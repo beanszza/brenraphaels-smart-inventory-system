@@ -1,7 +1,14 @@
 "use client";
 
-import ViewDistribution from "@/components/pages/ViewDistribution";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function DistributionPage() {
-  return <ViewDistribution />;
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/stock-transfer");
+  }, [router]);
+
+  return null;
 }

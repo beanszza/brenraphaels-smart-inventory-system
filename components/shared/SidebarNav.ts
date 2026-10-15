@@ -59,7 +59,7 @@ export const navGroups: NavGroup[] = [
       { name: "Goods Receiving",      href: "/goods-receiving",     icon: PackageCheck },
       { name: "Inventory",            href: "/inventory",           icon: Boxes },
       { name: "Production & Quality", href: "/production-quality",  icon: Building2 },
-      { name: "Stock Transfer",       href: "/distribution",        icon: Truck },
+      { name: "Stock Transfer",       href: "/stock-transfer",      icon: Truck },
     ],
   },
 ];

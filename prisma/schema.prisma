@@ -333,6 +333,7 @@ model FinishedProducts {
   Recipes            Recipes[]
   StockTransfers     StockTransfers[]
   ProductionRequests ProductionRequests[]
+  StockTransferRequestItems StockTransferRequestItems[]
 
   @@index([ItemId], map: "IX_FinishedProducts_ItemId")
 }
@@ -564,6 +565,7 @@ model Locations {
   StockLedgers                                              StockLedgers[]
   StockTransfers_StockTransfers_DestLocationIdToLocations   StockTransfers[]        @relation("StockTransfers_DestLocationIdToLocations")
   StockTransfers_StockTransfers_SourceLocationIdToLocations StockTransfers[]        @relation("StockTransfers_SourceLocationIdToLocations")
+  StockTransferRequests_StockTransferRequests_ToLocationIdToLocations StockTransferRequests[] @relation("StockTransferRequests_ToLocationIdToLocations")
 
   @@index([ParentLocationId], map: "IX_Locations_ParentLocationId")
 }
@@ -1036,15 +1038,67 @@ model StockTransfers {
   ReceivedDate                                         DateTime?        @db.Timestamptz(6)
   TransferNumber                                       String           @default("")
   VehiclePlate                                         String?
+  RequestId                                            Int?
+  ScheduledDate                                        DateTime?        @db.Timestamptz(6)
+  CourierName                                          String?
+  ProofOfReceipt                                       String?
+  Priority                                             String?          @default("Normal")
+  Notes                                                String?
+  CreatedBy                                            String?
+  CreatedAt                                            DateTime?        @default(now()) @db.Timestamptz(6)
+  UpdatedAt                                            DateTime?        @default(now()) @updatedAt @db.Timestamptz(6)
   BranchRequests                                       BranchRequests?  @relation(fields: [BranchRequestId], references: [BranchRequestId], onDelete: NoAction, onUpdate: NoAction, map: "FK_StockTransfers_BranchRequests_BranchRequestId")
   FinishedProducts                                     FinishedProducts @relation(fields: [ProductId], references: [ProductId], onDelete: Cascade, onUpdate: NoAction, map: "FK_StockTransfers_FinishedProducts_ProductId")
   Locations_StockTransfers_DestLocationIdToLocations   Locations        @relation("StockTransfers_DestLocationIdToLocations", fields: [DestLocationId], references: [LocationId], onUpdate: NoAction, map: "FK_StockTransfers_Locations_DestLocationId")
   Locations_StockTransfers_SourceLocationIdToLocations Locations        @relation("StockTransfers_SourceLocationIdToLocations", fields: [SourceLocationId], references: [LocationId], onUpdate: NoAction, map: "FK_StockTransfers_Locations_SourceLocationId")
+  StockTransferRequests                                StockTransferRequests? @relation(fields: [RequestId], references: [RequestId], onDelete: SetNull, onUpdate: NoAction, map: "FK_StockTransfers_StockTransferRequests_RequestId")
 
   @@index([BranchRequestId], map: "IX_StockTransfers_BranchRequestId")
   @@index([DestLocationId], map: "IX_StockTransfers_DestLocationId")
   @@index([ProductId], map: "IX_StockTransfers_ProductId")
   @@index([SourceLocationId], map: "IX_StockTransfers_SourceLocationId")
+  @@index([RequestId], map: "IX_StockTransfers_RequestId")
+}
+
+model StockTransferRequests {
+  RequestId            Int                          @id(map: "PK_StockTransferRequests") @default(autoincrement())
+  RequestNumber        String                       @unique(map: "IX_StockTransferRequests_RequestNumber")
+  ToLocationId         Int
+  RequestedBy          String
+  RequestDate          DateTime                     @default(now()) @db.Timestamptz(6)
+  RequiredDate         DateTime                     @db.Date
+  Priority             String                       @default("Normal")
+  Reason               String?
+  Status               String                       @default("Pending Approval")
+  AdminNotes           String?
+  ReviewedBy           String?
+  ReviewedAt           DateTime?                    @db.Timestamptz(6)
+  CreatedAt            DateTime                     @default(now()) @db.Timestamptz(6)
+  UpdatedAt            DateTime                     @default(now()) @updatedAt @db.Timestamptz(6)
+
+  Locations            Locations                    @relation("StockTransferRequests_ToLocationIdToLocations", fields: [ToLocationId], references: [LocationId], onDelete: Restrict, onUpdate: NoAction, map: "FK_StockTransferRequests_Locations_ToLocationId")
+  StockTransferRequestItems StockTransferRequestItems[]
+  StockTransfers       StockTransfers[]
+
+  @@index([ToLocationId], map: "IX_StockTransferRequests_ToLocationId")
+  @@index([Status], map: "IX_StockTransferRequests_Status")
+}
+
+model StockTransferRequestItems {
+  RequestItemId        Int                   @id(map: "PK_StockTransferRequestItems") @default(autoincrement())
+  RequestId            Int
+  ProductId            Int
+  RequestedQuantity    Decimal               @db.Decimal(18, 3)
+  AvailableQuantity    Decimal               @default(0) @db.Decimal(18, 3)
+  SuggestedLots        Json?
+  IsInsufficient       Boolean               @default(false)
+  Notes                String?
+
+  StockTransferRequests StockTransferRequests @relation(fields: [RequestId], references: [RequestId], onDelete: Cascade, onUpdate: NoAction, map: "FK_StockTransferRequestItems_Requests")
+  FinishedProducts     FinishedProducts      @relation(fields: [ProductId], references: [ProductId], onDelete: Restrict, onUpdate: NoAction, map: "FK_StockTransferRequestItems_Products")
+
+  @@index([RequestId], map: "IX_StockTransferRequestItems_RequestId")
+  @@index([ProductId], map: "IX_StockTransferRequestItems_ProductId")
 }
 
 model SupplierDocuments {

@@ -62,6 +62,7 @@ const STATUS_MAP: Record<string, BadgeTier> = {
   PendingDispatch: "subtle",
   "Pending Dispatch": "subtle",
   Dispatched:    "active",
+  Scheduled:     "subtle",
 
   // Recall
   Active:        "active",
@@ -115,3 +116,5 @@ export function StatusBadge({ status, className = "" }: StatusBadgeProps) {
     </Badge>
   );
 }
+
+export default StatusBadge;
