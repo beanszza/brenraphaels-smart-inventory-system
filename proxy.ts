@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { devBypassEnabled } from "@/lib/portal/dev-bypass";
-import { appOrigin, LOGIN_PATH, SESSION_COOKIE } from "@/lib/portal/config";
+import { appOrigin, SESSION_COOKIE } from "@/lib/portal/config";
 
 const PUBLIC_PATHS = new Set([
   "/api/portal/login",
@@ -28,7 +28,7 @@ export function proxy(request: NextRequest) {
         { status: 401, headers: { "Cache-Control": "no-store" } },
       );
     }
-    const login = new URL(LOGIN_PATH, appOrigin());
+    const login = new URL("/signing-in", appOrigin());
     login.searchParams.set("returnTo", returnTo);
     return NextResponse.redirect(login);
   }

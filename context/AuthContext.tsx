@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { RedirectToLogin } from "@/components/shared/RedirectToLogin";
 import { Loader2 } from "lucide-react";
 
 type ModuleAccess = {
