@@ -3,6 +3,7 @@ export const HANDOFF_COOKIE = "ims_handoff";
 export const CALLBACK_PATH = "/api/portal/callback";
 export const LOGIN_PATH = "/api/portal/login";
 export const LOGOUT_PATH = "/api/portal/logout";
+export const SIGNING_IN_PATH = "/signing-in";
 export const MODULES = [
   "Dashboard",
   "Resources & Suppliers",

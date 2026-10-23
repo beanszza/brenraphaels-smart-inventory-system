@@ -6,12 +6,10 @@ export function AuthScreen({
   title,
   children,
   actions,
-  icon,
 }: {
   title: string;
   children: ReactNode;
   actions?: ReactNode;
-  icon?: ReactNode;
 }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
@@ -24,7 +22,6 @@ export function AuthScreen({
           unoptimized
           className="size-14 rounded-xl"
         />
-        {icon}
         <div className="space-y-2">
           <h1 className="text-xl font-bold text-foreground sm:text-2xl">{title}</h1>
           <div className="text-sm leading-relaxed text-muted-foreground">{children}</div>
