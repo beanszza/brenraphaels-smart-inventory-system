@@ -19,7 +19,7 @@ const parseLogTime = (ts: string): number => {
   return 0;
 };
 
-export default function ViewTransactionalLogs({ initialLogs }: { initialLogs: LogEntry[] }) {
+export default function ViewTransactionalLogs({ initialLogs, unavailable = false }: { initialLogs: LogEntry[]; unavailable?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const typeParam = searchParams?.get("type") || "Supply";
@@ -122,7 +122,18 @@ export default function ViewTransactionalLogs({ initialLogs }: { initialLogs: Lo
           searchQuery={searchQuery} setSearchQuery={setSearchQuery} onResetFilters={handleResetFilters} onExportCSV={handleExportCSV}
         />
 
-        <AuditLogsTable logs={filteredLogs} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+        <AuditLogsTable
+          logs={filteredLogs}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          emptyMessage={
+            unavailable
+              ? "Audit events are unavailable right now. Try again shortly."
+              : logs.length === 0
+                ? "No audit events have been recorded yet."
+                : undefined
+          }
+        />
       </div>
     </div>
   );
