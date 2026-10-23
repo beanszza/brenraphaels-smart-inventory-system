@@ -2,9 +2,9 @@ import { requireRouteModule } from "@/lib/portal/staff";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { BATCH_INCLUDE, mapBatch } from "../../route";
+import { BATCH_INCLUDE, mapBatch } from "@/lib/production/production-batches";
 
-export const PRODUCTION_STAGES = [
+const PRODUCTION_STAGES = [
   "Pre-Production",
   "Peeling",
   "Steaming",

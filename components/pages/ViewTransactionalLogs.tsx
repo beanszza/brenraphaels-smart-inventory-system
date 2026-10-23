@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuditLogsFilterBar from "@/components/pages/AuditLogsFilterBar";
@@ -34,7 +34,6 @@ export default function ViewTransactionalLogs({ initialLogs, unavailable = false
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, filterMode, specificDate, startDate, endDate]);
 
   const handleResetFilters = () => {
     setFilterMode("all"); setSpecificDate(""); setStartDate(""); setEndDate(""); setSearchQuery(""); setCurrentPage(1);
@@ -89,7 +88,7 @@ export default function ViewTransactionalLogs({ initialLogs, unavailable = false
         `"${log.activity || ""}"`,
         `"${log.entityName || ""}"`,
         `"${log.user || ""}"`,
-        `"${((log as any).details || "").replace(/"/g, '""')}"`,
+        '""',
       ].join(","));
     });
 
@@ -117,9 +116,9 @@ export default function ViewTransactionalLogs({ initialLogs, unavailable = false
         </div>
 
         <AuditLogsFilterBar
-          filterMode={filterMode} setFilterMode={setFilterMode} specificDate={specificDate} setSpecificDate={setSpecificDate}
-          startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate}
-          searchQuery={searchQuery} setSearchQuery={setSearchQuery} onResetFilters={handleResetFilters} onExportCSV={handleExportCSV}
+          filterMode={filterMode} setFilterMode={(value) => { setFilterMode(value); setCurrentPage(1); }} specificDate={specificDate} setSpecificDate={(value) => { setSpecificDate(value); setCurrentPage(1); }}
+          startDate={startDate} setStartDate={(value) => { setStartDate(value); setCurrentPage(1); }} endDate={endDate} setEndDate={(value) => { setEndDate(value); setCurrentPage(1); }}
+          searchQuery={searchQuery} setSearchQuery={(value) => { setSearchQuery(value); setCurrentPage(1); }} onResetFilters={handleResetFilters} onExportCSV={handleExportCSV}
         />
 
         <AuditLogsTable

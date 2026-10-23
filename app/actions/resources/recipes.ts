@@ -1,5 +1,7 @@
 "use server";
 
+import { syncRecipeIngredients } from "@/lib/resources/recipe-ingredients";
+
 import type { RecipeInput } from "@/lib/resources/inputs";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
@@ -300,33 +302,7 @@ export async function updateRecipe(idInput: string | number, body: Partial<Recip
         }
 
         // Update Ingredients
-        const reqItemIds = body.ingredients.map((i) => i.itemId);
-        const toRemove = recipe.RecipeIngredients.filter(ri => !reqItemIds.includes(ri.ItemId));
-
-        // Remove unlisted ingredients
-        if (toRemove.length > 0) {
-          await tx.recipeIngredients.deleteMany({
-            where: {
-              RecipeId: id,
-              ItemId: { in: toRemove.map(ri => ri.ItemId) }
-            }
-          });
-        }
-
-        // Upsert the remaining/new ingredients
-        for (const ing of body.ingredients) {
-          const existingIngredient = recipe.RecipeIngredients.find(ri => ri.ItemId === ing.itemId);
-          if (existingIngredient) {
-            await tx.recipeIngredients.update({
-              where: { IngredientId: existingIngredient.IngredientId },
-              data: { StandardQuantity: ing.standardQuantity, UomId: ing.uomId },
-            });
-          } else {
-            await tx.recipeIngredients.create({
-              data: { RecipeId: id, ItemId: ing.itemId, UomId: ing.uomId, StandardQuantity: ing.standardQuantity },
-            });
-          }
-        }
+        await syncRecipeIngredients(tx, id, recipe.RecipeIngredients, body.ingredients);
       }
 
       const outputQty = body.outputQuantity !== undefined

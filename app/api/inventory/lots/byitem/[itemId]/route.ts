@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
-  props: { params: Promise<{ itemId: string }> | { itemId: string } }
+  props: { params: Promise<{ itemId: string }> }
 ) {
   const access = await requireRouteModule(request, "Inventory");
   if (!access.ok) return access.response;
