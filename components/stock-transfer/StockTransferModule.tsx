@@ -397,6 +397,8 @@ export default function StockTransferModule() {
               <Pagination
                 currentPage={page}
                 totalPages={totalPages}
+                totalCount={totalCount}
+                itemsPerPage={pageSize}
                 onPageChange={(p) => setPage(p)}
               />
             </div>

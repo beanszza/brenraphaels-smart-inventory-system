@@ -117,3 +117,5 @@ export interface DashboardMetrics {
   dispatchedTransfers: number;
   scheduledTransfers: number;
 }
+
+export type STRActionType = "approve" | "reject" | "cancel";

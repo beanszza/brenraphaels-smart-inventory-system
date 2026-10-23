@@ -13,6 +13,7 @@ interface InventoryTableProps {
   currentPage: number;
   pageSize: number;
   onOrderNow?: (item: InventoryItem) => void;
+  isFinishedGoods?: boolean;
 }
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -60,6 +61,7 @@ export default function InventoryTable({
   currentPage,
   pageSize,
   onOrderNow,
+  isFinishedGoods,
 }: InventoryTableProps) {
   const [expandedItemIds, setExpandedItemIds] = useState<Record<number, boolean>>({});
   const [itemLots, setItemLots] = useState<Record<number, LotItem[]>>({});
@@ -107,9 +109,19 @@ export default function InventoryTable({
             <th className="px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap">
               No.
             </th>
-            <th className="px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap">
+            <th className="px-3 py-3.5 text-left font-bold tracking-wider whitespace-nowrap">
               Item Name
             </th>
+            {isFinishedGoods && (
+              <>
+                <th className="px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap">
+                  Variant
+                </th>
+                <th className="px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap">
+                  SKU
+                </th>
+              </>
+            )}
             <th className="px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap">
               UOM
             </th>
@@ -134,7 +146,7 @@ export default function InventoryTable({
           {items.length === 0 ? (
             <tr>
               <td
-                colSpan={9}
+                colSpan={isFinishedGoods ? 11 : 9}
                 className="px-5 py-12 text-center text-sm font-semibold text-muted-foreground"
               >
                 No Inventory Records Found
@@ -188,6 +200,22 @@ export default function InventoryTable({
                         {item.itemName}
                       </span>
                     </td>
+                    {isFinishedGoods && (
+                      <>
+                        <td className="px-3 py-3.5 text-foreground whitespace-nowrap">
+                          {item.variantName ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-muted border border-border text-foreground">
+                              {item.variantName}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground font-mono">—</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3.5 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                          {item.variantSku || item.itemCode || "—"}
+                        </td>
+                      </>
+                    )}
                     <td className="px-3 py-3.5 text-muted-foreground">
                       {item.uomName || "—"}
                     </td>
@@ -245,11 +273,11 @@ export default function InventoryTable({
                   {/* Expandable Lot Detail Row */}
                   {isExpanded && (
                     <tr className="bg-muted/10 border-b border-border">
-                      <td colSpan={9} className="p-4 sm:p-5">
+                      <td colSpan={isFinishedGoods ? 11 : 9} className="p-4 sm:p-5">
                         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                           <div className="flex items-center justify-between border-b border-border pb-2">
                             <span className="font-semibold text-xs text-foreground">
-                              Available Lots Breakdown ({item.itemName})
+                              Available Lots Breakdown ({item.itemName}{item.variantName ? ` - ${item.variantName}` : ""})
                             </span>
                             <span className="text-[11px] text-muted-foreground">
                               Showing active lots and reserved quantities

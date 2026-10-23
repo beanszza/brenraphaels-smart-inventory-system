@@ -58,9 +58,9 @@ export function STRTable({
           <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
             <tr>
               <th className="px-5 py-3.5 whitespace-nowrap">REQUEST NO.</th>
-              <th className="px-5 py-3.5 whitespace-nowrap">TRANSFER NO.</th>
               <th className="px-5 py-3.5 whitespace-nowrap">DESTINATION</th>
-              <th className="px-5 py-3.5 whitespace-nowrap">PRODUCTS & VARIANT</th>
+              <th className="px-5 py-3.5 whitespace-nowrap">PRODUCT</th>
+              <th className="px-5 py-3.5 whitespace-nowrap">VARIANT</th>
               <th className="px-5 py-3.5 text-right whitespace-nowrap">QTY</th>
               <th className="px-5 py-3.5 whitespace-nowrap">TARGET DATE</th>
               <th className="px-5 py-3.5 whitespace-nowrap">COURIER / DRIVER</th>
@@ -77,7 +77,6 @@ export function STRTable({
               const isCancelled = req.status === "Cancelled" || req.status === "Rejected";
 
               const transferRef = req.transfers && req.transfers.length > 0 ? req.transfers[0] : null;
-              const transferNo = transferRef?.transferNumber || null;
 
               const totalQty = req.items?.reduce((sum, i) => sum + i.requestedQuantity, 0) || 0;
               const firstItem = req.items?.[0];
@@ -105,36 +104,35 @@ export function STRTable({
                     <span className="hover:underline">{req.requestNumber}</span>
                   </td>
 
-                  {/* Transfer No */}
-                  <td className="px-5 py-4 font-mono text-foreground font-semibold whitespace-nowrap">
-                    {transferNo ? (
-                      <span className="px-2 py-0.5 rounded-md bg-muted/60 border border-border">
-                        {transferNo}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-
                   {/* Destination */}
                   <td className="px-5 py-4 font-semibold text-foreground whitespace-nowrap">
                     {req.toLocationName}
                   </td>
 
-                  {/* Products & Variant */}
-                  <td className="px-5 py-4 max-w-[220px]">
+                  {/* Product */}
+                  <td className="px-5 py-4 font-semibold text-foreground whitespace-nowrap">
                     {firstItem ? (
                       <div>
-                        <div className="font-semibold text-foreground truncate">
-                          {firstItem.productName}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground font-normal truncate">
-                          {firstItem.variant || "Standard"}
-                          {req.items.length > 1 && ` (+${req.items.length - 1} more)`}
-                        </div>
+                        <span>{firstItem.productName}</span>
+                        {req.items && req.items.length > 1 && (
+                          <span className="ml-1 text-[10px] text-muted-foreground font-normal">
+                            (+{req.items.length - 1} more)
+                          </span>
+                        )}
                       </div>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-muted-foreground font-mono">—</span>
+                    )}
+                  </td>
+
+                  {/* Variant */}
+                  <td className="px-5 py-4 whitespace-nowrap">
+                    {firstItem?.variant ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-muted border border-border text-foreground">
+                        {firstItem.variant}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground font-mono">—</span>
                     )}
                   </td>
 

@@ -61,20 +61,71 @@ export async function GET(request: Request) {
     ]);
 
     const itemIds = records.map((r) => r.ItemId);
-    const lotAggregations = await prisma.inventoryLots.groupBy({
-      by: ["ItemId"],
-      where: {
-        ItemId: { in: itemIds },
-        Status: { in: ["Available", "Active"] },
-      },
-      _sum: {
-        ReservedQuantity: true,
-      },
-    });
+
+    const [lotAggregations, finishedProductRows] = await Promise.all([
+      prisma.inventoryLots.groupBy({
+        by: ["ItemId"],
+        where: {
+          ItemId: { in: itemIds },
+          Status: { in: ["Available", "Active"] },
+        },
+        _sum: {
+          ReservedQuantity: true,
+        },
+      }),
+      // Fetch finished product variants for all items in the current page along with their lots
+      prisma.finishedProducts.findMany({
+        where: { ItemId: { in: itemIds } },
+        select: {
+          ProductId: true,
+          ItemId: true,
+          Variant: true,
+          Sku: true,
+          ProductionBatches: {
+            select: {
+              InventoryLots: {
+                select: {
+                  QuantityRemaining: true,
+                  ReservedQuantity: true,
+                  Status: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { ProductId: "asc" },
+      }),
+    ]);
 
     const reservedMap: Record<number, number> = {};
     for (const agg of lotAggregations) {
       reservedMap[agg.ItemId] = Number(agg._sum.ReservedQuantity || 0);
+    }
+
+    // Map itemId -> list of variants with accurate variant stock
+    const variantsMap: Record<
+      number,
+      Array<{ productId: number; variant: string; sku: string; currentStock: number; reservedStock: number }>
+    > = {};
+    for (const fp of finishedProductRows) {
+      if (!variantsMap[fp.ItemId]) variantsMap[fp.ItemId] = [];
+      let variantStock = 0;
+      let variantReserved = 0;
+      fp.ProductionBatches?.forEach((batch) => {
+        const lot = batch.InventoryLots;
+        if (lot && (lot.Status === "Available" || lot.Status === "Active")) {
+          variantStock += Number(lot.QuantityRemaining || 0);
+          variantReserved += Number(lot.ReservedQuantity || 0);
+        }
+      });
+
+      variantsMap[fp.ItemId].push({
+        productId: fp.ProductId,
+        variant: fp.Variant || "",
+        sku: fp.Sku || "",
+        currentStock: variantStock,
+        reservedStock: variantReserved,
+      });
     }
 
     const data = records.map((inv) => {
@@ -102,12 +153,15 @@ export async function GET(request: Request) {
         minStockLevel: minStock,
         maxStockLevel: maxStock,
         uomId: uom?.UomId ?? item.StockUomId,
+        uomName: uom?.Name ?? uom?.Abbreviation ?? "",
         uomAbbreviation: uom?.Abbreviation ?? "",
         isLowStock: currentStock <= minStock,
         isOverStock: maxStock > 0 && currentStock > maxStock,
         isLotTracked: item.IsLotTracked,
         isExpiryTracked: item.IsExpiryTracked,
         isActive: item.IsActive,
+        // Populated for finished goods only; empty array for raw materials / ingredients
+        finishedProductVariants: variantsMap[item.ItemId] ?? [],
       };
     });
 

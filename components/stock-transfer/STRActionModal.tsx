@@ -4,8 +4,9 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, AlertCircle, CheckCircle, XCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { STRActionType } from "./types";
 
-export type STRActionType = "approve" | "reject" | "cancel";
+export type { STRActionType };
 
 interface STRActionModalProps {
   actionType: STRActionType;

@@ -45,7 +45,9 @@ function matchesSearch(item: InventoryItem, query: string): boolean {
   const codeMatch = item.itemCode?.toLowerCase().includes(q) ?? false;
   const splCodeMatch = `spl-${String(item.itemId).padStart(4, "0")}`.toLowerCase().includes(q);
   const idMatch = item.itemId?.toString().includes(q) ?? false;
-  return nameMatch || codeMatch || splCodeMatch || idMatch;
+  const variantMatch =
+    (item.variantName?.toLowerCase().includes(q) || item.variantSku?.toLowerCase().includes(q)) ?? false;
+  return nameMatch || codeMatch || splCodeMatch || idMatch || variantMatch;
 }
 
 export default function ViewInventory() {
@@ -60,7 +62,8 @@ export default function ViewInventory() {
 
   const [allInventories, setAllInventories] = useState<InventoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState("Raw Materials");
+  const [productFilter, setProductFilter] = useState("All");
   const [page, setPage] = useState(1);
 
   // KPI Metrics
@@ -151,17 +154,77 @@ export default function ViewInventory() {
     fetchKpiData();
   }, [fetchKpiData]);
 
+  // Distinct finished goods product names for the Product filter dropdown
+  const availableFinishedProducts = useMemo(() => {
+    const set = new Set<string>();
+    allInventories
+      .filter((item) => matchesCategory(item.categoryName, "Finished Goods"))
+      .forEach((item) => {
+        if (item.itemName) set.add(item.itemName.trim());
+      });
+    return Array.from(set).sort();
+  }, [allInventories]);
+
   // Scoped items by category
+  // For Finished Goods: separate each product variant into its own row with its own Variant & SKU column!
   const categoryScopedItems = useMemo(() => {
+    if (categoryFilter === "Finished Goods") {
+      const rawFinishedGoods = allInventories.filter((item) =>
+        matchesCategory(item.categoryName, "Finished Goods")
+      );
+      // Group by ItemId so multiple warehouse location rows for the same product don't duplicate variants!
+      const itemMap = new Map<number, InventoryItem>();
+      rawFinishedGoods.forEach((item) => {
+        if (!itemMap.has(item.itemId)) {
+          itemMap.set(item.itemId, item);
+        }
+      });
+
+      const rows: InventoryItem[] = [];
+      itemMap.forEach((item) => {
+        if (item.finishedProductVariants && item.finishedProductVariants.length > 0) {
+          item.finishedProductVariants.forEach((v) => {
+            const variantStock = v.currentStock ?? 0;
+            const variantReserved = v.reservedStock ?? 0;
+            const maxStock = item.maxStockLevel > 0 ? item.maxStockLevel : 100;
+            const minStock = item.minStockLevel || 0;
+            rows.push({
+              ...item,
+              inventoryId: `fp-${v.productId}`,
+              variantName: v.variant || "Standard",
+              variantSku: v.sku || item.itemCode || "",
+              productId: v.productId,
+              currentStock: variantStock,
+              reservedStock: variantReserved,
+              availableStock: Math.max(0, variantStock - variantReserved),
+              isLowStock: variantStock <= minStock,
+            });
+          });
+        } else {
+          rows.push({
+            ...item,
+            variantName: "Standard",
+            variantSku: item.itemCode || "",
+          });
+        }
+      });
+      return rows;
+    }
+
     return allInventories.filter((item) => matchesCategory(item.categoryName, categoryFilter));
   }, [allInventories, categoryFilter]);
 
-  // Full filtering: category + search
+  // Full filtering: category + product filter (Finished Goods only) + search
   const filteredInventories = useMemo(() => {
+    const isFinishedGoods = categoryFilter === "Finished Goods";
     return categoryScopedItems.filter((item) => {
-      return matchesSearch(item, searchQuery);
+      const matchesProduct =
+        !isFinishedGoods ||
+        productFilter === "All" ||
+        item.itemName.toLowerCase() === productFilter.toLowerCase();
+      return matchesProduct && matchesSearch(item, searchQuery);
     });
-  }, [categoryScopedItems, searchQuery]);
+  }, [categoryScopedItems, categoryFilter, productFilter, searchQuery]);
 
   const pageSize = 10;
   const totalCount = filteredInventories.length;
@@ -202,7 +265,6 @@ export default function ViewInventory() {
   };
 
   const categoryTabs = [
-    { id: "All", label: "ALL" },
     { id: "Raw Materials", label: "RAW MATERIALS" },
     { id: "Ingredients", label: "INGREDIENTS" },
     { id: "Tools and Supplies", label: "TOOLS & SUPPLIES" },
@@ -244,6 +306,7 @@ export default function ViewInventory() {
                 type="button"
                 onClick={() => {
                   setCategoryFilter(tab.id);
+                  setProductFilter("All");
                   setPage(1);
                 }}
                 className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
@@ -259,9 +322,9 @@ export default function ViewInventory() {
         </div>
       </div>
 
-      {/* Search and Category Filter Bar */}
+      {/* Search, Product Filter (Finished Goods only), and Category Filter Bar */}
       <div className="border border-border rounded-md overflow-hidden bg-card">
-        <div className="flex items-center justify-between gap-sm px-md py-sm bg-muted/20">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-sm px-md py-sm bg-muted/20">
           <div className="flex items-center gap-sm flex-1">
             <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
@@ -275,19 +338,42 @@ export default function ViewInventory() {
               className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-body-sm flex-1 text-foreground placeholder:text-muted-foreground"
             />
           </div>
-          <div className="flex items-center gap-sm shrink-0">
+          <div className="flex flex-wrap items-center gap-sm shrink-0">
+            {/* Product Filter Dropdown: Show strictly only when on Finished Goods */}
+            {categoryFilter === "Finished Goods" && availableFinishedProducts.length > 0 && (
+              <Select
+                value={productFilter}
+                onValueChange={(val) => {
+                  setProductFilter(val);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="h-10 min-w-[180px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+                  <SelectValue placeholder="All Products" />
+                </SelectTrigger>
+                <SelectContent className="min-w-[180px]">
+                  <SelectItem value="All">All Products</SelectItem>
+                  {availableFinishedProducts.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             <Select
               value={categoryFilter}
               onValueChange={(val) => {
                 setCategoryFilter(val);
+                setProductFilter("All");
                 setPage(1);
               }}
             >
               <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
-                <SelectValue placeholder="All Categories" />
+                <SelectValue placeholder="Select Category" />
               </SelectTrigger>
               <SelectContent className="min-w-[210px]">
-                <SelectItem value="All">All Categories</SelectItem>
                 <SelectItem value="Raw Materials">Raw Materials</SelectItem>
                 <SelectItem value="Ingredients">Ingredients</SelectItem>
                 <SelectItem value="Tools and Supplies">Tools & Supplies</SelectItem>
@@ -304,6 +390,7 @@ export default function ViewInventory() {
         currentPage={page}
         pageSize={pageSize}
         onOrderNow={handleOrderNow}
+        isFinishedGoods={categoryFilter === "Finished Goods"}
       />
 
       <Pagination
