@@ -8,6 +8,8 @@ import {
 } from "./config";
 import { challengeFor, newState, newVerifier } from "./pkce";
 import { portalClient, type PortalPort } from "./client";
+import { modulesFor } from "./access";
+import { prismaKnownStaff, recordKnownStaff, type KnownStaffStore } from "@/lib/known-staff";
 import { safeReturnTo } from "./return-to";
 import { devBypassEnabled } from "./dev-bypass";
 
@@ -56,9 +58,20 @@ export function login(request: NextRequest) {
   return noStore(response);
 }
 
+/** Best effort: Known Staff only decides who to notify, so sign-in never waits on or fails for it. */
+async function rememberStaff(handle: string, portal: PortalPort, store: KnownStaffStore) {
+  try {
+    const held = await modulesFor(handle, { portal });
+    if (held.decision === "allowed") await recordKnownStaff(held.staff, held.modules, store);
+  } catch (error) {
+    console.error("Known Staff could not be recorded", error);
+  }
+}
+
 export async function callback(
   request: NextRequest,
   portal: PortalPort = portalClient,
+  knownStaff: KnownStaffStore = prismaKnownStaff,
 ) {
   if (!originAllowed(request))
     return noStore(
@@ -104,6 +117,7 @@ export async function callback(
     });
     if (!result.ok)
       return failed(result.reason === "rejected" ? "failed" : result.reason);
+    await rememberStaff(result.sessionHandle, portal, knownStaff);
     const response = NextResponse.redirect(
       new URL(safeReturnTo(handoff.returnTo), appOrigin()),
     );
