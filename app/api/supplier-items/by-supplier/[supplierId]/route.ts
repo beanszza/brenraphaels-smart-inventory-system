@@ -1,7 +1,12 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: Request, props: { params: Promise<{ supplierId: string }> }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ supplierId: string }> }) {
+  const access = await requireRouteModule(request, "Resources & Suppliers");
+  if (!access.ok) return access.response;
+
   const params = await props.params;
   try {
     const supplierId = parseInt(params.supplierId, 10);

@@ -1,17 +1,25 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
+  const access = await requireRouteModule(request, "Production & Quality");
+  if (!access.ok) return access.response;
+
   return handleReject(request, props);
 }
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
+  const access = await requireRouteModule(request, "Production & Quality");
+  if (!access.ok) return access.response;
+
   return handleReject(request, props);
 }
 

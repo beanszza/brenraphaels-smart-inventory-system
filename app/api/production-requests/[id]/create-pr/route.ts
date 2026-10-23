@@ -1,7 +1,12 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const access = await requireRouteModule(request, "Production & Quality");
+  if (!access.ok) return access.response;
+
   const params = await props.params;
   const id = parseInt(params.id, 10);
   if (isNaN(id)) {

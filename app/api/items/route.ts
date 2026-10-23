@@ -1,7 +1,12 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const access = await requireRouteModule(request, "Resources & Suppliers");
+  if (!access.ok) return access.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
@@ -85,7 +90,10 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const access = await requireRouteModule(request, "Resources & Suppliers");
+  if (!access.ok) return access.response;
+
   try {
     const body = await request.json();
     const itemName = body.itemName?.trim();

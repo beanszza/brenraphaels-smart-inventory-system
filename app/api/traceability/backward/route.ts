@@ -1,8 +1,13 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // Backward traceability: given a batch ID or batch number, find the source lots used
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const access = await requireRouteModule(request, "Inventory");
+  if (!access.ok) return access.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const batchId = searchParams.get("batchId") || "";

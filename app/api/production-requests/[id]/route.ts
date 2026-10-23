@@ -1,8 +1,13 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { PROD_REQ_INCLUDE, mapProductionRequest } from "../route";
 
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const access = await requireRouteModule(request, "Production & Quality");
+  if (!access.ok) return access.response;
+
   const params = await props.params;
   const id = parseInt(params.id, 10);
   if (isNaN(id)) {
@@ -26,7 +31,10 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
   }
 }
 
-export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const access = await requireRouteModule(request, "Production & Quality");
+  if (!access.ok) return access.response;
+
   const params = await props.params;
   const id = parseInt(params.id, 10);
   if (isNaN(id)) {
@@ -339,7 +347,10 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
   }
 }
 
-export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const access = await requireRouteModule(request, "Production & Quality");
+  if (!access.ok) return access.response;
+
   const params = await props.params;
   const id = parseInt(params.id, 10);
   if (isNaN(id)) {
