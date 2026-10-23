@@ -15,6 +15,7 @@ import {
   Calculator,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { Module } from "@/lib/portal/config";
 
 export interface NavItem {
   name: string;
@@ -63,6 +64,38 @@ export const navGroups: NavGroup[] = [
     ],
   },
 ];
+
+/** Sidebar groups limited to the Modules the Staff member holds; empty groups are dropped. */
+export function visibleNavGroups(modules: readonly Module[]): NavGroup[] {
+  return navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => modules.includes(item.name as Module)),
+    }))
+    .filter((group) => group.items.length > 0);
+}
+
+/** Pages that are reachable but not in the sidebar still belong to one Module. */
+const unlistedRoutes: Record<string, Module> = {
+  "/cycle-counts": "Inventory",
+  "/traceability": "Inventory",
+  "/valuation": "Inventory",
+  "/mrp": "Orders & Procurement",
+  "/reports": "Orders & Procurement",
+  "/distribution": "Stock Transfer",
+  "/distribution-analytics": "Dashboard",
+};
+
+/** The Module that owns a page address, or undefined so callers deny by default. */
+export function moduleForPath(pathname: string): Module | undefined {
+  const path = pathname.split(/[?#]/)[0] || "/";
+  if (path === "/") return "Dashboard";
+  const owns = (href: string) => path === href || path.startsWith(`${href}/`);
+  const listed = mainNavItems.find((item) => item.href !== "/" && owns(item.href));
+  if (listed) return listed.name as Module;
+  const unlisted = Object.keys(unlistedRoutes).find(owns);
+  return unlisted ? unlistedRoutes[unlisted] : undefined;
+}
 
 /** Flat list of all nav items for breadcrumb lookups */
 export const mainNavItems: NavItem[] = navGroups.flatMap((g) => g.items);
