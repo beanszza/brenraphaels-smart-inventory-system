@@ -1,5 +1,9 @@
 "use client";
 
+import { listLocations } from "@/app/actions/resources/locations";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, Plus, Trash2, AlertCircle, Package } from "lucide-react";
@@ -75,7 +79,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
     try {
       const [prodRes, locRes, reqRes] = await Promise.all([
         api.get("/api/finished-products"),
-        api.get("/api/locations"),
+        actionResponse(listLocations()),
         api.get("/api/stock-transfer-requests?pageSize=20"),
       ]);
 

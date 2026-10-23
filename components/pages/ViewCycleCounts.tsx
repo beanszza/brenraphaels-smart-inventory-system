@@ -1,5 +1,9 @@
 "use client";
 
+import { listLocations } from "@/app/actions/resources/locations";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useState, useEffect } from "react";
 import {
   ClipboardList, Plus, Search, CheckCircle, AlertCircle, RefreshCw,
@@ -86,7 +90,7 @@ export default function ViewCycleCounts() {
     try {
       const [ccRes, locRes] = await Promise.allSettled([
         api.get("/api/cycle-counts?page=1&pageSize=100"),
-        api.get("/api/locations?pageSize=100"),
+        actionResponse(listLocations()),
       ]);
       if (ccRes.status === "fulfilled" && ccRes.value.data?.success) {
         const raw = ccRes.value.data.data?.items || ccRes.value.data.data || [];

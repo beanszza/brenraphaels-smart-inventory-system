@@ -1,4 +1,5 @@
 import React, { Suspense } from "react";
+import { AuditLogsSkeleton } from "@/components/loading/audit-logs-skeleton";
 import ViewTransactionalLogs from "@/components/pages/ViewTransactionalLogs";
 import type { LogEntry } from "@/components/pages/AuditLogsTable";
 import { readImsAuditEvents } from "@/lib/audit";
@@ -33,9 +34,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
   }
 
   return (
-    <Suspense fallback={<div className="p-10 text-center">Loading logs...</div>}>
-      {unavailable && <p className="p-4 text-sm text-muted-foreground">Audit events are unavailable right now. Try again shortly.</p>}
-      <ViewTransactionalLogs initialLogs={logs} />
+    <Suspense fallback={<AuditLogsSkeleton />}>
+      <ViewTransactionalLogs initialLogs={logs} unavailable={unavailable} />
     </Suspense>
   );
 }

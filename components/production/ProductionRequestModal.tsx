@@ -1,5 +1,9 @@
 "use client";
 
+import { listRecipes } from "@/app/actions/resources/recipes";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useState, useEffect, useMemo } from "react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Button } from "@/components/ui/button";
@@ -235,7 +239,7 @@ export default function ProductionRequestModal({
         }
       }).catch(console.error);
 
-      api.get("/api/recipes").then((res: any) => {
+      actionResponse(listRecipes()).then((res: any) => {
         const rawRecipes = Array.isArray(res.data) ? res.data : (res.data?.data || []);
         if (Array.isArray(rawRecipes)) {
           setRecipes(

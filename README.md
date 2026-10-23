@@ -1,5 +1,22 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Resources & Suppliers data
+
+The Resources & Suppliers page loads its initial data on the server. Its items, suppliers,
+supplier-item links, recipes, categories, units and locations use server actions under
+`app/actions/resources`. Every action validates the Resources & Suppliers Module before
+reading data or processing input. Shared lookup callers in other Modules use the same actions.
+The former resource HTTP handlers and their PascalCase aliases have been removed.
+
+Mutations commit in a database transaction, then send an IMS audit event with the session
+Username through the gateway. Audit failure is logged without failing the saved action.
+The logs page continues to read only IMS events through the gateway. These resources have
+no approval/rejection workflow or file upload; their finished-product choices are read under
+Resources & Suppliers, while product mutations and uploads remain with Production & Quality.
+
+`tests/resources-actions.test.ts` exercises every action's denial paths and every mutation's
+audit event, gateway failure and failed-commit behavior with fake Portal/gateway boundaries.
+
 ## IMS operator setup
 
 Run the repeatable wizard in a private interactive terminal with Bash and Node 24+:
