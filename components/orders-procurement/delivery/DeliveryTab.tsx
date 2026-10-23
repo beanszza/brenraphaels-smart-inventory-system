@@ -20,7 +20,6 @@ import { MarkDispatchedModal } from "./MarkDispatchedModal";
 import { MarkArrivedModal } from "./MarkArrivedModal";
 import { CancelDeliveryModal } from "./CancelDeliveryModal";
 import Pagination from "@/components/Pagination";
-import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
 const STATUS_TABS: (DeliveryStatus | "All")[] = [
@@ -31,7 +30,6 @@ const STATUS_TABS: (DeliveryStatus | "All")[] = [
 ];
 
 export function DeliveryTab() {
-  const { isAdmin } = useAuth();
   const router = useRouter();
 
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
@@ -148,15 +146,13 @@ export function DeliveryTab() {
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
           </Button>
 
-          {!isAdmin && (
-            <Button
-              type="button"
-              onClick={() => setOpenCreateModal(true)}
-              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
-            >
-              <Plus className="w-4 h-4" /> Create Delivery Order
-            </Button>
-          )}
+          <Button
+            type="button"
+            onClick={() => setOpenCreateModal(true)}
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+          >
+            <Plus className="w-4 h-4" /> Create Delivery Order
+          </Button>
         </div>
       </div>
 
@@ -242,7 +238,6 @@ export function DeliveryTab() {
       {/* Delivery Table */}
       <DeliveryTable
         deliveries={paginatedList}
-        isAdmin={isAdmin}
         onView={(d) => setSelectedDelivery(d)}
         onDispatch={(d) => setDispatchDelivery(d)}
         onArrive={(d) => setArriveDelivery(d)}
@@ -282,7 +277,6 @@ export function DeliveryTab() {
       {selectedDelivery && (
         <DeliveryDetailsModal
           delivery={selectedDelivery}
-          isAdmin={isAdmin}
           onClose={() => setSelectedDelivery(null)}
           onArrive={(d) => {
             setSelectedDelivery(null);

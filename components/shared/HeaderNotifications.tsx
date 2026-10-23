@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useAuth } from "@/context/AuthContext";
+import { useStaff } from "@/context/StaffContext";
 import { requestNotifications, type NotificationAction, type NotificationSnapshot } from "@/lib/notifications/client";
 
 export function NotificationSkeletons() {
@@ -17,8 +17,8 @@ export function NotificationSkeletons() {
 }
 
 export function HeaderNotifications() {
-  const { user } = useAuth();
-  return user ? <StaffNotifications key={user.id} /> : null;
+  const staff = useStaff();
+  return <StaffNotifications key={staff.id} />;
 }
 
 function StaffNotifications() {

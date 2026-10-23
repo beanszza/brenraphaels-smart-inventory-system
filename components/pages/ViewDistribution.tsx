@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import api from "@/lib/api";
 import Pagination from "@/components/Pagination";
-import { useAuth } from "@/context/AuthContext";
 import { TransferItem, LocationItem, DistributionStats } from "@/components/distribution/types";
 import DistributionSummaryCards from "@/components/distribution/DistributionSummaryCards";
 import StockTransferTable from "@/components/distribution/StockTransferTable";
@@ -23,10 +22,6 @@ import LocationDetailsModal from "@/components/distribution/LocationDetailsModal
 import { PageHeader } from "@/components/shared/PageHeader";
 
 export default function DistributionPage() {
-  const auth = useAuth();
-  const user = auth?.user;
-  const isAuth = user?.username === "scmsuser" || user?.username === "ERP-ADMIN" || user?.email === "scmsuser@r3b2p.com" || user?.email === "admin@r3b2p.com" || user?.roles?.includes("Admin");
-
   const [activeTab, setActiveTab] = useState<"Stock Transfer" | "Locations">("Stock Transfer");
   const [transfers, setTransfers] = useState<TransferItem[]>([]);
   const [locations, setLocations] = useState<LocationItem[]>([]);
@@ -107,13 +102,11 @@ export default function DistributionPage() {
         description="Manage internal stock transfers, warehouse movements, and facility locations."
         actions={
           <>
-            {isAuth && (
-              <Button size="sm" variant="outline" asChild className="gap-1.5">
-                <Link href="/reports?tab=distribution">
-                  <FileText className="w-4 h-4" /> Reports
-                </Link>
-              </Button>
-            )}
+            <Button size="sm" variant="outline" asChild className="gap-1.5">
+              <Link href="/reports?tab=distribution">
+                <FileText className="w-4 h-4" /> Reports
+              </Link>
+            </Button>
             {activeTab === "Stock Transfer" ? (
               <Button size="sm" onClick={() => setShowCreateTransfer(true)} className="gap-1.5">
                 <Plus className="w-4 h-4" /> New Transfer

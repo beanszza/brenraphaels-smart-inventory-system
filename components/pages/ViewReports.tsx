@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 import ReportFilterBar from "@/components/pages/ReportFilterBar";
 import InventoryReportView from "@/components/pages/InventoryReportView";
 import ProcurementReportView from "@/components/pages/ProcurementReportView";
@@ -17,14 +16,6 @@ import api from "@/lib/api";
 
 export default function ViewReports({ initialTab }: { initialTab: string }) {
   const router = useRouter();
-  const { user, isLoading } = useAuth() || {};
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/");
-    }
-  }, [user, isLoading, router]);
-
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");

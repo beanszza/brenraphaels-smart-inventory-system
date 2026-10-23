@@ -14,7 +14,6 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 
 interface PODetailsModalProps {
   po: PurchaseOrderPO | null;
-  isAdmin?: boolean;
   onClose: () => void;
   onEdit?: (po: PurchaseOrderPO) => void;
   onApprove?: (po: PurchaseOrderPO) => void;
@@ -27,7 +26,6 @@ interface PODetailsModalProps {
 
 export function PODetailsModal({
   po,
-  isAdmin = false,
   onClose,
   onEdit,
   onApprove,
@@ -63,7 +61,7 @@ export function PODetailsModal({
     <ModalWrapper
       open={!!po}
       title={
-        isAdmin && isPending
+        isPending
           ? `Review Purchase Order — ${po.poNumber}`
           : `Purchase Order Details — ${po.poNumber}`
       }
@@ -237,7 +235,7 @@ export function PODetailsModal({
           </Button>
 
           {/* Admin review buttons for Pending Approval */}
-          {isAdmin && isPending && (
+          {isPending && (
             <>
               {onReturn && (
                 <Button
@@ -272,7 +270,7 @@ export function PODetailsModal({
           )}
 
           {/* Inventory Manager: Edit Draft or Returned PO */}
-          {!isAdmin && (po.status === "Draft" || po.status === "Returned") && onEdit && (
+          {(po.status === "Draft" || po.status === "Returned") && onEdit && (
             <Button
               type="button"
               onClick={() => onEdit(po)}
@@ -283,7 +281,7 @@ export function PODetailsModal({
           )}
 
           {/* Inventory Manager: Cancel PO for Draft/Pending/Returned PO */}
-          {!isAdmin && isCancellable && onCancel && (
+          {isCancellable && onCancel && (
             <Button
               type="button"
               variant="outline"
@@ -295,7 +293,7 @@ export function PODetailsModal({
           )}
 
           {/* Inventory Manager: Schedule Delivery for Approved or Ordered PO */}
-          {!isAdmin && (po.status === "Approved" || po.status === "Ordered") && onCreateDelivery && (
+          {(po.status === "Approved" || po.status === "Ordered") && onCreateDelivery && (
             <Button
               type="button"
               onClick={() => onCreateDelivery(po)}

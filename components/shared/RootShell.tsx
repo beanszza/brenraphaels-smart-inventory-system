@@ -1,5 +1,5 @@
 "use client";
-import { AuthProvider } from "@/context/AuthContext";
+import { StaffProvider } from "@/context/StaffContext";
 import { AppShell } from "@/components/shared/AppShell";
 import type { Module } from "@/lib/portal/config";
 import type { Staff } from "@/lib/portal/client";
@@ -14,8 +14,8 @@ export function RootShell({
   children: React.ReactNode;
 }) {
   return (
-    <AuthProvider>
+    <StaffProvider staff={staff}>
       <AppShell modules={modules} staff={staff}>{children}</AppShell>
-    </AuthProvider>
+    </StaffProvider>
   );
 }

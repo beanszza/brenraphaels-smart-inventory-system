@@ -4,7 +4,6 @@ import React from "react";
 import { Eye, Truck, X } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransfer } from "./types";
-import { useAuth } from "@/context/AuthContext";
 
 interface STFTableProps {
   transfers: StockTransfer[];
@@ -21,7 +20,6 @@ export function STFTable({
   onDispatch,
   onCancel,
 }: STFTableProps) {
-  const { isAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -112,7 +110,7 @@ export function STFTable({
                   >
                     <div className="flex items-center justify-end gap-1.5">
                       {/* Inventory Manager Actions (Admin has NO write access here!) */}
-                      {!isAdmin && isScheduled && (
+                      {isScheduled && (
                         <>
                           {onDispatch && (
                             <button

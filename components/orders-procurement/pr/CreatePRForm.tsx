@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import api from "@/lib/api";
 import { PurchaseRequisition, PRItem } from "../types";
-import { useAuth } from "@/context/AuthContext";
+import { useStaff } from "@/context/StaffContext";
 import ConfirmModal from "@/components/ConfirmModal";
 import { HR_EMPLOYEES } from "@/lib/employees";
 
@@ -44,7 +44,7 @@ export function CreatePRModal({
   isEdit = false,
 }: CreatePRModalProps) {
   const router = useRouter();
-  const { user } = useAuth();
+  const staff = useStaff();
 
   // Supplies list
   const [suppliesList, setSuppliesList] = useState<SupplyOption[]>([]);
@@ -65,14 +65,8 @@ export function CreatePRModal({
           year: "numeric",
         })
   );
-  const defaultAccountName = user?.firstName
-    ? `${user.firstName} ${user.lastName}`.trim()
-    : (user?.username || "");
-  const detectedDepartment = user?.roles?.some((role) => role.toLowerCase().includes("cook"))
-    ? "Production"
-    : user?.roles?.some((role) => role.toLowerCase().includes("admin"))
-      ? "Administration"
-      : "Inventory";
+  const defaultAccountName = staff.name;
+  const detectedDepartment = "Inventory";
 
   const [requestedBy, setRequestedBy] = useState(
     initialData?.requestedBy && initialData.requestedBy !== "Unauthenticated"
@@ -171,7 +165,7 @@ export function CreatePRModal({
         setErrors({});
       }
     }
-  }, [open, initialData, user, defaultAccountName, detectedDepartment]);
+  }, [open, initialData, defaultAccountName, detectedDepartment]);
 
   // Fetch supplies and next PR number
   useEffect(() => {

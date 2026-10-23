@@ -5,7 +5,6 @@ import Link from "next/link";
 import { FileText, Search } from "lucide-react";
 import api from "@/lib/api";
 import Pagination from "@/components/Pagination";
-import { useAuth } from "@/context/AuthContext";
 import { InventoryItem } from "@/components/inventory/types";
 import { LotItem } from "@/components/lots/types";
 import InventorySummaryCards from "@/components/inventory/InventorySummaryCards";
@@ -51,15 +50,6 @@ function matchesSearch(item: InventoryItem, query: string): boolean {
 }
 
 export default function ViewInventory() {
-  const auth = useAuth();
-  const user = auth?.user;
-  const isAuth =
-    user?.username === "scmsuser" ||
-    user?.username === "ERP-ADMIN" ||
-    user?.email === "scmsuser@r3b2p.com" ||
-    user?.email === "admin@r3b2p.com" ||
-    user?.roles?.includes("Admin");
-
   const [allInventories, setAllInventories] = useState<InventoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("Raw Materials");
@@ -277,13 +267,11 @@ export default function ViewInventory() {
         title="Inventory Management"
         description="Monitor real-time warehouse stocks, ingredients, raw materials, and finished goods"
         actions={
-          isAuth && (
-            <Button size="sm" variant="outline" asChild className="gap-1.5 cursor-pointer">
-              <Link href="/reports?tab=inventory">
-                <FileText className="w-4 h-4" /> Reports
-              </Link>
-            </Button>
-          )
+          <Button size="sm" variant="outline" asChild className="gap-1.5 cursor-pointer">
+            <Link href="/reports?tab=inventory">
+              <FileText className="w-4 h-4" /> Reports
+            </Link>
+          </Button>
         }
       />
 

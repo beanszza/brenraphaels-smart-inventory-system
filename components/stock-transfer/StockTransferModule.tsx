@@ -5,7 +5,6 @@ import { Plus, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import api from "@/lib/api";
-import { useAuth } from "@/context/AuthContext";
 import { PageHeader } from "@/components/shared/PageHeader";
 import {
   StockTransferRequest,
@@ -35,7 +34,6 @@ const STATUS_TABS = [
 ];
 
 export default function StockTransferModule() {
-  const { isAdmin } = useAuth();
 
   // Primary navigation tab: "transfers" | "locations"
   const [activeMainTab, setActiveMainTab] = useState<"transfers" | "locations">("transfers");
@@ -236,15 +234,13 @@ export default function StockTransferModule() {
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
             </Button>
 
-            {!isAdmin && (
-              <Button
-                type="button"
-                onClick={() => setOpenCreateSTR(true)}
-                className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" /> Create Transfer Request
-              </Button>
-            )}
+            <Button
+              type="button"
+              onClick={() => setOpenCreateSTR(true)}
+              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Create Transfer Request
+            </Button>
           </div>
         }
       />
@@ -314,33 +310,31 @@ export default function StockTransferModule() {
           <div className="border-b border-border overflow-x-auto pb-2">
             <div className="flex items-center gap-1.5 min-w-max">
               {/* Admin Requests Tab (Identical to Orders & Procurement PRTab!) */}
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveStatusTab("Requests");
-                    setPage(1);
-                  }}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeStatusTab === "Requests"
-                      ? "bg-primary text-primary-foreground shadow-xs"
-                      : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <span>Requests</span>
-                  {statusCounts.Requests > 0 && (
-                    <span
-                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                        activeStatusTab === "Requests"
-                          ? "bg-background text-foreground"
-                          : "bg-foreground/20 text-foreground"
-                      }`}
-                    >
-                      {statusCounts.Requests}
-                    </span>
-                  )}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveStatusTab("Requests");
+                  setPage(1);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeStatusTab === "Requests"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                <span>Requests</span>
+                {statusCounts.Requests > 0 && (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      activeStatusTab === "Requests"
+                        ? "bg-background text-foreground"
+                        : "bg-foreground/20 text-foreground"
+                    }`}
+                  >
+                    {statusCounts.Requests}
+                  </span>
+                )}
+              </button>
 
               {/* Standard Status Tabs */}
               {STATUS_TABS.map((tab) => {

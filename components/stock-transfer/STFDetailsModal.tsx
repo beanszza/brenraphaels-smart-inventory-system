@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { X, Calendar, MapPin, Truck, Package, User } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransfer } from "./types";
-import { useAuth } from "@/context/AuthContext";
 
 interface STFDetailsModalProps {
   transfer: StockTransfer | null;
@@ -23,7 +22,6 @@ export function STFDetailsModal({
   onCancel,
 }: STFDetailsModalProps) {
   const [mounted, setMounted] = useState(false);
-  const { isAdmin } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -215,7 +213,7 @@ export function STFDetailsModal({
           </button>
 
           {/* Only Inventory Manager can dispatch or cancel (Admin is view-only here!) */}
-          {!isAdmin && isScheduled && (
+          {isScheduled && (
             <div className="flex items-center gap-2">
               {onCancel && (
                 <button

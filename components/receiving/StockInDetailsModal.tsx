@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { Download, CheckCircle2, ShieldCheck, AlertTriangle, AlertCircle } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/context/AuthContext";
+import { useStaff } from "@/context/StaffContext";
 import api from "@/lib/api";
 import { StockIn, StockInLine } from "./types";
 
@@ -19,8 +19,7 @@ interface Props {
 }
 
 export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess }: Props) {
-  const { user, isAdmin } = useAuth();
-  const [approverName, setApproverName] = useState("System Admin");
+  const approverName = useStaff().name;
   const [approvalNotes, setApprovalNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [committing, setCommitting] = useState(false);
@@ -32,16 +31,6 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
   const [commitModalOpen, setCommitModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [rejectionError, setRejectionError] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      const name =
-        user.firstName && user.lastName
-          ? `${user.firstName} ${user.lastName}`
-          : user.username || "System Admin";
-      setApproverName(name);
-    }
-  }, [user]);
 
   if (!stockIn) return null;
 
@@ -414,7 +403,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
             >
               Close
             </button>
-            {isPending && isAdmin && (
+            {isPending && (
               <>
                 <button
                   type="button"

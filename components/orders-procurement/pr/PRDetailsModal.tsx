@@ -9,7 +9,6 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 
 interface PRDetailsModalProps {
   pr: PurchaseRequisition | null;
-  isAdmin?: boolean;
   onClose: () => void;
   onApprove?: (pr: PurchaseRequisition) => void;
   onReject?: (pr: PurchaseRequisition) => void;
@@ -19,7 +18,6 @@ interface PRDetailsModalProps {
 
 export function PRDetailsModal({
   pr,
-  isAdmin = false,
   onClose,
   onApprove,
   onReject,
@@ -58,7 +56,7 @@ export function PRDetailsModal({
   return (
     <ModalWrapper
       open={!!pr}
-      title={isAdmin && isPending ? `Review Product Requisition — ${pr.prNumber}` : `Product Requisition Details — ${pr.prNumber}`}
+      title={isPending ? `Review Product Requisition — ${pr.prNumber}` : `Product Requisition Details — ${pr.prNumber}`}
       onClose={onClose}
       size="max-w-5xl"
     >
@@ -275,7 +273,7 @@ export function PRDetailsModal({
             </Button>
 
             {/* Admin Operations for Pending PRs */}
-            {isAdmin && isPending && (
+            {isPending && (
               <>
                 {onReturn && (
                   <Button

@@ -26,7 +26,6 @@ import { PRDetailsModal } from "./PRDetailsModal";
 import { PRActionModal, PRActionType } from "./PRActionModal";
 import { CreatePRModal } from "./CreatePRForm";
 import Pagination from "@/components/Pagination";
-import { useAuth } from "@/context/AuthContext";
 
 const STATUS_TABS: (PRStatus | "All")[] = [
   "All",
@@ -42,7 +41,6 @@ const STATUS_TABS: (PRStatus | "All")[] = [
 
 export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
   const router = useRouter();
-  const { isAdmin } = useAuth();
 
   const [requisitions, setRequisitions] = useState<PurchaseRequisition[]>([]);
   const [loading, setLoading] = useState(true);
@@ -196,15 +194,13 @@ export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
             </Link>
           </Button>
 
-          {!isAdmin && (
-            <Button
-              type="button"
-              onClick={() => setOpenCreateModal(true)}
-              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
-            >
-              <Plus className="w-4 h-4" /> Create Purchase Requisition
-            </Button>
-          )}
+          <Button
+            type="button"
+            onClick={() => setOpenCreateModal(true)}
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+          >
+            <Plus className="w-4 h-4" /> Create Purchase Requisition
+          </Button>
         </div>
       </div>
 
@@ -255,29 +251,27 @@ export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
       <div className="border-b border-border overflow-x-auto">
         <div className="flex items-center gap-1.5 min-w-max pb-2">
           {/* Requests Tab (Visible to Admin or with pending requests) */}
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("Requests");
-                setPage(1);
-              }}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === "Requests"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <span>Requests</span>
-              {counts.Requests > 0 && (
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  activeTab === "Requests" ? "bg-background text-foreground" : "bg-foreground/20 text-foreground"
-                }`}>
-                  {counts.Requests}
-                </span>
-              )}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("Requests");
+              setPage(1);
+            }}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              activeTab === "Requests"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            <span>Requests</span>
+            {counts.Requests > 0 && (
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                activeTab === "Requests" ? "bg-background text-foreground" : "bg-foreground/20 text-foreground"
+              }`}>
+                {counts.Requests}
+              </span>
+            )}
+          </button>
 
           {/* Standard Status Tabs */}
           {STATUS_TABS.map((tab) => {
@@ -323,7 +317,6 @@ export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
       {/* PR Table */}
       <PRTable
         requisitions={paginatedList}
-        isAdmin={isAdmin}
         isRequestsTab={activeTab === "Requests"}
         onView={(pr) => setSelectedPR(pr)}
         onEdit={(pr) => setEditingPR(pr)}
@@ -342,7 +335,6 @@ export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
       {/* PR Details / Review Modal */}
       <PRDetailsModal
         pr={selectedPR}
-        isAdmin={isAdmin}
         onClose={() => setSelectedPR(null)}
         onApprove={(pr) => setActionModal({ pr, type: "approve" })}
         onReject={(pr) => setActionModal({ pr, type: "reject" })}

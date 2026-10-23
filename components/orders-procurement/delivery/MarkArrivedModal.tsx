@@ -8,7 +8,7 @@ import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import api from "@/lib/api";
 import { Delivery } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { useAuth } from "@/context/AuthContext";
+import { useStaff } from "@/context/StaffContext";
 import { HR_EMPLOYEES } from "@/lib/employees";
 
 interface MarkArrivedModalProps {
@@ -22,12 +22,8 @@ export function MarkArrivedModal({
   onClose,
   onSuccess,
 }: MarkArrivedModalProps) {
-  const { user } = useAuth();
+  const defaultReceiver = useStaff().name;
   if (!delivery) return null;
-
-  const defaultReceiver = user?.firstName
-    ? `${user.firstName} ${user.lastName || ""}`.trim()
-    : (user?.username || "Warehouse Officer");
 
   const [actualArrivalDate, setActualArrivalDate] = useState(
     new Date().toISOString().slice(0, 10)
