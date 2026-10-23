@@ -55,6 +55,7 @@ export const gatewayPort: GatewayPort = {
     const events: AuditEventRecord[] = [];
     // The read key can see every Source, so Source is pinned here and re-checked on the way out.
     for (const moduleName of modules?.length ? modules : [undefined]) {
+      if (events.length >= limit) break;
       let cursor: string | null = null;
       do {
         const query = new URLSearchParams({ source: "IMS", limit: String(Math.min(limit, 100)) });

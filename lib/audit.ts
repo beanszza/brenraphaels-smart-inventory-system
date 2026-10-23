@@ -57,5 +57,6 @@ export async function readImsAuditEvents(
   const events = await gateway.listAudit({ modules: options.modules, limit: options.limit ?? 500 });
   return events
     .filter((event) => event.source === "IMS")
-    .sort((a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at));
+    .sort((a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at))
+    .slice(0, options.limit ?? 500);
 }

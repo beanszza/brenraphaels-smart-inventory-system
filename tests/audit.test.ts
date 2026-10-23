@@ -15,7 +15,11 @@ function fakeGateway(overrides: Partial<GatewayPort> = {}) {
   return { gateway, written };
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
 
 describe("recordAudit", () => {
   it("sends the Staff member as actor, the record as target, the Module and source IMS", async () => {
@@ -114,7 +118,5 @@ describe("gatewayPort", () => {
     expect(parsed.searchParams.get("source")).toBe("IMS");
     expect(parsed.searchParams.get("module")).toBe("Inventory");
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer read-key");
-    vi.unstubAllEnvs();
-    vi.unstubAllGlobals();
   });
 });
