@@ -2,7 +2,7 @@ import { requireRouteModule } from "@/lib/portal/staff";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { BATCH_INCLUDE, mapBatch } from "../../route";
+import { BATCH_INCLUDE, mapBatch } from "@/lib/production/production-batches";
 
 export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const access = await requireRouteModule(request, "Production & Quality");

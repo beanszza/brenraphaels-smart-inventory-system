@@ -1,10 +1,6 @@
 "use client";
 
-import { getRecipe } from "@/app/actions/resources/recipes";
-import { actionResponse } from "@/lib/resources/action-response";
-
-
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "./ModalWrapper";
@@ -24,10 +20,14 @@ interface RecipeModalProps {
     ingredients: { itemId: number; uomId: number; standardQuantity: number }[];
     notes: string;
     isActive: boolean;
-  }) => void;
+  }) => Promise<void>;
 }
 
-export default function RecipeModal({
+export default function RecipeModal(props: RecipeModalProps) {
+  return props.open ? <RecipeModalForm key={props.editingRecipe?.recipeId ?? "new"} {...props} /> : null;
+}
+
+function RecipeModalForm({
   open,
   editingRecipe,
   finishedProducts,
@@ -35,13 +35,17 @@ export default function RecipeModal({
   onClose,
   onSave,
 }: RecipeModalProps) {
-  const [recipeCode, setRecipeCode] = useState("");
-  const [recipeName, setRecipeName] = useState("");
-  const [selectedProductName, setSelectedProductName] = useState("");
-  const [productId, setProductId] = useState<number>(0);
-  const [batchSize, setBatchSize] = useState<string>("");
-  const [recipeActive, setRecipeActive] = useState(true);
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const recipeCode = editingRecipe?.recipeCode ?? "Assigned when saved";
+  const [recipeName, setRecipeName] = useState(editingRecipe?.recipeName ?? "");
+  const [selectedProductName, setSelectedProductName] = useState(finishedProducts.find(p => p.productId === editingRecipe?.productId)?.itemName ?? finishedProducts[0]?.itemName ?? "");
+  const [productId, setProductId] = useState<number>(editingRecipe?.productId ?? finishedProducts[0]?.productId ?? 0);
+  const [batchSize, setBatchSize] = useState<string>(editingRecipe ? String(editingRecipe.outputQuantity) : "");
+  const [recipeActive, setRecipeActive] = useState(editingRecipe?.isActive ?? true);
+  const [ingredients, setIngredients] = useState<Ingredient[]>(() => editingRecipe?.ingredients.length ? editingRecipe.ingredients.map((i, index) => ({
+    id: index + 1, itemId: i.itemId, uomId: i.uomId, quantity: String(i.standardQuantity),
+  })) : [{ id: 1, itemId: 0, uomId: 0, quantity: "" }]);
 
   // Validation errors
   const [recipeNameError, setRecipeNameError] = useState("");
@@ -65,78 +69,6 @@ export default function RecipeModal({
     return finishedProducts.filter((p) => p.itemName.trim() === selectedProductName.trim());
   }, [finishedProducts, selectedProductName]);
 
-  // Fetch next recipe code or populate from editing recipe
-  useEffect(() => {
-    if (open) {
-      if (editingRecipe) {
-        setRecipeCode(editingRecipe.recipeCode || "");
-        setRecipeName(editingRecipe.recipeName || "");
-        const matchedFp = finishedProducts.find((p) => p.productId === editingRecipe.productId);
-        if (matchedFp) {
-          setSelectedProductName(matchedFp.itemName);
-          setProductId(matchedFp.productId);
-        } else if (finishedProducts.length > 0) {
-          setSelectedProductName(finishedProducts[0].itemName);
-          setProductId(finishedProducts[0].productId);
-        }
-
-        const currentOutput = Number(editingRecipe.outputQuantity) > 0 ? String(editingRecipe.outputQuantity) : "";
-        setBatchSize(currentOutput);
-        setRecipeActive(editingRecipe.isActive);
-
-        if (editingRecipe.ingredients?.length > 0) {
-          setIngredients(
-            editingRecipe.ingredients.map((ing, idx) => ({
-              id: Date.now() + idx,
-              itemId: ing.itemId,
-              quantity: ing.standardQuantity.toString(),
-              uomId: ing.uomId || baseSupplies.find((s) => s.itemId === ing.itemId)?.uomId || 0,
-            }))
-          );
-        } else {
-          setIngredients([
-            { id: Date.now(), itemId: 0, quantity: "", uomId: 0 },
-          ]);
-        }
-      } else {
-        // Create mode: fetch upcoming sequence number
-        actionResponse(getRecipe("next-code"))
-          .then((res: any) => {
-            if (res.data?.nextCode) {
-              setRecipeCode(res.data.nextCode);
-            } else {
-              setRecipeCode(`BOM-${new Date().getFullYear()}-0001`);
-            }
-          })
-          .catch(() => {
-            setRecipeCode(`BOM-${new Date().getFullYear()}-0001`);
-          });
-
-        setRecipeName("");
-        if (distinctProductNames.length > 0) {
-          const firstProd = distinctProductNames[0];
-          setSelectedProductName(firstProd);
-          const firstVariant = finishedProducts.find((p) => p.itemName.trim() === firstProd.trim());
-          setProductId(firstVariant?.productId ?? 0);
-        } else {
-          setSelectedProductName("");
-          setProductId(0);
-        }
-
-        setBatchSize("");
-        setRecipeActive(true);
-        // Start with empty unselected item so dropdown prompts "Select item"
-        setIngredients([
-          { id: Date.now(), itemId: 0, quantity: "", uomId: 0 },
-        ]);
-      }
-
-      setRecipeNameError("");
-      setBatchSizeError("");
-      setIngredientsErrors({});
-    }
-  }, [editingRecipe, open, finishedProducts, distinctProductNames, baseSupplies]);
-
   // Handle Product change: automatically update Variant dropdown options & select first variant
   const handleProductChange = (prodName: string) => {
     setSelectedProductName(prodName);
@@ -148,7 +80,8 @@ export default function RecipeModal({
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (saving) return;
     let isValid = true;
 
     if (!recipeName.trim()) {
@@ -180,7 +113,10 @@ export default function RecipeModal({
 
     if (!isValid) return;
 
-    onSave({
+    setSaving(true);
+    setSaveError("");
+    try {
+      await onSave({
       recipeName: recipeName.trim(),
       productId: Number(productId),
       outputQuantity: parsedBatchSize,
@@ -189,9 +125,14 @@ export default function RecipeModal({
         uomId: i.uomId,
         standardQuantity: Number(i.quantity),
       })),
-      notes: "",
+      notes: editingRecipe?.notes ?? "",
       isActive: recipeActive,
     });
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Unable to save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Form validity check
@@ -212,10 +153,13 @@ export default function RecipeModal({
     <ModalWrapper
       open={open}
       title={editingRecipe ? "Edit Bill of Materials" : "Create Bill of Materials"}
-      onClose={onClose}
+      onClose={() => { if (!saving) onClose(); }}
       size="max-w-3xl"
     >
-      <div className="space-y-4 text-foreground">
+      <form onSubmit={(event) => { event.preventDefault(); void handleSave(); }}>
+      {saveError && <p role="alert" className="mb-3 text-sm text-destructive">{saveError}</p>}
+      {saving && <p role="status" className="mb-3 text-sm text-muted-foreground">Saving...</p>}
+      <fieldset disabled={saving} className="space-y-4 text-foreground">
         {/* Top Header Grid: Recipe Code, Product, Variant, Batch Size */}
         <div className="rounded-xl border border-border p-4 bg-muted/20 space-y-3.5">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 items-center">
@@ -416,8 +360,8 @@ export default function RecipeModal({
                 },
               ])
             }
-            className="w-full rounded-xl py-2.5 text-xs font-semibold shadow-sm transition-opacity hover:opacity-90 active:opacity-80 cursor-pointer"
-            style={{ backgroundColor: "#000000", color: "#ffffff" }}
+            className="w-full bg-primary text-primary-foreground rounded-xl py-2.5 text-xs font-semibold shadow-sm transition-opacity hover:opacity-90 active:opacity-80 cursor-pointer"
+
           >
             Add Items
           </button>
@@ -451,9 +395,9 @@ export default function RecipeModal({
             Cancel
           </Button>
           <Button
-            type="button"
+            type="submit"
             disabled={isFormInvalid}
-            onClick={handleSave}
+
             className={`rounded-xl px-5 py-2 text-xs font-semibold transition-colors ${
               isFormInvalid
                 ? "bg-muted text-muted-foreground opacity-50 cursor-not-allowed border border-border"
@@ -462,13 +406,14 @@ export default function RecipeModal({
             style={
               isFormInvalid
                 ? undefined
-                : { backgroundColor: "#000000", color: "#ffffff" }
+                : { backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }
             }
           >
             {editingRecipe ? "Save Recipe" : "Create Recipe"}
           </Button>
         </div>
-      </div>
+      </fieldset>
+      </form>
     </ModalWrapper>
   );
 }

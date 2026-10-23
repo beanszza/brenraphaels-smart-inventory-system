@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "./ModalWrapper";
 import { Supplier } from "./types";
-import AddressSelector from "@/components/shared/AddressSelector";
+import { Textarea } from "@/components/ui/textarea";
 
 interface SupplierModalProps {
   open: boolean;
@@ -20,25 +20,28 @@ interface SupplierModalProps {
     website?: string;
     isActive: boolean;
     suppliedItemIds: number[];
-  }) => void;
+  }) => Promise<void>;
 }
 
-export default function SupplierModal({
+export default function SupplierModal(props: SupplierModalProps) {
+  return props.open ? <SupplierModalForm key={props.editingSupplier?.supplierId ?? "new"} {...props} /> : null;
+}
+
+function SupplierModalForm({
   open,
   editingSupplier,
   onClose,
   onSave,
 }: SupplierModalProps) {
-  const [companyName, setCompanyName] = useState("");
-  const [contactPerson, setContactPerson] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [streetNumber, setStreetNumber] = useState("");
-  const [barangay, setBarangay] = useState("");
-  const [city, setCity] = useState("");
-  const [province, setProvince] = useState("");
-  const [website, setWebsite] = useState("");
-  const [supplierActive, setSupplierActive] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [companyName, setCompanyName] = useState(editingSupplier?.companyName ?? "");
+  const [contactPerson, setContactPerson] = useState(editingSupplier?.contactPerson ?? "");
+  const [email, setEmail] = useState(editingSupplier?.email ?? "");
+  const [phone, setPhone] = useState(() => (editingSupplier?.phone ?? "").replace(/^\+?63|^0/, "").replace(/\D/g, ""));
+  const [address, setAddress] = useState(editingSupplier?.address ?? "");
+  const [website, setWebsite] = useState(editingSupplier?.website ?? "");
+  const [supplierActive, setSupplierActive] = useState(editingSupplier?.isActive ?? true);
 
   const [companyNameError, setCompanyNameError] = useState("");
   const [contactPersonError, setContactPersonError] = useState("");
@@ -59,7 +62,7 @@ export default function SupplierModal({
     const trimmed = val.trim();
     if (!trimmed) { setContactPersonError("Contact Person is required."); return false; }
     if (/\d/.test(val)) { setContactPersonError("Contact Person cannot contain numbers."); return false; }
-    if (!/^[a-zA-Z\s\.\-']+$/.test(val)) { setContactPersonError("Contact Person can only contain letters and spaces."); return false; }
+    if (!/^[a-zA-Z\s\.\-',]+$/.test(val)) { setContactPersonError("Contact Person can only contain letters and spaces."); return false; }
     if (trimmed.length < 2) { setContactPersonError("Contact Person must be at least 2 characters."); return false; }
     if (trimmed.length > 50) { setContactPersonError("Contact Person cannot exceed 50 characters."); return false; }
     setContactPersonError(""); return true;
@@ -83,11 +86,9 @@ export default function SupplierModal({
     setPhoneError(""); return true;
   };
 
-  const validateAddress = (st: string, brgy: string, ct: string, pr: string) => {
-    if (!st.trim() || !brgy.trim() || !ct.trim() || !pr.trim()) { setAddressError("All address fields (Street, Barangay, City, Province) are required."); return false; }
-    const full = `${st.trim()}, ${brgy.trim()}, ${ct.trim()}, ${pr.trim()}`;
-    if (full.length < 5) { setAddressError("Please enter a complete address (at least 5 characters)."); return false; }
-    if (full.length > 150) { setAddressError("Address cannot exceed 150 characters."); return false; }
+  const validateAddress = (value: string) => {
+    if (!value.trim()) { setAddressError("Address is required."); return false; }
+    if (value.length > 100) { setAddressError("Address cannot exceed 100 characters."); return false; }
     setAddressError(""); return true;
   };
 
@@ -101,38 +102,7 @@ export default function SupplierModal({
     setWebsiteError(""); return true;
   };
 
-  useEffect(() => {
-    if (open) {
-      if (editingSupplier) {
-        setCompanyName(editingSupplier.companyName || "");
-        setContactPerson(editingSupplier.contactPerson || "");
-        setEmail(editingSupplier.email || "");
-        let rawPhone = (editingSupplier.phone || "").trim();
-        if (rawPhone.startsWith("+63")) rawPhone = rawPhone.slice(3);
-        else if (rawPhone.startsWith("63") && rawPhone.length > 10) rawPhone = rawPhone.slice(2);
-        else if (rawPhone.startsWith("0") && rawPhone.length === 11) rawPhone = rawPhone.slice(1);
-        setPhone(rawPhone.replace(/\D/g, "").slice(0, 10));
-        
-        if (editingSupplier.address) {
-          const parts = editingSupplier.address.split(", ");
-          setStreetNumber(parts[0] || "");
-          setBarangay(parts[1] || "");
-          setCity(parts[2] || "");
-          setProvince(parts[3] || "");
-        } else {
-          setStreetNumber(""); setBarangay(""); setCity(""); setProvince("");
-        }
 
-        setWebsite(editingSupplier.website || "");
-        setSupplierActive(editingSupplier.isActive !== false);
-      } else {
-        setCompanyName(""); setContactPerson(""); setEmail("");
-        setPhone(""); setStreetNumber(""); setBarangay(""); setCity(""); setProvince(""); setWebsite(""); setSupplierActive(true);
-      }
-      setCompanyNameError(""); setContactPersonError(""); setEmailError("");
-      setPhoneError(""); setAddressError(""); setWebsiteError("");
-    }
-  }, [editingSupplier, open]);
 
   const handleCompanyNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.slice(0, 50);
@@ -158,55 +128,47 @@ export default function SupplierModal({
     setPhone(digits); validatePhone(digits);
   };
 
-  const handleStreetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.slice(0, 50);
-    setStreetNumber(val); validateAddress(val, barangay, city, province);
-  };
-  const handleBarangayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.slice(0, 50);
-    setBarangay(val); validateAddress(streetNumber, val, city, province);
-  };
-  const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.slice(0, 50);
-    setCity(val); validateAddress(streetNumber, barangay, val, province);
-  };
-  const handleProvinceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.slice(0, 50);
-    setProvince(val); validateAddress(streetNumber, barangay, city, val);
-  };
-
   const handleWebsiteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.slice(0, 50);
     setWebsite(val); validateWebsite(val);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (saving) return;
     const v1 = validateCompanyName(companyName);
     const v2 = validateContactPerson(contactPerson);
     const v3 = validateEmail(email);
     const v4 = validatePhone(phone);
-    const v5 = validateAddress(streetNumber, barangay, city, province);
+    const v5 = validateAddress(address);
     const v6 = validateWebsite(website);
     if (!v1 || !v2 || !v3 || !v4 || !v5 || !v6) return;
 
     const formattedPhone = phone.trim() ? `+63${phone.replace(/\D/g, "")}` : "";
-    onSave({
+    setSaving(true);
+    setSaveError("");
+    try {
+      await onSave({
       companyName: companyName.trim(),
       contactPerson: contactPerson.trim(),
       email: email.trim(),
       phone: formattedPhone,
-      address: `${streetNumber.trim()}, ${barangay.trim()}, ${city.trim()}, ${province.trim()}`,
+      address: address.trim(),
       website: website.trim() || undefined,
       isActive: supplierActive,
       suppliedItemIds: [],
     });
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Unable to save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const hasErrors =
     !!companyNameError || !!contactPersonError || !!emailError ||
     !!phoneError || !!addressError || !!websiteError ||
     !companyName.trim() || !contactPerson.trim() || !email.trim() ||
-    !phone.trim() || !streetNumber.trim() || !barangay.trim() || !city.trim() || !province.trim();
+    !phone.trim() || !address.trim();
 
   const fieldClass = (err: string) =>
     `w-full rounded-xl border ${err ? "!border-destructive focus-visible:!ring-destructive" : "border-border"} bg-card text-foreground px-4 py-2.5 text-sm transition-colors`;
@@ -218,16 +180,19 @@ export default function SupplierModal({
     <ModalWrapper
       open={open}
       title={editingSupplier ? "Edit Supplier" : "Add New Supplier"}
-      onClose={onClose}
+      onClose={() => { if (!saving) onClose(); }}
       size="max-w-xl"
     >
-      <div className="space-y-4">
+      <form onSubmit={(event) => { event.preventDefault(); void handleSave(); }}>
+      {saveError && <p role="alert" className="mb-3 text-sm text-destructive">{saveError}</p>}
+      {saving && <p role="status" className="mb-3 text-sm text-muted-foreground">Saving...</p>}
+      <fieldset disabled={saving} className="space-y-4">
         {/* Supplier Name */}
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">
+          <label htmlFor="supplier-name" className="mb-1.5 block text-xs font-semibold text-foreground">
             Supplier Name <span className="text-destructive">*</span>
           </label>
-          <Input type="text" maxLength={50} value={companyName} onChange={handleCompanyNameChange}
+          <Input type="text" maxLength={50} id="supplier-name" value={companyName} onChange={handleCompanyNameChange}
             aria-invalid={!!companyNameError} style={fieldStyle(companyNameError)}
             placeholder="e.g. Acme Supplies Ltd." className={fieldClass(companyNameError)} />
           {companyNameError && <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{companyNameError}</p>}
@@ -235,10 +200,10 @@ export default function SupplierModal({
 
         {/* Contact Person */}
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">
+          <label htmlFor="supplier-contact" className="mb-1.5 block text-xs font-semibold text-foreground">
             Contact Person (Last Name, First Name) <span className="text-destructive">*</span>
           </label>
-          <Input type="text" maxLength={50} value={contactPerson} onChange={handleContactPersonChange}
+          <Input type="text" maxLength={50} id="supplier-contact" value={contactPerson} onChange={handleContactPersonChange}
             aria-invalid={!!contactPersonError} style={fieldStyle(contactPersonError)}
             placeholder="e.g. Doe, John" className={fieldClass(contactPersonError)} />
           {contactPersonError && <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{contactPersonError}</p>}
@@ -247,23 +212,23 @@ export default function SupplierModal({
         {/* Email & Phone */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+            <label htmlFor="supplier-email" className="mb-1.5 block text-xs font-semibold text-foreground">
               Email <span className="text-destructive">*</span>
             </label>
-            <Input type="email" maxLength={50} value={email} onChange={handleEmailChange}
+            <Input type="email" maxLength={50} id="supplier-email" value={email} onChange={handleEmailChange}
               aria-invalid={!!emailError} style={fieldStyle(emailError)}
               placeholder="e.g. contact@supplier.com" className={fieldClass(emailError)} />
             {emailError && <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{emailError}</p>}
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+            <label htmlFor="supplier-phone" className="mb-1.5 block text-xs font-semibold text-foreground">
               Phone No. <span className="text-destructive">*</span>
             </label>
             <div style={fieldStyle(phoneError)} className={`flex rounded-xl border ${phoneError ? "!border-destructive" : "border-border"} bg-card overflow-hidden transition-colors`}>
               <div className="flex items-center justify-center bg-muted/60 px-3.5 border-r border-border text-xs font-semibold text-muted-foreground select-none">
                 +63
               </div>
-              <Input type="tel" maxLength={10} value={phone} onChange={handlePhoneChange}
+              <Input type="tel" maxLength={10} id="supplier-phone" value={phone} onChange={handlePhoneChange}
                 placeholder="917 123 4567"
                 className="w-full rounded-none border-0 bg-transparent text-foreground px-3.5 py-2.5 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0" />
             </div>
@@ -273,23 +238,20 @@ export default function SupplierModal({
 
         {/* Address */}
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">
+          <label htmlFor="supplier-address" className="mb-1.5 block text-xs font-semibold text-foreground">
             Address <span className="text-destructive">*</span>
           </label>
-          <AddressSelector
-            streetNumber={streetNumber} setStreetNumber={setStreetNumber}
-            barangay={barangay} setBarangay={setBarangay}
-            city={city} setCity={setCity}
-            province={province} setProvince={setProvince}
-            addressError={addressError}
-          />
+          <Textarea id="supplier-address" maxLength={100} value={address}
+            onChange={(event) => { setAddress(event.target.value); validateAddress(event.target.value); }}
+            aria-invalid={!!addressError} placeholder="Street, barangay, city and province"
+            className={fieldClass(addressError)} />
           {addressError && <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{addressError}</p>}
         </div>
 
         {/* Website */}
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">Website (Optional)</label>
-          <Input type="text" maxLength={50} value={website} onChange={handleWebsiteChange}
+          <label htmlFor="supplier-website" className="mb-1.5 block text-xs font-semibold text-foreground">Website (Optional)</label>
+          <Input type="text" maxLength={50} id="supplier-website" value={website} onChange={handleWebsiteChange}
             aria-invalid={!!websiteError} style={fieldStyle(websiteError)}
             placeholder="e.g. www.acme.com" className={fieldClass(websiteError)} />
           {websiteError && <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{websiteError}</p>}
@@ -298,7 +260,7 @@ export default function SupplierModal({
         {/* Status (edit only) */}
         {editingSupplier && (
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Status</label>
+            <label htmlFor="supplier-status" className="mb-1.5 block text-xs font-semibold text-foreground">Status</label>
             <select
               value={supplierActive ? "true" : "false"}
               onChange={(e) => setSupplierActive(e.target.value === "true")}
@@ -315,12 +277,13 @@ export default function SupplierModal({
             className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
             Cancel
           </Button>
-          <Button type="button" disabled={hasErrors} onClick={handleSave}
+          <Button type="submit" disabled={hasErrors}
             className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             {editingSupplier ? "Save Changes" : "Create Supplier"}
           </Button>
         </div>
-      </div>
+      </fieldset>
+      </form>
     </ModalWrapper>
   );
 }

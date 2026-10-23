@@ -20,6 +20,7 @@ const fake = vi.hoisted(() => ({
   linkExists: true,
 }));
 
+vi.mock("server-only", () => ({}));
 vi.mock("next/headers", () => ({
   headers: async () => new Headers({ "x-return-to": "/resources-suppliers" }),
   cookies: async () => ({ get: () => fake.signed ? { value: "opaque" } : undefined }),
