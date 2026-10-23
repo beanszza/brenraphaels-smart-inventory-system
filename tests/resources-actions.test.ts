@@ -119,8 +119,8 @@ for (const [path, load] of Object.entries(actionModules)) {
     const actions = await load() as Record<string, (...args: never[]) => Promise<unknown>>;
     for (const [name, action] of Object.entries(actions)) {
       it.each([
-        ["unsigned", false, "allowed", "/api/portal/login"],
-        ["revoked session", true, "401", "/api/portal/login"],
+        ["unsigned", false, "allowed", "/signing-in"],
+        ["revoked session", true, "401", "/signing-in"],
         ["missing Module", true, "403", "/no-access"],
         ["Portal unavailable", true, "503", "/unavailable"],
       ])(`${name} denies %s before reading inputs or data`, async (_, signed, decision, destination) => {
