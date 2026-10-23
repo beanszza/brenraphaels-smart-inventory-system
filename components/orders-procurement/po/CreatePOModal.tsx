@@ -1,8 +1,9 @@
 "use client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { procurement } from "@/lib/orders/client";
 
-import { supplierItemsByItem, supplierItemsBySupplier } from "@/app/actions/resources/supplier-items";
+import { supplierItemsByItem, supplierItemsBySupplier } from "@/app/actions/orders/catalog";
 import { actionResponse } from "@/lib/resources/action-response";
 
 
@@ -14,7 +15,6 @@ import {
   Search,
   Users,
   ClipboardList,
-  Loader2,
   CheckCircle2,
   CalendarIcon,
   AlertTriangle,
@@ -175,7 +175,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
         setApprovedPRs(eligible);
       }
     } catch (e) {
-      console.error("Failed to fetch PRs:", e);
+      setErrors(p => ({ ...p, general: "Requisitions could not be loaded. Please retry." }));
     } finally {
       setLoadingPRs(false);
     }
@@ -209,10 +209,12 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
                 }
               });
             }
-          } catch {}
+          } catch (error) { throw error; }
         })
       );
       setEligibleSuppliers(Array.from(supplierMap.values()));
+    } catch {
+      setErrors(p => ({ ...p, general: "Supplier choices could not be loaded. Please retry." }));
     } finally {
       setLoadingSuppliers(false);
     }
@@ -259,7 +261,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
 
       setItemRows(rows);
     } catch (e) {
-      console.error("Failed to fetch supplier items:", e);
+      setErrors(p => ({ ...p, general: "Supplier items could not be loaded. Please retry." }));
     } finally {
       setLoadingItems(false);
     }
@@ -335,7 +337,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
         expectedArrivalDate: new Date(`${eta}T00:00:00`).toISOString(),
         totalAmount,
         requestedBy: staff.name,
-        initialStatus,
+        initialStatus: initialStatus === "Pending Approval" ? "PendingApproval" : initialStatus,
         items: activeRows.map((row) => ({
           itemId: row.itemId,
           poItemQuantity: parseFloat(row.orderQty),
@@ -390,7 +392,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
     >
       <div className="space-y-6">
         {errors.general && (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-center justify-between animate-in fade-in-50">
+          <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-center justify-between animate-in fade-in-50">
             <span className="font-medium">{errors.general}</span>
             <button
               type="button"
@@ -470,7 +472,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
             <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
               {loadingPRs ? (
                 <div className="flex items-center justify-center py-10">
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  <Skeleton className="h-5 w-24" />
                 </div>
               ) : filteredPRs.length === 0 ? (
                 <div className="py-10 text-center text-xs text-muted-foreground">
@@ -568,7 +570,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
             <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
               {loadingSuppliers ? (
                 <div className="flex items-center justify-center py-10">
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  <Skeleton className="h-5 w-24" />
                 </div>
               ) : eligibleSuppliers.length === 0 ? (
                 <div className="py-10 text-center text-xs text-muted-foreground">
@@ -758,7 +760,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
             {/* Items Input Table */}
             {loadingItems ? (
               <div className="flex items-center justify-center py-10">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                <Skeleton className="h-5 w-24" />
               </div>
             ) : errors.items ? (
               <div className="py-6 text-center text-xs text-foreground font-medium">{errors.items}</div>
@@ -911,7 +913,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
             </div>
 
             {/* Footer Actions */}
-            <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
+            <div className="flex flex-wrap justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
               <Button
                 type="button"
                 variant="outline"

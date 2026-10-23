@@ -2,7 +2,7 @@
 
 import { procurement } from "@/lib/orders/client";
 
-import { listItems } from "@/app/actions/resources/items";
+import { requisitionSupplies } from "@/app/actions/orders/screens";
 import { actionResponse } from "@/lib/resources/action-response";
 
 
@@ -16,16 +16,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { PurchaseRequisition, PRItem } from "../types";
 import { useStaff } from "@/context/StaffContext";
 import ConfirmModal from "@/components/ConfirmModal";
-import { HR_EMPLOYEES } from "@/lib/employees";
 
 export interface CreatePRModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  initialSupplies?: SupplyOption[];
   initialData?: PurchaseRequisition;
   isEdit?: boolean;
 }
@@ -36,12 +35,14 @@ export interface SupplyOption {
   itemName: string;
   uomName: string;
   currentStock: number;
+  purchaseUomId: number;
 }
 
 export function CreatePRModal({
   open,
   onClose,
   onSuccess,
+  initialSupplies,
   initialData,
   isEdit = false,
 }: CreatePRModalProps) {
@@ -49,11 +50,11 @@ export function CreatePRModal({
   const staff = useStaff();
 
   // Supplies list
-  const [suppliesList, setSuppliesList] = useState<SupplyOption[]>([]);
-  const [loadingSupplies, setLoadingSupplies] = useState(true);
+  const [suppliesList, setSuppliesList] = useState<SupplyOption[]>(initialSupplies ?? []);
+  const [loadingSupplies, setLoadingSupplies] = useState(!initialSupplies);
 
   // Form State
-  const [prNumber, setPrNumber] = useState(initialData?.prNumber || "PR-2026-0001");
+  const [prNumber, setPrNumber] = useState(initialData?.prNumber || "Assigned on save");
   const [requestDate, setRequestDate] = useState(
     initialData?.requestDate
       ? new Date(initialData.requestDate).toLocaleDateString("en-US", {
@@ -171,49 +172,20 @@ export function CreatePRModal({
 
   // Fetch supplies and next PR number
   useEffect(() => {
-    if (!open) return;
+    if (!open || initialSupplies) return;
 
     const fetchSuppliesAndNumber = async () => {
       try {
         setLoadingSupplies(true);
-        const [itemsRes, invRes, prRes] = await Promise.allSettled([
-          actionResponse(listItems()),
-          api.get("/api/inventory?page=1&pageSize=1000"),
-          procurement.listRequisitions(),
+        const [itemsRes, prRes] = await Promise.all([
+          actionResponse(requisitionSupplies()), procurement.listRequisitions(),
         ]);
-
-        let rawItems: any[] = [];
-        let stockMap: Record<number, number> = {};
-
-        if (itemsRes.status === "fulfilled" && itemsRes.value.data?.success) {
-          rawItems = itemsRes.value.data.data.items || itemsRes.value.data.data || [];
-        }
-
-        if (invRes.status === "fulfilled" && invRes.value.data?.success) {
-          const rawInv = invRes.value.data.data.items || invRes.value.data.data || [];
-          rawInv.forEach((inv: any) => {
-            if (inv.itemId) {
-              stockMap[inv.itemId] = (stockMap[inv.itemId] || 0) + (Number(inv.currentStock) || 0);
-            }
-          });
-        }
-
-        const formatted: SupplyOption[] = rawItems
-          .filter((it: any) => it.categoryName !== "Finished Good" && it.categoryName !== "Finished Goods")
-          .map((it: any) => ({
-            itemId: it.itemId,
-            itemCode: it.itemCode || `SPL-${String(it.itemId).padStart(4, "0")}`,
-            itemName: it.itemName,
-            uomName: it.uomName || it.uom?.abbreviation || it.stockUom?.abbreviation || "Unit",
-            currentStock: stockMap[it.itemId] ?? 0,
-          }));
-
-        setSuppliesList(formatted);
+        setSuppliesList(itemsRes.data.data);
 
         // Preview PR number if creating new
         if (!initialData?.prNumber) {
-          if (prRes.status === "fulfilled" && prRes.value.data?.success) {
-            const list: any[] = prRes.value.data.data || [];
+          if (prRes.data?.success) {
+            const list: any[] = prRes.data.data || [];
             const year = new Date().getFullYear();
             let maxSeq = 0;
             list.forEach((pr) => {
@@ -230,14 +202,14 @@ export function CreatePRModal({
           }
         }
       } catch (err) {
-        console.error("Failed to load supplies for PR:", err);
+        setErrors(prev => ({ ...prev, submit: "Supplies could not be loaded. Close and reopen the form to retry." }));
       } finally {
         setLoadingSupplies(false);
       }
     };
 
     fetchSuppliesAndNumber();
-  }, [open, initialData]);
+  }, [open, initialData, initialSupplies]);
 
   // Add Ingredient
   const handleAddIngredient = () => {
@@ -247,6 +219,7 @@ export function CreatePRModal({
       ...prev,
       {
         prItemId: 0,
+        purchaseUomId: unused.purchaseUomId,
         itemId: unused.itemId,
         itemCode: unused.itemCode,
         itemName: unused.itemName,
@@ -275,6 +248,7 @@ export function CreatePRModal({
       const copy = [...prev];
       copy[index] = {
         ...copy[index],
+        purchaseUomId: sup.purchaseUomId,
         itemId: sup.itemId,
         itemCode: sup.itemCode,
         itemName: sup.itemName,
@@ -382,6 +356,7 @@ export function CreatePRModal({
         await procurement.createRequisition(payload);
       }
 
+      router.refresh();
       if (onSuccess) {
         onSuccess();
       } else {
@@ -408,7 +383,7 @@ export function CreatePRModal({
       >
         <div className="space-y-4">
           {errors.submit && (
-            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-center justify-between animate-in fade-in-50">
+            <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-center justify-between animate-in fade-in-50">
               <span className="font-medium">{errors.submit}</span>
               <button
                 type="button"
@@ -452,28 +427,7 @@ export function CreatePRModal({
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
                 Requested By <span className="text-destructive">*</span>
               </label>
-              <select
-                value={requestedBy}
-                onChange={(e) => {
-                  setRequestedBy(e.target.value);
-                  setErrors((prev) => {
-                    const c = { ...prev };
-                    delete c.requestedBy;
-                    return c;
-                  });
-                }}
-                className={`w-full h-10 rounded-xl border ${
-                  errors.requestedBy ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                } bg-card px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-ring`}
-              >
-                <option value="" disabled>Select requester...</option>
-                {requestedBy && !HR_EMPLOYEES.includes(requestedBy as (typeof HR_EMPLOYEES)[number]) && (
-                  <option value={requestedBy}>{requestedBy}</option>
-                )}
-                {HR_EMPLOYEES.map((emp) => (
-                  <option key={emp} value={emp}>{emp}</option>
-                ))}
-              </select>
+              <Input aria-label="Requested by" value={staff.name} readOnly />
               {errors.requestedBy && (
                 <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.requestedBy}</p>
               )}
@@ -627,8 +581,8 @@ export function CreatePRModal({
               <p className="text-xs font-medium text-destructive animate-in fade-in-50 mb-2">{errors.items}</p>
             )}
 
-            <div className={`border rounded-xl overflow-hidden bg-card ${errors.items ? "border-destructive" : "border-border"}`}>
-              <table className="w-full text-xs">
+            <div className={`border rounded-xl overflow-x-auto bg-card ${errors.items ? "border-destructive" : "border-border"}`}>
+              <table className="w-full min-w-[600px] text-xs">
                 <thead>
                   <tr className="border-b border-border bg-muted/40 text-muted-foreground">
                     <th className="px-3.5 py-2.5 text-left font-bold w-1/3">SUPPLY NAME</th>
@@ -789,7 +743,7 @@ export function CreatePRModal({
           </div>
 
           {/* Modal Footer: Matching Resources & Suppliers Modals */}
-          <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
+          <div className="flex flex-wrap justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
             <Button
               type="button"
               variant="outline"
@@ -865,8 +819,8 @@ export function CreatePRModal({
                 </div>
               )}
 
-              <div className="mt-4 border border-border rounded-xl overflow-hidden bg-card">
-                <table className="w-full text-xs">
+              <div className="mt-4 border border-border rounded-xl overflow-x-auto bg-card">
+                <table className="w-full min-w-[600px] text-xs">
                   <thead className="bg-muted/40 border-b border-border">
                     <tr>
                       <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">ITEM NAME</th>
@@ -906,6 +860,7 @@ export function CreatePRModal({
 }
 
 export interface CreatePRFormProps {
+  initialSupplies?: SupplyOption[];
   initialData?: PurchaseRequisition;
   isEdit?: boolean;
   onClose?: () => void;
@@ -913,6 +868,7 @@ export interface CreatePRFormProps {
 }
 
 export function CreatePRForm({
+  initialSupplies,
   initialData,
   isEdit = false,
   onClose,
@@ -935,6 +891,7 @@ export function CreatePRForm({
       open={true}
       onClose={handleClose}
       onSuccess={handleSuccess}
+      initialSupplies={initialSupplies}
       initialData={initialData}
       isEdit={isEdit}
     />

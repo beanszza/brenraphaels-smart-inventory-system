@@ -1,5 +1,9 @@
 "use client";
+import { Skeleton } from "@/components/ui/skeleton";
 
+import { allPages } from "@/lib/orders/screen-data";
+import { listOrders } from "@/app/actions/orders/orders";
+import { listDeliveries } from "@/app/actions/orders/deliveries";
 import { procurement } from "@/lib/orders/client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -100,10 +104,11 @@ export function CreateDeliveryModal({
       try {
         setLoadingPOs(true);
         const [delivRes, poRes] = await Promise.allSettled([
-          procurement.listDeliveries("page=1&pageSize=1000"),
-          procurement.listOrders("page=1&pageSize=1000&eligibleForDelivery=true"),
+          allPages(listDeliveries).then(items => ({ data: { success: true, data: { items } } })),
+          allPages(listOrders, "eligibleForDelivery=true").then(items => ({ data: { success: true, data: { items } } })),
         ]);
 
+        if (delivRes.status === "rejected" || poRes.status === "rejected") throw new Error("Data unavailable");
         let deliveryList: any[] = [];
         // Calculate next unique Delivery Number & store deliveries
         if (delivRes.status === "fulfilled" && delivRes.value.data?.success) {
@@ -187,7 +192,7 @@ export function CreateDeliveryModal({
           setOrderedPOs(eligible);
         }
       } catch (err) {
-        console.error("Failed to load initial data for delivery modal:", err);
+        setError("Purchase orders could not be loaded. Close and reopen the form to retry.");
       } finally {
         setLoadingPOs(false);
       }
@@ -606,7 +611,7 @@ export function CreateDeliveryModal({
 
                 {loadingItems ? (
                   <div className="py-6 text-center text-xs text-muted-foreground rounded-xl border border-border bg-card">
-                    Loading purchase order items...
+                    <Skeleton className="h-16 w-full" />
                   </div>
                 ) : items.length === 0 ? (
                   <div className="py-6 text-center text-xs text-muted-foreground rounded-xl border border-border bg-card">

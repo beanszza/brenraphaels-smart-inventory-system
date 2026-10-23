@@ -1,13 +1,14 @@
 "use client";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import { supplierItemsByItem } from "@/app/actions/resources/supplier-items";
+import { supplierItemsByItem } from "@/app/actions/orders/catalog";
 import { actionResponse } from "@/lib/resources/action-response";
 
 
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Upload, Loader2, Sparkles, Clock, DollarSign, Package } from "lucide-react";
+import { Upload, Sparkles, Clock, DollarSign, Package } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Order, SupplyItem, Supplier, PaymentType } from "./types";
 
@@ -209,7 +210,7 @@ export default function CreateOrderModal({
             </label>
             {loadingSuppliers && (
               <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                <Loader2 size={11} className="animate-spin" /> Finding approved vendors...
+                <Skeleton className="h-5 w-24" /> Finding approved vendors...
               </span>
             )}
             {itemSuppliers.length > 0 && !loadingSuppliers && (
@@ -328,7 +329,7 @@ export default function CreateOrderModal({
             Cancel
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={isSaving} className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity">
-            {isSaving ? <Loader2 size={16} className="animate-spin" /> : editingOrder ? "Save Changes" : "Create Order"}
+            {isSaving ? <Skeleton className="h-5 w-24" /> : editingOrder ? "Save Changes" : "Create Order"}
           </Button>
         </div>
       </div>

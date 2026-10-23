@@ -24,6 +24,8 @@ const fake = vi.hoisted(() => ({
   transactionOpen: false,
 }));
 
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+
 vi.mock("next/headers", () => ({
   headers: async () => new Headers({ "x-return-to": "/orders-procurement" }),
   cookies: async () => ({ get: () => fake.signed ? { value: "opaque" } : undefined }),

@@ -91,6 +91,7 @@ export function POActionModal({ actionType, poNumber, onClose, onConfirm }: POAc
   const [error, setError] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -134,10 +135,13 @@ export function POActionModal({ actionType, poNumber, onClose, onConfirm }: POAc
       return;
     }
     setError(false);
+    setSubmitError("");
     setLoading(true);
     try {
       await onConfirm(reason.trim() || undefined);
       onClose();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "The action could not be completed.");
     } finally {
       setLoading(false);
     }
@@ -148,13 +152,15 @@ export function POActionModal({ actionType, poNumber, onClose, onConfirm }: POAc
   return createPortal(
     <div
       className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-      onClick={onClose}
+      onClick={() => { if (!loading) onClose(); }}
     >
       <div
+        role="dialog" aria-modal="true" aria-label={getTitle()}
         style={{ width: "100%", maxWidth: "440px" }}
         className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
+        {submitError && <p role="alert" className="mb-3 text-sm text-destructive">{submitError}</p>}
         <div className="flex flex-col items-center justify-center text-center">
           {/* Circular Alert Icon */}
           <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">

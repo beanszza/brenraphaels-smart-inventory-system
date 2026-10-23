@@ -1,8 +1,9 @@
 "use client";
+import { OrdersSkeleton } from "@/components/orders-procurement/OrdersSkeleton";
 
 import { procurement } from "@/lib/orders/client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -40,11 +41,12 @@ const STATUS_TABS: (PRStatus | "All")[] = [
   "Closed",
 ];
 
-export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
+export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions: PurchaseRequisition[]; onCreatePo?: (prId: number) => void }) {
   const router = useRouter();
 
-  const [requisitions, setRequisitions] = useState<PurchaseRequisition[]>([]);
-  const [loading, setLoading] = useState(true);
+  const requisitions = initialRequisitions;
+  const [loading, startRefresh] = useTransition();
+  const [notice, setNotice] = useState("");
   const [activeTab, setActiveTab] = useState<string>("All");
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("");
@@ -81,24 +83,8 @@ export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
   }, []);
 
   // Fetch Requisitions
-  const fetchRequisitions = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await procurement.listRequisitions();
-      if (res.data?.success) {
-        const raw = res.data.data || [];
-        setRequisitions(raw);
-      }
-    } catch (e) {
-      console.error("Failed to fetch purchase requisitions:", e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const fetchRequisitions = () => startRefresh(() => router.refresh());
 
-  useEffect(() => {
-    fetchRequisitions();
-  }, [fetchRequisitions]);
 
 
   // Counts for each tab
@@ -152,21 +138,18 @@ export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
 
   // Action handlers
   const handleStatusUpdate = async (prId: number, status: string, notes?: string) => {
-    try {
-      await procurement.setRequisitionStatus(prId, {
-        status,
-        adminNotes: notes || null,
-      });
-      await fetchRequisitions();
-    } catch (e: any) {
-      console.error("Status update failed:", e);
-      alert(e?.response?.data?.message || "Failed to update requisition status.");
-    }
+    await procurement.setRequisitionStatus(prId, {
+      status,
+      adminNotes: notes || null,
+    });
+    setNotice("Status updated successfully.");
+    fetchRequisitions();
   };
 
 
   return (
     <div className="space-y-6 animate-page-in">
+      {notice && <p role="status" className="rounded-lg bg-primary/10 p-3 text-sm text-primary">{notice}</p>}
       {/* Top Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -181,7 +164,7 @@ export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
             disabled={loading}
             className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+            <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
 
           <Button
@@ -316,14 +299,14 @@ export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
       )}
 
       {/* PR Table */}
-      <PRTable
+      {loading ? <OrdersSkeleton /> : (<PRTable
         requisitions={paginatedList}
         isRequestsTab={activeTab === "Requests"}
         onView={(pr) => setSelectedPR(pr)}
         onEdit={(pr) => setEditingPR(pr)}
         onCancel={(pr) => setActionModal({ pr, type: "cancel" })}
         onCreatePo={(pr) => onCreatePo?.(pr.prId)}
-      />
+      />)}
 
       {/* Pagination */}
       <Pagination
@@ -378,6 +361,7 @@ export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
           onSuccess={() => {
             setOpenCreateModal(false);
             setPrefillPR(null);
+            setNotice("Saved successfully.");
             fetchRequisitions();
           }}
         />
@@ -392,6 +376,7 @@ export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
           onClose={() => setEditingPR(null)}
           onSuccess={() => {
             setEditingPR(null);
+            setNotice("Saved successfully.");
             fetchRequisitions();
           }}
         />

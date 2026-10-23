@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { recordAudit, type AuditAction } from "@/lib/audit";
@@ -18,6 +19,11 @@ export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) 
     const saved = await prisma.$transaction(work);
     if (saved.audit) await recordAudit(staff, saved.audit);
     if (saved.audit && saved.after) await saved.after().catch((error) => console.error("Notification could not be sent", error));
+    if (saved.result.success) {
+      revalidatePath("/orders-procurement", "layout");
+      revalidatePath("/reports");
+      revalidatePath("/mrp");
+    }
     return saved.result;
   } catch (error) {
     console.error("Orders & Procurement action failed", error);

@@ -1,10 +1,9 @@
 "use client";
 
 import { procurement } from "@/lib/orders/client";
-import type { RequisitionInput } from "@/lib/orders/inputs";
-
-import { listRecipes } from "@/app/actions/resources/recipes";
+import { requisitionSupplies } from "@/app/actions/orders/screens";
 import { actionResponse } from "@/lib/resources/action-response";
+
 
 
 import React, { useState } from "react";
@@ -26,7 +25,6 @@ import { Separator } from "@/components/ui/separator";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import api from "@/lib/api";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -61,30 +59,19 @@ function UrgencyBadge({ urgency }: { urgency: string }) {
   return <StatusBadge status={urgency} />;
 }
 
-export default function ViewMrp() {
+export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }) {
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const [horizon, setHorizon] = useState("30");
   const [plannedRuns, setPlannedRuns] = useState<PlannedRun[]>([]);
   const [results, setResults] = useState<MrpRequirement[] | null>(null);
   const [loading, setLoading] = useState(false);
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [recipesLoaded, setRecipesLoaded] = useState(false);
+  const recipes = initialRecipes;
+
   const [showPrModal, setShowPrModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MrpRequirement | null>(null);
   const [prSaving, setPrSaving] = useState(false);
   const [newRun, setNewRun] = useState({ recipeId: "", batchCount: "1" });
-
-  // Load recipes on first use
-  const loadRecipes = async () => {
-    if (recipesLoaded) return;
-    try {
-      const res = await actionResponse(listRecipes());
-      if (res.data?.success) {
-        const raw = res.data.data?.items || res.data.data || [];
-        setRecipes(raw.map((r: any) => ({ recipeId: r.recipeId, recipeName: r.recipeName || r.name })));
-      }
-    } catch (e) { console.error(e); }
-    setRecipesLoaded(true);
-  };
 
   const addPlannedRun = () => {
     if (!newRun.recipeId) return;
@@ -100,6 +87,7 @@ export default function ViewMrp() {
   const removeRun = (idx: number) => setPlannedRuns((p) => p.filter((_, i) => i !== idx));
 
   const runMrp = async () => {
+    setError("");
     setLoading(true);
     setResults(null);
     try {
@@ -130,7 +118,7 @@ export default function ViewMrp() {
       }
     } catch (e) {
       console.error(e);
-      setResults([]);
+      setError(e instanceof Error ? e.message : "Planning could not be completed.");
     } finally {
       setLoading(false);
     }
@@ -140,16 +128,20 @@ export default function ViewMrp() {
     if (!selectedItem) return;
     setPrSaving(true);
     try {
-      // This body has never carried the `items` lines a requisition needs, so the action
-      // refuses it exactly as the old route did; the MRP page is not reachable today.
+      setError("");
+      const supplies = (await actionResponse(requisitionSupplies())).data.data;
+      const supply = supplies.find((s: { itemId: number }) => s.itemId === selectedItem.itemId);
+      if (!supply) throw new Error("This supply is no longer available. Run planning again.");
       await procurement.createRequisition({
-        itemId: selectedItem.itemId,
-        quantity: selectedItem.netRequirement,
-        notes: `Auto-generated from MRP run (${horizon}d horizon)`,
-      } as unknown as RequisitionInput);
+        department: "Inventory", requestType: "Stock Replenishment", priority: "Normal",
+        notes: `Generated from MRP (${horizon}d horizon)`,
+        items: [{ itemId: selectedItem.itemId, requestedQuantity: selectedItem.netRequirement,
+          purchaseUomId: supply.purchaseUomId }],
+      });
+      setMessage("Draft requisition created. Review it in Orders & Procurement before submitting.");
       setShowPrModal(false);
     } catch (e) {
-      console.error(e);
+      setError(e instanceof Error ? e.message : "The requisition could not be created.");
     } finally {
       setPrSaving(false);
     }
@@ -159,12 +151,14 @@ export default function ViewMrp() {
   const critical = results ? results.filter((r) => r.urgency === "Critical").length : 0;
 
   return (
-    <div className="w-full min-h-full py-8 px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="w-full min-h-full py-7 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
       <PageHeader
         title="MRP Planning"
         description="Material requirements planning — calculate gross/net requirements and generate reorder suggestions"
       />
 
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {message && <p role="status" className="text-sm text-primary">{message}</p>}
       {/* Planning Inputs */}
       <Card className="border-border">
         <CardHeader className="pb-3 border-b border-border/60">
@@ -190,14 +184,13 @@ export default function ViewMrp() {
 
           <Separator />
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Planned Production Runs (optional)</p>
-            <div className="flex gap-2 items-end">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Planned Production Runs</p>
+            <div className="flex flex-wrap gap-2 items-end">
               <div className="flex-1 space-y-1.5">
                 <Label className="text-xs font-medium">Recipe</Label>
                 <Select
                   value={newRun.recipeId}
                   onValueChange={(v) => setNewRun((p) => ({ ...p, recipeId: v }))}
-                  onOpenChange={(open) => { if (open) loadRecipes(); }}
                 >
                   <SelectTrigger className="h-9 text-sm">
                     <SelectValue placeholder="Select recipe..." />
@@ -397,6 +390,7 @@ export default function ViewMrp() {
               </p>
             </div>
           )}
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setShowPrModal(false)}>Cancel</Button>
             <Button size="sm" onClick={handleCreatePR} disabled={prSaving}>
