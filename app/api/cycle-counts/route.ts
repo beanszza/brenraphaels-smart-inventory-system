@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
         LocationId: body.locationId,
         CountDate: new Date(),
         Status: "Open",
-        CountedBy: body.countedBy ?? "System",
+        CountedBy: access.staff.username,
         Notes: body.notes ?? "",
         TotalSystemValue: 0,
         TotalCountedValue: 0,

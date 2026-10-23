@@ -27,7 +27,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       where: { StockInId: id },
       data: {
         Status: "PendingApproval",
-        SubmittedBy: "System User",
+        SubmittedBy: access.staff.username,
         SubmittedAt: new Date(),
       }
     });

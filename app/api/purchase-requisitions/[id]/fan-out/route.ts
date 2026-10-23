@@ -102,7 +102,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
             PaymentType: "Terms 30 Days",
             ProofImageUrl: "",
             TotalAmount: calculatedTotal,
-            RequestedBy: pr.RequestedBy || "System Generated",
+            RequestedBy: access.staff.username,
           },
         });
 

@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
           PaymentType: body.paymentType || "Cash",
           ProofImageUrl: "",
           TotalAmount: calculatedTotal,
-          RequestedBy: body.requestedBy || "",
+          RequestedBy: access.staff.username,
         },
       });
 

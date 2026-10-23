@@ -17,7 +17,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
     const body = await request.json();
     const qrRaw = body.qrRaw?.toString().trim();
     const ingredientId = Number(body.ingredientId);
-    const scannedBy = body.scannedBy || "Inventory Manager";
+    const scannedBy = access.staff.username;
 
     if (!qrRaw) {
       return NextResponse.json({ success: false, message: "QR payload is required." }, { status: 400 });

@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
       data: {
         IssuanceNumber: issuanceNumber,
         ProdReqId: prodReqId,
-        IssuedBy: body.issuedBy || "Inventory Manager",
+        IssuedBy: access.staff.username,
         Status: "Pending",
       },
       include: ISSUANCE_INCLUDE,

@@ -175,8 +175,8 @@ export async function POST(request: NextRequest) {
         SupplierInvoiceNumber: body.supplierInvoiceNumber?.trim() || null,
         ReceivingBay: body.receivingBay?.trim() || null,
         Carrier: body.carrier?.trim() || delivery.Carrier,
-        ReceivedBy: body.receivedBy || "System User",
-        CreatedBy: body.receivedBy || "System User",
+        ReceivedBy: access.staff.username,
+        CreatedBy: access.staff.username,
         Notes: body.notes?.trim(),
         CreatedAt: new Date(),
         GoodsReceiptItems: {

@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
         Status: "Resolved",
         ResolutionType: "LossReport",
         ResolutionNotes: body.notes ? `Loss Report Reason: ${body.reason} - ${body.notes}` : `Loss Report Reason: ${body.reason}`,
-        ResolvedBy: body.authorisedBy || "System User",
+        ResolvedBy: access.staff.username,
         ResolvedAt: new Date(),
       }
     });

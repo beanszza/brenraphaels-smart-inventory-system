@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
         Status: "Resolved",
         ResolutionType: body.resolutionType,
         ResolutionNotes: body.resolutionNotes,
-        ResolvedBy: "System User",
+        ResolvedBy: access.staff.username,
         ResolvedAt: new Date(),
       }
     });

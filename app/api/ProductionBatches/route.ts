@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
           ImageUrl: "",
           Notes: body.notes || prodReq.Reason || "",
           Purpose: "Production Request Fulfillment",
-          AssignedCook: body.assignedCook || prodReq.RequestedBy || "Head Cook",
+          AssignedCook: access.staff.username,
           Status: "In Production",
           BatchNumber: batchNumber,
           ScrapQuantity: 0,

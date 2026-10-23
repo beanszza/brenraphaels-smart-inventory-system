@@ -137,7 +137,6 @@ export async function POST(request: NextRequest) {
       vehiclePlate,
       courierName,
       notes,
-      createdBy = "Inventory Manager",
     } = body;
 
     if (!requestId || !productId || !transferQuantity || !scheduledDate) {
@@ -214,7 +213,7 @@ export async function POST(request: NextRequest) {
         CourierName: courierName || null,
         Priority: str.Priority,
         Notes: notes || null,
-        CreatedBy: createdBy,
+        CreatedBy: access.staff.username,
       },
       include: TRANSFER_INCLUDE,
     });

@@ -1,23 +1,24 @@
 import { requireRouteModule } from "@/lib/portal/staff";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import type { Staff } from "@/lib/portal/client";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const access = await requireRouteModule(request, "Production & Quality");
   if (!access.ok) return access.response;
 
-  return handleAddToInventory(request, props);
+  return handleAddToInventory(request, props, access.staff);
 }
 
 export async function PUT(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const access = await requireRouteModule(request, "Production & Quality");
   if (!access.ok) return access.response;
 
-  return handleAddToInventory(request, props);
+  return handleAddToInventory(request, props, access.staff);
 }
 
-async function handleAddToInventory(request: Request, props: { params: Promise<{ id: string }> }) {
+async function handleAddToInventory(request: Request, props: { params: Promise<{ id: string }> }, staff: Staff) {
   const params = await props.params;
   try {
     const id = parseInt(params.id, 10);
@@ -164,8 +165,8 @@ async function handleAddToInventory(request: Request, props: { params: Promise<{
             UnitCost: Number(batch.UnitCost || 0),
             ReferenceType: "ProductionBatch",
             ReferenceId: String(id),
-            UserId: "inventory-manager",
-            UserName: "Inventory Manager",
+            UserId: staff.username,
+            UserName: staff.name,
             PostedAt: now,
             Notes: `Production batch committed to inventory. Lot: ${finalLotCode}${notesInput ? ` | Notes: ${notesInput}` : ""}`,
           },
@@ -173,7 +174,7 @@ async function handleAddToInventory(request: Request, props: { params: Promise<{
       }
 
       // 4. Update Batch status to Stocked In / Completed
-      const activityLog = `[ACTIVITY:${now.toISOString()}|TITLE:Committed to inventory: ${acceptedQty} units added to ${fgLocation.LocationName}|ACTOR:Inventory Manager]`;
+      const activityLog = `[ACTIVITY:${now.toISOString()}|TITLE:Committed to inventory: ${acceptedQty} units added to ${fgLocation.LocationName}|ACTOR:${staff.username}]`;
       const updatedNotes = batch.Notes ? `${batch.Notes}\n${activityLog}` : activityLog;
 
       const completedBatch = await tx.productionBatches.update({

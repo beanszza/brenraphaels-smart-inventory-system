@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
         PaymentType: body.paymentType || po.PaymentType,
         Notes: body.notes?.trim(),
         AttachmentUrl: body.attachmentUrl?.trim(),
-        CreatedBy: "User", // This would normally come from session
+        CreatedBy: access.staff.username,
         CreatedAt: new Date(),
         DeliveryItems: {
           create: deliveryItems

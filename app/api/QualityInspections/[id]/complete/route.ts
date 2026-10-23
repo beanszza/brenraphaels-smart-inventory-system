@@ -27,6 +27,9 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
         data: {
           Status: "Completed",
           CompletedAt: new Date(),
+          CompletedBy: access.staff.username,
+          InspectorId: access.staff.username,
+          InspectorName: access.staff.name,
           OverallNotes: body.overallNotes || existingInspection.OverallNotes,
         },
       });

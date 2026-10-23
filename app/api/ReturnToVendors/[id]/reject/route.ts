@@ -28,7 +28,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       where: { RtvId: id },
       data: {
         Status: "Rejected",
-        RejectedBy: "System User",
+        RejectedBy: access.staff.username,
         RejectedAt: new Date(),
         RejectionReason: body.reason,
       }

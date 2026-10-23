@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { toLocationId, requiredDate, priority = "Normal", reason, requestedBy = "Inventory Manager", items } = body;
+    const { toLocationId, requiredDate, priority = "Normal", reason, items } = body;
 
     if (!toLocationId || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
         data: {
           RequestNumber: requestNumber,
           ToLocationId: Number(toLocationId),
-          RequestedBy: requestedBy,
+          RequestedBy: access.staff.username,
           RequestDate: new Date(),
           RequiredDate: new Date(requiredDate),
           Priority: priority,

@@ -14,8 +14,6 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
   }
 
   try {
-    const body = await request.json().catch(() => ({}));
-
     const prodReq = await prisma.productionRequests.findUnique({
       where: { ProdReqId: id },
       include: {
@@ -148,7 +146,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
         data: {
           PrNumber: prNumber,
           Department: "Production",
-          RequestedBy: body.requestedBy || prodReq.RequestedBy || "Inventory Manager",
+          RequestedBy: access.staff.username,
           RequestDate: reqDateNow,
           RequiredDate: prodReq.RequiredDate || new Date(reqDateNow.getTime() + 7 * 86400000),
           Status: "PendingApproval",

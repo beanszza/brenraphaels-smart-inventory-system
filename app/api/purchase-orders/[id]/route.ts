@@ -156,7 +156,6 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
           PaymentType: body.paymentType || order.PaymentType,
           Status: newStatus,
           TotalAmount: calculatedTotal,
-          RequestedBy: body.requestedBy || order.RequestedBy,
         },
       });
 

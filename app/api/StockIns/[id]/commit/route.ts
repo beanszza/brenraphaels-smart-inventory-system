@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
         where: { StockInId: id },
         data: {
           Status: "Committed",
-          CommittedBy: "System User",
+          CommittedBy: access.staff.username,
           CommittedAt: new Date(),
           Notes: body.notes ? (stockIn.Notes ? `${stockIn.Notes}\nCommit Note: ${body.notes}` : `Commit Note: ${body.notes}`) : stockIn.Notes,
         }

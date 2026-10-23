@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       data: {
         PrNumber: prNumber,
         Department: body.department?.trim() || "Inventory",
-        RequestedBy: body.requestedBy?.trim() || "Inventory Manager",
+        RequestedBy: access.staff.username,
         RequestDate: reqDateNow,
         RequiredDate: body.requiredDate ? new Date(body.requiredDate) : new Date(reqDateNow.getTime() + 7 * 24 * 60 * 60 * 1000),
         Status: initialStatus,
