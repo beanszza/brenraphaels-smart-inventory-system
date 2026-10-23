@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3003 --experimental-https --experimental-https-cert ./certificates/localhost.pem --experimental-https-key ./certificates/localhost-key.pem",
-    "build": "next build",
+    "build": "prisma generate --schema prisma/schema.prisma && next build",
     "start": "next start",
     "lint": "eslint",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma"
