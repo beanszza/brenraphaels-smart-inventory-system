@@ -1,5 +1,9 @@
 "use client";
 
+import { supplierItemsByItem } from "@/app/actions/resources/supplier-items";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useEffect, useState } from "react";
 import ModalWrapper from "./ModalWrapper";
 import { SupplyItem } from "./types";
@@ -49,9 +53,7 @@ export default function SupplyDetailsModal({
       setLoading(true);
       try {
         const [suppRes, poRes] = await Promise.allSettled([
-          api.get(`/api/supplier-items/by-item/${item.itemId}`).catch(() =>
-            api.get(`/api/SupplierItems/by-item/${item.itemId}`)
-          ),
+          actionResponse(supplierItemsByItem(item.itemId)),
           api.get(`/api/purchase-orders?pageSize=100`),
         ]);
 

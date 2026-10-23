@@ -1,5 +1,9 @@
 "use client";
 
+import { listRecipes } from "@/app/actions/resources/recipes";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useState } from "react";
 import {
   Calculator, Play, Plus, Trash2, Package, AlertCircle, ShoppingCart, Clock,
@@ -70,7 +74,7 @@ export default function ViewMrp() {
   const loadRecipes = async () => {
     if (recipesLoaded) return;
     try {
-      const res = await api.get("/api/recipes?pageSize=100");
+      const res = await actionResponse(listRecipes());
       if (res.data?.success) {
         const raw = res.data.data?.items || res.data.data || [];
         setRecipes(raw.map((r: any) => ({ recipeId: r.recipeId, recipeName: r.recipeName || r.name })));

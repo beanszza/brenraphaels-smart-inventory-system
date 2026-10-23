@@ -1,5 +1,9 @@
 "use client";
 
+import { createLocation, listLocations, updateLocation } from "@/app/actions/resources/locations";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Plus, Search, FileText } from "lucide-react";
@@ -43,7 +47,7 @@ export default function DistributionPage() {
       const statusParam = statusFilter === "All" ? "" : statusFilter;
       const [trRes, locRes, stRes] = await Promise.allSettled([
         api.get(`/api/stock-transfers?page=${page}&pageSize=10&status=${statusParam}&search=${search}`),
-        api.get("/api/locations?pageSize=100"),
+        actionResponse(listLocations()),
         api.get("/api/stock-transfers/dashboard"),
       ]);
 
@@ -90,8 +94,8 @@ export default function DistributionPage() {
 
   const handleSaveLocation = async (data: any) => {
     try {
-      if (editingLocation) await api.put(`/api/locations/${editingLocation.locationId}`, data);
-      else await api.post("/api/locations", data);
+      if (editingLocation?.locationId) await actionResponse(updateLocation(editingLocation.locationId, data));
+      else await actionResponse(createLocation(data));
       setShowLocationModal(false); setEditingLocation(null); fetchData();
     } catch { alert("Failed to save location."); }
   };

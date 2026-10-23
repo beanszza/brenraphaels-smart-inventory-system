@@ -1,12 +1,15 @@
 "use client";
 
+import { supplierItemsByItem } from "@/app/actions/resources/supplier-items";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Upload, Loader2, Sparkles, Clock, DollarSign, Package } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Order, SupplyItem, Supplier, PaymentType } from "./types";
-import api from "@/lib/api";
 
 interface ItemSupplierOption {
   supplierId: number;
@@ -98,12 +101,7 @@ export default function CreateOrderModal({
 
     setLoadingSuppliers(true);
     try {
-      let res;
-      try {
-        res = await api.get(`/api/supplier-items/by-item/${newItemId}`);
-      } catch {
-        res = await api.get(`/api/SupplierItems/by-item/${newItemId}`);
-      }
+      const res = await actionResponse(supplierItemsByItem(newItemId));
 
       if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
         const suppliers: ItemSupplierOption[] = res.data.data;

@@ -1,5 +1,8 @@
 "use client";
 
+import { listLocations } from "@/app/actions/resources/locations";
+import { actionResponse } from "@/lib/resources/action-response";
+
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
@@ -55,7 +58,7 @@ export default function CompletePutAwayModal({
   const loadLocations = async () => {
     setLoadingLocations(true);
     try {
-      const res = await api.get("/api/Locations?pageSize=100");
+      const res = await actionResponse(listLocations());
       const list = res.data?.data?.items || res.data?.data || [];
       setLocations(list);
       if (!destinationLocationId && list.length > 0) {

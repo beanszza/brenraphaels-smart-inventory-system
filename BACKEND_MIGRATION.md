@@ -4,11 +4,14 @@ The application currently runs in hybrid mode. Migrated endpoints are implemente
 
 ## Migrated modules
 
-- Categories and units of measure
-- Items
-- Suppliers
+Resources & Suppliers now uses guarded server actions under `app/actions/resources` for
+items, suppliers, supplier-item links, recipes, categories, units and locations. Its page
+loads initial data on the server; its HTTP handlers have been removed. Audit logs are
+read on the server through the gateway. See the README for the action and audit contract.
+
+The following modules still use App Router handlers:
+
 - Finished products, including image upload
-- Recipes
 - Purchase requisitions and status transitions
 - Purchase orders, receipt upload, status transitions, and PR quantity summaries
 - Deliveries and delivery status transitions
@@ -32,6 +35,6 @@ Read-only smoke tests have been run successfully against the configured database
 
 ## Remaining .NET-backed modules
 
-The most visible remaining endpoints are production batches, supplier-item catalog management, inventory and lots, stock transfers and locations, cycle counts, quality inspections, stock-in and put-away, MRP, reports, traceability, valuation, and authentication. Existing calls under `/api/scms/*`, plus unmatched `/api/*` paths, continue to use the configured .NET services until each module is migrated.
+The most visible remaining endpoints are production batches, inventory and lots, stock transfers, cycle counts, quality inspections, stock-in and put-away, MRP, reports, traceability, valuation, and authentication.
 
 When adding a local dynamic route, keep the generic legacy proxy in the `fallback` rewrite phase. Moving it to `beforeFiles` or a flat rewrite array causes the proxy to intercept local `[id]` handlers.
