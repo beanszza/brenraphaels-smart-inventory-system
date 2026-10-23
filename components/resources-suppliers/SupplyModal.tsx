@@ -1,5 +1,9 @@
 "use client";
 
+import { supplierItemsByItem } from "@/app/actions/resources/supplier-items";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,7 +12,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Badge } from "@/components/ui/badge";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import api from "@/lib/api";
 import ModalWrapper from "./ModalWrapper";
 import { SupplyItem, UomOption } from "./types";
 
@@ -117,8 +120,7 @@ export default function SupplyModal({
         setSelectedSupplierIds(editingItem.supplierIds || []);
 
         if (editingItem.itemId) {
-          api
-            .get(`/api/supplier-items/by-item/${editingItem.itemId}`)
+          actionResponse(supplierItemsByItem(editingItem.itemId))
             .then((res) => {
               const list = res.data?.data || res.data || [];
               if (Array.isArray(list) && list.length > 0) {

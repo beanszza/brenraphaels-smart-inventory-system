@@ -1,5 +1,9 @@
 "use client";
 
+import { listItems } from "@/app/actions/resources/items";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import { StatusBadge } from "@/components/shared/StatusBadge";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -177,7 +181,7 @@ export function CreatePRModal({
       try {
         setLoadingSupplies(true);
         const [itemsRes, invRes, prRes] = await Promise.allSettled([
-          api.get("/api/items"),
+          actionResponse(listItems()),
           api.get("/api/inventory?page=1&pageSize=1000"),
           api.get("/api/purchase-requisitions"),
         ]);

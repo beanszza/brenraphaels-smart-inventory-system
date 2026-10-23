@@ -1,5 +1,10 @@
 "use client";
 
+import { listItems } from "@/app/actions/resources/items";
+import { listRecipes } from "@/app/actions/resources/recipes";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useEffect, useState, useMemo } from "react";
 import { X, Loader2, Check, AlertTriangle, Package } from "lucide-react";
 import api from "../lib/api";
@@ -138,8 +143,8 @@ export default function CreateBatchModal({ open, onClose, onCreated }: Props) {
         try {
           const [prodRes, recipeRes, itemRes] = await Promise.all([
             api.get("/api/finished-products"),
-            api.get("/api/recipes"),
-            api.get("/api/items?pageSize=1000"),
+            actionResponse(listRecipes()),
+            actionResponse(listItems(`pageSize=1000`)),
           ]);
           setProducts(prodRes.data.data?.items || prodRes.data.data || []);
           setRecipes(recipeRes.data.data?.items || recipeRes.data.data || []);

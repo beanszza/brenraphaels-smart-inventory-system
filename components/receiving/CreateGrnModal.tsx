@@ -1,5 +1,9 @@
 "use client";
 
+import { listItems } from "@/app/actions/resources/items";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, ChevronUp, Plus, Trash2, ClipboardCheck, AlertTriangle } from "lucide-react";
@@ -190,7 +194,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
       const [deliveryResult, poResult, itemsCatalogRes] = await Promise.all([
         api.get(`/api/deliveries/${delivery.deliveryId}`),
         api.get(`/api/purchase-orders/${delivery.poId}`),
-        api.get("/api/items?pageSize=1000").catch(() => ({ data: { data: [] } })),
+        actionResponse(listItems(`pageSize=1000`)).catch(() => ({ data: { data: [] } })),
       ]);
 
       const catalogItems = Array.isArray(itemsCatalogRes.data?.data?.items)

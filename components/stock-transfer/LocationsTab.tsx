@@ -1,8 +1,11 @@
 "use client";
 
+import { listLocations } from "@/app/actions/resources/locations";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useState, useEffect } from "react";
 import { Search, MapPin, Warehouse, Store, Building, CheckCircle, RefreshCw } from "lucide-react";
-import api from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -24,7 +27,7 @@ export function LocationsTab() {
   const fetchLocations = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/locations");
+      const res = await actionResponse(listLocations());
       if (res.data?.success) {
         setLocations(res.data.data || []);
       }

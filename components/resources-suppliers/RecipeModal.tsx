@@ -1,12 +1,15 @@
 "use client";
 
+import { getRecipe } from "@/app/actions/resources/recipes";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "./ModalWrapper";
 import { Recipe, FinishedProduct, SupplyItem, Ingredient } from "./types";
 import RecipeIngredientItem from "./RecipeIngredientItem";
-import api from "@/lib/api";
 
 interface RecipeModalProps {
   open: boolean;
@@ -97,7 +100,7 @@ export default function RecipeModal({
         }
       } else {
         // Create mode: fetch upcoming sequence number
-        api.get("/api/recipes/next-code")
+        actionResponse(getRecipe("next-code"))
           .then((res: any) => {
             if (res.data?.nextCode) {
               setRecipeCode(res.data.nextCode);

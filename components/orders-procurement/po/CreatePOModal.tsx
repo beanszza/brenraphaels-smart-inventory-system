@@ -1,5 +1,9 @@
 "use client";
 
+import { supplierItemsByItem, supplierItemsBySupplier } from "@/app/actions/resources/supplier-items";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -196,7 +200,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
       await Promise.all(
         itemIds.map(async (itemId) => {
           try {
-            const res = await api.get(`/api/supplier-items/by-item/${itemId}`);
+            const res = await actionResponse(supplierItemsByItem(itemId));
             if (res.data?.success) {
               (res.data.data || []).forEach((s: any) => {
                 if (!supplierMap.has(s.supplierId)) {
@@ -218,7 +222,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
     try {
       // Fetch supplier catalog and already-ordered quantities in parallel
       const [catalogRes, orderedRes] = await Promise.all([
-        api.get(`/api/supplier-items/by-supplier/${supplierId}`),
+        actionResponse(supplierItemsBySupplier(supplierId)),
         api.get(`/api/purchase-orders/pr/${pr.prId}/ordered-qty`),
       ]);
 

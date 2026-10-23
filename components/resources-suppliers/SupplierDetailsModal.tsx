@@ -1,5 +1,9 @@
 "use client";
 
+import { supplierItemsBySupplier } from "@/app/actions/resources/supplier-items";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -59,9 +63,7 @@ export default function SupplierDetailsModal({
       setLoading(true);
       try {
         const [catRes, poRes] = await Promise.allSettled([
-          api.get(`/api/supplier-items/by-supplier/${supplier.supplierId}`).catch(() =>
-            api.get(`/api/SupplierItems/by-supplier/${supplier.supplierId}`)
-          ),
+          actionResponse(supplierItemsBySupplier(supplier.supplierId)),
           api.get(`/api/purchase-orders?pageSize=50`),
         ]);
 
