@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import api from "@/lib/api";
 import { PurchaseRequisition, PurchaseOrderPO } from "../types";
-import { useAuth } from "@/context/AuthContext";
+import { useStaff } from "@/context/StaffContext";
 
 interface ItemRow {
   itemId: number;
@@ -50,7 +50,7 @@ const fmtCurrency = (n: number) =>
   new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", minimumFractionDigits: 2 }).format(n);
 
 export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, onClose, onSuccess }: CreatePOModalProps) {
-  const { user } = useAuth();
+  const staff = useStaff();
 
   const [step, setStep] = useState(1);
 
@@ -329,9 +329,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
         supplierId: selectedSupplierId,
         expectedArrivalDate: new Date(`${eta}T00:00:00`).toISOString(),
         totalAmount,
-        requestedBy: user?.firstName
-          ? `${user.firstName} ${user.lastName || ""}`.trim()
-          : user?.username || "Inventory Manager",
+        requestedBy: staff.name,
         initialStatus,
         items: activeRows.map((row) => ({
           itemId: row.itemId,

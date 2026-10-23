@@ -1,10 +1,5 @@
 import type { NextConfig } from "next";
 
-const authApiUrl = (
-  process.env.AUTH_API_URL ||
-  "http://localhost:5007"
-).replace(/\/$/, "");
-
 // Maps PascalCase C# controller names (used by frontend-scms) to the
 // kebab-case Next.js App Router paths in this app.
 // Frontend calls e.g. /api/Items, /api/PurchaseOrders → rewrite to /api/items, /api/purchase-orders
@@ -55,11 +50,6 @@ const nextConfig: NextConfig = {
 
     return {
       beforeFiles: [
-        {
-          // Auth microservice proxy
-          source: "/api/erp-auth/:path*",
-          destination: `${authApiUrl}/api/erp-auth/:path*`,
-        },
         // Strip legacy /api/scms/api/ or /api/scms/ prefix if called
         {
           source: "/api/scms/api/:path*",

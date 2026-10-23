@@ -4,17 +4,10 @@ import React, { useEffect, useState } from "react";
 import { Package, AlertTriangle } from "lucide-react";
 import api from "@/lib/api";
 import Pagination from "@/components/Pagination";
-import { useAuth } from "@/context/AuthContext";
 import { LotItem } from "@/components/lots/types";
 import LotsTable from "@/components/lots/LotsTable";
 
 export default function ViewLots() {
-  const auth = useAuth();
-  const user = auth?.user;
-  const isAuth =
-    user?.username === "scmsuser" || user?.username === "ERP-ADMIN" ||
-    user?.email === "scmsuser@r3b2p.com" || user?.email === "admin@r3b2p.com" || user?.roles?.includes("Admin");
-
   const [lots, setLots] = useState<LotItem[]>([]);
   const [activeTab, setActiveTab] = useState("all");
   const [page, setPage] = useState(1);
@@ -68,11 +61,9 @@ export default function ViewLots() {
           <p className="mt-1 text-sm text-muted-foreground">Traceable batches, expiry monitoring, and lot-level inventory</p>
         </div>
         <div className="flex items-center gap-3">
-          {isAuth && (
-            <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-5 py-2.5 text-sm font-semibold text-foreground">
-              <Package size={16} /> Batch Traceability
-            </div>
-          )}
+          <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-5 py-2.5 text-sm font-semibold text-foreground">
+            <Package size={16} /> Batch Traceability
+          </div>
         </div>
       </div>
 

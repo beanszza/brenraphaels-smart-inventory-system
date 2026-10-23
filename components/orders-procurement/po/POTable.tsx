@@ -19,13 +19,12 @@ interface ActionItem {
 
 interface POTableProps {
   orders: PurchaseOrderPO[];
-  isAdmin: boolean;
   onView: (po: PurchaseOrderPO) => void;
   onEdit?: (po: PurchaseOrderPO) => void;
   onCancel?: (po: PurchaseOrderPO) => void;
 }
 
-export function POTable({ orders, isAdmin, onView, onEdit, onCancel }: POTableProps) {
+export function POTable({ orders, onView, onEdit, onCancel }: POTableProps) {
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -75,21 +74,19 @@ export function POTable({ orders, isAdmin, onView, onEdit, onCancel }: POTablePr
               ];
 
               // Inventory Manager actions only
-              if (!isAdmin) {
-                if ((isDraft || isReturned) && onEdit) {
-                  actions.push({
-                    label: isReturned ? "Edit & Re-Submit" : "Edit Draft",
-                    icon: <Pencil className="w-4 h-4 text-foreground" />,
-                    onClick: () => { setOpenDropdownId(null); onEdit(po); },
-                  });
-                }
-                if (isCancellable && onCancel) {
-                  actions.push({
-                    label: "Cancel Purchase Order",
-                    icon: <Ban className="w-4 h-4 text-foreground" />,
-                    onClick: () => { setOpenDropdownId(null); onCancel(po); },
-                  });
-                }
+              if ((isDraft || isReturned) && onEdit) {
+                actions.push({
+                  label: isReturned ? "Edit & Re-Submit" : "Edit Draft",
+                  icon: <Pencil className="w-4 h-4 text-foreground" />,
+                  onClick: () => { setOpenDropdownId(null); onEdit(po); },
+                });
+              }
+              if (isCancellable && onCancel) {
+                actions.push({
+                  label: "Cancel Purchase Order",
+                  icon: <Ban className="w-4 h-4 text-foreground" />,
+                  onClick: () => { setOpenDropdownId(null); onCancel(po); },
+                });
               }
 
               const isOpen = openDropdownId === po.poId;

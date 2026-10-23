@@ -11,18 +11,10 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 
 interface ProductionQaTabProps {
-  isQaOfficer: boolean;
-  isAdmin: boolean;
-  currentUser?: string;
-  onSwitchToQaOfficer?: () => void;
+  currentUser: string;
 }
 
-export default function ProductionQaTab({
-  isQaOfficer,
-  isAdmin,
-  currentUser = "Ramon Dela Cruz",
-  onSwitchToQaOfficer,
-}: ProductionQaTabProps) {
+export default function ProductionQaTab({ currentUser }: ProductionQaTabProps) {
   const [mounted, setMounted] = useState<boolean>(false);
   const [batches, setBatches] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -117,7 +109,7 @@ export default function ProductionQaTab({
         rejectedReason,
         remarks,
         checklist,
-        inspectorName: currentUser || "Ramon Dela Cruz",
+        inspectorName: currentUser,
       });
 
       if (res.data?.success) {
@@ -141,8 +133,6 @@ export default function ProductionQaTab({
     }
   };
 
-  const isReadOnly = !isQaOfficer;
-
   return (
     <div className="space-y-6 animate-page-in">
       {/* ── Header ── */}
@@ -154,17 +144,6 @@ export default function ProductionQaTab({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {!isQaOfficer && onSwitchToQaOfficer && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onSwitchToQaOfficer}
-              className="text-xs h-8 rounded-lg border-border font-semibold cursor-pointer"
-            >
-              Switch to Ramon (QA Officer)
-            </Button>
-          )}
           <Button
             variant="outline"
             size="sm"
@@ -175,25 +154,6 @@ export default function ProductionQaTab({
           </Button>
         </div>
       </div>
-
-      {/* ── Notice for non-QA officers matching Screenshot 1 ── */}
-      {!isQaOfficer && (
-        <div className="p-3.5 rounded-xl border border-border bg-muted/20 flex items-center justify-between gap-3 text-xs">
-          <span className="text-muted-foreground font-medium">
-            Only the QA Officer can perform and submit QA reviews.
-          </span>
-          {onSwitchToQaOfficer && (
-            <Button
-              type="button"
-              size="sm"
-              onClick={onSwitchToQaOfficer}
-              className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
-            >
-              Switch to Ramon
-            </Button>
-          )}
-        </div>
-      )}
 
       {/* ── Subtab Navigation (Pending QA & Completed QA) ── */}
       <div className="flex items-center gap-2">
@@ -358,7 +318,6 @@ export default function ProductionQaTab({
                         min="0"
                         max={selectedBatch.packedQty}
                         value={acceptedQty}
-                        disabled={isReadOnly}
                         onChange={(e) => {
                           const val = Math.max(0, Number(e.target.value));
                           setAcceptedQty(val);
@@ -373,7 +332,6 @@ export default function ProductionQaTab({
                           <Select
                             value={acceptedReason}
                             onValueChange={setAcceptedReason}
-                            disabled={isReadOnly}
                           >
                             <SelectTrigger className="h-8 text-xs border-border bg-background">
                               <SelectValue placeholder="Select reason" />
@@ -404,7 +362,6 @@ export default function ProductionQaTab({
                         min="0"
                         max={selectedBatch.packedQty}
                         value={rejectedQty}
-                        disabled={isReadOnly}
                         onChange={(e) => {
                           const val = Math.max(0, Number(e.target.value));
                           setRejectedQty(val);
@@ -419,7 +376,6 @@ export default function ProductionQaTab({
                           <Select
                             value={rejectedReason}
                             onValueChange={setRejectedReason}
-                            disabled={isReadOnly}
                           >
                             <SelectTrigger className="h-8 text-xs border-border bg-background">
                               <SelectValue placeholder="Select defect reason" />
@@ -457,7 +413,6 @@ export default function ProductionQaTab({
                           <input
                             type="checkbox"
                             checked={checklist[item.key] ?? true}
-                            disabled={isReadOnly}
                             onChange={(e) =>
                               setChecklist((prev) => ({ ...prev, [item.key]: e.target.checked }))
                             }
@@ -476,7 +431,6 @@ export default function ProductionQaTab({
                       placeholder="Add sensory findings, inspector observations..."
                       rows={2}
                       value={remarks}
-                      disabled={isReadOnly}
                       onChange={(e) => setRemarks(e.target.value)}
                       className="text-xs border-border bg-background"
                     />
@@ -486,7 +440,7 @@ export default function ProductionQaTab({
                   <div className="flex items-center justify-end pt-2">
                     <Button
                       type="button"
-                      disabled={isReadOnly || submitting}
+                      disabled={submitting}
                       onClick={() => setConfirmModal(true)}
                       className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
                     >

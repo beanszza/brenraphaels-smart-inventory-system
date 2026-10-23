@@ -24,8 +24,6 @@ interface ProductionRequestModalProps {
   onClose: () => void;
   onSuccess: (newPrData?: any) => void;
   initialRequest?: ProductionRequestEntity | null;
-  isAdmin?: boolean;
-  isInventoryManager?: boolean;
   onProceedToIssuance?: (prodReqId: number) => void;
   onViewPrSummary?: (prData: any) => void;
   onStartProduction?: (req: ProductionRequestEntity) => void;
@@ -103,8 +101,6 @@ export default function ProductionRequestModal({
   onClose,
   onSuccess,
   initialRequest,
-  isAdmin,
-  isInventoryManager,
   onProceedToIssuance,
   onViewPrSummary,
   onStartProduction,
@@ -1115,7 +1111,7 @@ export default function ProductionRequestModal({
             ) : (
               <>
                 {/* Admin Approval Actions (PR/PO style confirmation modal) */}
-                {isAdmin && initialRequest?.status === "Pending Approval" && (
+                {initialRequest?.status === "Pending Approval" && (
                   <>
                     <Button
                       type="button"
@@ -1138,7 +1134,7 @@ export default function ProductionRequestModal({
                 )}
 
                 {/* Shortfall resolution shortcut in View Mode */}
-                {lotSuggestions?.hasAnyShortfall && (isInventoryManager || isAdmin) && (
+                {lotSuggestions?.hasAnyShortfall && (
                   <Button
                     type="button"
                     variant="outline"
@@ -1150,7 +1146,7 @@ export default function ProductionRequestModal({
                 )}
 
                 {/* Approved status -> Proceed to Material Issuance */}
-                {isInventoryManager && initialRequest?.status === "Approved" && onProceedToIssuance && (
+                {initialRequest?.status === "Approved" && onProceedToIssuance && (
                   <Button
                     type="button"
                     onClick={() => {

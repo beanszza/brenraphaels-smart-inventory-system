@@ -4,7 +4,6 @@ import React from "react";
 import { Eye, Check, X, Truck, MoreHorizontal, Ban, Send, Package } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransferRequest, StockTransfer } from "./types";
-import { useAuth } from "@/context/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -33,7 +32,6 @@ export function STRTable({
   onDispatch,
   onCancel,
 }: STRTableProps) {
-  const { isAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -187,7 +185,7 @@ export function STRTable({
                         </DropdownMenuItem>
 
                         {/* Admin-only Approve / Reject */}
-                        {isAdmin && isPending && (
+                        {isPending && (
                           <>
                             {onApprove && (
                               <DropdownMenuItem
@@ -211,7 +209,7 @@ export function STRTable({
                         )}
 
                         {/* Inventory Manager: Schedule Transfer */}
-                        {!isAdmin && isApproved && onSchedule && (
+                        {isApproved && onSchedule && (
                           <DropdownMenuItem
                             onClick={() => onSchedule(req)}
                             className="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs font-semibold text-foreground"
@@ -222,7 +220,7 @@ export function STRTable({
                         )}
 
                         {/* Inventory Manager: Dispatch Transfer */}
-                        {!isAdmin && isScheduled && onDispatch && (
+                        {isScheduled && onDispatch && (
                           <DropdownMenuItem
                             onClick={() => onDispatch(req)}
                             className="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs font-semibold text-foreground"
@@ -233,7 +231,7 @@ export function STRTable({
                         )}
 
                         {/* Cancel (only if not dispatched / not cancelled) */}
-                        {!isAdmin && !isDispatched && !isCancelled && onCancel && (
+                        {!isDispatched && !isCancelled && onCancel && (
                           <DropdownMenuItem
                             onClick={() => onCancel(req)}
                             className="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs font-medium text-muted-foreground hover:text-destructive"

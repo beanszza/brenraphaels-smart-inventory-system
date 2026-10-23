@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { useAuth } from "@/context/AuthContext";
 import { SupplyItem, Supplier, Recipe, FinishedProduct, UomOption } from "@/components/resources-suppliers/types";
 import SupplyTab from "@/components/resources-suppliers/SupplyTab";
 import SupplierTab from "@/components/resources-suppliers/SupplierTab";
@@ -15,12 +14,6 @@ import RecipeModal from "@/components/resources-suppliers/RecipeModal";
 import { PageHeader } from "@/components/shared/PageHeader";
 
 export default function ResourcesSuppliersPage() {
-  const auth = useAuth();
-  const user = auth?.user;
-  const isAuth =
-    user?.username === "scmsuser" || user?.username === "ERP-ADMIN" ||
-    user?.email === "scmsuser@r3b2p.com" || user?.email === "admin@r3b2p.com" || user?.roles?.includes("Admin");
-
   const [activeTab, setActiveTab] = useState<"supply" | "supplier" | "recipe">("supply");
   const [supplyData, setSupplyData] = useState<SupplyItem[]>([]);
   const [supplierData, setSupplierData] = useState<Supplier[]>([]);

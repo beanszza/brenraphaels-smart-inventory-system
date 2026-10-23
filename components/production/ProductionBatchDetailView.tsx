@@ -62,7 +62,6 @@ interface ProductionBatchDetailViewProps {
   onBack: () => void;
   currentUser?: string;
   onRefreshList?: () => void;
-  onSwitchToQaOfficer?: () => void;
 }
 
 export default function ProductionBatchDetailView({
@@ -70,8 +69,7 @@ export default function ProductionBatchDetailView({
   onBack,
   currentUser = "Head Cook",
   onRefreshList,
-  onSwitchToQaOfficer,
-}: ProductionBatchDetailViewProps) {
+}:ProductionBatchDetailViewProps) {
   const [mounted, setMounted] = useState<boolean>(false);
   const [batch, setBatch] = useState<ProductionBatchEntity | null>(null);
   const [loading, setLoading] = useState<boolean>(true);

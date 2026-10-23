@@ -13,19 +13,23 @@ import { ProductionRequestEntity } from "./types";
 import ProductionRequestModal, { formatTimeTo12Hour } from "./ProductionRequestModal";
 import PrSummaryModal from "./PrSummaryModal";
 
+const STATUS_TABS = [
+  "All",
+  "Pending Approval",
+  "Approved",
+  "Ready for Production",
+  "In Progress",
+  "Completed",
+  "Rejected",
+];
+
 interface ProductionRequestsTabProps {
-  isAdmin: boolean;
-  isInventoryManager: boolean;
-  isHeadCook: boolean;
   onNavigateToIssuance?: (prodReqId?: number) => void;
   onStartBatchAndTrack?: (batchId: number) => void;
-  currentUser?: string;
+  currentUser: string;
 }
 
 export default function ProductionRequestsTab({
-  isAdmin,
-  isInventoryManager,
-  isHeadCook,
   onNavigateToIssuance,
   onStartBatchAndTrack,
   currentUser,
@@ -38,34 +42,9 @@ export default function ProductionRequestsTab({
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const [startingId, setStartingId] = useState<number | null>(null);
 
-  // Status Tabs: Head Cook sees only Ready for Production, In Progress, Completed
-  // Inventory Manager & Admin see: All, Pending Approval, Approved, Ready for Production, In Progress, Completed, Rejected
   // NO DRAFT, NO CANCELLED!
-  const statusTabs = useMemo(() => {
-    if (isHeadCook && !isAdmin) {
-      return ["Ready for Production", "In Progress", "Completed"];
-    }
-    return [
-      "All",
-      "Pending Approval",
-      "Approved",
-      "Ready for Production",
-      "In Progress",
-      "Completed",
-      "Rejected",
-    ];
-  }, [isHeadCook, isAdmin]);
-
-  const defaultStatusTab = isHeadCook && !isAdmin ? "Ready for Production" : "All";
-  const [activeTab, setActiveTab] = useState<string>(defaultStatusTab);
-
-  // Keep active tab in sync if user changes account or role
-  useEffect(() => {
-    if (!statusTabs.includes(activeTab)) {
-      setActiveTab(isHeadCook && !isAdmin ? "Ready for Production" : "All");
-      setCurrentPage(1);
-    }
-  }, [statusTabs, activeTab, isHeadCook, isAdmin]);
+  const statusTabs = STATUS_TABS;
+  const [activeTab, setActiveTab] = useState<string>("All");
 
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -90,7 +69,6 @@ export default function ProductionRequestsTab({
       const params: any = {};
       if (priorityFilter !== "All") params.priority = priorityFilter;
       if (searchQuery.trim()) params.search = searchQuery.trim();
-      if (isHeadCook && !isAdmin) params.role = "head_cook";
 
       const res = await api.get("/api/production-requests", { params });
       if (res.data?.success && Array.isArray(res.data.data)) {
@@ -102,7 +80,7 @@ export default function ProductionRequestsTab({
     } finally {
       setLoading(false);
     }
-  }, [priorityFilter, searchQuery, isHeadCook, isAdmin]);
+  }, [priorityFilter, searchQuery]);
 
   useEffect(() => {
     fetchRequests();
@@ -155,7 +133,7 @@ export default function ProductionRequestsTab({
     try {
       const res = await api.post("/api/ProductionBatches", {
         prodReqId: req.prodReqId,
-        assignedCook: isHeadCook ? (currentUser || "Head Cook") : "Head Cook",
+        assignedCook: currentUser,
         notes: `Started from Request ${req.reqNumber}`,
       });
 
@@ -190,23 +168,16 @@ export default function ProductionRequestsTab({
         <div>
           <h2 className="text-2xl font-bold text-foreground">Production Requests</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {isHeadCook && !isAdmin
-              ? "View ready for production requests, start kitchen batches, and track progress."
-              : isInventoryManager
-              ? "Plan production volumes, verify automated BOM lot reservations, and request supplies."
-              : "Review, approve, and track production requests."}
+            Plan production volumes, verify automated BOM lot reservations, review and approve requests, and start kitchen batches.
           </p>
         </div>
-        {/* Only Inventory Manager or Admin can create production requests */}
-        {(isInventoryManager || isAdmin) && !isHeadCook && (
-          <Button
-            onClick={handleOpenNewModal}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Production Request</span>
-          </Button>
-        )}
+        <Button
+          onClick={handleOpenNewModal}
+          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+        >
+          <Plus className="w-4 h-4" />
+          <span>New Production Request</span>
+        </Button>
       </div>
 
       {/* Filters Bar (Search & Priority Filter - Top orientation matching PR) */}
@@ -433,7 +404,7 @@ export default function ProductionRequestsTab({
                                 </button>
 
                                 {/* Issue Materials shortcut for Inventory Manager & Admin on Approved */}
-                                {req.status === "Approved" && (isInventoryManager || isAdmin) && onNavigateToIssuance && (
+                                {req.status === "Approved" && onNavigateToIssuance && (
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -461,7 +432,7 @@ export default function ProductionRequestsTab({
                                 )}
 
                                 {/* Admin Approval Action on Pending Approval */}
-                                {isAdmin && req.status === "Pending Approval" && (
+                                {req.status === "Pending Approval" && (
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -475,7 +446,7 @@ export default function ProductionRequestsTab({
                                 )}
 
                                 {/* In Progress items shortcut to track (Head Cook & Admin only) */}
-                                {isInProd && (isHeadCook || isAdmin) && onStartBatchAndTrack && req.batches?.[0]?.batchId && (
+                                {isInProd && onStartBatchAndTrack && req.batches?.[0]?.batchId && (
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -524,8 +495,6 @@ export default function ProductionRequestsTab({
           }
         }}
         initialRequest={selectedRequest}
-        isAdmin={isAdmin}
-        isInventoryManager={isInventoryManager}
         onProceedToIssuance={(id) => onNavigateToIssuance && onNavigateToIssuance(id)}
         onViewPrSummary={(data) => setPrSummaryData(data)}
         onStartProduction={handleStartProduction}

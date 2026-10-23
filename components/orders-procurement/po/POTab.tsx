@@ -24,7 +24,6 @@ import { POActionModal, POActionType } from "./POActionModal";
 import { CreatePOModal } from "./CreatePOModal";
 import { CreateDeliveryModal } from "../delivery/CreateDeliveryModal";
 import Pagination from "@/components/Pagination";
-import { useAuth } from "@/context/AuthContext";
 
 const STATUS_TABS: (POStatus | "All")[] = [
   "All",
@@ -68,7 +67,6 @@ function mapPO(o: any): PurchaseOrderPO {
 }
 
 export function POTab() {
-  const { isAdmin } = useAuth();
 
   const [orders, setOrders] = useState<PurchaseOrderPO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,15 +187,13 @@ export function POTab() {
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
           </Button>
 
-          {!isAdmin && (
-            <Button
-              type="button"
-              onClick={() => setOpenCreateModal(true)}
-              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
-            >
-              <Plus className="w-4 h-4" /> Create Purchase Order
-            </Button>
-          )}
+          <Button
+            type="button"
+            onClick={() => setOpenCreateModal(true)}
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+          >
+            <Plus className="w-4 h-4" /> Create Purchase Order
+          </Button>
         </div>
       </div>
 
@@ -245,26 +241,24 @@ export function POTab() {
       <div className="border-b border-border overflow-x-auto">
         <div className="flex items-center gap-1.5 min-w-max pb-2">
           {/* Requests Tab — Admin only */}
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => { setActiveTab("Requests"); setPage(1); }}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === "Requests"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <span>Requests</span>
-              {counts.Requests > 0 && (
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                  activeTab === "Requests" ? "bg-background text-foreground" : "bg-foreground/20 text-foreground"
-                }`}>
-                  {counts.Requests}
-                </span>
-              )}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => { setActiveTab("Requests"); setPage(1); }}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              activeTab === "Requests"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            <span>Requests</span>
+            {counts.Requests > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                activeTab === "Requests" ? "bg-background text-foreground" : "bg-foreground/20 text-foreground"
+              }`}>
+                {counts.Requests}
+              </span>
+            )}
+          </button>
 
           {/* Standard Status Tabs */}
           {STATUS_TABS.map((tab) => {
@@ -304,7 +298,6 @@ export function POTab() {
       {/* PO Table */}
       <POTable
         orders={paginatedList}
-        isAdmin={isAdmin}
         onView={(po) => setSelectedPO(po)}
         onEdit={(po) => setSelectedPO(po)} // For now opens details; edit form is a future iteration
         onCancel={(po) => setActionModal({ po, type: "cancel" })}
@@ -321,7 +314,6 @@ export function POTab() {
       {/* PO Details / Review Modal */}
       <PODetailsModal
         po={selectedPO}
-        isAdmin={isAdmin}
         onClose={() => setSelectedPO(null)}
         onEdit={(po) => { setSelectedPO(null); setEditingPO(po); }}
         onApprove={(po) => { setSelectedPO(null); setActionModal({ po, type: "approve" }); }}

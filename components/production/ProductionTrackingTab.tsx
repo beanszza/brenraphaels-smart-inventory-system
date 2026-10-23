@@ -11,14 +11,12 @@ import ProductionBatchDetailView from "./ProductionBatchDetailView";
 interface ProductionTrackingTabProps {
   initialBatchId?: number | null;
   onNavigateToBatches?: () => void;
-  currentUser?: string;
-  onSwitchToQaOfficer?: () => void;
+  currentUser: string;
 }
 
 export default function ProductionTrackingTab({
   initialBatchId,
-  currentUser = "Head Cook",
-  onSwitchToQaOfficer,
+  currentUser,
 }: ProductionTrackingTabProps) {
   const [batches, setBatches] = useState<ProductionBatchEntity[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -208,7 +206,6 @@ export default function ProductionTrackingTab({
               onBack={() => setSelectedBatchId(null)}
               currentUser={currentUser}
               onRefreshList={fetchBatches}
-              onSwitchToQaOfficer={onSwitchToQaOfficer}
             />
           )}
         </div>
