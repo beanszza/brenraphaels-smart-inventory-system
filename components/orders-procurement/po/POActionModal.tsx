@@ -42,7 +42,7 @@ const ACTION_CONFIG: Record<
     notesLabel: "",
     notesPlaceholder: "",
     confirmLabel: "Approve",
-    confirmClass: "bg-foreground text-background hover:bg-foreground/85",
+    confirmClass: "bg-primary text-primary-foreground hover:bg-primary/85",
   },
   reject: {
     title: "Reject Purchase Order",
@@ -52,7 +52,7 @@ const ACTION_CONFIG: Record<
     notesLabel: "Rejection Reason",
     notesPlaceholder: "State the reason for rejection (required)...",
     confirmLabel: "Reject",
-    confirmClass: "bg-foreground text-background hover:bg-foreground/85",
+    confirmClass: "bg-primary text-primary-foreground hover:bg-primary/85",
   },
   return: {
     title: "Return for Revision",
@@ -62,7 +62,7 @@ const ACTION_CONFIG: Record<
     notesLabel: "Revision Notes",
     notesPlaceholder: "Describe what needs to be revised (required)...",
     confirmLabel: "Return for Revision",
-    confirmClass: "bg-foreground text-background hover:bg-foreground/85",
+    confirmClass: "bg-primary text-primary-foreground hover:bg-primary/85",
   },
   cancel: {
     title: "Cancel Purchase Order",
@@ -72,7 +72,7 @@ const ACTION_CONFIG: Record<
     notesLabel: "Cancellation Reason & Notes",
     notesPlaceholder: "Please provide the reason for cancelling this purchase order (required)...",
     confirmLabel: "Confirm Cancellation",
-    confirmClass: "bg-foreground text-background hover:bg-foreground/85",
+    confirmClass: "bg-primary text-primary-foreground hover:bg-primary/85",
   },
   order: {
     title: "Mark as Ordered",
@@ -82,7 +82,7 @@ const ACTION_CONFIG: Record<
     notesLabel: "",
     notesPlaceholder: "",
     confirmLabel: "Mark as Ordered",
-    confirmClass: "bg-foreground text-background hover:bg-foreground/85",
+    confirmClass: "bg-primary text-primary-foreground hover:bg-primary/85",
   },
 };
 
@@ -222,7 +222,7 @@ export function POActionModal({ actionType, poNumber, onClose, onConfirm }: POAc
               type="button"
               onClick={handleConfirm}
               disabled={loading || (requiresReason && !reason.trim())}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-background bg-foreground hover:bg-foreground/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
             >
               {loading ? "Processing..." : "Confirm"}
             </button>

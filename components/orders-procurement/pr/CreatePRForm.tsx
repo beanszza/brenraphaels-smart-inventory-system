@@ -1,5 +1,7 @@
 "use client";
 
+import { StatusBadge } from "@/components/shared/StatusBadge";
+
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -608,13 +610,7 @@ export function CreatePRModal({
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">Status</label>
               <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-medium text-foreground">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider ${
-                  statusText === "Approved" ? "bg-emerald-500/10 text-emerald-600" :
-                  statusText === "Rejected" ? "bg-rose-500/10 text-rose-600" :
-                  "bg-amber-500/10 text-amber-600"
-                }`}>
-                  {statusText}
-                </span>
+                <StatusBadge status={statusText} />
               </div>
             </div>
           </div>
@@ -833,7 +829,7 @@ export function CreatePRModal({
                   });
                 }
               }}
-              className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               Submit for Approval
             </Button>

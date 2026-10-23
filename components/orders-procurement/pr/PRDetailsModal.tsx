@@ -303,7 +303,7 @@ export function PRDetailsModal({
                   <Button
                     type="button"
                     onClick={() => onApprove(pr)}
-                    className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
                   >
                     Approve
                   </Button>
@@ -316,7 +316,7 @@ export function PRDetailsModal({
               <Button
                 type="button"
                 onClick={() => onCreatePo(pr)}
-                className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
               >
                 Create Purchase Order
               </Button>

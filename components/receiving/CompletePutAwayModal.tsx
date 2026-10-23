@@ -380,7 +380,7 @@ export default function CompletePutAwayModal({
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                className="rounded-xl bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
               >
                 Close
               </button>
@@ -398,7 +398,7 @@ export default function CompletePutAwayModal({
                   type="button"
                   onClick={handleTryPutToInventory}
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
                   <Box className="h-4 w-4" />
                   {submitting ? "Putting to Inventory…" : "Put to Inventory"}
@@ -463,7 +463,7 @@ export default function CompletePutAwayModal({
                     type="button"
                     disabled={submitting}
                     onClick={handlePutToInventory}
-                    className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50"
                   >
                     {submitting ? "Processing..." : "Confirm & Save"}
                   </button>

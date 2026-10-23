@@ -130,7 +130,7 @@ export default function ViewGoodsReceiving() {
                 {tab.badgeCount !== undefined && tab.badgeCount > 0 && (
                   <span
                     className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
-                      isActive ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+                      isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {tab.badgeCount}

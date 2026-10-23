@@ -95,7 +95,7 @@ export function LocationsTab() {
                 onClick={() => setTypeFilter(t)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   isSelected
-                    ? "bg-foreground text-background shadow-xs"
+                    ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >

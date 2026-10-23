@@ -200,7 +200,7 @@ export default function GrnTab({ onPosted }: GrnTabProps) {
           <Button
             type="button"
             onClick={() => handleCreateGrn(undefined)}
-            className="flex items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm h-10"
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
           >
             <Plus className="w-4 h-4" /> Create Goods Receipt Note
           </Button>
@@ -276,7 +276,7 @@ export default function GrnTab({ onPosted }: GrnTabProps) {
             }}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
               activeSubTab === "pending"
-                ? "bg-foreground text-background shadow-sm"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
@@ -302,7 +302,7 @@ export default function GrnTab({ onPosted }: GrnTabProps) {
             }}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
               activeSubTab === "posted"
-                ? "bg-foreground text-background shadow-sm"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >

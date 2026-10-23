@@ -312,11 +312,11 @@ export default function SupplierModal({
 
         <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
           <Button type="button" variant="outline" onClick={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors">
+            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
             Cancel
           </Button>
           <Button type="button" disabled={hasErrors} onClick={handleSave}
-            className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             {editingSupplier ? "Save Changes" : "Create Supplier"}
           </Button>
         </div>

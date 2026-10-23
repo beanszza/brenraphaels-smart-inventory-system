@@ -187,7 +187,7 @@ export default function ProductionQaTab({
               type="button"
               size="sm"
               onClick={onSwitchToQaOfficer}
-              className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/85 cursor-pointer shadow-xs"
+              className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
             >
               Switch to Ramon
             </Button>
@@ -205,7 +205,7 @@ export default function ProductionQaTab({
           }}
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             subTab === "pending"
-              ? "bg-foreground text-background shadow-xs"
+              ? "bg-primary text-primary-foreground shadow-xs"
               : "border border-border bg-card text-muted-foreground hover:bg-muted"
           }`}
         >
@@ -220,7 +220,7 @@ export default function ProductionQaTab({
           }}
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             subTab === "completed"
-              ? "bg-foreground text-background shadow-xs"
+              ? "bg-primary text-primary-foreground shadow-xs"
               : "border border-border bg-card text-muted-foreground hover:bg-muted"
           }`}
         >
@@ -488,7 +488,7 @@ export default function ProductionQaTab({
                       type="button"
                       disabled={isReadOnly || submitting}
                       onClick={() => setConfirmModal(true)}
-                      className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/85 cursor-pointer shadow-xs"
+                      className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
                     >
                       Confirm & Sign Off QA Review
                     </Button>
@@ -544,7 +544,7 @@ export default function ProductionQaTab({
                 size="sm"
                 onClick={handleSubmitQa}
                 disabled={submitting}
-                className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/85 cursor-pointer shadow-xs"
+                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
               >
                 {submitting ? "Signing Off..." : "Sign Off & Complete"}
               </Button>

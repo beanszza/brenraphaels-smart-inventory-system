@@ -502,7 +502,7 @@ export default function MaterialIssuanceModal({
             {/* Panel Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-foreground text-background flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0">
                   <Camera size={15} />
                 </div>
                 <div>
@@ -588,7 +588,7 @@ export default function MaterialIssuanceModal({
                 {/* 5. Success Overlay */}
                 {scanStatus === "success" && (
                   <div className="absolute inset-0 bg-background/95 backdrop-blur-xs flex flex-col items-center justify-center gap-1.5 animate-in fade-in z-20">
-                    <div className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
                       <CheckCircle2 className="w-6 h-6" />
                     </div>
                     <p className="text-xs font-bold text-foreground">Success: Material Verified!</p>
@@ -642,9 +642,7 @@ export default function MaterialIssuanceModal({
                     <div className="p-2.5 rounded-lg bg-card border border-border space-y-1 animate-in fade-in text-xs">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-foreground">{lastScanned.itemName}</span>
-                        <span className="text-[10px] font-semibold bg-foreground text-background px-2 py-0.5 rounded-full">
-                          Success
-                        </span>
+                        <StatusBadge status="Success">Success</StatusBadge>
                       </div>
                       <div className="text-[11px] text-muted-foreground font-mono flex items-center justify-between">
                         <span>Lot: {lastScanned.lotCode}</span>
@@ -711,7 +709,7 @@ export default function MaterialIssuanceModal({
                     type="button"
                     size="sm"
                     onClick={handleRescan}
-                    className="flex-1 text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 cursor-pointer shadow-sm"
+                    className="flex-1 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer shadow-sm"
                   >
                     <RefreshCw className="w-3.5 h-3.5 mr-1" /> Rescan
                   </Button>
@@ -732,7 +730,7 @@ export default function MaterialIssuanceModal({
             <Button
               size="sm"
               onClick={handleRescan}
-              className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 cursor-pointer shadow-sm"
+              className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer shadow-sm"
             >
               <Camera className="w-3.5 h-3.5 mr-1.5" /> Open Camera Scanner
             </Button>
@@ -743,7 +741,7 @@ export default function MaterialIssuanceModal({
         {allVerified && !isAlreadyIssued && (
           <div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-muted/20">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-foreground text-background flex items-center justify-center font-bold text-xs">
+              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs">
                 ✓
               </div>
               <div>
@@ -833,13 +831,9 @@ export default function MaterialIssuanceModal({
                         {/* Status Column: Checkmark when verified, Pending Scan otherwise */}
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           {isVerified || isAlreadyIssued ? (
-                            <span className="inline-flex items-center text-[11px] font-semibold text-background bg-foreground border border-foreground px-2.5 py-0.5 rounded-full">
-                              ✓ Verified
-                            </span>
+                            <StatusBadge status="Verified">Verified</StatusBadge>
                           ) : (
-                            <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/50 border border-border px-2.5 py-0.5 rounded-full">
-                              Pending Scan
-                            </span>
+                            <StatusBadge status="Pending">Pending Scan</StatusBadge>
                           )}
                         </td>
                       </tr>
@@ -879,7 +873,7 @@ export default function MaterialIssuanceModal({
               disabled={!allVerified || issuing}
               className={`text-xs font-semibold px-6 py-2 rounded-xl transition-all shadow-sm ${
                 allVerified
-                  ? "bg-foreground text-background hover:bg-foreground/90 cursor-pointer"
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
                   : "bg-muted text-muted-foreground cursor-not-allowed"
               }`}
             >

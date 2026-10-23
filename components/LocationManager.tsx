@@ -1,5 +1,7 @@
 "use client";
 
+import { StatusBadge } from "@/components/shared/StatusBadge";
+
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { MoreHorizontal, Edit2, Eye } from "lucide-react";
@@ -46,9 +48,7 @@ export default function LocationManagement({ locations, onView, onEdit }: { loca
                   </td>
                   <td className="px-4 py-3 text-foreground max-w-[200px] truncate">{l.address}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${l.status === 'Active' ? 'bg-foreground text-background border-foreground' : 'bg-muted/30 text-muted-foreground border-border opacity-75'}`}>
-                      {l.status}
-                    </span>
+                    <StatusBadge status={l.status} />
                   </td>
                   <td className="px-4 py-3 text-center relative">
                     <button 

@@ -108,7 +108,7 @@ export default function PrSummaryModal({ open, onClose, prData }: PrSummaryModal
           <Button
             type="button"
             onClick={onClose}
-            className="bg-foreground text-background font-semibold text-xs px-5 py-2 rounded-xl hover:bg-foreground/90 transition-colors"
+            className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors"
           >
             Done
           </Button>

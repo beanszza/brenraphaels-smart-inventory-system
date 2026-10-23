@@ -828,7 +828,7 @@ export default function ProductionRequestModal({
                       onClick={() => updateTime(timeHour, timeMinute, "AM")}
                       className={`h-full px-2.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                         timePeriod === "AM"
-                          ? "bg-foreground text-background shadow-xs"
+                          ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -839,7 +839,7 @@ export default function ProductionRequestModal({
                       onClick={() => updateTime(timeHour, timeMinute, "PM")}
                       className={`h-full px-2.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                         timePeriod === "PM"
-                          ? "bg-foreground text-background shadow-xs"
+                          ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -906,7 +906,7 @@ export default function ProductionRequestModal({
                 type="button"
                 onClick={handleCreatePrDirect}
                 disabled={submitting}
-                className="bg-foreground text-background hover:bg-foreground/90 font-semibold text-xs px-3.5 py-1.5 rounded-xl transition-colors shrink-0 shadow-sm"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs px-3.5 py-1.5 rounded-xl transition-colors shrink-0 shadow-sm"
               >
                 Create PR Now
               </Button>
@@ -1057,28 +1057,18 @@ export default function ProductionRequestModal({
                           )}
                         </td>
 
-                        {/* Stock Status (Strictly Monochromatic) */}
+                        {/* Stock Status */}
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           {isRejected ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground bg-muted border border-border px-2.5 py-0.5 rounded-full">
-                              Released to Stock
-                            </span>
+                            <StatusBadge status="Released">Released to Stock</StatusBadge>
                           ) : isApproved ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground bg-muted border border-border px-2.5 py-0.5 rounded-full">
-                              Reserved &amp; Confirmed
-                            </span>
+                            <StatusBadge status="Reserved">Reserved &amp; Confirmed</StatusBadge>
                           ) : isPending ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground bg-muted border border-border px-2.5 py-0.5 rounded-full">
-                              Reserved (Pending)
-                            </span>
+                            <StatusBadge status="Pending">Reserved (Pending)</StatusBadge>
                           ) : hasShortfall ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-background bg-foreground border border-foreground px-2.5 py-0.5 rounded-full">
-                              Shortfall: {item.shortfallQuantity.toFixed(2)} {item.uomAbbr}
-                            </span>
+                            <StatusBadge status="Out of Stock">Shortfall: {item.shortfallQuantity.toFixed(2)} {item.uomAbbr}</StatusBadge>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground bg-muted border border-border px-2.5 py-0.5 rounded-full">
-                              Available
-                            </span>
+                            <StatusBadge status="Available">Available</StatusBadge>
                           )}
                         </td>
                       </tr>
@@ -1114,7 +1104,7 @@ export default function ProductionRequestModal({
                 type="button"
                 onClick={() => handleSubmit(true)}
                 disabled={submitting || !recipeId}
-                className="bg-foreground text-background font-semibold text-xs px-5 py-2 rounded-xl hover:bg-foreground/90 transition-colors shadow-sm"
+                className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm"
               >
                 {submitting
                   ? "Processing..."
@@ -1140,7 +1130,7 @@ export default function ProductionRequestModal({
                       type="button"
                       onClick={() => setActionModal({ open: true, type: "approve" })}
                       disabled={submitting}
-                      className="bg-foreground text-background font-semibold text-xs px-5 py-2 rounded-xl hover:bg-foreground/90 transition-colors shadow-sm cursor-pointer"
+                      className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
                     >
                       Approve Request
                     </Button>
@@ -1167,7 +1157,7 @@ export default function ProductionRequestModal({
                       onProceedToIssuance(initialRequest.prodReqId);
                       onClose();
                     }}
-                    className="bg-foreground text-background font-semibold text-xs px-5 py-2 rounded-xl hover:bg-foreground/90 transition-colors shadow-sm cursor-pointer"
+                    className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
                   >
                     Proceed to Material Issuance
                   </Button>
@@ -1183,7 +1173,7 @@ export default function ProductionRequestModal({
                         onClose();
                       }
                     }}
-                    className="bg-foreground text-background font-semibold text-xs px-5 py-2 rounded-xl hover:bg-foreground/90 transition-colors shadow-sm cursor-pointer"
+                    className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
                   >
                     Start Production
                   </Button>

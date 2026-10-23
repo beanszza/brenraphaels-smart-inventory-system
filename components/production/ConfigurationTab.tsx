@@ -461,7 +461,7 @@ export default function ConfigurationTab() {
           {/* "+ Add Product" button */}
           <Button
             onClick={handleOpenAddProduct}
-            className="flex items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-2 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Add Product
@@ -877,7 +877,7 @@ export default function ConfigurationTab() {
               <Button
                 type="submit"
                 disabled={submitting}
-                className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 cursor-pointer"
+                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               >
                 {submitting ? "Creating..." : "Save Product & Variations"}
               </Button>
@@ -1026,7 +1026,7 @@ export default function ConfigurationTab() {
               <Button
                 type="submit"
                 disabled={submitting}
-                className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 cursor-pointer"
+                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               >
                 {submitting ? "Adding..." : "Add Variant"}
               </Button>
@@ -1122,7 +1122,7 @@ export default function ConfigurationTab() {
               <Button
                 type="submit"
                 disabled={submitting}
-                className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 cursor-pointer"
+                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               >
                 {submitting ? "Saving..." : "Save Changes"}
               </Button>

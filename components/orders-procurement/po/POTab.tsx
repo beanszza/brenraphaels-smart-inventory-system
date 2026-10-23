@@ -193,7 +193,7 @@ export function POTab() {
             <Button
               type="button"
               onClick={() => setOpenCreateModal(true)}
-              className="flex items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm h-10"
+              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
             >
               <Plus className="w-4 h-4" /> Create Purchase Order
             </Button>
@@ -251,7 +251,7 @@ export function POTab() {
               onClick={() => { setActiveTab("Requests"); setPage(1); }}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === "Requests"
-                  ? "bg-foreground text-background shadow-sm"
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
             >
@@ -277,7 +277,7 @@ export function POTab() {
                 onClick={() => { setActiveTab(tab); setPage(1); }}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                   isSelected
-                    ? "bg-foreground text-background shadow-sm"
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >

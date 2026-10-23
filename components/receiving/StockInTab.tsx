@@ -133,7 +133,7 @@ export default function StockInTab() {
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
               activeSubTab === "pending"
-                ? "bg-foreground text-background"
+                ? "bg-primary text-primary-foreground"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -157,7 +157,7 @@ export default function StockInTab() {
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
               activeSubTab === "approved"
-                ? "bg-foreground text-background"
+                ? "bg-primary text-primary-foreground"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -181,7 +181,7 @@ export default function StockInTab() {
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
               activeSubTab === "committed"
-                ? "bg-foreground text-background"
+                ? "bg-primary text-primary-foreground"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -205,7 +205,7 @@ export default function StockInTab() {
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
               activeSubTab === "draft"
-                ? "bg-foreground text-background"
+                ? "bg-primary text-primary-foreground"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -229,7 +229,7 @@ export default function StockInTab() {
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
               activeSubTab === "rejected"
-                ? "bg-foreground text-background"
+                ? "bg-primary text-primary-foreground"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -261,7 +261,7 @@ export default function StockInTab() {
           <Button
             type="button"
             onClick={() => setCreateModalOpen(true)}
-            className="h-10 px-4 text-xs font-semibold rounded-xl bg-foreground text-background hover:bg-foreground/85 flex items-center gap-2 cursor-pointer shadow-xs"
+            className="h-10 px-4 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/85 flex items-center gap-2 cursor-pointer shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
             Create Stock-In

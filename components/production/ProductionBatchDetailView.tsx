@@ -1,5 +1,7 @@
 "use client";
 
+import { StatusBadge } from "@/components/shared/StatusBadge";
+
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle2, Package, AlertTriangle } from "lucide-react";
@@ -370,10 +372,7 @@ export default function ProductionBatchDetailView({
                 {batch.variant}
               </span>
             )}
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-foreground text-background">
-              <span className="w-1.5 h-1.5 rounded-full bg-background" />
-              {status === "For QA" ? "For QA" : status === "For Stock-in" ? "For Stock-in" : status}
-            </span>
+            <StatusBadge status={status} />
             <span className="text-xs font-mono font-bold text-muted-foreground">
               {batch.reqNumber || `PR-${batch.batchId}`}
             </span>
@@ -423,7 +422,7 @@ export default function ProductionBatchDetailView({
           }`}>
             <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
               currentStepIndex > 0
-                ? "bg-foreground text-background"
+                ? "bg-primary text-primary-foreground"
                 : "border-2 border-foreground text-foreground"
             }`}>
               {currentStepIndex > 0 ? "✓" : "1"}
@@ -499,9 +498,7 @@ export default function ProductionBatchDetailView({
                                 ✓ Done ({formatTo12Hour(stageLogs[stName].endTime)})
                               </span>
                             ) : isCurrent ? (
-                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-foreground text-background">
-                                Current Stage
-                              </span>
+                              <StatusBadge status="In Progress">Current Stage</StatusBadge>
                             ) : (
                               <span className="text-[11px] text-muted-foreground">• Waiting</span>
                             )}
@@ -555,7 +552,7 @@ export default function ProductionBatchDetailView({
                                       type="button"
                                       onClick={() => setStagePeriod("AM")}
                                       className={`px-2 py-1 text-[11px] font-bold cursor-pointer transition-colors ${
-                                        stagePeriod === "AM" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                                        stagePeriod === "AM" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
                                       }`}
                                     >
                                       AM
@@ -564,7 +561,7 @@ export default function ProductionBatchDetailView({
                                       type="button"
                                       onClick={() => setStagePeriod("PM")}
                                       className={`px-2 py-1 text-[11px] font-bold cursor-pointer transition-colors ${
-                                        stagePeriod === "PM" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                                        stagePeriod === "PM" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
                                       }`}
                                     >
                                       PM
@@ -592,7 +589,7 @@ export default function ProductionBatchDetailView({
                                 size="sm"
                                 onClick={() => setConfirmStageModal(true)}
                                 disabled={stageLoading}
-                                className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/85 cursor-pointer shadow-xs"
+                                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
                               >
                                 {stageLoading ? "Completing..." : `Complete ${stName} (${formattedStageEndTime})`}
                               </Button>
@@ -628,7 +625,7 @@ export default function ProductionBatchDetailView({
                     type="button"
                     onClick={handleProceedToPackaging}
                     disabled={stageLoading}
-                    className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/85 cursor-pointer shadow-xs"
+                    className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
                   >
                     Proceed to Packaging →
                   </Button>
@@ -747,7 +744,7 @@ export default function ProductionBatchDetailView({
                   type="button"
                   onClick={() => setConfirmPackagingModal(true)}
                   disabled={pkgLoading || !pkgPackedBy || !pkgProofUrl || pkgQuantity <= 0}
-                  className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/85 cursor-pointer shadow-xs"
+                  className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
                 >
                   Finish Packaging & Send to QA
                 </Button>
@@ -929,7 +926,7 @@ export default function ProductionBatchDetailView({
                 size="sm"
                 onClick={handleCompleteCurrentStage}
                 disabled={stageLoading}
-                className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/85 cursor-pointer shadow-xs"
+                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
               >
                 {stageLoading ? "Confirming..." : "Confirm & Proceed"}
               </Button>
@@ -982,7 +979,7 @@ export default function ProductionBatchDetailView({
                 size="sm"
                 onClick={handleFinishPackaging}
                 disabled={pkgLoading}
-                className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/85 cursor-pointer shadow-xs"
+                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
               >
                 {pkgLoading ? "Submitting..." : "Confirm & Send to QA"}
               </Button>

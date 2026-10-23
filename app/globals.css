@@ -1,125 +1,178 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
-/* ─────────────────────────────────────────────
-   MONOCHROMATIC DESIGN TOKEN SYSTEM
-   All colors use oklch with chroma=0 (greyscale).
-   Status semantics (success/warn/error) are
-   communicated via icon + greyscale shading only.
-───────────────────────────────────────────── */
 :root {
-  --radius: 0.5rem;
-
-  /* Core surface tokens */
-  --background:         oklch(0.988 0 0);
-  --foreground:         oklch(0.12 0 0);
-  --card:               oklch(1 0 0);
-  --card-foreground:    oklch(0.12 0 0);
-  --popover:            oklch(1 0 0);
-  --popover-foreground: oklch(0.12 0 0);
-
-  /* Interactive primary */
-  --primary:            oklch(0.14 0 0);
-  --primary-foreground: oklch(0.98 0 0);
-
-  /* Secondary surface */
-  --secondary:          oklch(0.945 0 0);
-  --secondary-foreground: oklch(0.14 0 0);
-
-  /* Muted */
-  --muted:              oklch(0.955 0 0);
-  --muted-foreground:   oklch(0.48 0 0);
-
-  /* Accent */
-  --accent:             oklch(0.94 0 0);
-  --accent-foreground:  oklch(0.14 0 0);
-
-  /* Destructive — vivid red for error validation and critical alerts */
-  --destructive:            oklch(0.577 0.245 27.325);
+  color-scheme: light;
+  --radius: 0.65rem;
+  --background: oklch(1 0 0);
+  --foreground: #1f1a2e;
+  --card: oklch(1 0 0);
+  --card-foreground: #1f1a2e;
+  --popover: oklch(1 0 0);
+  --popover-foreground: #1f1a2e;
+  --primary: #5b2a86;
+  --primary-foreground: #ffffff;
+  --secondary: #f7f5fa;
+  --secondary-foreground: #1f1a2e;
+  --muted: #f7f5fa;
+  --muted-foreground: #6e6680;
+  --accent: #efe6f8;
+  --accent-foreground: var(--primary);
+  --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
-
-  /* Semantic — monochromatic tinting for status */
-  --success:            oklch(0.28 0 0);
-  --success-foreground: oklch(0.98 0 0);
-  --warning:            oklch(0.50 0 0);
-  --warning-foreground: oklch(0.98 0 0);
-  --info:               oklch(0.42 0 0);
-  --info-foreground:    oklch(0.98 0 0);
-
-  /* Status badge tokens (greyscale tints) */
-  --badge-active:             oklch(0.14 0 0);
-  --badge-active-foreground:  oklch(0.98 0 0);
-  --badge-muted:              oklch(0.93 0 0);
-  --badge-muted-foreground:   oklch(0.42 0 0);
-  --badge-subtle:             oklch(0.87 0 0);
-  --badge-subtle-foreground:  oklch(0.25 0 0);
-  --badge-outline:            transparent;
-  --badge-outline-foreground: oklch(0.25 0 0);
-
-  /* Border / input / ring */
-  --border:  oklch(0.88 0 0);
-  --input:   oklch(0.88 0 0);
-  --ring:    oklch(0.62 0 0);
-
-  /* Chart — greyscale ramp */
-  --chart-1: oklch(0.14 0 0);
-  --chart-2: oklch(0.30 0 0);
-  --chart-3: oklch(0.48 0 0);
-  --chart-4: oklch(0.65 0 0);
-  --chart-5: oklch(0.80 0 0);
-
-  /* Sidebar */
-  --sidebar:                    oklch(0.975 0 0);
-  --sidebar-foreground:         oklch(0.12 0 0);
-  --sidebar-primary:            oklch(0.14 0 0);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent:             oklch(0.93 0 0);
-  --sidebar-accent-foreground:  oklch(0.14 0 0);
-  --sidebar-border:             oklch(0.88 0 0);
-  --sidebar-ring:               oklch(0.62 0 0);
-
-  /* Metric helpers */
+  --success: oklch(0.627 0.194 149.214);
+  --success-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.769 0.188 70.08);
+  --warning-foreground: oklch(0.145 0 0);
+  --info: oklch(0.6 0.118 184.704);
+  --info-foreground: oklch(0.985 0 0);
+  /* Badge-specific pastel tokens - separate from semantic alert/button colors */
+  --badge-success: oklch(0.94 0.05 149);
+  --badge-success-foreground: oklch(0.32 0.10 149);
+  --badge-warning: #fdf1d8;
+  --badge-warning-foreground: #8a5a00;
+  --badge-destructive: oklch(0.94 0.05 27);
+  --badge-destructive-foreground: oklch(0.40 0.14 27);
+  --badge-info: #e3eefb;
+  --badge-info-foreground: #1d4f91;
+  --badge-purple: var(--accent);
+  --badge-purple-foreground: var(--primary);
+  --badge-indigo: oklch(0.94 0.05 260);
+  --badge-indigo-foreground: oklch(0.35 0.12 260);
+  --badge-teal: oklch(0.94 0.05 170);
+  --badge-teal-foreground: oklch(0.33 0.10 170);
+  --badge-orange: oklch(0.95 0.06 45);
+  --badge-orange-foreground: oklch(0.40 0.14 45);
+  --badge-notification: #e5484d;
+  --badge-notification-foreground: #ffffff;
+  --badge-neutral: #eeecf2;
+  --badge-neutral-foreground: #5a5368;
+  --border: #e6e1ee;
+  --border-subtle: #efebf4;
+  --input: #e6e1ee;
+  --ring: var(--primary);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: #fafafa;
+  --sidebar-foreground: #3f3f46;
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #efeff1;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #ebebeb;
+  --sidebar-ring: var(--primary);
   --metric-positive: var(--success);
-  --metric-negative: oklch(0.38 0 0);
-  --metric-warning:  var(--warning);
+  --metric-negative: oklch(0.62 0.18 45);
+  --metric-warning: var(--warning);
+}
+
+/* CREOMS light tokens above; dark overrides follow the shared .dark theme. */
+.dark {
+  color-scheme: dark;
+  --background: #171320;
+  --foreground: #f3edf9;
+  --card: #211a2d;
+  --card-foreground: var(--foreground);
+  --popover: #211a2d;
+  --popover-foreground: var(--foreground);
+  --primary: #cba5ed;
+  --primary-foreground: #29123e;
+  --secondary: #2a2236;
+  --secondary-foreground: var(--foreground);
+  --muted: #2a2236;
+  --muted-foreground: #b5a9c5;
+  --accent: #382448;
+  --accent-foreground: #e2c4fa;
+  --destructive: #ff8b8b;
+  --destructive-foreground: #370b12;
+  --success: #73dda1;
+  --success-foreground: #092a19;
+  --warning: #f3ca77;
+  --warning-foreground: #352609;
+  --info: #83c9ed;
+  --info-foreground: #102b3a;
+  --badge-success: #153c2a;
+  --badge-success-foreground: #8fe0b0;
+  --badge-warning: #42331a;
+  --badge-warning-foreground: #f3ce88;
+  --badge-destructive: #481f29;
+  --badge-destructive-foreground: #ffadb3;
+  --badge-info: #1c304d;
+  --badge-info-foreground: #a7ceff;
+  --badge-purple: var(--accent);
+  --badge-purple-foreground: #e2c4fa;
+  --badge-indigo: #292b51;
+  --badge-indigo-foreground: #bec5ff;
+  --badge-teal: #153c38;
+  --badge-teal-foreground: #8be0cd;
+  --badge-orange: #472d1e;
+  --badge-orange-foreground: #ffc49a;
+  --badge-neutral: #30293c;
+  --badge-neutral-foreground: #c9bfd8;
+  --border: #41364e;
+  --border-subtle: #30273c;
+  --input: #41364e;
+  --sidebar: #1d1727;
+  --sidebar-foreground: #e1d8ec;
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: #30243e;
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: #3a3046;
 }
 
 @theme {
-  --color-background:         var(--background);
-  --color-foreground:         var(--foreground);
-  --color-card:               var(--card);
-  --color-card-foreground:    var(--card-foreground);
-  --color-popover:            var(--popover);
+  --color-metric-positive: var(--metric-positive);
+  --color-metric-negative: var(--metric-negative);
+  --color-metric-warning: var(--metric-warning);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --color-primary:            var(--primary);
+  --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-secondary:          var(--secondary);
+  --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted:              var(--muted);
-  --color-muted-foreground:   var(--muted-foreground);
-  --color-accent:             var(--accent);
-  --color-accent-foreground:  var(--accent-foreground);
-  --color-destructive:        var(--destructive);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --color-success:            var(--success);
+  --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
-  --color-warning:            var(--warning);
+  --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
-  --color-info:               var(--info);
-  --color-info-foreground:    var(--info-foreground);
-
-  /* Badge */
-  --color-badge-active:             var(--badge-active);
-  --color-badge-active-foreground:  var(--badge-active-foreground);
-  --color-badge-muted:              var(--badge-muted);
-  --color-badge-muted-foreground:   var(--badge-muted-foreground);
-  --color-badge-subtle:             var(--badge-subtle);
-  --color-badge-subtle-foreground:  var(--badge-subtle-foreground);
-  --color-badge-outline:            var(--badge-outline);
-  --color-badge-outline-foreground: var(--badge-outline-foreground);
-
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-badge-success: var(--badge-success);
+  --color-badge-success-foreground: var(--badge-success-foreground);
+  --color-badge-warning: var(--badge-warning);
+  --color-badge-warning-foreground: var(--badge-warning-foreground);
+  --color-badge-destructive: var(--badge-destructive);
+  --color-badge-destructive-foreground: var(--badge-destructive-foreground);
+  --color-badge-info: var(--badge-info);
+  --color-badge-info-foreground: var(--badge-info-foreground);
+  --color-badge-purple: var(--badge-purple);
+  --color-badge-purple-foreground: var(--badge-purple-foreground);
+  --color-badge-indigo: var(--badge-indigo);
+  --color-badge-indigo-foreground: var(--badge-indigo-foreground);
+  --color-badge-teal: var(--badge-teal);
+  --color-badge-teal-foreground: var(--badge-teal-foreground);
+  --color-badge-orange: var(--badge-orange);
+  --color-badge-orange-foreground: var(--badge-orange-foreground);
+  --color-badge-neutral: var(--badge-neutral);
+  --color-badge-neutral-foreground: var(--badge-neutral-foreground);
+  --color-badge-notification: var(--badge-notification);
+  --color-badge-notification-foreground: var(--badge-notification-foreground);
   --color-border: var(--border);
-  --color-input:  var(--input);
-  --color-ring:   var(--ring);
+  --color-border-subtle: var(--border-subtle);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -127,28 +180,24 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  --color-metric-positive: var(--metric-positive);
-  --color-metric-negative: var(--metric-negative);
-  --color-metric-warning:  var(--metric-warning);
-
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  --font-sans: "Segoe UI", Arial, ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   /* Spacing */
   --spacing-base: 4px;
-  --spacing-xs:   4px;
-  --spacing-sm:   8px;
-  --spacing-md:   16px;
-  --spacing-lg:   24px;
-  --spacing-xl:   32px;
-  --spacing-2xl:  48px;
-  --spacing-3xl:  64px;
-  --spacing-gutter:         24px;
-  --spacing-margin-mobile:  16px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+  --spacing-gutter: 24px;
+  --spacing-margin-mobile: 16px;
   --spacing-margin-desktop: 48px;
 }
 
@@ -163,7 +212,6 @@
   --color-sidebar-ring:               var(--sidebar-ring);
 }
 
-/* ─── Base ─── */
 body {
   background: var(--color-background);
   color: var(--color-foreground);

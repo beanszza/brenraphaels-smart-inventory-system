@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import { LotItem } from "./types";
 
 interface LotsTableProps {
@@ -9,14 +10,6 @@ interface LotsTableProps {
   pageSize: number;
 }
 
-const statusStyles: Record<string, { bg: string; text: string; border: string; label: string }> = {
-  Available: { bg: "bg-foreground text-background border-foreground", text: "font-semibold", border: "", label: "Available" },
-  Quarantine: { bg: "bg-muted/70 text-foreground border-muted-foreground/30", text: "font-semibold", border: "", label: "Quarantine" },
-  OnHold: { bg: "bg-muted/70 text-foreground border-muted-foreground/30", text: "font-semibold", border: "", label: "On Hold" },
-  Rejected: { bg: "bg-muted/30 text-muted-foreground border-border opacity-75", text: "", border: "", label: "Rejected" },
-  Consumed: { bg: "bg-muted/30 text-muted-foreground border-border opacity-75", text: "", border: "", label: "Consumed" },
-  Disposed: { bg: "bg-muted/30 text-muted-foreground border-border opacity-75", text: "", border: "", label: "Disposed" },
-};
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "-";
@@ -52,14 +45,10 @@ export default function LotsTable({ items, currentPage, pageSize }: LotsTablePro
             items.map((lot, idx) => {
               const resQty = Number(lot.reservedQuantity || 0);
 
-              let badgeStyle = statusStyles[lot.status] || statusStyles.Available;
-              let badgeLabel = badgeStyle.label;
-
+              let badgeLabel = lot.status;
               if (resQty >= lot.quantityRemaining && lot.quantityRemaining > 0) {
-                badgeStyle = { bg: "bg-foreground text-background border-foreground", text: "font-semibold", border: "", label: "Reserved" };
                 badgeLabel = "Reserved";
               } else if (resQty > 0) {
-                badgeStyle = { bg: "bg-muted text-foreground border-border", text: "font-semibold", border: "border", label: "Partially Reserved" };
                 badgeLabel = "Partially Reserved";
               }
 
@@ -94,9 +83,7 @@ export default function LotsTable({ items, currentPage, pageSize }: LotsTablePro
                     {resQty.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {lot.uomName}
                   </td>
                   <td className="px-3 py-3 text-center whitespace-nowrap">
-                    <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${badgeStyle.bg} ${badgeStyle.text} ${badgeStyle.border}`}>
-                      {badgeLabel}
-                    </span>
+                    <StatusBadge status={badgeLabel} />
                   </td>
                 </tr>
               );

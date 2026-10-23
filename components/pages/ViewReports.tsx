@@ -116,7 +116,7 @@ export default function ViewReports({ initialTab }: { initialTab: string }) {
         ) : error ? (
           <div className="p-4 bg-red-500/10 border !border-destructive/20 rounded-xl text-center">
             <p className="text-sm font-semibold text-red-600">{error}</p>
-            <Button onClick={fetchData} className="mt-3 text-xs bg-foreground text-background">Retry</Button>
+            <Button onClick={fetchData} className="mt-3 text-xs bg-primary text-primary-foreground">Retry</Button>
           </div>
         ) : (
           <div className="space-y-6">

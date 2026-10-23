@@ -236,7 +236,7 @@ export function STFDetailsModal({
                     onClose();
                     onDispatch(transfer);
                   }}
-                  className="rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm"
+                  className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm"
                 >
                   Dispatch Transfer
                 </button>

@@ -1007,7 +1007,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
                         <button
                           type="button"
                           onClick={() => addBatch(itemIndex)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
                         >
                           <Plus size={14} className="shrink-0" />
                           <span>Add Batch</span>
@@ -1113,14 +1113,14 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-3">
               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                step === 1 ? "bg-foreground text-background" : "bg-muted text-foreground"
+                step === 1 ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
               }`}>
                 <span>1</span>
                 <span>Receiving &amp; Physical Count</span>
               </div>
               <span className="text-muted-foreground">›</span>
               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                step === 2 ? "bg-foreground text-background" : "bg-muted/50 text-muted-foreground"
+                step === 2 ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground"
               }`}>
                 <span>2</span>
                 <span>Quality Assurance Inspection</span>
@@ -1305,7 +1305,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
                     type="button"
                     disabled={submitting || !isReadyForQa}
                     onClick={executeProceedToQa}
-                    className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    className="rounded-xl bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                   >
                     {submitting ? "Proceeding…" : "Proceed to Quality Assurance"}
                   </button>
@@ -1600,7 +1600,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
                     type="button"
                     disabled={!isQaDone || submitting}
                     onClick={() => setConfirmFinishGrnOpen(true)}
-                    className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    className="rounded-xl bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                   >
                     {submitting ? "Finishing Goods Receipt Note…" : "Finish Goods Receipt Note"}
                   </button>
@@ -1692,7 +1692,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
                   type="button"
                   disabled={!rejectionReason.trim() || submitting}
                   onClick={handleRejectShipment}
-                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-background bg-foreground hover:bg-foreground/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
                 >
                   {submitting ? "Rejecting…" : "Confirm Rejection"}
                 </button>
@@ -1754,7 +1754,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
                     setConfirmFinishGrnOpen(false);
                     executeFinishGrn();
                   }}
-                  className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50"
+                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50"
                 >
                   {submitting ? "Processing..." : "Confirm & Save"}
                 </button>
