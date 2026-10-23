@@ -18,6 +18,7 @@ export type NotificationInput = {
   type: string;
   title: string;
   body: string;
+  /** Must be an absolute URL; the notification service rejects relative paths. */
   link?: string;
 };
 
@@ -79,6 +80,8 @@ export const notificationGateway: NotificationGatewayPort = {
   },
 
   async markRead(userId, id) {
+    // Ids are UUIDs; anything else cannot exist, so there is nothing to mark.
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return;
     await call(`/${encodeURIComponent(id)}/read`, { method: "POST", body: Object.fromEntries(inbox(userId)) });
   },
 
