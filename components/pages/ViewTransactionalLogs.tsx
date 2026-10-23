@@ -2,12 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import api from "@/lib/api";
 import AuditLogsFilterBar from "@/components/pages/AuditLogsFilterBar";
 import AuditLogsTable, { LogEntry } from "@/components/pages/AuditLogsTable";
-import { useAuth } from "@/context/AuthContext";
 
 const parseLogTime = (ts: string): number => {
   if (!ts) return 0;
@@ -22,38 +19,13 @@ const parseLogTime = (ts: string): number => {
   return 0;
 };
 
-const fetchLogs = async (type: string | null): Promise<LogEntry[]> => {
-  const moduleType = type?.toLowerCase() || "supply";
-  try {
-    const response = await api.get(`/api/audit-logs?type=${moduleType}`);
-    const resData = response.data;
-    let list: LogEntry[] = [];
-    if (Array.isArray(resData)) list = resData;
-    else if (resData?.data && Array.isArray(resData.data)) list = resData.data;
-
-    // Strict descending sort so newest records always appear at the top
-    return [...list].sort((a, b) => parseLogTime(b.timestamp) - parseLogTime(a.timestamp));
-  } catch (e) {
-    console.error("Failed to fetch logs:", e);
-  }
-  return [];
-};
-
-export default function ViewTransactionalLogs() {
+export default function ViewTransactionalLogs({ initialLogs }: { initialLogs: LogEntry[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const typeParam = searchParams?.get("type") || "Supply";
-  const { user, isLoading } = useAuth() || {};
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/");
-    }
-  }, [user, isLoading, router]);
-
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [title, setTitle] = useState("");
+  const logs = initialLogs;
+  const formattedType = typeParam.charAt(0).toUpperCase() + typeParam.slice(1).toLowerCase();
+  const title = `${formattedType} Transactional Audit Logs`;
 
   const [filterMode, setFilterMode] = useState<"all" | "specific" | "range">("all");
   const [specificDate, setSpecificDate] = useState("");
@@ -61,16 +33,6 @@ export default function ViewTransactionalLogs() {
   const [endDate, setEndDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-
-  useEffect(() => {
-    const formattedType = typeParam.charAt(0).toUpperCase() + typeParam.slice(1).toLowerCase();
-    setTitle(`${formattedType} Transactional Audit Logs`);
-    setLoading(true);
-    fetchLogs(typeParam).then((data) => {
-      setLogs(data);
-      setLoading(false);
-    });
-  }, [typeParam]);
 
   useEffect(() => { setCurrentPage(1); }, [searchQuery, filterMode, specificDate, startDate, endDate]);
 
@@ -160,14 +122,7 @@ export default function ViewTransactionalLogs() {
           searchQuery={searchQuery} setSearchQuery={setSearchQuery} onResetFilters={handleResetFilters} onExportCSV={handleExportCSV}
         />
 
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="animate-spin text-foreground" size={32} />
-            <span className="ml-3 text-muted-foreground font-medium">Fetching transaction audit logs...</span>
-          </div>
-        ) : (
-          <AuditLogsTable logs={filteredLogs} currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        )}
+        <AuditLogsTable logs={filteredLogs} currentPage={currentPage} setCurrentPage={setCurrentPage} />
       </div>
     </div>
   );
