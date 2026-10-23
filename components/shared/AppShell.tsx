@@ -5,6 +5,7 @@ import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { MobileNav } from "./MobileNav";
+import type { Module } from "@/lib/portal/config";
 
 function MainContent({ children }: { children: React.ReactNode }) {
   const { open } = useSidebar();
@@ -33,12 +34,18 @@ function MainContent({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  modules,
+  children,
+}: {
+  modules: Module[];
+  children: React.ReactNode;
+}) {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex min-h-screen w-full bg-background text-foreground relative">
         {/* Sidebar Shell */}
-        <Sidebar />
+        <Sidebar modules={modules} />
 
         {/* Content Area Container */}
         <MainContent>{children}</MainContent>
