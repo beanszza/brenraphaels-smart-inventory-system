@@ -22,6 +22,8 @@ export interface NavItem {
   href: string;
   icon: LucideIcon;
   group?: string;
+  /** The Module Staff must hold to open this item. */
+  module?: Module;
 }
 
 export interface NavGroup {
@@ -49,18 +51,18 @@ export const navGroups: NavGroup[] = [
   {
     label: "Core",
     items: [
-      { name: "Dashboard",            href: "/",                    icon: LayoutDashboard },
-      { name: "Resources & Suppliers", href: "/resources-suppliers", icon: Warehouse },
-      { name: "Orders & Procurement", href: "/orders-procurement",  icon: ShoppingCart },
+      { name: "Dashboard",            href: "/",                    icon: LayoutDashboard, module: "Dashboard" },
+      { name: "Resources & Suppliers", href: "/resources-suppliers", icon: Warehouse, module: "Resources & Suppliers" },
+      { name: "Orders & Procurement", href: "/orders-procurement",  icon: ShoppingCart, module: "Orders & Procurement" },
     ],
   },
   {
     label: "Operations",
     items: [
-      { name: "Goods Receiving",      href: "/goods-receiving",     icon: PackageCheck },
-      { name: "Inventory",            href: "/inventory",           icon: Boxes },
-      { name: "Production & Quality", href: "/production-quality",  icon: Building2 },
-      { name: "Stock Transfer",       href: "/stock-transfer",      icon: Truck },
+      { name: "Goods Receiving",      href: "/goods-receiving",     icon: PackageCheck, module: "Goods Receiving" },
+      { name: "Inventory",            href: "/inventory",           icon: Boxes, module: "Inventory" },
+      { name: "Production & Quality", href: "/production-quality",  icon: Building2, module: "Production & Quality" },
+      { name: "Stock Transfer",       href: "/stock-transfer",      icon: Truck, module: "Stock Transfer" },
     ],
   },
 ];
@@ -70,7 +72,7 @@ export function visibleNavGroups(modules: readonly Module[]): NavGroup[] {
   return navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => modules.includes(item.name as Module)),
+      items: group.items.filter((item) => item.module && modules.includes(item.module)),
     }))
     .filter((group) => group.items.length > 0);
 }
@@ -92,9 +94,9 @@ export function moduleForPath(pathname: string): Module | undefined {
   if (path === "/") return "Dashboard";
   const owns = (href: string) => path === href || path.startsWith(`${href}/`);
   const listed = mainNavItems.find((item) => item.href !== "/" && owns(item.href));
-  if (listed) return listed.name as Module;
-  const unlisted = Object.keys(unlistedRoutes).find(owns);
-  return unlisted ? unlistedRoutes[unlisted] : undefined;
+  if (listed) return listed.module;
+  const unlistedHref = Object.keys(unlistedRoutes).find(owns);
+  return unlistedHref ? unlistedRoutes[unlistedHref] : undefined;
 }
 
 /** Flat list of all nav items for breadcrumb lookups */

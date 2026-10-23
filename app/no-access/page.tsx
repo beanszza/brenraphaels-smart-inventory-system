@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { LOGOUT_PATH } from "@/lib/portal/config";
 
 export default function NoAccessPage() {
@@ -10,7 +9,6 @@ export default function NoAccessPage() {
         to grant it, then sign in again.
       </p>
       <div className="flex items-center gap-4 text-sm font-medium">
-        <Link href="/" className="underline">Back to Dashboard</Link>
         <form action={LOGOUT_PATH} method="post">
           <button type="submit" className="underline">Sign out</button>
         </form>
