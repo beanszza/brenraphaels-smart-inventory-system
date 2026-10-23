@@ -251,7 +251,9 @@ warn 'Registration replaces ALL IMS callbacks and immediately invalidates the ol
 say 'If you already have the current secret and both callbacks are registered, skip the command and paste that secret.'
 say 'Otherwise coordinate the rotation with every IMS deployment using this Portal database.'
 must_confirm 'Ready to register or reuse the current registration?'
-step "Run in the Portal repo: npm run system:register -- IMS $IMS_LOCAL_APP_URL/api/portal/callback $IMS_APP_URL/api/portal/callback"
+printf -v registration_command 'npm run system:register -- IMS %q %q' \
+  "$IMS_LOCAL_APP_URL/api/portal/callback" "$IMS_APP_URL/api/portal/callback"
+step "Run in the Portal repo: $registration_command"
 step 'The backend secret is shown once. Paste only that value below; the wizard hides it.'
 capture_secret PORTAL_SYSTEM_SECRET '^iss_[A-Za-z0-9_-]{43}$'
 check portal
@@ -305,4 +307,3 @@ say 'Tickets #5 and #11 will consume these values; this ticket does not enable s
 say 'After #5, verify real handoff from the Portal using both registered callbacks. This probe checked credentials only.'
 must_confirm 'Have you saved the deployment values in the intended secret store?'
 finish
-
