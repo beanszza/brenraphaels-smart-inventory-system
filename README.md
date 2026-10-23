@@ -1,5 +1,49 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## IMS operator setup
+
+Run the repeatable wizard in a private interactive terminal with Bash and Node 24+:
+
+```bash
+bash scripts/setup-ims.sh
+```
+
+The five stages collect trusted addresses, register IMS with the Portal, guide audit-key creation,
+configure the gateway Callers, and record the deployment values. You need operator access to the
+Portal repository/database, audit-logs repository/owner database, gateway Worker and IMS hosting project.
+The wizard uses the services' existing operator commands; it does not apply database migrations.
+Portal Module/seed changes belong to ticket #2.
+
+IMS credentials are saved only in ignored `.env.local` with mode `600`; atomic updates temporarily
+copy that file into a private ignored `.ims-setup.*` directory beside it, deleted on exit.
+Audit keys go directly into the gateway's `CALLERS` secret through your password manager.
+Do not record the session or enable shell tracing. If forcibly terminated, remove any leftover
+`.ims-setup.*` directory securely. Existing credentials can be reused on reruns; Portal registration
+rotates its secret and replaces the entire callback list, so run it only when needed.
+
+The gateway needs two Callers because each holds one scoped audit key:
+
+| Caller | Audit scope | IMS environment variable |
+| --- | --- | --- |
+| `ims` | `write:IMS` | `IMS_GATEWAY_CALLER_KEY` |
+| `ims-audit-read` | `read:admin` | `IMS_GATEWAY_AUDIT_READ_CALLER_KEY` |
+
+Both use `app: IMS` and `systemCode: IMS`. Preserve every other Caller when updating `CALLERS`.
+The read credential can read all Sources, so keep it server-side and restrict the logs page to IMS
+events in ticket #11. Audit API keys themselves never belong in the IMS environment.
+
+See [.env.example](.env.example) for every current IMS variable and the Portal/gateway setup contract
+for tickets #5 and #11. Those features are not enabled by running this wizard alone. After #5,
+verify real sign-in with both registered callbacks. For local development, set `IMS_APP_URL` to
+`https://localhost:3003`; production uses the stable deployed domain. Preview sign-in is unsupported.
+The credential probes refuse redirects, discard response data and do not create sessions or Audit events.
+You can rerun them after changing deployment configuration:
+
+```bash
+node scripts/ims-setup.mjs portal .env.local
+node scripts/ims-setup.mjs gateway .env.local
+```
+
 ## Getting Started
 
 First, run the development server:
