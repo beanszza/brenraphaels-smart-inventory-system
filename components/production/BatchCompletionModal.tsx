@@ -211,7 +211,7 @@ export default function BatchCompletionModal({
           <Button
             type="submit"
             disabled={submitting}
-            className="bg-foreground text-background font-semibold text-xs px-6 py-2 rounded-xl hover:bg-foreground/90 transition-colors shadow-sm"
+            className="bg-primary text-primary-foreground font-semibold text-xs px-6 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm"
           >
             {submitting ? "Finalizing..." : "Complete Batch & Stock In FG"}
           </Button>

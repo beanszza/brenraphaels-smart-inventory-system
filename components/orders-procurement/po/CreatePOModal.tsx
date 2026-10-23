@@ -417,7 +417,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
                     step > s ? "cursor-pointer hover:bg-muted/80" : ""
                   } ${
                     step === s
-                      ? "bg-foreground text-background"
+                      ? "bg-primary text-primary-foreground"
                       : step > s
                       ? "bg-muted text-foreground"
                       : "text-muted-foreground"
@@ -428,7 +428,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
                       step === s
                         ? "bg-background text-foreground"
                         : step > s
-                        ? "bg-foreground text-background"
+                        ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
@@ -935,7 +935,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
                 onClick={() => {
                   if (validate()) setConfirmModal("Pending Approval");
                 }}
-                className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               >
                 {submitting
                   ? "Submitting..."
@@ -1019,7 +1019,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
                   setConfirmModal(null);
                   await handleSubmit(action);
                 }}
-                className="rounded-xl px-6 shadow-sm bg-foreground text-background hover:bg-foreground/85"
+                className="rounded-xl px-6 shadow-sm bg-primary text-primary-foreground hover:bg-primary/85"
               >
                 {submitting
                   ? "Processing..."

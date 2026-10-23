@@ -173,7 +173,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
             type="button"
             onClick={handleStartInspection}
             disabled={!selected || searching}
-            className="inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {searching ? "Finding Inspection…" : "Start Quality Assurance Inspection"}
           </button>

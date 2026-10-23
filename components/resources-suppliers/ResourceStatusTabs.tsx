@@ -31,7 +31,7 @@ export default function ResourceStatusTabs({ value, onChange, counts }: Resource
               aria-pressed={isSelected}
               className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
                 isSelected
-                  ? "bg-foreground text-background shadow-sm"
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               }`}
             >

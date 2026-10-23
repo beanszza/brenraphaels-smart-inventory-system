@@ -86,7 +86,7 @@ export function Sidebar() {
                       <h1 className="text-[13px] font-bold tracking-tight text-sidebar-foreground truncate leading-tight">
                         Bren Raphael&apos;s
                       </h1>
-                      <span className="text-[10px] font-semibold bg-foreground text-background px-1.5 py-0.5 rounded w-fit leading-tight tracking-wide uppercase">
+                      <span className="text-[10px] font-semibold bg-primary text-primary-foreground px-1.5 py-0.5 rounded w-fit leading-tight tracking-wide uppercase">
                         Supply Chain
                       </span>
                     </div>
@@ -170,7 +170,7 @@ export function Sidebar() {
                           isActive={isActive}
                           className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
                             isActive
-                              ? "bg-foreground text-background"
+                              ? "bg-primary text-primary-foreground"
                               : "text-sidebar-foreground hover:bg-sidebar-accent"
                           }`}
                         >
@@ -198,7 +198,7 @@ export function Sidebar() {
                   isActive={isSettingsActive}
                   className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
                     isSettingsActive
-                      ? "bg-foreground text-background"
+                      ? "bg-primary text-primary-foreground"
                       : "text-sidebar-foreground hover:bg-sidebar-accent"
                   }`}
                 >

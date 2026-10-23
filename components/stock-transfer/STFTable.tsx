@@ -119,7 +119,7 @@ export function STFTable({
                               type="button"
                               onClick={() => onDispatch(st)}
                               title="Dispatch Transfer"
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-foreground text-background text-xs font-semibold hover:bg-foreground/85 transition-colors shadow-xs"
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/85 transition-colors shadow-xs"
                             >
                               <Truck className="w-3.5 h-3.5" />
                               <span>Dispatch</span>

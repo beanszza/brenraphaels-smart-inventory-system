@@ -311,7 +311,7 @@ export default function QrScannerModal({
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border bg-muted/30">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center font-bold text-xs shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shrink-0">
               <Camera size={16} />
             </div>
             <div>
@@ -361,7 +361,7 @@ export default function QrScannerModal({
                   </Button>
                   <Button
                     onClick={handleRescan}
-                    className="bg-foreground text-background hover:bg-foreground/90 font-semibold text-xs px-5 py-2 rounded-xl transition-colors shadow-sm cursor-pointer"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs px-5 py-2 rounded-xl transition-colors shadow-sm cursor-pointer"
                   >
                     <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Rescan
                   </Button>
@@ -432,7 +432,7 @@ export default function QrScannerModal({
             {/* 5. Success Overlay */}
             {scanStatus === "success" && (
               <div className="absolute inset-0 bg-background/95 backdrop-blur-xs flex flex-col items-center justify-center gap-2 animate-in fade-in z-20">
-                <div className="w-12 h-12 rounded-full bg-foreground text-background flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
                   <CheckCircle2 className="w-7 h-7" />
                 </div>
                 <p className="text-sm font-bold text-foreground">Lot Verified Successfully!</p>
@@ -468,7 +468,7 @@ export default function QrScannerModal({
               />
               <Button
                 onClick={() => verifyLot(manualCode)}
-                className="h-9 px-4 text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 shrink-0 cursor-pointer"
+                className="h-9 px-4 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 cursor-pointer"
               >
                 Verify
               </Button>
@@ -501,7 +501,7 @@ export default function QrScannerModal({
               <Button
                 size="sm"
                 onClick={handleRescan}
-                className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 cursor-pointer"
+                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Rescan
               </Button>

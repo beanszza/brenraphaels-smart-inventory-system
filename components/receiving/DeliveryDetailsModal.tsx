@@ -199,7 +199,7 @@ export default function DeliveryDetailsModal({
               onClose();
               onCreateGrn(delivery.deliveryId);
             }}
-            className="rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Create Goods Receipt Note for this Delivery
           </button>

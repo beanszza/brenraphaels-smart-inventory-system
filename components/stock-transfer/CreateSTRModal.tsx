@@ -547,7 +547,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 rounded-xl bg-foreground px-6 py-2.5 text-xs font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
             >
               {loading ? "Submitting..." : "Submit Request"}
             </button>

@@ -422,7 +422,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
               >
                 Close
               </button>
@@ -440,7 +440,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                   type="button"
                   onClick={handleSubmit}
                   disabled={submitting || mismatch || missingDefectReasons}
-                  className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
                   {submitting ? "Submitting..." : "Complete Quality Assurance Inspection"}
                 </button>
@@ -505,7 +505,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                     type="button"
                     disabled={submitting}
                     onClick={executeSubmit}
-                    className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50"
                   >
                     {submitting ? "Processing..." : "Confirm & Save"}
                   </button>

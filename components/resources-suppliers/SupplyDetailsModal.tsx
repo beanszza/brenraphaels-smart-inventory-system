@@ -111,17 +111,6 @@ export default function SupplyDetailsModal({
 
   const stockLabel = isLowStock ? "Low Stock" : isOverStock ? "Overstock" : "Normal";
 
-  const statusBadge = (status: string) => {
-    const s = status.toLowerCase();
-    const base = "inline-flex px-2 py-0.5 rounded text-[10px] font-semibold border";
-    if (s === "delivered" || s === "completed" || s === "received")
-      return `${base} bg-foreground/10 text-foreground border-foreground/20`;
-    if (s === "pending" || s === "draft" || s === "approved")
-      return `${base} bg-muted text-muted-foreground border-border`;
-    if (s === "cancelled" || s === "rejected")
-      return `${base} bg-muted/60 text-muted-foreground border-border line-through`;
-    return `${base} bg-muted text-muted-foreground border-border`;
-  };
 
   return (
     <ModalWrapper
@@ -299,7 +288,7 @@ export default function SupplyDetailsModal({
                           })}
                         </td>
                         <td className="px-3 py-2.5">
-                          <span className={statusBadge(order.status)}>{order.status}</span>
+                          <StatusBadge status={order.status} />
                         </td>
                         <td className="px-3 py-2.5 text-right font-semibold text-foreground">
                           {order.quantity} {order.uomName}
@@ -329,7 +318,7 @@ export default function SupplyDetailsModal({
                 onClose();
                 onEdit(item);
               }}
-              className="rounded-xl bg-foreground text-background px-5 py-2 text-sm font-semibold hover:bg-foreground/85 transition-colors"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors"
             >
               Edit Item
             </button>

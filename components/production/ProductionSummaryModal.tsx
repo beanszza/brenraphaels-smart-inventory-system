@@ -37,7 +37,7 @@ export default function ProductionSummaryModal({
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border bg-muted/20">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
               <FileText size={16} />
             </div>
             <div>
@@ -102,7 +102,7 @@ export default function ProductionSummaryModal({
           {/* Finished Product Lot & Expiry Banner */}
           <div className="p-4 rounded-xl border border-foreground/30 bg-muted/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-foreground text-background flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0">
                 <Package size={18} />
               </div>
               <div>
@@ -180,7 +180,7 @@ export default function ProductionSummaryModal({
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-foreground">{log.stageName}</span>
-                    <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-foreground text-background">
+                    <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-primary text-primary-foreground">
                       Done
                     </span>
                   </div>

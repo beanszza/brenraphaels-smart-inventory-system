@@ -324,7 +324,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
             type="button"
             disabled={lines.length === 0 || submitting}
             onClick={() => handleTrySubmit(true)}
-            className="rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
           >
             {submitting ? "Committing…" : "Commit to Inventory"}
           </button>
@@ -380,7 +380,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
                     type="button"
                     disabled={submitting}
                     onClick={() => executeSubmit(confirmModal.submitForApproval)}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-foreground text-background hover:bg-foreground/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     {submitting ? "Processing…" : "Confirm"}
                   </button>

@@ -283,7 +283,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     onClick={handleCreateLossReport}
                     disabled={submitting}
-                    className="bg-foreground text-background rounded-lg px-4 py-1.5 text-xs font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="bg-primary text-primary-foreground rounded-lg px-4 py-1.5 text-xs font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {submitting ? "Writing Off..." : "Confirm Loss Report"}
                   </button>
@@ -347,7 +347,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     onClick={handleCreateRtv}
                     disabled={submitting}
-                    className="bg-foreground text-background rounded-lg px-4 py-1.5 text-xs font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="bg-primary text-primary-foreground rounded-lg px-4 py-1.5 text-xs font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {submitting ? "Submitting..." : "Submit Return Request"}
                   </button>
@@ -404,7 +404,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("loss")}
-                    className="rounded-xl bg-foreground text-background px-4 py-2.5 text-xs font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    className="rounded-xl bg-primary text-primary-foreground px-4 py-2.5 text-xs font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                   >
                     Create Loss Report
                   </button>
@@ -426,7 +426,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("rtv")}
-                    className="rounded-xl bg-foreground text-background px-4 py-2.5 text-xs font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    className="rounded-xl bg-primary text-primary-foreground px-4 py-2.5 text-xs font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                   >
                     Request Return to Supplier
                   </button>
@@ -453,7 +453,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("rtv")}
-                    className="rounded-xl bg-foreground text-background px-4 py-2.5 text-xs font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    className="rounded-xl bg-primary text-primary-foreground px-4 py-2.5 text-xs font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                   >
                     Request Return to Supplier
                   </button>

@@ -1,5 +1,7 @@
 "use client";
 
+import { StatusBadge } from "@/components/shared/StatusBadge";
+
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { MoreHorizontal, Eye, Pencil, Truck, XCircle, CheckCircle } from "lucide-react";
@@ -59,14 +61,7 @@ export default function StockTransferTable({ transfers, onDispatchClick, onCompl
                 <td className="px-4 py-3 text-foreground">{t.quantity}</td>
                 <td className="px-4 py-3 text-foreground">{t.date}</td>
                 <td className="px-4 py-3">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                    t.status === "Completed" ? "bg-foreground text-background border-foreground font-bold" :
-                    t.status === "In Transit" ? "bg-foreground text-background border-foreground font-bold" :
-                    t.status === "Cancelled" ? "bg-muted/30 text-muted-foreground border-border opacity-75" :
-                    "bg-muted/70 text-foreground border-muted-foreground/30"
-                  }`}>
-                    {t.status}
-                  </span>
+                  <StatusBadge status={t.status} />
                 </td>
                 <td className="px-4 py-3 text-center relative">
                   <div className="relative inline-block text-center">

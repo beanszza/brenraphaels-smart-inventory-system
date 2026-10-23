@@ -1,5 +1,6 @@
 "use client";
 
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "./ModalWrapper";
@@ -94,13 +95,6 @@ export default function SupplierDetailsModal({
 
   if (!supplier) return null;
 
-  const statusColor = (status: string) => {
-    const s = status.toLowerCase();
-    if (s === "delivered" || s === "completed" || s === "received") return "text-foreground bg-muted border-border";
-    if (s === "pending" || s === "draft") return "text-muted-foreground bg-muted/50 border-border";
-    if (s === "cancelled" || s === "rejected") return "text-muted-foreground bg-muted/30 border-border line-through";
-    return "text-muted-foreground bg-muted border-border";
-  };
 
   return (
     <ModalWrapper
@@ -179,9 +173,7 @@ export default function SupplierDetailsModal({
                       </td>
                       <td className="px-2.5 py-2.5">
                         {ci.isPreferred && (
-                          <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-foreground border border-border">
-                            ★ Preferred
-                          </span>
+                          <StatusBadge status="Preferred" />
                         )}
                       </td>
                     </tr>
@@ -225,9 +217,7 @@ export default function SupplierDetailsModal({
                       <td className="px-2.5 py-2.5 font-mono font-semibold text-foreground">{order.poNumber}</td>
                       <td className="px-2.5 py-2.5 text-muted-foreground">{formatDate(order.orderDate)}</td>
                       <td className="px-2.5 py-2.5">
-                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-semibold border ${statusColor(order.status)}`}>
-                          {order.status}
-                        </span>
+                        <StatusBadge status={order.status} />
                       </td>
                       <td className="px-2.5 py-2.5 text-right text-muted-foreground">
                         {order.itemCount} item{order.itemCount !== 1 ? "s" : ""}
@@ -247,7 +237,7 @@ export default function SupplierDetailsModal({
           <Button
             variant="outline"
             onClick={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors"
+            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             Close
           </Button>

@@ -326,7 +326,7 @@ export function MarkArrivedModal({
           <Button
             type="submit"
             disabled={submitting || !isFormValid}
-            className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             {submitting ? "Confirming..." : "Confirm Arrival"}
           </Button>
