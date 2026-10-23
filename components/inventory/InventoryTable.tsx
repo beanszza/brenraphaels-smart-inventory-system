@@ -260,7 +260,7 @@ export default function InventoryTable({
                             e.stopPropagation();
                             onOrderNow?.(item);
                           }}
-                          className="h-7 px-3 text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 transition-colors cursor-pointer shadow-xs"
+                          className="h-7 px-3 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer shadow-xs"
                         >
                           Order Now
                         </Button>

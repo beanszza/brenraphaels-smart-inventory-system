@@ -294,7 +294,7 @@ export function MarkDispatchedModal({
           <Button
             type="submit"
             disabled={submitting || !dispatchAttachmentBase64}
-            className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50"
+            className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50"
           >
             {submitting ? "Dispatching..." : "Dispatch"}
           </Button>
@@ -348,7 +348,7 @@ export function MarkDispatchedModal({
                   setConfirmModal(false);
                   handleSubmit();
                 }}
-                className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85"
                 disabled={submitting}
               >
                 {submitting ? "Dispatching..." : "Confirm Dispatch"}

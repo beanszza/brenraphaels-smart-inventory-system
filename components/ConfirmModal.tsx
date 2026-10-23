@@ -30,8 +30,8 @@ export default function ConfirmModal({ message, onConfirm, onCancel }: ConfirmMo
           <h2 className="text-xl font-bold text-foreground mb-2">Confirmation Required</h2>
           <p className="text-sm text-muted-foreground mb-6">{message}</p>
           <div className="flex justify-center gap-3 w-full">
-            <button onClick={onCancel} className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-foreground hover:text-background rounded-xl transition-colors">Cancel</button>
-            <button onClick={onConfirm} className="flex-1 px-5 py-2.5 text-sm font-semibold text-background bg-foreground hover:bg-foreground/85 rounded-xl transition-colors">Confirm</button>
+            <button onClick={onCancel} className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-primary hover:text-primary-foreground rounded-xl transition-colors">Cancel</button>
+            <button onClick={onConfirm} className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors">Confirm</button>
           </div>
         </div>
       </div>

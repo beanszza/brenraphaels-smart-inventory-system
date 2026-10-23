@@ -220,7 +220,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
           </Button>
           <Button
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
           >
             <Plus size={16} /> Create Stock-In
           </Button>
@@ -265,7 +265,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
           onClick={() => setSubTab("all")}
           className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
             subTab === "all"
-              ? "bg-foreground text-background shadow-sm"
+              ? "bg-primary text-primary-foreground shadow-sm"
               : "border border-border/80 bg-card text-muted-foreground hover:bg-muted"
           }`}
         >
@@ -284,7 +284,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
           onClick={() => setSubTab("pending")}
           className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
             subTab === "pending"
-              ? "bg-foreground text-background shadow-sm"
+              ? "bg-primary text-primary-foreground shadow-sm"
               : "border border-border/80 bg-card text-muted-foreground hover:bg-muted"
           }`}
         >
@@ -303,7 +303,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
           onClick={() => setSubTab("history")}
           className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
             subTab === "history"
-              ? "bg-foreground text-background shadow-sm"
+              ? "bg-primary text-primary-foreground shadow-sm"
               : "border border-border/80 bg-card text-muted-foreground hover:bg-muted"
           }`}
         >
@@ -545,7 +545,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
                     type="button"
                     disabled={committing || selectedBatchInModal.status !== "For Stock-in"}
                     onClick={handleCommitStockIn}
-                    className="rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {committing
                       ? "Committing..."

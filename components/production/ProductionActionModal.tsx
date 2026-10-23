@@ -137,7 +137,7 @@ export function ProductionActionModal({
               type="button"
               onClick={handleConfirm}
               disabled={loading}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-background bg-foreground hover:bg-foreground/85 rounded-xl transition-colors shadow-sm cursor-pointer"
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors shadow-sm cursor-pointer"
             >
               {loading ? "Confirming..." : isReject ? "Confirm Rejection" : "Confirm Approval"}
             </Button>

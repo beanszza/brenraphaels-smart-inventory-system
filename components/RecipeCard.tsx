@@ -1,5 +1,7 @@
 "use client";
 
+import { StatusBadge } from "@/components/shared/StatusBadge";
+
 import { Pencil } from "lucide-react";
 
 export default function RecipeCard() {
@@ -15,9 +17,7 @@ export default function RecipeCard() {
               Ube Halaya (500g Jar)
             </h2>
 
-            <span className="inline-flex items-center bg-foreground text-background border border-foreground px-3 py-1 rounded-full text-xs font-semibold">
-              Active
-            </span>
+            <StatusBadge status="Active">Active</StatusBadge>
           </div>
 
           <p className="text-sm text-muted-foreground mt-2">

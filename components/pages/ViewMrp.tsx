@@ -50,26 +50,8 @@ interface Recipe {
   recipeName: string;
 }
 
-const URGENCY_TIER: Record<string, string> = {
-  Critical: "active",
-  High:     "subtle",
-  Normal:   "muted",
-  None:     "outline",
-};
-
 function UrgencyBadge({ urgency }: { urgency: string }) {
-  const tier = URGENCY_TIER[urgency] || "muted";
-  const cls: Record<string, string> = {
-    active:  "bg-foreground text-background border-transparent",
-    subtle:  "bg-badge-subtle text-badge-subtle-foreground border-transparent",
-    muted:   "bg-badge-muted text-badge-muted-foreground border-transparent",
-    outline: "bg-transparent text-muted-foreground border-border",
-  };
-  return (
-    <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-md border ${cls[tier]}`}>
-      {urgency}
-    </span>
-  );
+  return <StatusBadge status={urgency} />;
 }
 
 export default function ViewMrp() {

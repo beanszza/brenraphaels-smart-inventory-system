@@ -127,7 +127,7 @@ export default function AuditLogsTable({
                           type="button"
                           onClick={() => setSelectedLog(log)}
                           title="Click to view full event details"
-                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-muted/80 text-foreground border border-border hover:bg-foreground hover:text-background hover:border-foreground transition-all cursor-pointer shadow-xs group/btn"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-muted/80 text-foreground border border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer shadow-xs group/btn"
                         >
                           {getActivityIcon(log.activity)}
                           <span>{activitySummary.label}</span>

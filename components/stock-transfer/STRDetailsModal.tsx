@@ -223,13 +223,13 @@ export function STRDetailsModal({
                           </td>
                           <td className="px-5 py-4 whitespace-nowrap">
                             {item.isInsufficient ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-destructive/10 text-destructive border border-destructive/20">
+                              <StatusBadge status="Shortage" className="gap-1">
                                 <AlertCircle className="w-3 h-3" /> Shortage
-                              </span>
+                              </StatusBadge>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-foreground/10 text-foreground">
-                                <CheckCircle className="w-3 h-3 text-foreground" /> In Stock
-                              </span>
+                              <StatusBadge status="In Stock" className="gap-1">
+                                <CheckCircle className="w-3 h-3" /> In Stock
+                              </StatusBadge>
                             )}
                           </td>
                         </tr>
@@ -308,7 +308,7 @@ export function STRDetailsModal({
                       onClose();
                       onApprove(request);
                     }}
-                    className="rounded-xl bg-foreground px-6 py-2.5 text-xs font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+                    className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
                   >
                     Approve Request
                   </button>
@@ -326,7 +326,7 @@ export function STRDetailsModal({
                       onClose();
                       onSchedule(request);
                     }}
-                    className="rounded-xl bg-foreground px-6 py-2.5 text-xs font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+                    className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
                   >
                     Schedule Transfer
                   </button>

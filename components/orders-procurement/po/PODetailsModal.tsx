@@ -263,7 +263,7 @@ export function PODetailsModal({
                 <Button
                   type="button"
                   onClick={() => onApprove(po)}
-                  className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm"
+                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
                 >
                   Approve
                 </Button>
@@ -276,7 +276,7 @@ export function PODetailsModal({
             <Button
               type="button"
               onClick={() => onEdit(po)}
-              className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
             >
               {po.status === "Returned" ? "Edit & Re-Submit" : "Edit Draft"}
             </Button>
@@ -299,7 +299,7 @@ export function PODetailsModal({
             <Button
               type="button"
               onClick={() => onCreateDelivery(po)}
-              className="flex items-center gap-2 rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm"
+              className="flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
             >
               <Truck className="w-4 h-4" />
               Schedule Delivery

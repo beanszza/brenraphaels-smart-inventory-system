@@ -201,7 +201,7 @@ export default function ProductionRequestsTab({
         {(isInventoryManager || isAdmin) && !isHeadCook && (
           <Button
             onClick={handleOpenNewModal}
-            className="flex items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>New Production Request</span>
@@ -267,7 +267,7 @@ export default function ProductionRequestsTab({
                 }}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   isSelected
-                    ? "bg-foreground text-background shadow-sm"
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
@@ -372,7 +372,7 @@ export default function ProductionRequestsTab({
                         <span
                           className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
                             isHigh
-                              ? "bg-foreground text-background border-foreground"
+                              ? "bg-primary text-primary-foreground border-primary"
                               : isLow
                               ? "bg-muted/40 text-muted-foreground border-border/60"
                               : "bg-muted text-foreground border-border"
@@ -401,7 +401,7 @@ export default function ProductionRequestsTab({
                               size="sm"
                               onClick={(e) => handleStartProduction(req, e)}
                               disabled={startingId === req.prodReqId}
-                              className="h-7 text-xs font-semibold px-2.5 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors shadow-sm"
+                              className="h-7 text-xs font-semibold px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
                             >
                               <Play className="w-3 h-3 mr-1 fill-current" />
                               <span>{startingId === req.prodReqId ? "Starting..." : "Start"}</span>

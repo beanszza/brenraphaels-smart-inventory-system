@@ -46,9 +46,9 @@ export default function ProductionQualityChart() {
 
   // Badge styles matching Orders & Procurement palette
   const badgeStyle: Record<string, { bg: string; text: string }> = {
-    Passed:    { bg: "bg-green-100",  text: "text-green-700" },
-    Rejected:  { bg: "bg-rose-100",   text: "text-rose-700" },
-    Cancelled: { bg: "bg-red-100",     text: "text-red-700" },
+    Passed:    { bg: "bg-badge-success",  text: "text-badge-success-foreground" },
+    Rejected:  { bg: "bg-badge-destructive",   text: "text-badge-destructive-foreground" },
+    Cancelled: { bg: "bg-badge-orange",     text: "text-badge-orange-foreground" },
   };
 
   return (
@@ -63,7 +63,7 @@ export default function ProductionQualityChart() {
             {total} total batches · current period
           </p>
         </div>
-        <span className="px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-semibold">
+        <span className="px-2.5 py-1 rounded-full bg-badge-success text-badge-success-foreground text-xs font-semibold">
           In Cycle
         </span>
       </div>

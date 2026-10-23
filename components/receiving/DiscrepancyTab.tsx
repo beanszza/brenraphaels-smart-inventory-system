@@ -144,7 +144,7 @@ export default function DiscrepancyTab() {
                 }}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
                   isActive
-                    ? "bg-foreground text-background"
+                    ? "bg-primary text-primary-foreground"
                     : "bg-muted/60 text-muted-foreground hover:text-foreground"
                 }`}
               >

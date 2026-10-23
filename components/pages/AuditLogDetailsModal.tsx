@@ -199,7 +199,7 @@ export default function AuditLogDetailsModal({
           <Button
             variant="outline"
             onClick={onClose}
-            className="rounded-xl border-border bg-card px-5 py-2 text-xs font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors"
+            className="rounded-xl border-border bg-card px-5 py-2 text-xs font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             Close
           </Button>

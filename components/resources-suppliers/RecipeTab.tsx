@@ -80,7 +80,7 @@ export default function RecipeTab({
           )}
           <Button
             onClick={onAddNew}
-            className="flex items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm"
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm"
           >
             <Plus size={16} /> New Recipe
           </Button>

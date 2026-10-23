@@ -240,7 +240,7 @@ export default function StockTransferModule() {
               <Button
                 type="button"
                 onClick={() => setOpenCreateSTR(true)}
-                className="flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-xs font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm h-10 cursor-pointer"
+                className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Create Transfer Request
               </Button>
@@ -323,7 +323,7 @@ export default function StockTransferModule() {
                   }}
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     activeStatusTab === "Requests"
-                      ? "bg-foreground text-background shadow-xs"
+                      ? "bg-primary text-primary-foreground shadow-xs"
                       : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
                   }`}
                 >
@@ -357,7 +357,7 @@ export default function StockTransferModule() {
                     }}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                       isSelected
-                        ? "bg-foreground text-background shadow-xs"
+                        ? "bg-primary text-primary-foreground shadow-xs"
                         : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
                     }`}
                   >

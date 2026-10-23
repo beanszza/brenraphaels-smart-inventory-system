@@ -508,7 +508,7 @@ export default function RtvTab() {
                       setSelectedRtv(null);
                     }}
                     disabled={actionLoading}
-                    className="rounded-xl bg-foreground text-background px-4 py-2.5 text-xs font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50"
+                    className="rounded-xl bg-primary text-primary-foreground px-4 py-2.5 text-xs font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50"
                   >
                     Approve Return
                   </button>
@@ -524,7 +524,7 @@ export default function RtvTab() {
                     setCreditNoteNumber("");
                   }}
                   disabled={actionLoading}
-                  className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50"
+                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50"
                 >
                   Dispatch Shipment
                 </button>
@@ -611,7 +611,7 @@ export default function RtvTab() {
                 type="button"
                 onClick={handleConfirmReject}
                 disabled={actionLoading}
-                className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
               >
                 {actionLoading ? "Rejecting..." : "Confirm Rejection"}
               </button>
@@ -680,7 +680,7 @@ export default function RtvTab() {
                 type="button"
                 onClick={handleConfirmDispatch}
                 disabled={actionLoading}
-                className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
               >
                 {actionLoading ? "Dispatching..." : "Confirm Dispatch"}
               </button>

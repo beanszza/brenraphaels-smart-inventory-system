@@ -399,7 +399,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
                 type="button"
                 disabled={submitting}
                 onClick={handleSubmitDraft}
-                className="rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
               >
                 {submitting ? "Submitting…" : "Submit for Admin Approval"}
               </button>
@@ -428,7 +428,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
                   type="button"
                   onClick={() => setApproveModalOpen(true)}
                   disabled={submitting}
-                  className="rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                  className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                 >
                   Approve Stock-In
                 </button>
@@ -439,7 +439,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
                 type="button"
                 disabled={committing}
                 onClick={() => setCommitModalOpen(true)}
-                className="rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm whitespace-nowrap cursor-pointer"
+                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm whitespace-nowrap cursor-pointer"
               >
                 Commit to Inventory
               </button>
@@ -486,7 +486,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
                     type="button"
                     disabled={committing}
                     onClick={handleCommit}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-foreground text-background hover:bg-foreground/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     {committing ? "Committing…" : "Confirm"}
                   </button>
@@ -549,7 +549,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
                     type="button"
                     disabled={submitting}
                     onClick={handleApprove}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-foreground text-background hover:bg-foreground/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     {submitting ? "Approving…" : "Confirm"}
                   </button>
@@ -622,7 +622,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
                     type="button"
                     disabled={submitting}
                     onClick={handleReject}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-foreground text-background hover:bg-foreground/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     {submitting ? "Rejecting…" : "Confirm"}
                   </button>

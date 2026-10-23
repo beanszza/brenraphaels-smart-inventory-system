@@ -452,7 +452,7 @@ export default function LossReportTab() {
                   type="button"
                   onClick={() => handleAcknowledge(selectedReport.lossReportId)}
                   disabled={actionLoadingId !== null}
-                  className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                   {actionLoadingId === selectedReport.lossReportId ? "Acknowledging..." : "Acknowledge This Report"}
                 </button>

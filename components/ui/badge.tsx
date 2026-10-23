@@ -4,17 +4,17 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md border px-sm.5 py-0.5 text-xs font-semibold transition-opacity focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:opacity-80",
+  "inline-flex items-center rounded-full border px-2.5 py-[3px] text-xs font-medium transition-opacity focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:opacity-80",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground shadow",
+          "border-transparent bg-badge-purple text-badge-purple-foreground",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground",
+          "border-transparent bg-badge-neutral text-badge-neutral-foreground",
         destructive:
           "border-transparent bg-badge-destructive text-badge-destructive-foreground",
-        outline: "text-foreground border-border",
+        outline: "border-border bg-badge-info text-badge-info-foreground",
         success:
           "border-transparent bg-badge-success text-badge-success-foreground",
         warning:
@@ -25,6 +25,8 @@ const badgeVariants = cva(
           "border-transparent bg-badge-purple text-badge-purple-foreground",
         indigo:
           "border-transparent bg-badge-indigo text-badge-indigo-foreground",
+        teal: "border-transparent bg-badge-teal text-badge-teal-foreground",
+        orange: "border-transparent bg-badge-orange text-badge-orange-foreground",
         notification:
           "border-transparent bg-badge-notification text-badge-notification-foreground shadow",
       },

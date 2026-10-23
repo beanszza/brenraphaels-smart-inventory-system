@@ -1,5 +1,7 @@
 "use client";
 
+import { StatusBadge } from "@/components/shared/StatusBadge";
+
 import { Pencil, Plus, Star } from "lucide-react";
 
 const suppliers = [
@@ -135,9 +137,7 @@ export default function SupplierTable() {
                 </td>
 
                 <td className="px-6 py-5">
-                  <span className="inline-flex items-center bg-foreground text-background border border-foreground px-3 py-1 rounded-full text-xs font-semibold">
-                    {supplier.status}
-                  </span>
+                  <StatusBadge status={supplier.status} />
                 </td>
 
                 <td className="px-6 py-5">
