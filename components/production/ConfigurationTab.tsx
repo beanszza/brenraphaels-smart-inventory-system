@@ -44,6 +44,8 @@ import { uploadFile } from "@/lib/file-upload";
 import { FileImage } from "@/components/shared/FileImage";
 import { toast } from "sonner";
 
+const productFileRoute = (productId: number) => `/api/finished-products/${productId}/file`;
+
 const PACKAGING_TYPES = [
   "Tub",
   "Jar",
@@ -246,12 +248,14 @@ export default function ConfigurationTab() {
       }
 
       // If a photo was selected, upload it to the created variants
+      let photoFailure: string | null = null;
       if (productPhotoFile && createdProductIds.length > 0) {
         for (const pid of createdProductIds) {
           try {
-            await uploadFile(`/api/finished-products/${pid}/file`, productPhotoFile);
-          } catch {
-            // Ignore non-fatal image upload errors on subsequent variants
+            await uploadFile(productFileRoute(pid), productPhotoFile);
+          } catch (err) {
+            // The product is saved; only its photo is missing, so say so without failing the create.
+            photoFailure = err instanceof Error ? err.message : "The photo could not be uploaded.";
           }
         }
       }
@@ -260,7 +264,9 @@ export default function ConfigurationTab() {
         `Product "${productName.trim()}" created with ${variationsList.length} variation(s)!`,
         { id: "save-prod" }
       );
+      if (photoFailure) toast.error(`The product photo was not saved: ${photoFailure}`);
       setIsAddProductOpen(false);
+      setPhotoVersion((v) => v + 1);
       fetchProducts();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to create product variations", {
@@ -383,7 +389,7 @@ export default function ConfigurationTab() {
 
     try {
       toast.loading("Uploading photo...", { id: "upload-photo" });
-      await uploadFile(`/api/finished-products/${activeUploadProductId}/file`, file);
+      await uploadFile(productFileRoute(activeUploadProductId), file);
       toast.success("Product photo updated successfully", { id: "upload-photo" });
       setPhotoVersion((v) => v + 1);
       fetchProducts();
@@ -523,7 +529,7 @@ export default function ConfigurationTab() {
                       <td className="py-2.5 px-4">
                         <div className="w-9 h-9 rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center shrink-0">
                           <FileImage
-                            base={`/api/finished-products/${product.productId}/file`}
+                            base={productFileRoute(product.productId)}
                             alt={product.itemName}
                             className="w-full h-full object-cover"
                             version={photoVersion}

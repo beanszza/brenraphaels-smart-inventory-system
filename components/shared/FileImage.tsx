@@ -10,7 +10,7 @@ import { resolveFileUrl } from "@/lib/file-upload";
  * missing, and files that fail to load, show the placeholder. Change `version` to look it up again.
  */
 export function FileImage({ base, alt, className, version = 0 }: { base: string; alt: string; className?: string; version?: number }) {
-  const [url, setUrl] = useState<string | null>(null);
+  const [url, setUrl] = useState<string>(FILE_PLACEHOLDER);
 
   useEffect(() => {
     let current = true;
@@ -20,6 +20,6 @@ export function FileImage({ base, alt, className, version = 0 }: { base: string;
     };
   }, [base, version]);
 
-  if (!url) return <div className={className} aria-hidden />;
-  return <img src={url} alt={alt} className={className} onError={() => setUrl(FILE_PLACEHOLDER)} />;
+  // Falling back only when not already on the placeholder, so a broken placeholder cannot retry forever.
+  return <img src={url} alt={alt} className={className} onError={() => url !== FILE_PLACEHOLDER && setUrl(FILE_PLACEHOLDER)} />;
 }
