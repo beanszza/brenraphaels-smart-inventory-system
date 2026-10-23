@@ -293,7 +293,7 @@ export function PODetailsModal({
           )}
 
           {/* Inventory Manager: Schedule Delivery for Approved or Ordered PO */}
-          {(po.status === "Approved" || po.status === "Ordered") && onCreateDelivery && (
+          {(po.status === "Approved" || po.status === "Ordered" || po.status === "Partially Delivered") && onCreateDelivery && (
             <Button
               type="button"
               onClick={() => onCreateDelivery(po)}

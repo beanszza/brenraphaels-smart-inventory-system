@@ -1,9 +1,10 @@
 "use client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Check, Upload, Loader2 } from "lucide-react";
+import { Check, Upload } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Order } from "./types";
 import { procurement } from "@/lib/orders/client";
@@ -153,7 +154,7 @@ export default function ProcurementQAInspectionModal({
             Cancel
           </Button>
           <Button type="button" onClick={handleComplete} disabled={isSaving} className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors flex items-center gap-2">
-            {isSaving && <Loader2 className="animate-spin h-4 w-4" />}
+            {isSaving && <Skeleton className="h-5 w-24" />}
             Submit Quality Assurance Inspection ({result})
           </Button>
         </div>
