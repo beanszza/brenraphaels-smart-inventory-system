@@ -25,7 +25,6 @@ const modules: Record<string, Module> = {
   locations: "Resources & Suppliers",
   categories: "Resources & Suppliers",
   "unit-of-measures": "Resources & Suppliers",
-  "audit-logs": "Resources & Suppliers",
   "purchase-orders": "Orders & Procurement",
   "purchase-requisitions": "Orders & Procurement",
   deliveries: "Orders & Procurement",

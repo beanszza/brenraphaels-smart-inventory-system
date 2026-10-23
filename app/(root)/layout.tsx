@@ -1,45 +1,10 @@
-"use client";
-import { useEffect, useMemo } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { AppShell } from "@/components/shared/AppShell";
+import { headers } from "next/headers";
+import { RootShell } from "@/components/shared/RootShell";
+import { requireShell } from "@/lib/portal/staff";
 
-function RootLayoutInner({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      // The AuthContext will render RedirectToLogin, but this is a fallback.
-      return;
-    }
-
-    if (!isLoading && user) {
-      const username = user.username?.toLowerCase();
-      const email = user.email?.toLowerCase();
-      const roles = user.roles || [];
-      const isHeadCook = username === "headcook" || email === "headcook@r3b2p.com" || roles.includes("Head Cook");
-
-      if (
-        isHeadCook &&
-        pathname !== "/production-quality" &&
-        !pathname.startsWith("/production-quality/") &&
-        pathname !== "/inventory" &&
-        !pathname.startsWith("/inventory/")
-      ) {
-        router.replace("/production-quality");
-      }
-    }
-  }, [user, isLoading, pathname, router]);
-
-  return <AppShell>{children}</AppShell>;
-}
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <AuthProvider>
-      <RootLayoutInner>{children}</RootLayoutInner>
-    </AuthProvider>
-  );
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Without the proxy's header the page is unknown, so no Module owns it and access is denied.
+  const pathname = (await headers()).get("x-return-to") ?? "";
+  const { modules } = await requireShell(pathname);
+  return <RootShell modules={modules}>{children}</RootShell>;
 }

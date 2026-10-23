@@ -26,10 +26,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { navGroups, settingsNavItem, systems } from "./SidebarNav";
+import { systems, visibleNavGroups } from "./SidebarNav";
+import type { Module } from "@/lib/portal/config";
 import { SidebarProfileFooter } from "./SidebarProfileFooter";
 
-export function Sidebar() {
+export function Sidebar({ modules }: { modules: Module[] }) {
   const pathname = usePathname();
   const { open, openMobile, setOpenMobile, toggleSidebar, isMobile } =
     useSidebar();
@@ -61,9 +62,6 @@ export function Sidebar() {
   };
 
   if (mounted && !isOpen) return null;
-
-  const SettingsIcon = settingsNavItem.icon;
-  const isSettingsActive = pathname === settingsNavItem.href;
 
   return (
     <>
@@ -143,17 +141,7 @@ export function Sidebar() {
 
         {/* ── Nav Content ── */}
         <SidebarContent className="px-2 py-3 overflow-y-auto flex-1 custom-scrollbar">
-          {(activeAccount === "head_cook" || activeAccount === "qa_officer"
-            ? navGroups
-                .map((group) => ({
-                  ...group,
-                  items: group.items.filter(
-                    (item) => item.href === "/production-quality" || (activeAccount === "head_cook" && item.href === "/inventory")
-                  ),
-                }))
-                .filter((group) => group.items.length > 0)
-            : navGroups
-          ).map((group) => (
+          {visibleNavGroups(modules).map((group) => (
             <SidebarGroup key={group.label} className="p-0 mb-1">
               <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-2 mb-1">
                 {group.label}
@@ -190,27 +178,6 @@ export function Sidebar() {
 
         {/* ── Footer ── */}
         <SidebarFooter className="px-2 py-2 border-t border-border/60 space-y-1">
-          {activeAccount !== "head_cook" && activeAccount !== "qa_officer" && (
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isSettingsActive}
-                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
-                    isSettingsActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent"
-                  }`}
-                >
-                  <Link href={settingsNavItem.href} onClick={handleNavClick}>
-                    <SettingsIcon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{settingsNavItem.name}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          )}
-
           <div className="pt-1 border-t border-border/60">
             <SidebarProfileFooter
               activeAccount={activeAccount}
