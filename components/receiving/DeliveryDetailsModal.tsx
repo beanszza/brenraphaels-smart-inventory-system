@@ -1,10 +1,12 @@
 "use client";
 
+import { getDeliveryForReceiving } from "@/app/actions/receiving/procurement-reads";
+import { actionResponse } from "@/lib/resources/action-response";
+
 import React, { useEffect, useState } from "react";
 import { Truck, Package } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import api from "@/lib/api";
 import { ArrivedDelivery } from "./types";
 
 interface DeliveryDetailsModalProps {
@@ -50,8 +52,7 @@ export default function DeliveryDetailsModal({
     if (!open || !delivery) return;
     setLoading(true);
     setError(null);
-    api
-      .get(`/api/deliveries/${delivery.deliveryId}`)
+    actionResponse(getDeliveryForReceiving(delivery.deliveryId))
       .then(({ data }) => {
         setDetail(data?.data || null);
       })

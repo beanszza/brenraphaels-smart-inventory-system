@@ -1,5 +1,7 @@
 "use client";
 
+import { procurement } from "@/lib/orders/client";
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Plus, Search, RefreshCw } from "lucide-react";
 import {
@@ -11,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
 import { Delivery, DeliveryStatus } from "../types";
 import { DeliveryTable } from "./DeliveryTable";
 import { CreateDeliveryModal } from "./CreateDeliveryModal";
@@ -55,7 +56,7 @@ export function DeliveryTab() {
   const fetchDeliveries = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/deliveries?page=1&pageSize=1000");
+      const res = await procurement.listDeliveries("page=1&pageSize=1000");
       if (res.data?.success) {
         const raw = res.data.data?.items || res.data.data || [];
         setDeliveries(raw);

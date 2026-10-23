@@ -1,5 +1,7 @@
 "use client";
 
+import { listOrdersForResources } from "@/app/actions/resources/orders";
+
 import { supplierItemsBySupplier } from "@/app/actions/resources/supplier-items";
 import { actionResponse } from "@/lib/resources/action-response";
 
@@ -9,7 +11,6 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "./ModalWrapper";
 import { Supplier } from "./types";
-import api from "@/lib/api";
 import { Package, Clock, ShoppingCart } from "lucide-react";
 
 interface CatalogItem {
@@ -64,7 +65,7 @@ export default function SupplierDetailsModal({
       try {
         const [catRes, poRes] = await Promise.allSettled([
           actionResponse(supplierItemsBySupplier(supplier.supplierId)),
-          api.get(`/api/purchase-orders?pageSize=50`),
+          actionResponse(listOrdersForResources("pageSize=50")),
         ]);
 
         if (catRes.status === "fulfilled" && catRes.value?.data?.success) {

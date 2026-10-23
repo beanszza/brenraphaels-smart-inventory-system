@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Check, Upload, Loader2 } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Order } from "./types";
-import api from "@/lib/api";
+import { procurement } from "@/lib/orders/client";
+import { uploadWith } from "@/lib/file-upload";
+import { actionResponse } from "@/lib/resources/action-response";
+import { confirmReceiptUpload, requestReceiptUpload } from "@/app/actions/orders/receipts";
 import { HR_EMPLOYEES } from "@/lib/employees";
 
 interface ProcurementQAInspectionModalProps {
@@ -47,18 +50,21 @@ export default function ProcurementQAInspectionModal({
     try {
       setIsSaving(true);
       const targetStatus = result === "Passed" ? "Completed" : "Rejected";
-      const res = await api.put(`/api/purchase-orders/${order.poId}/status`, {
+      const res = await procurement.setOrderStatus(order.poId, {
         status: targetStatus,
         qaNotes: comment,
         qaStatus: result,
-        inspectedBy: inspectedBy.trim(),
       });
 
       if (res.data.success) {
         if (pictureFile) {
-          const formData = new FormData();
-          formData.append("file", pictureFile);
-          await api.post(`/api/purchase-orders/${order.poId}/upload-receipt`, formData);
+          await uploadWith(
+            {
+              request: async (meta) => (await actionResponse(requestReceiptUpload(order.poId, meta))).data.data,
+              confirm: async (fileId) => void (await actionResponse(confirmReceiptUpload(order.poId, fileId))),
+            },
+            pictureFile,
+          );
         }
         onComplete();
         onClose();

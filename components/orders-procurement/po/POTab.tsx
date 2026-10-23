@@ -1,5 +1,7 @@
 "use client";
 
+import { procurement } from "@/lib/orders/client";
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Plus,
@@ -16,7 +18,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
 import { PurchaseOrderPO, POStatus } from "../types";
 import { POTable } from "./POTable";
 import { PODetailsModal } from "./PODetailsModal";
@@ -91,7 +92,7 @@ export function POTab() {
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/purchase-orders?page=1&pageSize=1000");
+      const res = await procurement.listOrders("page=1&pageSize=1000");
       if (res.data?.success) {
         const raw = res.data.data?.items || res.data.data || [];
         setOrders(raw.map(mapPO));
@@ -155,7 +156,7 @@ export function POTab() {
   // Status update handler
   const handleStatusUpdate = async (poId: number, status: string, adminNotes?: string) => {
     try {
-      await api.put(`/api/purchase-orders/${poId}/status`, {
+      await procurement.setOrderStatus(poId, {
         status,
         adminNotes: adminNotes || null,
       });

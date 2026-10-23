@@ -13,19 +13,17 @@ async function failure(response: Response): Promise<Error> {
   return new Error(typeof body?.message === "string" && body.message ? body.message : FAILED);
 }
 
-/**
- * Uploads a file for one record, straight to storage so its size never meets our request limit.
- * `base` is the record's file route, such as `/api/finished-products/42/file`. Resolves to the
- * new file id once the record is linked to it.
- */
-export async function uploadFile(base: string, file: File, fetcher: Fetcher = fetch): Promise<string> {
-  const requested = await fetcher(`${base}/upload`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ filename: file.name, contentType: file.type, size: file.size }),
-  });
-  if (!requested.ok) throw await failure(requested);
-  const address = await readJson<{ fileId?: string; uploadUrl?: string }>(requested);
+type UploadAddress = { fileId?: string; uploadUrl?: string };
+
+/** The record-side halves of an upload, however they are reached: route handlers or server actions. */
+export type UploadSteps = {
+  request(meta: { filename: string; contentType: string; size: number }): Promise<UploadAddress>;
+  confirm(fileId: string): Promise<void>;
+};
+
+/** Sends the bytes straight to storage so their size never meets our request limit. */
+export async function uploadWith(steps: UploadSteps, file: File, fetcher: Fetcher = fetch): Promise<string> {
+  const address = await steps.request({ filename: file.name, contentType: file.type, size: file.size });
   if (!address?.fileId || !address.uploadUrl) throw new Error(FAILED);
 
   // Storage signs the address, so our session cookie has no business going with it.
@@ -37,13 +35,38 @@ export async function uploadFile(base: string, file: File, fetcher: Fetcher = fe
   });
   if (!stored.ok) throw new Error(FAILED);
 
-  const confirmed = await fetcher(`${base}/confirm`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ fileId: address.fileId }),
-  });
-  if (!confirmed.ok) throw await failure(confirmed);
+  await steps.confirm(address.fileId);
   return address.fileId;
+}
+
+/**
+ * Uploads a file for one record through its file route. `base` is the record's file route,
+ * such as `/api/finished-products/42/file`. Resolves to the new file id once the record is linked.
+ */
+export function uploadFile(base: string, file: File, fetcher: Fetcher = fetch): Promise<string> {
+  return uploadWith(
+    {
+      async request(meta) {
+        const requested = await fetcher(`${base}/upload`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(meta),
+        });
+        if (!requested.ok) throw await failure(requested);
+        return (await readJson<UploadAddress>(requested)) ?? {};
+      },
+      async confirm(fileId) {
+        const confirmed = await fetcher(`${base}/confirm`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileId }),
+        });
+        if (!confirmed.ok) throw await failure(confirmed);
+      },
+    },
+    file,
+    fetcher,
+  );
 }
 
 /** Where to show a record's file from; the placeholder when it has none or cannot be found. */

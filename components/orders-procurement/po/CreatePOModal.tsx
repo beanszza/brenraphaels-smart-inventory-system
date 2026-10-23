@@ -1,5 +1,7 @@
 "use client";
 
+import { procurement } from "@/lib/orders/client";
+
 import { supplierItemsByItem, supplierItemsBySupplier } from "@/app/actions/resources/supplier-items";
 import { actionResponse } from "@/lib/resources/action-response";
 
@@ -20,7 +22,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { PurchaseRequisition, PurchaseOrderPO } from "../types";
 import { useStaff } from "@/context/StaffContext";
 
@@ -144,14 +145,14 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
   const fetchApprovedPRs = async () => {
     setLoadingPRs(true);
     try {
-      const res = await api.get("/api/purchase-requisitions?status=Approved");
+      const res = await procurement.listRequisitions("Approved");
       if (res.data?.success) {
         const prs: PurchaseRequisition[] = res.data.data || [];
         const eligible: PurchaseRequisition[] = [];
         await Promise.all(
           prs.map(async (pr) => {
             try {
-              const ordRes = await api.get(`/api/purchase-orders/pr/${pr.prId}/ordered-qty`);
+              const ordRes = await procurement.orderedQuantities(pr.prId);
               const orderedMap: Record<number, number> = {};
               if (ordRes.data?.success && Array.isArray(ordRes.data.data)) {
                 ordRes.data.data.forEach((o: any) => {
@@ -182,7 +183,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
 
   const fetchNextPoNumber = async () => {
     try {
-      const res = await api.get("/api/purchase-orders/next-number");
+      const res = await procurement.nextOrderNumber();
       if (res.data?.success && res.data.data) {
         setNextPoNumber(res.data.data);
       }
@@ -223,7 +224,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
       // Fetch supplier catalog and already-ordered quantities in parallel
       const [catalogRes, orderedRes] = await Promise.all([
         actionResponse(supplierItemsBySupplier(supplierId)),
-        api.get(`/api/purchase-orders/pr/${pr.prId}/ordered-qty`),
+        procurement.orderedQuantities(pr.prId),
       ]);
 
       const catalog: any[] = catalogRes.data?.success ? catalogRes.data.data || [] : [];
@@ -343,8 +344,8 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
       };
 
       const res = isEdit && initialPo?.poId
-        ? await api.put(`/api/purchase-orders/${initialPo.poId}`, payload)
-        : await api.post("/api/purchase-orders", payload);
+        ? await procurement.updateOrder(initialPo.poId, payload)
+        : await procurement.createOrder(payload);
 
       if (res.data?.success) {
         onSuccess();

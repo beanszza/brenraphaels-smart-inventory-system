@@ -1,11 +1,12 @@
 "use client";
 
+import { procurement } from "@/lib/orders/client";
+
 import React, { useState } from "react";
 import { AlertCircle, Upload, Check, Trash2, Calendar, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { Delivery } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useStaff } from "@/context/StaffContext";
@@ -84,20 +85,16 @@ export function MarkArrivedModal({
       };
 
       // Try direct arrive endpoint
-      let res = await api.put(
-        `/api/deliveries/${delivery.deliveryId}/arrive`,
-        payload
+      let res = await procurement.arriveDelivery(delivery.deliveryId, payload
       ).catch(async (err) => {
         // If transitioning from Scheduled requires dispatch first on older backend
         if (delivery.status === "Scheduled") {
           try {
-            await api.put(`/api/deliveries/${delivery.deliveryId}/dispatch`, {
+            await procurement.dispatchDelivery(delivery.deliveryId, {
               dispatchedDate: new Date().toISOString(),
               carrier: delivery.carrier || "In-House Logistics",
             });
-            return await api.put(
-              `/api/deliveries/${delivery.deliveryId}/arrive`,
-              payload
+            return await procurement.arriveDelivery(delivery.deliveryId, payload
             );
           } catch {
             throw err;

@@ -1,5 +1,7 @@
 "use client";
 
+import { procurement } from "@/lib/orders/client";
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,7 +21,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
 import { PurchaseRequisition, PRStatus } from "../types";
 import { PRTable } from "./PRTable";
 import { PRDetailsModal } from "./PRDetailsModal";
@@ -83,7 +84,7 @@ export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
   const fetchRequisitions = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/purchase-requisitions");
+      const res = await procurement.listRequisitions();
       if (res.data?.success) {
         const raw = res.data.data || [];
         setRequisitions(raw);
@@ -152,7 +153,7 @@ export function PRTab({ onCreatePo }: { onCreatePo?: (prId: number) => void }) {
   // Action handlers
   const handleStatusUpdate = async (prId: number, status: string, notes?: string) => {
     try {
-      await api.put(`/api/purchase-requisitions/${prId}/status`, {
+      await procurement.setRequisitionStatus(prId, {
         status,
         adminNotes: notes || null,
       });

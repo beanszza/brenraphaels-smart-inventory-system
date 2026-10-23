@@ -1,5 +1,7 @@
 "use client";
 
+import { listOrdersForResources } from "@/app/actions/resources/orders";
+
 import { supplierItemsByItem } from "@/app/actions/resources/supplier-items";
 import { actionResponse } from "@/lib/resources/action-response";
 
@@ -9,7 +11,6 @@ import ModalWrapper from "./ModalWrapper";
 import { SupplyItem } from "./types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Package, Truck, ShoppingCart, TrendingDown, TrendingUp, Minus } from "lucide-react";
-import api from "@/lib/api";
 
 interface SupplyDetailsModalProps {
   item: SupplyItem | null;
@@ -54,7 +55,7 @@ export default function SupplyDetailsModal({
       try {
         const [suppRes, poRes] = await Promise.allSettled([
           actionResponse(supplierItemsByItem(item.itemId)),
-          api.get(`/api/purchase-orders?pageSize=100`),
+          actionResponse(listOrdersForResources("pageSize=100")),
         ]);
 
         if (suppRes.status === "fulfilled" && suppRes.value?.data?.success) {

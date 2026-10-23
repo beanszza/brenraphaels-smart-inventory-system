@@ -5,17 +5,12 @@ import type { NextConfig } from "next";
 // Frontend calls e.g. /api/Items, /api/PurchaseOrders → rewrite to /api/items, /api/purchase-orders
 const pascalToKebabAliases = [
   { pascal: "FinishedProducts",       kebab: "finished-products" },
-  { pascal: "PurchaseRequisitions",   kebab: "purchase-requisitions" },
-  { pascal: "PurchaseOrders",         kebab: "purchase-orders" },
-  { pascal: "Deliveries",             kebab: "deliveries" },
   { pascal: "GoodsReceipts",          kebab: "goods-receipts" },
   { pascal: "Inventory",              kebab: "inventory" },
   { pascal: "StockTransfers",         kebab: "stock-transfers" },
   { pascal: "CycleCounts",            kebab: "cycle-counts" },
   { pascal: "Traceability",           kebab: "traceability" },
   { pascal: "Valuation",              kebab: "valuation" },
-  { pascal: "Mrp",                    kebab: "mrp" },
-  { pascal: "Reports",                kebab: "reports" },
   { pascal: "Discrepancies",          kebab: "Discrepancies" },
   { pascal: "LossReports",            kebab: "LossReports" },
   { pascal: "ProductionBatches",      kebab: "ProductionBatches" },

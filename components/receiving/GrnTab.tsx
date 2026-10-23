@@ -1,5 +1,8 @@
 "use client";
 
+import { listDeliveriesForReceiving } from "@/app/actions/receiving/procurement-reads";
+import { actionResponse } from "@/lib/resources/action-response";
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, RefreshCw, Plus } from "lucide-react";
 import {
@@ -59,7 +62,7 @@ export default function GrnTab({ onPosted }: GrnTabProps) {
       setPostedGrns(posted);
 
       // 2. Only arrived shipments are eligible. The server validates line-level eligibility again.
-      const delRes = await api.get("/api/deliveries");
+      const delRes = await actionResponse(listDeliveriesForReceiving());
       const deliveryPayload = delRes.data?.data;
       const allDeliveries: ArrivedDelivery[] = Array.isArray(deliveryPayload?.items)
         ? deliveryPayload.items
