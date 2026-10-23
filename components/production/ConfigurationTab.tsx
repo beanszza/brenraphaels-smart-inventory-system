@@ -40,6 +40,8 @@ import {
 import { FinishedProductItem } from "./types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import api from "@/lib/api";
+import { uploadFile } from "@/lib/file-upload";
+import { FileImage } from "@/components/shared/FileImage";
 import { toast } from "sonner";
 
 const PACKAGING_TYPES = [
@@ -72,6 +74,7 @@ interface DraftVariant {
 
 export default function ConfigurationTab() {
   const [products, setProducts] = useState<FinishedProductItem[]>([]);
+  const [photoVersion, setPhotoVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -245,12 +248,8 @@ export default function ConfigurationTab() {
       // If a photo was selected, upload it to the created variants
       if (productPhotoFile && createdProductIds.length > 0) {
         for (const pid of createdProductIds) {
-          const formData = new FormData();
-          formData.append("file", productPhotoFile);
           try {
-            await api.post(`/api/finished-products/${pid}/image`, formData, {
-              headers: { "Content-Type": "multipart/form-data" },
-            });
+            await uploadFile(`/api/finished-products/${pid}/file`, productPhotoFile);
           } catch {
             // Ignore non-fatal image upload errors on subsequent variants
           }
@@ -382,18 +381,14 @@ export default function ConfigurationTab() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
       toast.loading("Uploading photo...", { id: "upload-photo" });
-      await api.post(`/api/finished-products/${activeUploadProductId}/image`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await uploadFile(`/api/finished-products/${activeUploadProductId}/file`, file);
       toast.success("Product photo updated successfully", { id: "upload-photo" });
+      setPhotoVersion((v) => v + 1);
       fetchProducts();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to upload photo", {
+      toast.error(err?.message || "Failed to upload photo", {
         id: "upload-photo",
       });
     } finally {
@@ -527,15 +522,12 @@ export default function ConfigurationTab() {
                       {/* Thumbnail */}
                       <td className="py-2.5 px-4">
                         <div className="w-9 h-9 rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center shrink-0">
-                          {product.imageUrl ? (
-                            <img
-                              src={product.imageUrl}
-                              alt={product.itemName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <ImageIcon className="w-4 h-4 text-muted-foreground/40" />
-                          )}
+                          <FileImage
+                            base={`/api/finished-products/${product.productId}/file`}
+                            alt={product.itemName}
+                            className="w-full h-full object-cover"
+                            version={photoVersion}
+                          />
                         </div>
                       </td>
 
