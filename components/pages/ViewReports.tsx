@@ -1,5 +1,7 @@
 "use client";
 
+import { procurement } from "@/lib/orders/client";
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -13,7 +15,6 @@ import SupplierReportView from "@/components/pages/SupplierReportView";
 import SupplierOrdersModal from "@/components/pages/SupplierOrdersModal";
 import DistributionReportView from "@/components/pages/DistributionReportView";
 import { exportReportCSV } from "@/components/reports/exportReportCSV";
-import api from "@/lib/api";
 
 export default function ViewReports({ initialTab }: { initialTab: string }) {
   const router = useRouter();
@@ -51,8 +52,7 @@ export default function ViewReports({ initialTab }: { initialTab: string }) {
         if (endDate) params.append("endDate", endDate);
       }
       const qs = params.toString();
-      const endpoint = `/api/reports/${initialTab}${qs ? `?${qs}` : ""}`;
-      const response = await api.get(endpoint);
+      const response = await procurement.loadReport(initialTab, qs);
       const json = response.data;
       if (json.success) setData(json.data);
       else setError(json.message || "Failed to fetch data from server");

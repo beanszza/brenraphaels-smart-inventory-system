@@ -1,5 +1,8 @@
 "use client";
 
+import { listDeliveriesForReceiving } from "@/app/actions/receiving/procurement-reads";
+import { actionResponse } from "@/lib/resources/action-response";
+
 import React, { useState, useEffect } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import api from "@/lib/api";
@@ -26,7 +29,7 @@ export default function ViewGoodsReceiving() {
     try {
       const [grnRes, delRes, discRes, stockInRes, rtvRes, lrRes] = await Promise.allSettled([
         api.get("/api/goods-receipts"),
-        api.get("/api/deliveries"),
+        actionResponse(listDeliveriesForReceiving()),
         api.get("/api/Discrepancies"),
         api.get("/api/StockIns"),
         api.get("/api/ReturnToVendors"),

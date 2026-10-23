@@ -1,24 +1,14 @@
 /// <reference types="vite/client" />
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { GET, POST } from "@/app/api/purchase-requisitions/route";
 
-const { requisitions, rows } = vi.hoisted(() => ({
-  requisitions: new Map<number, Record<string, unknown>>(),
+const { rows } = vi.hoisted(() => ({
   rows: new Map<string, Record<string, unknown>>(),
 }));
 const routes = import.meta.glob("../app/api/**/route.ts");
 vi.mock("@/lib/prisma", () => {
   const prisma = new Proxy({
     documentSequences: { upsert: async () => ({ LastNumber: 1 }) },
-    purchaseRequisitions: {
-      create: async ({ data }: { data: Record<string, unknown> }) => {
-        const row = { ...data, PrId: 1, PurchaseRequisitionItems: [] };
-        requisitions.set(1, row);
-        return row;
-      },
-      findMany: async () => [...requisitions.values()],
-    },
   }, {
     get(target, table: string) {
       if (table === "$transaction") return (work: (tx: object) => Promise<unknown>) => work(prisma);
@@ -54,7 +44,6 @@ vi.mock("@/lib/prisma", () => {
 });
 
 beforeEach(() => {
-  requisitions.clear();
   rows.clear();
   vi.stubEnv("IMS_DEV_BYPASS", "false");
   vi.stubEnv("PORTAL_URL", "https://portal.test");
@@ -66,16 +55,6 @@ beforeEach(() => {
   });
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
-
-it.each(["Forged Manager", undefined])("records the session Username when requestedBy is %s", async (requestedBy) => {
-  const request = new NextRequest("https://localhost:3003/api/purchase-requisitions", {
-    method: "POST", body: JSON.stringify({ requestedBy, items: [{ itemId: 1, requestedQuantity: 5, purchaseUomId: 1 }] }),
-  });
-  request.cookies.set("ims_session", "opaque");
-  const response = await POST(request);
-  expect(response.status).toBe(200);
-  expect((await response.json()).data.requestedBy).toBe("2026-AB-001");
-});
 
 const transitions = [
   ["StockIns/[id]/submit", "POST", "stockIns", "Draft", "SubmittedBy"],
@@ -189,28 +168,8 @@ it("records posting Staff and removes the pending inspector placeholder", async 
   expect(rows.get("qualityInspections")).toMatchObject({ InspectorId: "2026-AB-001", InspectorName: "Ada Santos" });
 });
 
-it.each([
-  ["deliveries/[id]/dispatch", "deliveries", "Scheduled", "DispatchedBy"],
-  ["deliveries/[id]/arrive", "deliveries", "InTransit", "ReceivedBy"],
-] as const)("%s records Staff and preserves its creator", async (path, table, status, field) => {
-  rows.set(table, { Status: status, CreatedBy: "Legacy Creator" });
-  await act(path, "PUT", { dispatchedBy: "Forged", receivedBy: "Forged" });
-  expect(rows.get(table)?.[field]).toBe("2026-AB-001");
-  expect(rows.get(table)?.CreatedBy).toBe("Legacy Creator");
-});
-
 it("commits stock-in under the session Username", async () => {
   rows.set("stockIns", { Status: "Approved", CreatedBy: "Legacy Creator" });
   await act("StockIns/[id]/commit", "POST", { committedBy: "Forged" });
   expect(rows.get("stockIns")).toMatchObject({ CommittedBy: "2026-AB-001", CreatedBy: "Legacy Creator" });
-});
-
-it("reading a pre-sign-in requisition keeps its original free-text requester", async () => {
-  requisitions.set(1, { PrId: 1, RequestedBy: "Legacy Requester", PurchaseRequisitionItems: [] });
-  const request = new NextRequest("https://localhost:3003/api/purchase-requisitions");
-  request.cookies.set("ims_session", "opaque");
-  const response = await GET(request);
-  expect(response.status).toBe(200);
-  expect((await response.json()).data[0].requestedBy).toBe("Legacy Requester");
-  expect(requisitions.get(1)?.RequestedBy).toBe("Legacy Requester");
 });

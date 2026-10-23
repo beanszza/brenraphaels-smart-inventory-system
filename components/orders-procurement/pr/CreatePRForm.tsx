@@ -1,5 +1,7 @@
 "use client";
 
+import { procurement } from "@/lib/orders/client";
+
 import { listItems } from "@/app/actions/resources/items";
 import { actionResponse } from "@/lib/resources/action-response";
 
@@ -183,7 +185,7 @@ export function CreatePRModal({
         const [itemsRes, invRes, prRes] = await Promise.allSettled([
           actionResponse(listItems()),
           api.get("/api/inventory?page=1&pageSize=1000"),
-          api.get("/api/purchase-requisitions"),
+          procurement.listRequisitions(),
         ]);
 
         let rawItems: any[] = [];
@@ -381,9 +383,9 @@ export function CreatePRModal({
       };
 
       if (isEdit && initialData?.prId) {
-        await api.put(`/api/purchase-requisitions/${initialData.prId}`, payload);
+        await procurement.updateRequisition(initialData.prId, payload);
       } else {
-        await api.post("/api/purchase-requisitions", payload);
+        await procurement.createRequisition(payload);
       }
 
       if (onSuccess) {

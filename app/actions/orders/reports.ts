@@ -1,35 +1,23 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+"use server";
+
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { read } from "@/lib/orders/mutate";
 
-export async function GET(request: NextRequest, props: { params: Promise<{ type: string }> }) {
-  const access = await requireRouteModule(request, "Orders & Procurement");
-  if (!access.ok) return access.response;
+const day = (value: string | undefined, end: boolean) => value ? new Date(`${value}T${end ? "23:59:59.999" : "00:00:00.000"}Z`) : undefined;
 
-  const params = await props.params;
-  try {
-    const { searchParams } = new URL(request.url);
-    const startDateParam = searchParams.get("startDate");
-    const endDateParam = searchParams.get("endDate");
-    
-    let dateFilter: any = {};
-    if (startDateParam && endDateParam) {
-      dateFilter = {
-        gte: new Date(startDateParam + "T00:00:00.000Z"),
-        lte: new Date(endDateParam + "T23:59:59.999Z"),
-      };
-    } else if (startDateParam) {
-      dateFilter = {
-        gte: new Date(startDateParam + "T00:00:00.000Z"),
-      };
-    } else if (endDateParam) {
-      dateFilter = {
-        lte: new Date(endDateParam + "T23:59:59.999Z"),
-      };
-    }
+/** The Reports page's tabs. Reads only; `query` carries the optional startDate and endDate. */
+export async function loadReport(typeInput: string, query = "") {
+  await requireModule("Orders & Procurement");
+  return read(async () => {
+    const params = new URLSearchParams(query);
+    const gte = day(params.get("startDate") ?? undefined, false);
+    const lte = day(params.get("endDate") ?? undefined, true);
+    const dateFilter: Prisma.DateTimeFilter = { ...(gte ? { gte } : {}), ...(lte ? { lte } : {}) };
 
-    const type = params.type.toLowerCase();
+    const type = typeInput.toLowerCase();
 
     if (type === "inventory") {
       const inventories = await prisma.inventories.findMany({
@@ -40,7 +28,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ type:
         },
       });
 
-      const aggregated = new Map<number, any>();
+      const aggregated = new Map<number, { itemId: number; itemName: string; category: string; currentStock: number; minReorderPoint: number; status: string }>();
       inventories.forEach(inv => {
         const item = inv.Items;
         if (!aggregated.has(item.ItemId)) {
@@ -53,10 +41,10 @@ export async function GET(request: NextRequest, props: { params: Promise<{ type:
             status: item.IsActive ? "Active" : "Inactive",
           });
         }
-        aggregated.get(item.ItemId).currentStock += Number(inv.CurrentStock);
+        aggregated.get(item.ItemId)!.currentStock += Number(inv.CurrentStock);
       });
 
-      return NextResponse.json({
+      return resourceResult({
         success: true,
         data: {
           inventoryLevels: Array.from(aggregated.values()),
@@ -65,17 +53,14 @@ export async function GET(request: NextRequest, props: { params: Promise<{ type:
     }
 
     if (type === "procurement") {
-      let where: any = {};
-      if (Object.keys(dateFilter).length > 0) {
-        where.OrderDate = dateFilter;
-      }
+      const where = gte || lte ? { OrderDate: dateFilter } : {};
       const orders = await prisma.purchaseOrders.findMany({
         where,
         include: { Suppliers: true },
         orderBy: { OrderDate: 'desc' },
       });
 
-      return NextResponse.json({
+      return resourceResult({
         success: true,
         data: {
           orders: orders.map(po => ({
@@ -91,17 +76,14 @@ export async function GET(request: NextRequest, props: { params: Promise<{ type:
     }
 
     if (type === "production") {
-      let where: any = {};
-      if (Object.keys(dateFilter).length > 0) {
-        where.ProductionDate = dateFilter;
-      }
+      const where = gte || lte ? { ProductionDate: dateFilter } : {};
       const batches = await prisma.productionBatches.findMany({
         where,
         include: { FinishedProducts: { include: { Items: true } } },
         orderBy: { ProductionDate: 'desc' },
       });
 
-      return NextResponse.json({
+      return resourceResult({
         success: true,
         data: {
           batches: batches.map(b => ({
@@ -125,7 +107,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ type:
         include: { PurchaseOrders: true },
       });
 
-      return NextResponse.json({
+      return resourceResult({
         success: true,
         data: {
           vendorScorecard: suppliers.map(s => {
@@ -146,10 +128,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ type:
     }
 
     if (type === "distribution") {
-      let where: any = {};
-      if (Object.keys(dateFilter).length > 0) {
-        where.TransferDate = dateFilter;
-      }
+      const where = gte || lte ? { TransferDate: dateFilter } : {};
       const transfers = await prisma.stockTransfers.findMany({
         where,
         include: {
@@ -160,7 +139,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ type:
         orderBy: { TransferDate: 'desc' },
       });
 
-      return NextResponse.json({
+      return resourceResult({
         success: true,
         data: {
           stockTransfers: transfers.map(t => ({
@@ -176,9 +155,6 @@ export async function GET(request: NextRequest, props: { params: Promise<{ type:
       });
     }
 
-    return NextResponse.json({ success: false, message: "Unknown report type" }, { status: 400 });
-  } catch (error: any) {
-    console.error(`GET /api/reports error:`, error);
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
-  }
+    return resourceResult({ success: false, message: "Unknown report type" });
+  });
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { getDeliveryForReceiving, getOrderForReceiving, listDeliveriesForReceiving } from "@/app/actions/receiving/procurement-reads";
+
 import { listItems } from "@/app/actions/resources/items";
 import { actionResponse } from "@/lib/resources/action-response";
 
@@ -156,8 +158,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
       packagingConditionChecked: false,
     });
 
-    api
-      .get("/api/deliveries?eligibleForGrn=true&pageSize=1000")
+    actionResponse(listDeliveriesForReceiving("eligibleForGrn=true&pageSize=1000"))
       .then(({ data }) => {
         const payload = data?.data;
         const list = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
@@ -192,8 +193,8 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
     setItems([]);
     try {
       const [deliveryResult, poResult, itemsCatalogRes] = await Promise.all([
-        api.get(`/api/deliveries/${delivery.deliveryId}`),
-        api.get(`/api/purchase-orders/${delivery.poId}`),
+        actionResponse(getDeliveryForReceiving(delivery.deliveryId)),
+        actionResponse(getOrderForReceiving(delivery.poId)),
         actionResponse(listItems(`pageSize=1000`)).catch(() => ({ data: { data: [] } })),
       ]);
 

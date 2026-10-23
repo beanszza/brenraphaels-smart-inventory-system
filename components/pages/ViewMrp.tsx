@@ -1,5 +1,8 @@
 "use client";
 
+import { procurement } from "@/lib/orders/client";
+import type { RequisitionInput } from "@/lib/orders/inputs";
+
 import { listRecipes } from "@/app/actions/resources/recipes";
 import { actionResponse } from "@/lib/resources/action-response";
 
@@ -107,7 +110,7 @@ export default function ViewMrp() {
           batchCount: r.batchCount,
         })),
       };
-      const res = await api.post("/api/mrp/plan", body);
+      const res = await procurement.planMrp(body);
       if (res.data?.success && res.data.data) {
         const raw = res.data.data?.requirements || res.data.data || [];
         setResults(raw.map((r: any) => ({
@@ -137,11 +140,13 @@ export default function ViewMrp() {
     if (!selectedItem) return;
     setPrSaving(true);
     try {
-      await api.post("/api/purchase-requisitions", {
+      // This body has never carried the `items` lines a requisition needs, so the action
+      // refuses it exactly as the old route did; the MRP page is not reachable today.
+      await procurement.createRequisition({
         itemId: selectedItem.itemId,
         quantity: selectedItem.netRequirement,
         notes: `Auto-generated from MRP run (${horizon}d horizon)`,
-      });
+      } as unknown as RequisitionInput);
       setShowPrModal(false);
     } catch (e) {
       console.error(e);
