@@ -1,7 +1,12 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const access = await requireRouteModule(request, "Stock Transfer");
+  if (!access.ok) return access.response;
+
   try {
     const [totalRequests, pendingApproval, approvedRequests, dispatchedTransfers, scheduledTransfers] =
       await Promise.all([

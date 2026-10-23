@@ -1,8 +1,13 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // Forward traceability: given a lot code, find where ingredients went (which batches used it)
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const access = await requireRouteModule(request, "Inventory");
+  if (!access.ok) return access.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const lotCode = searchParams.get("lotCode") || "";

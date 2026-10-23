@@ -1,10 +1,15 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 const SUPPLY_CATEGORY_NAMES = ["Raw Materials", "Ingredients", "Tools and Supplies"];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const access = await requireRouteModule(request, "Resources & Suppliers");
+  if (!access.ok) return access.response;
+
   try {
     const categories = await prisma.categories.findMany({
       where: {

@@ -1,10 +1,15 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   props: { params: Promise<{ itemId: string }> | { itemId: string } }
 ) {
+  const access = await requireRouteModule(request, "Inventory");
+  if (!access.ok) return access.response;
+
   try {
     const rawParams = await props?.params;
     const itemId = parseInt(String(rawParams?.itemId), 10);

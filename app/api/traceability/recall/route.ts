@@ -1,8 +1,13 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // Execute a lot recall: puts affected lots on hold
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const access = await requireRouteModule(request, "Inventory");
+  if (!access.ok) return access.response;
+
   try {
     const body = await request.json();
     const lotCode = body.lotCode as string;

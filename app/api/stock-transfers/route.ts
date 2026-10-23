@@ -1,3 +1,5 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -39,7 +41,10 @@ function mapTransfer(t: any) {
   };
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const access = await requireRouteModule(request, "Stock Transfer");
+  if (!access.ok) return access.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
@@ -109,7 +114,10 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const access = await requireRouteModule(request, "Stock Transfer");
+  if (!access.ok) return access.response;
+
   try {
     const userRole = request.headers.get("x-user-role")?.toLowerCase();
     if (userRole === "admin") {

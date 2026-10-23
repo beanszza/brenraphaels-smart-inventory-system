@@ -1,7 +1,12 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: Request, props: { params: Promise<{ type: string }> }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ type: string }> }) {
+  const access = await requireRouteModule(request, "Orders & Procurement");
+  if (!access.ok) return access.response;
+
   const params = await props.params;
   try {
     const { searchParams } = new URL(request.url);

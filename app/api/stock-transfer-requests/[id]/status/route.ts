@@ -1,10 +1,15 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
+  const access = await requireRouteModule(request, "Stock Transfer");
+  if (!access.ok) return access.response;
+
   try {
     const params = await props.params;
     const requestId = parseInt(params.id, 10);

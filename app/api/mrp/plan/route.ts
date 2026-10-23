@@ -1,9 +1,14 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // MRP Planning: given planned batch counts per recipe, compute gross requirements,
 // compare against on-hand inventory, and return net requirements.
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const access = await requireRouteModule(request, "Orders & Procurement");
+  if (!access.ok) return access.response;
+
   try {
     const body = await request.json();
     const plannedBatches: Array<{ recipeId: number; batchCount: number }> = body.plannedBatches || [];

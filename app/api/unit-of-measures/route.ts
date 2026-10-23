@@ -1,8 +1,13 @@
+import { requireRouteModule } from "@/lib/portal/staff";
+import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const access = await requireRouteModule(request, "Resources & Suppliers");
+  if (!access.ok) return access.response;
+
   try {
     const rows = await prisma.unitOfMeasures.findMany({
       orderBy: [
