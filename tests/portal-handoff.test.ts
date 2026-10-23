@@ -15,6 +15,12 @@ import {
   FAKE_SECRET,
 } from "./fake-portal";
 
+// Sign-in also records Known Staff; these tests are about the handoff, not the database.
+vi.mock("@/lib/known-staff", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/known-staff")>()),
+  prismaKnownStaff: { upsert: async () => {}, holding: async () => [] },
+}));
+
 const origin = "https://localhost:3003";
 const staff = {
   id: "staff-1",
