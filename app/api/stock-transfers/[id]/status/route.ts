@@ -22,7 +22,7 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
     if (newStatus === "Dispatched") updateData.DispatchedDate = new Date();
     if (newStatus === "Received") {
       updateData.ReceivedDate = new Date();
-      updateData.ReceivedBy = body.receivedBy ?? "";
+      updateData.ReceivedBy = access.staff.username;
     }
 
     const updated = await prisma.stockTransfers.update({

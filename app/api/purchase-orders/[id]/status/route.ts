@@ -30,8 +30,8 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
     if (body.status) updateData.Status = body.status;
     if (body.qaStatus) updateData.QaStatus = body.qaStatus;
     if (body.qaNotes) updateData.QaNotes = body.qaNotes;
-    if (body.inspectedBy) updateData.InspectedBy = body.inspectedBy;
     if (body.qaStatus && body.qaStatus !== "Pending") {
+      updateData.InspectedBy = access.staff.username;
       updateData.QaInspectedDate = new Date();
     }
     if (body.adminNotes) updateData.AdminNotes = body.adminNotes;

@@ -44,6 +44,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       data: {
         Status: "Reconciled",
         ReconciledDate: new Date(),
+        ReconciledBy: access.staff.username,
       },
     });
 

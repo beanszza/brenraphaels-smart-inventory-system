@@ -16,7 +16,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
 
   try {
     const body = await request.json().catch(() => ({}));
-    const issuedBy = body.issuedBy || "Inventory Manager";
+    const issuedBy = access.staff.username;
     const bypassScanCheck = Boolean(body.bypassScanCheck);
 
     const issuance = await prisma.materialIssuances.findUnique({
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
             ReferenceType: "MaterialIssuance",
             ReferenceId: issuance.IssuanceNumber,
             UserId: issuedBy,
-            UserName: issuedBy,
+            UserName: access.staff.name,
             PostedAt: now,
             Notes: `Issued for Production Request ${issuance.ProductionRequests.ReqNumber}`,
           },

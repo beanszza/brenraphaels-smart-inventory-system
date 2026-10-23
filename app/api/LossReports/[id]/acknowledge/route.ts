@@ -27,7 +27,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       where: { LossReportId: id },
       data: {
         IsAcknowledged: true,
-        AcknowledgedBy: "System User", // Normally from session
+        AcknowledgedBy: access.staff.username,
         AcknowledgedAt: new Date(),
       }
     });

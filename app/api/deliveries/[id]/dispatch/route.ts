@@ -29,6 +29,7 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
       where: { DeliveryId: id },
       data: {
         Status: "InTransit",
+        DispatchedBy: access.staff.username,
         DispatchedDate: body.dispatchedDate ? new Date(body.dispatchedDate) : new Date(),
         ExpectedArrivalDate: body.expectedArrivalDate ? new Date(body.expectedArrivalDate) : delivery.ExpectedArrivalDate,
         TrackingNumber: body.trackingNumber?.trim() || delivery.TrackingNumber,

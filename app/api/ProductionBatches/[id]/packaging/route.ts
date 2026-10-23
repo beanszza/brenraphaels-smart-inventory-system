@@ -20,19 +20,12 @@ export async function POST(
     const body = await request.json();
     const packageDate = body.packageDate ? new Date(body.packageDate) : new Date();
     const expiryDate = body.expiryDate ? new Date(body.expiryDate) : null;
-    const packedBy = String(body.packedBy || "").trim();
+    const packedBy = access.staff.username;
     const proofImageUrl = String(body.proofImageUrl || "").trim();
     const finalQuantity = Number(body.finalQuantity);
     const notes = String(body.notes || "").trim();
 
     // Input Validations
-    if (!packedBy) {
-      return NextResponse.json(
-        { success: false, message: "Assigned packager (Packed By) is required." },
-        { status: 400 }
-      );
-    }
-
     if (!proofImageUrl) {
       return NextResponse.json(
         { success: false, message: "Proof of packaging (photo attachment) is required." },

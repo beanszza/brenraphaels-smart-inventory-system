@@ -27,7 +27,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       where: { RtvId: id },
       data: {
         Status: "Approved",
-        ApprovedBy: "System User",
+        ApprovedBy: access.staff.username,
         ApprovedAt: new Date(),
       }
     });

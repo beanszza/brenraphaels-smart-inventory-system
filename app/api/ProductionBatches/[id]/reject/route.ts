@@ -1,6 +1,7 @@
 import { requireRouteModule } from "@/lib/portal/staff";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import type { Staff } from "@/lib/portal/client";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
@@ -10,7 +11,7 @@ export async function POST(
   const access = await requireRouteModule(request, "Production & Quality");
   if (!access.ok) return access.response;
 
-  return handleReject(request, props);
+  return handleReject(request, props, access.staff);
 }
 
 export async function PUT(
@@ -20,12 +21,13 @@ export async function PUT(
   const access = await requireRouteModule(request, "Production & Quality");
   if (!access.ok) return access.response;
 
-  return handleReject(request, props);
+  return handleReject(request, props, access.staff);
 }
 
 async function handleReject(
   request: Request,
-  props: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> },
+  staff: Staff
 ) {
   const params = await props.params;
   const id = parseInt(params.id, 10);
@@ -36,7 +38,6 @@ async function handleReject(
   try {
     const body = await request.json();
     const reason = String(body.reason || "").trim();
-    const assignedCook = String(body.assignedCook || "").trim();
     const proofImageUrl = String(body.proofImageUrl || "").trim();
     const rejectionDate = body.rejectionDate ? new Date(body.rejectionDate) : new Date();
     const notes = String(body.notes || "").trim();
@@ -91,7 +92,7 @@ async function handleReject(
     const lostQty = Number(batch.EstimatedQuantity) > 0 ? Number(batch.EstimatedQuantity) : 1;
 
     const fullReason = `Batch Rejected (${batch.BatchNumber}): ${reason}`;
-    const fullNotes = `Cook: ${assignedCook || batch.AssignedCook || "Head Cook"}. ${notes ? `Notes: ${notes}. ` : ""}PR: ${batch.ProductionRequests?.ReqNumber || "N/A"}. Date: ${rejectionDate.toISOString()}`;
+    const fullNotes = `Cook: ${staff.username}. ${notes ? `Notes: ${notes}. ` : ""}PR: ${batch.ProductionRequests?.ReqNumber || "N/A"}. Date: ${rejectionDate.toISOString()}`;
 
     // Transaction to update batch, update PR, and create LossReport
     const result = await prisma.$transaction(async (tx) => {
@@ -104,8 +105,8 @@ async function handleReject(
           LostQuantity: lostQty,
           Reason: fullReason,
           Notes: fullNotes,
-          AuthorisedBy: "Head Cook",
-          CreatedBy: assignedCook || batch.AssignedCook || "Head Cook",
+          AuthorisedBy: staff.username,
+          CreatedBy: staff.username,
           CreatedAt: now,
           IsAcknowledged: false,
         },
@@ -117,7 +118,6 @@ async function handleReject(
         data: {
           Status: "Rejected",
           RejectionReason: reason,
-          AssignedCook: assignedCook || batch.AssignedCook,
           ImageUrl: proofImageUrl || batch.ImageUrl,
           Notes: batch.Notes
             ? `${batch.Notes}\n[REJECTED: ${reason} | Loss Report: ${lossReportNumber}]`
@@ -132,7 +132,7 @@ async function handleReject(
           data: {
             Status: "Rejected",
             RejectionReason: reason,
-            RejectedBy: assignedCook || batch.AssignedCook || "Head Cook",
+            RejectedBy: staff.username,
             RejectedAt: now,
           },
         });

@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       // 1. Advance GRN status to QaPending
       const result = await tx.goodsReceipts.update({
         where: { GrnId: id },
-        data: { Status: "QaPending" }
+        data: { Status: "QaPending", PostedBy: access.staff.username, PostedAt: new Date() }
       });
 
       // 2. Automatically generate a QA Inspection
@@ -56,8 +56,8 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
           ReferenceType: "GRN",
           ReferenceId: grn.GrnId,
           ReferenceNumber: grn.GrnNumber,
-          InspectorId: "SYS",
-          InspectorName: "Pending QA",
+          InspectorId: access.staff.username,
+          InspectorName: access.staff.name,
           InspectionDate: new Date(),
           Status: "Pending",
           QualityInspectionItems: {

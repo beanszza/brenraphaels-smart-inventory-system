@@ -29,6 +29,7 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
       where: { DeliveryId: id },
       data: {
         Status: "Arrived",
+        ReceivedBy: access.staff.username,
         ActualArrivalDate: body.actualArrivalDate ? new Date(body.actualArrivalDate) : new Date(),
         DeliveryNoteNumber: body.deliveryNoteNumber?.trim() || delivery.DeliveryNoteNumber,
         Notes: body.notes?.trim() || delivery.Notes,

@@ -84,7 +84,7 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ id:
             Amount: 0,
             Status: "Pending",
             Reason: existing.Reason || "Production Request Approval",
-            RequestedBy: body.requestedBy || existing.RequestedBy,
+            RequestedBy: access.staff.username,
             RequestedAt: new Date(),
           },
         });
@@ -98,13 +98,12 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ id:
           throw new Error(`Only requests in 'Pending Approval' can be approved. Current: ${existing.Status}`);
         }
 
-        const approverName = body.approvedBy || "Admin";
 
         const req = await tx.productionRequests.update({
           where: { ProdReqId: id },
           data: {
             Status: "Approved",
-            ApprovedBy: approverName,
+            ApprovedBy: access.staff.username,
             ApprovedAt: new Date(),
             AdminNotes: body.adminNotes ?? existing.AdminNotes,
             UpdatedAt: new Date(),
@@ -120,7 +119,8 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ id:
           },
           data: {
             Status: "Approved",
-            ApproverName: approverName,
+            ApproverId: access.staff.username,
+            ApproverName: access.staff.name,
             ActionAt: new Date(),
             Comments: body.adminNotes || "Approved",
           },
@@ -135,7 +135,6 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ id:
           throw new Error(`Only requests in 'Pending Approval' can be rejected. Current: ${existing.Status}`);
         }
 
-        const rejecterName = body.rejectedBy || "Admin";
         const reason = body.rejectionReason || "Requirements not met";
 
         // Release lot reservations
@@ -161,7 +160,7 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ id:
           where: { ProdReqId: id },
           data: {
             Status: "Rejected",
-            RejectedBy: rejecterName,
+            RejectedBy: access.staff.username,
             RejectedAt: new Date(),
             RejectionReason: reason,
             UpdatedAt: new Date(),
@@ -176,7 +175,8 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ id:
           },
           data: {
             Status: "Rejected",
-            ApproverName: rejecterName,
+            ApproverId: access.staff.username,
+            ApproverName: access.staff.name,
             ActionAt: new Date(),
             Comments: reason,
           },

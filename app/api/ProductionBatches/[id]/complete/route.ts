@@ -17,7 +17,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
   try {
     const body = await request.json();
     const finalQuantity = Number(body.finalQuantity);
-    const packagedBy = body.packagedBy || "Head Cook";
+    const packagedBy = access.staff.username;
     const expiryDate = body.expiryDate ? new Date(body.expiryDate) : null;
     const scrapQuantity = Number(body.scrapQuantity) || 0;
     const scrapReason = body.scrapReason || "";
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
           ReferenceType: "ProductionBatch",
           ReferenceId: batch.BatchNumber,
           UserId: packagedBy,
-          UserName: packagedBy,
+          UserName: access.staff.name,
           PostedAt: now,
           Notes: `Finished goods stock-in from completed Batch ${batch.BatchNumber}`,
         },

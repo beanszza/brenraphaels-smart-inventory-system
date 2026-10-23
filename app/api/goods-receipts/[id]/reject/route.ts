@@ -31,6 +31,8 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       where: { GrnId: id },
       data: { 
         Status: "Rejected",
+        RejectedBy: access.staff.username,
+        RejectedAt: new Date(),
         Notes: grn.Notes ? `${grn.Notes}\nRejected: ${reason}` : `Rejected: ${reason}`
       }
     });

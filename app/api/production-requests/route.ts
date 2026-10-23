@@ -266,7 +266,7 @@ export async function POST(request: NextRequest) {
           Priority: mappedPriority,
           RequiredDate: body.requiredDate ? new Date(body.requiredDate) : new Date(Date.now() + 86400000),
           RequiredTime: body.requiredTime || "",
-          RequestedBy: body.requestedBy || "Inventory Manager",
+          RequestedBy: access.staff.username,
           Status: initialStatus,
           AdminNotes: body.notes || "",
         },
@@ -329,7 +329,7 @@ export async function POST(request: NextRequest) {
             Amount: 0,
             Status: "Pending",
             Reason: prodReq.Reason || "Production Request Approval",
-            RequestedBy: prodReq.RequestedBy,
+            RequestedBy: access.staff.username,
             RequestedAt: new Date(),
           },
         });

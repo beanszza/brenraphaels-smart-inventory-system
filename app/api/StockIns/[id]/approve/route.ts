@@ -28,7 +28,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       where: { StockInId: id },
       data: {
         Status: "Approved",
-        ApprovedBy: "System User",
+        ApprovedBy: access.staff.username,
         ApprovedAt: new Date(),
         Notes: body.notes ? (stockIn.Notes ? `${stockIn.Notes}\nApproval Note: ${body.notes}` : `Approval Note: ${body.notes}`) : stockIn.Notes,
       }

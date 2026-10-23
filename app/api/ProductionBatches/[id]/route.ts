@@ -134,7 +134,6 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
       data: {
         ...(body.notes !== undefined && { Notes: body.notes }),
         ...(body.purpose !== undefined && { Purpose: body.purpose }),
-        ...(body.assignedCook !== undefined && { AssignedCook: body.assignedCook }),
         ...(body.scheduleDate !== undefined && { ProductionDate: new Date(body.scheduleDate) }),
       },
       include: BATCH_INCLUDE,

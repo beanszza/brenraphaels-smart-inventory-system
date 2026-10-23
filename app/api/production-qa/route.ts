@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     const acceptedReason = String(body.acceptedReason || "").trim();
     const rejectedQuantity = Number(body.rejectedQuantity ?? 0);
     const rejectedReason = String(body.rejectedReason || "").trim();
-    const inspectorName = String(body.inspectorName || "Ramon Dela Cruz").trim();
+    const inspectorName = access.staff.name;
     const remarks = String(body.remarks || "").trim();
     const checklist = body.checklist || {};
 
@@ -179,8 +179,8 @@ export async function POST(request: NextRequest) {
             LostQuantity: rejectedQuantity,
             Reason: `QA Inspection Rejected: ${rejectedReason}`,
             Notes: `PQA: ${pqaNumber}. Batch: ${batch.BatchNumber}. Lot: ${batch.InventoryLots?.LotCode || "N/A"}. Inspector: ${inspectorName}`,
-            AuthorisedBy: "QA Officer",
-            CreatedBy: inspectorName,
+            AuthorisedBy: access.staff.username,
+            CreatedBy: access.staff.username,
             CreatedAt: now,
             IsAcknowledged: false,
           },
@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
           ReferenceType: "ProductionBatch",
           ReferenceId: batch.BatchId,
           ReferenceNumber: batch.BatchNumber,
-          InspectorId: "qa-officer",
+          InspectorId: access.staff.username,
           InspectorName: inspectorName,
           InspectionDate: now,
           Status: qaStatus,
@@ -210,12 +210,12 @@ export async function POST(request: NextRequest) {
             lossReportNumber,
           }),
           CompletedAt: now,
-          CompletedBy: inspectorName,
+          CompletedBy: access.staff.username,
         },
       });
 
       // 4. Update Production Batches
-      const activityLog = `[ACTIVITY:${now.toISOString()}|TITLE:QA review completed (${qaStatus}): ${acceptedQuantity} accepted, ${rejectedQuantity} rejected|ACTOR:${inspectorName}]`;
+      const activityLog = `[ACTIVITY:${now.toISOString()}|TITLE:QA review completed (${qaStatus}): ${acceptedQuantity} accepted, ${rejectedQuantity} rejected|ACTOR:${access.staff.username}]`;
       const updatedNotes = batch.Notes ? `${batch.Notes}\n${activityLog}` : activityLog;
 
       const updatedBatch = await tx.productionBatches.update({

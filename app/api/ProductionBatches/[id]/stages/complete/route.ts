@@ -30,7 +30,7 @@ export async function POST(
     const stage = String(body.stage || "").trim();
     const endTime = String(body.endTime || "").trim();
     const notes = String(body.notes || "").trim();
-    const completedBy = String(body.completedBy || "Head Cook").trim();
+    const completedBy = access.staff.username;
 
     if (!stage || !COOKING_STAGES.includes(stage as any)) {
       return NextResponse.json(

@@ -18,7 +18,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { action, adminNotes, reviewedBy = "Admin" } = body;
+    const { action, adminNotes } = body;
 
     if (!action || !["Approve", "Reject"].includes(action)) {
       return NextResponse.json(
@@ -56,7 +56,7 @@ export async function PUT(
       data: {
         Status: newStatus,
         AdminNotes: adminNotes ? adminNotes.trim() : null,
-        ReviewedBy: reviewedBy,
+        ReviewedBy: access.staff.username,
         ReviewedAt: new Date(),
       },
     });
