@@ -44,6 +44,41 @@ node scripts/ims-setup.mjs portal .env.local
 node scripts/ims-setup.mjs gateway .env.local
 ```
 
+## Portal auth backend
+
+Set `PORTAL_URL`, `PORTAL_SYSTEM_SECRET`, `PORTAL_SYSTEM_NAME=IMS` and `IMS_APP_URL`
+from [.env.example](.env.example). IMS accepts `https://br-sims.vercel.app` and local HTTPS
+origins only; register the exact `/api/portal/callback` URL with the Portal. Run locally at
+`https://localhost:3003` with the existing certificate files. For development without the
+Portal, explicitly set `IMS_DEV_BYPASS=true` and `IMS_APP_URL=https://localhost:3003`.
+The bypass throws in production, on Vercel, or for a non-localhost origin/request.
+
+`GET /api/portal/login?returnTo=/inventory` starts PKCE. The callback checks the short-lived
+handoff cookie and state, exchanges the single-use code, and stores the opaque handle in
+`ims_session` (Secure, HttpOnly, SameSite=Lax, up to eight hours as issued by the Portal).
+Return paths are restricted to IMS pages. `POST /api/portal/logout` from an IMS-origin form
+clears the cookies and sends the browser to the Portal logout, ending the central session
+for every System in that browser.
+
+The proxy checks cookie presence only. Use `requireModule` from `lib/portal/staff.ts` before
+any page or server action data access. Route handlers use `requireRouteModule(request, module)`
+and immediately return `result.response` when `result.ok` is false. The guard revalidates with
+the Portal on each invocation and denies invalid, missing, unavailable or malformed answers.
+Dashboard opens to Staff holding any of the seven IMS Modules. Staff identity includes the
+Portal internal id, name and Username; it never comes from client-supplied attribution.
+
+This is the backend foundation in #5: screens and sidebar integration follow in #6, legacy
+auth removal in #7, and guard adoption in all existing route handlers with coverage in #8.
+The page/action guard redirects to `/no-access`, `/unavailable` or the Portal login;
+callback failures redirect to `/sign-in-error` (screens supplied by #6).
+This PR does not yet secure handlers against a forged cookie: #8 must land before the auth
+cutover is considered complete. No database migration or historical data rewrite is required.
+The Portal seed/registration migration is tracked in #2.
+
+Run `npm test` for the fake-Portal suite and `npm run typecheck` for TypeScript. Tests exercise
+PKCE, handoff, live Module decisions, central logout, return paths, and bypass refusal without
+browser or live-service calls.
+
 ## Getting Started
 
 First, run the development server:
@@ -58,7 +93,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [https://localhost:3003](https://localhost:3003) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
