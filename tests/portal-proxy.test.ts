@@ -6,7 +6,7 @@ it("preserves the original page across the sign-in redirect", () => {
     new NextRequest("https://localhost:3003/inventory?lot=42"),
   );
   expect(response.headers.get("location")).toBe(
-    "https://localhost:3003/api/portal/login?returnTo=%2Finventory%3Flot%3D42",
+    "https://localhost:3003/signing-in?returnTo=%2Finventory%3Flot%3D42",
   );
 });
 

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { NextResponse, type NextRequest } from "next/server";
 import { moduleForPath } from "@/components/shared/SidebarNav";
 import { accessFor, modulesFor } from "./access";
-import { SESSION_COOKIE, LOGIN_PATH, MODULES, type Module } from "./config";
+import { SESSION_COOKIE, SIGNING_IN_PATH, MODULES, type Module } from "./config";
 import { DEV_STAFF, devBypassEnabled } from "./dev-bypass";
 import { safeReturnTo } from "./return-to";
 import type { Staff } from "./client";
@@ -22,7 +22,7 @@ export async function requireModule(module: Module): Promise<Staff> {
   );
   switch (result.decision) {
     case "invalid":
-      redirect(`${LOGIN_PATH}?returnTo=${returnTo}`);
+      redirect(`${SIGNING_IN_PATH}?returnTo=${returnTo}`);
     case "denied":
       redirect("/no-access");
     case "unavailable":
@@ -46,7 +46,7 @@ export async function requireShell(
   const returnTo = encodeURIComponent(safeReturnTo(pathname));
   switch (result.decision) {
     case "invalid":
-      redirect(`${LOGIN_PATH}?returnTo=${returnTo}`);
+      redirect(`${SIGNING_IN_PATH}?returnTo=${returnTo}`);
     case "denied":
       redirect("/no-access");
     case "unavailable":
