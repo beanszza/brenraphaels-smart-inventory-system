@@ -1,4 +1,6 @@
 "use client";
+import { receivingDeliveries } from "@/lib/receiving/screen-data";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 import { receiving } from "@/lib/receiving/client";
 
@@ -159,11 +161,8 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
       packagingConditionChecked: false,
     });
 
-    actionResponse(listDeliveriesForReceiving("eligibleForGrn=true&pageSize=1000"))
-      .then(({ data }) => {
-        const payload = data?.data;
-        const list = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
-        const arrived = list.filter((d: ArrivedDelivery) => d.status === "Arrived");
+    receivingDeliveries(listDeliveriesForReceiving)
+      .then((arrived) => {
         setDeliveries(arrived);
 
         if (initialDeliveryId) {
@@ -1230,9 +1229,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
               )}
 
               {loading && (
-                <div className="py-10 text-center text-xs text-muted-foreground animate-pulse">
-                  Loading delivery items…
-                </div>
+                <ReceivingSkeleton />
               )}
 
               {selected && !loading && (

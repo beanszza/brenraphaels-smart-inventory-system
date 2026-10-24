@@ -184,7 +184,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
     <ModalWrapper open={open} title={`Goods Receipt Note — ${grn.grnNumber}`} onClose={onClose} size="max-w-4xl">
       <div className="space-y-5 text-foreground">
         {error && (
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl p-3">
+          <div role="alert" className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl p-3">
             {error}
           </div>
         )}

@@ -1,4 +1,5 @@
 "use client";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 import React from "react";
 import { ClipboardCheck, Eye, MoreHorizontal } from "lucide-react";
@@ -19,9 +20,7 @@ export default function QaTable({ inspections, loading, onSelectInspection, pend
 
   if (loading) {
     return (
-      <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm p-12 text-center text-xs text-muted-foreground animate-pulse">
-        Loading Quality Inspections...
-      </div>
+      <ReceivingSkeleton />
     );
   }
 

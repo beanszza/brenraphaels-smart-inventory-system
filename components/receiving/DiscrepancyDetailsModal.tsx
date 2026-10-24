@@ -119,7 +119,7 @@ export default function DiscrepancyDetailsModal({
     >
       <div className="space-y-6 text-foreground">
         {error && (
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl p-3">
+          <div role="alert" className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl p-3">
             {error}
           </div>
         )}

@@ -173,7 +173,7 @@ for (const [name, action] of Object.entries(allActions).filter(([name]) => /^(li
     expect(JSON.parse(JSON.stringify(result))).toEqual(result);
   });
 }
-for (const [name, action] of [...Object.entries(allActions), ["Goods Receiving page", GoodsReceivingPage]] as [string, (...args: never[]) => Promise<unknown>][]) {
+for (const [name, action] of [...Object.entries(allActions), ["Goods Receiving page", () => GoodsReceivingPage({ searchParams: Promise.resolve({}) })]] as [string, (...args: never[]) => Promise<unknown>][]) {
   describe(name, () => {
     it.each(["unsigned", "invalid", "denied", "unavailable"])("denies %s before any data access", async decision => {
       fake.signed = decision !== "unsigned"; fake.decision = decision;

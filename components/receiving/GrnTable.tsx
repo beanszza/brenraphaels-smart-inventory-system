@@ -1,4 +1,5 @@
 "use client";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 import React, { useState } from "react";
 import { Eye, MoreHorizontal } from "lucide-react";
@@ -16,9 +17,7 @@ export default function GrnTable({ grns, loading, onSelectGrn }: GrnTableProps) 
 
   if (loading) {
     return (
-      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm p-12 text-center text-xs text-muted-foreground animate-pulse">
-        Loading Goods Receipt Notes...
-      </div>
+      <ReceivingSkeleton />
     );
   }
 

@@ -1,4 +1,5 @@
 "use client";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 import { getDeliveryForReceiving } from "@/app/actions/receiving/procurement-reads";
 import { actionResponse } from "@/lib/resources/action-response";
@@ -71,15 +72,13 @@ export default function DeliveryDetailsModal({
     >
       <div className="space-y-6 text-foreground">
         {error && (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+          <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
             {error}
           </div>
         )}
 
         {loading ? (
-          <div className="py-12 text-center text-xs text-muted-foreground animate-pulse">
-            Loading delivery details…
-          </div>
+          <ReceivingSkeleton />
         ) : detail ? (
           <>
             {/* Header Summary */}
