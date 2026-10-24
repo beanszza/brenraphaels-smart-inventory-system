@@ -1,8 +1,9 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+"use server";
+/* eslint-disable @typescript-eslint/no-explicit-any -- Retain existing transfer DTOs during migration. */
 import { prisma } from "@/lib/prisma";
-
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { read, mutate, refuse, validateInput, saved } from "@/lib/stock-transfer/operations";
 const TRANSFER_INCLUDE = {
   FinishedProducts: { include: { Items: true } },
   Locations_StockTransfers_SourceLocationIdToLocations: true,
@@ -41,14 +42,13 @@ function mapTransfer(t: any) {
   };
 }
 
-export async function GET(request: NextRequest) {
-  const access = await requireRouteModule(request, "Stock Transfer");
-  if (!access.ok) return access.response;
+export async function listTransfers(query = "") {
+  await requireModule("Stock Transfer");
+  return read(async () => {
 
-  try {
-    const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "10", 10)));
+    const searchParams = new URLSearchParams(query);
+    const page = Math.max(1, (parseInt(searchParams.get("page") || "1", 10) || 1));
+    const pageSize = Math.min(100, Math.max(1, (parseInt(searchParams.get("pageSize") || "10", 10) || 10)));
     const status = searchParams.get("status")?.trim() || "";
     const search = searchParams.get("search")?.trim() || "";
 
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    return NextResponse.json({
+    return resourceResult({
       success: true,
       data: transfers.map(mapTransfer),
       pagination: {
@@ -105,29 +105,13 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / pageSize),
       },
     });
-  } catch (error: any) {
-    console.error("Error in GET /api/stock-transfers:", error);
-    return NextResponse.json(
-      { success: false, message: error.message || "Failed to fetch stock transfers" },
-      { status: 500 }
-    );
-  }
+
+  });
 }
-
-export async function POST(request: NextRequest) {
-  const access = await requireRouteModule(request, "Stock Transfer");
-  if (!access.ok) return access.response;
-
-  try {
-    const userRole = request.headers.get("x-user-role")?.toLowerCase();
-    if (userRole === "admin") {
-      return NextResponse.json(
-        { success: false, message: "Admins are not permitted to schedule stock transfers." },
-        { status: 403 }
-      );
-    }
-
-    const body = await request.json();
+export async function scheduleTransfer(body: any = {}) {
+  const staff = await requireModule("Stock Transfer");
+  return mutate(staff, async (tx) => {
+validateInput(body);
     const {
       requestId,
       productId,
@@ -140,13 +124,10 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!requestId || !productId || !transferQuantity || !scheduledDate) {
-      return NextResponse.json(
-        { success: false, message: "Request ID, Product, Quantity, and Scheduled Date are required." },
-        { status: 400 }
-      );
+      return refuse("Request ID, Product, Quantity, and Scheduled Date are required.");
     }
 
-    const str = await prisma.stockTransferRequests.findUnique({
+    const str = await tx.stockTransferRequests.findUnique({
       where: { RequestId: Number(requestId) },
       include: {
         StockTransferRequestItems: true,
@@ -154,24 +135,24 @@ export async function POST(request: NextRequest) {
     });
 
     if (!str) {
-      return NextResponse.json(
-        { success: false, message: "Stock Transfer Request not found." },
-        { status: 404 }
-      );
+      return refuse("Stock Transfer Request not found.");
     }
 
     if (str.Status !== "Approved") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Only Approved requests can be scheduled. Current request status is '${str.Status}'.`,
-        },
-        { status: 400 }
-      );
+      return refuse(`Only Approved requests can be scheduled. Current request status is '${str.Status}'.`);
     }
 
+    const requested = str.StockTransferRequestItems.filter(item => item.ProductId === Number(productId));
+    if (!requested.length) refuse("The product is not part of this request.");
+    const scheduled = await tx.stockTransfers.aggregate({
+      where: { RequestId: str.RequestId, ProductId: Number(productId), Status: { not: "Cancelled" } },
+      _sum: { TransferQuantity: true },
+    });
+    const limit = requested.reduce((sum, item) => sum + Number(item.RequestedQuantity), 0);
+    if (Number(scheduled._sum.TransferQuantity || 0) + Number(transferQuantity) > limit) refuse("The quantity exceeds the unscheduled request quantity.");
+
     // Identify Commissary source location
-    const commissary = await prisma.locations.findFirst({
+    const commissary = await tx.locations.findFirst({
       where: {
         OR: [
           { IsSystemLocation: true },
@@ -182,22 +163,19 @@ export async function POST(request: NextRequest) {
     });
 
     if (!commissary) {
-      return NextResponse.json(
-        { success: false, message: "Commissary source location not found." },
-        { status: 400 }
-      );
+      return refuse("Commissary source location not found.");
     }
 
     // Generate formal Transfer Number: STF-YYYY-XXXX
     const year = new Date().getFullYear();
-    const seq = await prisma.documentSequences.upsert({
+    const seq = await tx.documentSequences.upsert({
       where: { DocType_Year: { DocType: "StockTransfer", Year: year } },
       update: { LastNumber: { increment: 1 } },
       create: { DocType: "StockTransfer", Year: year, LastNumber: 1 },
     });
     const transferNumber = `STF-${year}-${String(seq.LastNumber).padStart(4, "0")}`;
 
-    const transfer = await prisma.stockTransfers.create({
+    const transfer = await tx.stockTransfers.create({
       data: {
         TransferNumber: transferNumber,
         RequestId: str.RequestId,
@@ -213,24 +191,16 @@ export async function POST(request: NextRequest) {
         CourierName: courierName || null,
         Priority: str.Priority,
         Notes: notes || null,
-        CreatedBy: access.staff.username,
+        CreatedBy: staff.username,
       },
       include: TRANSFER_INCLUDE,
     });
 
-    return NextResponse.json(
-      {
+    return saved(staff, "stock-transfer", transfer.TransferId, transfer.TransferNumber || String(transfer.TransferId), "created", resourceResult({
         success: true,
         message: "Stock transfer scheduled successfully.",
         data: mapTransfer(transfer),
-      },
-      { status: 201 }
-    );
-  } catch (error: any) {
-    console.error("Error in POST /api/stock-transfers:", error);
-    return NextResponse.json(
-      { success: false, message: error.message || "Failed to schedule stock transfer" },
-      { status: 500 }
-    );
-  }
+      }));
+
+  });
 }

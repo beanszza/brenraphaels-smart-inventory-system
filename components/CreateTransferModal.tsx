@@ -1,4 +1,5 @@
 "use client";
+import { stockTransfer } from "@/lib/stock-transfer/client";
 import { production } from "@/lib/production/client";
 
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -7,7 +8,6 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { inventory } from "@/lib/inventory/client";
-import api from "@/lib/api";
 
 type LocationItem = {
   id: string;
@@ -168,7 +168,7 @@ export default function CreateTransferModal({
 
     try {
       if (mode === "edit" && initialData?.id) {
-        await api.put(`/api/stock-transfers/${initialData.id}`, {
+        await stockTransfer.editTransfer(initialData.id, {
           productId: Number(product),
           sourceLocationId: sourceLocationId ?? initialData.sourceLocationId ?? 1,
           destLocationId: Number(to),
@@ -180,7 +180,7 @@ export default function CreateTransferModal({
           setSubmitError("Could not determine source location. Ensure the product has inventory.");
           return;
         }
-        await api.post("/api/stock-transfers", {
+        await stockTransfer.scheduleTransfer({
           productId: Number(product),
           sourceLocationId: sourceLocationId,
           destLocationId: Number(to),

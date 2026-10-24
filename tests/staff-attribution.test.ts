@@ -76,7 +76,10 @@ it.each(transitions)("%s attributes the action to signed-in Staff", async (path,
 
 async function act(path: string, method: string, body: Record<string, unknown> = {}) {
   const { production } = await import("@/lib/production/client");
+  const { stockTransfer } = await import("@/lib/stock-transfer/client");
   const actions: Record<string, () => ReturnType<typeof production.listBatches>> = {
+    "stock-transfers/[id]/status": () => stockTransfer.updateTransferStatus(1, body),
+    "stock-transfer-requests/[id]/status": () => stockTransfer.reviewRequest(1, body),
     "production-requests/[id]": () => production.updateProductionRequest(1, body),
     "ProductionBatches/[id]/stages/complete": () => production.completeBatchStage(1, body),
     "ProductionBatches/[id]/complete": () => production.completeBatch(1, body),

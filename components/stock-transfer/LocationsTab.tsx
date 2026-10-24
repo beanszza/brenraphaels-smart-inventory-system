@@ -1,6 +1,6 @@
 "use client";
 
-import { listLocations } from "@/app/actions/resources/locations";
+import { listLocations } from "@/app/actions/stock-transfer/locations";
 import { actionResponse } from "@/lib/resources/action-response";
 
 

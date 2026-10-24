@@ -1,12 +1,13 @@
 "use client";
-import { production } from "@/lib/production/client";
+import { actionResponse } from "@/lib/resources/action-response";
+import { stockTransfer } from "@/lib/stock-transfer/client";
+import { listFinishedProducts } from "@/app/actions/stock-transfer/products";
 
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { LocationItem } from "./types";
-import api from "@/lib/api";
 
 interface CreateTransferModalProps {
   open: boolean;
@@ -39,7 +40,7 @@ export default function CreateTransferModal({
 
       const load = async () => {
         try {
-          const res = await production.listFinishedProducts();
+          const res = await actionResponse(listFinishedProducts());
           if (res.data?.success) setProducts(res.data.data.items || res.data.data || []);
         } catch (e) { console.error(e); }
       };
@@ -66,7 +67,7 @@ export default function CreateTransferModal({
         status: "Pending",
       };
 
-      await api.post("/api/stock-transfers", payload);
+      await stockTransfer.scheduleTransfer(payload);
       onCreated();
       onClose();
     } catch {

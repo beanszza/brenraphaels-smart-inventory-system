@@ -1,13 +1,12 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+"use server";
 import { prisma } from "@/lib/prisma";
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { read } from "@/lib/stock-transfer/operations";
+export async function requestDashboard() {
+  await requireModule("Stock Transfer");
+  return read(async () => {
 
-export async function GET(request: NextRequest) {
-  const access = await requireRouteModule(request, "Stock Transfer");
-  if (!access.ok) return access.response;
-
-  try {
     const [totalRequests, pendingApproval, approvedRequests, dispatchedTransfers, scheduledTransfers] =
       await Promise.all([
         prisma.stockTransferRequests.count(),
@@ -17,7 +16,7 @@ export async function GET(request: NextRequest) {
         prisma.stockTransfers.count({ where: { Status: "Scheduled" } }),
       ]);
 
-    return NextResponse.json({
+    return resourceResult({
       success: true,
       data: {
         totalRequests,
@@ -27,11 +26,6 @@ export async function GET(request: NextRequest) {
         scheduledTransfers,
       },
     });
-  } catch (error: any) {
-    console.error("Error in GET /api/stock-transfer-requests/dashboard:", error);
-    return NextResponse.json(
-      { success: false, message: error.message || "Failed to fetch dashboard metrics" },
-      { status: 500 }
-    );
-  }
+
+  });
 }

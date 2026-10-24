@@ -1,0 +1,31 @@
+import { actionResponse } from "@/lib/resources/action-response";
+import { listRequests } from "@/app/actions/stock-transfer/requests";
+import { createRequest } from "@/app/actions/stock-transfer/requests";
+import { getRequest } from "@/app/actions/stock-transfer/request-detail";
+import { reviewRequest } from "@/app/actions/stock-transfer/request-status";
+import { cancelRequest } from "@/app/actions/stock-transfer/request-cancel";
+import { requestDashboard } from "@/app/actions/stock-transfer/request-dashboard";
+import { suggestLots } from "@/app/actions/stock-transfer/lot-suggestions";
+import { listTransfers } from "@/app/actions/stock-transfer/transfers";
+import { scheduleTransfer } from "@/app/actions/stock-transfer/transfers";
+import { updateTransferStatus } from "@/app/actions/stock-transfer/transfer-status";
+import { dispatchTransfer } from "@/app/actions/stock-transfer/dispatch";
+import { cancelTransfer } from "@/app/actions/stock-transfer/transfer-cancel";
+import { transferDashboard } from "@/app/actions/stock-transfer/transfer-dashboard";
+import { editTransfer } from "@/app/actions/stock-transfer/edit-transfer";
+export const stockTransfer = {
+  editTransfer: (...args: Parameters<typeof editTransfer>) => actionResponse(editTransfer(...args)),
+  listRequests: (...args: Parameters<typeof listRequests>) => actionResponse(listRequests(...args)),
+  createRequest: (...args: Parameters<typeof createRequest>) => actionResponse(createRequest(...args)),
+  getRequest: (...args: Parameters<typeof getRequest>) => actionResponse(getRequest(...args)),
+  reviewRequest: (...args: Parameters<typeof reviewRequest>) => actionResponse(reviewRequest(...args)),
+  cancelRequest: (...args: Parameters<typeof cancelRequest>) => actionResponse(cancelRequest(...args)),
+  requestDashboard: (...args: Parameters<typeof requestDashboard>) => actionResponse(requestDashboard(...args)),
+  suggestLots: (...args: Parameters<typeof suggestLots>) => actionResponse(suggestLots(...args)),
+  listTransfers: (...args: Parameters<typeof listTransfers>) => actionResponse(listTransfers(...args)),
+  scheduleTransfer: (...args: Parameters<typeof scheduleTransfer>) => actionResponse(scheduleTransfer(...args)),
+  updateTransferStatus: (...args: Parameters<typeof updateTransferStatus>) => actionResponse(updateTransferStatus(...args)),
+  dispatchTransfer: (...args: Parameters<typeof dispatchTransfer>) => actionResponse(dispatchTransfer(...args)),
+  cancelTransfer: (...args: Parameters<typeof cancelTransfer>) => actionResponse(cancelTransfer(...args)),
+  transferDashboard: (...args: Parameters<typeof transferDashboard>) => actionResponse(transferDashboard(...args)),
+};

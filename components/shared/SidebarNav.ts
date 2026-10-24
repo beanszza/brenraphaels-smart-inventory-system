@@ -79,7 +79,7 @@ const unlistedRoutes: Record<string, Module> = {
   "/mrp": "Orders & Procurement",
   "/reports": "Orders & Procurement",
   "/distribution": "Stock Transfer",
-  "/distribution-analytics": "Dashboard",
+  "/distribution-analytics": "Stock Transfer",
 };
 
 /** The Module that owns a page address, or undefined so callers deny by default. */

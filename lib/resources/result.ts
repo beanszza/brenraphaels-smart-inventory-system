@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type ResourceResult = {
   success: boolean;
+  pagination?: { page: number; pageSize: number; total: number; totalPages: number };
   message?: string;
   data?: any;
   nextCode?: string;

@@ -1,20 +1,15 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+"use server";
 import { prisma } from "@/lib/prisma";
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { read, refuse, positiveId } from "@/lib/stock-transfer/operations";
+export async function getRequest(idInput: number) {
+  await requireModule("Stock Transfer");
+  return read(async () => {
 
-export async function GET(
-  _request: NextRequest,
-  props: { params: Promise<{ id: string }> }
-) {
-  const access = await requireRouteModule(_request, "Stock Transfer");
-  if (!access.ok) return access.response;
-
-  try {
-    const params = await props.params;
-    const requestId = parseInt(params.id, 10);
+    const requestId = positiveId(idInput);
     if (isNaN(requestId)) {
-      return NextResponse.json({ success: false, message: "Invalid request ID." }, { status: 400 });
+      return refuse("Invalid request ID.");
     }
 
     const req = await prisma.stockTransferRequests.findUnique({
@@ -39,7 +34,7 @@ export async function GET(
     });
 
     if (!req) {
-      return NextResponse.json({ success: false, message: "Stock transfer request not found." }, { status: 404 });
+      return refuse("Stock transfer request not found.");
     }
 
     const data = {
@@ -84,12 +79,7 @@ export async function GET(
       })),
     };
 
-    return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    console.error("Error in GET /api/stock-transfer-requests/[id]:", error);
-    return NextResponse.json(
-      { success: false, message: error.message || "Failed to fetch stock transfer request" },
-      { status: 500 }
-    );
-  }
+    return resourceResult({ success: true, data });
+
+  });
 }

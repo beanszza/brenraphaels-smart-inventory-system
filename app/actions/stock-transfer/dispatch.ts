@@ -1,34 +1,19 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-
-export async function PUT(
-  request: NextRequest,
-  props: { params: Promise<{ id: string }> }
-) {
-  const access = await requireRouteModule(request, "Stock Transfer");
-  if (!access.ok) return access.response;
-
-  try {
-    const params = await props.params;
-    const userRole = request.headers.get("x-user-role")?.toLowerCase();
-    if (userRole === "admin") {
-      return NextResponse.json(
-        { success: false, message: "Admins are not permitted to dispatch stock transfers." },
-        { status: 403 }
-      );
-    }
-
-    const transferId = parseInt(params.id, 10);
+"use server";
+/* eslint-disable @typescript-eslint/no-explicit-any -- Retain existing transfer DTOs during migration. */
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { mutate, refuse, positiveId, validateInput, saved } from "@/lib/stock-transfer/operations";
+export async function dispatchTransfer(idInput: number, body: any = {}) {
+  const staff = await requireModule("Stock Transfer");
+  return mutate(staff, async (tx) => {
+validateInput(body);
+    const transferId = positiveId(idInput);
     if (isNaN(transferId)) {
-      return NextResponse.json({ success: false, message: "Invalid transfer ID." }, { status: 400 });
+      return refuse("Invalid transfer ID.");
     }
-
-    const body = await request.json().catch(() => ({}));
     const { driverName, vehiclePlate, courierName, notes } = body;
 
-    const transfer = await prisma.stockTransfers.findUnique({
+    const transfer = await tx.stockTransfers.findUnique({
       where: { TransferId: transferId },
       include: {
         FinishedProducts: true,
@@ -36,29 +21,26 @@ export async function PUT(
     });
 
     if (!transfer) {
-      return NextResponse.json({ success: false, message: "Stock transfer not found." }, { status: 404 });
+      return refuse("Stock transfer not found.");
     }
 
     if (transfer.Status !== "Scheduled") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Cannot dispatch transfer in '${transfer.Status}' status. Only 'Scheduled' transfers can be dispatched.`,
-        },
-        { status: 400 }
-      );
+      return refuse(`Cannot dispatch transfer in '${transfer.Status}' status. Only 'Scheduled' transfers can be dispatched.`);
     }
 
     const transferQty = Number(transfer.TransferQuantity);
+    if (!Number.isFinite(transferQty) || transferQty <= 0) refuse("Invalid transfer quantity.");
     const itemId = transfer.FinishedProducts.ItemId;
     const sourceLocId = transfer.SourceLocationId;
 
     // Execute atomic transaction for inventory deduction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await (async () => {
       // 1. Fetch active commissary lots sorted FEFO
       const lots = await tx.inventoryLots.findMany({
         where: {
           ItemId: itemId,
+          LocationId: sourceLocId,
+          OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
           Status: { in: ["Active", "Available"] },
           QuantityRemaining: { gt: 0 },
         },
@@ -72,7 +54,9 @@ export async function PUT(
         if (remainingToDeduct <= 0) break;
 
         const currentRem = Number(lot.QuantityRemaining);
-        const toDeduct = Math.min(currentRem, remainingToDeduct);
+        const available = Math.max(0, currentRem - Number(lot.ReservedQuantity || 0));
+        const toDeduct = Math.min(available, remainingToDeduct);
+        if (toDeduct <= 0) continue;
 
         await tx.inventoryLots.update({
           where: { LotId: lot.LotId },
@@ -87,7 +71,7 @@ export async function PUT(
       }
 
       if (remainingToDeduct > 0.001) {
-        throw new Error(
+        refuse(
           `Insufficient commissary stock to dispatch ${transferQty} units. Shortage of ${remainingToDeduct.toFixed(2)} units.`
         );
       }
@@ -102,6 +86,7 @@ export async function PUT(
         },
       });
 
+      if (!inventory || Number(inventory.CurrentStock) < transferQty) refuse("Insufficient source inventory.");
       if (inventory) {
         await tx.inventories.update({
           where: {
@@ -148,9 +133,9 @@ export async function PUT(
       }
 
       return { updatedTransfer, lotDeductions };
-    });
+    })();
 
-    return NextResponse.json({
+    return saved(staff, "stock-transfer", transfer.TransferId, transfer.TransferNumber || String(transfer.TransferId), "updated", resourceResult({
       success: true,
       message: "Transfer dispatched successfully and commissary stock deducted.",
       data: {
@@ -160,12 +145,7 @@ export async function PUT(
         dispatchedDate: result.updatedTransfer.DispatchedDate?.toISOString(),
         lotDeductions: result.lotDeductions,
       },
-    });
-  } catch (error: any) {
-    console.error("Error in PUT /api/stock-transfers/[id]/dispatch:", error);
-    return NextResponse.json(
-      { success: false, message: error.message || "Failed to dispatch stock transfer" },
-      { status: 500 }
-    );
-  }
+    }));
+
+  });
 }
