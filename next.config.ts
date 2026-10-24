@@ -4,13 +4,11 @@ import type { NextConfig } from "next";
 // kebab-case Next.js App Router paths in this app.
 // Frontend calls e.g. /api/Items, /api/PurchaseOrders → rewrite to /api/items, /api/purchase-orders
 const pascalToKebabAliases = [
-  { pascal: "FinishedProducts",       kebab: "finished-products" },
   { pascal: "Inventory",              kebab: "inventory" },
   { pascal: "StockTransfers",         kebab: "stock-transfers" },
   { pascal: "CycleCounts",            kebab: "cycle-counts" },
   { pascal: "Traceability",           kebab: "traceability" },
   { pascal: "Valuation",              kebab: "valuation" },
-  { pascal: "ProductionBatches",      kebab: "ProductionBatches" },
   { pascal: "Lots",                   kebab: "inventory" }, // Lots are part of inventory
 ];
 

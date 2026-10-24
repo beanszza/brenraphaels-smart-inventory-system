@@ -1,4 +1,5 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -39,12 +40,10 @@ import {
 } from "@/components/ui/dialog";
 import { FinishedProductItem } from "./types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import api from "@/lib/api";
-import { uploadFile } from "@/lib/file-upload";
-import { FileImage } from "@/components/shared/FileImage";
+import { uploadProductionImage } from "@/lib/production/image-client";
+import { ProductionImage } from "./ProductionImage";
 import { toast } from "sonner";
 
-const productFileRoute = (productId: number) => `/api/finished-products/${productId}/file`;
 
 const PACKAGING_TYPES = [
   "Tub",
@@ -138,7 +137,7 @@ export default function ConfigurationTab() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/finished-products");
+      const res = await production.listFinishedProducts();
       const list = res.data?.data || res.data || [];
       setProducts(list);
     } catch (err: any) {
@@ -237,13 +236,13 @@ export default function ConfigurationTab() {
       // Create each variation via POST /api/FinishedProducts
       for (const v of variationsList) {
         const variantLabel = `${v.size} ${v.packagingType}`.trim();
-        const res = await api.post("/api/finished-products", {
+        const res = await production.createFinishedProduct({
           productName: productName.trim(),
           variant: variantLabel,
           sellingPrice: v.price,
           sku: v.sku.toUpperCase(),
         });
-        const id = res.data?.data?.productId || res.data?.productId;
+        const id = res.data?.data?.productId;
         if (id) createdProductIds.push(id);
       }
 
@@ -252,7 +251,7 @@ export default function ConfigurationTab() {
       if (productPhotoFile && createdProductIds.length > 0) {
         for (const pid of createdProductIds) {
           try {
-            await uploadFile(productFileRoute(pid), productPhotoFile);
+            await uploadProductionImage("product", pid, productPhotoFile);
           } catch (err) {
             // The product is saved; only its photo is missing, so say so without failing the create.
             photoFailure = err instanceof Error ? err.message : "The photo could not be uploaded.";
@@ -306,7 +305,7 @@ export default function ConfigurationTab() {
         quickVarSku.trim() ||
         generateSku(targetProductName, quickVarType, quickVarSize);
 
-      await api.post("/api/finished-products", {
+      await production.createFinishedProduct({
         productName: targetProductName.trim(),
         variant: variantLabel,
         sellingPrice: Number(quickVarPrice) || 0,
@@ -339,7 +338,7 @@ export default function ConfigurationTab() {
 
     try {
       setSubmitting(true);
-      await api.put(`/api/finished-products/${editingItem.productId}`, {
+      await production.updateFinishedProduct(editingItem.productId, {
         productName: editProductName.trim(),
         variant: editVariantStr.trim(),
         sellingPrice: Number(editPrice) || 0,
@@ -361,7 +360,7 @@ export default function ConfigurationTab() {
     if (!confirm(`Are you sure you want to remove variant "${variantLabel}"?`)) return;
 
     try {
-      await api.delete(`/api/finished-products/${productId}`);
+      await production.deleteFinishedProduct(productId);
       toast.success("Variant removed successfully");
       fetchProducts();
     } catch (err: any) {
@@ -389,7 +388,7 @@ export default function ConfigurationTab() {
 
     try {
       toast.loading("Uploading photo...", { id: "upload-photo" });
-      await uploadFile(productFileRoute(activeUploadProductId), file);
+      await uploadProductionImage("product", activeUploadProductId, file);
       toast.success("Product photo updated successfully", { id: "upload-photo" });
       setPhotoVersion((v) => v + 1);
       fetchProducts();
@@ -528,8 +527,8 @@ export default function ConfigurationTab() {
                       {/* Thumbnail */}
                       <td className="py-2.5 px-4">
                         <div className="w-9 h-9 rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center shrink-0">
-                          <FileImage
-                            base={productFileRoute(product.productId)}
+                          <ProductionImage
+                            kind="product" id={product.productId}
                             alt={product.itemName}
                             className="w-full h-full object-cover"
                             version={photoVersion}

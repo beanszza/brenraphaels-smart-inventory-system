@@ -1,4 +1,5 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import { StatusBadge } from "@/components/shared/StatusBadge";
 
@@ -9,11 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { ProductionBatchEntity } from "./types";
 
-import { FileUploadField } from "@/components/orders-procurement/delivery/FileUploadField";
+import { BatchProofField } from "./BatchProofField";
 
 export const COOKING_STAGES = [
   "Steaming",
@@ -112,7 +112,7 @@ export default function ProductionBatchDetailView({
   const fetchBatchDetail = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/api/ProductionBatches/${batchId}`);
+      const res = await production.getBatch(batchId);
       if (res.data?.success && res.data.data) {
         const b = res.data.data;
         setBatch(b);
@@ -197,7 +197,7 @@ export default function ProductionBatchDetailView({
 
     setStageLoading(true);
     try {
-      const res = await api.post(`/api/ProductionBatches/${batchId}/stages/complete`, {
+      const res = await production.completeBatchStage(batchId, {
         stage: stageToComplete,
         endTime: formattedStageEndTime,
         notes: stageNotes,
@@ -229,7 +229,7 @@ export default function ProductionBatchDetailView({
   const handleProceedToPackaging = async () => {
     setStageLoading(true);
     try {
-      const res = await api.patch(`/api/ProductionBatches/${batchId}/stage`, {
+      const res = await production.advanceBatchStage(batchId, {
         stage: "Packaging",
         notes: "Cooking stages finished. Ready for packaging.",
       });
@@ -262,10 +262,10 @@ export default function ProductionBatchDetailView({
 
     setRejectLoading(true);
     try {
-      const res = await api.post(`/api/ProductionBatches/${batchId}/reject`, {
+      const res = await production.rejectBatch(batchId, {
         reason: rejectReason.trim(),
         assignedCook: rejectCook.trim(),
-        proofImageUrl: rejectProofUrl.trim() || "proof-rejection.jpg",
+        proofImageUrl: rejectProofUrl.trim(),
         notes: rejectNotes.trim(),
       });
 
@@ -306,7 +306,7 @@ export default function ProductionBatchDetailView({
 
     setPkgLoading(true);
     try {
-      const res = await api.post(`/api/ProductionBatches/${batchId}/packaging`, {
+      const res = await production.packageBatch(batchId, {
         packageDate: pkgDate || new Date(),
         expiryDate: pkgExpiryDate,
         packedBy: pkgPackedBy.trim(),
@@ -715,13 +715,7 @@ export default function ProductionBatchDetailView({
 
                 {/* Proof of Packaging via FileUploadField (same as delivery) */}
                 <div className="sm:col-span-2">
-                  <FileUploadField
-                    label="Proof of Packaging / Photo Verification *"
-                    helperText="Upload photo verification of packaged jars, sealing integrity, or lot labels"
-                    accept="image/*,.pdf"
-                    value={pkgProofUrl}
-                    onChange={({ fileName, fileUrl }) => setPkgProofUrl(fileUrl || fileName)}
-                  />
+                  <BatchProofField batchId={batchId} label="Proof of Packaging / Photo Verification *" onChange={setPkgProofUrl} />
                 </div>
 
                 <div className="sm:col-span-2 space-y-1">
@@ -1040,12 +1034,7 @@ export default function ProductionBatchDetailView({
                 <Label className="text-xs font-semibold text-foreground">
                   Proof of Picture / Photo Attachment <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  placeholder="rejection_defect_photo.jpg"
-                  value={rejectProofUrl}
-                  onChange={(e) => setRejectProofUrl(e.target.value)}
-                  className="h-8 text-xs border-border bg-background"
-                />
+                <BatchProofField batchId={batchId} label="Rejection photo" onChange={setRejectProofUrl} />
               </div>
 
               <div className="space-y-1">

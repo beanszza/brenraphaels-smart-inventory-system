@@ -6,6 +6,10 @@ const { rows } = vi.hoisted(() => ({
   rows: new Map<string, Record<string, unknown>>(),
 }));
 const routes = import.meta.glob("../app/api/**/route.ts");
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("next/headers", () => ({ headers: async () => new Headers(), cookies: async () => ({ get: () => ({ value: "opaque" }) }) }));
+vi.mock("@/lib/gateway/audit", () => ({ WRITE_TIMEOUT_MS: 3000, gatewayPort: { writeAudit: async () => {} } }));
+vi.mock("@/lib/gateway/notifications", () => ({ SEND_TIMEOUT_MS: 3000, notificationGateway: { send: async () => {} } }));
 vi.mock("@/lib/prisma", () => {
   const prisma = new Proxy({
     documentSequences: { upsert: async () => ({ LastNumber: 1 }) },
@@ -71,6 +75,17 @@ it.each(transitions)("%s attributes the action to signed-in Staff", async (path,
 });
 
 async function act(path: string, method: string, body: Record<string, unknown> = {}) {
+  const { production } = await import("@/lib/production/client");
+  const actions: Record<string, () => ReturnType<typeof production.listBatches>> = {
+    "production-requests/[id]": () => production.updateProductionRequest(1, body),
+    "ProductionBatches/[id]/stages/complete": () => production.completeBatchStage(1, body),
+    "ProductionBatches/[id]/complete": () => production.completeBatch(1, body),
+    "ProductionBatches/[id]/reject": () => production.rejectBatch(1, body),
+    "ProductionBatches/[id]/add-to-inventory": () => production.commitBatchInventory(1, body),
+    "production-qa": () => production.reviewProductionQa(body),
+    "ProductionBatches/[id]/packaging": () => production.packageBatch(1, body),
+  };
+  if (actions[path]) return (await actions[path]()).data;
   const route = await routes[`../app/api/${path}/route.ts`]() as Record<string, (r: NextRequest, p: { params: Promise<{ id: string }> }) => Promise<Response>>;
   const request = new NextRequest(`https://localhost:3003/api/${path.replace("[id]", "1")}`, {
     method, body: JSON.stringify(body),
@@ -138,7 +153,8 @@ it("attributes production QA and its loss report to the current inspector", asyn
 });
 
 it.each(["Forged", undefined])("packaging ignores packedBy=%s", async (packedBy) => {
-  rows.set("productionBatches", { BatchId: 1, BatchNumber: "PB-1", Status: "In Progress", ProductId: 1, EstimatedQuantity: 5 });
-  await act("ProductionBatches/[id]/packaging", "POST", { packedBy, finalQuantity: 5, expiryDate: "2027-01-01", proofImageUrl: "/proof.jpg" });
+  const proof = "3f2b8c1e-5a4d-4c6e-9b7a-1d2e3f4a5b6c";
+  rows.set("productionBatches", { BatchId: 1, BatchNumber: "PB-1", Status: "In Progress", ProductId: 1, EstimatedQuantity: 5, ImageUrl: proof });
+  await act("ProductionBatches/[id]/packaging", "POST", { packedBy, finalQuantity: 5, expiryDate: "2027-01-01", proofImageUrl: proof });
   expect(rows.get("productionBatches")?.PackagedBy).toBe("2026-AB-001");
 });

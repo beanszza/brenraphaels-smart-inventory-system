@@ -1,10 +1,10 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 import {
   Camera,
@@ -116,7 +116,7 @@ export default function MaterialIssuanceModal({
     if (!issuanceId) return;
     setLoading(true);
     try {
-      const res = await api.get(`/api/material-issuances/${issuanceId}`);
+      const res = await production.getIssuance(issuanceId);
       if (res.data?.success && res.data.data) {
         const issData: MaterialIssuanceDTO = res.data.data;
         setIssuance(issData);
@@ -319,7 +319,8 @@ export default function MaterialIssuanceModal({
     }
 
     try {
-      const res = await api.post(`/api/material-issuances/${issuanceId}/scan`, {
+      if (!issuanceId) return;
+      const res = await production.scanIssuance(issuanceId, {
         qrRaw: rawCode,
         ingredientId: matchingReservation.ingredientId,
         scannedBy: issuance?.issuedBy || "Inventory Manager",
@@ -436,7 +437,8 @@ export default function MaterialIssuanceModal({
 
     setIssuing(true);
     try {
-      const res = await api.post(`/api/material-issuances/${issuanceId}/issue`, {
+      if (!issuanceId) return;
+      const res = await production.issueMaterials(issuanceId, {
         issuedBy: issuance?.issuedBy || "Inventory Manager",
       });
 

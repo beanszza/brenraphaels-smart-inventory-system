@@ -1,6 +1,7 @@
 "use client";
+import { production } from "@/lib/production/client";
 
-import { listRecipes } from "@/app/actions/resources/recipes";
+import { listRecipes } from "@/app/actions/production/recipes";
 import { actionResponse } from "@/lib/resources/action-response";
 
 
@@ -10,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -226,7 +226,7 @@ export default function ProductionRequestModal({
   // Load products and recipes
   useEffect(() => {
     if (open) {
-      api.get("/api/finished-products").then((res: any) => {
+      production.listFinishedProducts().then((res: any) => {
         if (res.data?.success && Array.isArray(res.data.data)) {
           setProducts(
             res.data.data.map((p: any) => ({
@@ -306,7 +306,7 @@ export default function ProductionRequestModal({
     if (isViewMode && initialRequest) {
       // In view mode, fetch suggestions for the existing request
       setLoadingSuggestions(true);
-      api.get(`/api/production-requests/${initialRequest.prodReqId}/lot-suggestions`)
+      production.suggestRequestLots(initialRequest.prodReqId)
         .then((res: any) => {
           if (res.data?.success) {
             setLotSuggestions(res.data.data);
@@ -317,7 +317,7 @@ export default function ProductionRequestModal({
     } else if (recipeId && quantity > 0) {
       // In create mode, fetch preview
       setLoadingSuggestions(true);
-      api.get(`/api/production-requests/preview/lot-suggestions?recipeId=${recipeId}&quantity=${quantity}`)
+      production.suggestRequestLots("preview", `recipeId=${recipeId}&quantity=${quantity}`)
         .then((res: any) => {
           if (res.data?.success) {
             setLotSuggestions(res.data.data);
@@ -405,7 +405,7 @@ export default function ProductionRequestModal({
         submitForApproval,
       };
 
-      const res = await api.post("/api/production-requests", payload);
+      const res = await production.createProductionRequest(payload);
 
       if (res.data?.success) {
         const createdReq = res.data.data;
@@ -466,7 +466,7 @@ export default function ProductionRequestModal({
         payload.rejectionReason = notes || rejectionReason;
       }
 
-      const res = await api.patch(`/api/production-requests/${initialRequest.prodReqId}`, payload);
+      const res = await production.updateProductionRequest(initialRequest.prodReqId, payload);
       if (res.data?.success) {
         toast.success(
           action === "approve"

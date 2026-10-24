@@ -1,4 +1,5 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Search, Eye, QrCode, CheckCircle2, ArrowRight, MoreHorizontal } from "lucide-react";
 import Pagination from "@/components/Pagination";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { MaterialIssuanceDTO } from "./types";
 import MaterialIssuanceModal from "./MaterialIssuanceModal";
@@ -46,7 +46,7 @@ export default function MaterialIssuanceTab({ initialIssuanceId }: MaterialIssua
       if (statusFilter !== "All") params.status = statusFilter;
       if (searchQuery.trim()) params.search = searchQuery.trim();
 
-      const res = await api.get("/api/material-issuances", { params });
+      const res = await production.listIssuances(new URLSearchParams(params).toString());
       if (res.data?.success && Array.isArray(res.data.data)) {
         setIssuances(res.data.data);
       }

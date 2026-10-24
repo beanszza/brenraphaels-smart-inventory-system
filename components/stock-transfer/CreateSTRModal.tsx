@@ -1,4 +1,5 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import { listLocations } from "@/app/actions/resources/locations";
 import { actionResponse } from "@/lib/resources/action-response";
@@ -78,7 +79,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
   const fetchPrerequisites = async () => {
     try {
       const [prodRes, locRes, reqRes] = await Promise.all([
-        api.get("/api/finished-products"),
+        production.listFinishedProducts(),
         actionResponse(listLocations()),
         api.get("/api/stock-transfer-requests?pageSize=20"),
       ]);

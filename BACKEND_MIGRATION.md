@@ -16,10 +16,16 @@ handlers have been removed. Goods Receiving and Resources & Suppliers read the o
 deliveries they show through their own guarded actions (`app/actions/receiving/procurement-reads.ts`,
 `app/actions/resources/orders.ts`), so they need not hold Orders & Procurement.
 
-The following modules still use App Router handlers:
+Production & Quality now uses guarded server actions under `app/actions/production`
+for requests, material issuance, batches, QA inspections, recipes and finished products.
+Product and batch images upload directly to file storage through guarded actions. Recipe
+operations are shared with Resources & Suppliers, with each entry point checking its own
+Module. State changes emit audit events after commit and approvals notify the appropriate
+Known Staff. All Production & Quality route handlers and their callers have been removed.
+See `docs/ticket-25-verification.md` for verification and acceptance limits.
 
-- Finished products, including image upload
-- Goods receipts and GRN status transitions
+Stock Transfer is the remaining business Module with App Router handlers. The Portal
+handoff and logout handlers remain as authentication plumbing.
 
 The Prisma schema in `prisma/schema.prisma` maps the existing PostgreSQL database. Generate the client after changing it:
 

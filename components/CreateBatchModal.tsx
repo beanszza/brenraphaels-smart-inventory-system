@@ -1,13 +1,13 @@
 "use client";
+import { production } from "@/lib/production/client";
 
-import { listItems } from "@/app/actions/resources/items";
-import { listRecipes } from "@/app/actions/resources/recipes";
+import { listItems } from "@/app/actions/production/lookups";
+import { listRecipes } from "@/app/actions/production/recipes";
 import { actionResponse } from "@/lib/resources/action-response";
 
 
 import React, { useEffect, useState, useMemo } from "react";
 import { X, Loader2, Check, AlertTriangle, Package } from "lucide-react";
-import api from "../lib/api";
 
 interface Props {
   open: boolean;
@@ -142,9 +142,9 @@ export default function CreateBatchModal({ open, onClose, onCreated }: Props) {
         setIsLoadingData(true);
         try {
           const [prodRes, recipeRes, itemRes] = await Promise.all([
-            api.get("/api/finished-products"),
+            production.listFinishedProducts(),
             actionResponse(listRecipes()),
-            actionResponse(listItems(`pageSize=1000`)),
+            actionResponse(listItems()),
           ]);
           setProducts(prodRes.data.data?.items || prodRes.data.data || []);
           setRecipes(recipeRes.data.data?.items || recipeRes.data.data || []);
@@ -230,7 +230,7 @@ export default function CreateBatchModal({ open, onClose, onCreated }: Props) {
     if (!isFormValid) return;
     setIsSubmitting(true);
     try {
-      await api.post("/api/ProductionBatches", {
+      await production.createBatch({
         recipeId: Number(selectedVariantId),
         productId: Number(finishedProduct),
         batchSize: Number(userTargetYield),

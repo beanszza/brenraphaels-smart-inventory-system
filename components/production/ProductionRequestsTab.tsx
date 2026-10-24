@@ -1,4 +1,5 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Search, Plus, MoreHorizontal, FileText, Play } from "lucide-react";
 import Pagination from "@/components/Pagination";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { ProductionRequestEntity } from "./types";
 import ProductionRequestModal, { formatTimeTo12Hour } from "./ProductionRequestModal";
@@ -70,7 +70,7 @@ export default function ProductionRequestsTab({
       if (priorityFilter !== "All") params.priority = priorityFilter;
       if (searchQuery.trim()) params.search = searchQuery.trim();
 
-      const res = await api.get("/api/production-requests", { params });
+      const res = await production.listProductionRequests(new URLSearchParams(params).toString());
       if (res.data?.success && Array.isArray(res.data.data)) {
         setRequests(res.data.data);
       }
@@ -131,7 +131,7 @@ export default function ProductionRequestsTab({
 
     setStartingId(req.prodReqId);
     try {
-      const res = await api.post("/api/ProductionBatches", {
+      const res = await production.createBatch({
         prodReqId: req.prodReqId,
         assignedCook: currentUser,
         notes: `Started from Request ${req.reqNumber}`,

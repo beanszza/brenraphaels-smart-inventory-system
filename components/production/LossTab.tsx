@@ -1,11 +1,11 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import React, { useState, useEffect } from "react";
 import { AlertOctagon, FileText, X, Eye, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LossReport } from "./types";
-import api from "@/lib/api";
 import { toast } from "sonner";
 
 const LOSS_STORAGE_KEY = "production_loss_reports_v2";
@@ -21,7 +21,7 @@ export default function LossTab() {
       setLoading(true);
 
       // Fetch rejected batches from backend API
-      const batchesRes = await api.get("/api/ProductionBatches");
+      const batchesRes = await production.listBatches();
       const batches = Array.isArray(batchesRes.data)
         ? batchesRes.data
         : Array.isArray(batchesRes.data?.data)
