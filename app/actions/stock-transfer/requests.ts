@@ -1,19 +1,20 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+"use server";
+/* eslint-disable @typescript-eslint/no-explicit-any -- Retain existing transfer DTOs during migration. */
 import { prisma } from "@/lib/prisma";
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { read, mutate, refuse, validateInput, saved } from "@/lib/stock-transfer/operations";
+import { notifyApprovalRequested } from "@/lib/stock-transfer/notify";
+export async function listRequests(query = "") {
+  await requireModule("Stock Transfer");
+  return read(async () => {
 
-export async function GET(request: NextRequest) {
-  const access = await requireRouteModule(request, "Stock Transfer");
-  if (!access.ok) return access.response;
-
-  try {
-    const { searchParams } = new URL(request.url);
+    const searchParams = new URLSearchParams(query);
     const search = searchParams.get("search")?.trim() || "";
     const status = searchParams.get("status")?.trim() || "";
     const priority = searchParams.get("priority")?.trim() || "";
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "10", 10)));
+    const page = Math.max(1, (parseInt(searchParams.get("page") || "1", 10) || 1));
+    const pageSize = Math.min(100, Math.max(1, (parseInt(searchParams.get("pageSize") || "10", 10) || 10)));
 
     const where: any = {};
 
@@ -107,7 +108,7 @@ export async function GET(request: NextRequest) {
       })),
     }));
 
-    return NextResponse.json({
+    return resourceResult({
       success: true,
       data,
       pagination: {
@@ -117,47 +118,25 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / pageSize),
       },
     });
-  } catch (error: any) {
-    console.error("Error in GET /api/stock-transfer-requests:", error);
-    return NextResponse.json(
-      { success: false, message: error.message || "Failed to fetch stock transfer requests" },
-      { status: 500 }
-    );
-  }
+
+  });
 }
-
-export async function POST(request: NextRequest) {
-  const access = await requireRouteModule(request, "Stock Transfer");
-  if (!access.ok) return access.response;
-
-  try {
-    const userRole = request.headers.get("x-user-role")?.toLowerCase();
-    if (userRole === "admin") {
-      return NextResponse.json(
-        { success: false, message: "Admins are not permitted to create stock transfer requests." },
-        { status: 403 }
-      );
-    }
-
-    const body = await request.json();
+export async function createRequest(body: any = {}) {
+  const staff = await requireModule("Stock Transfer");
+  return mutate(staff, async (tx) => {
+validateInput(body);
     const { toLocationId, requiredDate, priority = "Normal", reason, items } = body;
 
     if (!toLocationId || !items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json(
-        { success: false, message: "Destination location and at least one item are required." },
-        { status: 400 }
-      );
+      return refuse("Destination location and at least one item are required.");
     }
 
     if (!requiredDate) {
-      return NextResponse.json(
-        { success: false, message: "Required Date is required." },
-        { status: 400 }
-      );
+      return refuse("Required Date is required.");
     }
 
     // Identify Commissary source location
-    const commissary = await prisma.locations.findFirst({
+    const commissary = await tx.locations.findFirst({
       where: {
         OR: [
           { IsSystemLocation: true },
@@ -167,7 +146,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const commissaryId = commissary?.LocationId;
+    if (!commissary) refuse("Commissary source location not found.");
+    const commissaryId = commissary.LocationId;
 
     // Process items and check availability + FEFO lots
     const preparedItems = await Promise.all(
@@ -177,7 +157,7 @@ export async function POST(request: NextRequest) {
           throw new Error("Item quantity must be greater than zero.");
         }
 
-        const product = await prisma.finishedProducts.findUnique({
+        const product = await tx.finishedProducts.findUnique({
           where: { ProductId: itm.productId },
           include: { Items: true },
         });
@@ -188,12 +168,14 @@ export async function POST(request: NextRequest) {
 
         // Available lots in commissary
         let availableQty = 0;
-        let suggestedLots: Array<{ lotId: number; lotCode: string; expiryDate: string | null; qty: number }> = [];
+        const suggestedLots: Array<{ lotId: number; lotCode: string; expiryDate: string | null; qty: number }> = [];
 
         if (commissaryId) {
-          const lots = await prisma.inventoryLots.findMany({
+          const lots = await tx.inventoryLots.findMany({
             where: {
               ItemId: product.ItemId,
+              LocationId: commissary.LocationId,
+              OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
               Status: { in: ["Active", "Available"] },
               QuantityRemaining: { gt: 0 },
             },
@@ -202,7 +184,7 @@ export async function POST(request: NextRequest) {
 
           let remainingToAllocate = qty;
           for (const lot of lots) {
-            const rem = Number(lot.QuantityRemaining);
+            const rem = Math.max(0, Number(lot.QuantityRemaining) - Number(lot.ReservedQuantity || 0));
             availableQty += rem;
 
             if (remainingToAllocate > 0) {
@@ -233,7 +215,7 @@ export async function POST(request: NextRequest) {
 
     // Generate Request Number (STR-YYYY-XXXX)
     const year = new Date().getFullYear();
-    const seq = await prisma.documentSequences.upsert({
+    const seq = await tx.documentSequences.upsert({
       where: { DocType_Year: { DocType: "STR", Year: year } },
       update: { LastNumber: { increment: 1 } },
       create: { DocType: "STR", Year: year, LastNumber: 1 },
@@ -241,12 +223,12 @@ export async function POST(request: NextRequest) {
     const requestNumber = `STR-${year}-${String(seq.LastNumber).padStart(4, "0")}`;
 
     // Create record with items
-    const createdRequest = await prisma.$transaction(async (tx) => {
+    const createdRequest = await (async () => {
       const str = await tx.stockTransferRequests.create({
         data: {
           RequestNumber: requestNumber,
           ToLocationId: Number(toLocationId),
-          RequestedBy: access.staff.username,
+          RequestedBy: staff.username,
           RequestDate: new Date(),
           RequiredDate: new Date(requiredDate),
           Priority: priority,
@@ -276,10 +258,9 @@ export async function POST(request: NextRequest) {
       });
 
       return str;
-    });
+    })();
 
-    return NextResponse.json(
-      {
+    return saved(staff, "stock-transfer-request", createdRequest.RequestId, createdRequest.RequestNumber || String(createdRequest.RequestId), "created", resourceResult({
         success: true,
         message: "Stock transfer request created successfully.",
         data: {
@@ -287,14 +268,7 @@ export async function POST(request: NextRequest) {
           requestNumber: createdRequest.RequestNumber,
           status: createdRequest.Status,
         },
-      },
-      { status: 201 }
-    );
-  } catch (error: any) {
-    console.error("Error in POST /api/stock-transfer-requests:", error);
-    return NextResponse.json(
-      { success: false, message: error.message || "Failed to create stock transfer request" },
-      { status: 500 }
-    );
-  }
+      }), () => notifyApprovalRequested(staff, createdRequest.RequestNumber));
+
+  });
 }

@@ -1,9 +1,9 @@
 "use client";
+import { stockTransfer } from "@/lib/stock-transfer/client";
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, Calendar, Truck, AlertCircle, Package } from "lucide-react";
-import api from "@/lib/api";
 import { StockTransferRequest, STRItem } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -118,7 +118,7 @@ export function ScheduleTransferModal({
         notes: notes.trim() || null,
       };
 
-      const res = await api.post("/api/stock-transfers", payload);
+      const res = await stockTransfer.scheduleTransfer(payload);
       if (res.data?.success) {
         onSuccess();
         onClose();

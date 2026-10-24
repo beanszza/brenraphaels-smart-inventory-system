@@ -1,34 +1,28 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+"use server";
 import { prisma } from "@/lib/prisma";
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { read, refuse } from "@/lib/stock-transfer/operations";
+export async function suggestLots(query = "") {
+  await requireModule("Stock Transfer");
+  return read(async () => {
 
-export async function GET(request: NextRequest) {
-  const access = await requireRouteModule(request, "Stock Transfer");
-  if (!access.ok) return access.response;
-
-  try {
-    const { searchParams } = new URL(request.url);
+    const searchParams = new URLSearchParams(query);
     const productId = parseInt(searchParams.get("productId") || "0", 10);
     const requestedQty = parseFloat(searchParams.get("quantity") || "0");
 
     if (!productId || productId <= 0) {
-      return NextResponse.json(
-        { success: false, message: "Valid productId parameter is required." },
-        { status: 400 }
-      );
+      return refuse("Valid productId parameter is required.");
     }
 
+    if (!Number.isFinite(requestedQty) || requestedQty < 0) refuse("Enter a valid quantity.");
     const product = await prisma.finishedProducts.findUnique({
       where: { ProductId: productId },
       include: { Items: true },
     });
 
     if (!product) {
-      return NextResponse.json(
-        { success: false, message: "Finished product not found." },
-        { status: 404 }
-      );
+      return refuse("Finished product not found.");
     }
 
     const commissary = await prisma.locations.findFirst({
@@ -42,15 +36,14 @@ export async function GET(request: NextRequest) {
     });
 
     if (!commissary) {
-      return NextResponse.json(
-        { success: false, message: "Commissary location could not be identified." },
-        { status: 404 }
-      );
+      return refuse("Commissary location could not be identified.");
     }
 
     const lots = await prisma.inventoryLots.findMany({
       where: {
         ItemId: product.ItemId,
+              LocationId: commissary.LocationId,
+              OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
         Status: { in: ["Active", "Available"] },
         QuantityRemaining: { gt: 0 },
       },
@@ -62,7 +55,7 @@ export async function GET(request: NextRequest) {
     const suggestedLots = [];
 
     for (const lot of lots) {
-      const remaining = Number(lot.QuantityRemaining);
+      const remaining = Math.max(0, Number(lot.QuantityRemaining) - Number(lot.ReservedQuantity || 0));
       totalAvailable += remaining;
 
       const allocate = remainingToAllocate > 0 ? Math.min(remaining, remainingToAllocate) : 0;
@@ -80,7 +73,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    return resourceResult({
       success: true,
       data: {
         productId: product.ProductId,
@@ -94,11 +87,6 @@ export async function GET(request: NextRequest) {
         suggestedLots,
       },
     });
-  } catch (error: any) {
-    console.error("Error in GET /api/stock-transfer-requests/lot-suggestions:", error);
-    return NextResponse.json(
-      { success: false, message: error.message || "Failed to fetch lot suggestions" },
-      { status: 500 }
-    );
-  }
+
+  });
 }

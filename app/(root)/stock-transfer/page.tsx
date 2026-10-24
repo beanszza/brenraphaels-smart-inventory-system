@@ -1,8 +1,6 @@
-"use client";
-
-import React from "react";
 import StockTransferModule from "@/components/stock-transfer/StockTransferModule";
-
-export default function StockTransferPage() {
+import { requireModule } from "@/lib/portal/staff";
+export default async function StockTransferPage() {
+  await requireModule("Stock Transfer");
   return <StockTransferModule />;
 }

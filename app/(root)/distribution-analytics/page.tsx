@@ -1,7 +1,6 @@
-"use client";
-
 import ViewDistribution from "@/components/pages/ViewDistribution";
-
-export default function DistributionPage() {
+import { requireModule } from "@/lib/portal/staff";
+export default async function DistributionPage() {
+  await requireModule("Stock Transfer");
   return <ViewDistribution />;
 }

@@ -1,6 +1,7 @@
 "use client";
+import { stockTransfer } from "@/lib/stock-transfer/client";
 
-import { createLocation, listLocations, updateLocation } from "@/app/actions/resources/locations";
+import { createLocation, listLocations, updateLocation } from "@/app/actions/stock-transfer/locations";
 import { actionResponse } from "@/lib/resources/action-response";
 
 
@@ -10,7 +11,6 @@ import { Plus, Search, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import api from "@/lib/api";
 import Pagination from "@/components/Pagination";
 import { TransferItem, LocationItem, DistributionStats } from "@/components/distribution/types";
 import DistributionSummaryCards from "@/components/distribution/DistributionSummaryCards";
@@ -41,9 +41,9 @@ export default function DistributionPage() {
     try {
       const statusParam = statusFilter === "All" ? "" : statusFilter;
       const [trRes, locRes, stRes] = await Promise.allSettled([
-        api.get(`/api/stock-transfers?page=${page}&pageSize=10&status=${statusParam}&search=${search}`),
+        stockTransfer.listTransfers(`page=${page}&pageSize=10&status=${statusParam}&search=${search}`),
         actionResponse(listLocations()),
-        api.get("/api/stock-transfers/dashboard"),
+        stockTransfer.transferDashboard(),
       ]);
 
       if (trRes.status === "fulfilled" && trRes.value.data?.success) {
@@ -54,7 +54,7 @@ export default function DistributionPage() {
           product: t.productName || t.product || "",
           from: t.sourceLocationName || t.from || "",
           to: t.destLocationName || t.to || "",
-          quantity: t.quantity || 0,
+          quantity: t.transferQuantity || 0,
           date: t.transferDate ? new Date(t.transferDate).toLocaleDateString() : "",
           status: t.status || "Pending",
         })));
@@ -73,7 +73,7 @@ export default function DistributionPage() {
       }
       if (stRes.status === "fulfilled" && stRes.value.data?.success) {
         const d = stRes.value.data.data;
-        setStats({ total: d.totalTransfers || 0, pending: d.pendingTransfers || 0, inTransit: d.inTransitTransfers || 0, completed: d.completedTransfers || 0 });
+        setStats({ total: d.total || 0, pending: d.pending || 0, inTransit: d.dispatched || 0, completed: d.received || 0 });
       }
     } catch (e) { console.error(e); }
   };
@@ -82,7 +82,9 @@ export default function DistributionPage() {
 
   const updateStatus = async (t: TransferItem, status: string) => {
     try {
-      await api.put(`/api/stock-transfers/${t.transferId}/status`, { status });
+      if (status === "Dispatched") await stockTransfer.dispatchTransfer(t.transferId!);
+      else if (status === "Cancelled") await stockTransfer.cancelTransfer(t.transferId!);
+      else await stockTransfer.updateTransferStatus(t.transferId!, { status });
       fetchData();
     } catch { alert(`Failed to update transfer status.`); }
   };
@@ -168,7 +170,7 @@ export default function DistributionPage() {
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {["All", "Pending", "In Transit", "Completed"].map((s) => (
+                    {["All", "Scheduled", "Dispatched", "Received", "Cancelled"].map((s) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
                   </SelectContent>
@@ -177,7 +179,7 @@ export default function DistributionPage() {
             </div>
           </div>
 
-          <StockTransferTable transfers={transfers} onDispatch={(t) => updateStatus(t, "In Transit")} onReceive={(t) => updateStatus(t, "Completed")} onCancel={(t) => updateStatus(t, "Cancelled")} />
+          <StockTransferTable transfers={transfers} onDispatch={(t) => updateStatus(t, "Dispatched")} onReceive={(t) => updateStatus(t, "Received")} onCancel={(t) => updateStatus(t, "Cancelled")} />
           <Pagination currentPage={page} totalPages={totalPages} totalCount={transfers.length} onPageChange={setPage} />
         </>
       )}

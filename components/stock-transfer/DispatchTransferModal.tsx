@@ -1,9 +1,9 @@
 "use client";
+import { stockTransfer } from "@/lib/stock-transfer/client";
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, Truck, AlertTriangle } from "lucide-react";
-import api from "@/lib/api";
 import { StockTransfer } from "./types";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -60,7 +60,7 @@ export function DispatchTransferModal({
     setLoading(true);
     setError(null);
     try {
-      const res = await api.put(`/api/stock-transfers/${transfer.transferId}/dispatch`, {
+      const res = await stockTransfer.dispatchTransfer(transfer.transferId, {
         driverName: driverName.trim() || undefined,
         vehiclePlate: vehiclePlate.trim() || undefined,
         courierName: courierName.trim() || undefined,

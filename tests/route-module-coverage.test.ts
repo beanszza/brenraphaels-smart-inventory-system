@@ -19,8 +19,6 @@ const publicRoutes = new Set([
 ]);
 const routes = import.meta.glob("../app/**/route.{ts,tsx,js,jsx}");
 const modules: Record<string, Module> = {
-  "stock-transfer-requests": "Stock Transfer",
-  "stock-transfers": "Stock Transfer",
 };
 
 beforeEach(() => {
@@ -73,3 +71,7 @@ for (const [path, load] of Object.entries(routes)) {
     }
   });
 }
+
+it("only Portal plumbing remains as route handlers", () => {
+  expect(Object.keys(routes).sort()).toEqual([...publicRoutes].sort());
+});

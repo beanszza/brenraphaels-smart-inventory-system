@@ -1,14 +1,14 @@
 "use client";
-import { production } from "@/lib/production/client";
+import { stockTransfer } from "@/lib/stock-transfer/client";
+import { listFinishedProducts } from "@/app/actions/stock-transfer/products";
 
-import { listLocations } from "@/app/actions/resources/locations";
+import { listLocations } from "@/app/actions/stock-transfer/locations";
 import { actionResponse } from "@/lib/resources/action-response";
 
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, Plus, Trash2, AlertCircle, Package } from "lucide-react";
-import api from "@/lib/api";
 import { FinishedProductOption, LocationOption } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -79,9 +79,9 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
   const fetchPrerequisites = async () => {
     try {
       const [prodRes, locRes, reqRes] = await Promise.all([
-        production.listFinishedProducts(),
+        actionResponse(listFinishedProducts()),
         actionResponse(listLocations()),
-        api.get("/api/stock-transfer-requests?pageSize=20"),
+        stockTransfer.listRequests("pageSize=20"),
       ]);
 
       if (prodRes.data?.success) {
@@ -119,7 +119,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
 
   const checkAvailability = async (index: number, prodId: number, qty: number) => {
     try {
-      const res = await api.get(`/api/stock-transfer-requests/lot-suggestions?productId=${prodId}&quantity=${qty || 1}`);
+      const res = await stockTransfer.suggestLots(`productId=${prodId}&quantity=${qty || 1}`);
       if (res.data?.success) {
         const totalAvail = res.data.data.totalAvailable || 0;
         const suggestedLots = res.data.data.suggestedLots || [];
@@ -246,7 +246,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
         })),
       };
 
-      const res = await api.post("/api/stock-transfer-requests", payload);
+      const res = await stockTransfer.createRequest(payload);
       if (res.data?.success) {
         onSuccess();
         onClose();

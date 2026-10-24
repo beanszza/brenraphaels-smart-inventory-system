@@ -1,10 +1,10 @@
 "use client";
+import { stockTransfer } from "@/lib/stock-transfer/client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Plus, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import api from "@/lib/api";
 import { PageHeader } from "@/components/shared/PageHeader";
 import {
   StockTransferRequest,
@@ -71,7 +71,7 @@ export default function StockTransferModule() {
   // Fetch Dashboard Metrics
   const fetchMetrics = useCallback(async () => {
     try {
-      const res = await api.get("/api/stock-transfer-requests/dashboard");
+      const res = await stockTransfer.requestDashboard();
       if (res.data?.success) {
         setMetrics(res.data.data);
       }
@@ -84,7 +84,7 @@ export default function StockTransferModule() {
   const fetchRequests = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/stock-transfer-requests?pageSize=100");
+      const res = await stockTransfer.listRequests("pageSize=100");
       if (res.data?.success) {
         setRequests(res.data.data || []);
       }
@@ -164,13 +164,13 @@ export default function StockTransferModule() {
 
     try {
       if (type === "approve" || type === "reject") {
-        await api.put(`/api/stock-transfer-requests/${request.requestId}/status`, {
+        await stockTransfer.reviewRequest(request.requestId, {
           action: type === "approve" ? "Approve" : "Reject",
           adminNotes: notes,
           reviewedBy: "Admin",
         });
       } else if (type === "cancel") {
-        await api.put(`/api/stock-transfer-requests/${request.requestId}/cancel`, {
+        await stockTransfer.cancelRequest(request.requestId, {
           reason: notes,
         });
       }
