@@ -1,19 +1,17 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+"use server";
 import { prisma } from "@/lib/prisma";
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { read } from "@/lib/inventory/mutate";
 
-// Simulate recall impact: given a lot code, find all affected batches and downstream products
-export async function GET(request: NextRequest) {
-  const access = await requireRouteModule(request, "Inventory");
-  if (!access.ok) return access.response;
-
-  try {
-    const { searchParams } = new URL(request.url);
+export async function simulateRecall(query = "") {
+  await requireModule("Inventory");
+  return read(async () => {
+    const searchParams = new URLSearchParams(query);
     const lotCode = searchParams.get("lotCode") || "";
 
     if (!lotCode) {
-      return NextResponse.json({ success: false, message: "lotCode is required." }, { status: 400 });
+      return resourceResult({ success: false, message: "lotCode is required." });
     }
 
     const lot = await prisma.inventoryLots.findFirst({
@@ -32,7 +30,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!lot) {
-      return NextResponse.json({ success: false, message: `Lot "${lotCode}" not found.` }, { status: 404 });
+      return resourceResult({ success: false, message: `Lot "${lotCode}" not found.` });
     }
 
     const affectedBatches = lot.BatchConsumptions.map((bc) => ({
@@ -43,7 +41,7 @@ export async function GET(request: NextRequest) {
       quantityUsed: Number(bc.QuantityUsed),
     }));
 
-    return NextResponse.json({
+    return resourceResult({
       success: true,
       data: {
         lotCode,
@@ -57,7 +55,5 @@ export async function GET(request: NextRequest) {
         estimatedRecallScope: `${affectedBatches.length} batch(es) affected`,
       },
     });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
-  }
+  });
 }

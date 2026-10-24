@@ -1,21 +1,21 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+"use server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { read, pageNumber, positiveId } from "@/lib/inventory/mutate";
 
-export async function GET(request: NextRequest) {
-  const access = await requireRouteModule(request, "Inventory");
-  if (!access.ok) return access.response;
-
-  try {
-    const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const pageSize = Math.min(500, Math.max(1, parseInt(searchParams.get("pageSize") || "10", 10)));
+export async function listLots(query = "") {
+  await requireModule("Inventory");
+  return read(async () => {
+    const searchParams = new URLSearchParams(query);
+    const page = pageNumber(searchParams.get("page"), 1, 1000000);
+    const pageSize = pageNumber(searchParams.get("pageSize"), 10, 500);
     const status = searchParams.get("status") || "";
     const search = searchParams.get("search") || "";
-    const itemId = searchParams.get("itemId") ? parseInt(searchParams.get("itemId")!, 10) : null;
+    const itemId = searchParams.get("itemId") ? positiveId(searchParams.get("itemId")!) : null;
 
-    const where: any = {};
+    const where: Prisma.InventoryLotsWhereInput = {};
 
     if (status) {
       if (status === "Reserved") {
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({
+    return resourceResult({
       success: true,
       data: {
         items: data,
@@ -129,8 +129,5 @@ export async function GET(request: NextRequest) {
         pageSize,
       },
     });
-  } catch (error: any) {
-    console.error("GET /api/inventory/lots error:", error);
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
-  }
+  });
 }

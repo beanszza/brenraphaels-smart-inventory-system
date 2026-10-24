@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { inventory } from "@/lib/inventory/client";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { Search, Plus, MoreHorizontal, Eye, ArrowDownToLine, X } from "lucide-react";
@@ -55,7 +56,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
     try {
       const [batchesRes, invRes] = await Promise.all([
         api.get("/api/ProductionBatches"),
-        api.get("/api/inventory?pageSize=1000").catch(() => ({ data: { data: [] } })),
+        inventory.listInventory("pageSize=1000").catch(() => ({ data: { data: [] } })),
       ]);
 
       const batchList = Array.isArray(batchesRes.data)

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { InventoryItem } from "./types";
 import { LotItem } from "../lots/types";
-import api from "@/lib/api";
+import { inventory } from "@/lib/inventory/client";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -77,13 +77,13 @@ export default function InventoryTable({
       try {
         let lots: LotItem[] = [];
         try {
-          const res = await api.get(`/api/inventory/lots/byitem/${itemId}`);
+          const res = await inventory.listItemLots(itemId);
           if (res.data?.success && Array.isArray(res.data.data)) {
             lots = res.data.data;
           }
         } catch {
           // Robust fallback to query param endpoint if route compilation lags
-          const fallbackRes = await api.get(`/api/inventory/lots?itemId=${itemId}&pageSize=200`);
+          const fallbackRes = await inventory.listLots(`itemId=${itemId}&pageSize=200`);
           if (fallbackRes.data?.success) {
             const raw = fallbackRes.data.data;
             lots = Array.isArray(raw?.items) ? raw.items : Array.isArray(raw) ? raw : [];

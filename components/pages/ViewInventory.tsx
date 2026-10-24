@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { FileText, Search } from "lucide-react";
-import api from "@/lib/api";
+import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
 import { InventoryItem } from "@/components/inventory/types";
 import { LotItem } from "@/components/lots/types";
@@ -49,100 +49,36 @@ function matchesSearch(item: InventoryItem, query: string): boolean {
   return nameMatch || codeMatch || splCodeMatch || idMatch || variantMatch;
 }
 
-export default function ViewInventory() {
-  const [allInventories, setAllInventories] = useState<InventoryItem[]>([]);
+export default function ViewInventory({ initialInventories, initialLots, initialTotal, asOf }: {
+  initialInventories: InventoryItem[]; initialLots: LotItem[]; initialTotal: number; asOf: string;
+}) {
+  const router = useRouter();
+  const allInventories = initialInventories;
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("Raw Materials");
   const [productFilter, setProductFilter] = useState("All");
   const [page, setPage] = useState(1);
 
-  // KPI Metrics
-  const [totalItemsCount, setTotalItemsCount] = useState(0);
-  const [lowStockCount, setLowStockCount] = useState(0);
-  const [expiringSoonCount, setExpiringSoonCount] = useState(0);
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({
-    "Raw Materials": 0,
-    Ingredients: 0,
-    Tools: 0,
-    "Finished Goods": 0,
-  });
+  const totalItemsCount = initialTotal;
+  const lots = initialLots;
+  const lowStockCount = allInventories.filter(i => i.isLowStock || i.currentStock <= i.minStockLevel).length;
+  const expiringSoonCount = lots.filter(lot => lot.expiryDate &&
+    Math.ceil((new Date(lot.expiryDate).getTime() - new Date(asOf).getTime()) / 86400000) <= 30).length;
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { "Raw Materials": 0, Ingredients: 0, Tools: 0, "Finished Goods": 0 };
+    for (const item of allInventories) {
+      const category = (item.categoryName || "").toLowerCase();
+      if (category.includes("raw")) counts["Raw Materials"]++;
+      else if (category.includes("ingredient")) counts.Ingredients++;
+      else if (category.includes("tool") || category.includes("equip") || category.includes("suppl")) counts.Tools++;
+      else if (category.includes("finish") || category.includes("prod")) counts["Finished Goods"]++;
+    }
+    return counts;
+  }, [allInventories]);
 
   // PR Modal State (for "Order Now" action)
   const [isCreatePROpen, setIsCreatePROpen] = useState(false);
   const [selectedPRData, setSelectedPRData] = useState<PurchaseRequisition | undefined>(undefined);
-
-  const fetchInventories = useCallback(async () => {
-    try {
-      const res = await api.get(`/api/inventory?pageSize=1000`);
-      if (res.data?.success) {
-        const items: InventoryItem[] = res.data.data.items || res.data.data || [];
-        setAllInventories(items);
-      }
-    } catch (e) {
-      console.error("Failed to fetch inventories:", e);
-    }
-  }, []);
-
-  const fetchKpiData = useCallback(async () => {
-    try {
-      // 1. Fetch inventories for total count & low-stock count
-      const invRes = await api.get("/api/inventory?pageSize=1000");
-
-      if (invRes.data?.success) {
-        const items: InventoryItem[] = invRes.data.data.items || invRes.data.data || [];
-        setTotalItemsCount(invRes.data.data.totalCount ?? items.length);
-        const low = items.filter(
-          (i) => i.isLowStock || i.currentStock <= i.minStockLevel
-        ).length;
-        setLowStockCount(low);
-
-        const counts: Record<string, number> = {
-          "Raw Materials": 0,
-          Ingredients: 0,
-          Tools: 0,
-          "Finished Goods": 0,
-        };
-        items.forEach((item) => {
-          const cat = (item.categoryName || "").toLowerCase();
-          if (cat.includes("raw")) {
-            counts["Raw Materials"] = (counts["Raw Materials"] || 0) + 1;
-          } else if (cat.includes("ingredient")) {
-            counts["Ingredients"] = (counts["Ingredients"] || 0) + 1;
-          } else if (cat.includes("tool") || cat.includes("equip") || cat.includes("suppl")) {
-            counts["Tools"] = (counts["Tools"] || 0) + 1;
-          } else if (cat.includes("finish") || cat.includes("prod")) {
-            counts["Finished Goods"] = (counts["Finished Goods"] || 0) + 1;
-          }
-        });
-        setCategoryCounts(counts);
-      }
-
-      // 2. Fetch available lots for expiring soon count (<= 30 days)
-      const lotsRes = await api.get("/api/inventory/lots?status=Available&pageSize=1000");
-
-      if (lotsRes.data?.success) {
-        const lots: LotItem[] = lotsRes.data.data.items || lotsRes.data.data || [];
-        const now = new Date();
-        const expiring = lots.filter((lot) => {
-          if (!lot.expiryDate) return false;
-          const exp = new Date(lot.expiryDate);
-          const diffDays = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          return diffDays <= 30;
-        }).length;
-        setExpiringSoonCount(expiring);
-      }
-    } catch (e) {
-      console.error("Failed to fetch inventory KPI stats:", e);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchInventories();
-  }, [fetchInventories]);
-
-  useEffect(() => {
-    fetchKpiData();
-  }, [fetchKpiData]);
 
   // Distinct finished goods product names for the Product filter dropdown
   const availableFinishedProducts = useMemo(() => {
@@ -176,7 +112,6 @@ export default function ViewInventory() {
           item.finishedProductVariants.forEach((v) => {
             const variantStock = v.currentStock ?? 0;
             const variantReserved = v.reservedStock ?? 0;
-            const maxStock = item.maxStockLevel > 0 ? item.maxStockLevel : 100;
             const minStock = item.minStockLevel || 0;
             rows.push({
               ...item,
@@ -399,8 +334,7 @@ export default function ViewInventory() {
           onSuccess={() => {
             setIsCreatePROpen(false);
             setSelectedPRData(undefined);
-            fetchInventories();
-            fetchKpiData();
+            router.refresh();
           }}
           initialData={selectedPRData}
         />

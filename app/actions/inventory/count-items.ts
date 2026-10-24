@@ -1,15 +1,13 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+"use server";
 import { prisma } from "@/lib/prisma";
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { read, positiveId } from "@/lib/inventory/mutate";
 
-export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
-  const access = await requireRouteModule(request, "Inventory");
-  if (!access.ok) return access.response;
-
-  const params = await props.params;
-  try {
-    const id = parseInt(params.id, 10);
+export async function listCycleCountItems(idInput: number) {
+  await requireModule("Inventory");
+  return read(async () => {
+    const id = positiveId(idInput);
 
     const items = await prisma.cycleCountItems.findMany({
       where: { CycleCountId: id },
@@ -48,8 +46,6 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
       };
     });
 
-    return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
-  }
+    return resourceResult({ success: true, data });
+  });
 }
