@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { InventoryItem } from "./types";
 import { LotItem } from "../lots/types";
-import { inventory } from "@/lib/inventory/client";
+import { listItemLots } from "@/app/actions/inventory/item-lots";
+import { InventorySkeleton } from "./InventorySkeleton";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -65,6 +66,7 @@ export default function InventoryTable({
 }: InventoryTableProps) {
   const [expandedItemIds, setExpandedItemIds] = useState<Record<number, boolean>>({});
   const [itemLots, setItemLots] = useState<Record<number, LotItem[]>>({});
+  const [lotErrors, setLotErrors] = useState<Record<number, string>>({});
   const [loadingLots, setLoadingLots] = useState<Record<number, boolean>>({});
 
   const toggleRow = async (itemId: number) => {
@@ -72,28 +74,15 @@ export default function InventoryTable({
     const nextState = !isExpanded;
     setExpandedItemIds((prev) => ({ ...prev, [itemId]: nextState }));
 
-    if (nextState && !itemLots[itemId]) {
+    if (nextState && !itemLots[itemId] && !loadingLots[itemId]) {
       setLoadingLots((prev) => ({ ...prev, [itemId]: true }));
       try {
-        let lots: LotItem[] = [];
-        try {
-          const res = await inventory.listItemLots(itemId);
-          if (res.data?.success && Array.isArray(res.data.data)) {
-            lots = res.data.data;
-          }
-        } catch {
-          // Robust fallback to query param endpoint if route compilation lags
-          const fallbackRes = await inventory.listLots(`itemId=${itemId}&pageSize=200`);
-          if (fallbackRes.data?.success) {
-            const raw = fallbackRes.data.data;
-            lots = Array.isArray(raw?.items) ? raw.items : Array.isArray(raw) ? raw : [];
-          }
-        }
-
-        setItemLots((prev) => ({ ...prev, [itemId]: lots }));
-      } catch (err) {
-        console.error("Failed to load lots for item", itemId, err);
-        setItemLots((prev) => ({ ...prev, [itemId]: [] }));
+        setLotErrors(prev => ({ ...prev, [itemId]: "" }));
+        const result = await listItemLots(itemId);
+        if (!result.success) throw new Error(result.message || "Lots could not be loaded.");
+        setItemLots(prev => ({ ...prev, [itemId]: result.data }));
+      } catch (error) {
+        setLotErrors(prev => ({ ...prev, [itemId]: error instanceof Error ? error.message : "Lots could not be loaded." }));
       } finally {
         setLoadingLots((prev) => ({ ...prev, [itemId]: false }));
       }
@@ -186,11 +175,13 @@ export default function InventoryTable({
                     className="hover:bg-muted/30 transition-colors cursor-pointer select-none group"
                   >
                     <td className="px-2 py-3.5 text-center text-muted-foreground group-hover:text-foreground">
+                      <button type="button" aria-label={`Show lots for ${item.itemName}`} aria-expanded={isExpanded}
+                        onClick={event => { event.stopPropagation(); void toggleRow(item.itemId); }}>
                       {isExpanded ? (
                         <ChevronDown size={14} className="text-foreground" />
                       ) : (
                         <ChevronRight size={14} />
-                      )}
+                      )}</button>
                     </td>
                     <td className="px-3 py-3.5 font-bold text-foreground whitespace-nowrap">
                       {(currentPage - 1) * pageSize + idx + 1}
@@ -285,8 +276,13 @@ export default function InventoryTable({
                           </div>
 
                           {isLoading ? (
-                            <div className="py-6 text-center text-xs text-muted-foreground animate-pulse">
-                              Loading lots...
+                            <InventorySkeleton compact />
+                          ) : lotErrors[item.itemId] ? (
+                            <div role="alert" className="space-y-2">
+                              <p>{lotErrors[item.itemId]}</p>
+                              <Button variant="outline" size="sm" onClick={() => {
+                                setExpandedItemIds(prev => ({ ...prev, [item.itemId]: false }));
+                              }}>Close and retry</Button>
                             </div>
                           ) : availableLots.length === 0 ? (
                             <div className="py-5 text-center text-xs text-muted-foreground">

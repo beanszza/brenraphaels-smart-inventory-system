@@ -1,6 +1,6 @@
 "use client";
 
-import { procurement } from "@/lib/orders/client";
+import { listRequisitions, createRequisition, updateRequisition } from "@/app/actions/orders/requisitions";
 
 import { requisitionSupplies } from "@/app/actions/orders/screens";
 import { actionResponse } from "@/lib/resources/action-response";
@@ -178,7 +178,7 @@ export function CreatePRModal({
       try {
         setLoadingSupplies(true);
         const [itemsRes, prRes] = await Promise.all([
-          actionResponse(requisitionSupplies()), procurement.listRequisitions(),
+          actionResponse(requisitionSupplies()), actionResponse(listRequisitions()),
         ]);
         setSuppliesList(itemsRes.data.data);
 
@@ -351,9 +351,9 @@ export function CreatePRModal({
       };
 
       if (isEdit && initialData?.prId) {
-        await procurement.updateRequisition(initialData.prId, payload);
+        await actionResponse(updateRequisition(initialData.prId, payload));
       } else {
-        await procurement.createRequisition(payload);
+        await actionResponse(createRequisition(payload));
       }
 
       router.refresh();
@@ -384,7 +384,7 @@ export function CreatePRModal({
         <div className="space-y-4">
           {errors.submit && (
             <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-center justify-between animate-in fade-in-50">
-              <span className="font-medium">{errors.submit}</span>
+              <span role="alert" className="font-medium">{errors.submit}</span>
               <button
                 type="button"
                 onClick={() =>

@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { FileText, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
@@ -63,7 +65,7 @@ export default function ViewInventory({ initialInventories, initialLots, initial
   const lots = initialLots;
   const lowStockCount = allInventories.filter(i => i.isLowStock || i.currentStock <= i.minStockLevel).length;
   const expiringSoonCount = lots.filter(lot => lot.expiryDate &&
-    Math.ceil((new Date(lot.expiryDate).getTime() - new Date(asOf).getTime()) / 86400000) <= 30).length;
+    Math.ceil((new Date(lot.expiryDate).getTime() - new Date(asOf).getTime()) / 86400000) <= 30 && new Date(lot.expiryDate).getTime() >= new Date(asOf).getTime()).length;
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { "Raw Materials": 0, Ingredients: 0, Tools: 0, "Finished Goods": 0 };
     for (const item of allInventories) {
@@ -197,7 +199,8 @@ export default function ViewInventory({ initialInventories, initialLots, initial
   ];
 
   return (
-    <div className="w-full min-h-full py-8 px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="w-full min-w-0 min-h-full py-6 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
+      <Toaster />
       <PageHeader
         title="Inventory Management"
         description="Monitor real-time warehouse stocks, ingredients, raw materials, and finished goods"
@@ -252,6 +255,7 @@ export default function ViewInventory({ initialInventories, initialLots, initial
             <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
               type="text"
+              aria-label="Search inventory"
               placeholder="Search by name or Supply No (e.g. SPL-0001)..."
               value={searchQuery}
               onChange={(e) => {
@@ -334,6 +338,7 @@ export default function ViewInventory({ initialInventories, initialLots, initial
           onSuccess={() => {
             setIsCreatePROpen(false);
             setSelectedPRData(undefined);
+            toast.success("Restock requisition saved successfully.");
             router.refresh();
           }}
           initialData={selectedPRData}
