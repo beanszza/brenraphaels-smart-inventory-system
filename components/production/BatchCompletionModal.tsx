@@ -1,10 +1,10 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import React, { useState } from "react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { CheckCircle2, PackageCheck, AlertCircle, Sparkles } from "lucide-react";
 import { ProductionBatchEntity } from "./types";
@@ -51,7 +51,7 @@ export default function BatchCompletionModal({
 
     setSubmitting(true);
     try {
-      const res = await api.post(`/api/ProductionBatches/${batch.batchId}/complete`, {
+      const res = await production.completeBatch(batch.batchId, {
         finalQuantity: Number(actualQuantity),
         packagedBy,
         expiryDate,

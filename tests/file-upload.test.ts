@@ -27,12 +27,12 @@ describe("uploadFile", () => {
       json({ fileId: ID, status: "active" }),
     ]);
 
-    await expect(uploadFile("/api/finished-products/42/file", image, fetcher)).resolves.toBe(ID);
+    await expect(uploadFile("/example/file", image, fetcher)).resolves.toBe(ID);
 
     expect(calls.map((c) => [c.init?.method, c.url])).toEqual([
-      ["POST", "/api/finished-products/42/file/upload"],
+      ["POST", "/example/file/upload"],
       ["PUT", "https://storage.test/put?sig=1"],
-      ["POST", "/api/finished-products/42/file/confirm"],
+      ["POST", "/example/file/confirm"],
     ]);
     expect(JSON.parse(String(calls[0].init?.body))).toEqual({ filename: "jam.png", contentType: "image/png", size: 5 });
     expect(calls[1].init?.body).toBe(image);
@@ -47,13 +47,13 @@ describe("uploadFile", () => {
       new Response(null, { status: 200 }),
       json({ fileId: ID, status: "active" }),
     ]);
-    await uploadFile("/api/finished-products/42/file", image, fetcher);
+    await uploadFile("/example/file", image, fetcher);
     expect(calls.filter((c) => c.init?.body === image).map((c) => c.url)).toEqual(["https://storage.test/put"]);
   });
 
   it("reports the server's reason when the address is refused, without uploading", async () => {
     const { fetcher, calls } = fakeFetch([json({ message: "The file must be between 1 byte and 10 MB." }, 400)]);
-    await expect(uploadFile("/api/finished-products/42/file", image, fetcher)).rejects.toThrow("The file must be between 1 byte and 10 MB.");
+    await expect(uploadFile("/example/file", image, fetcher)).rejects.toThrow("The file must be between 1 byte and 10 MB.");
     expect(calls).toHaveLength(1);
   });
 
@@ -62,32 +62,32 @@ describe("uploadFile", () => {
       json({ fileId: ID, uploadUrl: "https://storage.test/put", uploadUrlExpiresInSeconds: 600 }, 201),
       new Response("denied", { status: 403 }),
     ]);
-    await expect(uploadFile("/api/finished-products/42/file", image, fetcher)).rejects.toThrow("could not be uploaded");
+    await expect(uploadFile("/example/file", image, fetcher)).rejects.toThrow("could not be uploaded");
     expect(calls).toHaveLength(2);
   });
 
   it("uses a generic message when the failure has no readable reason", async () => {
     const { fetcher } = fakeFetch([new Response("<html>", { status: 502 })]);
-    await expect(uploadFile("/api/finished-products/42/file", image, fetcher)).rejects.toThrow("could not be uploaded");
+    await expect(uploadFile("/example/file", image, fetcher)).rejects.toThrow("could not be uploaded");
   });
 });
 
 describe("resolveFileUrl", () => {
   it("returns the address the server resolved", async () => {
     const { fetcher, calls } = fakeFetch([json({ kind: "file", url: "https://storage.test/jam.png", private: false })]);
-    await expect(resolveFileUrl("/api/finished-products/42/file", fetcher)).resolves.toBe("https://storage.test/jam.png");
-    expect(calls[0].url).toBe("/api/finished-products/42/file");
+    await expect(resolveFileUrl("/example/file", fetcher)).resolves.toBe("https://storage.test/jam.png");
+    expect(calls[0].url).toBe("/example/file");
   });
 
   it("shows the placeholder for an old record whose file no longer exists", async () => {
     const { fetcher } = fakeFetch([json({ kind: "placeholder", url: FILE_PLACEHOLDER, private: false })]);
-    await expect(resolveFileUrl("/api/finished-products/42/file", fetcher)).resolves.toBe(FILE_PLACEHOLDER);
+    await expect(resolveFileUrl("/example/file", fetcher)).resolves.toBe(FILE_PLACEHOLDER);
   });
 
   it("falls back to the placeholder when the lookup fails", async () => {
     const { fetcher } = fakeFetch([json({ message: "down" }, 502)]);
-    await expect(resolveFileUrl("/api/finished-products/42/file", fetcher)).resolves.toBe(FILE_PLACEHOLDER);
+    await expect(resolveFileUrl("/example/file", fetcher)).resolves.toBe(FILE_PLACEHOLDER);
     const network = fakeFetch([new Error("offline")]);
-    await expect(resolveFileUrl("/api/finished-products/42/file", network.fetcher)).resolves.toBe(FILE_PLACEHOLDER);
+    await expect(resolveFileUrl("/example/file", network.fetcher)).resolves.toBe(FILE_PLACEHOLDER);
   });
 });

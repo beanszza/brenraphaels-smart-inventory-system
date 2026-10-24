@@ -1,4 +1,5 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import React, { useState, useRef, useEffect } from "react";
 import {
@@ -9,7 +10,7 @@ import {
   Trash2,
   ChevronRight,
 } from "lucide-react";
-import api from "@/lib/api";
+import { uploadProductionImage } from "@/lib/production/image-client";
 
 interface Props {
   open: boolean;
@@ -88,15 +89,13 @@ export default function UploadImagesModal({
     if (selectedFiles.length === 0) return;
     // Upload one at a time — backend expects a single IFormFile named 'file'
     for (const file of selectedFiles) {
-      const formData = new FormData();
-      formData.append("file", file);
-      await api.post(`/api/ProductionBatches/${batchId}/images`, formData);
+      await uploadProductionImage("batch", batchId, file);
     }
   };
 
   const updateStage = async () => {
     if (!selectedStage) return;
-    await api.put(`/api/ProductionBatches/${batchId}/stage`, {
+    await production.advanceBatchStage(batchId, {
       stage: selectedStage,
     });
   };

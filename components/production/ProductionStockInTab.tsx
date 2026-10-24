@@ -1,4 +1,5 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -7,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { inventory } from "@/lib/inventory/client";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { Search, Plus, MoreHorizontal, Eye, ArrowDownToLine, X } from "lucide-react";
 
@@ -55,7 +55,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
     setLoading(true);
     try {
       const [batchesRes, invRes] = await Promise.all([
-        api.get("/api/ProductionBatches"),
+        production.listBatches(),
         inventory.listInventory("pageSize=1000").catch(() => ({ data: { data: [] } })),
       ]);
 
@@ -177,7 +177,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
 
     setCommitting(true);
     try {
-      const res = await api.post(`/api/ProductionBatches/${selectedBatchInModal.batchId}/add-to-inventory`, {
+      const res = await production.commitBatchInventory(selectedBatchInModal.batchId, {
         notes: stockInNotes.trim(),
       });
 

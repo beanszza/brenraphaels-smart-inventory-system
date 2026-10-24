@@ -1,4 +1,5 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import { StatusBadge } from "@/components/shared/StatusBadge";
 
@@ -110,7 +111,7 @@ export default function CreateTransferModal({
       setIsLoadingProducts(true);
       try {
         const [prodRes, invRes] = await Promise.all([
-          api.get("/api/finished-products"),
+          production.listFinishedProducts(),
           inventory.listInventory("pageSize=100"),
         ]);
         if (prodRes.data.success) {

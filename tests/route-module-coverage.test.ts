@@ -19,11 +19,6 @@ const publicRoutes = new Set([
 ]);
 const routes = import.meta.glob("../app/**/route.{ts,tsx,js,jsx}");
 const modules: Record<string, Module> = {
-  ProductionBatches: "Production & Quality",
-  "production-requests": "Production & Quality",
-  "production-qa": "Production & Quality",
-  "material-issuances": "Production & Quality",
-  "finished-products": "Production & Quality",
   "stock-transfer-requests": "Stock Transfer",
   "stock-transfers": "Stock Transfer",
 };

@@ -1,9 +1,9 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { ProductionBatchEntity } from "./types";
 import ProductionBatchDetailView from "./ProductionBatchDetailView";
@@ -26,7 +26,7 @@ export default function ProductionTrackingTab({
   const fetchBatches = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/ProductionBatches");
+      const res = await production.listBatches();
       const list = Array.isArray(res.data)
         ? res.data
         : Array.isArray(res.data?.data)

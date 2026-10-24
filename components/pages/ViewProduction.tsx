@@ -1,4 +1,5 @@
 "use client";
+import { createIssuance } from "@/app/actions/production/issuances";
 
 import React, { useState } from "react";
 import { useStaff } from "@/context/StaffContext";
@@ -33,12 +34,7 @@ export default function ProductionPage() {
   const handleNavigateToIssuance = async (prodReqId?: number) => {
     if (prodReqId) {
       try {
-        const res = await fetch("/api/material-issuances", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prodReqId, issuedBy: staff.username }),
-        });
-        const data = await res.json();
+        const data = await createIssuance({ prodReqId });
         if (data?.success && data?.data) {
           setTargetIssuanceId(data.data.issuanceId);
         }

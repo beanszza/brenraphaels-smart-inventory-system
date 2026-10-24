@@ -41,7 +41,7 @@ export async function uploadWith(steps: UploadSteps, file: File, fetcher: Fetche
 
 /**
  * Uploads a file for one record through its file route. `base` is the record's file route,
- * such as `/api/finished-products/42/file`. Resolves to the new file id once the record is linked.
+ * provided by the caller. Resolves to the new file id once the record is linked.
  */
 export function uploadFile(base: string, file: File, fetcher: Fetcher = fetch): Promise<string> {
   return uploadWith(

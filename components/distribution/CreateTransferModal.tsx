@@ -1,4 +1,5 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
@@ -38,7 +39,7 @@ export default function CreateTransferModal({
 
       const load = async () => {
         try {
-          const res = await api.get("/api/finished-products");
+          const res = await production.listFinishedProducts();
           if (res.data?.success) setProducts(res.data.data.items || res.data.data || []);
         } catch (e) { console.error(e); }
       };

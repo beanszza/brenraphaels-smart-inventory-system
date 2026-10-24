@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { X, Loader2, CheckCircle, XCircle } from "lucide-react";
-import api from "../lib/api";
+import { production } from "@/lib/production/client";
 
 interface Props {
   open: boolean;
@@ -39,13 +39,11 @@ export default function QAChecklistModal({ open, batchId, onClose, onSubmit }: P
     setSubmitting(true);
     try {
       // Save QA data
-      const qaPayload = { taste, texture, packaging, appearance, notes };
-      await api.put(`/api/ProductionBatches/${batchId}/qa`, qaPayload);
+      await production.updateQaNotes(batchId, { notes: JSON.stringify({ taste, texture, packaging, appearance, notes }) });
 
       // Execute approval or rejection
-      const endpoint = `/api/ProductionBatches/${batchId}/${decision}`;
-      const decisionPayload = decision === "reject" ? { reason: rejectionReason } : {};
-      await api.put(endpoint, decisionPayload);
+      if (decision === "reject") await production.rejectBatch(batchId, { reason: rejectionReason });
+      else await production.approveBatch(batchId);
 
       // Success – close modal and refresh parent
       onSubmit();

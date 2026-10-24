@@ -1,4 +1,5 @@
 "use client";
+import { production } from "@/lib/production/client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -7,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 
 interface ProductionQaTabProps {
@@ -45,7 +45,7 @@ export default function ProductionQaTab({ currentUser }: ProductionQaTabProps) {
   const fetchBatches = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/api/production-qa?status=${subTab}`);
+      const res = await production.listProductionQa(`status=${subTab}`);
       if (res.data?.success && Array.isArray(res.data.data)) {
         setBatches(res.data.data);
         if (res.data.data.length > 0 && !selectedBatchId) {
@@ -101,7 +101,7 @@ export default function ProductionQaTab({ currentUser }: ProductionQaTabProps) {
 
     setSubmitting(true);
     try {
-      const res = await api.post("/api/production-qa", {
+      const res = await production.reviewProductionQa({
         batchId: selectedBatch.batchId,
         acceptedQuantity: acceptedQty,
         acceptedReason,

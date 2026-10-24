@@ -6,6 +6,7 @@ export type ResourceResult = {
   message?: string;
   data?: any;
   nextCode?: string;
+  verified?: boolean;
 };
 
 export function resourceResult(value: ResourceResult): ResourceResult {
