@@ -1,4 +1,5 @@
 "use client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -383,7 +384,7 @@ export default function QrScannerModal({
               <div className="flex flex-col items-center justify-center text-center p-6 text-muted-foreground gap-2">
                 {cameraLoading ? (
                   <>
-                    <RefreshCw className="w-8 h-8 text-foreground animate-spin mb-1" />
+                    <ProductionSkeleton />
                     <p className="text-xs font-semibold text-foreground">Opening Camera...</p>
                     <p className="text-[11px] text-muted-foreground">Requesting video stream</p>
                   </>

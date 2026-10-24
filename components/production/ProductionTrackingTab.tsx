@@ -1,5 +1,7 @@
 "use client";
-import { production } from "@/lib/production/client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
+import { listBatches as productionListBatches } from "@/app/actions/production/batches";
+import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
@@ -9,24 +11,26 @@ import { ProductionBatchEntity } from "./types";
 import ProductionBatchDetailView from "./ProductionBatchDetailView";
 
 interface ProductionTrackingTabProps {
+  initialRows: ProductionBatchEntity[];
   initialBatchId?: number | null;
   onNavigateToBatches?: () => void;
   currentUser: string;
 }
 
 export default function ProductionTrackingTab({
+  initialRows,
   initialBatchId,
   currentUser,
 }: ProductionTrackingTabProps) {
-  const [batches, setBatches] = useState<ProductionBatchEntity[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [batches, setBatches] = useState<ProductionBatchEntity[]>(initialRows);
+  const [loading, setLoading] = useState<boolean>(false);
   const [selectedBatchId, setSelectedBatchId] = useState<number | null>(initialBatchId ?? null);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const fetchBatches = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await production.listBatches();
+      const res = await actionResponse(productionListBatches());
       const list = Array.isArray(res.data)
         ? res.data
         : Array.isArray(res.data?.data)
@@ -41,16 +45,6 @@ export default function ProductionTrackingTab({
     }
   }, []);
 
-  useEffect(() => {
-    fetchBatches();
-  }, [fetchBatches]);
-
-  useEffect(() => {
-    if (initialBatchId) {
-      setSelectedBatchId(initialBatchId);
-      fetchBatches();
-    }
-  }, [initialBatchId, fetchBatches]);
 
   // Active Batches = Batches currently undergoing kitchen production or packaging
   // (Excluding rejected, completed, stocked in, for stock-in, or already sent to QA)
@@ -137,9 +131,7 @@ export default function ProductionTrackingTab({
             {/* Batches List */}
             <div className="space-y-2 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
               {loading ? (
-                <div className="py-8 text-center text-xs font-mono text-muted-foreground uppercase tracking-widest">
-                  Loading active batches...
-                </div>
+                <ProductionSkeleton />
               ) : displayedBatches.length === 0 ? (
                 <div className="py-10 px-3 text-center text-xs text-muted-foreground">
                   No active batches in kitchen production.

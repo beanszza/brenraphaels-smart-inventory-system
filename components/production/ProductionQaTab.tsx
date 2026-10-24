@@ -1,5 +1,8 @@
 "use client";
-import { production } from "@/lib/production/client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
+import { listProductionQa as productionListProductionQa } from "@/app/actions/production/quality";
+import { reviewProductionQa as productionReviewProductionQa } from "@/app/actions/production/quality";
+import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -11,14 +14,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 
 interface ProductionQaTabProps {
+  initialRows: any[];
   currentUser: string;
 }
 
-export default function ProductionQaTab({ currentUser }: ProductionQaTabProps) {
+export default function ProductionQaTab({ initialRows, currentUser }: ProductionQaTabProps) {
   const [mounted, setMounted] = useState<boolean>(false);
-  const [batches, setBatches] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [selectedBatchId, setSelectedBatchId] = useState<number | null>(null);
+  const [allBatches, setBatches] = useState<any[]>(initialRows);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [selectedBatchId, setSelectedBatchId] = useState<number | null>(initialRows.find(b => b.status === "For QA")?.batchId ?? null);
   const [subTab, setSubTab] = useState<"pending" | "completed">("pending");
 
   useEffect(() => {
@@ -26,7 +30,7 @@ export default function ProductionQaTab({ currentUser }: ProductionQaTabProps) {
   }, []);
 
   // QA Form fields
-  const [acceptedQty, setAcceptedQty] = useState<number>(0);
+  const [acceptedQty, setAcceptedQty] = useState<number>(initialRows.find(b => b.status === "For QA")?.packedQty ?? 0);
   const [acceptedReason, setAcceptedReason] = useState<string>("Meets All Sensory & Packaging Standards");
   const [rejectedQty, setRejectedQty] = useState<number>(0);
   const [rejectedReason, setRejectedReason] = useState<string>("");
@@ -45,7 +49,7 @@ export default function ProductionQaTab({ currentUser }: ProductionQaTabProps) {
   const fetchBatches = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await production.listProductionQa(`status=${subTab}`);
+      const res = await actionResponse(productionListProductionQa("status=all"));
       if (res.data?.success && Array.isArray(res.data.data)) {
         setBatches(res.data.data);
         if (res.data.data.length > 0 && !selectedBatchId) {
@@ -60,12 +64,10 @@ export default function ProductionQaTab({ currentUser }: ProductionQaTabProps) {
     } finally {
       setLoading(false);
     }
-  }, [subTab, selectedBatchId]);
+  }, [selectedBatchId]);
 
-  useEffect(() => {
-    fetchBatches();
-  }, [fetchBatches]);
 
+  const batches = allBatches.filter(b => subTab === "pending" ? b.status === "For QA" : b.status !== "For QA");
   const selectedBatch = batches.find((b) => b.batchId === selectedBatchId) || null;
 
   // When changing batch selection
@@ -101,7 +103,7 @@ export default function ProductionQaTab({ currentUser }: ProductionQaTabProps) {
 
     setSubmitting(true);
     try {
-      const res = await production.reviewProductionQa({
+      const res = await actionResponse(productionReviewProductionQa({
         batchId: selectedBatch.batchId,
         acceptedQuantity: acceptedQty,
         acceptedReason,
@@ -110,7 +112,7 @@ export default function ProductionQaTab({ currentUser }: ProductionQaTabProps) {
         remarks,
         checklist,
         inspectorName: currentUser,
-      });
+      }));
 
       if (res.data?.success) {
         toast.success(
@@ -156,14 +158,14 @@ export default function ProductionQaTab({ currentUser }: ProductionQaTabProps) {
       </div>
 
       {/* ── Subtab Navigation (Pending QA & Completed QA) ── */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto">
         <button
           type="button"
           onClick={() => {
             setSubTab("pending");
             setSelectedBatchId(null);
           }}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             subTab === "pending"
               ? "bg-primary text-primary-foreground shadow-xs"
               : "border border-border bg-card text-muted-foreground hover:bg-muted"
@@ -178,7 +180,7 @@ export default function ProductionQaTab({ currentUser }: ProductionQaTabProps) {
             setSubTab("completed");
             setSelectedBatchId(null);
           }}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             subTab === "completed"
               ? "bg-primary text-primary-foreground shadow-xs"
               : "border border-border bg-card text-muted-foreground hover:bg-muted"
@@ -203,9 +205,7 @@ export default function ProductionQaTab({ currentUser }: ProductionQaTabProps) {
 
           <div className="space-y-2 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
             {loading ? (
-              <div className="p-6 text-center text-xs font-mono text-muted-foreground uppercase tracking-widest">
-                Loading batches...
-              </div>
+              <ProductionSkeleton />
             ) : batches.length === 0 ? (
               <div className="p-6 text-center text-xs text-muted-foreground rounded-xl border border-border bg-card">
                 No batches found in this view.
