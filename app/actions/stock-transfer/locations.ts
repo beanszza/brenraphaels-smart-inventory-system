@@ -106,4 +106,3 @@ export async function updateLocation(idInput: string | number, body: Partial<Loc
     return resourceResult({ success: false, message: errorMessage(error) });
   }
 }
-
