@@ -1,5 +1,6 @@
 "use client";
-import { production } from "@/lib/production/client";
+import { completeBatch as productionCompleteBatch } from "@/app/actions/production/batch-complete";
+import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState } from "react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
@@ -51,14 +52,14 @@ export default function BatchCompletionModal({
 
     setSubmitting(true);
     try {
-      const res = await production.completeBatch(batch.batchId, {
+      const res = await actionResponse(productionCompleteBatch(batch.batchId, {
         finalQuantity: Number(actualQuantity),
         packagedBy,
         expiryDate,
         scrapQuantity: Number(scrapQuantity) || 0,
         scrapReason,
         notes,
-      });
+      }));
 
       if (res.data?.success) {
         toast.success(res.data.message || "Batch successfully completed and Finished Goods lot stocked in!");

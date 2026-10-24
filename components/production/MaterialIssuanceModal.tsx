@@ -1,5 +1,9 @@
 "use client";
-import { production } from "@/lib/production/client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
+import { getIssuance as productionGetIssuance } from "@/app/actions/production/issuance-detail";
+import { scanIssuance as productionScanIssuance } from "@/app/actions/production/scan";
+import { issueMaterials as productionIssueMaterials } from "@/app/actions/production/issue";
+import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
@@ -116,7 +120,7 @@ export default function MaterialIssuanceModal({
     if (!issuanceId) return;
     setLoading(true);
     try {
-      const res = await production.getIssuance(issuanceId);
+      const res = await actionResponse(productionGetIssuance(issuanceId));
       if (res.data?.success && res.data.data) {
         const issData: MaterialIssuanceDTO = res.data.data;
         setIssuance(issData);
@@ -320,11 +324,11 @@ export default function MaterialIssuanceModal({
 
     try {
       if (!issuanceId) return;
-      const res = await production.scanIssuance(issuanceId, {
+      const res = await actionResponse(productionScanIssuance(issuanceId, {
         qrRaw: rawCode,
         ingredientId: matchingReservation.ingredientId,
         scannedBy: issuance?.issuedBy || "Inventory Manager",
-      });
+      }));
 
       if (res.data?.success && res.data.verified) {
         setScanStatus("success");
@@ -438,9 +442,9 @@ export default function MaterialIssuanceModal({
     setIssuing(true);
     try {
       if (!issuanceId) return;
-      const res = await production.issueMaterials(issuanceId, {
+      const res = await actionResponse(productionIssueMaterials(issuanceId, {
         issuedBy: issuance?.issuedBy || "Inventory Manager",
-      });
+      }));
 
       if (res.data?.success) {
         toast.success("Materials successfully issued! Ready for production.");
@@ -473,6 +477,7 @@ export default function MaterialIssuanceModal({
       <canvas ref={canvasRef} className="hidden" />
 
       <div className="space-y-5 overflow-y-auto max-h-[calc(85vh-110px)] pr-1">
+        {loading && <ProductionSkeleton />}
         {/* Header Summary Card */}
         {issuance && (
           <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-muted/20 border border-border">
@@ -551,7 +556,7 @@ export default function MaterialIssuanceModal({
                   <div className="flex flex-col items-center justify-center text-center p-5 text-muted-foreground gap-2">
                     {cameraLoading ? (
                       <>
-                        <RefreshCw className="w-7 h-7 text-foreground animate-spin mb-1" />
+                        <ProductionSkeleton />
                         <p className="text-xs font-semibold text-foreground">Initializing Camera...</p>
                         <p className="text-[11px] text-muted-foreground">Requesting video stream</p>
                       </>

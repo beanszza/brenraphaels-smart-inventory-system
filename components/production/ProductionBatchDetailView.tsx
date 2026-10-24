@@ -1,5 +1,11 @@
 "use client";
-import { production } from "@/lib/production/client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
+import { getBatch as productionGetBatch } from "@/app/actions/production/batch-detail";
+import { completeBatchStage as productionCompleteBatchStage } from "@/app/actions/production/batch-stages-complete";
+import { advanceBatchStage as productionAdvanceBatchStage } from "@/app/actions/production/batch-stage";
+import { rejectBatch as productionRejectBatch } from "@/app/actions/production/batch-reject";
+import { packageBatch as productionPackageBatch } from "@/app/actions/production/batch-packaging";
+import { actionResponse } from "@/lib/resources/action-response";
 
 import { StatusBadge } from "@/components/shared/StatusBadge";
 
@@ -112,7 +118,7 @@ export default function ProductionBatchDetailView({
   const fetchBatchDetail = async () => {
     setLoading(true);
     try {
-      const res = await production.getBatch(batchId);
+      const res = await actionResponse(productionGetBatch(batchId));
       if (res.data?.success && res.data.data) {
         const b = res.data.data;
         setBatch(b);
@@ -197,12 +203,12 @@ export default function ProductionBatchDetailView({
 
     setStageLoading(true);
     try {
-      const res = await production.completeBatchStage(batchId, {
+      const res = await actionResponse(productionCompleteBatchStage(batchId, {
         stage: stageToComplete,
         endTime: formattedStageEndTime,
         notes: stageNotes,
         completedBy: currentUser,
-      });
+      }));
 
       if (res.data?.success) {
         toast.success(`Stage ${stageToComplete} completed at ${formattedStageEndTime}!`);
@@ -229,10 +235,10 @@ export default function ProductionBatchDetailView({
   const handleProceedToPackaging = async () => {
     setStageLoading(true);
     try {
-      const res = await production.advanceBatchStage(batchId, {
+      const res = await actionResponse(productionAdvanceBatchStage(batchId, {
         stage: "Packaging",
         notes: "Cooking stages finished. Ready for packaging.",
-      });
+      }));
 
       if (res.data?.success) {
         toast.success("Advanced to Packaging phase.");
@@ -262,12 +268,12 @@ export default function ProductionBatchDetailView({
 
     setRejectLoading(true);
     try {
-      const res = await production.rejectBatch(batchId, {
+      const res = await actionResponse(productionRejectBatch(batchId, {
         reason: rejectReason.trim(),
         assignedCook: rejectCook.trim(),
         proofImageUrl: rejectProofUrl.trim(),
         notes: rejectNotes.trim(),
-      });
+      }));
 
       if (res.data?.success) {
         toast.error(`Batch rejected. Loss Report ${res.data.data.lossReportNumber} generated.`);
@@ -306,14 +312,14 @@ export default function ProductionBatchDetailView({
 
     setPkgLoading(true);
     try {
-      const res = await production.packageBatch(batchId, {
+      const res = await actionResponse(productionPackageBatch(batchId, {
         packageDate: pkgDate || new Date(),
         expiryDate: pkgExpiryDate,
         packedBy: pkgPackedBy.trim(),
         proofImageUrl: pkgProofUrl.trim(),
         finalQuantity: pkgQuantity,
         notes: pkgNotes.trim(),
-      });
+      }));
 
       if (res.data?.success) {
         toast.success(`Packaging completed! Lot ${res.data.data.fgLotCode} forwarded to QA.`);
@@ -334,9 +340,7 @@ export default function ProductionBatchDetailView({
 
   if (loading) {
     return (
-      <div className="p-8 text-center text-xs font-mono text-muted-foreground uppercase tracking-widest">
-        Loading batch details...
-      </div>
+      <ProductionSkeleton />
     );
   }
 

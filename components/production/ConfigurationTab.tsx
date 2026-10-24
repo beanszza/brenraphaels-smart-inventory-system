@@ -1,5 +1,10 @@
 "use client";
-import { production } from "@/lib/production/client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
+import { listFinishedProducts as productionListFinishedProducts } from "@/app/actions/production/products";
+import { createFinishedProduct as productionCreateFinishedProduct } from "@/app/actions/production/products";
+import { updateFinishedProduct as productionUpdateFinishedProduct } from "@/app/actions/production/product-detail";
+import { deleteFinishedProduct as productionDeleteFinishedProduct } from "@/app/actions/production/product-detail";
+import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -73,10 +78,10 @@ interface DraftVariant {
   price: number;
 }
 
-export default function ConfigurationTab() {
-  const [products, setProducts] = useState<FinishedProductItem[]>([]);
+export default function ConfigurationTab({ initialRows }: { initialRows: FinishedProductItem[] }) {
+  const [products, setProducts] = useState<FinishedProductItem[]>(initialRows);
   const [photoVersion, setPhotoVersion] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
 
@@ -137,7 +142,7 @@ export default function ConfigurationTab() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await production.listFinishedProducts();
+      const res = await actionResponse(productionListFinishedProducts());
       const list = res.data?.data || res.data || [];
       setProducts(list);
     } catch (err: any) {
@@ -147,9 +152,6 @@ export default function ConfigurationTab() {
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
 
   // Distinct product names for the quick-add variant selector
   const distinctProductNames = Array.from(
@@ -236,12 +238,12 @@ export default function ConfigurationTab() {
       // Create each variation via POST /api/FinishedProducts
       for (const v of variationsList) {
         const variantLabel = `${v.size} ${v.packagingType}`.trim();
-        const res = await production.createFinishedProduct({
+        const res = await actionResponse(productionCreateFinishedProduct({
           productName: productName.trim(),
           variant: variantLabel,
           sellingPrice: v.price,
           sku: v.sku.toUpperCase(),
-        });
+        }));
         const id = res.data?.data?.productId;
         if (id) createdProductIds.push(id);
       }
@@ -305,12 +307,12 @@ export default function ConfigurationTab() {
         quickVarSku.trim() ||
         generateSku(targetProductName, quickVarType, quickVarSize);
 
-      await production.createFinishedProduct({
+      await actionResponse(productionCreateFinishedProduct({
         productName: targetProductName.trim(),
         variant: variantLabel,
         sellingPrice: Number(quickVarPrice) || 0,
         sku: skuVal.toUpperCase(),
-      });
+      }));
 
       toast.success(`Variant "${variantLabel}" added to ${targetProductName}!`);
       setIsAddVariantOpen(false);
@@ -338,12 +340,12 @@ export default function ConfigurationTab() {
 
     try {
       setSubmitting(true);
-      await production.updateFinishedProduct(editingItem.productId, {
+      await actionResponse(productionUpdateFinishedProduct(editingItem.productId, {
         productName: editProductName.trim(),
         variant: editVariantStr.trim(),
         sellingPrice: Number(editPrice) || 0,
         sku: editSku.trim().toUpperCase(),
-      });
+      }));
 
       toast.success("Variant details updated successfully");
       setIsEditVariantOpen(false);
@@ -360,7 +362,7 @@ export default function ConfigurationTab() {
     if (!confirm(`Are you sure you want to remove variant "${variantLabel}"?`)) return;
 
     try {
-      await production.deleteFinishedProduct(productId);
+      await actionResponse(productionDeleteFinishedProduct(productId));
       toast.success("Variant removed successfully");
       fetchProducts();
     } catch (err: any) {
@@ -443,7 +445,7 @@ export default function ConfigurationTab() {
             disabled={loading}
             className="flex items-center gap-1.5 h-9 rounded-xl border-border hover:bg-muted font-semibold text-xs text-foreground cursor-pointer shadow-sm"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 `} />
             Refresh
           </Button>
 
@@ -491,10 +493,7 @@ export default function ConfigurationTab() {
       {/* Products & Variants Table */}
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs">
         {loading ? (
-          <div className="p-12 text-center text-muted-foreground text-xs flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin" />
-            Loading products &amp; variants...
-          </div>
+          <ProductionSkeleton />
         ) : filteredProducts.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground text-xs">
             {searchQuery

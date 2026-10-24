@@ -1,5 +1,7 @@
 "use client";
-import { production } from "@/lib/production/client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
+import { listBatches as productionListBatches } from "@/app/actions/production/batches";
+import { commitBatchInventory as productionCommitBatchInventory } from "@/app/actions/production/batch-add-to-inventory";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -7,19 +9,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { inventory } from "@/lib/inventory/client";
+import { listItems } from "@/app/actions/production/lookups";
+import { actionResponse } from "@/lib/resources/action-response";
 import { toast } from "sonner";
 import { Search, Plus, MoreHorizontal, Eye, ArrowDownToLine, X } from "lucide-react";
 
 interface ProductionStockInTabProps {
+  initialRows: any[];
+  initialItems: any[];
   currentUser?: string;
 }
 
-export default function ProductionStockInTab({ currentUser = "Inventory Manager" }: ProductionStockInTabProps) {
+export default function ProductionStockInTab({ initialRows, initialItems,  currentUser = "Inventory Manager" }: ProductionStockInTabProps) {
   const [mounted, setMounted] = useState<boolean>(false);
-  const [batches, setBatches] = useState<any[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [batches, setBatches] = useState<any[]>(initialRows);
+  const [inventoryItems, setInventoryItems] = useState<any[]>(initialItems);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Filter & Search states (matching Resources & Suppliers layout)
   const [subTab, setSubTab] = useState<"all" | "pending" | "history">("all");
@@ -55,8 +60,8 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
     setLoading(true);
     try {
       const [batchesRes, invRes] = await Promise.all([
-        production.listBatches(),
-        inventory.listInventory("pageSize=1000").catch(() => ({ data: { data: [] } })),
+        actionResponse(productionListBatches()),
+        actionResponse(listItems()),
       ]);
 
       const batchList = Array.isArray(batchesRes.data)
@@ -80,9 +85,6 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
     }
   }, []);
 
-  useEffect(() => {
-    fetchBatches();
-  }, [fetchBatches]);
 
   // Derived unique product names for dropdown filter
   const uniqueProducts = useMemo(() => {
@@ -132,11 +134,11 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
 
   // Get current stock for the selected batch product
   const currentStockForSelected = useMemo(() => {
-    if (!selectedBatchInModal) return 126;
+    if (!selectedBatchInModal) return 0;
     const match = inventoryItems.find(
       (i) => i.itemName?.toLowerCase() === selectedBatchInModal.productName?.toLowerCase()
     );
-    return match ? Number(match.currentStock ?? match.quantityOnHand ?? 10) : 10;
+    return match ? Number(match.currentStock ?? 0) : 0;
   }, [selectedBatchInModal, inventoryItems]);
 
   // Eligible finished goods lots for the dropdown:
@@ -177,9 +179,9 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
 
     setCommitting(true);
     try {
-      const res = await production.commitBatchInventory(selectedBatchInModal.batchId, {
+      const res = await actionResponse(productionCommitBatchInventory(selectedBatchInModal.batchId, {
         notes: stockInNotes.trim(),
-      });
+      }));
 
       if (res.data?.success) {
         toast.success(
@@ -322,9 +324,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
       {/* ── Table (Matching SupplyTable layout: No QA Status, No Variant Under Name) ── */}
       <div className="overflow-x-auto rounded-md border border-border bg-card">
         {loading ? (
-          <div className="p-8 text-center text-xs font-mono text-muted-foreground uppercase tracking-widest">
-            Loading stock-in records...
-          </div>
+          <ProductionSkeleton />
         ) : displayedBatches.length === 0 ? (
           <div className="p-12 text-center space-y-2">
             <p className="text-sm font-semibold text-foreground">

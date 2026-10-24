@@ -1,7 +1,13 @@
 "use client";
 import { createIssuance } from "@/app/actions/production/issuances";
 
-import React, { useState } from "react";
+import React, { useTransition } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import type { ProductionTab } from "@/lib/production/screen-data";
+// The action boundary preserves the existing serializable production DTOs.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useStaff } from "@/context/StaffContext";
 import { PageHeader } from "@/components/shared/PageHeader";
 import ProductionRequestsTab from "@/components/production/ProductionRequestsTab";
@@ -11,6 +17,7 @@ import ProductionQaTab from "@/components/production/ProductionQaTab";
 import ProductionStockInTab from "@/components/production/ProductionStockInTab";
 import ConfigurationTab from "@/components/production/ConfigurationTab";
 import LossTab from "@/components/production/LossTab";
+import { ProductionSkeleton } from "@/components/production/ProductionSkeleton";
 
 const TABS = [
   { key: "requests", label: "Production Requests" },
@@ -22,37 +29,42 @@ const TABS = [
   { key: "loss", label: "Loss" },
 ];
 
-export default function ProductionPage() {
+export default function ProductionPage({ activeTab, initialRows, initialItems, initialBatchId, initialIssuanceId }: {
+  activeTab: ProductionTab; initialRows: any[]; initialItems: any[];
+  initialBatchId: number | null; initialIssuanceId: number | null;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const navigate = (href: string) => startTransition(() => router.push(href));
   const staff = useStaff();
-  const [activeTab, setActiveTab] = useState<string>("requests");
-
-  // Cross-tab state
-  const [targetIssuanceId, setTargetIssuanceId] = useState<number | null>(null);
-  const [trackingBatchId, setTrackingBatchId] = useState<number | null>(null);
-
   // Navigate from Production Requests -> Material Issuance
   const handleNavigateToIssuance = async (prodReqId?: number) => {
     if (prodReqId) {
       try {
         const data = await createIssuance({ prodReqId });
         if (data?.success && data?.data) {
-          setTargetIssuanceId(data.data.issuanceId);
+          navigate(`/production-quality?tab=issuance&issuance=${data.data.issuanceId}`);
+          return;
+        } else {
+          toast.error(data?.message || "Failed to open material issuance.");
+          return;
         }
       } catch (err) {
         console.error("Failed to auto-open issuance session:", err);
+        toast.error("Failed to open material issuance.");
+        return;
       }
     }
-    setActiveTab("issuance");
+    navigate("/production-quality?tab=issuance");
   };
 
   // Navigate from Production Requests (Start Batch) -> Production Tracking
   const handleStartBatchAndTrack = (batchId: number) => {
-    setTrackingBatchId(batchId);
-    setActiveTab("tracking");
+    navigate(`/production-quality?tab=tracking&batch=${batchId}`);
   };
 
   return (
-    <div className="w-full min-h-full py-8 px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="w-full min-h-full py-6 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
       <PageHeader
         title="Production & Quality"
         description="End-to-end production management, material lot reservations, sequential stage tracking, and quality assurance."
@@ -64,10 +76,11 @@ export default function ProductionPage() {
           {TABS.map((tab) => {
             const isActive = activeTab === tab.key;
             return (
-              <button
+              <Link
                 key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
+                href={`/production-quality?tab=${tab.key}`}
+                onNavigate={(event) => { event.preventDefault(); navigate(`/production-quality?tab=${tab.key}`); }}
+                aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                   isActive
                     ? "border-foreground text-foreground"
@@ -75,14 +88,15 @@ export default function ProductionPage() {
                 }`}
               >
                 <span>{tab.label.toUpperCase()}</span>
-              </button>
+              </Link>
             );
           })}
         </div>
       </div>
 
+      {pending ? <ProductionSkeleton /> : <>
       {activeTab === "requests" && (
-        <ProductionRequestsTab
+        <ProductionRequestsTab initialRows={initialRows}
           onNavigateToIssuance={handleNavigateToIssuance}
           onStartBatchAndTrack={handleStartBatchAndTrack}
           currentUser={staff.username}
@@ -90,26 +104,27 @@ export default function ProductionPage() {
       )}
 
       {activeTab === "issuance" && (
-        <MaterialIssuanceTab initialIssuanceId={targetIssuanceId} />
+        <MaterialIssuanceTab initialRows={initialRows} initialIssuanceId={initialIssuanceId} />
       )}
 
       {activeTab === "tracking" && (
-        <ProductionTrackingTab
-          initialBatchId={trackingBatchId}
-          onNavigateToBatches={() => setActiveTab("requests")}
+        <ProductionTrackingTab initialRows={initialRows}
+          initialBatchId={initialBatchId}
+          onNavigateToBatches={() => router.push("/production-quality")}
           currentUser={staff.username}
         />
       )}
 
-      {activeTab === "qa" && <ProductionQaTab currentUser={staff.name} />}
+      {activeTab === "qa" && <ProductionQaTab initialRows={initialRows} currentUser={staff.username} />}
 
       {activeTab === "stockin" && (
-        <ProductionStockInTab currentUser={staff.username} />
+        <ProductionStockInTab initialRows={initialRows} initialItems={initialItems} currentUser={staff.username} />
       )}
 
-      {activeTab === "configuration" && <ConfigurationTab />}
+      {activeTab === "configuration" && <ConfigurationTab initialRows={initialRows} />}
 
-      {activeTab === "loss" && <LossTab />}
+      {activeTab === "loss" && <LossTab initialRows={initialRows} />}
+      </>}
     </div>
   );
 }

@@ -1,5 +1,8 @@
 "use client";
-import { production } from "@/lib/production/client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
+import { listProductionRequests as productionListProductionRequests } from "@/app/actions/production/requests";
+import { createBatch as productionCreateBatch } from "@/app/actions/production/batches";
+import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
@@ -12,6 +15,7 @@ import { toast } from "sonner";
 import { ProductionRequestEntity } from "./types";
 import ProductionRequestModal, { formatTimeTo12Hour } from "./ProductionRequestModal";
 import PrSummaryModal from "./PrSummaryModal";
+import { filterProductionRequests } from "@/lib/production/filters";
 
 const STATUS_TABS = [
   "All",
@@ -24,18 +28,20 @@ const STATUS_TABS = [
 ];
 
 interface ProductionRequestsTabProps {
+  initialRows: ProductionRequestEntity[];
   onNavigateToIssuance?: (prodReqId?: number) => void;
   onStartBatchAndTrack?: (batchId: number) => void;
   currentUser: string;
 }
 
 export default function ProductionRequestsTab({
+  initialRows,
   onNavigateToIssuance,
   onStartBatchAndTrack,
   currentUser,
 }: ProductionRequestsTabProps) {
-  const [requests, setRequests] = useState<ProductionRequestEntity[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [requests, setRequests] = useState<ProductionRequestEntity[]>(initialRows);
+  const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [priorityFilter, setPriorityFilter] = useState<string>("All");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -66,11 +72,7 @@ export default function ProductionRequestsTab({
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = {};
-      if (priorityFilter !== "All") params.priority = priorityFilter;
-      if (searchQuery.trim()) params.search = searchQuery.trim();
-
-      const res = await production.listProductionRequests(new URLSearchParams(params).toString());
+      const res = await actionResponse(productionListProductionRequests());
       if (res.data?.success && Array.isArray(res.data.data)) {
         setRequests(res.data.data);
       }
@@ -80,11 +82,8 @@ export default function ProductionRequestsTab({
     } finally {
       setLoading(false);
     }
-  }, [priorityFilter, searchQuery]);
+  }, []);
 
-  useEffect(() => {
-    fetchRequests();
-  }, [fetchRequests]);
 
   // Status helper mapping
   const matchesTab = (reqStatus: string, tabName: string) => {
@@ -102,18 +101,19 @@ export default function ProductionRequestsTab({
   };
 
   // Status counts for status tabs
+  const visibleRequests = useMemo(() => filterProductionRequests(requests, searchQuery, priorityFilter), [requests, searchQuery, priorityFilter]);
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     statusTabs.forEach((st) => {
-      counts[st] = requests.filter((r) => matchesTab(r.status, st)).length;
+      counts[st] = visibleRequests.filter((r) => matchesTab(r.status, st)).length;
     });
     return counts;
-  }, [requests, statusTabs]);
+  }, [visibleRequests, statusTabs]);
 
   // Filter by active status tab
   const filteredRequests = useMemo(() => {
-    return requests.filter((r) => matchesTab(r.status, activeTab));
-  }, [requests, activeTab]);
+    return visibleRequests.filter(r => matchesTab(r.status, activeTab));
+  }, [visibleRequests, activeTab]);
 
   const handleOpenNewModal = () => {
     setSelectedRequest(null);
@@ -131,11 +131,11 @@ export default function ProductionRequestsTab({
 
     setStartingId(req.prodReqId);
     try {
-      const res = await production.createBatch({
+      const res = await actionResponse(productionCreateBatch({
         prodReqId: req.prodReqId,
         assignedCook: currentUser,
         notes: `Started from Request ${req.reqNumber}`,
-      });
+      }));
 
       if (res.data?.success && res.data.data) {
         toast.success(`Production batch ${res.data.data.batchNumber} started!`);
@@ -277,7 +277,7 @@ export default function ProductionRequestsTab({
               {loading ? (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-xs text-muted-foreground animate-pulse">
-                    Loading production requests...
+                    <ProductionSkeleton />
                   </td>
                 </tr>
               ) : paginatedRequests.length === 0 ? (
