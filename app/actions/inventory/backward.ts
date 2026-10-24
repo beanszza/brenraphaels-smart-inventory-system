@@ -1,19 +1,17 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+"use server";
 import { prisma } from "@/lib/prisma";
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { read } from "@/lib/inventory/mutate";
 
-// Backward traceability: given a batch ID or batch number, find the source lots used
-export async function GET(request: NextRequest) {
-  const access = await requireRouteModule(request, "Inventory");
-  if (!access.ok) return access.response;
-
-  try {
-    const { searchParams } = new URL(request.url);
+export async function traceBackward(query = "") {
+  await requireModule("Inventory");
+  return read(async () => {
+    const searchParams = new URLSearchParams(query);
     const batchId = searchParams.get("batchId") || "";
 
     if (!batchId) {
-      return NextResponse.json({ success: false, message: "batchId query param is required." }, { status: 400 });
+      return resourceResult({ success: false, message: "batchId query param is required." });
     }
 
     // Support both numeric ID and batch number string
@@ -38,7 +36,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!batch) {
-      return NextResponse.json({ success: false, message: `Batch "${batchId}" not found.` }, { status: 404 });
+      return resourceResult({ success: false, message: `Batch "${batchId}" not found.` });
     }
 
     const data = {
@@ -64,9 +62,6 @@ export async function GET(request: NextRequest) {
       })),
     };
 
-    return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    console.error("GET /api/traceability/backward error:", error);
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
-  }
+    return resourceResult({ success: true, data });
+  });
 }

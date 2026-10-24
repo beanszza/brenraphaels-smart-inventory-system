@@ -1,21 +1,13 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+"use server";
 import { prisma } from "@/lib/prisma";
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { read, positiveId } from "@/lib/inventory/mutate";
 
-export async function GET(
-  request: NextRequest,
-  props: { params: Promise<{ itemId: string }> }
-) {
-  const access = await requireRouteModule(request, "Inventory");
-  if (!access.ok) return access.response;
-
-  try {
-    const rawParams = await props?.params;
-    const itemId = parseInt(String(rawParams?.itemId), 10);
-    if (isNaN(itemId)) {
-      return NextResponse.json({ success: false, message: "Invalid item ID" }, { status: 400 });
-    }
+export async function listItemLots(itemIdInput: number) {
+  await requireModule("Inventory");
+  return read(async () => {
+    const itemId = positiveId(itemIdInput);
 
     const lots = await prisma.inventoryLots.findMany({
       where: { ItemId: itemId, Status: { in: ["Available", "Active"] }, QuantityRemaining: { gt: 0 } },
@@ -76,9 +68,6 @@ export async function GET(
       };
     });
 
-    return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    console.error("GET /api/inventory/lots/byitem/[itemId] error:", error);
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
-  }
+    return resourceResult({ success: true, data });
+  });
 }

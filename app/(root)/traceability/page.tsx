@@ -1,6 +1,8 @@
+import { requireModule } from "@/lib/portal/staff";
 import { notFound } from "next/navigation";
 
-export default function TraceabilityPage() {
+export default async function TraceabilityPage() {
+  await requireModule("Inventory");
   notFound();
 }
 

@@ -98,11 +98,7 @@ it("attributes approval submission to the current Staff and preserves the origin
   expect(rows.get("productionRequests")?.RequestedBy).toBe("Legacy Requester");
 });
 
-it("records the current reconciler while preserving the original counter", async () => {
-  rows.set("cycleCounts", { Status: "Open", CountedBy: "Legacy Counter", CycleCountItems: [] });
-  await act("cycle-counts/[id]/reconcile", "POST", { reconciledBy: "Forged" });
-  expect(rows.get("cycleCounts")).toMatchObject({ CountedBy: "Legacy Counter", ReconciledBy: "2026-AB-001" });
-});
+// Cycle-count attribution now runs through server actions in inventory-actions.test.ts.
 
 it("records stage completion in batch notes using the session Username", async () => {
   rows.set("productionBatches", { Status: "In Progress" });

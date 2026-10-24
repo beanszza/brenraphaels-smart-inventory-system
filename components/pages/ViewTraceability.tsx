@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import api from "@/lib/api";
+import { inventory } from "@/lib/inventory/client";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -85,10 +85,9 @@ export default function ViewTraceability() {
     setLoading(true);
     setTraceResult(null);
     try {
-      const endpoint = traceType === "forward"
-        ? `/api/traceability/forward?lotCode=${encodeURIComponent(query)}`
-        : `/api/traceability/backward?batchId=${encodeURIComponent(query)}`;
-      const res = await api.get(endpoint);
+      const res = traceType === "forward"
+        ? await inventory.traceForward(`lotCode=${encodeURIComponent(query)}`)
+        : await inventory.traceBackward(`batchId=${encodeURIComponent(query)}`);
       if (res.data?.success && res.data.data) {
         // Map flat API data to tree structure
         const d = res.data.data;
@@ -164,7 +163,7 @@ export default function ViewTraceability() {
     if (!query.trim()) return;
     setRecallLoading(true);
     try {
-      const res = await api.get(`/api/traceability/recall-simulation?lotCode=${encodeURIComponent(query)}`);
+      const res = await inventory.simulateRecall(`lotCode=${encodeURIComponent(query)}`);
       if (res.data?.success && res.data.data) {
         const d = res.data.data;
         setRecallData({
@@ -188,7 +187,7 @@ export default function ViewTraceability() {
   const handleApplyRecallHold = async () => {
     if (!query.trim()) return;
     try {
-      await api.post("/api/traceability/recall", { lotCode: query, applyHold });
+      await inventory.recallLot({ lotCode: query, applyHold });
       setShowRecall(false);
     } catch (e) {
       console.error(e);

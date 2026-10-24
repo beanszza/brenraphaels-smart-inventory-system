@@ -1,14 +1,12 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+"use server";
 import { prisma } from "@/lib/prisma";
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { read } from "@/lib/inventory/mutate";
 
-// Inventory valuation: weighted average cost per item across all available lots
-export async function GET(request: NextRequest) {
-  const access = await requireRouteModule(request, "Inventory");
-  if (!access.ok) return access.response;
-
-  try {
+export async function getValuation() {
+  await requireModule("Inventory");
+  return read(async () => {
     const lots = await prisma.inventoryLots.findMany({
       where: { QuantityRemaining: { gt: 0 } },
       include: {
@@ -80,12 +78,9 @@ export async function GET(request: NextRequest) {
     // Sort by totalValue desc
     items.sort((a, b) => b.totalValue - a.totalValue);
 
-    return NextResponse.json({
+    return resourceResult({
       success: true,
       data: { items, totalCount: items.length },
     });
-  } catch (error: any) {
-    console.error("GET /api/valuation error:", error);
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
-  }
+  });
 }

@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { inventory } from "@/lib/inventory/client";
 import api from "@/lib/api";
 
 type LocationItem = {
@@ -110,7 +111,7 @@ export default function CreateTransferModal({
       try {
         const [prodRes, invRes] = await Promise.all([
           api.get("/api/finished-products"),
-          api.get("/api/inventory?pageSize=100"),
+          inventory.listInventory("pageSize=100"),
         ]);
         if (prodRes.data.success) {
           setProducts(prodRes.data.data?.items || prodRes.data.data || []);
