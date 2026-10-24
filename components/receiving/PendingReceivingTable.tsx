@@ -1,4 +1,5 @@
 "use client";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 import React, { useState } from "react";
 import { Truck, Eye, MoreHorizontal } from "lucide-react";
@@ -21,9 +22,7 @@ export default function PendingReceivingTable({
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
   if (loading) {
     return (
-      <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm p-12 text-center text-xs text-muted-foreground animate-pulse">
-        Loading pending deliveries arrived at docks...
-      </div>
+      <ReceivingSkeleton />
     );
   }
 

@@ -1,4 +1,5 @@
 "use client";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 import { receiving } from "@/lib/receiving/client";
 
@@ -234,9 +235,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
         </div>
 
         {loading && (
-          <div className="py-10 text-center text-xs text-muted-foreground animate-pulse">
-            Loading Goods Receipt Note items…
-          </div>
+          <ReceivingSkeleton />
         )}
 
         {/* Stock-In Items Table */}
@@ -248,7 +247,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
               </span>
             </div>
 
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="rounded-xl border border-border bg-card overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-border bg-muted/30 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">

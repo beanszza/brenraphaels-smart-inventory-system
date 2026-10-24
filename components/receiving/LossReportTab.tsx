@@ -1,8 +1,10 @@
 "use client";
+import { useRouter } from "next/navigation";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 import { receiving } from "@/lib/receiving/client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useTransition } from "react";
 import { Trash2, Search, MoreHorizontal, Eye, Check } from "lucide-react";
 import {
   Select,
@@ -18,9 +20,10 @@ import Pagination from "@/components/Pagination";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { LossReport } from "./types";
 
-export default function LossReportTab() {
-  const [lossReports, setLossReports] = useState<LossReport[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function LossReportTab({ initialLossReports }: { initialLossReports: LossReport[] }) {
+  const router = useRouter();
+  const lossReports = initialLossReports;
+  const [loading, startRefresh] = useTransition();
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("All");
   const [page, setPage] = useState(1);
@@ -32,23 +35,7 @@ export default function LossReportTab() {
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchLossReports = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await receiving.listLossReports();
-      if (res.data?.success) {
-        setLossReports(res.data.data || []);
-      }
-    } catch (err: any) {
-      console.error("Error fetching loss reports:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchLossReports();
-  }, [fetchLossReports]);
+  const fetchLossReports = () => startRefresh(() => router.refresh());
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -157,6 +144,7 @@ export default function LossReportTab() {
         <div className="flex flex-1 items-center gap-2 px-2 bg-muted/20 h-full rounded-md">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <Input
+            aria-label="Search records"
             type="text"
             placeholder="Search loss reports by Report#, Item, or Supplier..."
             value={search}
@@ -190,7 +178,7 @@ export default function LossReportTab() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
                 <SelectValue placeholder="All Suppliers" />
               </SelectTrigger>
               <SelectContent align="end" className="text-xs z-[9999]">
@@ -208,11 +196,9 @@ export default function LossReportTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="rounded-xl border border-border bg-card p-12 text-center text-xs text-muted-foreground animate-pulse">
-          Loading Loss & Disposal Reports...
-        </div>
+        <ReceivingSkeleton />
       ) : (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-card shadow-sm overflow-x-auto">
           <table className="w-full text-xs text-left border-collapse">
             <thead>
               <tr className="border-b border-border bg-muted/30 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">

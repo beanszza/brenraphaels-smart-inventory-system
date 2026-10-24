@@ -1,8 +1,10 @@
 "use client";
+import { useRouter } from "next/navigation";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 import { receiving } from "@/lib/receiving/client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useTransition } from "react";
 import { Search, MoreHorizontal, Eye, Check, XCircle, Truck, AlertCircle } from "lucide-react";
 import {
   Select,
@@ -19,9 +21,10 @@ import Pagination from "@/components/Pagination";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { RtvRecord } from "./types";
 
-export default function RtvTab() {
-  const [rtvs, setRtvs] = useState<RtvRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[] }) {
+  const router = useRouter();
+  const rtvs = initialReturns;
+  const [loading, startRefresh] = useTransition();
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("All");
   const [page, setPage] = useState(1);
@@ -52,23 +55,7 @@ export default function RtvTab() {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  const fetchRtvs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await receiving.listReturns();
-      if (res.data?.success) {
-        setRtvs(res.data.data || []);
-      }
-    } catch (err: any) {
-      console.error("Error fetching RTVs:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchRtvs();
-  }, [fetchRtvs]);
+  const fetchRtvs = () => startRefresh(() => router.refresh());
 
   const handleApprove = async (rtv: RtvRecord) => {
     setActionLoading(true);
@@ -76,7 +63,8 @@ export default function RtvTab() {
     try {
       const res = await receiving.approveReturn(rtv.rtvId);
       if (res.data?.success) {
-        await fetchRtvs();
+        setSelectedRtv(null);
+        fetchRtvs();
       } else {
         setActionError(res.data?.message || "Failed to approve return request.");
       }
@@ -104,7 +92,8 @@ export default function RtvTab() {
         setRejectingRtv(null);
         setRejectionReason("");
         setRejectionError(null);
-        await fetchRtvs();
+        setSelectedRtv(null);
+        fetchRtvs();
       } else {
         setActionError(res.data?.message || "Failed to reject return request.");
       }
@@ -126,7 +115,8 @@ export default function RtvTab() {
       if (res.data?.success) {
         setDispatchingRtv(null);
         setCreditNoteNumber("");
-        await fetchRtvs();
+        setSelectedRtv(null);
+        fetchRtvs();
       } else {
         setActionError(res.data?.message || "Failed to dispatch return shipment.");
       }
@@ -207,6 +197,7 @@ export default function RtvTab() {
         <div className="flex flex-1 items-center gap-2 px-2 bg-muted/20 h-full rounded-md">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <Input
+            aria-label="Search records"
             type="text"
             placeholder="Search supplier returns by Return to Vendor No., Supplier, or Item..."
             value={search}
@@ -240,7 +231,7 @@ export default function RtvTab() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
                 <SelectValue placeholder="All Suppliers" />
               </SelectTrigger>
               <SelectContent align="end" className="text-xs z-[9999]">
@@ -258,11 +249,9 @@ export default function RtvTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="rounded-xl border border-border bg-card p-12 text-center text-xs text-muted-foreground animate-pulse">
-          Loading Supplier Returns...
-        </div>
+        <ReceivingSkeleton />
       ) : (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-card shadow-sm overflow-x-auto">
           <table className="w-full text-xs text-left border-collapse">
             <thead>
               <tr className="border-b border-border bg-muted/30 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">

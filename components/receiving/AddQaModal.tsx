@@ -1,4 +1,5 @@
 "use client";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 import { receiving } from "@/lib/receiving/client";
 
@@ -75,7 +76,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
     <ModalWrapper open={open} title="Add Quality Assurance Inspection" onClose={onClose} size="max-w-2xl">
       <div className="space-y-6 text-foreground">
         {error && (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+          <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
             {error}
           </div>
         )}
@@ -93,9 +94,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
 
         {/* GRN Selection */}
         {loading ? (
-          <div className="py-8 text-center text-xs text-muted-foreground animate-pulse">
-            Loading eligible Goods Receipt Notes…
-          </div>
+          <ReceivingSkeleton />
         ) : grns.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-2xl bg-muted/10">
             <Package className="w-10 h-10 text-muted-foreground/40 mb-3" />
