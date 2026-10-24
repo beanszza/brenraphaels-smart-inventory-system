@@ -1,11 +1,12 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { Printer, AlertTriangle } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import api from "@/lib/api";
 import { GRN } from "./types";
 
 interface GrnDetailsModalProps {
@@ -29,7 +30,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
     setLoading(true);
     setError(null);
     try {
-      const res = await api.post(`/api/goods-receipts/${grn.grnId}/post`);
+      const res = await receiving.postReceipt(grn.grnId);
       if (res.data?.success) {
         onUpdated();
         onClose();
@@ -48,7 +49,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
     setLoading(true);
     setError(null);
     try {
-      const res = await api.post(`/api/goods-receipts/${grn.grnId}/cancel`);
+      const res = await receiving.cancelReceipt(grn.grnId);
       if (res.data?.success) {
         setCancelModalOpen(false);
         onUpdated();

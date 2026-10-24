@@ -1,5 +1,7 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, MoreHorizontal, Eye, RefreshCw, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -13,7 +15,6 @@ import {
 } from "@/components/ui/select";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import Pagination from "@/components/Pagination";
-import api from "@/lib/api";
 import { StockIn } from "./types";
 import CreateStockInModal from "./CreateStockInModal";
 import StockInDetailsModal from "./StockInDetailsModal";
@@ -40,7 +41,7 @@ export default function StockInTab() {
   const fetchStockIns = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/StockIns");
+      const res = await receiving.listStockIns();
       const list: StockIn[] = Array.isArray(res.data?.data) ? res.data.data : [];
       setStockIns(list);
     } catch (err) {

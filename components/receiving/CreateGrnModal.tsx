@@ -1,8 +1,10 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import { getDeliveryForReceiving, getOrderForReceiving, listDeliveriesForReceiving } from "@/app/actions/receiving/procurement-reads";
 
-import { listItems } from "@/app/actions/resources/items";
+import { listItemChoices } from "@/app/actions/receiving/lookups";
 import { actionResponse } from "@/lib/resources/action-response";
 
 
@@ -10,7 +12,6 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, ChevronUp, Plus, Trash2, ClipboardCheck, AlertTriangle } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { ArrivedDelivery, GRN, QAInspection } from "./types";
 import { HR_EMPLOYEES } from "@/lib/employees";
 
@@ -172,8 +173,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
       })
       .catch(() => setError("Unable to load arrived deliveries. Please refresh and try again."));
 
-    api
-      .get("/api/goods-receipts")
+    receiving.listReceipts()
       .then(({ data }) => {
         const allGrns: GRN[] = Array.isArray(data?.data) ? data.data : [];
         const year = new Date().getFullYear();
@@ -195,7 +195,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
       const [deliveryResult, poResult, itemsCatalogRes] = await Promise.all([
         actionResponse(getDeliveryForReceiving(delivery.deliveryId)),
         actionResponse(getOrderForReceiving(delivery.poId)),
-        actionResponse(listItems(`pageSize=1000`)).catch(() => ({ data: { data: [] } })),
+        actionResponse(listItemChoices()).catch(() => ({ data: { data: [] } })),
       ]);
 
       const catalogItems = Array.isArray(itemsCatalogRes.data?.data?.items)
@@ -397,7 +397,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
         }))
       );
 
-      const { data: createData } = await api.post("/api/goods-receipts", {
+      const { data: createData } = await receiving.createReceipt({
         deliveryId: selected.deliveryId,
         notes: notes.trim() || undefined,
         ...verified,
@@ -410,7 +410,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
 
       const createdGrn = createData.data;
 
-      const { data: rejectData } = await api.post(`/api/goods-receipts/${createdGrn.grnId}/reject`, {
+      const { data: rejectData } = await receiving.rejectReceipt(createdGrn.grnId, {
         reason: rejectionReason.trim(),
         notes: notes.trim() || undefined,
       });
@@ -471,7 +471,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
       // Check if a GRN already exists for this delivery (handles retry after partial failure)
       let resolvedGrn: GRN | null = null;
 
-      const existingGrnRes = await api.get(`/api/goods-receipts?deliveryId=${selected.deliveryId}`);
+      const existingGrnRes = await receiving.listReceipts(`deliveryId=${selected.deliveryId}`);
       const existingGrns: GRN[] = Array.isArray(existingGrnRes.data?.data) ? existingGrnRes.data.data : [];
 
       // Find a GRN that has already been posted (Received or later) for this delivery
@@ -506,7 +506,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
             }))
           );
 
-          const { data: createData } = await api.post("/api/goods-receipts", {
+          const { data: createData } = await receiving.createReceipt({
             deliveryId: selected.deliveryId,
             notes: notes.trim() || undefined,
             ...verified,
@@ -523,7 +523,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
         setActiveGrn(createdGrn);
 
         // Post the draft GRN
-        const postResult = await api.post(`/api/goods-receipts/${createdGrn.grnId}/post`);
+        const postResult = await receiving.postReceipt(createdGrn.grnId);
         if (!postResult.data?.success) {
           throw new Error(postResult.data?.message || "GRN saved as draft but failed to advance.");
         }
@@ -535,7 +535,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
       // Fetch or locate the QA inspection for this GRN
       let inspection: QAInspection | null = null;
       try {
-        const qaRes = await api.get(`/api/QualityInspections?grnId=${resolvedGrn!.grnId}`);
+        const qaRes = await receiving.listInspections(`grnId=${resolvedGrn!.grnId}`);
         const inspectionList: QAInspection[] = Array.isArray(qaRes.data?.data)
           ? qaRes.data.data
           : Array.isArray(qaRes.data)
@@ -544,7 +544,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
         inspection = inspectionList[0] || null;
 
         if (!inspection) {
-          const allQc = await api.get("/api/QualityInspections");
+          const allQc = await receiving.listInspections();
           const allList: QAInspection[] = Array.isArray(allQc.data?.data)
             ? allQc.data.data
             : Array.isArray(allQc.data)
@@ -752,7 +752,7 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
     try {
       let resolvedInspectionId = qaInspection?.inspectionId;
       if (!resolvedInspectionId) {
-        const qaRes = await api.get(`/api/QualityInspections?grnId=${activeGrn.grnId}`);
+        const qaRes = await receiving.listInspections(`grnId=${activeGrn.grnId}`);
         const list = Array.isArray(qaRes.data?.data) ? qaRes.data.data : [];
         if (list[0]?.inspectionId) {
           resolvedInspectionId = list[0].inspectionId;
@@ -782,12 +782,12 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
         })),
       };
 
-      const res = await api.post(`/api/QualityInspections/${resolvedInspectionId}/complete`, payload);
+      const res = await receiving.completeInspection(resolvedInspectionId, payload);
       if (!res.data?.success) {
         throw new Error(res.data?.message || "Failed to complete QA inspection.");
       }
 
-      const grnRes = await api.get(`/api/goods-receipts/${activeGrn.grnId}`);
+      const grnRes = await receiving.getReceipt(activeGrn.grnId);
       const finalGrn: GRN = grnRes.data?.data || activeGrn;
 
       onSuccess(finalGrn);
