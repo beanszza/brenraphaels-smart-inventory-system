@@ -1,17 +1,19 @@
-import { requireRouteModule } from "@/lib/portal/staff";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+"use server";
+
 import { prisma } from "@/lib/prisma";
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { mutate, read, refuse, positiveId } from "@/lib/receiving/mutate";
 
-export async function GET(request: NextRequest) {
-  const access = await requireRouteModule(request, "Goods Receiving");
-  if (!access.ok) return access.response;
+const MODULE = "Goods Receiving";
 
-  try {
-    const { searchParams } = new URL(request.url);
+export async function listLossReports(query = "") {
+  await requireModule(MODULE);
+  return read(async () => {
+    const searchParams = new URLSearchParams(query);
     const filter = searchParams.get("filter") || "all";
 
-    const where: any = {};
+    const where: import("@prisma/client").Prisma.LossReportsWhereInput = {};
     if (filter === "unacknowledged") {
       where.IsAcknowledged = false;
     } else if (filter === "acknowledged") {
@@ -74,9 +76,39 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    console.error("Error fetching LossReports:", error);
-    return NextResponse.json({ success: false, message: `An error occurred: ${error.message}` }, { status: 500 });
-  }
+    return resourceResult({ success: true, data });
+
+  });
+}
+
+export async function acknowledgeLoss(idInput: string | number) {
+  const staff = await requireModule(MODULE);
+  return mutate(staff, async (tx) => {
+    const id = positiveId(idInput);
+
+    const lossReport = await tx.lossReports.findUnique({
+      where: { LossReportId: id },
+    });
+
+    if (!lossReport) {
+      return refuse(`Loss Report ${id} not found.`);
+    }
+
+    if (lossReport.IsAcknowledged) {
+      return refuse(`Loss Report is already acknowledged.`);
+    }
+
+    const updated = await tx.lossReports.update({
+      where: { LossReportId: id },
+      data: {
+        IsAcknowledged: true,
+        AcknowledgedBy: staff.username,
+        AcknowledgedAt: new Date(),
+      }
+    });
+
+    const data = { ...updated, StockLedgerEntryId: updated.StockLedgerEntryId == null ? null : String(updated.StockLedgerEntryId) };
+    return { result: resourceResult({ success: true, data, message: "Loss Report acknowledged successfully." }), audit: { module: MODULE, change: "updated", target: { type: "loss-report", id: updated.LossReportId, name: updated.LossReportNumber }, description: `${staff.name} acknowledged loss report ${updated.LossReportNumber}` } };
+
+  });
 }

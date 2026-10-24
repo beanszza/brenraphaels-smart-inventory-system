@@ -56,16 +56,8 @@ beforeEach(() => {
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 
+// Goods Receiving action attribution is covered in receiving-actions.test.ts after #21.
 const transitions = [
-  ["StockIns/[id]/submit", "POST", "stockIns", "Draft", "SubmittedBy"],
-  ["StockIns/[id]/approve", "POST", "stockIns", "PendingApproval", "ApprovedBy"],
-  ["StockIns/[id]/reject", "POST", "stockIns", "PendingApproval", "RejectedBy"],
-  ["ReturnToVendors/[id]/approve", "POST", "returnToVendors", "PendingApproval", "ApprovedBy"],
-  ["ReturnToVendors/[id]/reject", "POST", "returnToVendors", "PendingApproval", "RejectedBy"],
-  ["LossReports/[id]/acknowledge", "POST", "lossReports", "Open", "AcknowledgedBy"],
-  ["Discrepancies/[id]/resolve", "POST", "discrepancies", "Open", "ResolvedBy"],
-  ["Discrepancies/[id]/loss-report", "POST", "discrepancies", "Open", "ResolvedBy"],
-  ["Discrepancies/[id]/return-to-supplier", "POST", "discrepancies", "Open", "ResolvedBy"],
   ["stock-transfers/[id]/status", "PUT", "stockTransfers", "Dispatched", "ReceivedBy"],
   ["stock-transfer-requests/[id]/status", "PUT", "stockTransferRequests", "Pending Approval", "ReviewedBy"],
 ] as const;
@@ -104,12 +96,6 @@ it("attributes approval submission to the current Staff and preserves the origin
   await act("production-requests/[id]", "PATCH", { action: "submit_approval", requestedBy: "Forged" });
   expect(rows.get("approvalRequests")?.RequestedBy).toBe("2026-AB-001");
   expect(rows.get("productionRequests")?.RequestedBy).toBe("Legacy Requester");
-});
-
-it("records the completing inspector's Username and readable name", async () => {
-  rows.set("qualityInspections", { Status: "Pending", InspectorId: "Legacy Inspector", InspectorName: "Old Name" });
-  await act("QualityInspections/[id]/complete", "POST", { inspectorId: "Forged", inspectorName: "Forged", completedBy: "Forged" });
-  expect(rows.get("qualityInspections")).toMatchObject({ InspectorId: "2026-AB-001", InspectorName: "Ada Santos", CompletedBy: "2026-AB-001" });
 });
 
 it("records the current reconciler while preserving the original counter", async () => {
@@ -159,17 +145,4 @@ it.each(["Forged", undefined])("packaging ignores packedBy=%s", async (packedBy)
   rows.set("productionBatches", { BatchId: 1, BatchNumber: "PB-1", Status: "In Progress", ProductId: 1, EstimatedQuantity: 5 });
   await act("ProductionBatches/[id]/packaging", "POST", { packedBy, finalQuantity: 5, expiryDate: "2027-01-01", proofImageUrl: "/proof.jpg" });
   expect(rows.get("productionBatches")?.PackagedBy).toBe("2026-AB-001");
-});
-
-it("records posting Staff and removes the pending inspector placeholder", async () => {
-  rows.set("goodsReceipts", { Status: "Draft", GoodsReceiptItems: [] });
-  await act("goods-receipts/[id]/post", "POST", { postedBy: "Forged" });
-  expect(rows.get("goodsReceipts")?.PostedBy).toBe("2026-AB-001");
-  expect(rows.get("qualityInspections")).toMatchObject({ InspectorId: "2026-AB-001", InspectorName: "Ada Santos" });
-});
-
-it("commits stock-in under the session Username", async () => {
-  rows.set("stockIns", { Status: "Approved", CreatedBy: "Legacy Creator" });
-  await act("StockIns/[id]/commit", "POST", { committedBy: "Forged" });
-  expect(rows.get("stockIns")).toMatchObject({ CommittedBy: "2026-AB-001", CreatedBy: "Legacy Creator" });
 });

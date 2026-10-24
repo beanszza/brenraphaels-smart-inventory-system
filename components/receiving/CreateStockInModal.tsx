@@ -1,10 +1,11 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { GRN, StockIn } from "./types";
 
 interface Props {
@@ -51,8 +52,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
     setError(null);
     setLoading(true);
 
-    api
-      .get("/api/goods-receipts")
+    receiving.listReceipts()
       .then(({ data }) => {
         const list: GRN[] = Array.isArray(data?.data) ? data.data : [];
         const eligible = list.filter(
@@ -77,8 +77,8 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
 
     try {
       const [grnDetailRes, invRes] = await Promise.all([
-        api.get(`/api/goods-receipts/${grnId}`),
-        api.get("/api/Inventory?pageSize=1000").catch(() => ({ data: { data: [] } })),
+        receiving.getReceipt(grnId),
+        receiving.listStockBalances().catch(() => ({ data: { data: [] } })),
       ]);
 
       const fullGrn: GRN = grnDetailRes.data?.data || grn;
@@ -167,7 +167,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
         })),
       };
 
-      const { data } = await api.post("/api/StockIns", payload);
+      const { data } = await receiving.createStockIn(payload);
       if (!data?.success) {
         throw new Error(data?.message || "Failed to create Stock-In record.");
       }

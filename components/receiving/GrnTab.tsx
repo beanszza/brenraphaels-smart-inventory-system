@@ -1,5 +1,7 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import { listDeliveriesForReceiving } from "@/app/actions/receiving/procurement-reads";
 import { actionResponse } from "@/lib/resources/action-response";
 
@@ -14,7 +16,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
 import GrnTable from "./GrnTable";
 import PendingReceivingTable from "./PendingReceivingTable";
 import CreateGrnModal from "./CreateGrnModal";
@@ -56,7 +57,7 @@ export default function GrnTab({ onPosted }: GrnTabProps) {
     setLoading(true);
     try {
       // 1. Fetch posted GRNs (non-draft)
-      const grnRes = await api.get("/api/goods-receipts");
+      const grnRes = await receiving.listReceipts();
       const allGrns: GRN[] = Array.isArray(grnRes.data?.data) ? grnRes.data.data : [];
       const posted = allGrns.filter((g) => g.status !== "Draft");
       setPostedGrns(posted);

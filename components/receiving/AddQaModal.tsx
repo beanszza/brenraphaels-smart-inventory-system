@@ -1,9 +1,10 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useEffect, useState } from "react";
 import { Package, Plus } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { GRN, QAInspection } from "./types";
 
 interface AddQaModalProps {
@@ -26,8 +27,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
     setLoading(true);
 
     // Fetch posted GRNs with status = "Received" (awaiting QA)
-    api
-      .get("/api/goods-receipts")
+    receiving.listReceipts()
       .then(({ data }) => {
         const all: GRN[] = Array.isArray(data?.data) ? data.data : [];
         // "Received" = posted GRN, QA not yet completed
@@ -45,7 +45,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
 
     try {
       // Find the QA inspection created for this GRN
-      const res = await api.get("/api/QualityInspections");
+      const res = await receiving.listInspections();
       const allInspections: QAInspection[] = Array.isArray(res.data?.data) ? res.data.data : [];
 
       // Match by referenceId (grnId) and Pending status

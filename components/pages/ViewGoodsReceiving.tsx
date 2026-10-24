@@ -1,11 +1,11 @@
 "use client";
 
-import { listDeliveriesForReceiving } from "@/app/actions/receiving/procurement-reads";
+import { getReceivingCounts } from "@/app/actions/receiving/lookups";
+
 import { actionResponse } from "@/lib/resources/action-response";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import api from "@/lib/api";
 import GrnTab from "@/components/receiving/GrnTab";
 import DiscrepancyTab from "@/components/receiving/DiscrepancyTab";
 import StockInTab from "@/components/receiving/StockInTab";
@@ -14,89 +14,18 @@ import LossReportTab from "@/components/receiving/LossReportTab";
 
 type MainTabId = "grn" | "discrepancies" | "stockin" | "rtv" | "loss";
 
-export default function ViewGoodsReceiving() {
-  const [activeTab, setActiveTab] = useState<MainTabId>("grn");
-  const [counts, setCounts] = useState({
-    grn: 0,
-    discrepancies: 0,
-    stockin: 0,
-    rtv: 0,
-    loss: 0,
-  });
+type Counts = { grn: number; discrepancies: number; stockin: number; rtv: number; loss: number };
 
-  // Fetch count indicators for navigation badges
+export default function ViewGoodsReceiving({ initialCounts }: { initialCounts: Counts }) {
+  const [activeTab, setActiveTab] = useState<MainTabId>("grn");
+  const [counts, setCounts] = useState(initialCounts);
+
   const loadTabCounts = async () => {
     try {
-      const [grnRes, delRes, discRes, stockInRes, rtvRes, lrRes] = await Promise.allSettled([
-        api.get("/api/goods-receipts"),
-        actionResponse(listDeliveriesForReceiving()),
-        api.get("/api/Discrepancies"),
-        api.get("/api/StockIns"),
-        api.get("/api/ReturnToVendors"),
-        api.get("/api/LossReports"),
-      ]);
-
-      let pendingDeliveriesCount = 0;
-      const deliveryPayload = delRes.status === "fulfilled" ? delRes.value.data?.data : null;
-      const deliveries = Array.isArray(deliveryPayload?.items)
-        ? (deliveryPayload.items as any[])
-        : Array.isArray(deliveryPayload)
-        ? (deliveryPayload as any[])
-        : [];
-      if (deliveries.length > 0) {
-        const postedDeliveryIds = new Set(
-          grnRes.status === "fulfilled" && Array.isArray(grnRes.value.data?.data)
-            ? (grnRes.value.data.data as any[])
-                .filter((g) => g.status !== "Draft" && g.deliveryId)
-                .map((g) => g.deliveryId)
-            : []
-        );
-        pendingDeliveriesCount = deliveries.filter(
-          (d: any) =>
-            d.status === "Arrived" &&
-            (!d.deliveryId || !postedDeliveryIds.has(d.deliveryId))
-        ).length;
-      }
-
-      let openDiscCount = 0;
-      if (discRes.status === "fulfilled" && Array.isArray(discRes.value.data?.data)) {
-        openDiscCount = (discRes.value.data.data as any[]).filter((d) => d.status === "Open").length;
-      }
-
-      let pendingStockInCount = 0;
-      if (stockInRes.status === "fulfilled" && Array.isArray(stockInRes.value.data?.data)) {
-        pendingStockInCount = (stockInRes.value.data.data as any[]).filter(
-          (s) => s.status === "PendingApproval" || s.status === "Pending"
-        ).length;
-      }
-
-      let rtvCount = 0;
-      if (rtvRes.status === "fulfilled" && Array.isArray(rtvRes.value.data?.data)) {
-        rtvCount = (rtvRes.value.data.data as any[]).filter(
-          (r) => r.status === "PendingApproval" || r.status === "Pending Approval"
-        ).length;
-      }
-
-      let lossCount = 0;
-      if (lrRes.status === "fulfilled" && Array.isArray(lrRes.value.data?.data)) {
-        lossCount = (lrRes.value.data.data as any[]).filter((l) => !l.isAcknowledged).length;
-      }
-
-      setCounts({
-        grn: pendingDeliveriesCount,
-        discrepancies: openDiscCount,
-        stockin: pendingStockInCount,
-        rtv: rtvCount,
-        loss: lossCount,
-      });
-    } catch (e) {
-      console.error("Failed to load header counts:", e);
-    }
+      const { data } = await actionResponse(getReceivingCounts());
+      setCounts(data.data);
+    } catch (error) { console.error("Failed to refresh receiving counts", error); }
   };
-
-  useEffect(() => {
-    loadTabCounts();
-  }, []);
 
   const tabs: { id: MainTabId; label: string; badgeCount?: number }[] = [
     { id: "grn", label: "GOODS RECEIPT NOTE / RECEIVE", badgeCount: counts.grn },

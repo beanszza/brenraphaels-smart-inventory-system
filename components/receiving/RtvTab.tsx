@@ -1,5 +1,7 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, MoreHorizontal, Eye, Check, XCircle, Truck, AlertCircle } from "lucide-react";
 import {
@@ -11,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import Pagination from "@/components/Pagination";
@@ -54,7 +55,7 @@ export default function RtvTab() {
   const fetchRtvs = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/ReturnToVendors");
+      const res = await receiving.listReturns();
       if (res.data?.success) {
         setRtvs(res.data.data || []);
       }
@@ -73,7 +74,7 @@ export default function RtvTab() {
     setActionLoading(true);
     setActionError(null);
     try {
-      const res = await api.post(`/api/ReturnToVendors/${rtv.rtvId}/approve`);
+      const res = await receiving.approveReturn(rtv.rtvId);
       if (res.data?.success) {
         await fetchRtvs();
       } else {
@@ -96,7 +97,7 @@ export default function RtvTab() {
     setActionError(null);
     setRejectionError(null);
     try {
-      const res = await api.post(`/api/ReturnToVendors/${rejectingRtv.rtvId}/reject`, {
+      const res = await receiving.rejectReturn(rejectingRtv.rtvId, {
         reason: rejectionReason.trim(),
       });
       if (res.data?.success) {
@@ -119,7 +120,7 @@ export default function RtvTab() {
     setActionLoading(true);
     setActionError(null);
     try {
-      const res = await api.post(`/api/ReturnToVendors/${dispatchingRtv.rtvId}/dispatch`, {
+      const res = await receiving.dispatchReturn(dispatchingRtv.rtvId, {
         creditNoteNumber: creditNoteNumber.trim() || undefined,
       });
       if (res.data?.success) {

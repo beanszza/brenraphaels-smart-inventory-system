@@ -1,5 +1,7 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Trash2, Search, MoreHorizontal, Eye, Check } from "lucide-react";
 import {
@@ -11,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
 import { EmptyState } from "@/components/shared/EmptyState";
 import Pagination from "@/components/Pagination";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
@@ -34,7 +35,7 @@ export default function LossReportTab() {
   const fetchLossReports = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/LossReports");
+      const res = await receiving.listLossReports();
       if (res.data?.success) {
         setLossReports(res.data.data || []);
       }
@@ -65,7 +66,7 @@ export default function LossReportTab() {
     setActionLoadingId(reportId);
     setError(null);
     try {
-      const res = await api.post(`/api/LossReports/${reportId}/acknowledge`);
+      const res = await receiving.acknowledgeLoss(reportId);
       if (res.data?.success) {
         await fetchLossReports();
         if (selectedReport && selectedReport.lossReportId === reportId) {

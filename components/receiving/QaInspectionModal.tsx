@@ -1,10 +1,11 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, ChevronRight, ClipboardCheck } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { QAInspection } from "./types";
 
 interface QaInspectionModalProps {
@@ -197,7 +198,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
       .join("\n");
 
     try {
-      const res = await api.post(`/api/QualityInspections/${inspection.inspectionId}/complete`, {
+      const res = await receiving.completeInspection(inspection.inspectionId, {
         ...payload,
         overallNotes: inspectionNotes || undefined,
       });

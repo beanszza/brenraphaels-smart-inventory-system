@@ -1,6 +1,6 @@
 "use client";
 
-import { listLocations } from "@/app/actions/resources/locations";
+import { listReceivingLocations } from "@/app/actions/receiving/lookups";
 import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -58,7 +58,7 @@ export default function CompletePutAwayModal({
   const loadLocations = async () => {
     setLoadingLocations(true);
     try {
-      const res = await actionResponse(listLocations());
+      const res = await actionResponse(listReceivingLocations());
       const list = res.data?.data?.items || res.data?.data || [];
       setLocations(list);
       if (!destinationLocationId && list.length > 0) {

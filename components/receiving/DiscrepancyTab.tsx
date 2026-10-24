@@ -1,5 +1,7 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Search } from "lucide-react";
 import {
@@ -11,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
 import DiscrepancyTable from "./DiscrepancyTable";
 import DiscrepancyDetailsModal from "./DiscrepancyDetailsModal";
 import Pagination from "@/components/Pagination";
@@ -34,7 +35,7 @@ export default function DiscrepancyTab() {
   const fetchDiscrepancies = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/Discrepancies");
+      const res = await receiving.listDiscrepancies();
       if (res.data?.success) {
         setDiscrepancies(res.data.data || []);
       }

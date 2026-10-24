@@ -1,5 +1,7 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
@@ -8,7 +10,6 @@ import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Textarea } from "@/components/ui/textarea";
 import { useStaff } from "@/context/StaffContext";
-import api from "@/lib/api";
 import { StockIn, StockInLine } from "./types";
 
 interface Props {
@@ -44,8 +45,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.post(`/api/StockIns/${stockIn.stockInId}/approve`, {
-        approverName: approverName.trim() || "System Admin",
+      const res = await receiving.approveStockIn(stockIn.stockInId, {
         notes: approvalNotes.trim() || undefined,
       });
 
@@ -67,9 +67,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
     setCommitting(true);
     setError(null);
     try {
-      const res = await api.post(`/api/StockIns/${stockIn.stockInId}/commit`, {
-        committerName: approverName.trim() || undefined,
-      });
+      const res = await receiving.commitStockIn(stockIn.stockInId);
 
       if (!res.data?.success) {
         throw new Error(res.data?.message || "Failed to commit Stock-In to inventory.");
@@ -94,9 +92,8 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.post(`/api/StockIns/${stockIn.stockInId}/reject`, {
-        rejectionReason: rejectionReason.trim(),
-        rejectedBy: approverName.trim() || undefined,
+      const res = await receiving.rejectStockIn(stockIn.stockInId, {
+        reason: rejectionReason.trim(),
         notes: approvalNotes.trim() || undefined,
       });
 
@@ -118,7 +115,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.post(`/api/StockIns/${stockIn.stockInId}/submit`);
+      const res = await receiving.submitStockIn(stockIn.stockInId);
       if (!res.data?.success) {
         throw new Error(res.data?.message || "Failed to submit Stock-In.");
       }

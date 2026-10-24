@@ -1,5 +1,7 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, RefreshCw, Plus } from "lucide-react";
 import {
@@ -11,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
 import QaTable from "./QaTable";
 import QaInspectionModal from "./QaInspectionModal";
 import AddQaModal from "./AddQaModal";
@@ -39,7 +40,7 @@ export default function QaTab() {
   const fetchInspections = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/QualityInspections");
+      const res = await receiving.listInspections();
       if (res.data?.success) {
         setInspections(res.data.data || []);
       }
