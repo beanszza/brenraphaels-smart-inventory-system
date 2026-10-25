@@ -6,7 +6,7 @@ export type TransferItem = {
   to: string;
   quantity: number;
   date: string;
-  status: "Completed" | "In Transit" | "Pending";
+  status: string;
 };
 
 export type LocationItem = {

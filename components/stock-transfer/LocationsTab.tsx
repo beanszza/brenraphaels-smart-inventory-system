@@ -1,47 +1,17 @@
 "use client";
 
-import { listLocations } from "@/app/actions/stock-transfer/locations";
-import { actionResponse } from "@/lib/resources/action-response";
-
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import type { TransferLocation } from "@/lib/stock-transfer/screen-data";
+import { TransferSkeleton } from "./TransferSkeleton";
 import { Search, MapPin, Warehouse, Store, Building, CheckCircle, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-interface LocationData {
-  locationId: number;
-  locationName: string;
-  locationType: string;
-  status: string;
-  address: string;
-  isSystemLocation: boolean;
-}
-
-export function LocationsTab() {
-  const [locations, setLocations] = useState<LocationData[]>([]);
-  const [loading, setLoading] = useState(true);
+export function LocationsTab({ locations, loading, onRefresh }: {
+  locations: TransferLocation[]; loading: boolean; onRefresh: () => void;
+}) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
-
-  const fetchLocations = async () => {
-    try {
-      setLoading(true);
-      const res = await actionResponse(listLocations());
-      if (res.data?.success) {
-        setLocations(res.data.data || []);
-      }
-    } catch (e) {
-      console.error("Failed to load locations:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLocations();
-  }, []);
-
   const locationTypes = ["All", "Branch", "Bazaar", "Warehouse", "Finished Goods", "Production"];
 
   const filteredLocations = locations.filter((loc) => {
@@ -78,11 +48,11 @@ export function LocationsTab() {
         <Button
           variant="outline"
           size="sm"
-          onClick={fetchLocations}
+          onClick={onRefresh}
           disabled={loading}
           className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 shrink-0"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
+          <RefreshCw className="w-3.5 h-3.5" /> Refresh
         </Button>
       </div>
 
@@ -111,9 +81,7 @@ export function LocationsTab() {
 
       {/* Locations Grid */}
       {loading ? (
-        <div className="rounded-2xl border border-border bg-card p-12 text-center text-xs text-muted-foreground animate-pulse">
-          Loading distribution locations...
-        </div>
+        <TransferSkeleton />
       ) : filteredLocations.length === 0 ? (
         <div className="rounded-2xl border border-border bg-card p-12 text-center text-xs text-muted-foreground">
           No distribution locations found.

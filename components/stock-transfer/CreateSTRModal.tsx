@@ -1,10 +1,12 @@
 "use client";
-import { stockTransfer } from "@/lib/stock-transfer/client";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { createRequest } from "@/app/actions/stock-transfer/requests";
+import { suggestLots } from "@/app/actions/stock-transfer/lot-suggestions";
 import { listFinishedProducts } from "@/app/actions/stock-transfer/products";
 
 import { listLocations } from "@/app/actions/stock-transfer/locations";
 import { actionResponse } from "@/lib/resources/action-response";
-
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -40,7 +42,9 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
   const [locations, setLocations] = useState<LocationOption[]>([]);
 
   // Form Fields
-  const [requestNumber, setRequestNumber] = useState<string>("STR-YYYY-XXXX");
+  const requestNumber = "Assigned on submission";
+  const [prerequisitesReady, setPrerequisitesReady] = useState(false);
+  const [prerequisitesLoading, setPrerequisitesLoading] = useState(false);
   const [toLocationId, setToLocationId] = useState<string>("");
   const [requiredDate, setRequiredDate] = useState<string>("");
   const [priority, setPriority] = useState<string>("Normal");
@@ -76,12 +80,14 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
     }
   }, [open]);
 
-  const fetchPrerequisites = async () => {
+  async function fetchPrerequisites() {
+    setPrerequisitesLoading(true);
+    setPrerequisitesReady(false);
+    setFormError(null);
     try {
-      const [prodRes, locRes, reqRes] = await Promise.all([
+      const [prodRes, locRes] = await Promise.all([
         actionResponse(listFinishedProducts()),
         actionResponse(listLocations()),
-        stockTransfer.listRequests("pageSize=20"),
       ]);
 
       if (prodRes.data?.success) {
@@ -96,30 +102,17 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
         setLocations(destinations);
       }
 
-      // Compute next Request Number preview
-      const year = new Date().getFullYear();
-      let maxSeq = 0;
-      if (reqRes.data?.success && Array.isArray(reqRes.data.data)) {
-        reqRes.data.data.forEach((r: any) => {
-          if (r.requestNumber) {
-            const match = r.requestNumber.match(/STR-\d{4}-(\d+)/);
-            if (match) {
-              const num = parseInt(match[1], 10);
-              if (num > maxSeq) maxSeq = num;
-            }
-          }
-        });
-      }
-      const nextSeq = String(maxSeq + 1).padStart(4, "0");
-      setRequestNumber(`STR-${year}-${nextSeq}`);
+      setPrerequisitesReady(true);
     } catch (e) {
-      console.error("Failed to load prerequisites:", e);
+      setFormError(e instanceof Error ? e.message : "Unable to load products and destinations. Please retry.");
+    } finally {
+      setPrerequisitesLoading(false);
     }
-  };
+  }
 
   const checkAvailability = async (index: number, prodId: number, qty: number) => {
     try {
-      const res = await stockTransfer.suggestLots(`productId=${prodId}&quantity=${qty || 1}`);
+      const res = await actionResponse(suggestLots(`productId=${prodId}&quantity=${qty || 1}`));
       if (res.data?.success) {
         const totalAvail = res.data.data.totalAvailable || 0;
         const suggestedLots = res.data.data.suggestedLots || [];
@@ -137,7 +130,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
         });
       }
     } catch (e) {
-      console.error("Error checking availability:", e);
+      setFormError(e instanceof Error ? e.message : "Unable to check available stock. Please retry.");
       setItems((prev) => {
         const next = [...prev];
         if (next[index]) next[index].isChecking = false;
@@ -207,6 +200,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || !prerequisitesReady) return;
     setFormError(null);
 
     if (!toLocationId) {
@@ -238,7 +232,6 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
         requiredDate,
         priority,
         reason: reason.trim() || null,
-        requestedBy: "Inventory Manager",
         items: items.map((i) => ({
           productId: i.productId,
           requestedQuantity: Number(i.requestedQuantity),
@@ -246,15 +239,16 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
         })),
       };
 
-      const res = await stockTransfer.createRequest(payload);
+      const res = await actionResponse(createRequest(payload));
       if (res.data?.success) {
+        toast.success("Transfer request created.");
         onSuccess();
         onClose();
       } else {
         setFormError(res.data?.message || "Failed to create transfer request.");
       }
-    } catch (err: any) {
-      setFormError(err.response?.data?.message || err.message || "Failed to create transfer request.");
+    } catch (err: unknown) {
+      setFormError((err instanceof Error ? err.message : null) || "Failed to create transfer request.");
     } finally {
       setLoading(false);
     }
@@ -297,11 +291,15 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+          {prerequisitesLoading && <div role="status" aria-label="Loading products and destinations" className="space-y-3">
+            <Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" />
+          </div>}
+          {!prerequisitesLoading && !prerequisitesReady && <button type="button" onClick={fetchPrerequisites} className="text-sm underline">Retry loading products and destinations</button>}
           {formError && (
             <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3.5 text-xs text-destructive flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{formError}</span>
+              <span role="alert">{formError}</span>
             </div>
           )}
 
@@ -465,7 +463,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                           <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                             {row.productId ? (
                               row.isChecking ? (
-                                <span className="text-[11px] text-muted-foreground italic">Checking...</span>
+                                <Skeleton aria-label="Checking stock" className="h-4 w-16" />
                               ) : row.lotExpiry && row.lotExpiry !== "N/A" ? (
                                 <div className="space-y-0.5">
                                   <span className="font-semibold text-foreground text-xs">
@@ -551,7 +549,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !prerequisitesReady || items.some(row => row.isChecking)}
               className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
             >
               {loading ? "Submitting..." : "Submit Request"}

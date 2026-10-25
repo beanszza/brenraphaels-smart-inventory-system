@@ -11,7 +11,7 @@ interface LocationModalProps {
   open: boolean;
   editingLocation: LocationItem | null;
   onClose: () => void;
-  onSave: (data: { name: string; type: string; address: string; isActive: boolean }) => void;
+  onSave: (data: { name: string; type: string; address: string; isActive: boolean }) => Promise<void>;
 }
 
 export default function LocationModal({
@@ -27,6 +27,8 @@ export default function LocationModal({
   const [city, setCity] = useState("");
   const [province, setProvince] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [nameError, setNameError] = useState("");
 
   useEffect(() => {
@@ -56,20 +58,29 @@ export default function LocationModal({
       setIsActive(true);
     }
     setNameError("");
+    setSaveError("");
   }, [editingLocation, open]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (saving) return;
     if (!name.trim()) {
       setNameError("Location name is required.");
       return;
     }
     const fullAddress = `${streetNumber.trim()}, ${barangay.trim()}, ${city.trim()}, ${province.trim()}`;
-    onSave({ name: name.trim(), type, address: fullAddress, isActive });
+    setSaving(true);
+    setSaveError("");
+    try {
+      await onSave({ name: name.trim(), type, address: fullAddress, isActive });
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Unable to save location.");
+    } finally { setSaving(false); }
   };
 
   return (
     <ModalWrapper open={open} title={editingLocation ? "Edit Location" : "Add New Location"} onClose={onClose} size="max-w-xl">
       <div className="space-y-4">
+        {saveError && <p role="alert" className="text-sm text-destructive">{saveError}</p>}
         <div>
           <label className="mb-1.5 block text-xs font-semibold text-foreground">Location Name <span className="text-muted-foreground">*</span></label>
           <Input type="text" value={name} onChange={(e) => { setName(e.target.value); setNameError(""); }} placeholder="e.g. Main Distribution Hub" className="rounded-xl border border-border bg-card text-foreground text-sm" />
@@ -107,10 +118,10 @@ export default function LocationModal({
         )}
 
         <div className="flex justify-end gap-3 pt-3 border-t border-border">
-          <Button type="button" variant="outline" onClick={onClose} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
+          <Button type="button" variant="outline" onClick={onClose} disabled={saving} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
             Cancel
           </Button>
-          <Button type="button" onClick={handleSave} className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors">
+          <Button type="button" onClick={handleSave} disabled={saving} className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors">
             {editingLocation ? "Save Changes" : "Create Location"}
           </Button>
         </div>

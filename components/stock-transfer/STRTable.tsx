@@ -1,9 +1,10 @@
 "use client";
 
 import React from "react";
-import { Eye, Check, X, Truck, MoreHorizontal, Ban, Send, Package } from "lucide-react";
+import { TransferSkeleton } from "./TransferSkeleton";
+import { Eye, Check, X, Truck, MoreHorizontal, Ban, Send } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { StockTransferRequest, StockTransfer } from "./types";
+import { StockTransferRequest } from "./types";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -33,13 +34,7 @@ export function STRTable({
   onCancel,
 }: STRTableProps) {
 
-  if (loading) {
-    return (
-      <div className="rounded-2xl border border-border bg-card p-12 text-center text-sm text-muted-foreground animate-pulse">
-        Loading stock transfers...
-      </div>
-    );
-  }
+  if (loading) return <TransferSkeleton />;
 
   if (requests.length === 0) {
     return (
@@ -80,9 +75,9 @@ export function STRTable({
               const firstItem = req.items?.[0];
 
               const targetDate = transferRef?.scheduledDate
-                ? new Date(transferRef.scheduledDate).toLocaleDateString()
+                ? new Date(transferRef.scheduledDate).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
                 : req.requiredDate
-                ? new Date(req.requiredDate).toLocaleDateString()
+                ? new Date(req.requiredDate).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
                 : "—";
 
               const courierDriver = transferRef?.courierName

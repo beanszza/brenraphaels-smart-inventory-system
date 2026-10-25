@@ -1,5 +1,7 @@
 "use client";
-import { stockTransfer } from "@/lib/stock-transfer/client";
+import { toast } from "sonner";
+import { actionResponse } from "@/lib/resources/action-response";
+import { scheduleTransfer } from "@/app/actions/stock-transfer/transfers";
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -90,6 +92,7 @@ export function ScheduleTransferModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setFormError(null);
 
     if (!selectedProductId) {
@@ -118,15 +121,16 @@ export function ScheduleTransferModal({
         notes: notes.trim() || null,
       };
 
-      const res = await stockTransfer.scheduleTransfer(payload);
+      const res = await actionResponse(scheduleTransfer(payload));
       if (res.data?.success) {
+        toast.success("Transfer scheduled.");
         onSuccess();
         onClose();
       } else {
         setFormError(res.data?.message || "Failed to schedule transfer.");
       }
-    } catch (err: any) {
-      setFormError(err.response?.data?.message || err.message || "Failed to schedule transfer.");
+    } catch (err: unknown) {
+      setFormError((err instanceof Error ? err.message : null) || "Failed to schedule transfer.");
     } finally {
       setLoading(false);
     }

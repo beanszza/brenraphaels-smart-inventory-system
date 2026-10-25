@@ -1,5 +1,7 @@
 "use client";
-import { stockTransfer } from "@/lib/stock-transfer/client";
+import { toast } from "sonner";
+import { actionResponse } from "@/lib/resources/action-response";
+import { dispatchTransfer } from "@/app/actions/stock-transfer/dispatch";
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -57,24 +59,26 @@ export function DispatchTransferModal({
   if (!open || !mounted || !transfer) return null;
 
   const handleDispatch = async () => {
+    if (loading) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await stockTransfer.dispatchTransfer(transfer.transferId, {
+      const res = await actionResponse(dispatchTransfer(transfer.transferId, {
         driverName: driverName.trim() || undefined,
         vehiclePlate: vehiclePlate.trim() || undefined,
         courierName: courierName.trim() || undefined,
         notes: notes.trim() || undefined,
-      });
+      }));
 
       if (res.data?.success) {
+        toast.success("Transfer dispatched.");
         onSuccess();
         onClose();
       } else {
         setError(res.data?.message || "Failed to dispatch transfer.");
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to dispatch transfer.");
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : null) || "Failed to dispatch transfer.");
     } finally {
       setLoading(false);
     }
@@ -87,7 +91,7 @@ export function DispatchTransferModal({
     >
       <div
         style={{ width: "100%", maxWidth: "640px" }}
-        className="w-full bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
+        className="w-full max-h-[92vh] overflow-y-auto bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
