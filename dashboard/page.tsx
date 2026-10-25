@@ -6,25 +6,25 @@ export default async function AnalyticsDashboardPage() {
   const sections = await getDashboardData();
 
   return (
-    <div className="w-full space-y-6 p-4 sm:p-8">
+    <div className="min-w-0 w-full space-y-5 p-4 sm:px-8 sm:py-7">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Current figures for your assigned Modules.
+          Your inventory operations at a glance.
         </p>
       </header>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <section aria-label="Module overview" className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {sections.map((section) => (
-          <Card key={section.module}>
-            <CardHeader>
-              <CardTitle className="text-base">
-                <Link className="hover:underline" href={section.href}>{section.module}</Link>
+          <Card key={section.module} className="min-w-0 shadow-none">
+            <CardHeader className="p-5">
+              <CardTitle className="text-base leading-6">
+                <Link className="rounded-sm text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href={section.href}>{section.module}</Link>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-5 pb-5">
               <dl className="space-y-4">
                 {section.figures.map((figure) => (
-                  <div key={figure.label} className="flex items-center justify-between gap-4">
+                  <div key={figure.label} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
                     <dt className="text-sm text-muted-foreground">{figure.label}</dt>
                     <dd className="text-2xl font-semibold tabular-nums">{figure.value.toLocaleString("en-US")}</dd>
                   </div>
@@ -33,7 +33,7 @@ export default async function AnalyticsDashboardPage() {
             </CardContent>
           </Card>
         ))}
-      </div>
+      </section>
     </div>
   );
 }

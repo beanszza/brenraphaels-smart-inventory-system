@@ -4,6 +4,8 @@ import type { Module } from "@/lib/portal/config";
 import { MODULES } from "@/lib/portal/config";
 import { getDashboardData } from "@/app/actions/dashboard";
 import Dashboard from "@/dashboard/page";
+import DashboardPage from "@/app/(root)/page";
+import DashboardLoading from "@/app/(root)/loading";
 
 const fake = vi.hoisted(() => ({
   held: [] as string[], signed: true, decision: "normal", fail: false, empty: false,
@@ -114,4 +116,25 @@ it("renders an empty database as zero counts", async () => {
   const sections = await getDashboardData();
   expect(sections.flatMap(section => section.figures).every(figure => figure.value === 0)).toBe(true);
   expect(renderToStaticMarkup(await Dashboard())).toContain(">0<");
+});
+
+it("renders all authorized Module links through the route", async () => {
+  fake.held = [...MODULES];
+  const html = renderToStaticMarkup(await DashboardPage());
+  for (const href of ["resources-suppliers", "orders-procurement", "goods-receiving", "inventory", "production-quality", "stock-transfer"]) {
+    expect(html).toContain(`href="/${href}"`);
+  }
+  expect(html).toContain("Module overview");
+  expect(html).not.toContain("Loading Dashboard");
+});
+
+it("provides an accessible card skeleton without reading or revealing Module data", () => {
+  const html = renderToStaticMarkup(<DashboardLoading />);
+  expect(html).toContain('role="status"');
+  expect(html).toContain('aria-label="Loading Dashboard"');
+  expect(html).toContain('aria-hidden="true"');
+  expect(html).toContain("animate-pulse");
+  expect(html).not.toContain("href=");
+  expect(fake.reads).not.toHaveBeenCalled();
+  expect(fake.validate).not.toHaveBeenCalled();
 });
