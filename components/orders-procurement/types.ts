@@ -95,6 +95,7 @@ export type POStatus =
 export type POItem = {
   poItemId?: number;
   itemId: number;
+  itemCode?: string;
   itemName: string;
   poItemQuantity: number;
   receivedQuantity?: number;

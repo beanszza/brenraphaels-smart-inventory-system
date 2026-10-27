@@ -12,7 +12,18 @@ import api from "@/lib/api";
 import { PurchaseRequisition, PRItem } from "../types";
 import { useAuth } from "@/context/AuthContext";
 import ConfirmModal from "@/components/ConfirmModal";
-import { HR_EMPLOYEES } from "@/lib/employees";
+
+export const PR_PURPOSE_REASONS = [
+  "Stock Replenishment",
+  "Safety Stock Buffer",
+  "Upcoming Production Schedule",
+  "Emergency Stockout Restock",
+  "Seasonal Demand Preparation",
+  "New Recipe / Product Trial",
+  "Supplier Minimum Order Fulfilment",
+  "Damaged / Expired Goods Replacement",
+  "Other",
+] as const;
 
 export interface CreatePRModalProps {
   open: boolean;
@@ -68,14 +79,28 @@ export function CreatePRModal({
       ? "Administration"
       : "Inventory";
 
-  const [requestedBy, setRequestedBy] = useState(
+  // Split requested-by into three separate name fields
+  const splitName = (fullName: string) => {
+    const parts = fullName.split(" ");
+    const lastName = parts[0] || "";
+    const firstName = parts[1] || "";
+    const middleName = parts.slice(2).join(" ") || "";
+    return { lastName, firstName, middleName };
+  };
+
+  const existingName =
     initialData?.requestedBy && initialData.requestedBy !== "Unauthenticated"
-      ? initialData.requestedBy
-      : ""
-  );
+      ? splitName(initialData.requestedBy)
+      : splitName(defaultAccountName || "");
+
+  const [lastName, setLastName] = useState(existingName.lastName);
+  const [firstName, setFirstName] = useState(existingName.firstName);
+  const [middleName, setMiddleName] = useState(existingName.middleName);
+
+  // Composed requestedBy value
+  const requestedBy = [lastName, firstName, middleName].filter(Boolean).join(" ");
 
   const [department, setDepartment] = useState(initialData?.department || "");
-  const [requestType, setRequestType] = useState(initialData?.requestType || "");
   const [priority, setPriority] = useState(initialData?.priority || "");
   const [requiredDate, setRequiredDate] = useState(
     initialData?.requiredDate
@@ -121,13 +146,15 @@ export function CreatePRModal({
             })
           );
         }
-        setRequestedBy(
+        const nm = splitName(
           initialData.requestedBy && initialData.requestedBy !== "Unauthenticated"
             ? initialData.requestedBy
             : defaultAccountName || ""
         );
+        setLastName(nm.lastName);
+        setFirstName(nm.firstName);
+        setMiddleName(nm.middleName);
         setDepartment(initialData.department || "");
-        setRequestType(initialData.requestType || "");
         setPriority(initialData.priority || "");
         setRequiredDate(
           initialData.requiredDate
@@ -153,9 +180,11 @@ export function CreatePRModal({
             year: "numeric",
           })
         );
-        setRequestedBy(defaultAccountName || "Inventory Manager");
+        const defaultNm = splitName(defaultAccountName || "");
+        setLastName(defaultNm.lastName);
+        setFirstName(defaultNm.firstName);
+        setMiddleName(defaultNm.middleName);
         setDepartment(detectedDepartment);
-        setRequestType("");
         setPriority("");
         setRequiredDate("");
         setStatusText("Draft");
@@ -175,7 +204,7 @@ export function CreatePRModal({
       try {
         setLoadingSupplies(true);
         const [itemsRes, invRes, prRes] = await Promise.allSettled([
-          api.get("/api/items"),
+          api.get("/api/items?pageSize=1000"),
           api.get("/api/inventory?page=1&pageSize=1000"),
           api.get("/api/purchase-requisitions"),
         ]);
@@ -184,11 +213,11 @@ export function CreatePRModal({
         let stockMap: Record<number, number> = {};
 
         if (itemsRes.status === "fulfilled" && itemsRes.value.data?.success) {
-          rawItems = itemsRes.value.data.data.items || itemsRes.value.data.data || [];
+          rawItems = itemsRes.value.data.data?.items || itemsRes.value.data.data || [];
         }
 
         if (invRes.status === "fulfilled" && invRes.value.data?.success) {
-          const rawInv = invRes.value.data.data.items || invRes.value.data.data || [];
+          const rawInv = invRes.value.data.data?.items || invRes.value.data.data || [];
           rawInv.forEach((inv: any) => {
             if (inv.itemId) {
               stockMap[inv.itemId] = (stockMap[inv.itemId] || 0) + (Number(inv.currentStock) || 0);
@@ -197,14 +226,18 @@ export function CreatePRModal({
         }
 
         const formatted: SupplyOption[] = rawItems
-          .filter((it: any) => it.categoryName !== "Finished Good" && it.categoryName !== "Finished Goods")
+          .filter((it: any) => {
+            const cat = (it.categoryName || "").toLowerCase();
+            return cat !== "finished good" && cat !== "finished goods";
+          })
           .map((it: any) => ({
             itemId: it.itemId,
             itemCode: it.itemCode || `SPL-${String(it.itemId).padStart(4, "0")}`,
             itemName: it.itemName,
-            uomName: it.uomName || it.uom?.abbreviation || it.stockUom?.abbreviation || "Unit",
-            currentStock: stockMap[it.itemId] ?? 0,
-          }));
+            uomName: it.uomName || it.uom?.abbreviation || it.uom?.name || it.stockUom?.abbreviation || "Unit",
+            currentStock: stockMap[it.itemId] ?? (Number(it.currentStock) || 0),
+          }))
+          .sort((a, b) => a.itemName.localeCompare(b.itemName));
 
         setSuppliesList(formatted);
 
@@ -240,7 +273,8 @@ export function CreatePRModal({
   // Add Ingredient
   const handleAddIngredient = () => {
     if (suppliesList.length === 0) return;
-    const unused = suppliesList.find((s) => !items.some((it) => it.itemId === s.itemId)) || suppliesList[0];
+    const unused = suppliesList.find((s) => !items.some((it) => it.itemId === s.itemId));
+    if (!unused) return;
     setItems((prev) => [
       ...prev,
       {
@@ -301,10 +335,11 @@ export function CreatePRModal({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!requestedBy.trim()) newErrors.requestedBy = "Requester name is required.";
+    if (!lastName.trim()) newErrors.lastName = "Last name is required.";
+    if (!firstName.trim()) newErrors.firstName = "First name is required.";
     if (!department.trim()) newErrors.department = "Department is required.";
-    if (!requestType.trim()) newErrors.requestType = "Request type is required.";
     if (!priority.trim()) newErrors.priority = "Priority is required.";
+    if (!purpose.trim()) newErrors.purpose = "Purpose / justification is required.";
     if (!requiredDate) {
       newErrors.requiredDate = "Required date is required.";
     } else {
@@ -340,12 +375,12 @@ export function CreatePRModal({
   };
 
   const isFormValid = useMemo(() => {
-    if (!requestedBy.trim() || !department.trim() || !requestType.trim() || !priority.trim() || !requiredDate) {
+    if (!lastName.trim() || !firstName.trim() || !department.trim() || !priority.trim() || !requiredDate || !purpose.trim()) {
       return false;
     }
     if (items.length === 0) return false;
     return items.every((it) => it.itemId > 0 && it.requestedQuantity > 0);
-  }, [requestedBy, department, requestType, priority, requiredDate, items]);
+  }, [lastName, firstName, department, priority, requiredDate, purpose, items]);
 
   // Execution
   const executeSave = async (submitForApproval: boolean) => {
@@ -359,10 +394,10 @@ export function CreatePRModal({
       const payload = {
         department: department.trim(),
         requestedBy: requestedBy.trim(),
-        requestType: requestType.trim(),
+        requestType: purpose.trim(), // map purpose to requestType field for API compatibility
         priority: priority.trim(),
         requiredDate: new Date(requiredDate).toISOString(),
-        purpose: notes.trim() || "Stock replenishment",
+        purpose: purpose.trim() || "Stock Replenishment",
         notes: notes.trim() || null,
         submitForApproval,
         items: items.map((it) => ({
@@ -423,7 +458,7 @@ export function CreatePRModal({
               </button>
             </div>
           )}
-          {/* Top Form Fields: Clean, modern 3-column responsive grid preventing overly wide stretched inputs */}
+          {/* Top Form Fields: Clean, modern 3-column responsive grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
             {/* PR Number */}
             <div>
@@ -444,37 +479,77 @@ export function CreatePRModal({
                 {requestDate}
               </div>
             </div>
-          </div>
-            {/* Requested By */}
+
+            {/* Status (Read-Only) */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">Status</label>
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-medium text-foreground">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold ${
+                  statusText === "Approved" ? "bg-emerald-500/10 text-emerald-600" :
+                  statusText === "Rejected" ? "bg-rose-500/10 text-rose-600" :
+                  "bg-amber-500/10 text-amber-600"
+                }`}>
+                  {statusText}
+                </span>
+              </div>
+            </div>
+
+            {/* Requested By — Last Name */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Requested By <span className="text-destructive">*</span>
+                Last Name <span className="text-destructive">*</span>
               </label>
-              <select
-                value={requestedBy}
+              <input
+                type="text"
+                value={lastName}
                 onChange={(e) => {
-                  setRequestedBy(e.target.value);
-                  setErrors((prev) => {
-                    const c = { ...prev };
-                    delete c.requestedBy;
-                    return c;
-                  });
+                  setLastName(e.target.value);
+                  setErrors((prev) => { const c = { ...prev }; delete c.lastName; return c; });
                 }}
+                placeholder="Last name"
                 className={`w-full h-10 rounded-xl border ${
-                  errors.requestedBy ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                } bg-card px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-ring`}
-              >
-                <option value="" disabled>Select requester...</option>
-                {requestedBy && !HR_EMPLOYEES.includes(requestedBy as (typeof HR_EMPLOYEES)[number]) && (
-                  <option value={requestedBy}>{requestedBy}</option>
-                )}
-                {HR_EMPLOYEES.map((emp) => (
-                  <option key={emp} value={emp}>{emp}</option>
-                ))}
-              </select>
-              {errors.requestedBy && (
-                <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.requestedBy}</p>
+                  errors.lastName ? "!border-destructive" : "border-border"
+                } bg-card px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring`}
+              />
+              {errors.lastName && (
+                <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.lastName}</p>
               )}
+            </div>
+
+            {/* Requested By — First Name */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                First Name <span className="text-destructive">*</span>
+              </label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => {
+                  setFirstName(e.target.value);
+                  setErrors((prev) => { const c = { ...prev }; delete c.firstName; return c; });
+                }}
+                placeholder="First name"
+                className={`w-full h-10 rounded-xl border ${
+                  errors.firstName ? "!border-destructive" : "border-border"
+                } bg-card px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring`}
+              />
+              {errors.firstName && (
+                <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.firstName}</p>
+              )}
+            </div>
+
+            {/* Requested By — Middle Name */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Middle Name <span className="text-muted-foreground font-normal">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={middleName}
+                onChange={(e) => setMiddleName(e.target.value)}
+                placeholder="Middle name"
+                className="w-full h-10 rounded-xl border border-border bg-card px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
             </div>
 
             {/* Department */}
@@ -510,41 +585,8 @@ export function CreatePRModal({
               )}
             </div>
 
-            {/* Request Type */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Request Type <span className="text-destructive">*</span>
-              </label>
-              <select
-                value={requestType}
-                onChange={(e) => {
-                  setRequestType(e.target.value);
-                  setErrors((prev) => {
-                    const c = { ...prev };
-                    delete c.requestType;
-                    return c;
-                  });
-                }}
-                className={`w-full h-10 rounded-xl border ${
-                  errors.requestType ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                } bg-card px-3 py-2 text-xs focus:ring-1 focus:ring-ring ${
-                  requestType ? "text-foreground" : "text-muted-foreground"
-                }`}
-              >
-                <option value="">Select request type...</option>
-                <option value="Stock Replenishment" className="text-foreground">Stock Replenishment</option>
-                <option value="Emergency Restock" className="text-foreground">Emergency Restock</option>
-                <option value="Production Run" className="text-foreground">Production Run</option>
-                <option value="Trial / New Product" className="text-foreground">Trial / New Product</option>
-                <option value="Other" className="text-foreground">Other</option>
-              </select>
-              {errors.requestType && (
-                <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.requestType}</p>
-              )}
-            </div>
-
             {/* Priority */}
-            <div className="sm:col-span-2 lg:col-span-1">
+            <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
                 Priority <span className="text-destructive">*</span>
               </label>
@@ -604,18 +646,37 @@ export function CreatePRModal({
               )}
             </div>
 
-            {/* Status (Read-Only) */}
+            {/* Purpose / Justification */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">Status</label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-medium text-foreground">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider ${
-                  statusText === "Approved" ? "bg-emerald-500/10 text-emerald-600" :
-                  statusText === "Rejected" ? "bg-rose-500/10 text-rose-600" :
-                  "bg-amber-500/10 text-amber-600"
-                }`}>
-                  {statusText}
-                </span>
-              </div>
+              <label className={`mb-1.5 block text-xs font-semibold ${errors.purpose ? "text-destructive" : "text-foreground"}`}>
+                Purpose / Justification <span className="text-destructive">*</span>
+              </label>
+              <select
+                value={purpose}
+                onChange={(e) => {
+                  setPurpose(e.target.value);
+                  setErrors((prev) => {
+                    const c = { ...prev };
+                    delete c.purpose;
+                    return c;
+                  });
+                }}
+                className={`w-full h-10 rounded-xl border ${
+                  errors.purpose ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
+                } bg-card px-3 py-2 text-xs focus:ring-1 focus:ring-ring ${
+                  purpose ? "text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                <option value="">Select purpose / reason...</option>
+                {PR_PURPOSE_REASONS.map((r) => (
+                  <option key={r} value={r} className="text-foreground">
+                    {r}
+                  </option>
+                ))}
+              </select>
+              {errors.purpose && (
+                <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.purpose}</p>
+              )}
             </div>
           </div>
 
@@ -635,11 +696,11 @@ export function CreatePRModal({
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border bg-muted/40 text-muted-foreground">
-                    <th className="px-3.5 py-2.5 text-left font-bold w-1/3">SUPPLY NAME</th>
-                    <th className="px-3.5 py-2.5 text-left font-bold">SUPPLY NO.</th>
-                    <th className="px-3.5 py-2.5 text-left font-bold">Unit of Measure</th>
-                    <th className="px-3.5 py-2.5 text-right font-bold">ACTUAL INVENTORY</th>
-                    <th className="px-3.5 py-2.5 text-right font-bold w-36">QUANTITY (TO ORDER)</th>
+                    <th className="px-3.5 py-2.5 text-left font-bold w-2/5">SUPPLY NAME</th>
+                    <th className="px-3.5 py-2.5 text-left font-bold min-w-[120px]">SUPPLY NO.</th>
+                    <th className="px-3.5 py-2.5 text-left font-bold">Unit</th>
+                    <th className="px-3.5 py-2.5 text-right font-bold">INVENTORY</th>
+                    <th className="px-3.5 py-2.5 text-right font-bold w-36">QTY (TO ORDER)</th>
                     <th className="px-3.5 py-2.5 text-center font-bold w-10"></th>
                   </tr>
                 </thead>
@@ -655,132 +716,105 @@ export function CreatePRModal({
                       const qtyErrorKey = `item_qty_${idx}`;
                       const hasQtyError = !!errors[qtyErrorKey] || (item.requestedQuantity !== undefined && item.requestedQuantity <= 0);
 
-                        return (
-                          <tr key={idx} className="hover:bg-muted/10 transition-colors">
-                            <td className="px-3.5 py-2">
-                              <select
-                                value={item.itemId}
-                                onChange={(e) => handleSelectSupply(idx, parseInt(e.target.value))}
-                                className="w-full rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs text-foreground focus:ring-1 focus:ring-ring"
-                              >
-                                {suppliesList.map((sup) => (
-                                  <option key={sup.itemId} value={sup.itemId}>
-                                    {sup.itemName}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                            <td className="px-3.5 py-2 font-mono text-muted-foreground">
-                              {item.itemCode || `SPL-${item.itemId}`}
-                            </td>
-                            <td className="px-3.5 py-2 text-muted-foreground">
-                              {item.uomName || "Unit"}
-                            </td>
-                            <td className="px-3.5 py-2 text-right font-mono text-muted-foreground">
-                              {Number(item.actualInventory || 0).toLocaleString()}
-                            </td>
-                            <td className="px-3.5 py-2 text-right">
-                              <div className="flex flex-col items-end">
-                                <Input
-                                  type="number"
-                                  step="any"
-                                  min="0.001"
-                                  value={item.requestedQuantity || ""}
-                                  onChange={(e) => {
-                                    handleQuantityChange(idx, e.target.value);
-                                    if (errors[qtyErrorKey]) {
-                                      setErrors((prev) => {
-                                        const copy = { ...prev };
-                                        delete copy[qtyErrorKey];
-                                        return copy;
-                                      });
-                                    }
-                                  }}
-                                  className={`h-8 text-xs text-right font-mono font-bold rounded-lg ${
-                                    hasQtyError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                                  }`}
-                                />
-                                {hasQtyError && (
-                                  <p className="mt-1 text-[10px] font-medium text-destructive text-right whitespace-nowrap animate-in fade-in-50">
-                                    {errors[qtyErrorKey]}
-                                  </p>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-3.5 py-2 text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveItem(idx)}
-                                className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted transition-colors cursor-pointer"
-                                title="Remove"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })
+                      // Available supplies for this row: current item OR any supply not selected in other rows
+                      const availableSupplies = suppliesList.filter(
+                        (sup) => sup.itemId === item.itemId || !items.some((it, i) => i !== idx && it.itemId === sup.itemId)
+                      );
+
+                      return (
+                        <tr key={idx} className="hover:bg-muted/10 transition-colors">
+                          <td className="px-3.5 py-2">
+                            <select
+                              value={item.itemId}
+                              onChange={(e) => handleSelectSupply(idx, parseInt(e.target.value))}
+                              className="w-full rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs text-foreground focus:ring-1 focus:ring-ring"
+                            >
+                              {availableSupplies.map((sup) => (
+                                <option key={sup.itemId} value={sup.itemId}>
+                                  {sup.itemName}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-3.5 py-2 font-mono text-muted-foreground">
+                            {item.itemCode || `SPL-${item.itemId}`}
+                          </td>
+                          <td className="px-3.5 py-2 text-muted-foreground">
+                            {item.uomName || "Unit"}
+                          </td>
+                          <td className="px-3.5 py-2 text-right font-mono text-muted-foreground">
+                            {Number(item.actualInventory || 0).toLocaleString()}
+                          </td>
+                          <td className="px-3.5 py-2 text-right">
+                            <div className="flex flex-col items-end">
+                              <Input
+                                type="number"
+                                step="any"
+                                min="0.001"
+                                value={item.requestedQuantity || ""}
+                                onChange={(e) => {
+                                  handleQuantityChange(idx, e.target.value);
+                                  if (errors[qtyErrorKey]) {
+                                    setErrors((prev) => {
+                                      const copy = { ...prev };
+                                      delete copy[qtyErrorKey];
+                                      return copy;
+                                    });
+                                  }
+                                }}
+                                className={`h-8 text-xs text-right font-mono font-bold rounded-lg ${
+                                  hasQtyError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
+                                }`}
+                              />
+                              {hasQtyError && (
+                                <p className="mt-1 text-[10px] font-medium text-destructive text-right whitespace-nowrap animate-in fade-in-50">
+                                  {errors[qtyErrorKey]}
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3.5 py-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(idx)}
+                              className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted transition-colors cursor-pointer"
+                              title="Remove"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
             </div>
 
-            <button
-              type="button"
-              onClick={handleAddIngredient}
-              disabled={loadingSupplies || suppliesList.length === 0}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-foreground bg-card border border-border rounded-xl hover:bg-muted transition-colors cursor-pointer"
-            >
-              <Plus size={14} /> Add Ingredient
-            </button>
-          </div>
-
-          {/* Row 5: Purpose / Justification & Notes (2 Columns) */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-2 border-t border-border">
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className={`text-xs font-semibold ${errors.purpose ? "text-destructive" : "text-foreground"}`}>
-                  Purpose / Justification <span className="text-destructive">*</span>
-                </label>
-                <span className="text-[10px] text-muted-foreground">{purpose.length}/500</span>
-              </div>
-              <Textarea
-                rows={3}
-                maxLength={500}
-                placeholder="Enter purpose or justification..."
-                value={purpose}
-                onChange={(e) => {
-                  setPurpose(e.target.value);
-                  setErrors((prev) => {
-                    const copy = { ...prev };
-                    delete copy.purpose;
-                    return copy;
-                  });
-                }}
-                className={`w-full rounded-xl border ${
-                  errors.purpose ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                } bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring resize-none`}
-              />
-              {errors.purpose && (
-                <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{errors.purpose}</p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleAddIngredient}
+                disabled={loadingSupplies || suppliesList.length === 0 || items.length >= suppliesList.length}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-foreground bg-card border border-border rounded-xl hover:bg-muted transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Plus size={14} /> Add Ingredient
+              </button>
+              {items.length >= suppliesList.length && suppliesList.length > 0 && (
+                <span className="text-[11px] text-muted-foreground italic">
+                  All available supplies have been selected.
+                </span>
               )}
             </div>
+          </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  Notes <span className="text-muted-foreground font-normal">(Optional)</span>
-                </label>
-                <span className="text-[10px] text-muted-foreground">{notes.length}/300</span>
-              </div>
-              <Textarea
-                rows={3}
-                maxLength={300}
-                placeholder="Enter additional notes (optional)..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring resize-none"
-              />
+          {/* Notes (Optional) */}
+          <div className="pt-2 border-t border-border">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-foreground">
+                Notes <span className="text-muted-foreground font-normal">(Optional)</span>
+              </label>
+              <span className="text-[10px] text-muted-foreground">{notes.length}/300</span>
             </div>
             <Textarea
               rows={3}
@@ -788,7 +822,7 @@ export function CreatePRModal({
               placeholder="Enter additional notes (optional)..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-ring resize-none"
+              className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-xs text-foreground focus:ring-1 focus:ring-ring resize-none"
             />
           </div>
 
@@ -838,7 +872,7 @@ export function CreatePRModal({
               Submit for Approval
             </Button>
           </div>
-
+        </div>
       </ModalWrapper>
 
       {/* Review Modal for Submit/Draft */}
@@ -857,9 +891,9 @@ export function CreatePRModal({
               <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
                 <div><span className="text-muted-foreground block text-xs mb-1">Department</span> <span className="font-semibold">{department}</span></div>
                 <div><span className="text-muted-foreground block text-xs mb-1">Requested By</span> <span className="font-semibold">{requestedBy}</span></div>
-                <div><span className="text-muted-foreground block text-xs mb-1">Request Type</span> <span className="font-semibold">{requestType}</span></div>
                 <div><span className="text-muted-foreground block text-xs mb-1">Priority</span> <span className="font-semibold">{priority}</span></div>
                 <div><span className="text-muted-foreground block text-xs mb-1">Required Date</span> <span className="font-semibold">{requiredDate}</span></div>
+                <div className="col-span-2"><span className="text-muted-foreground block text-xs mb-1">Purpose / Justification</span> <span className="font-semibold">{purpose}</span></div>
               </div>
 
               {notes && (

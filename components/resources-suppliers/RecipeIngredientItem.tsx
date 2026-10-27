@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Input } from "@/components/ui/input";
+import { Trash2 } from "lucide-react";
 import { SupplyItem, Ingredient } from "./types";
 
 interface RecipeIngredientItemProps {
@@ -27,6 +28,7 @@ export default function RecipeIngredientItem({
   onQuantityChange,
 }: RecipeIngredientItemProps) {
   const selectedSupply = baseSupplies.find((s) => s.itemId === ingredient.itemId);
+  const categoryDisplay = selectedSupply?.categoryName || "-";
   const uomDisplay = selectedSupply?.uomName || "-";
 
   // Filter out items already selected in other rows to prevent duplicates
@@ -34,12 +36,23 @@ export default function RecipeIngredientItem({
     (s) => s.itemId === ingredient.itemId || !excludedItemIds.includes(s.itemId)
   );
 
+  // Group items by category to separate them cleanly in the item selector
+  const suppliesByCategory = React.useMemo(() => {
+    const groups: { [cat: string]: SupplyItem[] } = {};
+    availableSupplies.forEach((supply) => {
+      const cat = supply.categoryName || "Uncategorized";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(supply);
+    });
+    return groups;
+  }, [availableSupplies]);
+
   return (
-    <div className="rounded-xl border border-border p-3 bg-card/60 transition-colors">
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-12 items-end">
+    <div className="rounded-xl border border-border p-3.5 bg-card/60 transition-colors">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 items-end">
         {/* Item Selector */}
-        <div className="sm:col-span-6">
-          <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+        <div className="sm:col-span-4">
+          <label className="mb-1.5 block text-xs font-semibold text-foreground">
             Item <span className="text-destructive">*</span>
           </label>
           <select
@@ -49,22 +62,38 @@ export default function RecipeIngredientItem({
               const supply = baseSupplies.find((s) => s.itemId === newId);
               onItemChange(ingredient.id, newId, supply?.uomId || 0);
             }}
-            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-ring outline-none"
+            className="w-full h-10 rounded-xl border border-border bg-card px-3.5 text-sm text-foreground focus:ring-1 focus:ring-ring focus:outline-none transition-colors"
           >
             <option value="" disabled>
               Select item
             </option>
-            {availableSupplies.map((supply) => (
-              <option key={supply.itemId} value={supply.itemId}>
-                {supply.itemName}
-              </option>
+            {Object.entries(suppliesByCategory).map(([category, items]) => (
+              <optgroup key={category} label={category}>
+                {items.map((supply) => (
+                  <option key={supply.itemId} value={supply.itemId}>
+                    {supply.itemName}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>
 
-        {/* Quantity Input */}
+        {/* Category (Separated per Item) */}
         <div className="sm:col-span-3">
-          <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+          <label className="mb-1.5 block text-xs font-semibold text-foreground">Category</label>
+          <input
+            type="text"
+            readOnly
+            disabled
+            value={categoryDisplay}
+            className="w-full h-10 rounded-xl border border-border bg-muted/40 px-3.5 text-sm text-muted-foreground cursor-not-allowed select-none truncate"
+          />
+        </div>
+
+        {/* Quantity Input */}
+        <div className="sm:col-span-2">
+          <label className="mb-1.5 block text-xs font-semibold text-foreground">
             Quantity <span className="text-destructive">*</span>
           </label>
           <Input
@@ -86,42 +115,44 @@ export default function RecipeIngredientItem({
                 onQuantityChange(ingredient.id, val);
               }
             }}
-            className={`w-full rounded-lg border ${
+            className={`w-full h-10 rounded-xl border ${
               error ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-            } bg-card px-3 py-2 text-xs text-foreground`}
+            } bg-card px-3.5 text-sm text-foreground transition-colors focus:ring-1 focus:ring-ring focus:outline-none`}
           />
         </div>
 
         {/* Read-Only Unit */}
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Unit</label>
+          <label className="mb-1.5 block text-xs font-semibold text-foreground">Unit</label>
           <input
             type="text"
             readOnly
             disabled
             value={uomDisplay}
-            className="w-full rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs text-muted-foreground cursor-not-allowed select-none"
+            className="w-full h-10 rounded-xl border border-border bg-muted/40 px-3 text-sm text-center text-muted-foreground cursor-not-allowed select-none"
           />
         </div>
 
         {/* Remove Button */}
-        <div className="sm:col-span-1 flex justify-center pb-0.5">
+        <div className="sm:col-span-1 flex justify-center">
           {canRemove ? (
             <button
               type="button"
               onClick={() => onRemove(ingredient.id)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-lg font-semibold leading-none transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-destructive hover:border-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
               title="Remove item"
               aria-label="Remove item"
             >
-              ×
+              <Trash2 size={16} />
             </button>
           ) : (
-            <div className="w-8" />
+            <div className="w-10 h-10" />
           )}
         </div>
       </div>
-      {error && <p className="mt-1 text-[11px] font-medium text-destructive">{error}</p>}
+      {error && (
+        <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{error}</p>
+      )}
     </div>
   );
 }

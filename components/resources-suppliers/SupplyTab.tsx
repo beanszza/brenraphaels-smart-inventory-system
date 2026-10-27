@@ -13,6 +13,7 @@ import ResourceStatusTabs from "./ResourceStatusTabs";
 
 interface SupplyTabProps {
   supplies: SupplyItem[];
+  categories?: { categoryId: number; categoryName: string }[];
   searchQuery: string;
   onSearchChange: (q: string) => void;
   categoryFilter: string;
@@ -29,6 +30,7 @@ interface SupplyTabProps {
 
 export default function SupplyTab({
   supplies,
+  categories = [],
   searchQuery,
   onSearchChange,
   categoryFilter,
@@ -121,9 +123,11 @@ export default function SupplyTab({
               </SelectTrigger>
               <SelectContent className="min-w-[210px]">
                 <SelectItem value="All">All Categories</SelectItem>
-                <SelectItem value="Raw Materials">Raw Materials</SelectItem>
-                <SelectItem value="Ingredients">Ingredients</SelectItem>
-                <SelectItem value="Tools and Supplies">Tools & Supplies</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c.categoryId} value={c.categoryName}>
+                    {c.categoryName === "Tools and Supplies" ? "Tools & Supplies" : c.categoryName}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

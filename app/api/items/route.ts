@@ -9,7 +9,8 @@ export async function GET(request: Request) {
     const isActiveParam = searchParams.get("isActive");
     const sort = searchParams.get("sort") || "asc";
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "10", 10)));
+    const rawPageSize = searchParams.get("pageSize");
+    const pageSize = rawPageSize ? Math.min(1000, Math.max(1, parseInt(rawPageSize, 10))) : 1000;
 
     if (search.length > 200) {
       return NextResponse.json({ success: false, message: "Search query cannot exceed 200 characters.", data: null }, { status: 400 });

@@ -57,7 +57,11 @@ export async function GET(request: Request) {
         varianceType: i.VarianceType,
         deliveryItemId: i.DeliveryItemId,
         purchaseUomId: i.PurchaseUomId,
-        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit"
+        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit",
+        supplierLotCode: i.SupplierLotCode || null,
+        manufactureDate: i.ManufactureDate ? i.ManufactureDate.toISOString() : null,
+        expiryDate: i.ExpiryDate ? i.ExpiryDate.toISOString() : null,
+        notes: i.Notes || ""
       }))
     }));
 
@@ -98,12 +102,47 @@ export async function POST(request: Request) {
     }
 
     const year = new Date().getFullYear();
-    const seq = await prisma.documentSequences.upsert({
-      where: { DocType_Year: { DocType: "GoodsReceiptNote", Year: year } },
-      update: { LastNumber: { increment: 1 } },
-      create: { DocType: "GoodsReceiptNote", Year: year, LastNumber: 1 },
+
+    // Find the latest existing GRN number for this year to prevent unique constraint collisions
+    const latestGrns = await prisma.goodsReceipts.findMany({
+      where: { GrnNumber: { startsWith: `GRN-${year}-` } },
+      select: { GrnNumber: true },
     });
-    const grnNumber = `GRN-${year}-${String(seq.LastNumber).padStart(4, '0')}`;
+
+    let maxNum = 0;
+    latestGrns.forEach((g) => {
+      const match = g.GrnNumber.match(/GRN-\d{4}-(\d+)/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    });
+
+    const currentSeq = await prisma.documentSequences.findFirst({
+      where: {
+        DocType: { in: ["GoodsReceipt", "GoodsReceiptNote"] },
+        Year: year,
+      },
+      orderBy: { LastNumber: "desc" },
+    });
+
+    const nextNumber = Math.max(maxNum, currentSeq?.LastNumber || 0) + 1;
+
+    // Synchronize both sequence keys
+    await Promise.all([
+      prisma.documentSequences.upsert({
+        where: { DocType_Year: { DocType: "GoodsReceipt", Year: year } },
+        update: { LastNumber: nextNumber },
+        create: { DocType: "GoodsReceipt", Year: year, LastNumber: nextNumber },
+      }),
+      prisma.documentSequences.upsert({
+        where: { DocType_Year: { DocType: "GoodsReceiptNote", Year: year } },
+        update: { LastNumber: nextNumber },
+        create: { DocType: "GoodsReceiptNote", Year: year, LastNumber: nextNumber },
+      }),
+    ]);
+
+    const grnNumber = `GRN-${year}-${String(nextNumber).padStart(4, '0')}`;
 
     const receivingLocation = await prisma.locations.findFirst({
       where: { IsSystemLocation: true, LocationType: "Warehouse", IsActive: true },
@@ -210,7 +249,11 @@ export async function POST(request: Request) {
         varianceType: i.VarianceType,
         deliveryItemId: i.DeliveryItemId,
         purchaseUomId: i.PurchaseUomId,
-        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit"
+        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit",
+        supplierLotCode: i.SupplierLotCode || null,
+        manufactureDate: i.ManufactureDate ? i.ManufactureDate.toISOString() : null,
+        expiryDate: i.ExpiryDate ? i.ExpiryDate.toISOString() : null,
+        notes: i.Notes || ""
       }))
     };
 

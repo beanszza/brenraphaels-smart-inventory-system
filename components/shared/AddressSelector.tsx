@@ -50,7 +50,7 @@ export default function AddressSelector({
   }, [selectedCityCode]);
 
   const fieldClass = (err?: string | boolean) =>
-    `w-full rounded-xl border ${err ? "!border-destructive focus-visible:!ring-destructive" : "border-border"} bg-card text-foreground px-4 py-2.5 text-sm transition-colors`;
+    `w-full h-10 rounded-xl border ${err ? "!border-destructive focus-visible:!ring-destructive" : "border-border"} bg-card text-foreground px-3.5 text-sm transition-colors focus:ring-1 focus:ring-ring focus:outline-none`;
 
   const fieldStyle = (err?: string | boolean) =>
     err ? { borderColor: "var(--destructive)" } : undefined;

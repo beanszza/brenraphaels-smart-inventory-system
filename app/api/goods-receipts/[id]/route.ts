@@ -46,7 +46,11 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
         varianceType: i.VarianceType,
         deliveryItemId: i.DeliveryItemId,
         purchaseUomId: i.PurchaseUomId,
-        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit"
+        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit",
+        supplierLotCode: i.SupplierLotCode || null,
+        manufactureDate: i.ManufactureDate ? i.ManufactureDate.toISOString() : null,
+        expiryDate: i.ExpiryDate ? i.ExpiryDate.toISOString() : null,
+        notes: i.Notes || ""
       }))
     };
 
@@ -158,7 +162,11 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
         varianceType: i.VarianceType,
         deliveryItemId: i.DeliveryItemId,
         purchaseUomId: i.PurchaseUomId,
-        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit"
+        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit",
+        supplierLotCode: i.SupplierLotCode || null,
+        manufactureDate: i.ManufactureDate ? i.ManufactureDate.toISOString() : null,
+        expiryDate: i.ExpiryDate ? i.ExpiryDate.toISOString() : null,
+        notes: i.Notes || ""
       }))
     };
 

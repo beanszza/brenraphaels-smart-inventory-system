@@ -49,8 +49,6 @@ export function CreateDeliveryModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [deliveryGrouping, setDeliveryGrouping] = useState<"grouped" | "per-batch">("grouped");
-  const [batchReference, setBatchReference] = useState("");
 
   // Form Fields
   const [paymentType, setPaymentType] = useState("Payable");
@@ -77,7 +75,7 @@ export function CreateDeliveryModal({
     let sum = 0;
     deliveriesList.forEach((d) => {
       const matchPo = (d.poId && d.poId === poId) || (poNumber && d.poNumber === poNumber);
-      if (matchPo && d.status !== "Cancelled") {
+      if (matchPo && ["Scheduled", "InTransit", "Arrived"].includes(d.status)) {
         (d.items || []).forEach((di: any) => {
           const matchItem =
             (poItemId && di.poItemId && di.poItemId === poItemId) ||
@@ -205,8 +203,6 @@ export function CreateDeliveryModal({
       setPaymentType("Payable");
       setError(null);
       setFieldErrors({});
-      setDeliveryGrouping("grouped");
-      setBatchReference("");
     }
 
     fetchInitialData();
@@ -240,9 +236,9 @@ export function CreateDeliveryModal({
         const res = await api.get(`/api/deliveries/po/${selectedPoId}/outstanding`);
         if (res.data?.success && Array.isArray(res.data.data)) {
           const rows: ItemRow[] = res.data.data.map((i: any) => {
-            const ordered = Number(i.poOrderedQuantity) || 0;
-            const received = Number(i.poTotalReceivedQuantity) || 0;
-            const apiScheduled = Number(i.alreadyScheduledQuantity) || 0;
+            const ordered = Number(i.poOrderedQuantity ?? i.orderedQuantity ?? i.poItemQuantity) || 0;
+            const received = Number(i.poTotalReceivedQuantity ?? i.receivedQuantity) || 0;
+            const apiScheduled = Number(i.alreadyScheduledQuantity ?? i.inFlightQuantity) || 0;
             const delivScheduled = getActiveScheduledForPoItem(
               existingDeliveries,
               selectedPoId,
@@ -256,7 +252,7 @@ export function CreateDeliveryModal({
               poItemId: i.poItemId,
               itemId: i.itemId,
               itemName: i.itemName,
-              itemCode: i.itemCode || "",
+              itemCode: i.itemCode || currentPO?.items?.find((p: any) => p.itemId === i.itemId)?.itemCode || "",
               purchaseUomName: i.purchaseUomName || "Unit",
               poOrderedQuantity: ordered,
               poTotalReceivedQuantity: received,
@@ -400,9 +396,6 @@ export function CreateDeliveryModal({
     if (!selectedPoId) {
       errs.poId = "Purchase Order selection is required.";
     }
-    if (deliveryGrouping === "per-batch" && !batchReference.trim()) {
-      errs.batchReference = "Batch reference is required for per-batch delivery.";
-    }
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
       return;
@@ -442,8 +435,6 @@ export function CreateDeliveryModal({
         carrier: null,
         driverName: null,
         vehiclePlateNumber: null,
-        isPerBatch: deliveryGrouping === "per-batch",
-        batchReference: deliveryGrouping === "per-batch" ? batchReference.trim() : null,
         items: itemsToSchedule,
       };
 
@@ -467,9 +458,9 @@ export function CreateDeliveryModal({
         open={open}
         title="Create Delivery Order"
         onClose={onClose}
-        size="max-w-4xl"
+        size="max-w-5xl"
       >
-        <form onSubmit={(e) => { e.preventDefault(); setConfirmModal(true); }} className="space-y-5">
+        <form onSubmit={(e) => { e.preventDefault(); setConfirmModal(true); }} className="space-y-4">
           {error && (
             <div className="p-3.5 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -477,31 +468,27 @@ export function CreateDeliveryModal({
             </div>
           )}
 
-          {/* Row 1: Delivery Number & Purchase Order Selector (2 Columns) */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* Top Form Fields Card: Clean responsive grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
+            {/* Delivery Number */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
                 Delivery Number
               </label>
-              <Input
-                type="text"
-                readOnly
-                value={deliveryNumber}
-                className="w-full rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-sm text-foreground cursor-not-allowed shadow-none focus-visible:ring-0 font-mono font-medium"
-              />
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 font-mono text-xs text-muted-foreground select-all">
+                {deliveryNumber}
+              </div>
             </div>
 
+            {/* Purchase Order Selector */}
             <div>
               <label className={`mb-1.5 block text-xs font-semibold ${fieldErrors.poId ? "text-destructive" : "text-foreground"}`}>
                 Purchase Order <span className="text-destructive">*</span>
               </label>
               {initialPo ? (
-                <Input
-                  type="text"
-                  readOnly
-                  value={initialPo.poNumber}
-                  className="w-full rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-sm text-foreground cursor-not-allowed shadow-none focus-visible:ring-0 font-mono font-medium"
-                />
+                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 font-mono text-xs text-foreground">
+                  {initialPo.poNumber}
+                </div>
               ) : (
                 <>
                   <select
@@ -510,9 +497,9 @@ export function CreateDeliveryModal({
                       handlePoSelectionChange(Number(e.target.value) || null)
                     }
                     disabled={loadingPOs}
-                    className={`w-full rounded-xl border ${
+                    className={`w-full h-10 rounded-xl border ${
                       fieldErrors.poId ? "!border-destructive focus:!ring-destructive" : "border-border"
-                    } bg-card px-4 py-2.5 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring`}
+                    } bg-card px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring`}
                   >
                     <option value="">Select Purchase Order...</option>
                     {orderedPOs.map((p) => (
@@ -522,47 +509,13 @@ export function CreateDeliveryModal({
                     ))}
                   </select>
                   {fieldErrors.poId && (
-                    <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">
+                    <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">
                       {fieldErrors.poId}
                     </p>
                   )}
                 </>
               )}
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">Delivery Grouping</label>
-              <select
-                value={deliveryGrouping}
-                onChange={(e) => {
-                  setDeliveryGrouping(e.target.value as "grouped" | "per-batch");
-                  setFieldErrors((previous) => ({ ...previous, batchReference: "" }));
-                }}
-                className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground"
-              >
-                <option value="grouped">Grouped Delivery</option>
-                <option value="per-batch">Per Batch</option>
-              </select>
-            </div>
-            {deliveryGrouping === "per-batch" && (
-              <div>
-                <label className={`mb-1.5 block text-xs font-semibold ${fieldErrors.batchReference ? "text-destructive" : "text-foreground"}`}>
-                  Batch Reference <span className="text-destructive">*</span>
-                </label>
-                <Input
-                  value={batchReference}
-                  onChange={(e) => {
-                    setBatchReference(e.target.value);
-                    setFieldErrors((previous) => ({ ...previous, batchReference: "" }));
-                  }}
-                  placeholder="e.g. SUPPLIER-BATCH-2026-001"
-                  className={fieldErrors.batchReference ? "!border-destructive focus-visible:!ring-destructive" : "border-border"}
-                />
-                {fieldErrors.batchReference && <p className="mt-1 text-xs font-medium text-destructive">{fieldErrors.batchReference}</p>}
-              </div>
-            )}
           </div>
 
           {/* If NO PO is selected, show instructional prompt */}
@@ -756,8 +709,8 @@ export function CreateDeliveryModal({
                 )}
               </div>
 
-              {/* Row 3: Payment Type, Planned Dispatch Date (Date only) (2 Columns) */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Payment Type & Planned Dispatch Date */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-foreground">
                     Payment Type <span className="text-destructive">*</span>
@@ -765,7 +718,7 @@ export function CreateDeliveryModal({
                   <select
                     value={paymentType}
                     onChange={(e) => setPaymentType(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    className="w-full h-10 rounded-xl border border-border bg-card px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <option value="Payable">Payable</option>
                     <option value="Paid">Paid</option>
@@ -782,7 +735,7 @@ export function CreateDeliveryModal({
                       min={new Date().toISOString().split("T")[0]}
                       value={plannedDispatchDate}
                       onChange={(e) => setPlannedDispatchDate(e.target.value)}
-                      className="w-full rounded-xl border border-border bg-card px-4 py-2.5 pr-10 text-sm text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                      className="w-full h-10 rounded-xl border border-border bg-card px-3.5 py-2 pr-10 text-xs text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     />
                     <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   </div>

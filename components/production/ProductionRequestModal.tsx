@@ -306,7 +306,7 @@ export default function ProductionRequestModal({
     if (isViewMode && initialRequest) {
       // In view mode, fetch suggestions for the existing request
       setLoadingSuggestions(true);
-      api.get(`/api/production-requests/${initialRequest.prodReqId}/lot-suggestions`)
+      api.get(`/api/production-requests/lot-suggestions?prodReqId=${initialRequest.prodReqId}`)
         .then((res: any) => {
           if (res.data?.success) {
             setLotSuggestions(res.data.data);
@@ -317,7 +317,7 @@ export default function ProductionRequestModal({
     } else if (recipeId && quantity > 0) {
       // In create mode, fetch preview
       setLoadingSuggestions(true);
-      api.get(`/api/production-requests/preview/lot-suggestions?recipeId=${recipeId}&quantity=${quantity}`)
+      api.get(`/api/production-requests/lot-suggestions?recipeId=${recipeId}&quantity=${quantity}`)
         .then((res: any) => {
           if (res.data?.success) {
             setLotSuggestions(res.data.data);

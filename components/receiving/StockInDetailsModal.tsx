@@ -45,7 +45,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
 
   if (!stockIn) return null;
 
-  const isPending = stockIn.status === "PendingApproval" || stockIn.status === "Pending";
+  const isPending = stockIn.status === "PendingApproval" || stockIn.status === "Pending Approval" || stockIn.status === "Pending";
   const isDraft = stockIn.status === "Draft";
   const isApproved = stockIn.status === "Approved";
   const isCommitted = stockIn.status === "Committed";

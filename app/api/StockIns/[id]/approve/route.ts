@@ -15,8 +15,8 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       return NextResponse.json({ success: false, message: `Stock-In ${id} not found.` }, { status: 404 });
     }
 
-    if (stockIn.Status !== "PendingApproval") {
-      return NextResponse.json({ success: false, message: `Only Stock-Ins in PendingApproval status can be approved. Current status: ${stockIn.Status}.` }, { status: 400 });
+    if (!["PendingApproval", "Pending Approval", "Pending"].includes(stockIn.Status)) {
+      return NextResponse.json({ success: false, message: `Only Stock-Ins in Pending Approval status can be approved. Current status: ${stockIn.Status}.` }, { status: 400 });
     }
 
     const updated = await prisma.stockIns.update({

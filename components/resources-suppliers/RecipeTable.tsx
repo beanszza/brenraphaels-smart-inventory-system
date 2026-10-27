@@ -45,7 +45,10 @@ export default function RecipeTable({ recipes, currentPage, pageSize, onEdit }: 
                 <td className="px-5 py-4 text-sm font-semibold text-foreground">
                   <HoverCard>
                     <HoverCardTrigger asChild>
-                      <span className="cursor-default whitespace-nowrap">
+                      <span
+                        className="cursor-default whitespace-nowrap"
+                        title={recipe.recipeCode ? `Recipe No: ${recipe.recipeCode}` : undefined}
+                      >
                         {recipe.recipeName}
                       </span>
                     </HoverCardTrigger>

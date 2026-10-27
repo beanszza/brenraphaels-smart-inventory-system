@@ -41,10 +41,15 @@ export async function GET(request: Request, props: { params: Promise<{ poId: str
         poItemId: item.PoItemId,
         itemId: item.ItemId,
         itemName: item.Items?.ItemName || "",
+        itemCode: item.Items?.ItemCode || "",
         orderedQuantity: Number(item.PoItemQuantity),
+        poOrderedQuantity: Number(item.PoItemQuantity),
         receivedQuantity: Number(item.ReceivedQuantity),
+        poTotalReceivedQuantity: Number(item.ReceivedQuantity),
         inFlightQuantity: inFlightQty,
+        alreadyScheduledQuantity: inFlightQty,
         remainingQuantity: remainingQty > 0 ? remainingQty : 0,
+        availableToSchedule: remainingQty > 0 ? remainingQty : 0,
         purchaseUomId: item.PurchaseUomId,
         purchaseUomName: item.UnitOfMeasures?.Abbreviation || "Unit"
       };

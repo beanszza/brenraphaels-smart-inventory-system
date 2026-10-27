@@ -133,6 +133,7 @@ model Categories {
   CategoryId   Int     @id(map: "PK_Categories") @default(autoincrement())
   CategoryName String
   Description  String
+  IsActive     Boolean @default(true)
   Items        Items[]
 }
 

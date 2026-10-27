@@ -2,20 +2,20 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const SUPPLY_CATEGORY_NAMES = ["Raw Materials", "Ingredients", "Tools and Supplies"];
-
 export async function GET() {
   try {
     const categories = await prisma.categories.findMany({
       where: {
+        IsActive: true,
         CategoryName: {
-          in: SUPPLY_CATEGORY_NAMES,
+          notIn: ["Finished Good", "Finished Goods"],
         },
       },
       select: {
         CategoryId: true,
         CategoryName: true,
         Description: true,
+        IsActive: true,
       },
     });
 
@@ -23,13 +23,18 @@ export async function GET() {
       categoryId: cat.CategoryId,
       categoryName: cat.CategoryName,
       description: cat.Description,
+      isActive: cat.IsActive,
     }));
 
-    // Custom sorting to match the C# backend logic
+    // Standard ordering: Raw Materials, Ingredients, Tools and Supplies first, then custom categories
+    const priority = ["Raw Materials", "Ingredients", "Tools and Supplies"];
     const sortedCategories = formattedCategories.sort((a, b) => {
-      const orderA = a.categoryName === "Raw Materials" ? 0 : a.categoryName === "Ingredients" ? 1 : 2;
-      const orderB = b.categoryName === "Raw Materials" ? 0 : b.categoryName === "Ingredients" ? 1 : 2;
-      return orderA - orderB;
+      const idxA = priority.indexOf(a.categoryName);
+      const idxB = priority.indexOf(b.categoryName);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.categoryName.localeCompare(b.categoryName);
     });
 
     return NextResponse.json({
@@ -45,3 +50,4 @@ export async function GET() {
     );
   }
 }
+

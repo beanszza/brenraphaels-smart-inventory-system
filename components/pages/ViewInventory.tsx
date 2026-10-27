@@ -25,17 +25,20 @@ import { PurchaseRequisition } from "@/components/orders-procurement/types";
 
 function matchesCategory(itemCat: string, filter: string): boolean {
   if (!filter || filter === "All") return true;
-  const c = (itemCat || "").toLowerCase();
-  const f = filter.toLowerCase();
-  if (f === "raw materials" || f === "raw material") return c.includes("raw");
-  if (f === "ingredients" || f === "ingredient") return c.includes("ingredient");
+  const c = (itemCat || "").toLowerCase().trim();
+  const f = filter.toLowerCase().trim();
+
+  // Legacy mappings for initial categories
+  if (f === "raw materials" || f === "raw material") return c === "raw materials" || c === "raw material" || c.includes("raw");
+  if (f === "ingredients" || f === "ingredient") return c === "ingredients" || c === "ingredient" || c.includes("ingredient");
   if (f === "tools and supplies" || f === "tools" || f === "tools & supplies" || f === "tool") {
-    return c.includes("tool") || c.includes("suppl");
+    return c === "tools and supplies" || c === "tools & supplies" || c.includes("tool") || c.includes("suppl");
   }
   if (f === "finished goods" || f === "finished good") {
-    return c.includes("finish") || c.includes("prod");
+    return c === "finished goods" || c === "finished good" || c.includes("finish") || c.includes("prod");
   }
-  return c === f || c.includes(f);
+
+  return c === f;
 }
 
 function matchesSearch(item: InventoryItem, query: string): boolean {
@@ -61,6 +64,7 @@ export default function ViewInventory() {
     user?.roles?.includes("Admin");
 
   const [allInventories, setAllInventories] = useState<InventoryItem[]>([]);
+  const [categories, setCategories] = useState<{ categoryId: number; categoryName: string }[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("Raw Materials");
   const [productFilter, setProductFilter] = useState("All");
@@ -70,16 +74,22 @@ export default function ViewInventory() {
   const [totalItemsCount, setTotalItemsCount] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [expiringSoonCount, setExpiringSoonCount] = useState(0);
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({
-    "Raw Materials": 0,
-    Ingredients: 0,
-    Tools: 0,
-    "Finished Goods": 0,
-  });
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
 
   // PR Modal State (for "Order Now" action)
   const [isCreatePROpen, setIsCreatePROpen] = useState(false);
   const [selectedPRData, setSelectedPRData] = useState<PurchaseRequisition | undefined>(undefined);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await api.get("/api/categories/supplies");
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setCategories(res.data.data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch supply categories:", e);
+    }
+  }, []);
 
   const fetchInventories = useCallback(async () => {
     try {
@@ -106,23 +116,10 @@ export default function ViewInventory() {
         ).length;
         setLowStockCount(low);
 
-        const counts: Record<string, number> = {
-          "Raw Materials": 0,
-          Ingredients: 0,
-          Tools: 0,
-          "Finished Goods": 0,
-        };
+        const counts: Record<string, number> = {};
         items.forEach((item) => {
-          const cat = (item.categoryName || "").toLowerCase();
-          if (cat.includes("raw")) {
-            counts["Raw Materials"] = (counts["Raw Materials"] || 0) + 1;
-          } else if (cat.includes("ingredient")) {
-            counts["Ingredients"] = (counts["Ingredients"] || 0) + 1;
-          } else if (cat.includes("tool") || cat.includes("equip") || cat.includes("suppl")) {
-            counts["Tools"] = (counts["Tools"] || 0) + 1;
-          } else if (cat.includes("finish") || cat.includes("prod")) {
-            counts["Finished Goods"] = (counts["Finished Goods"] || 0) + 1;
-          }
+          const cat = item.categoryName || "Uncategorized";
+          counts[cat] = (counts[cat] || 0) + 1;
         });
         setCategoryCounts(counts);
       }
@@ -147,12 +144,32 @@ export default function ViewInventory() {
   }, []);
 
   useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  useEffect(() => {
     fetchInventories();
   }, [fetchInventories]);
 
   useEffect(() => {
     fetchKpiData();
   }, [fetchKpiData]);
+
+  // Dynamic Category Tabs from active supply categories + Finished Goods
+  const categoryTabs = useMemo(() => {
+    const dynamicTabs = categories.map((c) => ({
+      id: c.categoryName,
+      label: c.categoryName === "Tools and Supplies" ? "TOOLS & SUPPLIES" : c.categoryName.toUpperCase(),
+    }));
+    return [...dynamicTabs, { id: "Finished Goods", label: "FINISHED GOODS" }];
+  }, [categories]);
+
+  // Ensure categoryFilter is valid when tabs load
+  useEffect(() => {
+    if (categoryTabs.length > 0 && !categoryTabs.some((t) => t.id === categoryFilter)) {
+      setCategoryFilter(categoryTabs[0].id);
+    }
+  }, [categoryTabs, categoryFilter]);
 
   // Distinct finished goods product names for the Product filter dropdown
   const availableFinishedProducts = useMemo(() => {
@@ -264,13 +281,6 @@ export default function ViewInventory() {
     setIsCreatePROpen(true);
   };
 
-  const categoryTabs = [
-    { id: "Raw Materials", label: "RAW MATERIALS" },
-    { id: "Ingredients", label: "INGREDIENTS" },
-    { id: "Tools and Supplies", label: "TOOLS & SUPPLIES" },
-    { id: "Finished Goods", label: "FINISHED GOODS" },
-  ];
-
   return (
     <div className="w-full min-h-full py-8 px-6 md:px-8 space-y-6 animate-page-in">
       <PageHeader
@@ -295,7 +305,7 @@ export default function ViewInventory() {
         categoryCounts={categoryCounts}
       />
 
-      {/* Category Tabs */}
+      {/* Dynamic Category Tabs */}
       <div className="border-b border-border">
         <div className="flex items-center gap-2 overflow-x-auto">
           {categoryTabs.map((tab) => {
@@ -362,6 +372,7 @@ export default function ViewInventory() {
               </Select>
             )}
 
+            {/* Dynamic Category Selector */}
             <Select
               value={categoryFilter}
               onValueChange={(val) => {
@@ -374,10 +385,11 @@ export default function ViewInventory() {
                 <SelectValue placeholder="Select Category" />
               </SelectTrigger>
               <SelectContent className="min-w-[210px]">
-                <SelectItem value="Raw Materials">Raw Materials</SelectItem>
-                <SelectItem value="Ingredients">Ingredients</SelectItem>
-                <SelectItem value="Tools and Supplies">Tools & Supplies</SelectItem>
-                <SelectItem value="Finished Goods">Finished Goods</SelectItem>
+                {categoryTabs.map((tab) => (
+                  <SelectItem key={tab.id} value={tab.id}>
+                    {tab.id === "Tools and Supplies" ? "Tools & Supplies" : tab.id}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

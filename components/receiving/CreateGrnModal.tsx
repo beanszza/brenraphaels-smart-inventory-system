@@ -172,7 +172,17 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
       .then(({ data }) => {
         const allGrns: GRN[] = Array.isArray(data?.data) ? data.data : [];
         const year = new Date().getFullYear();
-        const nextSeq = allGrns.length + 1;
+        let maxSeq = 0;
+        allGrns.forEach((g) => {
+          if (g.grnNumber) {
+            const m = g.grnNumber.match(/GRN-\d{4}-(\d+)/);
+            if (m) {
+              const num = parseInt(m[1], 10);
+              if (num > maxSeq) maxSeq = num;
+            }
+          }
+        });
+        const nextSeq = Math.max(maxSeq, allGrns.length) + 1;
         setPreviewGrnNo(`GRN-${year}-${String(nextSeq).padStart(4, "0")}`);
       })
       .catch(() => {
@@ -523,14 +533,23 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
           throw new Error(postResult.data?.message || "GRN saved as draft but failed to advance.");
         }
 
-        resolvedGrn = postResult.data.data;
+        const rawData = postResult.data?.data;
+        resolvedGrn = {
+          ...rawData,
+          grnId: rawData?.grnId ?? rawData?.GrnId ?? createdGrn.grnId,
+          grnNumber: rawData?.grnNumber ?? rawData?.GrnNumber ?? createdGrn.grnNumber,
+          status: rawData?.status ?? rawData?.Status,
+        };
         setActiveGrn(resolvedGrn);
       }
+
+      const targetGrnId = resolvedGrn?.grnId ?? (resolvedGrn as any)?.GrnId;
+      const targetGrnNumber = resolvedGrn?.grnNumber ?? (resolvedGrn as any)?.GrnNumber;
 
       // Fetch or locate the QA inspection for this GRN
       let inspection: QAInspection | null = null;
       try {
-        const qaRes = await api.get(`/api/QualityInspections?grnId=${resolvedGrn!.grnId}`);
+        const qaRes = await api.get(`/api/QualityInspections?grnId=${targetGrnId}`);
         const inspectionList: QAInspection[] = Array.isArray(qaRes.data?.data)
           ? qaRes.data.data
           : Array.isArray(qaRes.data)
@@ -548,9 +567,9 @@ export default function CreateGrnModal({ open, initialDeliveryId, onClose, onSuc
           inspection =
             allList.find(
               (q) =>
-                q.referenceId === resolvedGrn!.grnId ||
-                q.referenceNumber === resolvedGrn!.grnNumber ||
-                (q as any).grnId === resolvedGrn!.grnId
+                q.referenceId === targetGrnId ||
+                q.referenceNumber === targetGrnNumber ||
+                (q as any).grnId === targetGrnId
             ) || null;
         }
       } catch (qcFetchErr) {

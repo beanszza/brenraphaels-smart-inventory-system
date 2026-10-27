@@ -44,6 +44,54 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         }
       }
 
+      // 3. Update associated GRN, Delivery, and Purchase Order if ReferenceType is GRN
+      if (existingInspection.ReferenceType === "GRN" && existingInspection.ReferenceId) {
+        let totalAccepted = 0;
+        let totalRejected = 0;
+        if (Array.isArray(body.items)) {
+          body.items.forEach((it: any) => {
+            totalAccepted += Number(it.acceptedQuantity) || 0;
+            totalRejected += Number(it.rejectedQuantity) || 0;
+          });
+        }
+
+        const grnStatus = totalAccepted === 0 && totalRejected > 0 ? "Rejected" : "QaCompleted";
+
+        await tx.goodsReceipts.update({
+          where: { GrnId: existingInspection.ReferenceId },
+          data: {
+            Status: grnStatus,
+            PostedAt: new Date(),
+          },
+        });
+
+        const grn = await tx.goodsReceipts.findUnique({
+          where: { GrnId: existingInspection.ReferenceId },
+          include: { GoodsReceiptItems: true },
+        });
+
+        if (grn?.DeliveryId) {
+          await tx.deliveries.update({
+            where: { DeliveryId: grn.DeliveryId },
+            data: { Status: grnStatus === "Rejected" ? "Rejected" : "Received" },
+          }).catch(() => {});
+        }
+
+        if (grn?.GoodsReceiptItems && grnStatus !== "Rejected") {
+          for (const grnItem of grn.GoodsReceiptItems) {
+            const acceptedQty = body.items?.find((i: any) => i.itemId === grnItem.ItemId)?.acceptedQuantity ?? grnItem.DeliveredQuantity;
+            if (Number(acceptedQty) > 0 && grnItem.PoItemId) {
+              await tx.purchaseOrderItems.update({
+                where: { PoItemId: grnItem.PoItemId },
+                data: {
+                  ReceivedQuantity: { increment: Number(acceptedQty) },
+                },
+              }).catch(() => {});
+            }
+          }
+        }
+      }
+
       return inspection;
     });
 

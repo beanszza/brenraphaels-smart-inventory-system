@@ -59,6 +59,14 @@ export type CategoryOption = {
   categoryName: string;
 };
 
+export type CategoryItem = {
+  categoryId: number;
+  categoryName: string;
+  description: string;
+  isActive: boolean;
+  itemCount?: number;
+};
+
 export type UomOption = {
   uomId: number;
   code: string;

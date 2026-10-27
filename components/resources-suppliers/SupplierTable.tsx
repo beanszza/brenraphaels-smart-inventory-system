@@ -19,32 +19,32 @@ export default function SupplierTable({ suppliers, currentPage, pageSize, onEdit
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-      <table className="w-full min-w-[900px]">
+      <table className="w-full">
         <thead className="border-b border-border bg-muted/30">
           <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-            <th className="px-5 py-4">No.</th>
-            <th className="px-5 py-4">Supplier Name</th>
-            <th className="px-5 py-4">Contact Person</th>
-            <th className="px-5 py-4">Email</th>
-            <th className="px-5 py-4">Phone</th>
-            <th className="px-5 py-4">Status</th>
-            <th className="px-5 py-4 text-center">Actions</th>
+            <th className="w-12 px-4 py-4 text-center">No.</th>
+            <th className="px-4 py-4">Supplier Name</th>
+            <th className="px-4 py-4">Contact Person</th>
+            <th className="px-4 py-4">Email</th>
+            <th className="px-4 py-4 whitespace-nowrap">Phone</th>
+            <th className="px-4 py-4 text-center whitespace-nowrap">Status</th>
+            <th className="w-16 px-4 py-4 text-center whitespace-nowrap">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
           {suppliers.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-5 py-10 text-center text-sm font-semibold text-muted-foreground">
+              <td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-muted-foreground">
                 No Results Found
               </td>
             </tr>
           ) : (
             suppliers.map((supplier, index) => (
               <tr key={supplier.supplierId} className="hover:bg-muted/30 transition-colors">
-                <td className="px-5 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                <td className="w-12 px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
                   {index + 1 + (currentPage - 1) * pageSize}
                 </td>
-                <td className="px-5 py-4 text-sm font-semibold text-foreground">
+                <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <span className="cursor-default whitespace-nowrap">
@@ -66,13 +66,19 @@ export default function SupplierTable({ suppliers, currentPage, pageSize, onEdit
                     </HoverCardContent>
                   </HoverCard>
                 </td>
-                <td className="px-5 py-4 text-sm text-muted-foreground">{supplier.contactPerson}</td>
-                <td className="px-5 py-4 text-sm text-muted-foreground">{supplier.email}</td>
-                <td className="px-5 py-4 text-sm text-muted-foreground whitespace-nowrap">{supplier.phone}</td>
-                <td className="px-5 py-4 whitespace-nowrap">
+                <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                  {supplier.contactPerson}
+                </td>
+                <td className="px-4 py-4 text-sm text-muted-foreground">
+                  {supplier.email}
+                </td>
+                <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                  {supplier.phone}
+                </td>
+                <td className="px-4 py-4 text-center whitespace-nowrap">
                   <StatusBadge status={supplier.isActive ? "Active" : "Inactive"} />
                 </td>
-                <td className="px-5 py-4 text-center relative">
+                <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap">
                   <button
                     type="button"
                     onClick={() =>

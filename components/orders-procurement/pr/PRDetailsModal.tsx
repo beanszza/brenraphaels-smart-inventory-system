@@ -158,16 +158,6 @@ export function PRDetailsModal({
             </div>
           </div>
 
-          {/* Request Type */}
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Request Type
-            </label>
-            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-              {pr.requestType || "Stock Replenishment"}
-            </div>
-          </div>
-
           {/* Priority */}
           <div className="sm:col-span-2 lg:col-span-1">
             <label className="mb-1.5 block text-xs font-semibold text-foreground">

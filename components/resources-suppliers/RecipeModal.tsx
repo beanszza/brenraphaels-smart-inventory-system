@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import ModalWrapper from "./ModalWrapper";
 import { Recipe, FinishedProduct, SupplyItem, Ingredient } from "./types";
 import RecipeIngredientItem from "./RecipeIngredientItem";
@@ -210,143 +211,133 @@ export default function RecipeModal({
       open={open}
       title={editingRecipe ? "Edit Bill of Materials" : "Create Bill of Materials"}
       onClose={onClose}
-      size="max-w-3xl"
+      size="max-w-4xl"
     >
-      <div className="space-y-4 text-foreground">
-        {/* Top Header Grid: Recipe Code, Product, Variant, Batch Size */}
-        <div className="rounded-xl border border-border p-4 bg-muted/20 space-y-3.5">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 items-center">
-            {/* Recipe Code / Number */}
-            <div className="sm:col-span-4">
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Recipe No.</label>
-              <div className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground select-none">
-                {recipeCode || "BOM-2026-0001"}
-              </div>
-            </div>
+      <div className="space-y-4">
+        {/* Recipe Name */}
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-foreground">
+            Recipe Name <span className="text-destructive">*</span>
+          </label>
+          <Input
+            type="text"
+            maxLength={60}
+            value={recipeName}
+            onChange={(e) => {
+              const val = e.target.value.slice(0, 60);
+              setRecipeName(val);
+              if (!val.trim()) setRecipeNameError("Recipe Name is required.");
+              else setRecipeNameError("");
+            }}
+            placeholder="e.g. Ube Halaya Standard Batch"
+            aria-invalid={!!recipeNameError}
+            style={recipeNameError ? { borderColor: "var(--destructive)" } : undefined}
+            className={`w-full h-10 rounded-xl border ${
+              recipeNameError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
+            } bg-card px-3.5 text-sm text-foreground transition-colors focus:ring-1 focus:ring-ring focus:outline-none`}
+          />
+          {recipeNameError && (
+            <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{recipeNameError}</p>
+          )}
+        </div>
 
-            {/* Recipe Name */}
-            <div className="sm:col-span-8">
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
-                Recipe Name <span className="text-destructive">*</span>
-              </label>
-              <Input
-                type="text"
-                maxLength={60}
-                value={recipeName}
-                onChange={(e) => {
-                  const val = e.target.value.slice(0, 60);
-                  setRecipeName(val);
-                  if (!val.trim()) setRecipeNameError("Recipe Name is required.");
-                  else setRecipeNameError("");
-                }}
-                placeholder="e.g. Ube Halaya Standard Batch"
-                aria-invalid={!!recipeNameError}
-                style={recipeNameError ? { borderColor: "var(--destructive)" } : undefined}
-                className={`w-full rounded-lg border ${
-                  recipeNameError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                } bg-card px-3 py-2 text-xs text-foreground`}
-              />
-              {recipeNameError && (
-                <p className="mt-1 text-[11px] font-medium text-destructive">{recipeNameError}</p>
+        {/* Row 2: Product, Variant, Batch Size */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
+          {/* Product Selector */}
+          <div className="sm:col-span-5">
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Product <span className="text-destructive">*</span>
+            </label>
+            <select
+              value={selectedProductName}
+              onChange={(e) => handleProductChange(e.target.value)}
+              className="w-full h-10 rounded-xl border border-border bg-card px-3.5 text-sm text-foreground focus:ring-1 focus:ring-ring focus:outline-none transition-colors"
+            >
+              {distinctProductNames.length === 0 ? (
+                <option value="">No products found (configure in Production)</option>
+              ) : (
+                distinctProductNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))
               )}
-            </div>
+            </select>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
-            {/* Product Selector (Filtered from Configuration tab) */}
-            <div className="sm:col-span-5">
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
-                Product <span className="text-destructive">*</span>
-              </label>
-              <select
-                value={selectedProductName}
-                onChange={(e) => handleProductChange(e.target.value)}
-                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-ring outline-none"
-              >
-                {distinctProductNames.length === 0 ? (
-                  <option value="">No products found (configure in Production)</option>
-                ) : (
-                  distinctProductNames.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-
-            {/* Variant Selector (Only variants of chosen product) */}
-            <div className="sm:col-span-4">
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
-                Variant <span className="text-destructive">*</span>
-              </label>
-              <select
-                value={productId}
-                onChange={(e) => setProductId(Number(e.target.value))}
-                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-ring outline-none"
-              >
-                {availableVariants.length === 0 ? (
-                  <option value={0}>No variant configured</option>
-                ) : (
-                  availableVariants.map((v) => (
-                    <option key={v.productId} value={v.productId}>
-                      {v.variant ? v.variant : "Standard"}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-
-            {/* Batch Size (pcs) */}
-            <div className="sm:col-span-3">
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
-                Batch Size (pcs) <span className="text-destructive">*</span>
-              </label>
-              <Input
-                type="number"
-                min={1}
-                step={1}
-                value={batchSize}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setBatchSize(val);
-                  if (!val.trim() || Number(val) <= 0) {
-                    setBatchSizeError("Must be > 0");
-                  } else {
-                    setBatchSizeError("");
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (["-", "+", "e", "E", "."].includes(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-                placeholder="e.g. 100"
-                aria-invalid={!!batchSizeError}
-                style={batchSizeError ? { borderColor: "var(--destructive)" } : undefined}
-                className={`w-full rounded-lg border ${
-                  batchSizeError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                } bg-card px-3 py-2 text-xs text-foreground`}
-              />
-              {batchSizeError && (
-                <p className="mt-1 text-[11px] font-medium text-destructive">{batchSizeError}</p>
+          {/* Variant Selector */}
+          <div className="sm:col-span-4">
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Variant <span className="text-destructive">*</span>
+            </label>
+            <select
+              value={productId}
+              onChange={(e) => setProductId(Number(e.target.value))}
+              className="w-full h-10 rounded-xl border border-border bg-card px-3.5 text-sm text-foreground focus:ring-1 focus:ring-ring focus:outline-none transition-colors"
+            >
+              {availableVariants.length === 0 ? (
+                <option value={0}>No variant configured</option>
+              ) : (
+                availableVariants.map((v) => (
+                  <option key={v.productId} value={v.productId}>
+                    {v.variant ? v.variant : "Standard"}
+                  </option>
+                ))
               )}
-            </div>
+            </select>
+          </div>
+
+          {/* Batch Size (pcs) */}
+          <div className="sm:col-span-3">
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Batch Size (pcs) <span className="text-destructive">*</span>
+            </label>
+            <Input
+              type="number"
+              min={1}
+              step={1}
+              value={batchSize}
+              onChange={(e) => {
+                const val = e.target.value;
+                setBatchSize(val);
+                if (!val.trim() || Number(val) <= 0) {
+                  setBatchSizeError("Must be > 0");
+                } else {
+                  setBatchSizeError("");
+                }
+              }}
+              onKeyDown={(e) => {
+                if (["-", "+", "e", "E", "."].includes(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+              placeholder="e.g. 100"
+              aria-invalid={!!batchSizeError}
+              style={batchSizeError ? { borderColor: "var(--destructive)" } : undefined}
+              className={`w-full h-10 rounded-xl border ${
+                batchSizeError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
+              } bg-card px-3.5 text-sm text-foreground transition-colors focus:ring-1 focus:ring-ring focus:outline-none`}
+            />
+            {batchSizeError && (
+              <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{batchSizeError}</p>
+            )}
           </div>
         </div>
 
-        {/* Bill of Materials Items */}
-        <div className="space-y-2.5">
+        {/* Bill of Materials Section */}
+        <div className="pt-2 border-t border-border space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Bill of Materials
-            </h3>
-            <span className="text-[11px] text-muted-foreground">
-              {ingredients.length} item{ingredients.length === 1 ? "" : "s"}
-            </span>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                Bill of Materials
+              </h3>
+              <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                {ingredients.length} {ingredients.length === 1 ? "item" : "items"}
+              </span>
+            </div>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {ingredients.map((ingredient, index) => (
               <RecipeIngredientItem
                 key={ingredient.id}
@@ -399,7 +390,7 @@ export default function RecipeModal({
             ))}
           </div>
 
-          {/* Add Items Button (Solid Black Button) */}
+          {/* Add Item Button */}
           <button
             type="button"
             onClick={() =>
@@ -413,37 +404,35 @@ export default function RecipeModal({
                 },
               ])
             }
-            className="w-full rounded-xl py-2.5 text-xs font-semibold shadow-sm transition-opacity hover:opacity-90 active:opacity-80 cursor-pointer"
-            style={{ backgroundColor: "#000000", color: "#ffffff" }}
+            className="w-full h-10 rounded-xl border border-dashed border-border bg-card/60 text-xs font-semibold text-foreground hover:bg-muted/70 hover:border-foreground/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            Add Items
+            <Plus className="h-4 w-4" />
+            <span>Add Item</span>
           </button>
         </div>
 
         {/* Status (when editing) */}
         {editingRecipe && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-            <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Status</label>
-              <select
-                value={recipeActive ? "true" : "false"}
-                onChange={(e) => setRecipeActive(e.target.value === "true")}
-                className="w-full rounded-lg border border-border bg-card text-foreground px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </select>
-            </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">Status</label>
+            <select
+              value={recipeActive ? "true" : "false"}
+              onChange={(e) => setRecipeActive(e.target.value === "true")}
+              className="w-full h-10 rounded-xl border border-border bg-card text-foreground px-3.5 text-sm focus:ring-1 focus:ring-ring focus:outline-none"
+            >
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
           </div>
         )}
 
         {/* Modal Actions */}
-        <div className="flex justify-end gap-2.5 pt-4 border-t border-border mt-5">
+        <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors"
           >
             Cancel
           </Button>
@@ -451,18 +440,9 @@ export default function RecipeModal({
             type="button"
             disabled={isFormInvalid}
             onClick={handleSave}
-            className={`rounded-xl px-5 py-2 text-xs font-semibold transition-colors ${
-              isFormInvalid
-                ? "bg-muted text-muted-foreground opacity-50 cursor-not-allowed border border-border"
-                : "shadow-sm cursor-pointer"
-            }`}
-            style={
-              isFormInvalid
-                ? undefined
-                : { backgroundColor: "#000000", color: "#ffffff" }
-            }
+            className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {editingRecipe ? "Save Recipe" : "Create Recipe"}
+            {editingRecipe ? "Save Changes" : "Create Recipe"}
           </Button>
         </div>
       </div>

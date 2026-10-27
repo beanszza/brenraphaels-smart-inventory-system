@@ -58,7 +58,7 @@ export default function StockInTab() {
   const counts = useMemo(() => {
     return {
       draft: stockIns.filter((s) => s.status === "Draft").length,
-      pending: stockIns.filter((s) => s.status === "PendingApproval" || s.status === "Pending").length,
+      pending: stockIns.filter((s) => s.status === "PendingApproval" || s.status === "Pending Approval" || s.status === "Pending").length,
       approved: stockIns.filter((s) => s.status === "Approved").length,
       committed: stockIns.filter((s) => s.status === "Committed").length,
       rejected: stockIns.filter((s) => s.status === "Rejected").length,
@@ -69,7 +69,7 @@ export default function StockInTab() {
   const tabFiltered = useMemo(() => {
     return stockIns.filter((s) => {
       if (activeSubTab === "draft") return s.status === "Draft";
-      if (activeSubTab === "pending") return s.status === "PendingApproval" || s.status === "Pending";
+      if (activeSubTab === "pending") return s.status === "PendingApproval" || s.status === "Pending Approval" || s.status === "Pending";
       if (activeSubTab === "approved") return s.status === "Approved";
       if (activeSubTab === "committed") return s.status === "Committed";
       if (activeSubTab === "rejected") return s.status === "Rejected";
@@ -410,7 +410,7 @@ export default function StockInTab() {
           onClose={() => setCreateModalOpen(false)}
           onSuccess={(newStockIn) => {
             fetchStockIns();
-            if (newStockIn.status === "PendingApproval" || newStockIn.status === "Pending") {
+            if (newStockIn.status === "PendingApproval" || newStockIn.status === "Pending Approval" || newStockIn.status === "Pending") {
               setActiveSubTab("pending");
             } else if (newStockIn.status === "Draft") {
               setActiveSubTab("draft");

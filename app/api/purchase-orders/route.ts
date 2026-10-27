@@ -68,9 +68,11 @@ export async function GET(request: Request) {
         poItemId: i.PoItemId,
         itemId: i.ItemId,
         itemName: i.Items?.ItemName || "",
+        itemCode: i.Items?.ItemCode || "",
         poItemQuantity: Number(i.PoItemQuantity),
         receivedQuantity: Number(i.ReceivedQuantity),
         totalPrice: Number(i.TotalPrice),
+        unitPrice: Number(i.PoItemQuantity) > 0 ? Number(i.TotalPrice) / Number(i.PoItemQuantity) : 0,
         purchaseUomId: i.PurchaseUomId,
         purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit"
       }))
@@ -122,14 +124,34 @@ export async function POST(request: Request) {
       const catalogEntry = await prisma.supplierItems.findFirst({
         where: { SupplierId: body.supplierId, ItemId: itemReq.itemId }
       });
-      if (!catalogEntry) {
-        return NextResponse.json({ success: false, message: `No supplier price is configured for '${item.ItemName}'.` }, { status: 400 });
-      }
-      if (Number(catalogEntry.UnitPrice) <= 0) {
-        return NextResponse.json({ success: false, message: `Supplier price for '${item.ItemName}' must be greater than zero.` }, { status: 400 });
+
+      let lineTotalPrice = 0;
+      if (itemReq.totalPrice !== undefined && itemReq.totalPrice !== null && !isNaN(Number(itemReq.totalPrice))) {
+        lineTotalPrice = Number(itemReq.totalPrice);
+      } else if (itemReq.unitPrice !== undefined && itemReq.unitPrice !== null && !isNaN(Number(itemReq.unitPrice))) {
+        lineTotalPrice = Number(itemReq.unitPrice) * Number(itemReq.poItemQuantity);
+      } else if (catalogEntry && Number(catalogEntry.UnitPrice) > 0) {
+        lineTotalPrice = Number(catalogEntry.UnitPrice) * Number(itemReq.poItemQuantity);
       }
 
-      let purchaseUomId = itemReq.purchaseUomId ?? catalogEntry.PurchaseUomId;
+      if (lineTotalPrice <= 0) {
+        return NextResponse.json({ success: false, message: `Price for '${item.ItemName}' must be greater than zero.` }, { status: 400 });
+      }
+
+      if (catalogEntry) {
+        const computedUnit = lineTotalPrice / Math.max(1, Number(itemReq.poItemQuantity));
+        await prisma.supplierItems.update({
+          where: {
+            SupplierId_ItemId: {
+              SupplierId: body.supplierId,
+              ItemId: itemReq.itemId,
+            },
+          },
+          data: { UnitPrice: computedUnit },
+        }).catch(() => {});
+      }
+
+      let purchaseUomId = itemReq.purchaseUomId ?? catalogEntry?.PurchaseUomId;
       if (!purchaseUomId || purchaseUomId <= 0) {
         purchaseUomId = item.StockUomId;
       }
@@ -138,7 +160,7 @@ export async function POST(request: Request) {
         ItemId: itemReq.itemId,
         SupplierId: body.supplierId,
         PoItemQuantity: itemReq.poItemQuantity,
-        TotalPrice: Number(catalogEntry.UnitPrice) * Number(itemReq.poItemQuantity),
+        TotalPrice: lineTotalPrice,
         PurchaseUomId: purchaseUomId,
         ReceivedQuantity: 0
       });
@@ -221,9 +243,11 @@ export async function POST(request: Request) {
         poItemId: i.PoItemId,
         itemId: i.ItemId,
         itemName: i.Items?.ItemName || "",
+        itemCode: i.Items?.ItemCode || "",
         poItemQuantity: Number(i.PoItemQuantity),
         receivedQuantity: Number(i.ReceivedQuantity),
         totalPrice: Number(i.TotalPrice),
+        unitPrice: Number(i.PoItemQuantity) > 0 ? Number(i.TotalPrice) / Number(i.PoItemQuantity) : 0,
         purchaseUomId: i.PurchaseUomId,
         purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit"
       }))
