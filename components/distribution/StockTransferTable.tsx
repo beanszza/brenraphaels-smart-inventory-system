@@ -70,7 +70,7 @@ export default function StockTransferTable({
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-36 z-[100]">
-                      {item.status === "Pending" && (
+                      {["Pending", "Scheduled"].includes(item.status) && (
                         <>
                           <DropdownMenuItem onClick={() => onDispatch(item)} className="flex items-center gap-2 cursor-pointer">
                             <Truck size={14} className="shrink-0" /> Dispatch
@@ -80,12 +80,12 @@ export default function StockTransferTable({
                           </DropdownMenuItem>
                         </>
                       )}
-                      {item.status === "In Transit" && (
+                      {["In Transit", "Dispatched"].includes(item.status) && (
                         <DropdownMenuItem onClick={() => onReceive(item)} className="flex items-center gap-2 cursor-pointer">
                           <Check size={14} className="shrink-0" /> Mark Received
                         </DropdownMenuItem>
                       )}
-                      {item.status === "Completed" && (
+                      {["Completed", "Received"].includes(item.status) && (
                         <div className="px-3 py-2 text-xs text-muted-foreground">Transfer completed</div>
                       )}
                     </DropdownMenuContent>

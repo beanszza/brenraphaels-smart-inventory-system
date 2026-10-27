@@ -19,7 +19,6 @@ interface ActionItem {
 
 interface DeliveryTableProps {
   deliveries: Delivery[];
-  isAdmin: boolean;
   onView: (delivery: Delivery) => void;
   onDispatch?: (delivery: Delivery) => void;
   onArrive?: (delivery: Delivery) => void;
@@ -29,7 +28,6 @@ interface DeliveryTableProps {
 
 export function DeliveryTable({
   deliveries,
-  isAdmin,
   onView,
   onDispatch,
   onArrive,
@@ -101,37 +99,35 @@ export function DeliveryTable({
               ];
 
               // Only inventory manager has actions; admin side just checks/views
-              if (!isAdmin) {
-                if ((isScheduled || isInTransit) && onArrive) {
-                  actions.push({
-                    label: "Mark Arrived",
-                    icon: <CheckCircle className="w-4 h-4 text-foreground" />,
-                    onClick: () => {
-                      setOpenDropdownId(null);
-                      onArrive(delivery);
-                    },
-                  });
-                }
-                if (isArrived && !delivery.grnNumber && onCreateGrn) {
-                  actions.push({
-                    label: "Create Goods Receipt Note",
-                    icon: <Receipt className="w-4 h-4 text-foreground" />,
-                    onClick: () => {
-                      setOpenDropdownId(null);
-                      onCreateGrn(delivery);
-                    },
-                  });
-                }
-                if (isCancellable && onCancel) {
-                  actions.push({
-                    label: "Cancel Delivery",
-                    icon: <Ban className="w-4 h-4 text-foreground" />,
-                    onClick: () => {
-                      setOpenDropdownId(null);
-                      onCancel(delivery);
-                    },
-                  });
-                }
+              if ((isScheduled || isInTransit) && onArrive) {
+                actions.push({
+                  label: "Mark Arrived",
+                  icon: <CheckCircle className="w-4 h-4 text-foreground" />,
+                  onClick: () => {
+                    setOpenDropdownId(null);
+                    onArrive(delivery);
+                  },
+                });
+              }
+              if (isArrived && !delivery.grnNumber && onCreateGrn) {
+                actions.push({
+                  label: "Create Goods Receipt Note",
+                  icon: <Receipt className="w-4 h-4 text-foreground" />,
+                  onClick: () => {
+                    setOpenDropdownId(null);
+                    onCreateGrn(delivery);
+                  },
+                });
+              }
+              if (isCancellable && onCancel) {
+                actions.push({
+                  label: "Cancel Delivery",
+                  icon: <Ban className="w-4 h-4 text-foreground" />,
+                  onClick: () => {
+                    setOpenDropdownId(null);
+                    onCancel(delivery);
+                  },
+                });
               }
 
               const isOpen = openDropdownId === delivery.deliveryId;

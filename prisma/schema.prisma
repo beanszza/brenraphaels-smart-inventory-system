@@ -27,19 +27,6 @@ model ApprovalRequests {
   @@index([Status], map: "IX_ApprovalRequests_Status")
 }
 
-model AuditLogs {
-  LogId      Int      @id(map: "PK_AuditLogs") @default(autoincrement())
-  EntityName String
-  EntityId   String
-  FieldName  String
-  OldValue   String
-  NewValue   String
-  Action     String
-  Timestamp  DateTime @db.Timestamptz(6)
-  UserId     String
-  UserName   String   @default("")
-}
-
 model BatchConsumptions {
   BatchConsumptionId Int               @id(map: "PK_BatchConsumptions") @default(autoincrement())
   BatchId            Int
@@ -1302,3 +1289,11 @@ model MaterialIssuanceScans {
   @@index([LotId], map: "IX_MaterialIssuanceScans_LotId")
 }
 
+
+model KnownStaff {
+  StaffId  String   @id(map: "PK_KnownStaff")
+  Name     String
+  Username String
+  Modules  String[]
+  SeenAt   DateTime @db.Timestamptz(6)
+}

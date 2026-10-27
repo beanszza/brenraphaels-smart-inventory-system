@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { receiving } from "@/lib/receiving/client";
+
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { Download, CheckCircle2, ShieldCheck, AlertTriangle, AlertCircle } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/context/AuthContext";
-import api from "@/lib/api";
+import { useStaff } from "@/context/StaffContext";
 import { StockIn, StockInLine } from "./types";
 
 interface Props {
@@ -19,8 +20,7 @@ interface Props {
 }
 
 export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess }: Props) {
-  const { user, isAdmin } = useAuth();
-  const [approverName, setApproverName] = useState("System Admin");
+  const approverName = useStaff().name;
   const [approvalNotes, setApprovalNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [committing, setCommitting] = useState(false);
@@ -32,16 +32,6 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
   const [commitModalOpen, setCommitModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [rejectionError, setRejectionError] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      const name =
-        user.firstName && user.lastName
-          ? `${user.firstName} ${user.lastName}`
-          : user.username || "System Admin";
-      setApproverName(name);
-    }
-  }, [user]);
 
   if (!stockIn) return null;
 
@@ -55,8 +45,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.post(`/api/StockIns/${stockIn.stockInId}/approve`, {
-        approverName: approverName.trim() || "System Admin",
+      const res = await receiving.approveStockIn(stockIn.stockInId, {
         notes: approvalNotes.trim() || undefined,
       });
 
@@ -78,9 +67,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
     setCommitting(true);
     setError(null);
     try {
-      const res = await api.post(`/api/StockIns/${stockIn.stockInId}/commit`, {
-        committerName: approverName.trim() || undefined,
-      });
+      const res = await receiving.commitStockIn(stockIn.stockInId);
 
       if (!res.data?.success) {
         throw new Error(res.data?.message || "Failed to commit Stock-In to inventory.");
@@ -105,9 +92,8 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.post(`/api/StockIns/${stockIn.stockInId}/reject`, {
-        rejectionReason: rejectionReason.trim(),
-        rejectedBy: approverName.trim() || undefined,
+      const res = await receiving.rejectStockIn(stockIn.stockInId, {
+        reason: rejectionReason.trim(),
         notes: approvalNotes.trim() || undefined,
       });
 
@@ -129,7 +115,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.post(`/api/StockIns/${stockIn.stockInId}/submit`);
+      const res = await receiving.submitStockIn(stockIn.stockInId);
       if (!res.data?.success) {
         throw new Error(res.data?.message || "Failed to submit Stock-In.");
       }
@@ -399,7 +385,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
                 type="button"
                 disabled={submitting}
                 onClick={handleSubmitDraft}
-                className="rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
               >
                 {submitting ? "Submitting…" : "Submit for Admin Approval"}
               </button>
@@ -414,7 +400,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
             >
               Close
             </button>
-            {isPending && isAdmin && (
+            {isPending && (
               <>
                 <button
                   type="button"
@@ -428,7 +414,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
                   type="button"
                   onClick={() => setApproveModalOpen(true)}
                   disabled={submitting}
-                  className="rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                  className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                 >
                   Approve Stock-In
                 </button>
@@ -439,7 +425,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
                 type="button"
                 disabled={committing}
                 onClick={() => setCommitModalOpen(true)}
-                className="rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm whitespace-nowrap cursor-pointer"
+                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm whitespace-nowrap cursor-pointer"
               >
                 Commit to Inventory
               </button>
@@ -486,7 +472,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
                     type="button"
                     disabled={committing}
                     onClick={handleCommit}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-foreground text-background hover:bg-foreground/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     {committing ? "Committing…" : "Confirm"}
                   </button>
@@ -549,7 +535,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
                     type="button"
                     disabled={submitting}
                     onClick={handleApprove}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-foreground text-background hover:bg-foreground/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     {submitting ? "Approving…" : "Confirm"}
                   </button>
@@ -622,7 +608,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose, onSuccess 
                     type="button"
                     disabled={submitting}
                     onClick={handleReject}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-foreground text-background hover:bg-foreground/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     {submitting ? "Rejecting…" : "Confirm"}
                   </button>

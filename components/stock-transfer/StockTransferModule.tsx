@@ -1,16 +1,22 @@
 "use client";
+import { actionResponse } from "@/lib/resources/action-response";
+import { listTransfers } from "@/app/actions/stock-transfer/transfers";
+import { cancelRequest } from "@/app/actions/stock-transfer/request-cancel";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { reviewRequest } from "@/app/actions/stock-transfer/request-status";
+
+import type { StockTransferScreen } from "@/lib/stock-transfer/screen-data";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
+import React, { useState, useTransition, useMemo } from "react";
 import { Plus, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import api from "@/lib/api";
-import { useAuth } from "@/context/AuthContext";
 import { PageHeader } from "@/components/shared/PageHeader";
 import {
   StockTransferRequest,
   StockTransfer,
-  DashboardMetrics,
   STRActionType,
 } from "./types";
 import StockTransferSummaryCards from "./StockTransferSummaryCards";
@@ -34,11 +40,10 @@ const STATUS_TABS = [
   "Rejected",
 ];
 
-export default function StockTransferModule() {
-  const { isAdmin } = useAuth();
-
-  // Primary navigation tab: "transfers" | "locations"
-  const [activeMainTab, setActiveMainTab] = useState<"transfers" | "locations">("transfers");
+export default function StockTransferModule({ requests, metrics, locations, activeMainTab }: StockTransferScreen & { activeMainTab: "transfers" | "locations" }) {
+  const router = useRouter();
+  const [loading, startTransition] = useTransition();
+  const refreshAll = () => startTransition(() => router.refresh());
 
   // Status Filter within Transfers tab (can be "Requests" for Admin or standard statuses)
   const [activeStatusTab, setActiveStatusTab] = useState<string>("All");
@@ -47,17 +52,6 @@ export default function StockTransferModule() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 10;
-
-  // Data State
-  const [loading, setLoading] = useState(true);
-  const [requests, setRequests] = useState<StockTransferRequest[]>([]);
-  const [metrics, setMetrics] = useState<DashboardMetrics>({
-    totalRequests: 0,
-    pendingApproval: 0,
-    approvedRequests: 0,
-    dispatchedTransfers: 0,
-    scheduledTransfers: 0,
-  });
 
   // Modal Visibility States
   const [openCreateSTR, setOpenCreateSTR] = useState(false);
@@ -69,43 +63,6 @@ export default function StockTransferModule() {
     request: StockTransferRequest;
     type: STRActionType;
   } | null>(null);
-
-  // Fetch Dashboard Metrics
-  const fetchMetrics = useCallback(async () => {
-    try {
-      const res = await api.get("/api/stock-transfer-requests/dashboard");
-      if (res.data?.success) {
-        setMetrics(res.data.data);
-      }
-    } catch (e) {
-      console.error("Failed to load dashboard metrics:", e);
-    }
-  }, []);
-
-  // Fetch STR Requests with full transfers
-  const fetchRequests = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await api.get("/api/stock-transfer-requests?pageSize=100");
-      if (res.data?.success) {
-        setRequests(res.data.data || []);
-      }
-    } catch (e) {
-      console.error("Failed to load requests:", e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const refreshAll = useCallback(() => {
-    fetchMetrics();
-    fetchRequests();
-  }, [fetchMetrics, fetchRequests]);
-
-  useEffect(() => {
-    fetchMetrics();
-    fetchRequests();
-  }, [fetchMetrics, fetchRequests]);
 
   // Compute status counts for tab badges
   const statusCounts = useMemo(() => {
@@ -134,7 +91,7 @@ export default function StockTransferModule() {
 
       // Search filter
       if (search.trim()) {
-        const s = search.toLowerCase();
+        const s = search.trim().toLowerCase();
         const matchReqNum = r.requestNumber?.toLowerCase().includes(s);
         const matchTransferNum = r.transfers?.some((t) => t.transferNumber?.toLowerCase().includes(s));
         const matchLoc = r.toLocationName?.toLowerCase().includes(s);
@@ -155,77 +112,52 @@ export default function StockTransferModule() {
   const totalCount = filteredRequests.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const paginatedRequests = useMemo(() => {
-    const start = (page - 1) * pageSize;
+    const start = (Math.min(page, totalPages) - 1) * pageSize;
     return filteredRequests.slice(start, start + pageSize);
-  }, [filteredRequests, page, pageSize]);
+  }, [filteredRequests, page, pageSize, totalPages]);
 
   // STR Action Handlers
   const handleSTRActionConfirm = async (notes?: string) => {
     if (!strAction) return;
     const { request, type } = strAction;
 
-    try {
-      if (type === "approve" || type === "reject") {
-        await api.put(`/api/stock-transfer-requests/${request.requestId}/status`, {
-          action: type === "approve" ? "Approve" : "Reject",
-          adminNotes: notes,
-          reviewedBy: "Admin",
-        });
-      } else if (type === "cancel") {
-        await api.put(`/api/stock-transfer-requests/${request.requestId}/cancel`, {
-          reason: notes,
-        });
-      }
-      refreshAll();
-    } catch (e: any) {
-      alert(e.response?.data?.message || "Failed to process request action.");
+    if (type === "approve" || type === "reject") {
+      await actionResponse(reviewRequest(request.requestId, {
+        action: type === "approve" ? "Approve" : "Reject", adminNotes: notes,
+      }));
+    } else {
+      await actionResponse(cancelRequest(request.requestId, { reason: notes }));
     }
+    toast.success("Request updated successfully.");
+    refreshAll();
   };
 
   const handleOpenDispatch = (req: StockTransferRequest) => {
-    const transferRef = req.transfers && req.transfers.length > 0 ? req.transfers[0] : null;
-    const firstItem = req.items?.[0];
-
-    const transferPayload: StockTransfer = {
-      transferId: transferRef ? transferRef.transferId : 0,
-      transferNumber: transferRef ? transferRef.transferNumber : "",
-      requestId: req.requestId,
-      requestNumber: req.requestNumber,
-      productId: firstItem ? firstItem.productId : 0,
-      productName: firstItem ? firstItem.productName : "Product",
-      variant: firstItem ? firstItem.variant : "",
-      sku: firstItem ? firstItem.sku : "",
-      sourceLocationId: 4,
-      sourceLocationName: "Commissary (Central Kitchen)",
-      destLocationId: req.toLocationId,
-      destLocationName: req.toLocationName,
-      transferQuantity: transferRef ? transferRef.transferQuantity : (firstItem?.requestedQuantity || 0),
-      status: transferRef ? (transferRef.status as any) : "Scheduled",
-      scheduledDate: transferRef?.scheduledDate || null,
-      transferDate: null,
-      dispatchedDate: null,
-      receivedDate: null,
-      driverName: transferRef?.driverName || "",
-      vehiclePlate: transferRef?.vehiclePlate || "",
-      courierName: transferRef?.courierName || "Lalamove",
-      proofOfReceipt: "",
-      priority: req.priority,
-      notes: "",
-      receivedBy: "",
-      createdAt: null,
-    };
-
-    setDispatchTargetTransfer(transferPayload);
+    const scheduled = req.transfers?.find(transfer => transfer.status === "Scheduled");
+    if (!scheduled) {
+      toast.error("No scheduled transfer is available to dispatch.");
+      return;
+    }
+    startTransition(async () => {
+      try {
+        const result = await actionResponse(listTransfers(new URLSearchParams({ search: scheduled.transferNumber, pageSize: "100" }).toString()));
+        const transfer: StockTransfer | undefined = result.data.data?.find((row: StockTransfer) => row.transferId === scheduled.transferId);
+        if (!transfer || transfer.status !== "Scheduled") throw new Error("This transfer is no longer scheduled. Refresh and retry.");
+        setDispatchTargetTransfer(transfer);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Unable to load transfer.");
+      }
+    });
   };
 
   return (
-    <div className="w-full min-h-full py-8 px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="w-full min-h-full py-6 px-4 sm:py-8 sm:px-6 md:px-8 space-y-6 animate-page-in">
       {/* Top Page Header (matches Inventory module allowance) */}
       <PageHeader
         title="Stock Transfers"
         description="Monitor, approve, schedule, and dispatch stock replenishment to branch stores"
         actions={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="outline"
               size="sm"
@@ -233,18 +165,16 @@ export default function StockTransferModule() {
               disabled={loading}
               className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
+              <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </Button>
 
-            {!isAdmin && (
-              <Button
-                type="button"
-                onClick={() => setOpenCreateSTR(true)}
-                className="flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-xs font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm h-10 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" /> Create Transfer Request
-              </Button>
-            )}
+            <Button
+              type="button"
+              onClick={() => setOpenCreateSTR(true)}
+              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Create Transfer Request
+            </Button>
           </div>
         }
       />
@@ -257,7 +187,7 @@ export default function StockTransferModule() {
         <div className="flex items-center gap-2 overflow-x-auto">
           <button
             type="button"
-            onClick={() => setActiveMainTab("transfers")}
+            onClick={() => startTransition(() => router.push("/stock-transfer"))}
             className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               activeMainTab === "transfers"
                 ? "border-foreground text-foreground"
@@ -274,7 +204,7 @@ export default function StockTransferModule() {
 
           <button
             type="button"
-            onClick={() => setActiveMainTab("locations")}
+            onClick={() => startTransition(() => router.push("/stock-transfer?tab=locations"))}
             className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               activeMainTab === "locations"
                 ? "border-foreground text-foreground"
@@ -288,7 +218,7 @@ export default function StockTransferModule() {
 
       {/* Content based on Primary Tab */}
       {activeMainTab === "locations" ? (
-        <LocationsTab />
+        <LocationsTab locations={locations} loading={loading} onRefresh={refreshAll} />
       ) : (
         <div className="space-y-5">
           {/* Search Filter Bar */}
@@ -314,33 +244,31 @@ export default function StockTransferModule() {
           <div className="border-b border-border overflow-x-auto pb-2">
             <div className="flex items-center gap-1.5 min-w-max">
               {/* Admin Requests Tab (Identical to Orders & Procurement PRTab!) */}
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveStatusTab("Requests");
-                    setPage(1);
-                  }}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeStatusTab === "Requests"
-                      ? "bg-foreground text-background shadow-xs"
-                      : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <span>Requests</span>
-                  {statusCounts.Requests > 0 && (
-                    <span
-                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                        activeStatusTab === "Requests"
-                          ? "bg-background text-foreground"
-                          : "bg-foreground/20 text-foreground"
-                      }`}
-                    >
-                      {statusCounts.Requests}
-                    </span>
-                  )}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveStatusTab("Requests");
+                  setPage(1);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeStatusTab === "Requests"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                <span>Requests</span>
+                {statusCounts.Requests > 0 && (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      activeStatusTab === "Requests"
+                        ? "bg-background text-foreground"
+                        : "bg-foreground/20 text-foreground"
+                    }`}
+                  >
+                    {statusCounts.Requests}
+                  </span>
+                )}
+              </button>
 
               {/* Standard Status Tabs */}
               {STATUS_TABS.map((tab) => {
@@ -357,7 +285,7 @@ export default function StockTransferModule() {
                     }}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                       isSelected
-                        ? "bg-foreground text-background shadow-xs"
+                        ? "bg-primary text-primary-foreground shadow-xs"
                         : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
                     }`}
                   >
@@ -395,7 +323,7 @@ export default function StockTransferModule() {
           {totalPages > 1 && (
             <div className="pt-2">
               <Pagination
-                currentPage={page}
+                currentPage={Math.min(page, totalPages)}
                 totalPages={totalPages}
                 totalCount={totalCount}
                 itemsPerPage={pageSize}
@@ -408,11 +336,11 @@ export default function StockTransferModule() {
 
       {/* Modals */}
       {/* 1. Create STR Modal */}
-      <CreateSTRModal
-        open={openCreateSTR}
+      {openCreateSTR && <CreateSTRModal
+        open
         onClose={() => setOpenCreateSTR(false)}
         onSuccess={refreshAll}
-      />
+      />}
 
       {/* 2. Schedule Transfer Modal */}
       <ScheduleTransferModal

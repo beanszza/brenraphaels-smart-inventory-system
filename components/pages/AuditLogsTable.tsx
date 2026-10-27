@@ -18,6 +18,7 @@ interface AuditLogsTableProps {
   currentPage: number;
   setCurrentPage: (p: number) => void;
   itemsPerPage?: number;
+  emptyMessage?: string;
 }
 
 export function summarizeActivity(activity: string): { label: string; full: string } {
@@ -74,11 +75,17 @@ export function parseEntitySummary(raw: string): { primary: string; secondary: s
   return { primary: raw, secondary: "" };
 }
 
+export function formatTimestamp(iso: string): string {
+  const date = new Date(iso);
+  return isNaN(date.getTime()) ? iso : date.toLocaleString();
+}
+
 export default function AuditLogsTable({
   logs,
   currentPage,
   setCurrentPage,
   itemsPerPage = 10,
+  emptyMessage = "No transaction log records match the selected filters.",
 }: AuditLogsTableProps) {
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
 
@@ -103,7 +110,7 @@ export default function AuditLogsTable({
               {paginatedLogs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                    No transaction log records match the selected filters.
+                    {emptyMessage}
                   </td>
                 </tr>
               ) : (
@@ -127,7 +134,7 @@ export default function AuditLogsTable({
                           type="button"
                           onClick={() => setSelectedLog(log)}
                           title="Click to view full event details"
-                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-muted/80 text-foreground border border-border hover:bg-foreground hover:text-background hover:border-foreground transition-all cursor-pointer shadow-xs group/btn"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-muted/80 text-foreground border border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer shadow-xs group/btn"
                         >
                           {getActivityIcon(log.activity)}
                           <span>{activitySummary.label}</span>
@@ -156,7 +163,7 @@ export default function AuditLogsTable({
                       <td className="whitespace-nowrap px-4 py-3.5 text-muted-foreground text-xs font-mono">
                         <div className="flex items-center gap-1.5">
                           <Clock size={13} className="text-muted-foreground" />
-                          <span>{log.timestamp}</span>
+                          <span>{formatTimestamp(log.timestamp)}</span>
                         </div>
                       </td>
 

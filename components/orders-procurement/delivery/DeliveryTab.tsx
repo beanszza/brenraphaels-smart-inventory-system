@@ -1,6 +1,9 @@
 "use client";
+import { OrdersSkeleton } from "@/components/orders-procurement/OrdersSkeleton";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { procurement } from "@/lib/orders/client";
+
+import React, { useState, useMemo, useTransition } from "react";
 import { Plus, Search, RefreshCw } from "lucide-react";
 import {
   Select,
@@ -11,7 +14,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
 import { Delivery, DeliveryStatus } from "../types";
 import { DeliveryTable } from "./DeliveryTable";
 import { CreateDeliveryModal } from "./CreateDeliveryModal";
@@ -20,22 +22,22 @@ import { MarkDispatchedModal } from "./MarkDispatchedModal";
 import { MarkArrivedModal } from "./MarkArrivedModal";
 import { CancelDeliveryModal } from "./CancelDeliveryModal";
 import Pagination from "@/components/Pagination";
-import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
 const STATUS_TABS: (DeliveryStatus | "All")[] = [
   "All",
   "Scheduled",
+  "In Transit",
   "Arrived",
   "Cancelled",
 ];
 
-export function DeliveryTab() {
-  const { isAdmin } = useAuth();
+export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery[] }) {
   const router = useRouter();
 
-  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
-  const [loading, setLoading] = useState(true);
+  const deliveries = initialDeliveries.map(d => ({ ...d, status: (String(d.status) === "InTransit" ? "In Transit" : d.status) as DeliveryStatus }));
+  const [loading, startRefresh] = useTransition();
+  const [notice, setNotice] = useState("");
   const [activeTab, setActiveTab] = useState<string>("All");
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("");
@@ -54,24 +56,8 @@ export function DeliveryTab() {
   const [arriveDelivery, setArriveDelivery] = useState<Delivery | null>(null);
   const [cancelDelivery, setCancelDelivery] = useState<Delivery | null>(null);
 
-  const fetchDeliveries = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await api.get("/api/deliveries?page=1&pageSize=1000");
-      if (res.data?.success) {
-        const raw = res.data.data?.items || res.data.data || [];
-        setDeliveries(raw);
-      }
-    } catch (err) {
-      console.error("Failed to fetch deliveries:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const fetchDeliveries = () => startRefresh(() => router.refresh());
 
-  useEffect(() => {
-    fetchDeliveries();
-  }, [fetchDeliveries]);
 
   // Counts per tab
   const counts = useMemo(() => {
@@ -129,6 +115,7 @@ export function DeliveryTab() {
 
   return (
     <div className="space-y-6 animate-page-in">
+      {notice && <p role="status" className="rounded-lg bg-primary/10 p-3 text-sm text-primary">{notice}</p>}
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -145,18 +132,16 @@ export function DeliveryTab() {
             disabled={loading}
             className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+            <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
 
-          {!isAdmin && (
-            <Button
-              type="button"
-              onClick={() => setOpenCreateModal(true)}
-              className="flex items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm h-10"
-            >
-              <Plus className="w-4 h-4" /> Create Delivery Order
-            </Button>
-          )}
+          <Button
+            type="button"
+            onClick={() => setOpenCreateModal(true)}
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+          >
+            <Plus className="w-4 h-4" /> Create Delivery Order
+          </Button>
         </div>
       </div>
 
@@ -219,7 +204,7 @@ export function DeliveryTab() {
                 }}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                   isSelected
-                    ? "bg-foreground text-background shadow-sm"
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
@@ -240,15 +225,14 @@ export function DeliveryTab() {
       </div>
 
       {/* Delivery Table */}
-      <DeliveryTable
+      {loading ? <OrdersSkeleton /> : (<DeliveryTable
         deliveries={paginatedList}
-        isAdmin={isAdmin}
         onView={(d) => setSelectedDelivery(d)}
         onDispatch={(d) => setDispatchDelivery(d)}
         onArrive={(d) => setArriveDelivery(d)}
         onCancel={(d) => setCancelDelivery(d)}
         onCreateGrn={(d) => handleCreateGrn(d)}
-      />
+      />)}
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -273,6 +257,7 @@ export function DeliveryTab() {
           onClose={() => setOpenCreateModal(false)}
           onSuccess={() => {
             setOpenCreateModal(false);
+            setNotice("Saved successfully.");
             fetchDeliveries();
           }}
         />
@@ -282,7 +267,6 @@ export function DeliveryTab() {
       {selectedDelivery && (
         <DeliveryDetailsModal
           delivery={selectedDelivery}
-          isAdmin={isAdmin}
           onClose={() => setSelectedDelivery(null)}
           onArrive={(d) => {
             setSelectedDelivery(null);
@@ -303,6 +287,7 @@ export function DeliveryTab() {
           onClose={() => setArriveDelivery(null)}
           onSuccess={() => {
             setArriveDelivery(null);
+            setNotice("Saved successfully.");
             fetchDeliveries();
           }}
         />
@@ -315,6 +300,7 @@ export function DeliveryTab() {
           onClose={() => setCancelDelivery(null)}
           onSuccess={() => {
             setCancelDelivery(null);
+            setNotice("Saved successfully.");
             fetchDeliveries();
           }}
         />

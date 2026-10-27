@@ -1,11 +1,12 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { Printer, AlertTriangle } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import api from "@/lib/api";
 import { GRN } from "./types";
 
 interface GrnDetailsModalProps {
@@ -29,7 +30,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
     setLoading(true);
     setError(null);
     try {
-      const res = await api.post(`/api/goods-receipts/${grn.grnId}/post`);
+      const res = await receiving.postReceipt(grn.grnId);
       if (res.data?.success) {
         onUpdated();
         onClose();
@@ -48,7 +49,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
     setLoading(true);
     setError(null);
     try {
-      const res = await api.post(`/api/goods-receipts/${grn.grnId}/cancel`);
+      const res = await receiving.cancelReceipt(grn.grnId);
       if (res.data?.success) {
         setCancelModalOpen(false);
         onUpdated();
@@ -183,7 +184,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
     <ModalWrapper open={open} title={`Goods Receipt Note — ${grn.grnNumber}`} onClose={onClose} size="max-w-4xl">
       <div className="space-y-5 text-foreground">
         {error && (
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl p-3">
+          <div role="alert" className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl p-3">
             {error}
           </div>
         )}
@@ -377,7 +378,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
+            className="rounded-xl bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
           >
             Close
           </button>
@@ -388,7 +389,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
               type="button"
               onClick={handlePost}
               disabled={loading}
-              className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? "Posting…" : "Post Goods Receipt Note"}
             </button>
@@ -434,7 +435,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
                     type="button"
                     disabled={loading}
                     onClick={executeCancel}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-foreground text-background hover:bg-foreground/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     {loading ? "Cancelling…" : "Confirm Cancel"}
                   </button>

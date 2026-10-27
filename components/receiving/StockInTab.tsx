@@ -1,6 +1,10 @@
 "use client";
+import { useRouter } from "next/navigation";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+
+
+import React, { useState, useMemo, useTransition } from "react";
 import { Search, MoreHorizontal, Eye, RefreshCw, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,17 +17,17 @@ import {
 } from "@/components/ui/select";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import Pagination from "@/components/Pagination";
-import api from "@/lib/api";
 import { StockIn } from "./types";
 import CreateStockInModal from "./CreateStockInModal";
 import StockInDetailsModal from "./StockInDetailsModal";
 
 type SubTab = "pending" | "approved" | "committed" | "draft" | "rejected";
 
-export default function StockInTab() {
+export default function StockInTab({ initialStockIns }: { initialStockIns: StockIn[] }) {
+  const router = useRouter();
   const [activeSubTab, setActiveSubTab] = useState<SubTab>("pending");
-  const [stockIns, setStockIns] = useState<StockIn[]>([]);
-  const [loading, setLoading] = useState(true);
+  const stockIns = initialStockIns;
+  const [loading, startRefresh] = useTransition();
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("All");
   const [page, setPage] = useState(1);
@@ -37,22 +41,7 @@ export default function StockInTab() {
   const [selectedStockIn, setSelectedStockIn] = useState<StockIn | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
-  const fetchStockIns = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get("/api/StockIns");
-      const list: StockIn[] = Array.isArray(res.data?.data) ? res.data.data : [];
-      setStockIns(list);
-    } catch (err) {
-      console.error("Error fetching Stock-Ins:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchStockIns();
-  }, [fetchStockIns]);
+  const fetchStockIns = () => startRefresh(() => router.refresh());
 
   // SubTab counts
   const counts = useMemo(() => {
@@ -133,7 +122,7 @@ export default function StockInTab() {
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
               activeSubTab === "pending"
-                ? "bg-foreground text-background"
+                ? "bg-primary text-primary-foreground"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -157,7 +146,7 @@ export default function StockInTab() {
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
               activeSubTab === "approved"
-                ? "bg-foreground text-background"
+                ? "bg-primary text-primary-foreground"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -181,7 +170,7 @@ export default function StockInTab() {
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
               activeSubTab === "committed"
-                ? "bg-foreground text-background"
+                ? "bg-primary text-primary-foreground"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -205,7 +194,7 @@ export default function StockInTab() {
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
               activeSubTab === "draft"
-                ? "bg-foreground text-background"
+                ? "bg-primary text-primary-foreground"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -229,7 +218,7 @@ export default function StockInTab() {
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
               activeSubTab === "rejected"
-                ? "bg-foreground text-background"
+                ? "bg-primary text-primary-foreground"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -255,13 +244,13 @@ export default function StockInTab() {
             disabled={loading}
             className="h-10 px-4 text-xs font-semibold rounded-xl border border-border bg-card hover:bg-muted text-foreground flex items-center gap-2 cursor-pointer shadow-xs"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 `} />
             Refresh
           </Button>
           <Button
             type="button"
             onClick={() => setCreateModalOpen(true)}
-            className="h-10 px-4 text-xs font-semibold rounded-xl bg-foreground text-background hover:bg-foreground/85 flex items-center gap-2 cursor-pointer shadow-xs"
+            className="h-10 px-4 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/85 flex items-center gap-2 cursor-pointer shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
             Create Stock-In
@@ -274,6 +263,7 @@ export default function StockInTab() {
         <div className="flex flex-1 items-center gap-2 px-2 bg-muted/20 h-full rounded-md">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <Input
+            aria-label="Search records"
             type="text"
             placeholder="Search by Stock-In number, Goods Receipt Note, or supplier..."
             value={search}
@@ -295,7 +285,7 @@ export default function StockInTab() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
                 <SelectValue placeholder="All Suppliers" />
               </SelectTrigger>
               <SelectContent align="end" className="text-xs z-[9999]">
@@ -313,9 +303,7 @@ export default function StockInTab() {
 
       {/* Table Section */}
       {loading ? (
-        <div className="rounded-xl border border-border bg-card p-12 text-center text-xs text-muted-foreground animate-pulse">
-          Loading Stock-In records…
-        </div>
+        <ReceivingSkeleton />
       ) : (
         <div className="rounded-xl border border-border bg-card shadow-sm overflow-visible">
           <table className="w-full text-left text-xs border-collapse">

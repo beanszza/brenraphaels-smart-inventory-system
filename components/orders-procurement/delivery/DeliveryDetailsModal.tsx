@@ -10,7 +10,6 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 
 interface DeliveryDetailsModalProps {
   delivery: Delivery | null;
-  isAdmin?: boolean;
   onClose: () => void;
   onArrive?: (delivery: Delivery) => void;
   onCancel?: (delivery: Delivery) => void;
@@ -19,7 +18,6 @@ interface DeliveryDetailsModalProps {
 
 export function DeliveryDetailsModal({
   delivery,
-  isAdmin = false,
   onClose,
   onArrive,
   onCancel,
@@ -91,7 +89,7 @@ export function DeliveryDetailsModal({
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs font-bold transition-all duration-500 z-10 ${
                         isActive
-                          ? "bg-foreground border-foreground text-background shadow-md scale-110"
+                          ? "bg-primary border-primary text-primary-foreground shadow-md scale-110"
                           : "bg-background border-muted text-muted-foreground"
                       }`}
                     >
@@ -274,7 +272,7 @@ export function DeliveryDetailsModal({
             Close
           </Button>
 
-          {!isAdmin && isCancellable && onCancel && (
+          {isCancellable && onCancel && (
             <Button
               type="button"
               variant="outline"
@@ -288,26 +286,26 @@ export function DeliveryDetailsModal({
             </Button>
           )}
 
-          {!isAdmin && (isScheduled || isInTransit) && onArrive && (
+          {(isScheduled || isInTransit) && onArrive && (
             <Button
               type="button"
               onClick={() => {
                 onClose();
                 onArrive(delivery);
               }}
-              className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
             >
               Confirm Arrival
             </Button>
           )}
 
-          {!isAdmin && isArrived && !delivery.grnNumber && (
+          {isArrived && !delivery.grnNumber && (
             <Button
               type="button"
               onClick={() => {
                 setShowCreateGrnModal(true);
               }}
-              className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
             >
               Create Goods Receipt Note
             </Button>

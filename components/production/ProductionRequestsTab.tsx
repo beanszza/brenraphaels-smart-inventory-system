@@ -1,4 +1,8 @@
 "use client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
+import { listProductionRequests as productionListProductionRequests } from "@/app/actions/production/requests";
+import { createBatch as productionCreateBatch } from "@/app/actions/production/batches";
+import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
@@ -7,65 +11,46 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Search, Plus, MoreHorizontal, FileText, Play } from "lucide-react";
 import Pagination from "@/components/Pagination";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { ProductionRequestEntity } from "./types";
 import ProductionRequestModal, { formatTimeTo12Hour } from "./ProductionRequestModal";
 import PrSummaryModal from "./PrSummaryModal";
+import { filterProductionRequests } from "@/lib/production/filters";
+
+const STATUS_TABS = [
+  "All",
+  "Pending Approval",
+  "Approved",
+  "Ready for Production",
+  "In Progress",
+  "Completed",
+  "Rejected",
+];
 
 interface ProductionRequestsTabProps {
-  isAdmin: boolean;
-  isInventoryManager: boolean;
-  isHeadCook: boolean;
+  initialRows: ProductionRequestEntity[];
   onNavigateToIssuance?: (prodReqId?: number) => void;
   onStartBatchAndTrack?: (batchId: number) => void;
-  currentUser?: string;
+  currentUser: string;
 }
 
 export default function ProductionRequestsTab({
-  isAdmin,
-  isInventoryManager,
-  isHeadCook,
+  initialRows,
   onNavigateToIssuance,
   onStartBatchAndTrack,
   currentUser,
 }: ProductionRequestsTabProps) {
-  const [requests, setRequests] = useState<ProductionRequestEntity[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [requests, setRequests] = useState<ProductionRequestEntity[]>(initialRows);
+  const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [priorityFilter, setPriorityFilter] = useState<string>("All");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const [startingId, setStartingId] = useState<number | null>(null);
 
-  // Status Tabs: Head Cook sees only Ready for Production, In Progress, Completed
-  // Inventory Manager & Admin see: All, Pending Approval, Approved, Ready for Production, In Progress, Completed, Rejected
   // NO DRAFT, NO CANCELLED!
-  const statusTabs = useMemo(() => {
-    if (isHeadCook && !isAdmin) {
-      return ["Ready for Production", "In Progress", "Completed"];
-    }
-    return [
-      "All",
-      "Pending Approval",
-      "Approved",
-      "Ready for Production",
-      "In Progress",
-      "Completed",
-      "Rejected",
-    ];
-  }, [isHeadCook, isAdmin]);
-
-  const defaultStatusTab = isHeadCook && !isAdmin ? "Ready for Production" : "All";
-  const [activeTab, setActiveTab] = useState<string>(defaultStatusTab);
-
-  // Keep active tab in sync if user changes account or role
-  useEffect(() => {
-    if (!statusTabs.includes(activeTab)) {
-      setActiveTab(isHeadCook && !isAdmin ? "Ready for Production" : "All");
-      setCurrentPage(1);
-    }
-  }, [statusTabs, activeTab, isHeadCook, isAdmin]);
+  const statusTabs = STATUS_TABS;
+  const [activeTab, setActiveTab] = useState<string>("All");
 
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -87,12 +72,7 @@ export default function ProductionRequestsTab({
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = {};
-      if (priorityFilter !== "All") params.priority = priorityFilter;
-      if (searchQuery.trim()) params.search = searchQuery.trim();
-      if (isHeadCook && !isAdmin) params.role = "head_cook";
-
-      const res = await api.get("/api/production-requests", { params });
+      const res = await actionResponse(productionListProductionRequests());
       if (res.data?.success && Array.isArray(res.data.data)) {
         setRequests(res.data.data);
       }
@@ -102,11 +82,8 @@ export default function ProductionRequestsTab({
     } finally {
       setLoading(false);
     }
-  }, [priorityFilter, searchQuery, isHeadCook, isAdmin]);
+  }, []);
 
-  useEffect(() => {
-    fetchRequests();
-  }, [fetchRequests]);
 
   // Status helper mapping
   const matchesTab = (reqStatus: string, tabName: string) => {
@@ -124,18 +101,19 @@ export default function ProductionRequestsTab({
   };
 
   // Status counts for status tabs
+  const visibleRequests = useMemo(() => filterProductionRequests(requests, searchQuery, priorityFilter), [requests, searchQuery, priorityFilter]);
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     statusTabs.forEach((st) => {
-      counts[st] = requests.filter((r) => matchesTab(r.status, st)).length;
+      counts[st] = visibleRequests.filter((r) => matchesTab(r.status, st)).length;
     });
     return counts;
-  }, [requests, statusTabs]);
+  }, [visibleRequests, statusTabs]);
 
   // Filter by active status tab
   const filteredRequests = useMemo(() => {
-    return requests.filter((r) => matchesTab(r.status, activeTab));
-  }, [requests, activeTab]);
+    return visibleRequests.filter(r => matchesTab(r.status, activeTab));
+  }, [visibleRequests, activeTab]);
 
   const handleOpenNewModal = () => {
     setSelectedRequest(null);
@@ -153,11 +131,11 @@ export default function ProductionRequestsTab({
 
     setStartingId(req.prodReqId);
     try {
-      const res = await api.post("/api/ProductionBatches", {
+      const res = await actionResponse(productionCreateBatch({
         prodReqId: req.prodReqId,
-        assignedCook: isHeadCook ? (currentUser || "Head Cook") : "Head Cook",
+        assignedCook: currentUser,
         notes: `Started from Request ${req.reqNumber}`,
-      });
+      }));
 
       if (res.data?.success && res.data.data) {
         toast.success(`Production batch ${res.data.data.batchNumber} started!`);
@@ -190,23 +168,16 @@ export default function ProductionRequestsTab({
         <div>
           <h2 className="text-2xl font-bold text-foreground">Production Requests</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {isHeadCook && !isAdmin
-              ? "View ready for production requests, start kitchen batches, and track progress."
-              : isInventoryManager
-              ? "Plan production volumes, verify automated BOM lot reservations, and request supplies."
-              : "Review, approve, and track production requests."}
+            Plan production volumes, verify automated BOM lot reservations, review and approve requests, and start kitchen batches.
           </p>
         </div>
-        {/* Only Inventory Manager or Admin can create production requests */}
-        {(isInventoryManager || isAdmin) && !isHeadCook && (
-          <Button
-            onClick={handleOpenNewModal}
-            className="flex items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Production Request</span>
-          </Button>
-        )}
+        <Button
+          onClick={handleOpenNewModal}
+          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+        >
+          <Plus className="w-4 h-4" />
+          <span>New Production Request</span>
+        </Button>
       </div>
 
       {/* Filters Bar (Search & Priority Filter - Top orientation matching PR) */}
@@ -267,7 +238,7 @@ export default function ProductionRequestsTab({
                 }}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   isSelected
-                    ? "bg-foreground text-background shadow-sm"
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
@@ -306,7 +277,7 @@ export default function ProductionRequestsTab({
               {loading ? (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-xs text-muted-foreground animate-pulse">
-                    Loading production requests...
+                    <ProductionSkeleton />
                   </td>
                 </tr>
               ) : paginatedRequests.length === 0 ? (
@@ -372,7 +343,7 @@ export default function ProductionRequestsTab({
                         <span
                           className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
                             isHigh
-                              ? "bg-foreground text-background border-foreground"
+                              ? "bg-primary text-primary-foreground border-primary"
                               : isLow
                               ? "bg-muted/40 text-muted-foreground border-border/60"
                               : "bg-muted text-foreground border-border"
@@ -401,7 +372,7 @@ export default function ProductionRequestsTab({
                               size="sm"
                               onClick={(e) => handleStartProduction(req, e)}
                               disabled={startingId === req.prodReqId}
-                              className="h-7 text-xs font-semibold px-2.5 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors shadow-sm"
+                              className="h-7 text-xs font-semibold px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
                             >
                               <Play className="w-3 h-3 mr-1 fill-current" />
                               <span>{startingId === req.prodReqId ? "Starting..." : "Start"}</span>
@@ -433,7 +404,7 @@ export default function ProductionRequestsTab({
                                 </button>
 
                                 {/* Issue Materials shortcut for Inventory Manager & Admin on Approved */}
-                                {req.status === "Approved" && (isInventoryManager || isAdmin) && onNavigateToIssuance && (
+                                {req.status === "Approved" && onNavigateToIssuance && (
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -461,7 +432,7 @@ export default function ProductionRequestsTab({
                                 )}
 
                                 {/* Admin Approval Action on Pending Approval */}
-                                {isAdmin && req.status === "Pending Approval" && (
+                                {req.status === "Pending Approval" && (
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -475,7 +446,7 @@ export default function ProductionRequestsTab({
                                 )}
 
                                 {/* In Progress items shortcut to track (Head Cook & Admin only) */}
-                                {isInProd && (isHeadCook || isAdmin) && onStartBatchAndTrack && req.batches?.[0]?.batchId && (
+                                {isInProd && onStartBatchAndTrack && req.batches?.[0]?.batchId && (
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -524,8 +495,6 @@ export default function ProductionRequestsTab({
           }
         }}
         initialRequest={selectedRequest}
-        isAdmin={isAdmin}
-        isInventoryManager={isInventoryManager}
         onProceedToIssuance={(id) => onNavigateToIssuance && onNavigateToIssuance(id)}
         onViewPrSummary={(data) => setPrSummaryData(data)}
         onStartProduction={handleStartProduction}

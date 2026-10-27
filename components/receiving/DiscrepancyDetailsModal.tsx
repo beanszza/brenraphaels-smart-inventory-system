@@ -1,9 +1,10 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useState } from "react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import api from "@/lib/api";
 import { Discrepancy } from "./types";
 import { HR_EMPLOYEES } from "@/lib/employees";
 
@@ -45,7 +46,7 @@ export default function DiscrepancyDetailsModal({
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.post(`/api/Discrepancies/${discrepancy.discrepancyId}/resolve`, {
+      const res = await receiving.resolveDiscrepancy(discrepancy.discrepancyId, {
         resolutionType: type,
         resolutionNotes: resolutionNotes || defaultNotes,
       });
@@ -70,10 +71,9 @@ export default function DiscrepancyDetailsModal({
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.post(`/api/Discrepancies/${discrepancy.discrepancyId}/loss-report`, {
+      const res = await receiving.resolveAsLoss(discrepancy.discrepancyId, {
         reason: lossReason.trim(),
         notes: lossNotes.trim() || undefined,
-        authorisedBy: lossAuthorisedBy.trim(),
       });
       if (res.data?.success) {
         onResolved();
@@ -92,7 +92,7 @@ export default function DiscrepancyDetailsModal({
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.post(`/api/Discrepancies/${discrepancy.discrepancyId}/return-to-supplier`, {
+      const res = await receiving.resolveAsReturn(discrepancy.discrepancyId, {
         reason: rtvReason.trim() || `Return arising from Discrepancy ${discrepancy.discrepancyNumber}`,
         carrier: rtvCarrier.trim() || undefined,
         notes: rtvNotes.trim() || undefined,
@@ -119,7 +119,7 @@ export default function DiscrepancyDetailsModal({
     >
       <div className="space-y-6 text-foreground">
         {error && (
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl p-3">
+          <div role="alert" className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl p-3">
             {error}
           </div>
         )}
@@ -283,7 +283,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     onClick={handleCreateLossReport}
                     disabled={submitting}
-                    className="bg-foreground text-background rounded-lg px-4 py-1.5 text-xs font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="bg-primary text-primary-foreground rounded-lg px-4 py-1.5 text-xs font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {submitting ? "Writing Off..." : "Confirm Loss Report"}
                   </button>
@@ -347,7 +347,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     onClick={handleCreateRtv}
                     disabled={submitting}
-                    className="bg-foreground text-background rounded-lg px-4 py-1.5 text-xs font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="bg-primary text-primary-foreground rounded-lg px-4 py-1.5 text-xs font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {submitting ? "Submitting..." : "Submit Return Request"}
                   </button>
@@ -404,7 +404,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("loss")}
-                    className="rounded-xl bg-foreground text-background px-4 py-2.5 text-xs font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    className="rounded-xl bg-primary text-primary-foreground px-4 py-2.5 text-xs font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                   >
                     Create Loss Report
                   </button>
@@ -426,7 +426,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("rtv")}
-                    className="rounded-xl bg-foreground text-background px-4 py-2.5 text-xs font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    className="rounded-xl bg-primary text-primary-foreground px-4 py-2.5 text-xs font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                   >
                     Request Return to Supplier
                   </button>
@@ -453,7 +453,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("rtv")}
-                    className="rounded-xl bg-foreground text-background px-4 py-2.5 text-xs font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    className="rounded-xl bg-primary text-primary-foreground px-4 py-2.5 text-xs font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                   >
                     Request Return to Supplier
                   </button>

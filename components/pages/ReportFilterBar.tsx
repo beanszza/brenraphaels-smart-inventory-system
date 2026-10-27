@@ -58,7 +58,7 @@ export default function ReportFilterBar({
               onClick={() => setFilterMode("all")}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 filterMode === "all"
-                  ? "bg-foreground text-background shadow-sm font-bold"
+                  ? "bg-primary text-primary-foreground shadow-sm font-bold"
                   : "text-foreground hover:text-foreground hover:bg-card/60"
               }`}
             >
@@ -69,7 +69,7 @@ export default function ReportFilterBar({
               onClick={() => setFilterMode("specific")}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 filterMode === "specific"
-                  ? "bg-foreground text-background shadow-sm font-bold"
+                  ? "bg-primary text-primary-foreground shadow-sm font-bold"
                   : "text-foreground hover:text-foreground hover:bg-card/60"
               }`}
             >
@@ -80,7 +80,7 @@ export default function ReportFilterBar({
               onClick={() => setFilterMode("range")}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 filterMode === "range"
-                  ? "bg-foreground text-background shadow-sm font-bold"
+                  ? "bg-primary text-primary-foreground shadow-sm font-bold"
                   : "text-foreground hover:text-foreground hover:bg-card/60"
               }`}
             >

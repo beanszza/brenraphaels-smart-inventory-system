@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
+import { TransferSkeleton } from "./TransferSkeleton";
 import { Eye, Truck, X } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransfer } from "./types";
-import { useAuth } from "@/context/AuthContext";
 
 interface STFTableProps {
   transfers: StockTransfer[];
@@ -21,15 +21,8 @@ export function STFTable({
   onDispatch,
   onCancel,
 }: STFTableProps) {
-  const { isAdmin } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="rounded-2xl border border-border bg-card p-12 text-center text-sm text-muted-foreground animate-pulse">
-        Loading formal stock transfers...
-      </div>
-    );
-  }
+  if (loading) return <TransferSkeleton />;
 
   if (transfers.length === 0) {
     return (
@@ -90,7 +83,7 @@ export function STFTable({
                   </td>
 
                   <td className="px-5 py-4 text-muted-foreground">
-                    {st.scheduledDate ? new Date(st.scheduledDate).toLocaleDateString() : "—"}
+                    {st.scheduledDate ? new Date(st.scheduledDate).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" }) : "—"}
                   </td>
 
                   <td className="px-5 py-4 text-muted-foreground">
@@ -112,14 +105,14 @@ export function STFTable({
                   >
                     <div className="flex items-center justify-end gap-1.5">
                       {/* Inventory Manager Actions (Admin has NO write access here!) */}
-                      {!isAdmin && isScheduled && (
+                      {isScheduled && (
                         <>
                           {onDispatch && (
                             <button
                               type="button"
                               onClick={() => onDispatch(st)}
                               title="Dispatch Transfer"
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-foreground text-background text-xs font-semibold hover:bg-foreground/85 transition-colors shadow-xs"
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/85 transition-colors shadow-xs"
                             >
                               <Truck className="w-3.5 h-3.5" />
                               <span>Dispatch</span>

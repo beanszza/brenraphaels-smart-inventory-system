@@ -1,14 +1,15 @@
 "use client";
 
+import { procurement } from "@/lib/orders/client";
+
 import React, { useState } from "react";
 import { AlertCircle, Upload, Check, Trash2, Calendar, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { Delivery } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { useAuth } from "@/context/AuthContext";
+import { useStaff } from "@/context/StaffContext";
 import { HR_EMPLOYEES } from "@/lib/employees";
 
 interface MarkArrivedModalProps {
@@ -22,12 +23,8 @@ export function MarkArrivedModal({
   onClose,
   onSuccess,
 }: MarkArrivedModalProps) {
-  const { user } = useAuth();
+  const defaultReceiver = useStaff().name;
   if (!delivery) return null;
-
-  const defaultReceiver = user?.firstName
-    ? `${user.firstName} ${user.lastName || ""}`.trim()
-    : (user?.username || "Warehouse Officer");
 
   const [actualArrivalDate, setActualArrivalDate] = useState(
     new Date().toISOString().slice(0, 10)
@@ -88,20 +85,16 @@ export function MarkArrivedModal({
       };
 
       // Try direct arrive endpoint
-      let res = await api.put(
-        `/api/deliveries/${delivery.deliveryId}/arrive`,
-        payload
+      let res = await procurement.arriveDelivery(delivery.deliveryId, payload
       ).catch(async (err) => {
         // If transitioning from Scheduled requires dispatch first on older backend
         if (delivery.status === "Scheduled") {
           try {
-            await api.put(`/api/deliveries/${delivery.deliveryId}/dispatch`, {
+            await procurement.dispatchDelivery(delivery.deliveryId, {
               dispatchedDate: new Date().toISOString(),
               carrier: delivery.carrier || "In-House Logistics",
             });
-            return await api.put(
-              `/api/deliveries/${delivery.deliveryId}/arrive`,
-              payload
+            return await procurement.arriveDelivery(delivery.deliveryId, payload
             );
           } catch {
             throw err;
@@ -326,7 +319,7 @@ export function MarkArrivedModal({
           <Button
             type="submit"
             disabled={submitting || !isFormValid}
-            className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             {submitting ? "Confirming..." : "Confirm Arrival"}
           </Button>

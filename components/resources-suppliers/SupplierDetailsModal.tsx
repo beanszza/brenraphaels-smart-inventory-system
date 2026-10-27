@@ -1,10 +1,12 @@
 "use client";
 
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "./ModalWrapper";
 import { Supplier } from "./types";
-import api from "@/lib/api";
+import { loadSupplierDetails } from "@/lib/resources-suppliers/actions";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Package, Clock, ShoppingCart } from "lucide-react";
 
 interface CatalogItem {
@@ -39,68 +41,35 @@ function formatDate(dateStr: string | null | undefined): string {
   return d.toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" });
 }
 
-export default function SupplierDetailsModal({
+export default function SupplierDetailsModal(props: SupplierDetailsModalProps) {
+  return props.supplier ? <SupplierDetailsModalContent key={props.supplier.supplierId} {...props} /> : null;
+}
+
+function SupplierDetailsModalContent({
   supplier,
   onClose,
 }: SupplierDetailsModalProps) {
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  const [error, setError] = useState("");
   useEffect(() => {
-    if (!supplier) {
-      setCatalog([]);
-      setRecentOrders([]);
-      return;
-    }
-
-    const loadDetails = async () => {
-      setLoading(true);
-      try {
-        const [catRes, poRes] = await Promise.allSettled([
-          api.get(`/api/supplier-items/by-supplier/${supplier.supplierId}`).catch(() =>
-            api.get(`/api/SupplierItems/by-supplier/${supplier.supplierId}`)
-          ),
-          api.get(`/api/purchase-orders?pageSize=50`),
-        ]);
-
-        if (catRes.status === "fulfilled" && catRes.value?.data?.success) {
-          setCatalog(catRes.value.data.data || []);
-        }
-        if (poRes.status === "fulfilled" && poRes.value?.data?.success) {
-          const allPOs = poRes.value.data.data?.items || poRes.value.data.data || [];
-          const filtered = allPOs
-            .filter((po: any) => po.supplierId === supplier.supplierId)
-            .slice(0, 5)
-            .map((po: any) => ({
-              poId: po.poId,
-              poNumber: po.poNumber,
-              orderDate: po.orderDate,
-              status: po.status,
-              totalAmount: po.totalAmount,
-              itemCount: (po.items || []).length,
-            }));
-          setRecentOrders(filtered);
-        }
-      } catch (err) {
-        console.error("Failed to load supplier details", err);
-      } finally {
-        setLoading(false);
+    let cancelled = false;
+    if (!supplier) return;
+    loadSupplierDetails(supplier.supplierId).then(data => {
+      if (!cancelled) {
+        setCatalog(data.catalog);
+        setRecentOrders(data.recentOrders);
       }
-    };
-
-    loadDetails();
+    }).catch(() => {
+      if (!cancelled) setError("Unable to load details. Close and reopen to try again.");
+    }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [supplier]);
 
   if (!supplier) return null;
 
-  const statusColor = (status: string) => {
-    const s = status.toLowerCase();
-    if (s === "delivered" || s === "completed" || s === "received") return "text-foreground bg-muted border-border";
-    if (s === "pending" || s === "draft") return "text-muted-foreground bg-muted/50 border-border";
-    if (s === "cancelled" || s === "rejected") return "text-muted-foreground bg-muted/30 border-border line-through";
-    return "text-muted-foreground bg-muted border-border";
-  };
 
   return (
     <ModalWrapper
@@ -110,6 +79,7 @@ export default function SupplierDetailsModal({
       size="max-w-3xl"
     >
       <div className="space-y-6 max-h-[75vh] overflow-y-auto pr-1">
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         {/* Header */}
         {supplier.supplierCode && (
           <div className="flex items-center justify-end pb-3 border-b border-border">
@@ -149,7 +119,7 @@ export default function SupplierDetailsModal({
           </div>
 
           {loading ? (
-            <div className="py-6 text-center text-xs text-muted-foreground">Loading catalog...</div>
+            <Skeleton aria-label="Loading details" className="m-4 h-16" />
           ) : catalog.length === 0 ? (
             <div className="py-6 text-center text-xs text-muted-foreground">
               No items linked to this supplier.
@@ -179,9 +149,7 @@ export default function SupplierDetailsModal({
                       </td>
                       <td className="px-2.5 py-2.5">
                         {ci.isPreferred && (
-                          <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-foreground border border-border">
-                            ★ Preferred
-                          </span>
+                          <StatusBadge status="Preferred" />
                         )}
                       </td>
                     </tr>
@@ -202,7 +170,7 @@ export default function SupplierDetailsModal({
           </div>
 
           {loading ? (
-            <div className="py-6 text-center text-xs text-muted-foreground">Loading orders...</div>
+            <Skeleton aria-label="Loading details" className="m-4 h-16" />
           ) : recentOrders.length === 0 ? (
             <div className="py-6 text-center text-xs text-muted-foreground">
               No purchase orders found for this supplier.
@@ -225,9 +193,7 @@ export default function SupplierDetailsModal({
                       <td className="px-2.5 py-2.5 font-mono font-semibold text-foreground">{order.poNumber}</td>
                       <td className="px-2.5 py-2.5 text-muted-foreground">{formatDate(order.orderDate)}</td>
                       <td className="px-2.5 py-2.5">
-                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-semibold border ${statusColor(order.status)}`}>
-                          {order.status}
-                        </span>
+                        <StatusBadge status={order.status} />
                       </td>
                       <td className="px-2.5 py-2.5 text-right text-muted-foreground">
                         {order.itemCount} item{order.itemCount !== 1 ? "s" : ""}
@@ -247,7 +213,7 @@ export default function SupplierDetailsModal({
           <Button
             variant="outline"
             onClick={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors"
+            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             Close
           </Button>

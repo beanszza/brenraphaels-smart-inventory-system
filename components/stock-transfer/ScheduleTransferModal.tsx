@@ -1,9 +1,11 @@
 "use client";
+import { toast } from "sonner";
+import { actionResponse } from "@/lib/resources/action-response";
+import { scheduleTransfer } from "@/app/actions/stock-transfer/transfers";
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, Calendar, Truck, AlertCircle, Package } from "lucide-react";
-import api from "@/lib/api";
 import { StockTransferRequest, STRItem } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -90,6 +92,7 @@ export function ScheduleTransferModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setFormError(null);
 
     if (!selectedProductId) {
@@ -118,15 +121,16 @@ export function ScheduleTransferModal({
         notes: notes.trim() || null,
       };
 
-      const res = await api.post("/api/stock-transfers", payload);
+      const res = await actionResponse(scheduleTransfer(payload));
       if (res.data?.success) {
+        toast.success("Transfer scheduled.");
         onSuccess();
         onClose();
       } else {
         setFormError(res.data?.message || "Failed to schedule transfer.");
       }
-    } catch (err: any) {
-      setFormError(err.response?.data?.message || err.message || "Failed to schedule transfer.");
+    } catch (err: unknown) {
+      setFormError((err instanceof Error ? err.message : null) || "Failed to schedule transfer.");
     } finally {
       setLoading(false);
     }
@@ -365,7 +369,7 @@ export function ScheduleTransferModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 rounded-xl bg-foreground px-6 py-2.5 text-xs font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
             >
               {loading ? "Scheduling..." : "Confirm & Schedule Transfer"}
             </button>

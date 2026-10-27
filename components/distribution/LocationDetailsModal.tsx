@@ -1,5 +1,7 @@
 "use client";
 
+import { StatusBadge } from "@/components/shared/StatusBadge";
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
@@ -20,11 +22,7 @@ export default function LocationDetailsModal({
     <ModalWrapper open={!!location} title={`Location Details - ${location.name}`} onClose={onClose} size="max-w-xl">
       <div className="space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-border">
-          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-            location.status === "Active" ? "bg-foreground text-background border border-foreground font-semibold" : "bg-muted/40 text-muted-foreground border border-border"
-          }`}>
-            {location.status}
-          </span>
+          <StatusBadge status={location.status} />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -43,7 +41,7 @@ export default function LocationDetailsModal({
         </div>
 
         <div className="flex justify-end pt-3 border-t border-border">
-          <Button variant="outline" onClick={onClose} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors">
+          <Button variant="outline" onClick={onClose} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
             Close
           </Button>
         </div>

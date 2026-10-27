@@ -4,15 +4,28 @@ The application currently runs in hybrid mode. Migrated endpoints are implemente
 
 ## Migrated modules
 
-- Categories and units of measure
-- Items
-- Suppliers
-- Finished products, including image upload
-- Recipes
-- Purchase requisitions and status transitions
-- Purchase orders, receipt upload, status transitions, and PR quantity summaries
-- Deliveries and delivery status transitions
-- Goods receipts and GRN status transitions
+Resources & Suppliers now uses guarded server actions under `app/actions/resources` for
+items, suppliers, supplier-item links, recipes, categories, units and locations. Its page
+loads initial data on the server; its HTTP handlers have been removed. Audit logs are
+read on the server through the gateway. See the README for the action and audit contract.
+
+Orders & Procurement now uses guarded server actions under `app/actions/orders` for
+purchase requisitions, purchase orders (with receipts uploaded straight to file storage),
+deliveries, MRP planning and reports, and its pages check the Module on the server. Its HTTP
+handlers have been removed. Goods Receiving and Resources & Suppliers read the orders and
+deliveries they show through their own guarded actions (`app/actions/receiving/procurement-reads.ts`,
+`app/actions/resources/orders.ts`), so they need not hold Orders & Procurement.
+
+Production & Quality now uses guarded server actions under `app/actions/production`
+for requests, material issuance, batches, QA inspections, recipes and finished products.
+Product and batch images upload directly to file storage through guarded actions. Recipe
+operations are shared with Resources & Suppliers, with each entry point checking its own
+Module. State changes emit audit events after commit and approvals notify the appropriate
+Known Staff. All Production & Quality route handlers and their callers have been removed.
+See `docs/ticket-25-verification.md` for verification and acceptance limits.
+
+Stock Transfer is the remaining business Module with App Router handlers. The Portal
+handoff and logout handlers remain as authentication plumbing.
 
 The Prisma schema in `prisma/schema.prisma` maps the existing PostgreSQL database. Generate the client after changing it:
 
@@ -32,6 +45,6 @@ Read-only smoke tests have been run successfully against the configured database
 
 ## Remaining .NET-backed modules
 
-The most visible remaining endpoints are production batches, supplier-item catalog management, inventory and lots, stock transfers and locations, cycle counts, quality inspections, stock-in and put-away, MRP, reports, traceability, valuation, and authentication. Existing calls under `/api/scms/*`, plus unmatched `/api/*` paths, continue to use the configured .NET services until each module is migrated.
+The most visible remaining endpoints are production batches, inventory and lots, stock transfers, cycle counts, quality inspections, stock-in and put-away, traceability, valuation, and authentication.
 
 When adding a local dynamic route, keep the generic legacy proxy in the `fallback` rewrite phase. Moving it to `beforeFiles` or a flat rewrite array causes the proxy to intercept local `[id]` handlers.

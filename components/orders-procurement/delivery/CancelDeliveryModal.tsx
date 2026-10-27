@@ -1,11 +1,12 @@
 "use client";
 
+import { procurement } from "@/lib/orders/client";
+
 import React, { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { Delivery } from "../types";
 
 interface CancelDeliveryModalProps {
@@ -41,9 +42,7 @@ export function CancelDeliveryModal({
 
     try {
       setSubmitting(true);
-      const res = await api.put(
-        `/api/deliveries/${delivery.deliveryId}/cancel`,
-        { reason: reason.trim() }
+      const res = await procurement.cancelDelivery(delivery.deliveryId, { reason: reason.trim() }
       );
 
       if (res.data?.success) {

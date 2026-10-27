@@ -1,10 +1,11 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, ChevronRight, ClipboardCheck } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { QAInspection } from "./types";
 
 interface QaInspectionModalProps {
@@ -197,7 +198,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
       .join("\n");
 
     try {
-      const res = await api.post(`/api/QualityInspections/${inspection.inspectionId}/complete`, {
+      const res = await receiving.completeInspection(inspection.inspectionId, {
         ...payload,
         overallNotes: inspectionNotes || undefined,
       });
@@ -235,7 +236,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
     >
       <div className="space-y-6 text-foreground">
         {error && (
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl p-3">
+          <div role="alert" className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl p-3">
             {error}
           </div>
         )}
@@ -422,7 +423,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
               >
                 Close
               </button>
@@ -440,7 +441,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                   type="button"
                   onClick={handleSubmit}
                   disabled={submitting || mismatch || missingDefectReasons}
-                  className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
                   {submitting ? "Submitting..." : "Complete Quality Assurance Inspection"}
                 </button>
@@ -505,7 +506,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                     type="button"
                     disabled={submitting}
                     onClick={executeSubmit}
-                    className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50"
                   >
                     {submitting ? "Processing..." : "Confirm & Save"}
                   </button>

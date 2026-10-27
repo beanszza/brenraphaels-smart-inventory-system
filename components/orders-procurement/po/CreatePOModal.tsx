@@ -1,4 +1,11 @@
 "use client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+import { procurement } from "@/lib/orders/client";
+
+import { supplierItemsByItem, supplierItemsBySupplier } from "@/app/actions/orders/catalog";
+import { actionResponse } from "@/lib/resources/action-response";
+
 
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -8,16 +15,14 @@ import {
   Search,
   Users,
   ClipboardList,
-  Loader2,
   CheckCircle2,
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { PurchaseRequisition, PurchaseOrderPO } from "../types";
-import { useAuth } from "@/context/AuthContext";
+import { useStaff } from "@/context/StaffContext";
 
 interface ItemRow {
   itemId: number;
@@ -49,7 +54,7 @@ const fmtCurrency = (n: number) =>
   new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", minimumFractionDigits: 2 }).format(n);
 
 export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, onClose, onSuccess }: CreatePOModalProps) {
-  const { user } = useAuth();
+  const staff = useStaff();
 
   const [step, setStep] = useState(1);
 
@@ -138,14 +143,14 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
   const fetchApprovedPRs = async () => {
     setLoadingPRs(true);
     try {
-      const res = await api.get("/api/purchase-requisitions?status=Approved");
+      const res = await procurement.listRequisitions("Approved");
       if (res.data?.success) {
         const prs: PurchaseRequisition[] = res.data.data || [];
         const eligible: PurchaseRequisition[] = [];
         await Promise.all(
           prs.map(async (pr) => {
             try {
-              const ordRes = await api.get(`/api/purchase-orders/pr/${pr.prId}/ordered-qty`);
+              const ordRes = await procurement.orderedQuantities(pr.prId);
               const orderedMap: Record<number, number> = {};
               if (ordRes.data?.success && Array.isArray(ordRes.data.data)) {
                 ordRes.data.data.forEach((o: any) => {
@@ -168,7 +173,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
         setApprovedPRs(eligible);
       }
     } catch (e) {
-      console.error("Failed to fetch PRs:", e);
+      setErrors(p => ({ ...p, general: "Requisitions could not be loaded. Please retry." }));
     } finally {
       setLoadingPRs(false);
     }
@@ -176,7 +181,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
 
   const fetchNextPoNumber = async () => {
     try {
-      const res = await api.get("/api/purchase-orders/next-number");
+      const res = await procurement.nextOrderNumber();
       if (res.data?.success && res.data.data) {
         setNextPoNumber(res.data.data);
       }
@@ -194,7 +199,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
       await Promise.all(
         itemIds.map(async (itemId) => {
           try {
-            const res = await api.get(`/api/supplier-items/by-item/${itemId}`);
+            const res = await actionResponse(supplierItemsByItem(itemId));
             if (res.data?.success) {
               (res.data.data || []).forEach((s: any) => {
                 if (!supplierMap.has(s.supplierId)) {
@@ -202,10 +207,12 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
                 }
               });
             }
-          } catch {}
+          } catch (error) { throw error; }
         })
       );
       setEligibleSuppliers(Array.from(supplierMap.values()));
+    } catch {
+      setErrors(p => ({ ...p, general: "Supplier choices could not be loaded. Please retry." }));
     } finally {
       setLoadingSuppliers(false);
     }
@@ -216,8 +223,8 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
     try {
       // Fetch supplier catalog and already-ordered quantities in parallel
       const [catalogRes, orderedRes] = await Promise.all([
-        api.get(`/api/supplier-items/by-supplier/${supplierId}`),
-        api.get(`/api/purchase-orders/pr/${pr.prId}/ordered-qty`),
+        actionResponse(supplierItemsBySupplier(supplierId)),
+        procurement.orderedQuantities(pr.prId),
       ]);
 
       const catalog: any[] = catalogRes.data?.success ? catalogRes.data.data || [] : [];
@@ -252,7 +259,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
 
       setItemRows(rows);
     } catch (e) {
-      console.error("Failed to fetch supplier items:", e);
+      setErrors(p => ({ ...p, general: "Supplier items could not be loaded. Please retry." }));
     } finally {
       setLoadingItems(false);
     }
@@ -331,26 +338,18 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
         prId: selectedPR?.prId ?? initialPo?.prId ?? null,
         supplierId: selectedSupplierId,
         totalAmount,
-        requestedBy: user?.firstName
-          ? `${user.firstName} ${user.lastName || ""}`.trim()
-          : user?.username || "Inventory Manager",
-        initialStatus,
-        items: activeRows.map((row) => {
-          const qty = parseFloat(row.orderQty) || 1;
-          const tot = parseFloat(row.totalPrice) || 0;
-          return {
-            itemId: row.itemId,
-            poItemQuantity: qty,
-            purchaseUomId: row.purchaseUomId || undefined,
-            totalPrice: tot,
-            unitPrice: tot / qty,
-          };
-        }),
+        requestedBy: staff.name,
+        initialStatus: initialStatus === "Pending Approval" ? "PendingApproval" : initialStatus,
+        items: activeRows.map((row) => ({
+          itemId: row.itemId,
+          poItemQuantity: parseFloat(row.orderQty),
+          purchaseUomId: row.purchaseUomId || undefined,
+        })),
       };
 
       const res = isEdit && initialPo?.poId
-        ? await api.put(`/api/purchase-orders/${initialPo.poId}`, payload)
-        : await api.post("/api/purchase-orders", payload);
+        ? await procurement.updateOrder(initialPo.poId, payload)
+        : await procurement.createOrder(payload);
 
       if (res.data?.success) {
         onSuccess();
@@ -395,7 +394,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
     >
       <div className="space-y-6">
         {errors.general && (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-center justify-between animate-in fade-in-50">
+          <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-center justify-between animate-in fade-in-50">
             <span className="font-medium">{errors.general}</span>
             <button
               type="button"
@@ -425,7 +424,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
                     step > s ? "cursor-pointer hover:bg-muted/80" : ""
                   } ${
                     step === s
-                      ? "bg-foreground text-background"
+                      ? "bg-primary text-primary-foreground"
                       : step > s
                       ? "bg-muted text-foreground"
                       : "text-muted-foreground"
@@ -436,7 +435,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
                       step === s
                         ? "bg-background text-foreground"
                         : step > s
-                        ? "bg-foreground text-background"
+                        ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
@@ -475,7 +474,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
             <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
               {loadingPRs ? (
                 <div className="flex items-center justify-center py-10">
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  <Skeleton className="h-5 w-24" />
                 </div>
               ) : filteredPRs.length === 0 ? (
                 <div className="py-10 text-center text-xs text-muted-foreground">
@@ -573,7 +572,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
             <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
               {loadingSuppliers ? (
                 <div className="flex items-center justify-center py-10">
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  <Skeleton className="h-5 w-24" />
                 </div>
               ) : eligibleSuppliers.length === 0 ? (
                 <div className="py-10 text-center text-xs text-muted-foreground">
@@ -763,7 +762,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
             {/* Items Input Table */}
             {loadingItems ? (
               <div className="flex items-center justify-center py-10">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                <Skeleton className="h-5 w-24" />
               </div>
             ) : errors.items ? (
               <div className="py-6 text-center text-xs text-foreground font-medium">{errors.items}</div>
@@ -910,7 +909,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
             </div>
 
             {/* Footer Actions */}
-            <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
+            <div className="flex flex-wrap justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
               <Button
                 type="button"
                 variant="outline"
@@ -937,7 +936,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
                 onClick={() => {
                   if (validate()) setConfirmModal("Pending Approval");
                 }}
-                className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               >
                 {submitting
                   ? "Submitting..."
@@ -1022,7 +1021,7 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
                   setConfirmModal(null);
                   await handleSubmit(action);
                 }}
-                className="rounded-xl px-6 shadow-sm bg-foreground text-background hover:bg-foreground/85"
+                className="rounded-xl px-6 shadow-sm bg-primary text-primary-foreground hover:bg-primary/85"
               >
                 {submitting
                   ? "Processing..."

@@ -1,0 +1,85 @@
+"use server";
+import { prisma } from "@/lib/prisma";
+import { requireModule } from "@/lib/portal/staff";
+import { resourceResult } from "@/lib/resources/result";
+import { read, refuse, positiveId } from "@/lib/stock-transfer/operations";
+export async function getRequest(idInput: number) {
+  await requireModule("Stock Transfer");
+  return read(async () => {
+
+    const requestId = positiveId(idInput);
+    if (isNaN(requestId)) {
+      return refuse("Invalid request ID.");
+    }
+
+    const req = await prisma.stockTransferRequests.findUnique({
+      where: { RequestId: requestId },
+      include: {
+        Locations: true,
+        StockTransferRequestItems: {
+          include: {
+            FinishedProducts: {
+              include: { Items: true },
+            },
+          },
+        },
+        StockTransfers: {
+          include: {
+            FinishedProducts: {
+              include: { Items: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!req) {
+      return refuse("Stock transfer request not found.");
+    }
+
+    const data = {
+      requestId: req.RequestId,
+      requestNumber: req.RequestNumber,
+      toLocationId: req.ToLocationId,
+      toLocationName: req.Locations?.LocationName || "",
+      requestedBy: req.RequestedBy,
+      requestDate: req.RequestDate.toISOString(),
+      requiredDate: req.RequiredDate.toISOString(),
+      priority: req.Priority,
+      reason: req.Reason || "",
+      status: req.Status,
+      adminNotes: req.AdminNotes || "",
+      reviewedBy: req.ReviewedBy || null,
+      reviewedAt: req.ReviewedAt?.toISOString() || null,
+      createdAt: req.CreatedAt.toISOString(),
+      items: req.StockTransferRequestItems.map((item) => ({
+        requestItemId: item.RequestItemId,
+        productId: item.ProductId,
+        productName: item.FinishedProducts?.Items?.ItemName || "Unknown Product",
+        variant: item.FinishedProducts?.Variant || "",
+        sku: item.FinishedProducts?.Sku || "",
+        requestedQuantity: Number(item.RequestedQuantity),
+        availableQuantity: Number(item.AvailableQuantity),
+        isInsufficient: item.IsInsufficient,
+        suggestedLots: item.SuggestedLots,
+        notes: item.Notes || "",
+      })),
+      transfers: req.StockTransfers.map((st) => ({
+        transferId: st.TransferId,
+        transferNumber: st.TransferNumber,
+        productId: st.ProductId,
+        productName: st.FinishedProducts?.Items?.ItemName || "Unknown Product",
+        status: st.Status,
+        transferQuantity: Number(st.TransferQuantity),
+        scheduledDate: st.ScheduledDate?.toISOString() || null,
+        dispatchedDate: st.DispatchedDate?.toISOString() || null,
+        courierName: st.CourierName || null,
+        vehiclePlate: st.VehiclePlate || null,
+        driverName: st.DriverName || null,
+      })),
+    };
+
+    return resourceResult({ success: true, data });
+
+  });
+}

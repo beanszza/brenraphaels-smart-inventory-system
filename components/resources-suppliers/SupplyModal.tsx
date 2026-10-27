@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -8,7 +8,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Badge } from "@/components/ui/badge";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import api from "@/lib/api";
 import ModalWrapper from "./ModalWrapper";
 import { SupplyItem, UomOption } from "./types";
 
@@ -39,10 +38,14 @@ interface SupplyModalProps {
     maxStock: number;
     isActive: boolean;
     supplierIds: number[];
-  }) => void;
+  }) => Promise<void>;
 }
 
-export default function SupplyModal({
+export default function SupplyModal(props: SupplyModalProps) {
+  return props.open ? <SupplyModalForm key={props.editingItem?.itemId ?? "new"} {...props} /> : null;
+}
+
+function SupplyModalForm({
   open,
   editingItem,
   existingSupplies = [],
@@ -52,13 +55,15 @@ export default function SupplyModal({
   onClose,
   onSave,
 }: SupplyModalProps) {
-  const [itemName, setItemName] = useState("");
-  const [categoryId, setCategoryId] = useState(0);
-  const [uomId, setUomId] = useState(0);
-  const [minStock, setMinStock] = useState("");
-  const [maxStock, setMaxStock] = useState("");
-  const [supplyActive, setSupplyActive] = useState(true);
-  const [selectedSupplierIds, setSelectedSupplierIds] = useState<number[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [itemName, setItemName] = useState(editingItem?.itemName ?? "");
+  const [categoryId, setCategoryId] = useState(editingItem?.categoryId ?? categories[0]?.categoryId ?? 0);
+  const [uomId, setUomId] = useState(editingItem?.uomId ?? uoms[0]?.uomId ?? 0);
+  const [minStock, setMinStock] = useState(editingItem ? String(editingItem.minStockLevel) : "");
+  const [maxStock, setMaxStock] = useState(editingItem ? String(editingItem.maxStockLevel) : "");
+  const [supplyActive, setSupplyActive] = useState(editingItem?.isActive ?? true);
+  const [selectedSupplierIds, setSelectedSupplierIds] = useState<number[]>(editingItem?.supplierIds ?? []);
   const [openCombobox, setOpenCombobox] = useState(false);
   const [supplierError, setSupplierError] = useState("");
 
@@ -105,36 +110,7 @@ export default function SupplyModal({
     setMaxStockError(""); return true;
   };
 
-  useEffect(() => {
-    if (open) {
-      if (editingItem) {
-        setItemName(editingItem.itemName || "");
-        setCategoryId(editingItem.categoryId);
-        setUomId(editingItem.uomId || uoms[0]?.uomId || 0);
-        setMinStock(editingItem.minStockLevel ? editingItem.minStockLevel.toString() : "1");
-        setMaxStock(editingItem.maxStockLevel ? editingItem.maxStockLevel.toString() : "1");
-        setSupplyActive(editingItem.isActive !== false);
-        setSelectedSupplierIds(editingItem.supplierIds || []);
 
-        if (editingItem.itemId) {
-          api
-            .get(`/api/supplier-items/by-item/${editingItem.itemId}`)
-            .then((res) => {
-              const list = res.data?.data || res.data || [];
-              if (Array.isArray(list) && list.length > 0) {
-                const ids = list.map((s: any) => s.supplierId).filter(Boolean);
-                setSelectedSupplierIds(ids);
-              }
-            })
-            .catch(() => {});
-        }
-      } else {
-        setItemName(""); setCategoryId(categories[0]?.categoryId ?? 0); setUomId(uoms[0]?.uomId ?? 0);
-        setMinStock(""); setMaxStock(""); setSupplyActive(true); setSelectedSupplierIds([]);
-      }
-      setItemNameError(""); setMinStockError(""); setMaxStockError(""); setSupplierError("");
-    }
-  }, [editingItem, open, categories, uoms]);
 
   const handleNumberKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (["-", "+", "e", "E"].includes(e.key)) e.preventDefault();
@@ -157,14 +133,18 @@ export default function SupplyModal({
     setMaxStock(val); validateMaxStock(val, minStock);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (saving) return;
     const isNameValid = validateItemName(itemName);
     const isMinValid = validateMinStock(minStock, maxStock);
     const isMaxValid = validateMaxStock(maxStock, minStock);
     const hasSupplier = selectedSupplierIds.length > 0;
     if (!hasSupplier) setSupplierError("At least one supplier is required.");
     if (!isNameValid || !isMinValid || !isMaxValid || !hasSupplier) return;
-    onSave({
+    setSaving(true);
+    setSaveError("");
+    try {
+      await onSave({
       itemName: itemName.trim(),
       categoryId,
       uomId,
@@ -173,6 +153,11 @@ export default function SupplyModal({
       isActive: supplyActive,
       supplierIds: selectedSupplierIds,
     });
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Unable to save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const hasErrors =
@@ -184,10 +169,13 @@ export default function SupplyModal({
     <ModalWrapper
       open={open}
       title={editingItem ? "Edit Supply Item" : "Add New Supply Item"}
-      onClose={onClose}
+      onClose={() => { if (!saving) onClose(); }}
       size="max-w-xl"
     >
-      <div className="space-y-4">
+      <form onSubmit={(event) => { event.preventDefault(); void handleSave(); }}>
+      {saveError && <p role="alert" className="mb-3 text-sm text-destructive">{saveError}</p>}
+      {saving && <p role="status" className="mb-3 text-sm text-muted-foreground">Saving...</p>}
+      <fieldset disabled={saving} className="space-y-4">
         {/* Supply Name */}
         <div>
           <label className="mb-1.5 block text-xs font-semibold text-foreground">
@@ -312,6 +300,7 @@ export default function SupplyModal({
           >
             <PopoverTrigger asChild>
               <Button
+                type="button"
                 variant="outline"
                 role="combobox"
                 aria-expanded={openCombobox}
@@ -417,20 +406,21 @@ export default function SupplyModal({
             type="button"
             variant="outline"
             onClick={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors"
+            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             Cancel
           </Button>
           <Button
-            type="button"
+            type="submit"
             disabled={hasErrors}
-            onClick={handleSave}
-            className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+
+            className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {editingItem ? "Save Changes" : "Create Supply"}
           </Button>
         </div>
-      </div>
+      </fieldset>
+      </form>
     </ModalWrapper>
   );
 }

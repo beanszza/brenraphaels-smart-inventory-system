@@ -1,12 +1,13 @@
 "use client";
 
+import { procurement } from "@/lib/orders/client";
+
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertCircle, Upload, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { Delivery } from "../types";
 
 interface MarkDispatchedModalProps {
@@ -102,9 +103,7 @@ export function MarkDispatchedModal({
         attachmentUrl: dispatchAttachmentBase64,
       };
 
-      const res = await api.put(
-        `/api/deliveries/${delivery.deliveryId}/dispatch`,
-        payload
+      const res = await procurement.dispatchDelivery(delivery.deliveryId, payload
       );
 
       if (res.data?.success) {
@@ -294,7 +293,7 @@ export function MarkDispatchedModal({
           <Button
             type="submit"
             disabled={submitting || !dispatchAttachmentBase64}
-            className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50"
+            className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50"
           >
             {submitting ? "Dispatching..." : "Dispatch"}
           </Button>
@@ -348,7 +347,7 @@ export function MarkDispatchedModal({
                   setConfirmModal(false);
                   handleSubmit();
                 }}
-                className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85"
                 disabled={submitting}
               >
                 {submitting ? "Dispatching..." : "Confirm Dispatch"}

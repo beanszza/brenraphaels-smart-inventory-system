@@ -46,8 +46,6 @@ jobs:
       - name: Build Next.js app
         run: npm run build
         env:
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL: http://localhost:${{ inputs.port }}
           NEXT_PUBLIC_API_URL: http://localhost:5006/
           NEXT_PUBLIC_HOST_URL: http://localhost:3000
           NEXT_PUBLIC_HRMS_URL: http://localhost:3001

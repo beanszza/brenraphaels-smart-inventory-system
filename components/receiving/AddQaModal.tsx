@@ -1,9 +1,11 @@
 "use client";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
+
+import { receiving } from "@/lib/receiving/client";
 
 import React, { useEffect, useState } from "react";
 import { Package, Plus } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { GRN, QAInspection } from "./types";
 
 interface AddQaModalProps {
@@ -26,8 +28,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
     setLoading(true);
 
     // Fetch posted GRNs with status = "Received" (awaiting QA)
-    api
-      .get("/api/goods-receipts")
+    receiving.listReceipts()
       .then(({ data }) => {
         const all: GRN[] = Array.isArray(data?.data) ? data.data : [];
         // "Received" = posted GRN, QA not yet completed
@@ -45,7 +46,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
 
     try {
       // Find the QA inspection created for this GRN
-      const res = await api.get("/api/QualityInspections");
+      const res = await receiving.listInspections();
       const allInspections: QAInspection[] = Array.isArray(res.data?.data) ? res.data.data : [];
 
       // Match by referenceId (grnId) and Pending status
@@ -75,7 +76,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
     <ModalWrapper open={open} title="Add Quality Assurance Inspection" onClose={onClose} size="max-w-2xl">
       <div className="space-y-6 text-foreground">
         {error && (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+          <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
             {error}
           </div>
         )}
@@ -93,9 +94,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
 
         {/* GRN Selection */}
         {loading ? (
-          <div className="py-8 text-center text-xs text-muted-foreground animate-pulse">
-            Loading eligible Goods Receipt Notes…
-          </div>
+          <ReceivingSkeleton />
         ) : grns.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-2xl bg-muted/10">
             <Package className="w-10 h-10 text-muted-foreground/40 mb-3" />
@@ -173,7 +172,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
             type="button"
             onClick={handleStartInspection}
             disabled={!selected || searching}
-            className="inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {searching ? "Finding Inspection…" : "Start Quality Assurance Inspection"}
           </button>

@@ -1,12 +1,16 @@
 "use client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Check, Upload, Loader2 } from "lucide-react";
+import { Check, Upload } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Order } from "./types";
-import api from "@/lib/api";
+import { procurement } from "@/lib/orders/client";
+import { uploadWith } from "@/lib/file-upload";
+import { actionResponse } from "@/lib/resources/action-response";
+import { confirmReceiptUpload, requestReceiptUpload } from "@/app/actions/orders/receipts";
 import { HR_EMPLOYEES } from "@/lib/employees";
 
 interface ProcurementQAInspectionModalProps {
@@ -47,18 +51,21 @@ export default function ProcurementQAInspectionModal({
     try {
       setIsSaving(true);
       const targetStatus = result === "Passed" ? "Completed" : "Rejected";
-      const res = await api.put(`/api/purchase-orders/${order.poId}/status`, {
+      const res = await procurement.setOrderStatus(order.poId, {
         status: targetStatus,
         qaNotes: comment,
         qaStatus: result,
-        inspectedBy: inspectedBy.trim(),
       });
 
       if (res.data.success) {
         if (pictureFile) {
-          const formData = new FormData();
-          formData.append("file", pictureFile);
-          await api.post(`/api/purchase-orders/${order.poId}/upload-receipt`, formData);
+          await uploadWith(
+            {
+              request: async (meta) => (await actionResponse(requestReceiptUpload(order.poId, meta))).data.data,
+              confirm: async (fileId) => void (await actionResponse(confirmReceiptUpload(order.poId, fileId))),
+            },
+            pictureFile,
+          );
         }
         onComplete();
         onClose();
@@ -97,7 +104,7 @@ export default function ProcurementQAInspectionModal({
                   isChecked ? "border-foreground bg-muted/40" : "border-border bg-card hover:border-foreground/40"
                 }`}
               >
-                <div className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center border ${isChecked ? "bg-foreground border-foreground text-background" : "border-border"}`}>
+                <div className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center border ${isChecked ? "bg-primary border-primary text-primary-foreground" : "border-border"}`}>
                   {isChecked && <Check size={12} strokeWidth={3} />}
                 </div>
                 <div>
@@ -143,11 +150,11 @@ export default function ProcurementQAInspectionModal({
         </div>
 
         <div className="flex justify-end gap-3 pt-3 border-t border-border">
-          <Button type="button" variant="outline" onClick={onClose} disabled={isSaving} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors">
+          <Button type="button" variant="outline" onClick={onClose} disabled={isSaving} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
             Cancel
           </Button>
-          <Button type="button" onClick={handleComplete} disabled={isSaving} className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors flex items-center gap-2">
-            {isSaving && <Loader2 className="animate-spin h-4 w-4" />}
+          <Button type="button" onClick={handleComplete} disabled={isSaving} className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors flex items-center gap-2">
+            {isSaving && <Skeleton className="h-5 w-24" />}
             Submit Quality Assurance Inspection ({result})
           </Button>
         </div>

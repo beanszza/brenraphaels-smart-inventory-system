@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { PRTab } from "@/components/orders-procurement/pr/PRTab";
@@ -7,7 +8,11 @@ import { POTab } from "@/components/orders-procurement/po/POTab";
 import { CreatePOModal } from "@/components/orders-procurement/po/CreatePOModal";
 import { DeliveryTab } from "@/components/orders-procurement/delivery/DeliveryTab";
 
-export default function OrdersProcurementPage() {
+import type { PurchaseRequisition, PurchaseOrderPO, Delivery } from "@/components/orders-procurement/types";
+
+export default function OrdersProcurementPage({ data }: { data: { requisitions: PurchaseRequisition[]; orders: PurchaseOrderPO[]; deliveries: Delivery[] } }) {
+  const router = useRouter();
+  const [notice, setNotice] = useState("");
   const [mainTab, setMainTab] = useState<"pr" | "po" | "delivery">("pr");
 
   // Cross-tab PO creation — triggered from PR details "Create PO" button
@@ -21,7 +26,8 @@ export default function OrdersProcurementPage() {
   };
 
   return (
-    <div className="w-full min-h-full py-8 px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="w-full min-h-full py-7 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
+      {notice && <p role="status" className="text-sm text-primary">{notice}</p>}
       {/* Page Header */}
       <PageHeader
         title="Orders & Procurement"
@@ -36,7 +42,7 @@ export default function OrdersProcurementPage() {
             onClick={() => setMainTab("pr")}
             className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               mainTab === "pr"
-                ? "border-foreground text-foreground"
+                ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -48,7 +54,7 @@ export default function OrdersProcurementPage() {
             onClick={() => setMainTab("po")}
             className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               mainTab === "po"
-                ? "border-foreground text-foreground"
+                ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -60,7 +66,7 @@ export default function OrdersProcurementPage() {
             onClick={() => setMainTab("delivery")}
             className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               mainTab === "delivery"
-                ? "border-foreground text-foreground"
+                ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -70,13 +76,13 @@ export default function OrdersProcurementPage() {
       </div>
 
       {/* MAIN TAB 1: PRODUCT REQUISITION */}
-      {mainTab === "pr" && <PRTab onCreatePo={handleCreatePoFromPR} />}
+      {mainTab === "pr" && <PRTab initialRequisitions={data.requisitions} onCreatePo={handleCreatePoFromPR} />}
 
       {/* MAIN TAB 2: PRODUCT ORDER (new PO approval workflow) */}
-      {mainTab === "po" && <POTab />}
+      {mainTab === "po" && <POTab initialOrders={data.orders} />}
 
       {/* MAIN TAB 3: DELIVERY */}
-      {mainTab === "delivery" && <DeliveryTab />}
+      {mainTab === "delivery" && <DeliveryTab initialDeliveries={data.deliveries} />}
 
       {/* Global CreatePO Modal — opened from PR details "Create PO" button */}
       {showCreatePO && (
@@ -84,7 +90,7 @@ export default function OrdersProcurementPage() {
           open={showCreatePO}
           initialPrId={createPOFromPR}
           onClose={() => { setShowCreatePO(false); setCreatePOFromPR(undefined); }}
-          onSuccess={() => { setShowCreatePO(false); setCreatePOFromPR(undefined); }}
+          onSuccess={() => { setShowCreatePO(false); setCreatePOFromPR(undefined); setNotice("Purchase order saved successfully."); router.refresh(); }}
         />
       )}
     </div>

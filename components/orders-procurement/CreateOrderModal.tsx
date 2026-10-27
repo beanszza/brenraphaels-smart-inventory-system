@@ -1,12 +1,16 @@
 "use client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+import { supplierItemsByItem } from "@/app/actions/orders/catalog";
+import { actionResponse } from "@/lib/resources/action-response";
+
 
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Upload, Loader2, Sparkles, Clock, DollarSign, Package } from "lucide-react";
+import { Upload, Sparkles, Clock, DollarSign, Package } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Order, SupplyItem, Supplier, PaymentType } from "./types";
-import api from "@/lib/api";
 
 interface ItemSupplierOption {
   supplierId: number;
@@ -98,12 +102,7 @@ export default function CreateOrderModal({
 
     setLoadingSuppliers(true);
     try {
-      let res;
-      try {
-        res = await api.get(`/api/supplier-items/by-item/${newItemId}`);
-      } catch {
-        res = await api.get(`/api/SupplierItems/by-item/${newItemId}`);
-      }
+      const res = await actionResponse(supplierItemsByItem(newItemId));
 
       if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
         const suppliers: ItemSupplierOption[] = res.data.data;
@@ -211,7 +210,7 @@ export default function CreateOrderModal({
             </label>
             {loadingSuppliers && (
               <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                <Loader2 size={11} className="animate-spin" /> Finding approved vendors...
+                <Skeleton className="h-5 w-24" /> Finding approved vendors...
               </span>
             )}
             {itemSuppliers.length > 0 && !loadingSuppliers && (
@@ -326,11 +325,11 @@ export default function CreateOrderModal({
         </div>
 
         <div className="flex justify-end gap-3 pt-3 border-t border-border">
-          <Button type="button" variant="outline" onClick={onClose} disabled={isSaving} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors">
+          <Button type="button" variant="outline" onClick={onClose} disabled={isSaving} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
             Cancel
           </Button>
-          <Button type="button" onClick={handleSubmit} disabled={isSaving} className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity">
-            {isSaving ? <Loader2 size={16} className="animate-spin" /> : editingOrder ? "Save Changes" : "Create Order"}
+          <Button type="button" onClick={handleSubmit} disabled={isSaving} className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity">
+            {isSaving ? <Skeleton className="h-5 w-24" /> : editingOrder ? "Save Changes" : "Create Order"}
           </Button>
         </div>
       </div>

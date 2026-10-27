@@ -1,10 +1,12 @@
 "use client";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
+
+import { receiving } from "@/lib/receiving/client";
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import api from "@/lib/api";
 import { GRN, StockIn } from "./types";
 
 interface Props {
@@ -51,8 +53,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
     setError(null);
     setLoading(true);
 
-    api
-      .get("/api/goods-receipts")
+    receiving.listReceipts()
       .then(({ data }) => {
         const list: GRN[] = Array.isArray(data?.data) ? data.data : [];
         const eligible = list.filter(
@@ -77,8 +78,8 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
 
     try {
       const [grnDetailRes, invRes] = await Promise.all([
-        api.get(`/api/goods-receipts/${grnId}`),
-        api.get("/api/Inventory?pageSize=1000").catch(() => ({ data: { data: [] } })),
+        receiving.getReceipt(grnId),
+        receiving.listStockBalances().catch(() => ({ data: { data: [] } })),
       ]);
 
       const fullGrn: GRN = grnDetailRes.data?.data || grn;
@@ -167,7 +168,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
         })),
       };
 
-      const { data } = await api.post("/api/StockIns", payload);
+      const { data } = await receiving.createStockIn(payload);
       if (!data?.success) {
         throw new Error(data?.message || "Failed to create Stock-In record.");
       }
@@ -234,9 +235,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
         </div>
 
         {loading && (
-          <div className="py-10 text-center text-xs text-muted-foreground animate-pulse">
-            Loading Goods Receipt Note items…
-          </div>
+          <ReceivingSkeleton />
         )}
 
         {/* Stock-In Items Table */}
@@ -248,7 +247,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
               </span>
             </div>
 
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="rounded-xl border border-border bg-card overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-border bg-muted/30 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -324,7 +323,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
             type="button"
             disabled={lines.length === 0 || submitting}
             onClick={() => handleTrySubmit(true)}
-            className="rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
           >
             {submitting ? "Submitting…" : "Submit for Approval"}
           </button>
@@ -380,7 +379,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
                     type="button"
                     disabled={submitting}
                     onClick={() => executeSubmit(confirmModal.submitForApproval)}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-foreground text-background hover:bg-foreground/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     {submitting ? "Processing…" : "Confirm"}
                   </button>

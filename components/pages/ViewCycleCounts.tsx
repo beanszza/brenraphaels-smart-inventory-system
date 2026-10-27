@@ -1,5 +1,9 @@
 "use client";
 
+import { listLocations } from "@/app/actions/resources/locations";
+import { actionResponse } from "@/lib/resources/action-response";
+
+
 import React, { useState, useEffect } from "react";
 import {
   ClipboardList, Plus, Search, CheckCircle, AlertCircle, RefreshCw,
@@ -20,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import api from "@/lib/api";
+import { inventory } from "@/lib/inventory/client";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -85,8 +89,8 @@ export default function ViewCycleCounts() {
     setLoading(true);
     try {
       const [ccRes, locRes] = await Promise.allSettled([
-        api.get("/api/cycle-counts?page=1&pageSize=100"),
-        api.get("/api/locations?pageSize=100"),
+        inventory.listCycleCounts("page=1&pageSize=100"),
+        actionResponse(listLocations()),
       ]);
       if (ccRes.status === "fulfilled" && ccRes.value.data?.success) {
         const raw = ccRes.value.data.data?.items || ccRes.value.data.data || [];
@@ -120,7 +124,7 @@ export default function ViewCycleCounts() {
     setShowDetailModal(true);
     setLoadingItems(true);
     try {
-      const res = await api.get(`/api/cycle-counts/${cc.cycleCountId}/items`);
+      const res = await inventory.listCycleCountItems(cc.cycleCountId);
       if (res.data?.success) {
         const raw = res.data.data || [];
         setCountItems(raw.map((i: any) => ({
@@ -146,9 +150,8 @@ export default function ViewCycleCounts() {
     if (!newCount.locationId) return;
     setSaving(true);
     try {
-      await api.post("/api/cycle-counts", {
+      await inventory.createCycleCount({
         locationId: parseInt(newCount.locationId),
-        countedBy: newCount.countedBy || "System",
       });
       setShowCreateModal(false);
       setNewCount({ locationId: "", countedBy: "" });
@@ -163,7 +166,7 @@ export default function ViewCycleCounts() {
   const handleReconcile = async () => {
     if (!selectedCount) return;
     try {
-      await api.post(`/api/cycle-counts/${selectedCount.cycleCountId}/reconcile`);
+      await inventory.reconcileCycleCount(selectedCount.cycleCountId);
       setShowReconcileDialog(false);
       setShowDetailModal(false);
       fetchCounts();

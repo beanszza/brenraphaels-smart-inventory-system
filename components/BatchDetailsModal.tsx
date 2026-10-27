@@ -1,5 +1,1 @@
-import ResourcesSuppliers from "@/components/pages/ViewSuppliers";
-
-export default function Page() {
-  return <ResourcesSuppliers />;
-}
+export { default } from "@/app/(root)/resources-suppliers/page";

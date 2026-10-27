@@ -5,7 +5,8 @@ import ModalWrapper from "./ModalWrapper";
 import { SupplyItem } from "./types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Package, Truck, ShoppingCart, TrendingDown, TrendingUp, Minus } from "lucide-react";
-import api from "@/lib/api";
+import { loadSupplyDetails } from "@/lib/resources-suppliers/actions";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SupplyDetailsModalProps {
   item: SupplyItem | null;
@@ -29,72 +30,32 @@ interface RecentOrder {
   uomName: string;
 }
 
-export default function SupplyDetailsModal({
+export default function SupplyDetailsModal(props: SupplyDetailsModalProps) {
+  return props.item ? <SupplyDetailsModalContent key={props.item.itemId} {...props} /> : null;
+}
+
+function SupplyDetailsModalContent({
   item,
   onClose,
   onEdit,
 }: SupplyDetailsModalProps) {
   const [linkedSuppliers, setLinkedSuppliers] = useState<LinkedSupplier[]>([]);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  const [error, setError] = useState("");
   useEffect(() => {
-    if (!item) {
-      setLinkedSuppliers([]);
-      setRecentOrders([]);
-      return;
-    }
-
-    const fetchDetails = async () => {
-      setLoading(true);
-      try {
-        const [suppRes, poRes] = await Promise.allSettled([
-          api.get(`/api/supplier-items/by-item/${item.itemId}`).catch(() =>
-            api.get(`/api/SupplierItems/by-item/${item.itemId}`)
-          ),
-          api.get(`/api/purchase-orders?pageSize=100`),
-        ]);
-
-        if (suppRes.status === "fulfilled" && suppRes.value?.data?.success) {
-          const list = suppRes.value.data.data || [];
-          setLinkedSuppliers(
-            list.map((s: any) => ({
-              supplierId: s.supplierId,
-              supplierName: s.supplierCompanyName || s.companyName || s.supplierName || `Supplier #${s.supplierId}`,
-              supplierCode: s.supplierCode,
-              leadTimeDays: s.leadTimeDays,
-            }))
-          );
-        }
-
-        if (poRes.status === "fulfilled" && poRes.value?.data?.success) {
-          const allPOs = poRes.value.data.data?.items || poRes.value.data.data || [];
-          const itemOrders: RecentOrder[] = [];
-          for (const po of allPOs) {
-            const poItems = po.items || [];
-            for (const poi of poItems) {
-              if (poi.itemId === item.itemId) {
-                itemOrders.push({
-                  poId: po.poId,
-                  poNumber: po.poNumber,
-                  orderDate: po.orderDate,
-                  status: po.status,
-                  quantity: poi.poItemQuantity,
-                  uomName: poi.purchaseUomName || item.uomName || "",
-                });
-              }
-            }
-          }
-          setRecentOrders(itemOrders.slice(0, 5));
-        }
-      } catch {
-        // silently fail
-      } finally {
-        setLoading(false);
+    let cancelled = false;
+    if (!item) return;
+    loadSupplyDetails(item.itemId).then(data => {
+      if (!cancelled) {
+        setLinkedSuppliers(data.linkedSuppliers);
+        setRecentOrders(data.recentOrders);
       }
-    };
-
-    fetchDetails();
+    }).catch(() => {
+      if (!cancelled) setError("Unable to load details. Close and reopen to try again.");
+    }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [item]);
 
   if (!item) return null;
@@ -111,17 +72,6 @@ export default function SupplyDetailsModal({
 
   const stockLabel = isLowStock ? "Low Stock" : isOverStock ? "Overstock" : "Normal";
 
-  const statusBadge = (status: string) => {
-    const s = status.toLowerCase();
-    const base = "inline-flex px-2 py-0.5 rounded text-[10px] font-semibold border";
-    if (s === "delivered" || s === "completed" || s === "received")
-      return `${base} bg-foreground/10 text-foreground border-foreground/20`;
-    if (s === "pending" || s === "draft" || s === "approved")
-      return `${base} bg-muted text-muted-foreground border-border`;
-    if (s === "cancelled" || s === "rejected")
-      return `${base} bg-muted/60 text-muted-foreground border-border line-through`;
-    return `${base} bg-muted text-muted-foreground border-border`;
-  };
 
   return (
     <ModalWrapper
@@ -131,6 +81,7 @@ export default function SupplyDetailsModal({
       size="max-w-2xl"
     >
       <div className="space-y-6 max-h-[75vh] overflow-y-auto pr-1">
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         {/* Header Summary Banner */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-muted/40 border border-border">
           <div className="flex items-center gap-3.5">
@@ -228,7 +179,7 @@ export default function SupplyDetailsModal({
 
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             {loading ? (
-              <div className="p-6 text-center text-xs text-muted-foreground">Loading...</div>
+              <Skeleton aria-label="Loading details" className="m-4 h-16" />
             ) : linkedSuppliers.length === 0 ? (
               <div className="p-6 text-center space-y-1">
                 <p className="text-xs font-semibold text-foreground">No suppliers linked yet</p>
@@ -270,7 +221,7 @@ export default function SupplyDetailsModal({
 
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             {loading ? (
-              <div className="p-6 text-center text-xs text-muted-foreground">Loading orders...</div>
+              <Skeleton aria-label="Loading details" className="m-4 h-16" />
             ) : recentOrders.length === 0 ? (
               <div className="p-6 text-center space-y-1">
                 <p className="text-xs font-semibold text-foreground">No orders found</p>
@@ -299,7 +250,7 @@ export default function SupplyDetailsModal({
                           })}
                         </td>
                         <td className="px-3 py-2.5">
-                          <span className={statusBadge(order.status)}>{order.status}</span>
+                          <StatusBadge status={order.status} />
                         </td>
                         <td className="px-3 py-2.5 text-right font-semibold text-foreground">
                           {order.quantity} {order.uomName}
@@ -329,7 +280,7 @@ export default function SupplyDetailsModal({
                 onClose();
                 onEdit(item);
               }}
-              className="rounded-xl bg-foreground text-background px-5 py-2 text-sm font-semibold hover:bg-foreground/85 transition-colors"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors"
             >
               Edit Item
             </button>

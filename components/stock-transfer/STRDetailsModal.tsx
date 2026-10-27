@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { X, Calendar, MapPin, User, AlertCircle, CheckCircle, Package, Truck } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransferRequest } from "./types";
-import { useAuth } from "@/context/AuthContext";
 
 interface STRDetailsModalProps {
   request: StockTransferRequest | null;
@@ -27,7 +26,6 @@ export function STRDetailsModal({
   onCancel,
 }: STRDetailsModalProps) {
   const [mounted, setMounted] = useState(false);
-  const { isAdmin } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -223,13 +221,13 @@ export function STRDetailsModal({
                           </td>
                           <td className="px-5 py-4 whitespace-nowrap">
                             {item.isInsufficient ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-destructive/10 text-destructive border border-destructive/20">
+                              <StatusBadge status="Shortage" className="gap-1">
                                 <AlertCircle className="w-3 h-3" /> Shortage
-                              </span>
+                              </StatusBadge>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-foreground/10 text-foreground">
-                                <CheckCircle className="w-3 h-3 text-foreground" /> In Stock
-                              </span>
+                              <StatusBadge status="In Stock" className="gap-1">
+                                <CheckCircle className="w-3 h-3" /> In Stock
+                              </StatusBadge>
                             )}
                           </td>
                         </tr>
@@ -287,7 +285,7 @@ export function STRDetailsModal({
 
           <div className="flex items-center gap-2.5">
             {/* Admin-only Approve / Reject */}
-            {isAdmin && request.status === "Pending Approval" && (
+            {request.status === "Pending Approval" && (
               <>
                 {onReject && (
                   <button
@@ -308,7 +306,7 @@ export function STRDetailsModal({
                       onClose();
                       onApprove(request);
                     }}
-                    className="rounded-xl bg-foreground px-6 py-2.5 text-xs font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+                    className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
                   >
                     Approve Request
                   </button>
@@ -317,35 +315,33 @@ export function STRDetailsModal({
             )}
 
             {/* Inventory Manager actions */}
-            {!isAdmin && (
-              <>
-                {request.status === "Approved" && onSchedule && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onSchedule(request);
-                    }}
-                    className="rounded-xl bg-foreground px-6 py-2.5 text-xs font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
-                  >
-                    Schedule Transfer
-                  </button>
-                )}
+            <>
+              {request.status === "Approved" && onSchedule && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onSchedule(request);
+                  }}
+                  className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+                >
+                  Schedule Transfer
+                </button>
+              )}
 
-                {["Pending Approval", "Approved"].includes(request.status) && onCancel && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onCancel(request);
-                    }}
-                    className="rounded-xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
-                  >
-                    Cancel Request
-                  </button>
-                )}
-              </>
-            )}
+              {["Pending Approval", "Approved"].includes(request.status) && onCancel && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onCancel(request);
+                  }}
+                  className="rounded-xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                >
+                  Cancel Request
+                </button>
+              )}
+            </>
           </div>
         </div>
       </div>

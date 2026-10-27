@@ -1,5 +1,7 @@
 "use client";
 
+import { receiving } from "@/lib/receiving/client";
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, RefreshCw, Plus } from "lucide-react";
 import {
@@ -11,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
 import QaTable from "./QaTable";
 import QaInspectionModal from "./QaInspectionModal";
 import AddQaModal from "./AddQaModal";
@@ -39,7 +40,7 @@ export default function QaTab() {
   const fetchInspections = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/QualityInspections");
+      const res = await receiving.listInspections();
       if (res.data?.success) {
         setInspections(res.data.data || []);
       }
@@ -166,7 +167,7 @@ export default function QaTab() {
           <Button
             type="button"
             onClick={() => setAddQaOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm h-10"
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
           >
             <Plus className="w-4 h-4" /> Add Quality Assurance
           </Button>
@@ -242,7 +243,7 @@ export default function QaTab() {
                 }}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   isActive
-                    ? "bg-foreground text-background shadow-sm"
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >

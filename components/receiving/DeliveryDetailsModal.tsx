@@ -1,10 +1,13 @@
 "use client";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
+
+import { getDeliveryForReceiving } from "@/app/actions/receiving/procurement-reads";
+import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useEffect, useState } from "react";
 import { Truck, Package } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import api from "@/lib/api";
 import { ArrivedDelivery } from "./types";
 
 interface DeliveryDetailsModalProps {
@@ -50,8 +53,7 @@ export default function DeliveryDetailsModal({
     if (!open || !delivery) return;
     setLoading(true);
     setError(null);
-    api
-      .get(`/api/deliveries/${delivery.deliveryId}`)
+    actionResponse(getDeliveryForReceiving(delivery.deliveryId))
       .then(({ data }) => {
         setDetail(data?.data || null);
       })
@@ -70,15 +72,13 @@ export default function DeliveryDetailsModal({
     >
       <div className="space-y-6 text-foreground">
         {error && (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+          <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
             {error}
           </div>
         )}
 
         {loading ? (
-          <div className="py-12 text-center text-xs text-muted-foreground animate-pulse">
-            Loading delivery details…
-          </div>
+          <ReceivingSkeleton />
         ) : detail ? (
           <>
             {/* Header Summary */}
@@ -199,7 +199,7 @@ export default function DeliveryDetailsModal({
               onClose();
               onCreateGrn(delivery.deliveryId);
             }}
-            className="rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Create Goods Receipt Note for this Delivery
           </button>

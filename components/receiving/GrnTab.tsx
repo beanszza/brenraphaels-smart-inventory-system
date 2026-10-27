@@ -1,6 +1,7 @@
 "use client";
+import { useRouter } from "next/navigation";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useTransition } from "react";
 import { Search, RefreshCw, Plus } from "lucide-react";
 import {
   Select,
@@ -11,7 +12,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
 import GrnTable from "./GrnTable";
 import PendingReceivingTable from "./PendingReceivingTable";
 import CreateGrnModal from "./CreateGrnModal";
@@ -23,20 +23,26 @@ import { GRN, ArrivedDelivery } from "./types";
 type SubTab = "pending" | "posted";
 
 interface GrnTabProps {
-  onPosted: () => void;
+  initialReceipts: GRN[];
+  initialDeliveries: ArrivedDelivery[];
 }
 
-export default function GrnTab({ onPosted }: GrnTabProps) {
+export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabProps) {
+  const router = useRouter();
+  const onPosted = () => router.push("/goods-receiving?tab=stockin");
   const [activeSubTab, setActiveSubTab] = useState<SubTab>("pending");
-  const [loading, setLoading] = useState(true);
+  const [loading, startRefresh] = useTransition();
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("All");
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
   // Data states
-  const [postedGrns, setPostedGrns] = useState<GRN[]>([]);
-  const [pendingDeliveries, setPendingDeliveries] = useState<ArrivedDelivery[]>([]);
+  const postedGrns = useMemo(() => initialReceipts.filter(g => g.status !== "Draft"), [initialReceipts]);
+  const pendingDeliveries = useMemo(() => {
+    const postedDeliveryIds = new Set(postedGrns.map(g => g.deliveryId));
+    return initialDeliveries.filter(d => d.status === "Arrived" && !postedDeliveryIds.has(d.deliveryId));
+  }, [initialDeliveries, postedGrns]);
 
   // Modals
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -48,36 +54,7 @@ export default function GrnTab({ onPosted }: GrnTabProps) {
   const [viewDelivery, setViewDelivery] = useState<ArrivedDelivery | null>(null);
   const [deliveryDetailsOpen, setDeliveryDetailsOpen] = useState(false);
 
-  // Fetch all inbound data
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      // 1. Fetch posted GRNs (non-draft)
-      const grnRes = await api.get("/api/goods-receipts");
-      const allGrns: GRN[] = Array.isArray(grnRes.data?.data) ? grnRes.data.data : [];
-      const posted = allGrns.filter((g) => g.status !== "Draft");
-      setPostedGrns(posted);
-
-      // 2. Only arrived shipments are eligible. The server validates line-level eligibility again.
-      const delRes = await api.get("/api/deliveries");
-      const deliveryPayload = delRes.data?.data;
-      const allDeliveries: ArrivedDelivery[] = Array.isArray(deliveryPayload?.items)
-        ? deliveryPayload.items
-        : Array.isArray(deliveryPayload) ? deliveryPayload : [];
-      const pending = allDeliveries.filter((d) => {
-        return d.status === "Arrived";
-      });
-      setPendingDeliveries(pending);
-    } catch (err: any) {
-      console.error("Error fetching GRN receiving data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = () => startRefresh(() => router.refresh());
 
   // Counts
   const counts = useMemo(() => ({
@@ -181,9 +158,9 @@ export default function GrnTab({ onPosted }: GrnTabProps) {
       {/* Top Header Controls */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Goods Receiving &amp; Inbound Counts</h2>
+          <h2 className="text-lg font-semibold text-foreground">Receive deliveries</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Verify arrived supplier shipments, record physical gate counts, and post Goods Receipt Notes directly to Quality Assurance
+            Record physical counts and send received goods to Quality Assurance.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -194,13 +171,13 @@ export default function GrnTab({ onPosted }: GrnTabProps) {
             disabled={loading}
             className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+            <RefreshCw className={`w-4 h-4 `} /> Refresh
           </Button>
 
           <Button
             type="button"
             onClick={() => handleCreateGrn(undefined)}
-            className="flex items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm h-10"
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
           >
             <Plus className="w-4 h-4" /> Create Goods Receipt Note
           </Button>
@@ -212,6 +189,7 @@ export default function GrnTab({ onPosted }: GrnTabProps) {
         <div className="flex flex-1 items-center gap-2 px-2 bg-muted/20 h-full rounded-md">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <Input
+            aria-label="Search records"
             type="text"
             placeholder={
               activeSubTab === "pending"
@@ -249,7 +227,7 @@ export default function GrnTab({ onPosted }: GrnTabProps) {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
                 <SelectValue placeholder="All Suppliers" />
               </SelectTrigger>
               <SelectContent align="end" className="text-xs z-[9999]">
@@ -276,7 +254,7 @@ export default function GrnTab({ onPosted }: GrnTabProps) {
             }}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
               activeSubTab === "pending"
-                ? "bg-foreground text-background shadow-sm"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
@@ -302,7 +280,7 @@ export default function GrnTab({ onPosted }: GrnTabProps) {
             }}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
               activeSubTab === "posted"
-                ? "bg-foreground text-background shadow-sm"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >

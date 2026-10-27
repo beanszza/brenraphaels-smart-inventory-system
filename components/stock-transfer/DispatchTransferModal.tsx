@@ -1,9 +1,11 @@
 "use client";
+import { toast } from "sonner";
+import { actionResponse } from "@/lib/resources/action-response";
+import { dispatchTransfer } from "@/app/actions/stock-transfer/dispatch";
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, Truck, AlertTriangle } from "lucide-react";
-import api from "@/lib/api";
 import { StockTransfer } from "./types";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -57,24 +59,26 @@ export function DispatchTransferModal({
   if (!open || !mounted || !transfer) return null;
 
   const handleDispatch = async () => {
+    if (loading) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await api.put(`/api/stock-transfers/${transfer.transferId}/dispatch`, {
+      const res = await actionResponse(dispatchTransfer(transfer.transferId, {
         driverName: driverName.trim() || undefined,
         vehiclePlate: vehiclePlate.trim() || undefined,
         courierName: courierName.trim() || undefined,
         notes: notes.trim() || undefined,
-      });
+      }));
 
       if (res.data?.success) {
+        toast.success("Transfer dispatched.");
         onSuccess();
         onClose();
       } else {
         setError(res.data?.message || "Failed to dispatch transfer.");
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to dispatch transfer.");
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : null) || "Failed to dispatch transfer.");
     } finally {
       setLoading(false);
     }
@@ -87,7 +91,7 @@ export function DispatchTransferModal({
     >
       <div
         style={{ width: "100%", maxWidth: "640px" }}
-        className="w-full bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
+        className="w-full max-h-[92vh] overflow-y-auto bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -216,7 +220,7 @@ export function DispatchTransferModal({
             type="button"
             onClick={handleDispatch}
             disabled={loading}
-            className="flex items-center gap-2 rounded-xl bg-foreground px-6 py-2.5 text-xs font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
           >
             {loading ? "Deducting & Dispatching..." : "Confirm Dispatch"}
           </button>

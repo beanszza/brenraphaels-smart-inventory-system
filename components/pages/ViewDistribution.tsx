@@ -1,15 +1,25 @@
 "use client";
+import { cancelTransfer } from "@/app/actions/stock-transfer/transfer-cancel";
+import { dispatchTransfer } from "@/app/actions/stock-transfer/dispatch";
 
-import React, { useState, useEffect } from "react";
+import { updateTransferStatus } from "@/app/actions/stock-transfer/transfer-status";
+
+import { createLocation, updateLocation } from "@/app/actions/stock-transfer/locations";
+import { actionResponse } from "@/lib/resources/action-response";
+
+import type { DistributionScreen } from "@/lib/stock-transfer/screen-data";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { TransferSkeleton } from "@/components/stock-transfer/TransferSkeleton";
+
+import React, { useState, useTransition } from "react";
 import Link from "next/link";
 import { Plus, Search, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import api from "@/lib/api";
 import Pagination from "@/components/Pagination";
-import { useAuth } from "@/context/AuthContext";
-import { TransferItem, LocationItem, DistributionStats } from "@/components/distribution/types";
+import { TransferItem, LocationItem } from "@/components/distribution/types";
 import DistributionSummaryCards from "@/components/distribution/DistributionSummaryCards";
 import StockTransferTable from "@/components/distribution/StockTransferTable";
 import LocationTable from "@/components/distribution/LocationTable";
@@ -18,101 +28,69 @@ import LocationModal from "@/components/distribution/LocationModal";
 import LocationDetailsModal from "@/components/distribution/LocationDetailsModal";
 import { PageHeader } from "@/components/shared/PageHeader";
 
-export default function DistributionPage() {
-  const auth = useAuth();
-  const user = auth?.user;
-  const isAuth = user?.username === "scmsuser" || user?.username === "ERP-ADMIN" || user?.email === "scmsuser@r3b2p.com" || user?.email === "admin@r3b2p.com" || user?.roles?.includes("Admin");
-
+export default function DistributionPage({ transfers: initialTransfers, locations: initialLocations, stats }: DistributionScreen) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const fetchData = () => startTransition(() => router.refresh());
   const [activeTab, setActiveTab] = useState<"Stock Transfer" | "Locations">("Stock Transfer");
-  const [transfers, setTransfers] = useState<TransferItem[]>([]);
-  const [locations, setLocations] = useState<LocationItem[]>([]);
-  const [stats, setStats] = useState<DistributionStats>({ total: 0, pending: 0, inTransit: 0, completed: 0 });
-
+  const transfers: TransferItem[] = initialTransfers.map(t => ({
+    id: t.transferNumber, transferId: t.transferId, product: t.productName,
+    from: t.sourceLocationName, to: t.destLocationName, quantity: t.transferQuantity,
+    date: t.transferDate ? new Date(t.transferDate).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" }) : "",
+    status: t.status,
+  }));
+  const locations: LocationItem[] = initialLocations.map(l => ({ id: String(l.locationId), locationId: l.locationId,
+    name: l.locationName, type: l.locationType, address: l.address || "", status: l.status }));
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const filtered = transfers.filter(t => (statusFilter === "All" || t.status === statusFilter) &&
+    [t.id, t.product, t.from, t.to].some(value => value.toLowerCase().includes(search.trim().toLowerCase())));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / 10));
+  const currentPage = Math.min(page, totalPages);
+  const visibleTransfers = filtered.slice((currentPage - 1) * 10, currentPage * 10);
 
   const [showCreateTransfer, setShowCreateTransfer] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [editingLocation, setEditingLocation] = useState<LocationItem | null>(null);
   const [viewLocation, setViewLocation] = useState<LocationItem | null>(null);
 
-  const fetchData = async () => {
-    try {
-      const statusParam = statusFilter === "All" ? "" : statusFilter;
-      const [trRes, locRes, stRes] = await Promise.allSettled([
-        api.get(`/api/stock-transfers?page=${page}&pageSize=10&status=${statusParam}&search=${search}`),
-        api.get("/api/locations?pageSize=100"),
-        api.get("/api/stock-transfers/dashboard"),
-      ]);
-
-      if (trRes.status === "fulfilled" && trRes.value.data?.success) {
-        const raw = trRes.value.data.data.items || trRes.value.data.data || [];
-        setTransfers(raw.map((t: any) => ({
-          id: `TR-${String(t.transferId || t.id).padStart(4, "0")}`,
-          transferId: t.transferId || t.id,
-          product: t.productName || t.product || "",
-          from: t.sourceLocationName || t.from || "",
-          to: t.destLocationName || t.to || "",
-          quantity: t.quantity || 0,
-          date: t.transferDate ? new Date(t.transferDate).toLocaleDateString() : "",
-          status: t.status || "Pending",
-        })));
-        setTotalPages(trRes.value.data.data.totalPages || 1);
-      }
-      if (locRes.status === "fulfilled" && locRes.value.data?.success) {
-        const raw = locRes.value.data.data.items || locRes.value.data.data || [];
-        setLocations(raw.map((l: any) => ({
-          id: String(l.locationId || l.id),
-          locationId: l.locationId || l.id,
-          name: l.locationName || l.name || "",
-          type: l.locationType || l.type || "Warehouse",
-          address: l.address || "",
-          status: l.isActive !== false ? "Active" : "Inactive",
-        })));
-      }
-      if (stRes.status === "fulfilled" && stRes.value.data?.success) {
-        const d = stRes.value.data.data;
-        setStats({ total: d.totalTransfers || 0, pending: d.pendingTransfers || 0, inTransit: d.inTransitTransfers || 0, completed: d.completedTransfers || 0 });
-      }
-    } catch (e) { console.error(e); }
-  };
-
-  useEffect(() => { fetchData(); }, [page, search, statusFilter]);
-
   const updateStatus = async (t: TransferItem, status: string) => {
     try {
-      await api.put(`/api/stock-transfers/${t.transferId}/status`, { status });
+      if (status === "Dispatched") await actionResponse(dispatchTransfer(t.transferId!));
+      else if (status === "Cancelled") await actionResponse(cancelTransfer(t.transferId!));
+      else await actionResponse(updateTransferStatus(t.transferId!, { status }));
+      toast.success("Transfer updated successfully.");
       fetchData();
-    } catch { alert(`Failed to update transfer status.`); }
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Failed to update transfer status."); }
   };
 
-  const handleSaveLocation = async (data: any) => {
-    try {
-      if (editingLocation) await api.put(`/api/locations/${editingLocation.locationId}`, data);
-      else await api.post("/api/locations", data);
-      setShowLocationModal(false); setEditingLocation(null); fetchData();
-    } catch { alert("Failed to save location."); }
+  const handleSaveLocation = async (data: { name: string; type: string; address: string; isActive: boolean }) => {
+    const body = { locationName: data.name, locationType: data.type, address: data.address,
+      isActive: data.isActive, status: data.isActive ? "Active" : "Inactive" };
+    if (editingLocation?.locationId) await actionResponse(updateLocation(editingLocation.locationId, body));
+    else await actionResponse(createLocation(body));
+    toast.success("Location saved.");
+    setShowLocationModal(false);
+    setEditingLocation(null);
+    fetchData();
   };
 
   return (
-    <div className="w-full min-h-full py-8 px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="w-full min-h-full py-6 px-4 sm:py-8 sm:px-6 md:px-8 space-y-6 animate-page-in">
       <PageHeader
         title="Stock Transfer"
         description="Manage internal stock transfers, warehouse movements, and facility locations."
         actions={
           <>
-            {isAuth && (
-              <Button size="sm" variant="outline" asChild className="gap-1.5">
-                <Link href="/reports?tab=distribution">
-                  <FileText className="w-4 h-4" /> Reports
-                </Link>
-              </Button>
-            )}
+            <Button size="sm" variant="outline" asChild className="gap-1.5">
+              <Link href="/reports?tab=distribution">
+                <FileText className="w-4 h-4" /> Reports
+              </Link>
+            </Button>
             {activeTab === "Stock Transfer" ? (
               <Button size="sm" onClick={() => setShowCreateTransfer(true)} className="gap-1.5">
-                <Plus className="w-4 h-4" /> New Transfer
+                <Plus className="w-4 h-4" /> New Request
               </Button>
             ) : (
               <Button size="sm" onClick={() => { setEditingLocation(null); setShowLocationModal(true); }} className="gap-1.5">
@@ -123,7 +101,7 @@ export default function DistributionPage() {
         }
       />
 
-      <DistributionSummaryCards stats={stats} />
+      {pending ? <TransferSkeleton /> : <DistributionSummaryCards stats={stats} />}
 
       {/* Process Tabs */}
       <div className="border-b border-border">
@@ -137,7 +115,7 @@ export default function DistributionPage() {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => { setActiveTab(tab.id as any); setPage(1); }}
+                onClick={() => { setActiveTab(tab.id as "Stock Transfer" | "Locations"); setPage(1); }}
                 className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                   isActive
                     ? "border-foreground text-foreground"
@@ -154,7 +132,7 @@ export default function DistributionPage() {
       {activeTab === "Stock Transfer" && (
         <>
           <div className="mb-6 border border-border rounded-md overflow-hidden bg-card">
-            <div className="flex items-center justify-between gap-sm px-md py-sm bg-muted/20">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-sm px-md py-sm bg-muted/20">
               <div className="flex items-center gap-sm flex-1">
                 <Search className="w-4 h-4 text-muted-foreground shrink-0" />
                 <Input
@@ -171,7 +149,7 @@ export default function DistributionPage() {
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {["All", "Pending", "In Transit", "Completed"].map((s) => (
+                    {["All", "Scheduled", "Dispatched", "Received", "Cancelled"].map((s) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
                   </SelectContent>
@@ -180,8 +158,8 @@ export default function DistributionPage() {
             </div>
           </div>
 
-          <StockTransferTable transfers={transfers} onDispatch={(t) => updateStatus(t, "In Transit")} onReceive={(t) => updateStatus(t, "Completed")} onCancel={(t) => updateStatus(t, "Cancelled")} />
-          <Pagination currentPage={page} totalPages={totalPages} totalCount={transfers.length} onPageChange={setPage} />
+          <StockTransferTable transfers={visibleTransfers} onDispatch={(t) => updateStatus(t, "Dispatched")} onReceive={(t) => updateStatus(t, "Received")} onCancel={(t) => updateStatus(t, "Cancelled")} />
+          <Pagination currentPage={currentPage} totalPages={totalPages} totalCount={filtered.length} onPageChange={setPage} />
         </>
       )}
 

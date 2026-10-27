@@ -31,7 +31,7 @@ export default function ProductionBatchDetailsModal({
       <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto bg-card border-border p-6 shadow-2xl">
         <DialogHeader className="border-b border-border pb-3">
           <div className="flex items-center gap-2.5 text-left">
-            <div className="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0">
               <Package size={16} />
             </div>
             <div>
@@ -178,7 +178,7 @@ export default function ProductionBatchDetailsModal({
           <Button
             size="sm"
             onClick={onClose}
-            className="h-8 text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 cursor-pointer"
+            className="h-8 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
           >
             Close
           </Button>

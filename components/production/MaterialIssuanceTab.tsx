@@ -1,4 +1,7 @@
 "use client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
+import { listIssuances as productionListIssuances } from "@/app/actions/production/issuances";
+import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
@@ -7,18 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Search, Eye, QrCode, CheckCircle2, ArrowRight, MoreHorizontal } from "lucide-react";
 import Pagination from "@/components/Pagination";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { MaterialIssuanceDTO } from "./types";
 import MaterialIssuanceModal from "./MaterialIssuanceModal";
 
 interface MaterialIssuanceTabProps {
+  initialRows: MaterialIssuanceDTO[];
   initialIssuanceId?: number | null;
 }
 
-export default function MaterialIssuanceTab({ initialIssuanceId }: MaterialIssuanceTabProps) {
-  const [issuances, setIssuances] = useState<MaterialIssuanceDTO[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+export default function MaterialIssuanceTab({ initialRows, initialIssuanceId }: MaterialIssuanceTabProps) {
+  const [issuances, setIssuances] = useState<MaterialIssuanceDTO[]>(initialRows);
+  const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -42,11 +45,7 @@ export default function MaterialIssuanceTab({ initialIssuanceId }: MaterialIssua
   const fetchIssuances = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = {};
-      if (statusFilter !== "All") params.status = statusFilter;
-      if (searchQuery.trim()) params.search = searchQuery.trim();
-
-      const res = await api.get("/api/material-issuances", { params });
+      const res = await actionResponse(productionListIssuances());
       if (res.data?.success && Array.isArray(res.data.data)) {
         setIssuances(res.data.data);
       }
@@ -56,18 +55,8 @@ export default function MaterialIssuanceTab({ initialIssuanceId }: MaterialIssua
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, searchQuery]);
+  }, []);
 
-  useEffect(() => {
-    fetchIssuances();
-  }, [fetchIssuances]);
-
-  useEffect(() => {
-    if (initialIssuanceId) {
-      setSelectedIssuanceId(initialIssuanceId);
-      setIsModalOpen(true);
-    }
-  }, [initialIssuanceId]);
 
   const handleOpenScanner = (issuanceId: number) => {
     setSelectedIssuanceId(issuanceId);
@@ -76,9 +65,12 @@ export default function MaterialIssuanceTab({ initialIssuanceId }: MaterialIssua
 
   // Pagination
   const pageSize = 10;
-  const totalCount = issuances.length;
+  const q = searchQuery.trim().toLowerCase();
+  const filteredIssuances = issuances.filter(r => (statusFilter === "All" || r.status === statusFilter)
+    && (!q || `${r.issuanceNumber} ${r.reqNumber} ${r.productName}`.toLowerCase().includes(q)));
+  const totalCount = filteredIssuances.length;
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
-  const paginatedIssuances = issuances.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedIssuances = filteredIssuances.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div className="space-y-6">
@@ -92,8 +84,8 @@ export default function MaterialIssuanceTab({ initialIssuanceId }: MaterialIssua
 
       {/* Search and Status Filter Bar */}
       <div className="border border-border rounded-md overflow-hidden bg-card">
-        <div className="flex items-center justify-between gap-sm px-md py-sm bg-muted/20">
-          <div className="flex items-center gap-sm flex-1">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-md py-sm bg-muted/20">
+          <div className="flex min-w-0 items-center gap-sm flex-1">
             <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
               type="text"
@@ -148,7 +140,7 @@ export default function MaterialIssuanceTab({ initialIssuanceId }: MaterialIssua
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-xs text-muted-foreground animate-pulse">
-                    Loading material issuances...
+                    <ProductionSkeleton />
                   </td>
                 </tr>
               ) : paginatedIssuances.length === 0 ? (

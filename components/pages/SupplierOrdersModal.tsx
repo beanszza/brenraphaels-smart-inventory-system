@@ -124,7 +124,7 @@ export default function SupplierOrdersModal({
           <Button
             variant="outline"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-border bg-card text-foreground font-semibold text-sm hover:bg-foreground hover:text-background transition-colors"
+            className="px-4 py-2 rounded-xl border border-border bg-card text-foreground font-semibold text-sm hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             Close
           </Button>

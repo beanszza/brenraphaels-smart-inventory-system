@@ -1,6 +1,10 @@
 "use client";
+import { OrdersSkeleton } from "@/components/orders-procurement/OrdersSkeleton";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { procurement } from "@/lib/orders/client";
+
+import { useRouter } from "next/navigation";
+import React, { useState, useMemo, useTransition } from "react";
 import {
   Plus,
   Search,
@@ -16,7 +20,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
 import { PurchaseOrderPO, POStatus } from "../types";
 import { POTable } from "./POTable";
 import { PODetailsModal } from "./PODetailsModal";
@@ -24,7 +27,6 @@ import { POActionModal, POActionType } from "./POActionModal";
 import { CreatePOModal } from "./CreatePOModal";
 import { CreateDeliveryModal } from "../delivery/CreateDeliveryModal";
 import Pagination from "@/components/Pagination";
-import { useAuth } from "@/context/AuthContext";
 
 const STATUS_TABS: (POStatus | "All")[] = [
   "All",
@@ -33,6 +35,8 @@ const STATUS_TABS: (POStatus | "All")[] = [
   "Returned",
   "Approved",
   "Ordered",
+  "Partially Delivered",
+  "Delivered",
   "Rejected",
   "Cancelled",
 ];
@@ -48,7 +52,7 @@ function mapPO(o: any): PurchaseOrderPO {
     requestedBy: o.requestedBy || "—",
     orderDate: o.orderDate,
     expectedArrivalDate: o.expectedArrivalDate,
-    status: o.status as POStatus,
+    status: (o.status === "PendingApproval" ? "Pending Approval" : o.status === "PartiallyDelivered" ? "Partially Delivered" : o.status) as POStatus,
     paymentType: o.paymentType,
     adminNotes: o.adminNotes ?? undefined,
     totalAmount: o.totalAmount || 0,
@@ -58,7 +62,7 @@ function mapPO(o: any): PurchaseOrderPO {
       itemName: i.itemName,
       poItemQuantity: i.poItemQuantity,
       receivedQuantity: i.receivedQuantity,
-      unitPrice: i.unitPrice,
+      unitPrice: i.unitPrice ?? (Number(i.totalPrice) / Math.max(1, Number(i.poItemQuantity))),
       totalPrice: i.totalPrice ?? i.lineTotal ?? (i.poItemQuantity * (i.unitPrice || 0)),
       purchaseUomId: i.purchaseUomId,
       purchaseUomName: i.purchaseUomName || "Unit",
@@ -67,11 +71,12 @@ function mapPO(o: any): PurchaseOrderPO {
   };
 }
 
-export function POTab() {
-  const { isAdmin } = useAuth();
+export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
 
-  const [orders, setOrders] = useState<PurchaseOrderPO[]>([]);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const orders = initialOrders.map(mapPO);
+  const [loading, startRefresh] = useTransition();
+  const [notice, setNotice] = useState("");
   const [activeTab, setActiveTab] = useState<string>("All");
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("");
@@ -90,24 +95,8 @@ export function POTab() {
   const [editingPO, setEditingPO] = useState<PurchaseOrderPO | null>(null);
   const [deliveryPO, setDeliveryPO] = useState<PurchaseOrderPO | null>(null);
 
-  const fetchOrders = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await api.get("/api/purchase-orders?page=1&pageSize=1000");
-      if (res.data?.success) {
-        const raw = res.data.data?.items || res.data.data || [];
-        setOrders(raw.map(mapPO));
-      }
-    } catch (e) {
-      console.error("Failed to fetch purchase orders:", e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const fetchOrders = () => startRefresh(() => router.refresh());
 
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
 
   // Counts per tab
   const counts = useMemo(() => {
@@ -156,20 +145,17 @@ export function POTab() {
 
   // Status update handler
   const handleStatusUpdate = async (poId: number, status: string, adminNotes?: string) => {
-    try {
-      await api.put(`/api/purchase-orders/${poId}/status`, {
-        status,
-        adminNotes: adminNotes || null,
-      });
-      await fetchOrders();
-    } catch (e: any) {
-      console.error("Status update failed:", e);
-      alert(e?.response?.data?.message || "Failed to update purchase order status.");
-    }
+    await procurement.setOrderStatus(poId, {
+      status,
+      adminNotes: adminNotes || null,
+    });
+    setNotice("Status updated successfully.");
+    fetchOrders();
   };
 
   return (
     <div className="space-y-6 animate-page-in">
+      {notice && <p role="status" className="rounded-lg bg-primary/10 p-3 text-sm text-primary">{notice}</p>}
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -186,18 +172,16 @@ export function POTab() {
             disabled={loading}
             className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+            <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
 
-          {!isAdmin && (
-            <Button
-              type="button"
-              onClick={() => setOpenCreateModal(true)}
-              className="flex items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm h-10"
-            >
-              <Plus className="w-4 h-4" /> Create Purchase Order
-            </Button>
-          )}
+          <Button
+            type="button"
+            onClick={() => setOpenCreateModal(true)}
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+          >
+            <Plus className="w-4 h-4" /> Create Purchase Order
+          </Button>
         </div>
       </div>
 
@@ -245,26 +229,24 @@ export function POTab() {
       <div className="border-b border-border overflow-x-auto">
         <div className="flex items-center gap-1.5 min-w-max pb-2">
           {/* Requests Tab — Admin only */}
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => { setActiveTab("Requests"); setPage(1); }}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === "Requests"
-                  ? "bg-foreground text-background shadow-sm"
-                  : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <span>Requests</span>
-              {counts.Requests > 0 && (
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                  activeTab === "Requests" ? "bg-background text-foreground" : "bg-foreground/20 text-foreground"
-                }`}>
-                  {counts.Requests}
-                </span>
-              )}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => { setActiveTab("Requests"); setPage(1); }}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              activeTab === "Requests"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            <span>Requests</span>
+            {counts.Requests > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                activeTab === "Requests" ? "bg-background text-foreground" : "bg-foreground/20 text-foreground"
+              }`}>
+                {counts.Requests}
+              </span>
+            )}
+          </button>
 
           {/* Standard Status Tabs */}
           {STATUS_TABS.map((tab) => {
@@ -277,7 +259,7 @@ export function POTab() {
                 onClick={() => { setActiveTab(tab); setPage(1); }}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                   isSelected
-                    ? "bg-foreground text-background shadow-sm"
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
@@ -302,13 +284,12 @@ export function POTab() {
       )}
 
       {/* PO Table */}
-      <POTable
+      {loading ? <OrdersSkeleton /> : (<POTable
         orders={paginatedList}
-        isAdmin={isAdmin}
         onView={(po) => setSelectedPO(po)}
-        onEdit={(po) => setSelectedPO(po)} // For now opens details; edit form is a future iteration
+        onEdit={(po) => setEditingPO(po)}
         onCancel={(po) => setActionModal({ po, type: "cancel" })}
-      />
+      />)}
 
       {/* Pagination */}
       <Pagination
@@ -321,7 +302,6 @@ export function POTab() {
       {/* PO Details / Review Modal */}
       <PODetailsModal
         po={selectedPO}
-        isAdmin={isAdmin}
         onClose={() => setSelectedPO(null)}
         onEdit={(po) => { setSelectedPO(null); setEditingPO(po); }}
         onApprove={(po) => { setSelectedPO(null); setActionModal({ po, type: "approve" }); }}
@@ -360,6 +340,7 @@ export function POTab() {
           onClose={() => setOpenCreateModal(false)}
           onSuccess={() => {
             setOpenCreateModal(false);
+            setNotice("Saved successfully.");
             fetchOrders();
           }}
         />
@@ -374,6 +355,7 @@ export function POTab() {
           onClose={() => setEditingPO(null)}
           onSuccess={() => {
             setEditingPO(null);
+            setNotice("Saved successfully.");
             fetchOrders();
           }}
         />
@@ -387,6 +369,7 @@ export function POTab() {
           onClose={() => setDeliveryPO(null)}
           onSuccess={() => {
             setDeliveryPO(null);
+            setNotice("Saved successfully.");
             fetchOrders();
           }}
         />

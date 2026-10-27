@@ -1,47 +1,55 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import api from "@/lib/api";
-import { useAuth } from "@/context/AuthContext";
+import React, { useState } from "react";
+import {
+  saveSupply,
+  saveSupplier,
+  saveRecipe,
+  saveCategory,
+  toggleCategoryStatus,
+  type SupplyInput,
+  type SupplierInput,
+  type RecipeInput,
+  type CategoryInput,
+} from "@/lib/resources-suppliers/actions";
+import type { ResourcesData } from "@/lib/resources-suppliers/data";
+import { useRouter } from "next/navigation";
 import {
   SupplyItem,
   Supplier,
   Recipe,
+  CategoryItem,
   FinishedProduct,
   UomOption,
-  CategoryItem,
 } from "@/components/resources-suppliers/types";
 import CategoryTab from "@/components/resources-suppliers/CategoryTab";
 import CategoryModal from "@/components/resources-suppliers/CategoryModal";
 import SupplyTab from "@/components/resources-suppliers/SupplyTab";
 import SupplierTab from "@/components/resources-suppliers/SupplierTab";
 import RecipeTab from "@/components/resources-suppliers/RecipeTab";
-import SupplyModal, { SupplyCategory } from "@/components/resources-suppliers/SupplyModal";
+import SupplyModal from "@/components/resources-suppliers/SupplyModal";
 import SupplyDetailsModal from "@/components/resources-suppliers/SupplyDetailsModal";
 import SupplierModal from "@/components/resources-suppliers/SupplierModal";
 import SupplierDetailsModal from "@/components/resources-suppliers/SupplierDetailsModal";
 import RecipeModal from "@/components/resources-suppliers/RecipeModal";
 import { PageHeader } from "@/components/shared/PageHeader";
 
-export default function ResourcesSuppliersPage() {
-  const auth = useAuth();
-  const user = auth?.user;
-  const isAuth =
-    user?.username === "scmsuser" ||
-    user?.username === "ERP-ADMIN" ||
-    user?.email === "scmsuser@r3b2p.com" ||
-    user?.email === "admin@r3b2p.com" ||
-    user?.roles?.includes("Admin");
+export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }) {
+  const router = useRouter();
+  const [message, setMessage] = useState("");
 
-  // New tab order: Categories, Supplier, Supply, BOM
+  // Process Tab Order: Categories -> Supplier List -> Supply List -> BOM
   const [activeTab, setActiveTab] = useState<"category" | "supplier" | "supply" | "recipe">("category");
-  const [categoryData, setCategoryData] = useState<CategoryItem[]>([]);
-  const [supplyData, setSupplyData] = useState<SupplyItem[]>([]);
-  const [supplierData, setSupplierData] = useState<Supplier[]>([]);
-  const [recipeData, setRecipeData] = useState<Recipe[]>([]);
-  const [finishedProductData, setFinishedProductData] = useState<FinishedProduct[]>([]);
-  const [supplyCategories, setSupplyCategories] = useState<SupplyCategory[]>([]);
-  const [uoms, setUoms] = useState<UomOption[]>([]);
+
+  const {
+    supplies: supplyData,
+    suppliers: supplierData,
+    recipes: recipeData,
+    products: finishedProductData,
+    categories: supplyCategories,
+    allCategories: categoryData = [],
+    units: uoms,
+  } = data;
 
   // Search & Filter State
   const [categoryStatusFilter, setCategoryStatusFilter] = useState("All");
@@ -76,221 +84,61 @@ export default function ResourcesSuppliersPage() {
   const [openRecipeModal, setOpenRecipeModal] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 
-  const fetchData = async () => {
-    try {
-      const results = await Promise.allSettled([
-        api.get(`/api/items?page=1&pageSize=1000`),
-        api.get(`/api/suppliers?page=1&pageSize=1000`),
-        api.get("/api/recipes"),
-        api.get("/api/finished-products"),
-        api.get("/api/categories/supplies"),
-        api.get("/api/unit-of-measures"),
-        api.get("/api/categories?pageSize=1000"),
-      ]);
-      const [itemsRes, suppliersRes, recipesRes, fpRes, categoriesRes, uomsRes, allCategoriesRes] =
-        results.map((r) => (r.status === "fulfilled" ? r.value : null));
-
-      if (itemsRes?.data?.success) {
-        const rawItems = itemsRes.data.data.items || itemsRes.data.data || [];
-        const suppliesOnly = rawItems.filter(
-          (i: any) => i.categoryName !== "Finished Good" && i.categoryName !== "Finished Goods"
-        );
-        setSupplyData([...suppliesOnly].sort((a: any, b: any) => (b.itemId || 0) - (a.itemId || 0)));
-      }
-      if (suppliersRes?.data?.success) {
-        const rawSuppliers = suppliersRes.data.data.items || suppliersRes.data.data || [];
-        setSupplierData(
-          [...rawSuppliers].sort((a: any, b: any) => (b.supplierId || 0) - (a.supplierId || 0))
-        );
-      }
-      if (recipesRes?.data?.success) {
-        const rawRecipes = recipesRes.data.data.items || recipesRes.data.data || [];
-        setRecipeData(
-          [...rawRecipes].sort((a: any, b: any) => (b.recipeId || 0) - (a.recipeId || 0))
-        );
-      }
-      if (fpRes?.data?.success) {
-        setFinishedProductData(
-          (fpRes.data.data.items || fpRes.data.data || [])
-            .sort((a: any, b: any) => a.productId - b.productId)
-            .map((p: any) => ({
-              productId: p.productId,
-              itemName: p.itemName || "",
-              variant: p.variant || "",
-            }))
-        );
-      }
-      if (categoriesRes?.data?.success) setSupplyCategories(categoriesRes.data.data || []);
-      if (uomsRes?.data?.success) setUoms(uomsRes.data.data || []);
-
-      if (allCategoriesRes?.data?.success) {
-        const rawCats = allCategoriesRes.data.data.items || allCategoriesRes.data.data || [];
-        setCategoryData(rawCats);
-      }
-    } catch (e) {
-      console.error(e);
-    }
+  const handleSaveCategory = async (input: { categoryName: string; description: string; isActive: boolean }) => {
+    const result = await saveCategory(input, editingCategory?.categoryId);
+    if (!result.success) throw new Error(result.message);
+    setMessage(result.message);
+    setOpenCategoryModal(false);
+    setEditingCategory(null);
+    setCategoryPage(1);
+    router.refresh();
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleSaveCategory = async (data: any) => {
-    try {
-      if (editingCategory) {
-        await api.put(`/api/categories/${editingCategory.categoryId}`, data);
-      } else {
-        await api.post("/api/categories", data);
-      }
-      setOpenCategoryModal(false);
-      setEditingCategory(null);
-      setCategoryPage(1);
-      fetchData();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || "Failed to save category.";
-      alert(msg);
-    }
+  const handleSaveSupply = async (input: SupplyInput) => {
+    const result = await saveSupply(input, editingSupply?.itemId);
+    if (!result.success) throw new Error(result.message);
+    setMessage(result.message);
+    setOpenSupplyModal(false);
+    setEditingSupply(null);
+    setSupplyPage(1);
+    router.refresh();
   };
 
-  const handleSaveSupply = async (data: any) => {
-    try {
-      const payload = {
-        itemName: data.itemName,
-        categoryId: data.categoryId,
-        uomId: data.uomId,
-        minStockLevel: data.minStock,
-        maxStockLevel: data.maxStock,
-        isActive: data.isActive,
-      };
-      let itemId: number;
-      if (editingSupply) {
-        await api.put(`/api/items/${editingSupply.itemId}`, payload);
-        itemId = editingSupply.itemId;
-      } else {
-        const res = await api.post("/api/items", payload);
-        itemId = res?.data?.data?.itemId || res?.data?.itemId;
-      }
-      // Sync linked suppliers
-      if (itemId) {
-        const targetSupplierIds: number[] = data.supplierIds || [];
-        if (editingSupply) {
-          try {
-            const curRes = await api.get(`/api/supplier-items/by-item/${itemId}`);
-            const existingItems = curRes.data?.data || curRes.data || [];
-            const existingIds: number[] = existingItems.map((s: any) => s.supplierId);
-
-            const removedIds = existingIds.filter((id) => !targetSupplierIds.includes(id));
-            await Promise.allSettled(
-              removedIds.map((supplierId) =>
-                api.delete(`/api/supplier-items/${supplierId}/${itemId}`).catch(() => {})
-              )
-            );
-
-            const addedIds = targetSupplierIds.filter((id) => !existingIds.includes(id));
-            await Promise.allSettled(
-              addedIds.map((supplierId) =>
-                api.post("/api/supplier-items", {
-                  supplierId: supplierId,
-                  itemId: itemId,
-                  purchaseUomId: data.uomId,
-                  unitPrice: 0,
-                  leadTimeDays: 3,
-                  packSize: 1,
-                  minOrderQuantity: 1,
-                  isPreferred: false,
-                  isActive: true,
-                }).catch(() => {})
-              )
-            );
-          } catch {
-            await Promise.allSettled(
-              targetSupplierIds.map((supplierId) =>
-                api.post("/api/supplier-items", {
-                  supplierId: supplierId,
-                  itemId: itemId,
-                  purchaseUomId: data.uomId,
-                  unitPrice: 0,
-                  leadTimeDays: 3,
-                  packSize: 1,
-                  minOrderQuantity: 1,
-                  isPreferred: false,
-                  isActive: true,
-                }).catch(() => {})
-              )
-            );
-          }
-        } else if (targetSupplierIds.length > 0) {
-          await Promise.allSettled(
-            targetSupplierIds.map((supplierId: number) =>
-              api.post("/api/supplier-items", {
-                supplierId: supplierId,
-                itemId: itemId,
-                purchaseUomId: data.uomId,
-                unitPrice: 0,
-                leadTimeDays: 3,
-                packSize: 1,
-                minOrderQuantity: 1,
-                isPreferred: false,
-                isActive: true,
-              }).catch(() => {})
-            )
-          );
-        }
-      }
-      setOpenSupplyModal(false);
-      setEditingSupply(null);
-      setSupplyPage(1);
-      fetchData();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || "Failed to save supply item.";
-      alert(msg);
-    }
+  const handleSaveSupplier = async (input: SupplierInput) => {
+    const result = await saveSupplier(input, editingSupplier?.supplierId);
+    if (!result.success) throw new Error(result.message);
+    setMessage(result.message);
+    setOpenSupplierModal(false);
+    setEditingSupplier(null);
+    setSupplierPage(1);
+    router.refresh();
   };
 
-  const handleSaveSupplier = async (data: any) => {
-    try {
-      if (editingSupplier) await api.put(`/api/suppliers/${editingSupplier.supplierId}`, data);
-      else await api.post("/api/suppliers", data);
-      setOpenSupplierModal(false);
-      setEditingSupplier(null);
-      setSupplierPage(1);
-      fetchData();
-    } catch {
-      alert("Failed to save supplier.");
-    }
-  };
-
-  const handleSaveRecipe = async (data: any) => {
-    try {
-      const payload = {
-        recipeName: data.recipeName,
-        productId: data.productId,
-        outputQuantity: data.outputQuantity,
-        notes: data.notes,
-        isActive: data.isActive,
-        ingredients: data.ingredients,
-      };
-      if (editingRecipe) await api.put(`/api/recipes/${editingRecipe.recipeId}`, payload);
-      else await api.post("/api/recipes", payload);
-      setOpenRecipeModal(false);
-      setEditingRecipe(null);
-      setRecipePage(1);
-      fetchData();
-    } catch {
-      alert("Failed to save recipe.");
-    }
+  const handleSaveRecipe = async (input: RecipeInput) => {
+    const result = await saveRecipe(input, editingRecipe?.recipeId);
+    if (!result.success) throw new Error(result.message);
+    setMessage(result.message);
+    setOpenRecipeModal(false);
+    setEditingRecipe(null);
+    setRecipePage(1);
+    router.refresh();
   };
 
   return (
-    <div className="w-full min-h-full py-8 px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="w-full min-h-full py-7 px-4 sm:px-8 space-y-5 animate-page-in">
       <PageHeader
         title="Resources & Suppliers"
         description="Manage your foundation data - Categories, Suppliers, Supply, and Recipes"
       />
 
-      {/* Process Tabs in Requested Order: Categories, Supplier, Supply, BOM */}
-      <div className="border-b border-border">
+      {message && (
+        <p role="status" className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
+          {message}
+        </p>
+      )}
+
+      {/* Process Tabs in Uniform Order: Categories -> Supplier List -> Supply List -> BOM */}
+      <div className="border-b border-border-subtle">
         <div className="flex items-center gap-2 overflow-x-auto">
           {[
             { id: "category", label: "CATEGORIES" },
@@ -303,10 +151,10 @@ export default function ResourcesSuppliersPage() {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? "border-foreground text-foreground"
+                    ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -422,7 +270,7 @@ export default function ResourcesSuppliersPage() {
         open={openSupplyModal}
         editingItem={editingSupply}
         existingSupplies={supplyData}
-        suppliers={supplierData.map((s: any) => ({
+        suppliers={supplierData.map((s) => ({
           supplierId: s.supplierId,
           companyName: s.companyName,
           supplierCode: s.supplierCode,

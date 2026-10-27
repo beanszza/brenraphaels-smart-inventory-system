@@ -1,13 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import api from "@/lib/api";
 import AuditLogsFilterBar from "@/components/pages/AuditLogsFilterBar";
 import AuditLogsTable, { LogEntry } from "@/components/pages/AuditLogsTable";
-import { useAuth } from "@/context/AuthContext";
 
 const parseLogTime = (ts: string): number => {
   if (!ts) return 0;
@@ -22,38 +19,13 @@ const parseLogTime = (ts: string): number => {
   return 0;
 };
 
-const fetchLogs = async (type: string | null): Promise<LogEntry[]> => {
-  const moduleType = type?.toLowerCase() || "supply";
-  try {
-    const response = await api.get(`/api/audit-logs?type=${moduleType}`);
-    const resData = response.data;
-    let list: LogEntry[] = [];
-    if (Array.isArray(resData)) list = resData;
-    else if (resData?.data && Array.isArray(resData.data)) list = resData.data;
-
-    // Strict descending sort so newest records always appear at the top
-    return [...list].sort((a, b) => parseLogTime(b.timestamp) - parseLogTime(a.timestamp));
-  } catch (e) {
-    console.error("Failed to fetch logs:", e);
-  }
-  return [];
-};
-
-export default function ViewTransactionalLogs() {
+export default function ViewTransactionalLogs({ initialLogs, unavailable = false }: { initialLogs: LogEntry[]; unavailable?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const typeParam = searchParams?.get("type") || "Supply";
-  const { user, isLoading } = useAuth() || {};
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/");
-    }
-  }, [user, isLoading, router]);
-
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [title, setTitle] = useState("");
+  const logs = initialLogs;
+  const formattedType = typeParam.charAt(0).toUpperCase() + typeParam.slice(1).toLowerCase();
+  const title = `${formattedType} Transactional Audit Logs`;
 
   const [filterMode, setFilterMode] = useState<"all" | "specific" | "range">("all");
   const [specificDate, setSpecificDate] = useState("");
@@ -62,17 +34,6 @@ export default function ViewTransactionalLogs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    const formattedType = typeParam.charAt(0).toUpperCase() + typeParam.slice(1).toLowerCase();
-    setTitle(`${formattedType} Transactional Audit Logs`);
-    setLoading(true);
-    fetchLogs(typeParam).then((data) => {
-      setLogs(data);
-      setLoading(false);
-    });
-  }, [typeParam]);
-
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, filterMode, specificDate, startDate, endDate]);
 
   const handleResetFilters = () => {
     setFilterMode("all"); setSpecificDate(""); setStartDate(""); setEndDate(""); setSearchQuery(""); setCurrentPage(1);
@@ -127,7 +88,7 @@ export default function ViewTransactionalLogs() {
         `"${log.activity || ""}"`,
         `"${log.entityName || ""}"`,
         `"${log.user || ""}"`,
-        `"${((log as any).details || "").replace(/"/g, '""')}"`,
+        '""',
       ].join(","));
     });
 
@@ -155,19 +116,23 @@ export default function ViewTransactionalLogs() {
         </div>
 
         <AuditLogsFilterBar
-          filterMode={filterMode} setFilterMode={setFilterMode} specificDate={specificDate} setSpecificDate={setSpecificDate}
-          startDate={startDate} setStartDate={setStartDate} endDate={endDate} setEndDate={setEndDate}
-          searchQuery={searchQuery} setSearchQuery={setSearchQuery} onResetFilters={handleResetFilters} onExportCSV={handleExportCSV}
+          filterMode={filterMode} setFilterMode={(value) => { setFilterMode(value); setCurrentPage(1); }} specificDate={specificDate} setSpecificDate={(value) => { setSpecificDate(value); setCurrentPage(1); }}
+          startDate={startDate} setStartDate={(value) => { setStartDate(value); setCurrentPage(1); }} endDate={endDate} setEndDate={(value) => { setEndDate(value); setCurrentPage(1); }}
+          searchQuery={searchQuery} setSearchQuery={(value) => { setSearchQuery(value); setCurrentPage(1); }} onResetFilters={handleResetFilters} onExportCSV={handleExportCSV}
         />
 
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="animate-spin text-foreground" size={32} />
-            <span className="ml-3 text-muted-foreground font-medium">Fetching transaction audit logs...</span>
-          </div>
-        ) : (
-          <AuditLogsTable logs={filteredLogs} currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        )}
+        <AuditLogsTable
+          logs={filteredLogs}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          emptyMessage={
+            unavailable
+              ? "Audit events are unavailable right now. Try again shortly."
+              : logs.length === 0
+                ? "No audit events have been recorded yet."
+                : undefined
+          }
+        />
       </div>
     </div>
   );

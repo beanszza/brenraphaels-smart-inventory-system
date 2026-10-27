@@ -1,4 +1,5 @@
 "use client";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 import React from "react";
 import { MoreHorizontal, Eye } from "lucide-react";
@@ -19,9 +20,7 @@ export default function DiscrepancyTable({
   const [activeMenuId, setActiveMenuId] = React.useState<number | null>(null);
   if (loading) {
     return (
-      <div className="rounded-xl border border-border bg-card p-12 text-center text-xs text-muted-foreground animate-pulse">
-        Loading Discrepancies...
-      </div>
+      <ReceivingSkeleton />
     );
   }
 

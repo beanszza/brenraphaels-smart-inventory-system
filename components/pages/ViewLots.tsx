@@ -2,19 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { Package, AlertTriangle } from "lucide-react";
-import api from "@/lib/api";
+import { inventory } from "@/lib/inventory/client";
 import Pagination from "@/components/Pagination";
-import { useAuth } from "@/context/AuthContext";
 import { LotItem } from "@/components/lots/types";
 import LotsTable from "@/components/lots/LotsTable";
 
 export default function ViewLots() {
-  const auth = useAuth();
-  const user = auth?.user;
-  const isAuth =
-    user?.username === "scmsuser" || user?.username === "ERP-ADMIN" ||
-    user?.email === "scmsuser@r3b2p.com" || user?.email === "admin@r3b2p.com" || user?.roles?.includes("Admin");
-
   const [lots, setLots] = useState<LotItem[]>([]);
   const [activeTab, setActiveTab] = useState("all");
   const [page, setPage] = useState(1);
@@ -24,10 +17,7 @@ export default function ViewLots() {
   const fetchLots = async () => {
     try {
       const statusFilter = activeTab === "all" ? "" : activeTab;
-      const url = statusFilter
-        ? `/api/inventory/lots?status=${statusFilter}&page=${page}&pageSize=10`
-        : `/api/inventory/lots?page=${page}&pageSize=10`;
-      const res = await api.get(url);
+      const res = await inventory.listLots(`status=${statusFilter}&page=${page}&pageSize=10`);
       if (res.data.success) {
         setLots(res.data.data.items || res.data.data || []);
         setTotalPages(res.data.data.totalPages || 1);
@@ -48,7 +38,7 @@ export default function ViewLots() {
         const counts: Record<string, number> = { all: 0 };
         await Promise.all(
           statuses.map(async (status) => {
-            const res = await api.get(`/api/inventory/lots?status=${status}&page=1&pageSize=1`);
+            const res = await inventory.listLots(`status=${status}&page=1&pageSize=1`);
             if (res.data?.success) {
               counts[status] = res.data.data.totalCount || res.data.data.items?.length || 0;
             }
@@ -68,11 +58,9 @@ export default function ViewLots() {
           <p className="mt-1 text-sm text-muted-foreground">Traceable batches, expiry monitoring, and lot-level inventory</p>
         </div>
         <div className="flex items-center gap-3">
-          {isAuth && (
-            <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-5 py-2.5 text-sm font-semibold text-foreground">
-              <Package size={16} /> Batch Traceability
-            </div>
-          )}
+          <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-5 py-2.5 text-sm font-semibold text-foreground">
+            <Package size={16} /> Batch Traceability
+          </div>
         </div>
       </div>
 

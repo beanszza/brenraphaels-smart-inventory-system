@@ -1,4 +1,8 @@
 "use client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
+import { listProductionQa as productionListProductionQa } from "@/app/actions/production/quality";
+import { reviewProductionQa as productionReviewProductionQa } from "@/app/actions/production/quality";
+import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -7,26 +11,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 
 interface ProductionQaTabProps {
-  isQaOfficer: boolean;
-  isAdmin: boolean;
-  currentUser?: string;
-  onSwitchToQaOfficer?: () => void;
+  initialRows: any[];
+  currentUser: string;
 }
 
-export default function ProductionQaTab({
-  isQaOfficer,
-  isAdmin,
-  currentUser = "Ramon Dela Cruz",
-  onSwitchToQaOfficer,
-}: ProductionQaTabProps) {
+export default function ProductionQaTab({ initialRows, currentUser }: ProductionQaTabProps) {
   const [mounted, setMounted] = useState<boolean>(false);
-  const [batches, setBatches] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [selectedBatchId, setSelectedBatchId] = useState<number | null>(null);
+  const [allBatches, setBatches] = useState<any[]>(initialRows);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [selectedBatchId, setSelectedBatchId] = useState<number | null>(initialRows.find(b => b.status === "For QA")?.batchId ?? null);
   const [subTab, setSubTab] = useState<"pending" | "completed">("pending");
 
   useEffect(() => {
@@ -34,7 +30,7 @@ export default function ProductionQaTab({
   }, []);
 
   // QA Form fields
-  const [acceptedQty, setAcceptedQty] = useState<number>(0);
+  const [acceptedQty, setAcceptedQty] = useState<number>(initialRows.find(b => b.status === "For QA")?.packedQty ?? 0);
   const [acceptedReason, setAcceptedReason] = useState<string>("Meets All Sensory & Packaging Standards");
   const [rejectedQty, setRejectedQty] = useState<number>(0);
   const [rejectedReason, setRejectedReason] = useState<string>("");
@@ -53,7 +49,7 @@ export default function ProductionQaTab({
   const fetchBatches = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/api/production-qa?status=${subTab}`);
+      const res = await actionResponse(productionListProductionQa("status=all"));
       if (res.data?.success && Array.isArray(res.data.data)) {
         setBatches(res.data.data);
         if (res.data.data.length > 0 && !selectedBatchId) {
@@ -68,12 +64,10 @@ export default function ProductionQaTab({
     } finally {
       setLoading(false);
     }
-  }, [subTab, selectedBatchId]);
+  }, [selectedBatchId]);
 
-  useEffect(() => {
-    fetchBatches();
-  }, [fetchBatches]);
 
+  const batches = allBatches.filter(b => subTab === "pending" ? b.status === "For QA" : b.status !== "For QA");
   const selectedBatch = batches.find((b) => b.batchId === selectedBatchId) || null;
 
   // When changing batch selection
@@ -109,7 +103,7 @@ export default function ProductionQaTab({
 
     setSubmitting(true);
     try {
-      const res = await api.post("/api/production-qa", {
+      const res = await actionResponse(productionReviewProductionQa({
         batchId: selectedBatch.batchId,
         acceptedQuantity: acceptedQty,
         acceptedReason,
@@ -117,8 +111,8 @@ export default function ProductionQaTab({
         rejectedReason,
         remarks,
         checklist,
-        inspectorName: currentUser || "Ramon Dela Cruz",
-      });
+        inspectorName: currentUser,
+      }));
 
       if (res.data?.success) {
         toast.success(
@@ -141,8 +135,6 @@ export default function ProductionQaTab({
     }
   };
 
-  const isReadOnly = !isQaOfficer;
-
   return (
     <div className="space-y-6 animate-page-in">
       {/* ── Header ── */}
@@ -154,17 +146,6 @@ export default function ProductionQaTab({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {!isQaOfficer && onSwitchToQaOfficer && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onSwitchToQaOfficer}
-              className="text-xs h-8 rounded-lg border-border font-semibold cursor-pointer"
-            >
-              Switch to Ramon (QA Officer)
-            </Button>
-          )}
           <Button
             variant="outline"
             size="sm"
@@ -176,36 +157,17 @@ export default function ProductionQaTab({
         </div>
       </div>
 
-      {/* ── Notice for non-QA officers matching Screenshot 1 ── */}
-      {!isQaOfficer && (
-        <div className="p-3.5 rounded-xl border border-border bg-muted/20 flex items-center justify-between gap-3 text-xs">
-          <span className="text-muted-foreground font-medium">
-            Only the QA Officer can perform and submit QA reviews.
-          </span>
-          {onSwitchToQaOfficer && (
-            <Button
-              type="button"
-              size="sm"
-              onClick={onSwitchToQaOfficer}
-              className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/85 cursor-pointer shadow-xs"
-            >
-              Switch to Ramon
-            </Button>
-          )}
-        </div>
-      )}
-
       {/* ── Subtab Navigation (Pending QA & Completed QA) ── */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto">
         <button
           type="button"
           onClick={() => {
             setSubTab("pending");
             setSelectedBatchId(null);
           }}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             subTab === "pending"
-              ? "bg-foreground text-background shadow-xs"
+              ? "bg-primary text-primary-foreground shadow-xs"
               : "border border-border bg-card text-muted-foreground hover:bg-muted"
           }`}
         >
@@ -218,9 +180,9 @@ export default function ProductionQaTab({
             setSubTab("completed");
             setSelectedBatchId(null);
           }}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             subTab === "completed"
-              ? "bg-foreground text-background shadow-xs"
+              ? "bg-primary text-primary-foreground shadow-xs"
               : "border border-border bg-card text-muted-foreground hover:bg-muted"
           }`}
         >
@@ -243,9 +205,7 @@ export default function ProductionQaTab({
 
           <div className="space-y-2 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
             {loading ? (
-              <div className="p-6 text-center text-xs font-mono text-muted-foreground uppercase tracking-widest">
-                Loading batches...
-              </div>
+              <ProductionSkeleton />
             ) : batches.length === 0 ? (
               <div className="p-6 text-center text-xs text-muted-foreground rounded-xl border border-border bg-card">
                 No batches found in this view.
@@ -358,7 +318,6 @@ export default function ProductionQaTab({
                         min="0"
                         max={selectedBatch.packedQty}
                         value={acceptedQty}
-                        disabled={isReadOnly}
                         onChange={(e) => {
                           const val = Math.max(0, Number(e.target.value));
                           setAcceptedQty(val);
@@ -373,7 +332,6 @@ export default function ProductionQaTab({
                           <Select
                             value={acceptedReason}
                             onValueChange={setAcceptedReason}
-                            disabled={isReadOnly}
                           >
                             <SelectTrigger className="h-8 text-xs border-border bg-background">
                               <SelectValue placeholder="Select reason" />
@@ -404,7 +362,6 @@ export default function ProductionQaTab({
                         min="0"
                         max={selectedBatch.packedQty}
                         value={rejectedQty}
-                        disabled={isReadOnly}
                         onChange={(e) => {
                           const val = Math.max(0, Number(e.target.value));
                           setRejectedQty(val);
@@ -419,7 +376,6 @@ export default function ProductionQaTab({
                           <Select
                             value={rejectedReason}
                             onValueChange={setRejectedReason}
-                            disabled={isReadOnly}
                           >
                             <SelectTrigger className="h-8 text-xs border-border bg-background">
                               <SelectValue placeholder="Select defect reason" />
@@ -457,7 +413,6 @@ export default function ProductionQaTab({
                           <input
                             type="checkbox"
                             checked={checklist[item.key] ?? true}
-                            disabled={isReadOnly}
                             onChange={(e) =>
                               setChecklist((prev) => ({ ...prev, [item.key]: e.target.checked }))
                             }
@@ -476,7 +431,6 @@ export default function ProductionQaTab({
                       placeholder="Add sensory findings, inspector observations..."
                       rows={2}
                       value={remarks}
-                      disabled={isReadOnly}
                       onChange={(e) => setRemarks(e.target.value)}
                       className="text-xs border-border bg-background"
                     />
@@ -486,9 +440,9 @@ export default function ProductionQaTab({
                   <div className="flex items-center justify-end pt-2">
                     <Button
                       type="button"
-                      disabled={isReadOnly || submitting}
+                      disabled={submitting}
                       onClick={() => setConfirmModal(true)}
-                      className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/85 cursor-pointer shadow-xs"
+                      className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
                     >
                       Confirm & Sign Off QA Review
                     </Button>
@@ -544,7 +498,7 @@ export default function ProductionQaTab({
                 size="sm"
                 onClick={handleSubmitQa}
                 disabled={submitting}
-                className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/85 cursor-pointer shadow-xs"
+                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
               >
                 {submitting ? "Signing Off..." : "Sign Off & Complete"}
               </Button>

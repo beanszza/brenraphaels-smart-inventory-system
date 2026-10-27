@@ -9,7 +9,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import api from "@/lib/api";
+import { inventory } from "@/lib/inventory/client";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 
@@ -110,7 +110,7 @@ export default function ViewValuation() {
   const fetchValuation = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/valuation?page=1&pageSize=1000");
+      const res = await inventory.getValuation();
       if (res.data?.success) {
         const raw = res.data.data?.items || res.data.data || [];
         setItems(raw.map((i: any) => ({

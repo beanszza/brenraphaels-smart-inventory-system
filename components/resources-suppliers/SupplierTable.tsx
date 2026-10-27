@@ -84,6 +84,7 @@ export default function SupplierTable({ suppliers, currentPage, pageSize, onEdit
                     onClick={() =>
                       setActiveDropdownId(activeDropdownId === supplier.supplierId ? null : supplier.supplierId)
                     }
+                    aria-label="Record actions"
                     className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none"
                   >
                     <MoreHorizontal size={18} />

@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { OrdersSkeleton } from "@/components/orders-procurement/OrdersSkeleton";
+
+import React, { useState, useEffect, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 import ReportFilterBar from "@/components/pages/ReportFilterBar";
 import InventoryReportView from "@/components/pages/InventoryReportView";
 import ProcurementReportView from "@/components/pages/ProcurementReportView";
@@ -13,62 +13,38 @@ import SupplierReportView from "@/components/pages/SupplierReportView";
 import SupplierOrdersModal from "@/components/pages/SupplierOrdersModal";
 import DistributionReportView from "@/components/pages/DistributionReportView";
 import { exportReportCSV } from "@/components/reports/exportReportCSV";
-import api from "@/lib/api";
 
-export default function ViewReports({ initialTab }: { initialTab: string }) {
+export default function ViewReports({ initialTab, initialData, initialDates }: { initialTab: string; initialData: any; initialDates: { start: string; end: string } }) {
   const router = useRouter();
-  const { user, isLoading } = useAuth() || {};
+  const data = initialData;
+  const [loading, startNavigation] = useTransition();
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/");
-    }
-  }, [user, isLoading, router]);
 
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
-
-  const [filterMode, setFilterMode] = useState<"all" | "specific" | "range">("all");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [filterMode, setFilterMode] = useState<"all" | "specific" | "range">(initialDates.start || initialDates.end ? "range" : "all");
+  const [startDate, setStartDate] = useState(initialDates.start);
+  const [endDate, setEndDate] = useState(initialDates.end);
   const [specificDate, setSpecificDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSupplierFilter, setSelectedSupplierFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedSupplierModal, setSelectedSupplierModal] = useState<any>(null);
 
-  const fetchData = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const params = new URLSearchParams();
-      if (filterMode === "specific" && specificDate) {
-        params.append("startDate", specificDate);
-        params.append("endDate", specificDate);
-      } else if (filterMode === "range") {
-        if (startDate) params.append("startDate", startDate);
-        if (endDate) params.append("endDate", endDate);
-      }
-      const qs = params.toString();
-      const endpoint = `/api/reports/${initialTab}${qs ? `?${qs}` : ""}`;
-      const response = await api.get(endpoint);
-      const json = response.data;
-      if (json.success) setData(json.data);
-      else setError(json.message || "Failed to fetch data from server");
-    } catch {
-      setError("Network error occurred while fetching reports.");
-    } finally {
-      setLoading(false);
+  const fetchData = () => {
+    const params = new URLSearchParams({ tab: initialTab });
+    if (filterMode === "specific" && specificDate) {
+      params.set("startDate", specificDate); params.set("endDate", specificDate);
+    } else if (filterMode === "range") {
+      if (startDate) params.set("startDate", startDate);
+      if (endDate) params.set("endDate", endDate);
     }
+    startNavigation(() => router.push(`/reports?${params}`));
   };
 
-  useEffect(() => { fetchData(); }, [initialTab, filterMode]);
   useEffect(() => { setCurrentPage(1); }, [searchQuery, filterMode, specificDate, startDate, endDate, selectedSupplierFilter, initialTab]);
 
   const handleResetFilters = () => {
     setFilterMode("all"); setStartDate(""); setEndDate(""); setSpecificDate("");
-    setSearchQuery(""); setSelectedSupplierFilter("all"); setCurrentPage(1); fetchData();
+    setSearchQuery(""); setSelectedSupplierFilter("all"); setCurrentPage(1); startNavigation(() => router.push(`/reports?tab=${initialTab}`));
   };
 
   const getBackPath = () => {
@@ -109,15 +85,7 @@ export default function ViewReports({ initialTab }: { initialTab: string }) {
         />
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center p-12 bg-card rounded-2xl border border-border">
-            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mb-3" />
-            <p className="text-sm text-muted-foreground">Loading report metrics...</p>
-          </div>
-        ) : error ? (
-          <div className="p-4 bg-red-500/10 border !border-destructive/20 rounded-xl text-center">
-            <p className="text-sm font-semibold text-red-600">{error}</p>
-            <Button onClick={fetchData} className="mt-3 text-xs bg-foreground text-background">Retry</Button>
-          </div>
+          <OrdersSkeleton />
         ) : (
           <div className="space-y-6">
             {initialTab === "inventory" && <InventoryReportView data={data} searchQuery={searchQuery} currentPage={currentPage} setCurrentPage={setCurrentPage} />}

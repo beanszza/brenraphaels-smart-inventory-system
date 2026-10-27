@@ -1,10 +1,11 @@
 "use client";
+import { completeBatch as productionCompleteBatch } from "@/app/actions/production/batch-complete";
+import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState } from "react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { CheckCircle2, PackageCheck, AlertCircle, Sparkles } from "lucide-react";
 import { ProductionBatchEntity } from "./types";
@@ -51,14 +52,14 @@ export default function BatchCompletionModal({
 
     setSubmitting(true);
     try {
-      const res = await api.post(`/api/ProductionBatches/${batch.batchId}/complete`, {
+      const res = await actionResponse(productionCompleteBatch(batch.batchId, {
         finalQuantity: Number(actualQuantity),
         packagedBy,
         expiryDate,
         scrapQuantity: Number(scrapQuantity) || 0,
         scrapReason,
         notes,
-      });
+      }));
 
       if (res.data?.success) {
         toast.success(res.data.message || "Batch successfully completed and Finished Goods lot stocked in!");
@@ -211,7 +212,7 @@ export default function BatchCompletionModal({
           <Button
             type="submit"
             disabled={submitting}
-            className="bg-foreground text-background font-semibold text-xs px-6 py-2 rounded-xl hover:bg-foreground/90 transition-colors shadow-sm"
+            className="bg-primary text-primary-foreground font-semibold text-xs px-6 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm"
           >
             {submitting ? "Finalizing..." : "Complete Batch & Stock In FG"}
           </Button>

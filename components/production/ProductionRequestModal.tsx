@@ -1,4 +1,12 @@
 "use client";
+import { listFinishedProducts as productionListFinishedProducts } from "@/app/actions/production/products";
+import { suggestRequestLots as productionSuggestRequestLots } from "@/app/actions/production/lot-suggestions";
+import { createProductionRequest as productionCreateProductionRequest } from "@/app/actions/production/requests";
+import { updateProductionRequest as productionUpdateProductionRequest } from "@/app/actions/production/request-detail";
+
+import { listRecipes } from "@/app/actions/production/recipes";
+import { actionResponse } from "@/lib/resources/action-response";
+
 
 import React, { useState, useEffect, useMemo } from "react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
@@ -6,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { api } from "@/lib/api";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -24,8 +31,6 @@ interface ProductionRequestModalProps {
   onClose: () => void;
   onSuccess: (newPrData?: any) => void;
   initialRequest?: ProductionRequestEntity | null;
-  isAdmin?: boolean;
-  isInventoryManager?: boolean;
   onProceedToIssuance?: (prodReqId: number) => void;
   onViewPrSummary?: (prData: any) => void;
   onStartProduction?: (req: ProductionRequestEntity) => void;
@@ -103,8 +108,6 @@ export default function ProductionRequestModal({
   onClose,
   onSuccess,
   initialRequest,
-  isAdmin,
-  isInventoryManager,
   onProceedToIssuance,
   onViewPrSummary,
   onStartProduction,
@@ -226,7 +229,7 @@ export default function ProductionRequestModal({
   // Load products and recipes
   useEffect(() => {
     if (open) {
-      api.get("/api/finished-products").then((res: any) => {
+      actionResponse(productionListFinishedProducts()).then((res: any) => {
         if (res.data?.success && Array.isArray(res.data.data)) {
           setProducts(
             res.data.data.map((p: any) => ({
@@ -239,7 +242,7 @@ export default function ProductionRequestModal({
         }
       }).catch(console.error);
 
-      api.get("/api/recipes").then((res: any) => {
+      actionResponse(listRecipes()).then((res: any) => {
         const rawRecipes = Array.isArray(res.data) ? res.data : (res.data?.data || []);
         if (Array.isArray(rawRecipes)) {
           setRecipes(
@@ -306,7 +309,7 @@ export default function ProductionRequestModal({
     if (isViewMode && initialRequest) {
       // In view mode, fetch suggestions for the existing request
       setLoadingSuggestions(true);
-      api.get(`/api/production-requests/lot-suggestions?prodReqId=${initialRequest.prodReqId}`)
+      actionResponse(productionSuggestRequestLots(initialRequest.prodReqId))
         .then((res: any) => {
           if (res.data?.success) {
             setLotSuggestions(res.data.data);
@@ -317,7 +320,7 @@ export default function ProductionRequestModal({
     } else if (recipeId && quantity > 0) {
       // In create mode, fetch preview
       setLoadingSuggestions(true);
-      api.get(`/api/production-requests/lot-suggestions?recipeId=${recipeId}&quantity=${quantity}`)
+      actionResponse(productionSuggestRequestLots("preview", `recipeId=${recipeId}&quantity=${quantity}`))
         .then((res: any) => {
           if (res.data?.success) {
             setLotSuggestions(res.data.data);
@@ -405,7 +408,7 @@ export default function ProductionRequestModal({
         submitForApproval,
       };
 
-      const res = await api.post("/api/production-requests", payload);
+      const res = await actionResponse(productionCreateProductionRequest(payload));
 
       if (res.data?.success) {
         const createdReq = res.data.data;
@@ -466,7 +469,7 @@ export default function ProductionRequestModal({
         payload.rejectionReason = notes || rejectionReason;
       }
 
-      const res = await api.patch(`/api/production-requests/${initialRequest.prodReqId}`, payload);
+      const res = await actionResponse(productionUpdateProductionRequest(initialRequest.prodReqId, payload));
       if (res.data?.success) {
         toast.success(
           action === "approve"
@@ -828,7 +831,7 @@ export default function ProductionRequestModal({
                       onClick={() => updateTime(timeHour, timeMinute, "AM")}
                       className={`h-full px-2.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                         timePeriod === "AM"
-                          ? "bg-foreground text-background shadow-xs"
+                          ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -839,7 +842,7 @@ export default function ProductionRequestModal({
                       onClick={() => updateTime(timeHour, timeMinute, "PM")}
                       className={`h-full px-2.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                         timePeriod === "PM"
-                          ? "bg-foreground text-background shadow-xs"
+                          ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -906,7 +909,7 @@ export default function ProductionRequestModal({
                 type="button"
                 onClick={handleCreatePrDirect}
                 disabled={submitting}
-                className="bg-foreground text-background hover:bg-foreground/90 font-semibold text-xs px-3.5 py-1.5 rounded-xl transition-colors shrink-0 shadow-sm"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs px-3.5 py-1.5 rounded-xl transition-colors shrink-0 shadow-sm"
               >
                 Create PR Now
               </Button>
@@ -1057,28 +1060,18 @@ export default function ProductionRequestModal({
                           )}
                         </td>
 
-                        {/* Stock Status (Strictly Monochromatic) */}
+                        {/* Stock Status */}
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           {isRejected ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground bg-muted border border-border px-2.5 py-0.5 rounded-full">
-                              Released to Stock
-                            </span>
+                            <StatusBadge status="Released">Released to Stock</StatusBadge>
                           ) : isApproved ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground bg-muted border border-border px-2.5 py-0.5 rounded-full">
-                              Reserved &amp; Confirmed
-                            </span>
+                            <StatusBadge status="Reserved">Reserved &amp; Confirmed</StatusBadge>
                           ) : isPending ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground bg-muted border border-border px-2.5 py-0.5 rounded-full">
-                              Reserved (Pending)
-                            </span>
+                            <StatusBadge status="Pending">Reserved (Pending)</StatusBadge>
                           ) : hasShortfall ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-background bg-foreground border border-foreground px-2.5 py-0.5 rounded-full">
-                              Shortfall: {item.shortfallQuantity.toFixed(2)} {item.uomAbbr}
-                            </span>
+                            <StatusBadge status="Out of Stock">Shortfall: {item.shortfallQuantity.toFixed(2)} {item.uomAbbr}</StatusBadge>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground bg-muted border border-border px-2.5 py-0.5 rounded-full">
-                              Available
-                            </span>
+                            <StatusBadge status="Available">Available</StatusBadge>
                           )}
                         </td>
                       </tr>
@@ -1114,7 +1107,7 @@ export default function ProductionRequestModal({
                 type="button"
                 onClick={() => handleSubmit(true)}
                 disabled={submitting || !recipeId}
-                className="bg-foreground text-background font-semibold text-xs px-5 py-2 rounded-xl hover:bg-foreground/90 transition-colors shadow-sm"
+                className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm"
               >
                 {submitting
                   ? "Processing..."
@@ -1125,7 +1118,7 @@ export default function ProductionRequestModal({
             ) : (
               <>
                 {/* Admin Approval Actions (PR/PO style confirmation modal) */}
-                {isAdmin && initialRequest?.status === "Pending Approval" && (
+                {initialRequest?.status === "Pending Approval" && (
                   <>
                     <Button
                       type="button"
@@ -1140,7 +1133,7 @@ export default function ProductionRequestModal({
                       type="button"
                       onClick={() => setActionModal({ open: true, type: "approve" })}
                       disabled={submitting}
-                      className="bg-foreground text-background font-semibold text-xs px-5 py-2 rounded-xl hover:bg-foreground/90 transition-colors shadow-sm cursor-pointer"
+                      className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
                     >
                       Approve Request
                     </Button>
@@ -1148,7 +1141,7 @@ export default function ProductionRequestModal({
                 )}
 
                 {/* Shortfall resolution shortcut in View Mode */}
-                {lotSuggestions?.hasAnyShortfall && (isInventoryManager || isAdmin) && (
+                {lotSuggestions?.hasAnyShortfall && (
                   <Button
                     type="button"
                     variant="outline"
@@ -1160,14 +1153,14 @@ export default function ProductionRequestModal({
                 )}
 
                 {/* Approved status -> Proceed to Material Issuance */}
-                {isInventoryManager && initialRequest?.status === "Approved" && onProceedToIssuance && (
+                {initialRequest?.status === "Approved" && onProceedToIssuance && (
                   <Button
                     type="button"
                     onClick={() => {
                       onProceedToIssuance(initialRequest.prodReqId);
                       onClose();
                     }}
-                    className="bg-foreground text-background font-semibold text-xs px-5 py-2 rounded-xl hover:bg-foreground/90 transition-colors shadow-sm cursor-pointer"
+                    className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
                   >
                     Proceed to Material Issuance
                   </Button>
@@ -1183,7 +1176,7 @@ export default function ProductionRequestModal({
                         onClose();
                       }
                     }}
-                    className="bg-foreground text-background font-semibold text-xs px-5 py-2 rounded-xl hover:bg-foreground/90 transition-colors shadow-sm cursor-pointer"
+                    className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
                   >
                     Start Production
                   </Button>

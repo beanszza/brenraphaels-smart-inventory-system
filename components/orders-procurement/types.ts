@@ -85,6 +85,8 @@ export type POStatus =
   | "Pending Approval"
   | "Returned"
   | "Approved"
+  | "Partially Delivered"
+  | "Delivered"
   | "Ordered"
   | "Rejected"
   | "Cancelled"

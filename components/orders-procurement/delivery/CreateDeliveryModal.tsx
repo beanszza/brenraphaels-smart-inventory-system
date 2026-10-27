@@ -1,4 +1,10 @@
 "use client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+import { allPages } from "@/lib/orders/screen-data";
+import { listOrders } from "@/app/actions/orders/orders";
+import { listDeliveries } from "@/app/actions/orders/deliveries";
+import { procurement } from "@/lib/orders/client";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -7,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import ConfirmModal from "@/components/ConfirmModal";
-import api from "@/lib/api";
 import { PurchaseOrderPO } from "../types";
 
 interface CreateDeliveryModalProps {
@@ -97,10 +102,11 @@ export function CreateDeliveryModal({
       try {
         setLoadingPOs(true);
         const [delivRes, poRes] = await Promise.allSettled([
-          api.get("/api/deliveries?page=1&pageSize=1000"),
-          api.get("/api/purchase-orders?page=1&pageSize=1000&eligibleForDelivery=true"),
+          allPages(listDeliveries).then(items => ({ data: { success: true, data: { items } } })),
+          allPages(listOrders, "eligibleForDelivery=true").then(items => ({ data: { success: true, data: { items } } })),
         ]);
 
+        if (delivRes.status === "rejected" || poRes.status === "rejected") throw new Error("Data unavailable");
         let deliveryList: any[] = [];
         // Calculate next unique Delivery Number & store deliveries
         if (delivRes.status === "fulfilled" && delivRes.value.data?.success) {
@@ -134,7 +140,7 @@ export function CreateDeliveryModal({
             candidate.map(async (po) => {
               try {
                 let poItems: any[] = [];
-                const outRes = await api.get(`/api/deliveries/po/${po.poId}/outstanding`);
+                const outRes = await procurement.outstandingItems(po.poId);
                 if (outRes.data?.success && Array.isArray(outRes.data.data) && outRes.data.data.length > 0) {
                   poItems = outRes.data.data;
                 } else if (po.items && po.items.length > 0) {
@@ -184,7 +190,7 @@ export function CreateDeliveryModal({
           setOrderedPOs(eligible);
         }
       } catch (err) {
-        console.error("Failed to load initial data for delivery modal:", err);
+        setError("Purchase orders could not be loaded. Close and reopen the form to retry.");
       } finally {
         setLoadingPOs(false);
       }
@@ -233,7 +239,7 @@ export function CreateDeliveryModal({
       try {
         setLoadingItems(true);
         setError(null);
-        const res = await api.get(`/api/deliveries/po/${selectedPoId}/outstanding`);
+        const res = await procurement.outstandingItems(selectedPoId);
         if (res.data?.success && Array.isArray(res.data.data)) {
           const rows: ItemRow[] = res.data.data.map((i: any) => {
             const ordered = Number(i.poOrderedQuantity ?? i.orderedQuantity ?? i.poItemQuantity) || 0;
@@ -438,7 +444,7 @@ export function CreateDeliveryModal({
         items: itemsToSchedule,
       };
 
-      const res = await api.post("/api/deliveries", payload);
+      const res = await procurement.createDelivery(payload);
       if (res.data?.success) {
         onSuccess();
       } else {
@@ -558,7 +564,7 @@ export function CreateDeliveryModal({
 
                 {loadingItems ? (
                   <div className="py-6 text-center text-xs text-muted-foreground rounded-xl border border-border bg-card">
-                    Loading purchase order items...
+                    <Skeleton className="h-16 w-full" />
                   </div>
                 ) : items.length === 0 ? (
                   <div className="py-6 text-center text-xs text-muted-foreground rounded-xl border border-border bg-card">
@@ -834,7 +840,7 @@ export function CreateDeliveryModal({
             <Button
               type="submit"
               disabled={submitting || !selectedPoId || hasErrors || !hasAnyOrderQty || !scheduledAttachmentBase64.trim() || !plannedDispatchDate}
-              className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {submitting ? "Scheduling..." : "Schedule Order"}
             </Button>
@@ -902,7 +908,7 @@ export function CreateDeliveryModal({
                   setConfirmModal(false);
                   handleSubmit();
                 }}
-                className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85"
                 disabled={submitting}
               >
                 {submitting ? "Submitting..." : "Confirm Schedule"}

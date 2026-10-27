@@ -1,6 +1,10 @@
 "use client";
+import { useRouter } from "next/navigation";
+import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+
+
+import React, { useState, useMemo, useTransition } from "react";
 import { Search } from "lucide-react";
 import {
   Select,
@@ -11,7 +15,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
 import DiscrepancyTable from "./DiscrepancyTable";
 import DiscrepancyDetailsModal from "./DiscrepancyDetailsModal";
 import Pagination from "@/components/Pagination";
@@ -19,9 +22,10 @@ import { Discrepancy } from "./types";
 
 type DiscrepancySubTab = "short" | "rejected" | "over";
 
-export default function DiscrepancyTab() {
-  const [discrepancies, setDiscrepancies] = useState<Discrepancy[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscrepancies: Discrepancy[] }) {
+  const router = useRouter();
+  const discrepancies = initialDiscrepancies;
+  const [loading, startRefresh] = useTransition();
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("All");
   const [activeSubTab, setActiveSubTab] = useState<DiscrepancySubTab>("short");
@@ -31,23 +35,7 @@ export default function DiscrepancyTab() {
   const [selectedDiscrepancy, setSelectedDiscrepancy] = useState<Discrepancy | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const fetchDiscrepancies = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get("/api/Discrepancies");
-      if (res.data?.success) {
-        setDiscrepancies(res.data.data || []);
-      }
-    } catch (err: any) {
-      console.error("Error fetching discrepancies:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchDiscrepancies();
-  }, [fetchDiscrepancies]);
+  const fetchDiscrepancies = () => startRefresh(() => router.refresh());
 
   // Counts for each subtab
   const counts = useMemo(() => {
@@ -144,7 +132,7 @@ export default function DiscrepancyTab() {
                 }}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
                   isActive
-                    ? "bg-foreground text-background"
+                    ? "bg-primary text-primary-foreground"
                     : "bg-muted/60 text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -181,6 +169,7 @@ export default function DiscrepancyTab() {
         <div className="flex flex-1 items-center gap-2 px-2 bg-muted/20 h-full rounded-md">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <Input
+            aria-label="Search records"
             type="text"
             placeholder="Search by discrepancy, Goods Receipt Note, Purchase Order, item, or supplier..."
             value={search}
@@ -214,7 +203,7 @@ export default function DiscrepancyTab() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
                 <SelectValue placeholder="All Suppliers" />
               </SelectTrigger>
               <SelectContent align="end" className="text-xs z-[9999]">

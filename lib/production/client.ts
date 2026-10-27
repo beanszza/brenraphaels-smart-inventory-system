@@ -1,0 +1,61 @@
+// Preserve modal result/error shapes while calling named server actions.
+import { actionResponse } from "@/lib/resources/action-response";
+import * as batches from "@/app/actions/production/batches";
+import * as batch_detail from "@/app/actions/production/batch-detail";
+import * as batch_approve from "@/app/actions/production/batch-approve";
+import * as batch_cancel from "@/app/actions/production/batch-cancel";
+import * as batch_complete from "@/app/actions/production/batch-complete";
+import * as batch_qa_notes from "@/app/actions/production/batch-qa-notes";
+import * as batch_qa_status from "@/app/actions/production/batch-qa-status";
+import * as batch_stage from "@/app/actions/production/batch-stage";
+import * as batch_stages_complete from "@/app/actions/production/batch-stages-complete";
+import * as batch_packaging from "@/app/actions/production/batch-packaging";
+import * as batch_reject from "@/app/actions/production/batch-reject";
+import * as batch_add_to_inventory from "@/app/actions/production/batch-add-to-inventory";
+import * as requests from "@/app/actions/production/requests";
+import * as request_detail from "@/app/actions/production/request-detail";
+import * as lot_suggestions from "@/app/actions/production/lot-suggestions";
+import * as create_requisition from "@/app/actions/production/create-requisition";
+import * as issuances from "@/app/actions/production/issuances";
+import * as issuance_detail from "@/app/actions/production/issuance-detail";
+import * as scan from "@/app/actions/production/scan";
+import * as issue from "@/app/actions/production/issue";
+import * as quality from "@/app/actions/production/quality";
+import * as products from "@/app/actions/production/products";
+import * as product_detail from "@/app/actions/production/product-detail";
+
+export const production = {
+  listBatches: (...args: Parameters<typeof batches.listBatches>) => actionResponse(batches.listBatches(...args)),
+  createBatch: (...args: Parameters<typeof batches.createBatch>) => actionResponse(batches.createBatch(...args)),
+  getBatch: (...args: Parameters<typeof batch_detail.getBatch>) => actionResponse(batch_detail.getBatch(...args)),
+  updateBatch: (...args: Parameters<typeof batch_detail.updateBatch>) => actionResponse(batch_detail.updateBatch(...args)),
+  deleteBatch: (...args: Parameters<typeof batch_detail.deleteBatch>) => actionResponse(batch_detail.deleteBatch(...args)),
+  approveBatch: (...args: Parameters<typeof batch_approve.approveBatch>) => actionResponse(batch_approve.approveBatch(...args)),
+  cancelBatch: (...args: Parameters<typeof batch_cancel.cancelBatch>) => actionResponse(batch_cancel.cancelBatch(...args)),
+  completeBatch: (...args: Parameters<typeof batch_complete.completeBatch>) => actionResponse(batch_complete.completeBatch(...args)),
+  updateQaNotes: (...args: Parameters<typeof batch_qa_notes.updateQaNotes>) => actionResponse(batch_qa_notes.updateQaNotes(...args)),
+  updateQaStatus: (...args: Parameters<typeof batch_qa_status.updateQaStatus>) => actionResponse(batch_qa_status.updateQaStatus(...args)),
+  advanceBatchStage: (...args: Parameters<typeof batch_stage.advanceBatchStage>) => actionResponse(batch_stage.advanceBatchStage(...args)),
+  completeBatchStage: (...args: Parameters<typeof batch_stages_complete.completeBatchStage>) => actionResponse(batch_stages_complete.completeBatchStage(...args)),
+  packageBatch: (...args: Parameters<typeof batch_packaging.packageBatch>) => actionResponse(batch_packaging.packageBatch(...args)),
+  rejectBatch: (...args: Parameters<typeof batch_reject.rejectBatch>) => actionResponse(batch_reject.rejectBatch(...args)),
+  commitBatchInventory: (...args: Parameters<typeof batch_add_to_inventory.commitBatchInventory>) => actionResponse(batch_add_to_inventory.commitBatchInventory(...args)),
+  listProductionRequests: (...args: Parameters<typeof requests.listProductionRequests>) => actionResponse(requests.listProductionRequests(...args)),
+  createProductionRequest: (...args: Parameters<typeof requests.createProductionRequest>) => actionResponse(requests.createProductionRequest(...args)),
+  getProductionRequest: (...args: Parameters<typeof request_detail.getProductionRequest>) => actionResponse(request_detail.getProductionRequest(...args)),
+  updateProductionRequest: (...args: Parameters<typeof request_detail.updateProductionRequest>) => actionResponse(request_detail.updateProductionRequest(...args)),
+  deleteProductionRequest: (...args: Parameters<typeof request_detail.deleteProductionRequest>) => actionResponse(request_detail.deleteProductionRequest(...args)),
+  suggestRequestLots: (...args: Parameters<typeof lot_suggestions.suggestRequestLots>) => actionResponse(lot_suggestions.suggestRequestLots(...args)),
+  createShortfallRequisition: (...args: Parameters<typeof create_requisition.createShortfallRequisition>) => actionResponse(create_requisition.createShortfallRequisition(...args)),
+  listIssuances: (...args: Parameters<typeof issuances.listIssuances>) => actionResponse(issuances.listIssuances(...args)),
+  createIssuance: (...args: Parameters<typeof issuances.createIssuance>) => actionResponse(issuances.createIssuance(...args)),
+  getIssuance: (...args: Parameters<typeof issuance_detail.getIssuance>) => actionResponse(issuance_detail.getIssuance(...args)),
+  scanIssuance: (...args: Parameters<typeof scan.scanIssuance>) => actionResponse(scan.scanIssuance(...args)),
+  issueMaterials: (...args: Parameters<typeof issue.issueMaterials>) => actionResponse(issue.issueMaterials(...args)),
+  listProductionQa: (...args: Parameters<typeof quality.listProductionQa>) => actionResponse(quality.listProductionQa(...args)),
+  reviewProductionQa: (...args: Parameters<typeof quality.reviewProductionQa>) => actionResponse(quality.reviewProductionQa(...args)),
+  listFinishedProducts: (...args: Parameters<typeof products.listFinishedProducts>) => actionResponse(products.listFinishedProducts(...args)),
+  createFinishedProduct: (...args: Parameters<typeof products.createFinishedProduct>) => actionResponse(products.createFinishedProduct(...args)),
+  updateFinishedProduct: (...args: Parameters<typeof product_detail.updateFinishedProduct>) => actionResponse(product_detail.updateFinishedProduct(...args)),
+  deleteFinishedProduct: (...args: Parameters<typeof product_detail.deleteFinishedProduct>) => actionResponse(product_detail.deleteFinishedProduct(...args)),
+};

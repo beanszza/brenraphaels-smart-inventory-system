@@ -14,7 +14,6 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 
 interface PODetailsModalProps {
   po: PurchaseOrderPO | null;
-  isAdmin?: boolean;
   onClose: () => void;
   onEdit?: (po: PurchaseOrderPO) => void;
   onApprove?: (po: PurchaseOrderPO) => void;
@@ -27,7 +26,6 @@ interface PODetailsModalProps {
 
 export function PODetailsModal({
   po,
-  isAdmin = false,
   onClose,
   onEdit,
   onApprove,
@@ -63,7 +61,7 @@ export function PODetailsModal({
     <ModalWrapper
       open={!!po}
       title={
-        isAdmin && isPending
+        isPending
           ? `Review Purchase Order — ${po.poNumber}`
           : `Purchase Order Details — ${po.poNumber}`
       }
@@ -237,7 +235,7 @@ export function PODetailsModal({
           </Button>
 
           {/* Admin review buttons for Pending Approval */}
-          {isAdmin && isPending && (
+          {isPending && (
             <>
               {onReturn && (
                 <Button
@@ -263,7 +261,7 @@ export function PODetailsModal({
                 <Button
                   type="button"
                   onClick={() => onApprove(po)}
-                  className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm"
+                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
                 >
                   Approve
                 </Button>
@@ -272,18 +270,18 @@ export function PODetailsModal({
           )}
 
           {/* Inventory Manager: Edit Draft or Returned PO */}
-          {!isAdmin && (po.status === "Draft" || po.status === "Returned") && onEdit && (
+          {(po.status === "Draft" || po.status === "Returned") && onEdit && (
             <Button
               type="button"
               onClick={() => onEdit(po)}
-              className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
             >
               {po.status === "Returned" ? "Edit & Re-Submit" : "Edit Draft"}
             </Button>
           )}
 
           {/* Inventory Manager: Cancel PO for Draft/Pending/Returned PO */}
-          {!isAdmin && isCancellable && onCancel && (
+          {isCancellable && onCancel && (
             <Button
               type="button"
               variant="outline"
@@ -295,11 +293,11 @@ export function PODetailsModal({
           )}
 
           {/* Inventory Manager: Schedule Delivery for Approved or Ordered PO */}
-          {!isAdmin && (po.status === "Approved" || po.status === "Ordered") && onCreateDelivery && (
+          {(po.status === "Approved" || po.status === "Ordered" || po.status === "Partially Delivered") && onCreateDelivery && (
             <Button
               type="button"
               onClick={() => onCreateDelivery(po)}
-              className="flex items-center gap-2 rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm"
+              className="flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
             >
               <Truck className="w-4 h-4" />
               Schedule Delivery

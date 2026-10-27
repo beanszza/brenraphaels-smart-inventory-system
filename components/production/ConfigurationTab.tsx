@@ -1,4 +1,10 @@
 "use client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
+import { listFinishedProducts as productionListFinishedProducts } from "@/app/actions/production/products";
+import { createFinishedProduct as productionCreateFinishedProduct } from "@/app/actions/production/products";
+import { updateFinishedProduct as productionUpdateFinishedProduct } from "@/app/actions/production/product-detail";
+import { deleteFinishedProduct as productionDeleteFinishedProduct } from "@/app/actions/production/product-detail";
+import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -39,8 +45,10 @@ import {
 } from "@/components/ui/dialog";
 import { FinishedProductItem } from "./types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import api from "@/lib/api";
+import { uploadProductionImage } from "@/lib/production/image-client";
+import { ProductionImage } from "./ProductionImage";
 import { toast } from "sonner";
+
 
 const PACKAGING_TYPES = [
   "Tub",
@@ -70,9 +78,10 @@ interface DraftVariant {
   price: number;
 }
 
-export default function ConfigurationTab() {
-  const [products, setProducts] = useState<FinishedProductItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function ConfigurationTab({ initialRows }: { initialRows: FinishedProductItem[] }) {
+  const [products, setProducts] = useState<FinishedProductItem[]>(initialRows);
+  const [photoVersion, setPhotoVersion] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
 
@@ -133,7 +142,7 @@ export default function ConfigurationTab() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/finished-products");
+      const res = await actionResponse(productionListFinishedProducts());
       const list = res.data?.data || res.data || [];
       setProducts(list);
     } catch (err: any) {
@@ -143,9 +152,6 @@ export default function ConfigurationTab() {
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
 
   // Distinct product names for the quick-add variant selector
   const distinctProductNames = Array.from(
@@ -232,27 +238,25 @@ export default function ConfigurationTab() {
       // Create each variation via POST /api/FinishedProducts
       for (const v of variationsList) {
         const variantLabel = `${v.size} ${v.packagingType}`.trim();
-        const res = await api.post("/api/finished-products", {
+        const res = await actionResponse(productionCreateFinishedProduct({
           productName: productName.trim(),
           variant: variantLabel,
           sellingPrice: v.price,
           sku: v.sku.toUpperCase(),
-        });
-        const id = res.data?.data?.productId || res.data?.productId;
+        }));
+        const id = res.data?.data?.productId;
         if (id) createdProductIds.push(id);
       }
 
       // If a photo was selected, upload it to the created variants
+      let photoFailure: string | null = null;
       if (productPhotoFile && createdProductIds.length > 0) {
         for (const pid of createdProductIds) {
-          const formData = new FormData();
-          formData.append("file", productPhotoFile);
           try {
-            await api.post(`/api/finished-products/${pid}/image`, formData, {
-              headers: { "Content-Type": "multipart/form-data" },
-            });
-          } catch {
-            // Ignore non-fatal image upload errors on subsequent variants
+            await uploadProductionImage("product", pid, productPhotoFile);
+          } catch (err) {
+            // The product is saved; only its photo is missing, so say so without failing the create.
+            photoFailure = err instanceof Error ? err.message : "The photo could not be uploaded.";
           }
         }
       }
@@ -261,7 +265,9 @@ export default function ConfigurationTab() {
         `Product "${productName.trim()}" created with ${variationsList.length} variation(s)!`,
         { id: "save-prod" }
       );
+      if (photoFailure) toast.error(`The product photo was not saved: ${photoFailure}`);
       setIsAddProductOpen(false);
+      setPhotoVersion((v) => v + 1);
       fetchProducts();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to create product variations", {
@@ -301,12 +307,12 @@ export default function ConfigurationTab() {
         quickVarSku.trim() ||
         generateSku(targetProductName, quickVarType, quickVarSize);
 
-      await api.post("/api/finished-products", {
+      await actionResponse(productionCreateFinishedProduct({
         productName: targetProductName.trim(),
         variant: variantLabel,
         sellingPrice: Number(quickVarPrice) || 0,
         sku: skuVal.toUpperCase(),
-      });
+      }));
 
       toast.success(`Variant "${variantLabel}" added to ${targetProductName}!`);
       setIsAddVariantOpen(false);
@@ -334,12 +340,12 @@ export default function ConfigurationTab() {
 
     try {
       setSubmitting(true);
-      await api.put(`/api/finished-products/${editingItem.productId}`, {
+      await actionResponse(productionUpdateFinishedProduct(editingItem.productId, {
         productName: editProductName.trim(),
         variant: editVariantStr.trim(),
         sellingPrice: Number(editPrice) || 0,
         sku: editSku.trim().toUpperCase(),
-      });
+      }));
 
       toast.success("Variant details updated successfully");
       setIsEditVariantOpen(false);
@@ -356,7 +362,7 @@ export default function ConfigurationTab() {
     if (!confirm(`Are you sure you want to remove variant "${variantLabel}"?`)) return;
 
     try {
-      await api.delete(`/api/finished-products/${productId}`);
+      await actionResponse(productionDeleteFinishedProduct(productId));
       toast.success("Variant removed successfully");
       fetchProducts();
     } catch (err: any) {
@@ -382,18 +388,14 @@ export default function ConfigurationTab() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
       toast.loading("Uploading photo...", { id: "upload-photo" });
-      await api.post(`/api/finished-products/${activeUploadProductId}/image`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await uploadProductionImage("product", activeUploadProductId, file);
       toast.success("Product photo updated successfully", { id: "upload-photo" });
+      setPhotoVersion((v) => v + 1);
       fetchProducts();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to upload photo", {
+      toast.error(err?.message || "Failed to upload photo", {
         id: "upload-photo",
       });
     } finally {
@@ -443,7 +445,7 @@ export default function ConfigurationTab() {
             disabled={loading}
             className="flex items-center gap-1.5 h-9 rounded-xl border-border hover:bg-muted font-semibold text-xs text-foreground cursor-pointer shadow-sm"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 `} />
             Refresh
           </Button>
 
@@ -461,7 +463,7 @@ export default function ConfigurationTab() {
           {/* "+ Add Product" button */}
           <Button
             onClick={handleOpenAddProduct}
-            className="flex items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-2 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Add Product
@@ -491,10 +493,7 @@ export default function ConfigurationTab() {
       {/* Products & Variants Table */}
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs">
         {loading ? (
-          <div className="p-12 text-center text-muted-foreground text-xs flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin" />
-            Loading products &amp; variants...
-          </div>
+          <ProductionSkeleton />
         ) : filteredProducts.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground text-xs">
             {searchQuery
@@ -527,15 +526,12 @@ export default function ConfigurationTab() {
                       {/* Thumbnail */}
                       <td className="py-2.5 px-4">
                         <div className="w-9 h-9 rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center shrink-0">
-                          {product.imageUrl ? (
-                            <img
-                              src={product.imageUrl}
-                              alt={product.itemName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <ImageIcon className="w-4 h-4 text-muted-foreground/40" />
-                          )}
+                          <ProductionImage
+                            kind="product" id={product.productId}
+                            alt={product.itemName}
+                            className="w-full h-full object-cover"
+                            version={photoVersion}
+                          />
                         </div>
                       </td>
 
@@ -877,7 +873,7 @@ export default function ConfigurationTab() {
               <Button
                 type="submit"
                 disabled={submitting}
-                className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 cursor-pointer"
+                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               >
                 {submitting ? "Creating..." : "Save Product & Variations"}
               </Button>
@@ -1026,7 +1022,7 @@ export default function ConfigurationTab() {
               <Button
                 type="submit"
                 disabled={submitting}
-                className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 cursor-pointer"
+                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               >
                 {submitting ? "Adding..." : "Add Variant"}
               </Button>
@@ -1122,7 +1118,7 @@ export default function ConfigurationTab() {
               <Button
                 type="submit"
                 disabled={submitting}
-                className="text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 cursor-pointer"
+                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               >
                 {submitting ? "Saving..." : "Save Changes"}
               </Button>

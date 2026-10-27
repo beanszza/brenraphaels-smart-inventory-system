@@ -1,18 +1,20 @@
 "use client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
+import { listBatches as productionListBatches } from "@/app/actions/production/batches";
+import { actionResponse } from "@/lib/resources/action-response";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { AlertOctagon, FileText, X, Eye, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LossReport } from "./types";
-import api from "@/lib/api";
 import { toast } from "sonner";
 
-const LOSS_STORAGE_KEY = "production_loss_reports_v2";
+import { lossReportsFromBatches } from "@/lib/production/loss-reports";
 
-export default function LossTab() {
-  const [lossReports, setLossReports] = useState<LossReport[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function LossTab({ initialRows }: { initialRows: Parameters<typeof lossReportsFromBatches>[0] }) {
+  const [lossReports, setLossReports] = useState<LossReport[]>(() => lossReportsFromBatches(initialRows));
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedReport, setSelectedReport] = useState<LossReport | null>(null);
 
@@ -21,84 +23,14 @@ export default function LossTab() {
       setLoading(true);
 
       // Fetch rejected batches from backend API
-      const batchesRes = await api.get("/api/ProductionBatches");
+      const batchesRes = await actionResponse(productionListBatches());
       const batches = Array.isArray(batchesRes.data)
         ? batchesRes.data
         : Array.isArray(batchesRes.data?.data)
         ? batchesRes.data.data
         : [];
 
-      // Filter batches that were rejected or cancelled
-      const rejectedBatches = batches.filter(
-        (b: any) =>
-          b.status?.toLowerCase() === "rejected" ||
-          b.qualityStatus?.toLowerCase() === "rejected"
-      );
-
-      // Stored local loss reports
-      let localLoss: LossReport[] = [];
-      try {
-        const saved = localStorage.getItem(LOSS_STORAGE_KEY);
-        if (saved) localLoss = JSON.parse(saved);
-      } catch {}
-
-      // Map rejected batches to LossReport shape
-      const mappedApiReports: LossReport[] = rejectedBatches.map((b: any, idx: number) => {
-        const estLoss = (b.estimatedQuantity || 100) * 45; // Estimated material cost ~45/pc
-        return {
-          lossId: `LOSS-${b.batchNumber || `B${b.batchId}`}`,
-          batchId: b.batchId,
-          batchNumber: b.batchNumber,
-          productName: b.productName,
-          variant: b.variant || "Standard",
-          targetYield: b.estimatedQuantity || 100,
-          failureStage: b.stage || "Quality Control",
-          date: b.productionDate || new Date().toISOString(),
-          rejectionReason: b.rejectionReason || "QA Inspection Rejection",
-          inspector: b.assignedCook || "QA Inspector",
-          notes: b.notes || "Failed quality assurance sensory evaluation",
-          totalEstimatedLoss: estLoss,
-          items: [
-            {
-              itemName: "Raw Purple Yam",
-              lotNumber: `LOT-UB-2026-${idx + 10}`,
-              quantity: Math.round((b.estimatedQuantity || 100) * 0.3),
-              uom: "KG",
-              unitCost: 80,
-              totalCost: Math.round((b.estimatedQuantity || 100) * 0.3) * 80,
-            },
-            {
-              itemName: "Sweetened Condensed Milk",
-              lotNumber: `LOT-CM-2026-${idx + 20}`,
-              quantity: Math.round((b.estimatedQuantity || 100) * 0.15),
-              uom: "Cans",
-              unitCost: 55,
-              totalCost: Math.round((b.estimatedQuantity || 100) * 0.15) * 55,
-            },
-            {
-              itemName: "Pure Dairy Butter",
-              lotNumber: `LOT-DB-2026-${idx + 30}`,
-              quantity: Math.round((b.estimatedQuantity || 100) * 0.05),
-              uom: "KG",
-              unitCost: 180,
-              totalCost: Math.round((b.estimatedQuantity || 100) * 0.05) * 180,
-            },
-          ],
-        };
-      });
-
-      // Combine API reports and local records without duplicates
-      const seen = new Set<string>();
-      const combined: LossReport[] = [];
-
-      [...mappedApiReports, ...localLoss].forEach((r) => {
-        if (!seen.has(r.lossId)) {
-          seen.add(r.lossId);
-          combined.push(r);
-        }
-      });
-
-      setLossReports(combined);
+      setLossReports(lossReportsFromBatches(batches));
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to load loss reports");
     } finally {
@@ -106,9 +38,6 @@ export default function LossTab() {
     }
   };
 
-  useEffect(() => {
-    fetchLossReports();
-  }, []);
 
   const totalLossBatches = lossReports.length;
   const totalFinancialLoss = lossReports.reduce((sum, r) => sum + r.totalEstimatedLoss, 0);
@@ -143,7 +72,7 @@ export default function LossTab() {
           disabled={loading}
           className="flex items-center gap-1.5 h-9 rounded-xl border-border hover:bg-muted font-semibold text-xs text-foreground cursor-pointer shadow-sm"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-3.5 h-3.5 `} />
           Refresh
         </Button>
       </div>
@@ -254,10 +183,7 @@ export default function LossTab() {
       {/* Loss Reports Table */}
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs">
         {loading ? (
-          <div className="p-12 text-center text-muted-foreground text-xs flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin" />
-            Loading loss reports...
-          </div>
+          <ProductionSkeleton />
         ) : filteredReports.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground text-xs">
             {searchQuery

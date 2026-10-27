@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import { PRStatus } from "../types";
 import { 
   FileEdit, 
@@ -24,67 +25,67 @@ export function PRStatusBadge({ status, className = "" }: PRStatusBadgeProps) {
   switch (norm) {
     case "Draft":
       return (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border ${className}`}>
+        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
           <FileEdit className="w-3.5 h-3.5" />
           Draft
-        </span>
+        </StatusBadge>
       );
     case "Pending Approval":
     case "Pending":
       return (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-foreground/10 text-foreground border border-foreground/30 ${className}`}>
+        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
           <Clock className="w-3.5 h-3.5" />
           Pending Approval
-        </span>
+        </StatusBadge>
       );
     case "Returned":
       return (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-foreground border border-foreground/50 ${className}`}>
+        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
           <RotateCcw className="w-3.5 h-3.5" />
           Returned
-        </span>
+        </StatusBadge>
       );
     case "Approved":
       return (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-foreground text-background border border-foreground ${className}`}>
+        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
           <CheckCircle2 className="w-3.5 h-3.5" />
           Approved
-        </span>
+        </StatusBadge>
       );
     case "Rejected":
       return (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-foreground/80 line-through border border-border ${className}`}>
+        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
           <XCircle className="w-3.5 h-3.5" />
           Rejected
-        </span>
+        </StatusBadge>
       );
     case "Converted to PO":
     case "Converted":
       return (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-foreground/15 text-foreground border border-border ${className}`}>
+        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
           <ArrowRightCircle className="w-3.5 h-3.5" />
           Converted to Purchase Order
-        </span>
+        </StatusBadge>
       );
     case "Cancelled":
       return (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted/60 text-muted-foreground border border-border ${className}`}>
+        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
           <Ban className="w-3.5 h-3.5" />
           Cancelled
-        </span>
+        </StatusBadge>
       );
     case "Closed":
       return (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border ${className}`}>
+        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
           <Lock className="w-3.5 h-3.5" />
           Closed
-        </span>
+        </StatusBadge>
       );
     default:
       return (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border ${className}`}>
+        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
           {status}
-        </span>
+        </StatusBadge>
       );
   }
 }

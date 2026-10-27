@@ -1,4 +1,7 @@
 "use client";
+import { ProductionSkeleton } from "./ProductionSkeleton";
+import { listBatches as productionListBatches } from "@/app/actions/production/batches";
+import { commitBatchInventory as productionCommitBatchInventory } from "@/app/actions/production/batch-add-to-inventory";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -6,19 +9,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { api } from "@/lib/api";
+import { listItems } from "@/app/actions/production/lookups";
+import { actionResponse } from "@/lib/resources/action-response";
 import { toast } from "sonner";
 import { Search, Plus, MoreHorizontal, Eye, ArrowDownToLine, X } from "lucide-react";
 
 interface ProductionStockInTabProps {
+  initialRows: any[];
+  initialItems: any[];
   currentUser?: string;
 }
 
-export default function ProductionStockInTab({ currentUser = "Inventory Manager" }: ProductionStockInTabProps) {
+export default function ProductionStockInTab({ initialRows, initialItems,  currentUser = "Inventory Manager" }: ProductionStockInTabProps) {
   const [mounted, setMounted] = useState<boolean>(false);
-  const [batches, setBatches] = useState<any[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [batches, setBatches] = useState<any[]>(initialRows);
+  const [inventoryItems, setInventoryItems] = useState<any[]>(initialItems);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Filter & Search states (matching Resources & Suppliers layout)
   const [subTab, setSubTab] = useState<"all" | "pending" | "history">("all");
@@ -54,8 +60,8 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
     setLoading(true);
     try {
       const [batchesRes, invRes] = await Promise.all([
-        api.get("/api/ProductionBatches"),
-        api.get("/api/inventory?pageSize=1000").catch(() => ({ data: { data: [] } })),
+        actionResponse(productionListBatches()),
+        actionResponse(listItems()),
       ]);
 
       const batchList = Array.isArray(batchesRes.data)
@@ -79,9 +85,6 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
     }
   }, []);
 
-  useEffect(() => {
-    fetchBatches();
-  }, [fetchBatches]);
 
   // Derived unique product names for dropdown filter
   const uniqueProducts = useMemo(() => {
@@ -131,11 +134,11 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
 
   // Get current stock for the selected batch product
   const currentStockForSelected = useMemo(() => {
-    if (!selectedBatchInModal) return 126;
+    if (!selectedBatchInModal) return 0;
     const match = inventoryItems.find(
       (i) => i.itemName?.toLowerCase() === selectedBatchInModal.productName?.toLowerCase()
     );
-    return match ? Number(match.currentStock ?? match.quantityOnHand ?? 10) : 10;
+    return match ? Number(match.currentStock ?? 0) : 0;
   }, [selectedBatchInModal, inventoryItems]);
 
   // Eligible finished goods lots for the dropdown:
@@ -176,9 +179,9 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
 
     setCommitting(true);
     try {
-      const res = await api.post(`/api/ProductionBatches/${selectedBatchInModal.batchId}/add-to-inventory`, {
+      const res = await actionResponse(productionCommitBatchInventory(selectedBatchInModal.batchId, {
         notes: stockInNotes.trim(),
-      });
+      }));
 
       if (res.data?.success) {
         toast.success(
@@ -220,7 +223,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
           </Button>
           <Button
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
           >
             <Plus size={16} /> Create Stock-In
           </Button>
@@ -265,7 +268,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
           onClick={() => setSubTab("all")}
           className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
             subTab === "all"
-              ? "bg-foreground text-background shadow-sm"
+              ? "bg-primary text-primary-foreground shadow-sm"
               : "border border-border/80 bg-card text-muted-foreground hover:bg-muted"
           }`}
         >
@@ -284,7 +287,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
           onClick={() => setSubTab("pending")}
           className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
             subTab === "pending"
-              ? "bg-foreground text-background shadow-sm"
+              ? "bg-primary text-primary-foreground shadow-sm"
               : "border border-border/80 bg-card text-muted-foreground hover:bg-muted"
           }`}
         >
@@ -303,7 +306,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
           onClick={() => setSubTab("history")}
           className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
             subTab === "history"
-              ? "bg-foreground text-background shadow-sm"
+              ? "bg-primary text-primary-foreground shadow-sm"
               : "border border-border/80 bg-card text-muted-foreground hover:bg-muted"
           }`}
         >
@@ -321,9 +324,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
       {/* ── Table (Matching SupplyTable layout: No QA Status, No Variant Under Name) ── */}
       <div className="overflow-x-auto rounded-md border border-border bg-card">
         {loading ? (
-          <div className="p-8 text-center text-xs font-mono text-muted-foreground uppercase tracking-widest">
-            Loading stock-in records...
-          </div>
+          <ProductionSkeleton />
         ) : displayedBatches.length === 0 ? (
           <div className="p-12 text-center space-y-2">
             <p className="text-sm font-semibold text-foreground">
@@ -545,7 +546,7 @@ export default function ProductionStockInTab({ currentUser = "Inventory Manager"
                     type="button"
                     disabled={committing || selectedBatchInModal.status !== "For Stock-in"}
                     onClick={handleCommitStockIn}
-                    className="rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {committing
                       ? "Committing..."

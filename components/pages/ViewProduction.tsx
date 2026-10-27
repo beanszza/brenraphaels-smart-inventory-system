@@ -1,7 +1,14 @@
 "use client";
+import { createIssuance } from "@/app/actions/production/issuances";
 
-import React, { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
+import React, { useTransition } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import type { ProductionTab } from "@/lib/production/screen-data";
+// The action boundary preserves the existing serializable production DTOs.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useStaff } from "@/context/StaffContext";
 import { PageHeader } from "@/components/shared/PageHeader";
 import ProductionRequestsTab from "@/components/production/ProductionRequestsTab";
 import MaterialIssuanceTab from "@/components/production/MaterialIssuanceTab";
@@ -10,140 +17,70 @@ import ProductionQaTab from "@/components/production/ProductionQaTab";
 import ProductionStockInTab from "@/components/production/ProductionStockInTab";
 import ConfigurationTab from "@/components/production/ConfigurationTab";
 import LossTab from "@/components/production/LossTab";
+import { ProductionSkeleton } from "@/components/production/ProductionSkeleton";
 
-export default function ProductionPage() {
-  const { user, activeAccount, switchAccount } = useAuth();
+const TABS = [
+  { key: "requests", label: "Production Requests" },
+  { key: "issuance", label: "Material Issuance" },
+  { key: "tracking", label: "Production Tracking" },
+  { key: "qa", label: "Quality Assurance" },
+  { key: "stockin", label: "Stock-In" },
+  { key: "configuration", label: "Configuration" },
+  { key: "loss", label: "Loss" },
+];
 
-  const isInventoryManager = Boolean(
-    activeAccount === "inventory_manager" ||
-    user?.email?.toLowerCase() === "inventorymanager@r3b2p.com" ||
-    user?.email?.toLowerCase() === "scmsuser@r3b2p.com" ||
-    user?.roles?.includes("Inventory Manager") ||
-    user?.roles?.includes("InventoryManager")
-  );
-
-  const isHeadCook = Boolean(
-    activeAccount === "head_cook" ||
-    user?.email?.toLowerCase() === "headcook@r3b2p.com" ||
-    user?.username === "headcook" ||
-    user?.roles?.includes("Head Cook")
-  );
-
-  const isQaOfficer = Boolean(
-    activeAccount === "qa_officer" ||
-    user?.email?.toLowerCase() === "qaofficer@r3b2p.com" ||
-    user?.username === "ramon" ||
-    user?.roles?.includes("QA Officer") ||
-    user?.roles?.includes("Quality Assurance")
-  );
-
-  const isAdmin = Boolean(
-    activeAccount === "admin" ||
-    user?.email?.toLowerCase() === "admin@r3b2p.com" ||
-    user?.roles?.includes("Admin")
-  );
-
-  // Default active tab based on role
-  const [activeTab, setActiveTab] = useState<string>(
-    isQaOfficer ? "qa" : "requests"
-  );
-
-  // Cross-tab state
-  const [targetIssuanceId, setTargetIssuanceId] = useState<number | null>(null);
-  const [trackingBatchId, setTrackingBatchId] = useState<number | null>(null);
-
-  // Switch to QA Officer account handler
-  const handleSwitchToQaOfficer = () => {
-    switchAccount("qa_officer");
-    setActiveTab("qa");
-  };
-
+export default function ProductionPage({ activeTab, initialRows, initialItems, initialBatchId, initialIssuanceId }: {
+  activeTab: ProductionTab; initialRows: any[]; initialItems: any[];
+  initialBatchId: number | null; initialIssuanceId: number | null;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const navigate = (href: string) => startTransition(() => router.push(href));
+  const staff = useStaff();
   // Navigate from Production Requests -> Material Issuance
   const handleNavigateToIssuance = async (prodReqId?: number) => {
     if (prodReqId) {
       try {
-        const res = await fetch("/api/material-issuances", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prodReqId, issuedBy: user?.username || "Inventory Manager" }),
-        });
-        const data = await res.json();
+        const data = await createIssuance({ prodReqId });
         if (data?.success && data?.data) {
-          setTargetIssuanceId(data.data.issuanceId);
+          navigate(`/production-quality?tab=issuance&issuance=${data.data.issuanceId}`);
+          return;
+        } else {
+          toast.error(data?.message || "Failed to open material issuance.");
+          return;
         }
       } catch (err) {
         console.error("Failed to auto-open issuance session:", err);
+        toast.error("Failed to open material issuance.");
+        return;
       }
     }
-    setActiveTab("issuance");
+    navigate("/production-quality?tab=issuance");
   };
 
   // Navigate from Production Requests (Start Batch) -> Production Tracking
   const handleStartBatchAndTrack = (batchId: number) => {
-    setTrackingBatchId(batchId);
-    setActiveTab("tracking");
+    navigate(`/production-quality?tab=tracking&batch=${batchId}`);
   };
 
-  // Define tabs based on role
-  let tabs: Array<{ key: string; label: string }> = [];
-
-  if (activeAccount === "inventory_manager" || (isInventoryManager && !isAdmin)) {
-    tabs = [
-      { key: "requests", label: "Production Requests" },
-      { key: "issuance", label: "Material Issuance" },
-      { key: "stockin", label: "Stock-In" },
-      { key: "configuration", label: "Configuration" },
-      { key: "loss", label: "Loss" },
-    ];
-  } else if (activeAccount === "qa_officer" || (isQaOfficer && !isAdmin)) {
-    tabs = [{ key: "qa", label: "Quality Assurance" }];
-  } else if (activeAccount === "head_cook" || (isHeadCook && !isAdmin)) {
-    tabs = [
-      { key: "requests", label: "Production Requests" },
-      { key: "tracking", label: "Production Tracking" },
-    ];
-  } else {
-    // Admin sees all
-    tabs = [
-      { key: "requests", label: "Production Requests" },
-      { key: "issuance", label: "Material Issuance" },
-      { key: "tracking", label: "Production Tracking" },
-      { key: "qa", label: "Quality Assurance" },
-      { key: "stockin", label: "Stock-In" },
-      { key: "configuration", label: "Configuration" },
-      { key: "loss", label: "Loss" },
-    ];
-  }
-
-  // Ensure active tab is valid for current role
-  const isCurrentTabValid = tabs.some((t) => t.key === activeTab);
-  const currentTab = isCurrentTabValid ? activeTab : tabs[0]?.key || (isQaOfficer ? "qa" : "requests");
-
   return (
-    <div className="w-full min-h-full py-8 px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="w-full min-h-full py-6 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
       <PageHeader
         title="Production & Quality"
-        description={
-          isQaOfficer && !isAdmin
-            ? "Inspect finished production batches, verify sensory attributes and packaging, and approve stock-in."
-            : isInventoryManager && !isAdmin
-            ? "Create production requests with automated FIFO/FEFO lot reservations, scan raw materials, and issue supplies."
-            : isHeadCook && !isAdmin
-            ? "View ready for production requests, start authorized kitchen batches, track stage progression, and record finished goods."
-            : "End-to-end production management, material lot reservations, sequential stage tracking, and quality assurance."
-        }
+        description="End-to-end production management, material lot reservations, sequential stage tracking, and quality assurance."
       />
 
       {/* Main Tab Bar matching Resources & Suppliers styling */}
       <div className="border-b border-border">
         <div className="flex items-center gap-2 overflow-x-auto">
-          {tabs.map((tab) => {
-            const isActive = currentTab === tab.key;
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.key;
             return (
-              <button
+              <Link
                 key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
+                href={`/production-quality?tab=${tab.key}`}
+                onNavigate={(event) => { event.preventDefault(); navigate(`/production-quality?tab=${tab.key}`); }}
+                aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                   isActive
                     ? "border-foreground text-foreground"
@@ -151,61 +88,43 @@ export default function ProductionPage() {
                 }`}
               >
                 <span>{tab.label.toUpperCase()}</span>
-              </button>
+              </Link>
             );
           })}
         </div>
       </div>
 
-      {/* Tab 1: Production Requests (Base for Inventory Manager, Head Cook, and Admin) */}
-      {currentTab === "requests" && (
-        <ProductionRequestsTab
-          isAdmin={isAdmin}
-          isInventoryManager={isInventoryManager || isAdmin}
-          isHeadCook={isHeadCook}
+      {pending ? <ProductionSkeleton /> : <>
+      {activeTab === "requests" && (
+        <ProductionRequestsTab initialRows={initialRows}
           onNavigateToIssuance={handleNavigateToIssuance}
           onStartBatchAndTrack={handleStartBatchAndTrack}
-          currentUser={user?.username || (isHeadCook ? "Head Cook" : isInventoryManager ? "Inventory Manager" : "Admin")}
+          currentUser={staff.username}
         />
       )}
 
-      {/* Tab 2: Material Issuance (Inventory Manager & Admin) */}
-      {currentTab === "issuance" && (
-        <MaterialIssuanceTab initialIssuanceId={targetIssuanceId} />
+      {activeTab === "issuance" && (
+        <MaterialIssuanceTab initialRows={initialRows} initialIssuanceId={initialIssuanceId} />
       )}
 
-      {/* Tab 3: Production Tracking (Head Cook & Admin) */}
-      {currentTab === "tracking" && (
-        <ProductionTrackingTab
-          initialBatchId={trackingBatchId}
-          onNavigateToBatches={() => setActiveTab("requests")}
-          currentUser={user?.username || "Head Cook"}
-          onSwitchToQaOfficer={handleSwitchToQaOfficer}
+      {activeTab === "tracking" && (
+        <ProductionTrackingTab initialRows={initialRows}
+          initialBatchId={initialBatchId}
+          onNavigateToBatches={() => router.push("/production-quality")}
+          currentUser={staff.username}
         />
       )}
 
-      {/* Tab 4: Quality Assurance (QA Officer & Admin view-only) */}
-      {currentTab === "qa" && (
-        <ProductionQaTab
-          isQaOfficer={isQaOfficer}
-          isAdmin={isAdmin}
-          currentUser={user?.firstName ? `${user.firstName} ${user.lastName}` : "Ramon Dela Cruz"}
-          onSwitchToQaOfficer={handleSwitchToQaOfficer}
-        />
+      {activeTab === "qa" && <ProductionQaTab initialRows={initialRows} currentUser={staff.username} />}
+
+      {activeTab === "stockin" && (
+        <ProductionStockInTab initialRows={initialRows} initialItems={initialItems} currentUser={staff.username} />
       )}
 
-      {/* Tab 5: Stock-In (Inventory Manager & Admin) */}
-      {currentTab === "stockin" && (
-        <ProductionStockInTab
-          currentUser={user?.username || "Inventory Manager"}
-        />
-      )}
+      {activeTab === "configuration" && <ConfigurationTab initialRows={initialRows} />}
 
-      {/* Tab 6: Configuration (Admin) */}
-      {currentTab === "configuration" && <ConfigurationTab />}
-
-      {/* Tab 7: Loss (Admin) */}
-      {currentTab === "loss" && <LossTab />}
+      {activeTab === "loss" && <LossTab initialRows={initialRows} />}
+      </>}
     </div>
   );
 }

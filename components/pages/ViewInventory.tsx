@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { FileText, Search } from "lucide-react";
-import api from "@/lib/api";
+import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
-import { useAuth } from "@/context/AuthContext";
 import { InventoryItem } from "@/components/inventory/types";
 import { LotItem } from "@/components/lots/types";
 import InventorySummaryCards from "@/components/inventory/InventorySummaryCards";
@@ -53,116 +54,70 @@ function matchesSearch(item: InventoryItem, query: string): boolean {
   return nameMatch || codeMatch || splCodeMatch || idMatch || variantMatch;
 }
 
-export default function ViewInventory() {
-  const auth = useAuth();
-  const user = auth?.user;
-  const isAuth =
-    user?.username === "scmsuser" ||
-    user?.username === "ERP-ADMIN" ||
-    user?.email === "scmsuser@r3b2p.com" ||
-    user?.email === "admin@r3b2p.com" ||
-    user?.roles?.includes("Admin");
-
-  const [allInventories, setAllInventories] = useState<InventoryItem[]>([]);
-  const [categories, setCategories] = useState<{ categoryId: number; categoryName: string }[]>([]);
+export default function ViewInventory({
+  initialInventories,
+  initialLots,
+  initialTotal,
+  initialCategories = [],
+  asOf,
+}: {
+  initialInventories: InventoryItem[];
+  initialLots: LotItem[];
+  initialTotal: number;
+  initialCategories?: { categoryId: number; categoryName: string }[];
+  asOf: string;
+}) {
+  const router = useRouter();
+  const allInventories = initialInventories;
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("Raw Materials");
   const [productFilter, setProductFilter] = useState("All");
   const [page, setPage] = useState(1);
 
-  // KPI Metrics
-  const [totalItemsCount, setTotalItemsCount] = useState(0);
-  const [lowStockCount, setLowStockCount] = useState(0);
-  const [expiringSoonCount, setExpiringSoonCount] = useState(0);
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+  const totalItemsCount = initialTotal;
+  const lots = initialLots;
+  const lowStockCount = allInventories.filter(
+    (i) => i.isLowStock || i.currentStock <= i.minStockLevel
+  ).length;
+  const expiringSoonCount = lots.filter(
+    (lot) =>
+      lot.expiryDate &&
+      Math.ceil((new Date(lot.expiryDate).getTime() - new Date(asOf).getTime()) / 86400000) <= 30 &&
+      new Date(lot.expiryDate).getTime() >= new Date(asOf).getTime()
+  ).length;
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of allInventories) {
+      const cat = item.categoryName || "Uncategorized";
+      counts[cat] = (counts[cat] || 0) + 1;
+    }
+    return counts;
+  }, [allInventories]);
 
   // PR Modal State (for "Order Now" action)
   const [isCreatePROpen, setIsCreatePROpen] = useState(false);
   const [selectedPRData, setSelectedPRData] = useState<PurchaseRequisition | undefined>(undefined);
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      const res = await api.get("/api/categories/supplies");
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setCategories(res.data.data);
-      }
-    } catch (e) {
-      console.error("Failed to fetch supply categories:", e);
-    }
-  }, []);
-
-  const fetchInventories = useCallback(async () => {
-    try {
-      const res = await api.get(`/api/inventory?pageSize=1000`);
-      if (res.data?.success) {
-        const items: InventoryItem[] = res.data.data.items || res.data.data || [];
-        setAllInventories(items);
-      }
-    } catch (e) {
-      console.error("Failed to fetch inventories:", e);
-    }
-  }, []);
-
-  const fetchKpiData = useCallback(async () => {
-    try {
-      // 1. Fetch inventories for total count & low-stock count
-      const invRes = await api.get("/api/inventory?pageSize=1000");
-
-      if (invRes.data?.success) {
-        const items: InventoryItem[] = invRes.data.data.items || invRes.data.data || [];
-        setTotalItemsCount(invRes.data.data.totalCount ?? items.length);
-        const low = items.filter(
-          (i) => i.isLowStock || i.currentStock <= i.minStockLevel
-        ).length;
-        setLowStockCount(low);
-
-        const counts: Record<string, number> = {};
-        items.forEach((item) => {
-          const cat = item.categoryName || "Uncategorized";
-          counts[cat] = (counts[cat] || 0) + 1;
-        });
-        setCategoryCounts(counts);
-      }
-
-      // 2. Fetch available lots for expiring soon count (<= 30 days)
-      const lotsRes = await api.get("/api/inventory/lots?status=Available&pageSize=1000");
-
-      if (lotsRes.data?.success) {
-        const lots: LotItem[] = lotsRes.data.data.items || lotsRes.data.data || [];
-        const now = new Date();
-        const expiring = lots.filter((lot) => {
-          if (!lot.expiryDate) return false;
-          const exp = new Date(lot.expiryDate);
-          const diffDays = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          return diffDays <= 30;
-        }).length;
-        setExpiringSoonCount(expiring);
-      }
-    } catch (e) {
-      console.error("Failed to fetch inventory KPI stats:", e);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
-
-  useEffect(() => {
-    fetchInventories();
-  }, [fetchInventories]);
-
-  useEffect(() => {
-    fetchKpiData();
-  }, [fetchKpiData]);
-
   // Dynamic Category Tabs from active supply categories + Finished Goods
   const categoryTabs = useMemo(() => {
-    const dynamicTabs = categories.map((c) => ({
+    let baseList = initialCategories;
+    if (!baseList || baseList.length === 0) {
+      const set = new Set<string>();
+      allInventories.forEach((item) => {
+        if (item.categoryName && !item.categoryName.toLowerCase().includes("finished good")) {
+          set.add(item.categoryName);
+        }
+      });
+      baseList = Array.from(set).map((name, i) => ({ categoryId: i + 1, categoryName: name }));
+    }
+
+    const dynamicTabs = baseList.map((c) => ({
       id: c.categoryName,
       label: c.categoryName === "Tools and Supplies" ? "TOOLS & SUPPLIES" : c.categoryName.toUpperCase(),
     }));
     return [...dynamicTabs, { id: "Finished Goods", label: "FINISHED GOODS" }];
-  }, [categories]);
+  }, [initialCategories, allInventories]);
 
   // Ensure categoryFilter is valid when tabs load
   useEffect(() => {
@@ -203,7 +158,6 @@ export default function ViewInventory() {
           item.finishedProductVariants.forEach((v) => {
             const variantStock = v.currentStock ?? 0;
             const variantReserved = v.reservedStock ?? 0;
-            const maxStock = item.maxStockLevel > 0 ? item.maxStockLevel : 100;
             const minStock = item.minStockLevel || 0;
             rows.push({
               ...item,
@@ -282,18 +236,17 @@ export default function ViewInventory() {
   };
 
   return (
-    <div className="w-full min-h-full py-8 px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="w-full min-w-0 min-h-full py-6 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
+      <Toaster />
       <PageHeader
         title="Inventory Management"
         description="Monitor real-time warehouse stocks, ingredients, raw materials, and finished goods"
         actions={
-          isAuth && (
-            <Button size="sm" variant="outline" asChild className="gap-1.5 cursor-pointer">
-              <Link href="/reports?tab=inventory">
-                <FileText className="w-4 h-4" /> Reports
-              </Link>
-            </Button>
-          )
+          <Button size="sm" variant="outline" asChild className="gap-1.5 cursor-pointer">
+            <Link href="/reports?tab=inventory">
+              <FileText className="w-4 h-4" /> Reports
+            </Link>
+          </Button>
         }
       />
 
@@ -339,6 +292,7 @@ export default function ViewInventory() {
             <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
               type="text"
+              aria-label="Search inventory"
               placeholder="Search by name or Supply No (e.g. SPL-0001)..."
               value={searchQuery}
               onChange={(e) => {
@@ -423,8 +377,8 @@ export default function ViewInventory() {
           onSuccess={() => {
             setIsCreatePROpen(false);
             setSelectedPRData(undefined);
-            fetchInventories();
-            fetchKpiData();
+            toast.success("Restock requisition saved successfully.");
+            router.refresh();
           }}
           initialData={selectedPRData}
         />

@@ -24,6 +24,7 @@ export function PRActionModal({
   const [reason, setReason] = useState("");
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -67,10 +68,13 @@ export function PRActionModal({
       return;
     }
     setError(false);
+    setSubmitError("");
     setLoading(true);
     try {
       await onConfirm(reason.trim());
       onClose();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "The action could not be completed.");
     } finally {
       setLoading(false);
     }
@@ -81,13 +85,15 @@ export function PRActionModal({
   return createPortal(
     <div
       className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-      onClick={onClose}
+      onClick={() => { if (!loading) onClose(); }}
     >
       <div
+        role="dialog" aria-modal="true" aria-label={getTitle()}
         style={{ width: "100%", maxWidth: "440px" }}
         className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
+        {submitError && <p role="alert" className="mb-3 text-sm text-destructive">{submitError}</p>}
         <div className="flex flex-col items-center justify-center text-center">
           {/* Circular Alert Icon */}
           <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
@@ -153,7 +159,7 @@ export function PRActionModal({
               type="button"
               onClick={handleConfirm}
               disabled={loading}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-background bg-foreground hover:bg-foreground/85 rounded-xl transition-colors disabled:opacity-50"
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors disabled:opacity-50"
             >
               {loading ? "Processing..." : "Confirm"}
             </button>
