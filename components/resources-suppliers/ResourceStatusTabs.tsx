@@ -18,10 +18,12 @@ const statuses = [
 
 export default function ResourceStatusTabs({ value, onChange, counts }: ResourceStatusTabsProps) {
   return (
-    <div className="mb-6 overflow-x-auto">
-      <div className="flex min-w-max items-center gap-1.5 pb-2">
+    <div className="border-b border-border overflow-x-auto mb-6">
+      <div className="flex items-center gap-1.5 min-w-max pb-2">
+        <span className="text-xs font-bold text-muted-foreground mr-1.5 px-1">Status</span>
         {statuses.map((status) => {
           const isSelected = value === status.value;
+          const count = counts[status.countKey] || 0;
 
           return (
             <button
@@ -29,21 +31,21 @@ export default function ResourceStatusTabs({ value, onChange, counts }: Resource
               type="button"
               onClick={() => onChange(status.value)}
               aria-pressed={isSelected}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 isSelected
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
             >
               <span>{status.label}</span>
               <span
-                className={`rounded-full px-1.5 py-0.5 text-xs font-medium ${
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
                   isSelected
-                    ? "bg-transparent text-accent-foreground"
-                    : "bg-transparent text-muted-foreground"
+                    ? "bg-background text-foreground"
+                    : "bg-muted text-muted-foreground"
                 }`}
               >
-                {counts[status.countKey]}
+                {count}
               </span>
             </button>
           );

@@ -125,20 +125,20 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
   };
 
   return (
-    <div className="w-full min-h-full py-7 px-4 sm:px-8 space-y-5 animate-page-in">
+    <div className="w-full min-h-full py-7 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
       <PageHeader
         title="Resources & Suppliers"
         description="Manage your foundation data - Categories, Suppliers, Supply, and Recipes"
       />
 
       {message && (
-        <p role="status" className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
+        <p role="status" className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm text-primary">
           {message}
         </p>
       )}
 
       {/* Process Tabs in Uniform Order: Categories -> Supplier List -> Supply List -> BOM */}
-      <div className="border-b border-border-subtle">
+      <div className="border-b border-border">
         <div className="flex items-center gap-2 overflow-x-auto">
           {[
             { id: "category", label: "CATEGORIES" },

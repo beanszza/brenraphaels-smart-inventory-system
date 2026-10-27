@@ -18,7 +18,7 @@ export default function SupplierTable({ suppliers, currentPage, pageSize, onEdit
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+    <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
       <table className="w-full">
         <thead className="border-b border-border bg-muted/30">
           <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
@@ -34,8 +34,8 @@ export default function SupplierTable({ suppliers, currentPage, pageSize, onEdit
         <tbody className="divide-y divide-border">
           {suppliers.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-muted-foreground">
-                No Results Found
+              <td colSpan={7} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
+                No suppliers found.
               </td>
             </tr>
           ) : (

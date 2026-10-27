@@ -21,7 +21,7 @@ export default function CategoryTable({
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+    <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
       <table className="w-full min-w-[700px]">
         <thead className="border-b border-border bg-muted/30">
           <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
@@ -38,9 +38,9 @@ export default function CategoryTable({
             <tr>
               <td
                 colSpan={6}
-                className="px-5 py-10 text-center text-sm font-semibold text-muted-foreground"
+                className="px-5 py-12 text-center text-sm font-normal text-muted-foreground"
               >
-                No Categories Found
+                No categories found.
               </td>
             </tr>
           ) : (

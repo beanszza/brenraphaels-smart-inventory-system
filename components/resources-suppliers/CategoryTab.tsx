@@ -1,9 +1,10 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, RefreshCw } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { CategoryItem } from "./types";
 import CategoryTable from "./CategoryTable";
@@ -32,6 +33,15 @@ export default function CategoryTab({
   onAddNew,
   onEdit,
 }: CategoryTabProps) {
+  const router = useRouter();
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    router.refresh();
+    setTimeout(() => setRefreshing(false), 600);
+  };
+
   const statusCounts = {
     all: categories.length,
     active: categories.filter((c) => c.isActive !== false).length,
@@ -61,7 +71,7 @@ export default function CategoryTab({
   );
 
   return (
-    <div>
+    <div className="space-y-6 animate-page-in">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Supply Categories</h2>
@@ -71,17 +81,27 @@ export default function CategoryTab({
         </div>
         <div className="flex items-center gap-3">
           <Button
-            onClick={onAddNew}
-            className="flex items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/85 transition-colors shadow-sm"
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
           >
-            <Plus size={16} /> Add New Category
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
+          </Button>
+          <Button
+            type="button"
+            onClick={onAddNew}
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+          >
+            <Plus className="w-4 h-4" /> Add New Category
           </Button>
         </div>
       </div>
 
-      <div className="mb-6 border border-border rounded-md overflow-hidden bg-card">
-        <div className="flex items-center justify-between gap-sm px-md py-sm bg-muted/20">
-          <div className="flex items-center gap-sm flex-1">
+      <div className="mb-6 border border-border rounded-xl overflow-hidden bg-card">
+        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-muted/20">
+          <div className="flex items-center gap-3 flex-1">
             <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
               type="text"
@@ -91,7 +111,7 @@ export default function CategoryTab({
                 onSearchChange(e.target.value);
                 onPageChange(1);
               }}
-              className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-body-sm flex-1 text-foreground placeholder:text-muted-foreground"
+              className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-sm flex-1 text-foreground placeholder:text-muted-foreground"
             />
           </div>
         </div>

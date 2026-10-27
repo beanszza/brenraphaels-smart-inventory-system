@@ -18,25 +18,25 @@ export default function SupplyTable({ items, currentPage, pageSize, onEdit, onVi
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-card">
+    <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
       <table className="w-full min-w-[900px]">
-        <thead className="border-b border-border bg-card">
-          <tr className="text-left text-xs font-medium text-muted-foreground whitespace-nowrap">
-            <th className="px-4 py-3">No.</th>
-            <th className="px-4 py-3">Name</th>
-            <th className="px-4 py-3">Category</th>
-            <th className="px-4 py-3">Unit</th>
-            <th className="px-4 py-3">Min Stock</th>
-            <th className="px-4 py-3">Max Stock</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3 text-center">Actions</th>
+        <thead className="border-b border-border bg-muted/30">
+          <tr className="text-left text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">
+            <th className="px-4 py-3.5">No.</th>
+            <th className="px-4 py-3.5">Name</th>
+            <th className="px-4 py-3.5">Category</th>
+            <th className="px-4 py-3.5">Unit</th>
+            <th className="px-4 py-3.5">Min Stock</th>
+            <th className="px-4 py-3.5">Max Stock</th>
+            <th className="px-4 py-3.5">Status</th>
+            <th className="px-4 py-3.5 text-center">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border-subtle">
+        <tbody className="divide-y divide-border">
           {items.length === 0 ? (
             <tr>
-              <td colSpan={8} className="px-5 py-10 text-center text-sm font-semibold text-muted-foreground">
-                No Results Found
+              <td colSpan={8} className="px-5 py-12 text-center text-sm font-normal text-muted-foreground">
+                No supplies found.
               </td>
             </tr>
           ) : (
