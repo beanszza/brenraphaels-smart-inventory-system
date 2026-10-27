@@ -30,6 +30,7 @@ export default function CategoryModal({
   const [isActive, setIsActive] = useState(true);
   const [nameError, setNameError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const validateName = (val: string) => {
     const trimmed = val.trim();
@@ -84,11 +85,14 @@ export default function CategoryModal({
     if (!validateName(categoryName)) return;
     try {
       setIsSaving(true);
+      setSaveError("");
       await onSave({
         categoryName: categoryName.trim(),
         description: description.trim(),
         isActive,
       });
+    } catch (err: any) {
+      setSaveError(err instanceof Error ? err.message : "Unable to save category. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -104,6 +108,11 @@ export default function CategoryModal({
       size="max-w-md"
     >
       <div className="space-y-4">
+        {saveError && (
+          <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+            {saveError}
+          </div>
+        )}
         {/* Category Name */}
         <div>
           <label className="mb-1.5 block text-xs font-semibold text-foreground">

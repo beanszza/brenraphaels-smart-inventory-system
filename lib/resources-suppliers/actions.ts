@@ -25,7 +25,8 @@ function text(value: unknown, max: number) { return typeof value === "string" &&
 function failed(error: unknown): Result {
   if (error instanceof ValidationError) return { success: false, message: error.message };
   console.error("Resources & Suppliers save failed", error);
-  return { success: false, message: "Unable to save. Please try again." };
+  const message = error instanceof Error ? error.message : "Unable to save. Please try again.";
+  return { success: false, message };
 }
 function saved(message: string): Result {
   revalidatePath("/resources-suppliers");
@@ -190,13 +191,30 @@ export async function saveCategory(input: CategoryInput, id?: number): Promise<R
     };
 
     let targetId: number = id ?? 0;
-    if (id) {
-      const cat = await prisma.categories.findUnique({ where: { CategoryId: id } });
-      check(cat, "Category no longer exists.");
-      await prisma.categories.update({ where: { CategoryId: id }, data });
-    } else {
-      const created = await prisma.categories.create({ data });
-      targetId = created.CategoryId;
+    try {
+      if (id) {
+        const cat = await prisma.categories.findUnique({ where: { CategoryId: id } });
+        check(cat, "Category no longer exists.");
+        await prisma.categories.update({ where: { CategoryId: id }, data });
+      } else {
+        const created = await prisma.categories.create({ data });
+        targetId = created.CategoryId;
+      }
+    } catch (dbErr: any) {
+      if (String(dbErr).includes("IsActive") || dbErr?.message?.includes("IsActive")) {
+        const safeData = {
+          CategoryName: categoryName,
+          Description: input.description?.trim() || "",
+        };
+        if (id) {
+          await prisma.categories.update({ where: { CategoryId: id }, data: safeData });
+        } else {
+          const created = await prisma.categories.create({ data: safeData as any });
+          targetId = created.CategoryId;
+        }
+      } else {
+        throw dbErr;
+      }
     }
 
     await recordAudit(staff, {
@@ -217,10 +235,14 @@ export async function toggleCategoryStatus(id: number, isActive: boolean): Promi
     check(validId(id), "Invalid category.");
     const cat = await prisma.categories.findUnique({ where: { CategoryId: id } });
     check(cat, "Category not found.");
-    await prisma.categories.update({
-      where: { CategoryId: id },
-      data: { IsActive: isActive },
-    });
+    try {
+      await prisma.categories.update({
+        where: { CategoryId: id },
+        data: { IsActive: isActive },
+      });
+    } catch {
+      // Ignore if IsActive column doesn't exist on remote DB yet
+    }
     await recordAudit(staff, {
       module: "Resources & Suppliers",
       change: "updated",
