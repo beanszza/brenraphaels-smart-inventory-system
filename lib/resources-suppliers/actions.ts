@@ -189,7 +189,7 @@ export async function saveCategory(input: CategoryInput, id?: number): Promise<R
       IsActive: input.isActive ?? true,
     };
 
-    let targetId = id;
+    let targetId: number = id ?? 0;
     if (id) {
       const cat = await prisma.categories.findUnique({ where: { CategoryId: id } });
       check(cat, "Category no longer exists.");
@@ -223,7 +223,7 @@ export async function toggleCategoryStatus(id: number, isActive: boolean): Promi
     });
     await recordAudit(staff, {
       module: "Resources & Suppliers",
-      change: "status_changed",
+      change: "updated",
       target: { type: "category", id, name: cat.CategoryName },
       description: `${staff.name} set category ${cat.CategoryName} to ${isActive ? "Active" : "Inactive"}`,
     });
