@@ -45,6 +45,26 @@ export default function SupplyModal(props: SupplyModalProps) {
   return props.open ? <SupplyModalForm key={props.editingItem?.itemId ?? "new"} {...props} /> : null;
 }
 
+const DEFAULT_FALLBACK_UOMS: UomOption[] = [
+  { uomId: 1, code: "kg", name: "Kilogram", abbreviation: "kg", uomType: "Weight", conversionFactor: 1 },
+  { uomId: 2, code: "pcs", name: "Piece", abbreviation: "pcs", uomType: "Count", conversionFactor: 1 },
+  { uomId: 3, code: "L", name: "Litre", abbreviation: "L", uomType: "Volume", conversionFactor: 1 },
+  { uomId: 4, code: "m", name: "Meter", abbreviation: "m", uomType: "Length", conversionFactor: 1 },
+  { uomId: 5, code: "g", name: "Gram", abbreviation: "g", uomType: "Weight", conversionFactor: 0.001 },
+  { uomId: 6, code: "box", name: "Box", abbreviation: "box", uomType: "Count", conversionFactor: 1 },
+  { uomId: 7, code: "pack", name: "Pack", abbreviation: "pack", uomType: "Count", conversionFactor: 1 },
+  { uomId: 8, code: "roll", name: "Roll", abbreviation: "roll", uomType: "Count", conversionFactor: 1 },
+  { uomId: 9, code: "bottle", name: "Bottle", abbreviation: "bottle", uomType: "Count", conversionFactor: 1 },
+  { uomId: 10, code: "sack50", name: "Sack (50 kg)", abbreviation: "sack", uomType: "Weight", conversionFactor: 50 },
+  { uomId: 11, code: "mL", name: "Millilitre", abbreviation: "mL", uomType: "Volume", conversionFactor: 0.001 },
+];
+
+const DEFAULT_FALLBACK_CATS: SupplyCategory[] = [
+  { categoryId: 1, categoryName: "Raw Materials" },
+  { categoryId: 2, categoryName: "Ingredients" },
+  { categoryId: 3, categoryName: "Tools and Supplies" },
+];
+
 function SupplyModalForm({
   open,
   editingItem,
@@ -55,11 +75,14 @@ function SupplyModalForm({
   onClose,
   onSave,
 }: SupplyModalProps) {
+  const availableUoms = uoms && uoms.length > 0 ? uoms : DEFAULT_FALLBACK_UOMS;
+  const availableCategories = categories && categories.length > 0 ? categories : DEFAULT_FALLBACK_CATS;
+
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [itemName, setItemName] = useState(editingItem?.itemName ?? "");
-  const [categoryId, setCategoryId] = useState(editingItem?.categoryId ?? categories[0]?.categoryId ?? 0);
-  const [uomId, setUomId] = useState(editingItem?.uomId ?? uoms[0]?.uomId ?? 0);
+  const [categoryId, setCategoryId] = useState(editingItem?.categoryId ?? availableCategories[0]?.categoryId ?? 1);
+  const [uomId, setUomId] = useState(editingItem?.uomId ?? availableUoms[0]?.uomId ?? 1);
   const [minStock, setMinStock] = useState(editingItem ? String(editingItem.minStockLevel) : "");
   const [maxStock, setMaxStock] = useState(editingItem ? String(editingItem.maxStockLevel) : "");
   const [supplyActive, setSupplyActive] = useState(editingItem?.isActive ?? true);
@@ -205,9 +228,9 @@ function SupplyModalForm({
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(Number(e.target.value))}
-              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring"
+              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring focus:outline-none"
             >
-              {categories.map((category) => (
+              {availableCategories.map((category) => (
                 <option key={category.categoryId} value={category.categoryId}>
                   {category.categoryName === "Tools and Supplies" ? "Tools & Supplies" : category.categoryName}
                 </option>
@@ -219,9 +242,9 @@ function SupplyModalForm({
             <select
               value={uomId}
               onChange={(e) => setUomId(Number(e.target.value))}
-              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring"
+              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring focus:outline-none"
             >
-              {uoms.map((uom) => (
+              {availableUoms.map((uom) => (
                 <option key={uom.uomId} value={uom.uomId}>
                   {uom.name} ({uom.abbreviation})
                 </option>

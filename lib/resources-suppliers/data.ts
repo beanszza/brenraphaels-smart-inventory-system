@@ -26,6 +26,59 @@ export async function getResources() {
     }),
     prisma.unitOfMeasures.findMany({ orderBy: [{ UomType: "asc" }, { Name: "asc" }] }),
   ]);
+
+  let finalUnits = units;
+  if (finalUnits.length === 0) {
+    const DEFAULT_UOMS = [
+      { Name: "Kilogram", Abbreviation: "kg", Code: "kg", ConversionFactor: 1, IsBaseUnit: true, UomType: "Weight" },
+      { Name: "Piece", Abbreviation: "pcs", Code: "pcs", ConversionFactor: 1, IsBaseUnit: true, UomType: "Count" },
+      { Name: "Litre", Abbreviation: "L", Code: "L", ConversionFactor: 1, IsBaseUnit: true, UomType: "Volume" },
+      { Name: "Gram", Abbreviation: "g", Code: "g", ConversionFactor: 0.001, IsBaseUnit: false, UomType: "Weight" },
+      { Name: "Box", Abbreviation: "box", Code: "box", ConversionFactor: 1, IsBaseUnit: false, UomType: "Count" },
+      { Name: "Pack", Abbreviation: "pack", Code: "pack", ConversionFactor: 1, IsBaseUnit: false, UomType: "Count" },
+      { Name: "Bottle", Abbreviation: "bottle", Code: "bottle", ConversionFactor: 1, IsBaseUnit: false, UomType: "Count" },
+      { Name: "Meter", Abbreviation: "m", Code: "m", ConversionFactor: 1, IsBaseUnit: true, UomType: "Length" },
+      { Name: "Millilitre", Abbreviation: "mL", Code: "mL", ConversionFactor: 0.001, IsBaseUnit: false, UomType: "Volume" },
+      { Name: "Sack (50 kg)", Abbreviation: "sack", Code: "sack50", ConversionFactor: 50, IsBaseUnit: false, UomType: "Weight" },
+      { Name: "Roll", Abbreviation: "roll", Code: "roll", ConversionFactor: 1, IsBaseUnit: false, UomType: "Count" },
+    ];
+    try {
+      for (const def of DEFAULT_UOMS) {
+        await prisma.unitOfMeasures.upsert({
+          where: { Code: def.Code },
+          update: {},
+          create: def,
+        });
+      }
+      finalUnits = await prisma.unitOfMeasures.findMany({ orderBy: [{ UomType: "asc" }, { Name: "asc" }] });
+    } catch (e) {
+      console.warn("Could not seed unitOfMeasures into DB, using fallback array:", e);
+      finalUnits = DEFAULT_UOMS.map((u, i) => ({ ...u, UomId: i + 1, BaseUomId: null } as any));
+    }
+  }
+
+  let finalCategories = categories;
+  if (finalCategories.length === 0) {
+    const DEFAULT_CATS = [
+      { CategoryName: "Raw Materials", Description: "Unprocessed materials used in production" },
+      { CategoryName: "Ingredients", Description: "Edible ingredients and food components" },
+      { CategoryName: "Tools and Supplies", Description: "Operational tools, packaging, and supplies" },
+    ];
+    try {
+      for (const cat of DEFAULT_CATS) {
+        await prisma.categories.create({ data: cat });
+      }
+      finalCategories = await prisma.categories.findMany({
+        where: { NOT: { CategoryName: { in: ["Finished Goods", "Finished Good"] } } },
+        select: { CategoryId: true, CategoryName: true, Description: true, _count: { select: { Items: true } } },
+        orderBy: { CategoryId: "asc" },
+      });
+    } catch (e) {
+      console.warn("Could not seed initial categories:", e);
+      finalCategories = DEFAULT_CATS.map((c, i) => ({ ...c, CategoryId: i + 1, _count: { Items: 0 } }));
+    }
+  }
+
   return {
     supplies: items
       .filter((i) => !i.Category?.CategoryName?.toLowerCase().includes("finished good"))
@@ -80,17 +133,17 @@ export async function getResources() {
       itemName: p.Items?.ItemName ?? "",
       variant: p.Variant ?? "",
     })),
-    allCategories: categories.map((c) => ({
+    allCategories: finalCategories.map((c) => ({
       categoryId: c.CategoryId,
       categoryName: c.CategoryName,
       description: c.Description ?? "",
       isActive: (c as any).IsActive ?? true,
       itemCount: c._count?.Items ?? 0,
     })),
-    categories: categories
+    categories: finalCategories
       .filter((c) => (c as any).IsActive !== false)
       .map((c) => ({ categoryId: c.CategoryId, categoryName: c.CategoryName })),
-    units: units.map((u) => ({
+    units: finalUnits.map((u) => ({
       uomId: u.UomId,
       code: u.Code,
       name: u.Name,
