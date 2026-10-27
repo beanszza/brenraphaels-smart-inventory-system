@@ -14,7 +14,6 @@ export default async function InventoryPage() {
     inventoryPages<LotItem>(listLots, "status=Available&pageSize=500"),
     prisma.categories.findMany({
       where: {
-        IsActive: true,
         NOT: {
           CategoryName: { in: ["Finished Goods", "Finished Good"] },
         },

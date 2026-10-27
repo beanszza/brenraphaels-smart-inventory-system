@@ -16,7 +16,10 @@ export async function getResources() {
           CategoryName: { in: ["Finished Goods", "Finished Good"] },
         },
       },
-      include: {
+      select: {
+        CategoryId: true,
+        CategoryName: true,
+        Description: true,
         _count: { select: { Items: true } },
       },
       orderBy: { CategoryId: "asc" },
@@ -24,26 +27,59 @@ export async function getResources() {
     prisma.unitOfMeasures.findMany({ orderBy: [{ UomType: "asc" }, { Name: "asc" }] }),
   ]);
   return {
-    supplies: items.filter(i => !i.Category.CategoryName.toLowerCase().includes("finished good")).map(i => ({
-      itemId: i.ItemId, itemCode: i.ItemCode, itemName: i.ItemName, categoryId: i.CategoryId,
-      categoryName: i.Category.CategoryName, uomId: i.UomId, uomName: i.Uom.Name,
-      minStockLevel: Number(i.MinStockLevel), maxStockLevel: Number(i.MaxStockLevel),
-      currentStock: i.Inventories.reduce((sum, row) => sum + Number(row.CurrentStock), 0),
-      isActive: i.IsActive, supplierIds: i.SupplierItems.map(s => s.SupplierId),
+    supplies: items
+      .filter((i) => !i.Category?.CategoryName?.toLowerCase().includes("finished good"))
+      .map((i) => ({
+        itemId: i.ItemId,
+        itemCode: i.ItemCode ?? `SPL-${String(i.ItemId).padStart(4, "0")}`,
+        itemName: i.ItemName,
+        categoryId: i.CategoryId,
+        categoryName: i.Category?.CategoryName ?? "Uncategorized",
+        uomId: i.UomId,
+        uomName: i.Uom?.Name ?? "",
+        minStockLevel: Number(i.MinStockLevel ?? 0),
+        maxStockLevel: Number(i.MaxStockLevel ?? 0),
+        currentStock: (i.Inventories ?? []).reduce((sum, row) => sum + Number(row.CurrentStock ?? 0), 0),
+        isActive: i.IsActive ?? true,
+        supplierIds: (i.SupplierItems ?? []).map((s) => s.SupplierId),
+      })),
+    suppliers: suppliers.map((s) => ({
+      supplierId: s.SupplierId,
+      supplierCode: s.SupplierCode ?? `SUP-${String(s.SupplierId).padStart(4, "0")}`,
+      companyName: s.CompanyName,
+      contactPerson: s.ContactPerson ?? "",
+      email: s.Email ?? "",
+      phone: s.Phone ?? "",
+      address: s.Address ?? "",
+      website: s.Website ?? undefined,
+      isActive: s.IsActive ?? true,
+      suppliedItems: (s.SupplierItems ?? []).map((i) => ({
+        itemId: i.ItemId,
+        itemName: i.Items?.ItemName ?? "",
+      })),
     })),
-    suppliers: suppliers.map(s => ({ supplierId: s.SupplierId, supplierCode: s.SupplierCode,
-      companyName: s.CompanyName, contactPerson: s.ContactPerson, email: s.Email, phone: s.Phone,
-      address: s.Address, website: s.Website ?? undefined, isActive: s.IsActive,
-      suppliedItems: s.SupplierItems.map(i => ({ itemId: i.ItemId, itemName: i.Items.ItemName })),
+    recipes: recipes.map((r) => ({
+      recipeId: r.RecipeId,
+      recipeCode: r.RecipeCode ?? `BOM-${String(r.RecipeId).padStart(4, "0")}`,
+      recipeName: r.RecipeName,
+      productId: r.ProductId,
+      finishedProduct: r.Product?.Items?.ItemName ?? "Finished Product",
+      outputQuantity: Number(r.OutputQuantity ?? 1),
+      notes: r.Notes ?? "",
+      isActive: r.IsActive ?? true,
+      displayName: `${r.RecipeName} — Batch of ${Number(r.OutputQuantity ?? 1)} pcs`,
+      yieldLabel: `Batch of ${Number(r.OutputQuantity ?? 1)} pcs`,
+      ingredients: (r.RecipeIngredients ?? []).map((i) => ({
+        itemId: i.ItemId,
+        uomId: i.UomId,
+        standardQuantity: Number(i.StandardQuantity ?? 0),
+      })),
     })),
-    recipes: recipes.map(r => ({ recipeId: r.RecipeId, recipeCode: r.RecipeCode,
-      recipeName: r.RecipeName, productId: r.ProductId, finishedProduct: r.Product.Items.ItemName,
-      outputQuantity: Number(r.OutputQuantity), notes: r.Notes, isActive: r.IsActive,
-      displayName: `${r.RecipeName} — Batch of ${Number(r.OutputQuantity)} pcs`,
-      yieldLabel: `Batch of ${Number(r.OutputQuantity)} pcs`,
-      ingredients: r.RecipeIngredients.map(i => ({ itemId: i.ItemId, uomId: i.UomId, standardQuantity: Number(i.StandardQuantity) })),
+    products: products.map((p) => ({
+      productId: p.ProductId,
+      itemName: p.Items?.ItemName ?? "",
+      variant: p.Variant ?? "",
     })),
-    products: products.map(p => ({ productId: p.ProductId, itemName: p.Items.ItemName, variant: p.Variant })),
     allCategories: categories.map((c) => ({
       categoryId: c.CategoryId,
       categoryName: c.CategoryName,
@@ -54,8 +90,14 @@ export async function getResources() {
     categories: categories
       .filter((c) => (c as any).IsActive !== false)
       .map((c) => ({ categoryId: c.CategoryId, categoryName: c.CategoryName })),
-    units: units.map(u => ({ uomId: u.UomId, code: u.Code, name: u.Name, abbreviation: u.Abbreviation,
-      uomType: u.UomType, conversionFactor: Number(u.ConversionFactor) })),
+    units: units.map((u) => ({
+      uomId: u.UomId,
+      code: u.Code,
+      name: u.Name,
+      abbreviation: u.Abbreviation,
+      uomType: u.UomType,
+      conversionFactor: Number(u.ConversionFactor ?? 1),
+    })),
   };
 }
 
