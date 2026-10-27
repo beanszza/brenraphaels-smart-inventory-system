@@ -20,7 +20,6 @@ export default function ResourceStatusTabs({ value, onChange, counts }: Resource
   return (
     <div className="border-b border-border overflow-x-auto mb-6">
       <div className="flex items-center gap-1.5 min-w-max pb-2">
-        <span className="text-xs font-bold text-muted-foreground mr-1.5 px-1">Status</span>
         {statuses.map((status) => {
           const isSelected = value === status.value;
           const count = counts[status.countKey] || 0;
