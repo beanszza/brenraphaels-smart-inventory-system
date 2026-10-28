@@ -158,8 +158,18 @@ export function PRDetailsModal({
             </div>
           </div>
 
+          {/* Purpose */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Purpose
+            </label>
+            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+              {pr.purpose || pr.requestType || "Stock Replenishment"}
+            </div>
+          </div>
+
           {/* Priority */}
-          <div className="sm:col-span-2 lg:col-span-1">
+          <div>
             <label className="mb-1.5 block text-xs font-semibold text-foreground">
               Priority
             </label>
@@ -235,14 +245,16 @@ export function PRDetailsModal({
           </div>
         </div>
 
-        {/* Notes (Purpose removed as requested) */}
+        {/* Notes on bottom right */}
         {pr.notes && (
-          <div className="pt-2 border-t border-border">
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Notes
-            </label>
-            <div className="w-full rounded-xl border border-border bg-muted/40 p-3 text-xs text-foreground leading-relaxed whitespace-pre-wrap">
-              {pr.notes}
+          <div className="flex justify-end pt-2 border-t border-border">
+            <div className="w-full sm:w-1/2 lg:w-5/12 space-y-1.5">
+              <label className="block text-xs font-semibold text-foreground">
+                Notes
+              </label>
+              <div className="w-full rounded-xl border border-border bg-muted/40 p-3 text-xs text-foreground leading-relaxed whitespace-pre-wrap">
+                {pr.notes}
+              </div>
             </div>
           </div>
         )}

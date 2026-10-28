@@ -20,6 +20,18 @@ import { PurchaseRequisition, PRItem } from "../types";
 import { useStaff } from "@/context/StaffContext";
 import ConfirmModal from "@/components/ConfirmModal";
 
+export const PR_PURPOSE_CHOICES = [
+  "Stock Replenishment",
+  "Safety Stock Buffer",
+  "Upcoming Production Schedule",
+  "Emergency Restock",
+  "Seasonal Demand Preparation",
+  "Trial / New Product",
+  "Supplier Minimum Order Fulfilment",
+  "Damaged / Expired Goods Replacement",
+  "Other",
+] as const;
+
 export interface CreatePRModalProps {
   open: boolean;
   onClose: () => void;
@@ -78,7 +90,7 @@ export function CreatePRModal({
   );
 
   const [department, setDepartment] = useState(initialData?.department || "");
-  const [requestType, setRequestType] = useState(initialData?.requestType || "");
+  const [purpose, setPurpose] = useState(initialData?.purpose || initialData?.requestType || "");
   const [priority, setPriority] = useState(initialData?.priority || "");
   const [requiredDate, setRequiredDate] = useState(
     initialData?.requiredDate
@@ -95,8 +107,7 @@ export function CreatePRModal({
     })) || []
   );
 
-  // Purpose & Notes
-  const [purpose, setPurpose] = useState(initialData?.purpose || "");
+  // Notes
   const [notes, setNotes] = useState(initialData?.notes || "");
   const [itemSearch, setItemSearch] = useState("");
 
@@ -130,7 +141,7 @@ export function CreatePRModal({
             : defaultAccountName || ""
         );
         setDepartment(initialData.department || "");
-        setRequestType(initialData.requestType || "");
+        setPurpose(initialData.purpose || initialData.requestType || "");
         setPriority(initialData.priority || "");
         setRequiredDate(
           initialData.requiredDate
@@ -138,7 +149,6 @@ export function CreatePRModal({
             : ""
         );
         setStatusText(initialData.status || "Draft");
-        setPurpose(initialData.purpose || "");
         setNotes(initialData.notes || "");
         setItems(
           initialData.items?.map((it) => ({
@@ -158,11 +168,10 @@ export function CreatePRModal({
         );
         setRequestedBy(defaultAccountName || "Inventory Manager");
         setDepartment(detectedDepartment);
-        setRequestType("");
+        setPurpose("");
         setPriority("");
         setRequiredDate("");
         setStatusText("Draft");
-        setPurpose("");
         setNotes("");
         setItems([]);
         setErrors({});
@@ -279,7 +288,7 @@ export function CreatePRModal({
 
     if (!requestedBy.trim()) newErrors.requestedBy = "Requester name is required.";
     if (!department.trim()) newErrors.department = "Department is required.";
-    if (!requestType.trim()) newErrors.requestType = "Request type is required.";
+    if (!purpose.trim()) newErrors.purpose = "Purpose is required.";
     if (!priority.trim()) newErrors.priority = "Priority is required.";
     if (!requiredDate) {
       newErrors.requiredDate = "Required date is required.";
@@ -316,12 +325,12 @@ export function CreatePRModal({
   };
 
   const isFormValid = useMemo(() => {
-    if (!requestedBy.trim() || !department.trim() || !requestType.trim() || !priority.trim() || !requiredDate) {
+    if (!requestedBy.trim() || !department.trim() || !purpose.trim() || !priority.trim() || !requiredDate) {
       return false;
     }
     if (items.length === 0) return false;
     return items.every((it) => it.itemId > 0 && it.requestedQuantity > 0);
-  }, [requestedBy, department, requestType, priority, requiredDate, items]);
+  }, [requestedBy, department, purpose, priority, requiredDate, items]);
 
   // Execution
   const executeSave = async (submitForApproval: boolean) => {
@@ -335,10 +344,10 @@ export function CreatePRModal({
       const payload = {
         department: department.trim(),
         requestedBy: requestedBy.trim(),
-        requestType: requestType.trim(),
+        requestType: purpose.trim(),
         priority: priority.trim(),
         requiredDate: new Date(requiredDate).toISOString(),
-        purpose: notes.trim() || "Stock replenishment",
+        purpose: purpose.trim(),
         notes: notes.trim() || null,
         submitForApproval,
         items: items.map((it) => ({
@@ -400,7 +409,7 @@ export function CreatePRModal({
               </button>
             </div>
           )}
-          {/* Top Form Fields: Clean, modern 3-column responsive grid preventing overly wide stretched inputs */}
+          {/* Top Form Fields: Clean, modern 3-column responsive grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
             {/* PR Number */}
             <div>
@@ -421,7 +430,36 @@ export function CreatePRModal({
                 {requestDate}
               </div>
             </div>
-          </div>
+
+            {/* Required Date */}
+            <div>
+              <label className={`mb-1.5 block text-xs font-semibold ${errors.requiredDate ? "text-destructive" : "text-foreground"}`}>
+                Required Date <span className="text-destructive">*</span>
+              </label>
+              <div className="relative">
+                <Input
+                  type="date"
+                  min={new Date().toISOString().split("T")[0]}
+                  value={requiredDate}
+                  onChange={(e) => {
+                    setRequiredDate(e.target.value);
+                    setErrors((prev) => {
+                      const c = { ...prev };
+                      delete c.requiredDate;
+                      return c;
+                    });
+                  }}
+                  className={`w-full h-10 rounded-xl border ${
+                    errors.requiredDate ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
+                  } bg-card px-3.5 py-2 pr-10 text-xs text-foreground transition-colors cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                />
+                <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              </div>
+              {errors.requiredDate && (
+                <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.requiredDate}</p>
+              )}
+            </div>
+
             {/* Requested By */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
@@ -466,41 +504,41 @@ export function CreatePRModal({
               )}
             </div>
 
-            {/* Request Type */}
+            {/* Purpose */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Request Type <span className="text-destructive">*</span>
+                Purpose <span className="text-destructive">*</span>
               </label>
               <select
-                value={requestType}
+                value={purpose}
                 onChange={(e) => {
-                  setRequestType(e.target.value);
+                  setPurpose(e.target.value);
                   setErrors((prev) => {
                     const c = { ...prev };
-                    delete c.requestType;
+                    delete c.purpose;
                     return c;
                   });
                 }}
                 className={`w-full h-10 rounded-xl border ${
-                  errors.requestType ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
+                  errors.purpose ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
                 } bg-card px-3 py-2 text-xs focus:ring-1 focus:ring-ring ${
-                  requestType ? "text-foreground" : "text-muted-foreground"
+                  purpose ? "text-foreground" : "text-muted-foreground"
                 }`}
               >
-                <option value="">Select request type...</option>
-                <option value="Stock Replenishment" className="text-foreground">Stock Replenishment</option>
-                <option value="Emergency Restock" className="text-foreground">Emergency Restock</option>
-                <option value="Production Run" className="text-foreground">Production Run</option>
-                <option value="Trial / New Product" className="text-foreground">Trial / New Product</option>
-                <option value="Other" className="text-foreground">Other</option>
+                <option value="">Select purpose...</option>
+                {PR_PURPOSE_CHOICES.map((choice) => (
+                  <option key={choice} value={choice} className="text-foreground">
+                    {choice}
+                  </option>
+                ))}
               </select>
-              {errors.requestType && (
-                <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.requestType}</p>
+              {errors.purpose && (
+                <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.purpose}</p>
               )}
             </div>
 
             {/* Priority */}
-            <div className="sm:col-span-2 lg:col-span-1">
+            <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
                 Priority <span className="text-destructive">*</span>
               </label>
@@ -531,37 +569,8 @@ export function CreatePRModal({
               )}
             </div>
 
-            {/* Required Date */}
-            <div>
-              <label className={`mb-1.5 block text-xs font-semibold ${errors.requiredDate ? "text-destructive" : "text-foreground"}`}>
-                Required Date <span className="text-destructive">*</span>
-              </label>
-              <div className="relative">
-                <Input
-                  type="date"
-                  min={new Date().toISOString().split("T")[0]}
-                  value={requiredDate}
-                  onChange={(e) => {
-                    setRequiredDate(e.target.value);
-                    setErrors((prev) => {
-                      const c = { ...prev };
-                      delete c.requiredDate;
-                      return c;
-                    });
-                  }}
-                  className={`w-full h-10 rounded-xl border ${
-                    errors.requiredDate ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                  } bg-card px-3.5 py-2 pr-10 text-xs text-foreground transition-colors cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
-                />
-                <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              </div>
-              {errors.requiredDate && (
-                <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.requiredDate}</p>
-              )}
-            </div>
-
             {/* Status (Read-Only) */}
-            <div>
+            <div className="sm:col-span-2 lg:col-span-1">
               <label className="mb-1.5 block text-xs font-semibold text-foreground">Status</label>
               <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-medium text-foreground">
                 <StatusBadge status={statusText} />
@@ -685,39 +694,10 @@ export function CreatePRModal({
             </button>
           </div>
 
-          {/* Row 5: Purpose / Justification & Notes (2 Columns) */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-2 border-t border-border">
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className={`text-xs font-semibold ${errors.purpose ? "text-destructive" : "text-foreground"}`}>
-                  Purpose / Justification <span className="text-destructive">*</span>
-                </label>
-                <span className="text-[10px] text-muted-foreground">{purpose.length}/500</span>
-              </div>
-              <Textarea
-                rows={3}
-                maxLength={500}
-                placeholder="Enter purpose or justification..."
-                value={purpose}
-                onChange={(e) => {
-                  setPurpose(e.target.value);
-                  setErrors((prev) => {
-                    const copy = { ...prev };
-                    delete copy.purpose;
-                    return copy;
-                  });
-                }}
-                className={`w-full rounded-xl border ${
-                  errors.purpose ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                } bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring resize-none`}
-              />
-              {errors.purpose && (
-                <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{errors.purpose}</p>
-              )}
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
+          {/* Bottom Section: Notes (Optional) retained on bottom right */}
+          <div className="flex flex-col sm:flex-row justify-end pt-3 border-t border-border">
+            <div className="w-full sm:w-1/2 lg:w-5/12 space-y-1.5">
+              <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-foreground">
                   Notes <span className="text-muted-foreground font-normal">(Optional)</span>
                 </label>
@@ -729,17 +709,9 @@ export function CreatePRModal({
                 placeholder="Enter additional notes (optional)..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring resize-none"
+                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-ring resize-none"
               />
             </div>
-            <Textarea
-              rows={3}
-              maxLength={300}
-              placeholder="Enter additional notes (optional)..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-ring resize-none"
-            />
           </div>
 
           {/* Modal Footer: Matching Resources & Suppliers Modals */}
@@ -788,7 +760,7 @@ export function CreatePRModal({
               Submit for Approval
             </Button>
           </div>
-
+        </div>
       </ModalWrapper>
 
       {/* Review Modal for Submit/Draft */}
@@ -807,7 +779,7 @@ export function CreatePRModal({
               <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
                 <div><span className="text-muted-foreground block text-xs mb-1">Department</span> <span className="font-semibold">{department}</span></div>
                 <div><span className="text-muted-foreground block text-xs mb-1">Requested By</span> <span className="font-semibold">{requestedBy}</span></div>
-                <div><span className="text-muted-foreground block text-xs mb-1">Request Type</span> <span className="font-semibold">{requestType}</span></div>
+                <div><span className="text-muted-foreground block text-xs mb-1">Purpose</span> <span className="font-semibold">{purpose}</span></div>
                 <div><span className="text-muted-foreground block text-xs mb-1">Priority</span> <span className="font-semibold">{priority}</span></div>
                 <div><span className="text-muted-foreground block text-xs mb-1">Required Date</span> <span className="font-semibold">{requiredDate}</span></div>
               </div>

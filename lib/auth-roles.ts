@@ -10,3 +10,4 @@ export function isAdminStaff(staff?: Staff | null): boolean {
     false
   );
 }
+
