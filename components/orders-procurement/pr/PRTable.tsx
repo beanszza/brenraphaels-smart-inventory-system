@@ -7,6 +7,9 @@ import {
   ShoppingBag,
   MoreHorizontal,
   Ban,
+  CheckCircle2,
+  CornerUpLeft,
+  XCircle,
 } from "lucide-react";
 import { PurchaseRequisition } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -30,6 +33,9 @@ interface PRTableProps {
   onView: (pr: PurchaseRequisition) => void;
   onEdit?: (pr: PurchaseRequisition) => void;
   onCancel?: (pr: PurchaseRequisition) => void;
+  onApprove?: (pr: PurchaseRequisition) => void;
+  onReject?: (pr: PurchaseRequisition) => void;
+  onReturn?: (pr: PurchaseRequisition) => void;
   onCreatePo?: (pr: PurchaseRequisition) => void;
 }
 
@@ -39,6 +45,9 @@ export function PRTable({
   onView,
   onEdit,
   onCancel,
+  onApprove,
+  onReject,
+  onReturn,
   onCreatePo,
 }: PRTableProps) {
   const [openDropdownPrId, setOpenDropdownPrId] = useState<number | null>(null);
@@ -108,6 +117,40 @@ export function PRTable({
                   },
                 },
               ];
+
+                            // If Admin: can Approve, Return for Revision, and Reject when Pending Approval
+              if (isAdmin && isPending) {
+                if (onApprove) {
+                  actions.push({
+                    label: "Approve",
+                    icon: <CheckCircle2 className="w-4 h-4 text-foreground" />,
+                    onClick: () => {
+                      setOpenDropdownPrId(null);
+                      onApprove(pr);
+                    },
+                  });
+                }
+                if (onReturn) {
+                  actions.push({
+                    label: "Return for Revision",
+                    icon: <CornerUpLeft className="w-4 h-4 text-foreground" />,
+                    onClick: () => {
+                      setOpenDropdownPrId(null);
+                      onReturn(pr);
+                    },
+                  });
+                }
+                if (onReject) {
+                  actions.push({
+                    label: "Reject",
+                    icon: <XCircle className="w-4 h-4 text-destructive" />,
+                    onClick: () => {
+                      setOpenDropdownPrId(null);
+                      onReject(pr);
+                    },
+                  });
+                }
+              }
 
               // If NOT admin (Inventory Manager side):
               if (!isAdmin) {

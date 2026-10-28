@@ -2,9 +2,30 @@
 // Numbers replace Prisma Decimals here; dates survive because results are JSON round-tripped.
 import type { Prisma } from "@prisma/client";
 
+const STAFF_NAME_MAP: Record<string, string> = {
+  "2026-VM-007": "Vince Neil Madeja",
+  "2026-ADMIN-001": "Jude Nitram",
+};
+
+export function resolveStaffName(usernameOrName: string | null | undefined): string {
+  if (!usernameOrName) return "";
+  const trimmed = usernameOrName.trim();
+  return STAFF_NAME_MAP[trimmed] || trimmed;
+}
+
+
 export const PR_INCLUDE = {
   PurchaseRequisitionItems: {
-    include: { Items: { include: { Inventories: true } }, SuggestedSuppliers: true, UnitOfMeasures: true },
+    include: {
+      Items: {
+        include: {
+          Inventories: true,
+          UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: true,
+          },
+      },
+      SuggestedSuppliers: true,
+      UnitOfMeasures: true,
+    },
   },
 } satisfies Prisma.PurchaseRequisitionsInclude;
 
@@ -35,7 +56,7 @@ export function prDto(pr: PR, labelled = false) {
     prId: pr.PrId,
     prNumber: pr.PrNumber,
     department: pr.Department,
-    requestedBy: pr.RequestedBy,
+    requestedBy: resolveStaffName(pr.RequestedBy),
     requestDate: pr.RequestDate,
     requiredDate: pr.RequiredDate,
     status: labelled
@@ -48,21 +69,33 @@ export function prDto(pr: PR, labelled = false) {
     adminNotes: pr.AdminNotes,
     estimatedTotalAmount: Number(pr.EstimatedTotalAmount),
     updatedAt: pr.UpdatedAt,
-    items: pr.PurchaseRequisitionItems.map((i) => ({
-      prItemId: i.PrItemId,
-      itemId: i.ItemId,
-      itemName: i.Items?.ItemName || "",
-      suggestedSupplierId: i.SuggestedSupplierId,
-      suggestedSupplierName: i.SuggestedSuppliers?.CompanyName || "",
-      requestedQuantity: Number(i.RequestedQuantity),
-      purchaseUomId: i.PurchaseUomId,
-      purchaseUomAbbreviation: i.UnitOfMeasures?.Abbreviation || "",
-      estimatedUnitPrice: Number(i.EstimatedUnitPrice),
-      totalEstimatedValue: Number(i.RequestedQuantity) * Number(i.EstimatedUnitPrice),
-      ...(labelled
-        ? { currentStockInfo: `${i.Items?.Inventories?.reduce((sum, inv) => sum + Number(inv.CurrentStock), 0) || 0} available` }
-        : {}),
-    })),
+    items: pr.PurchaseRequisitionItems.map((i) => {
+      const uom =
+        i.UnitOfMeasures?.Abbreviation ||
+        i.UnitOfMeasures?.Name ||
+        i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation ||
+        "Unit";
+      const actualInventory =
+        i.Items?.Inventories?.reduce((sum, inv) => sum + Number(inv.CurrentStock), 0) || 0;
+      return {
+        prItemId: i.PrItemId,
+        itemId: i.ItemId,
+        itemName: i.Items?.ItemName || "",
+        itemCode: i.Items?.ItemCode || `SPL-${i.ItemId}`,
+        uomName: uom,
+        actualInventory: actualInventory,
+        suggestedSupplierId: i.SuggestedSupplierId,
+        suggestedSupplierName: i.SuggestedSuppliers?.CompanyName || "",
+        requestedQuantity: Number(i.RequestedQuantity),
+        purchaseUomId: i.PurchaseUomId,
+        purchaseUomAbbreviation: i.UnitOfMeasures?.Abbreviation || uom,
+        estimatedUnitPrice: Number(i.EstimatedUnitPrice),
+        totalEstimatedValue: Number(i.RequestedQuantity) * Number(i.EstimatedUnitPrice),
+        ...(labelled
+          ? { currentStockInfo: `${actualInventory} available` }
+          : {}),
+      };
+    }),
   };
 }
 
@@ -81,7 +114,7 @@ export function poDto(po: PO) {
     status: po.Status,
     paymentType: po.PaymentType,
     totalAmount: Number(po.TotalAmount),
-    requestedBy: po.RequestedBy,
+    requestedBy: resolveStaffName(po.RequestedBy),
     adminNotes: po.AdminNotes,
     qaNotes: po.QaNotes,
     qaInspectedDate: po.QaInspectedDate,

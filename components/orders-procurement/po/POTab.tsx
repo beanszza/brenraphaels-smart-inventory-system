@@ -293,6 +293,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
       {/* PO Table */}
       {loading ? <OrdersSkeleton /> : (<POTable
         orders={paginatedList}
+        isAdmin={isAdmin}
         onView={(po) => setSelectedPO(po)}
         onEdit={(po) => setEditingPO(po)}
         onCancel={(po) => setActionModal({ po, type: "cancel" })}
@@ -309,6 +310,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
       {/* PO Details / Review Modal */}
       <PODetailsModal
         po={selectedPO}
+        isAdmin={isAdmin}
         onClose={() => setSelectedPO(null)}
         onEdit={(po) => { setSelectedPO(null); setEditingPO(po); }}
         onApprove={(po) => { setSelectedPO(null); setActionModal({ po, type: "approve" }); }}

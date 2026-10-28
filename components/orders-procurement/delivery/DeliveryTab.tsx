@@ -272,7 +272,8 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
       {/* DELIVERY DETAILS MODAL */}
       {selectedDelivery && (
         <DeliveryDetailsModal
-          delivery={selectedDelivery}
+        delivery={selectedDelivery}
+        isAdmin={isAdmin}
           onClose={() => setSelectedDelivery(null)}
           onArrive={(d) => {
             setSelectedDelivery(null);

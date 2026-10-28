@@ -309,10 +309,14 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
       {/* PR Table */}
       {loading ? <OrdersSkeleton /> : (<PRTable
         requisitions={paginatedList}
+        isAdmin={isAdmin}
         isRequestsTab={activeTab === "Requests"}
         onView={(pr) => setSelectedPR(pr)}
         onEdit={(pr) => setEditingPR(pr)}
         onCancel={(pr) => setActionModal({ pr, type: "cancel" })}
+        onApprove={(pr) => setActionModal({ pr, type: "approve" })}
+        onReject={(pr) => setActionModal({ pr, type: "reject" })}
+        onReturn={(pr) => setActionModal({ pr, type: "return" })}
         onCreatePo={(pr) => onCreatePo?.(pr.prId)}
       />)}
 
@@ -327,10 +331,20 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
       {/* PR Details / Review Modal */}
       <PRDetailsModal
         pr={selectedPR}
+        isAdmin={isAdmin}
         onClose={() => setSelectedPR(null)}
-        onApprove={(pr) => setActionModal({ pr, type: "approve" })}
-        onReject={(pr) => setActionModal({ pr, type: "reject" })}
-        onReturn={(pr) => setActionModal({ pr, type: "return" })}
+        onApprove={(pr) => {
+          setSelectedPR(null);
+          setActionModal({ pr, type: "approve" });
+        }}
+        onReject={(pr) => {
+          setSelectedPR(null);
+          setActionModal({ pr, type: "reject" });
+        }}
+        onReturn={(pr) => {
+          setSelectedPR(null);
+          setActionModal({ pr, type: "return" });
+        }}
         onCreatePo={onCreatePo ? (pr) => { setSelectedPR(null); onCreatePo(pr.prId); } : undefined}
       />
 

@@ -7,6 +7,7 @@ export type RequisitionLine = {
 };
 
 export type RequisitionInput = {
+  requestedBy?: string | null;
   department?: string | null;
   requiredDate?: string | null;
   requestType?: string | null;
