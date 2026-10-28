@@ -65,6 +65,16 @@ export function CreatePRModal({
   const [suppliesList, setSuppliesList] = useState<SupplyOption[]>(initialSupplies ?? []);
   const [loadingSupplies, setLoadingSupplies] = useState(!initialSupplies);
 
+  // De-duplicated supplies
+  const uniqueSupplies = useMemo(() => {
+    const seen = new Set<number>();
+    return suppliesList.filter((s) => {
+      if (seen.has(s.itemId)) return false;
+      seen.add(s.itemId);
+      return true;
+    });
+  }, [suppliesList]);
+
   // Form State
   const [prNumber, setPrNumber] = useState(initialData?.prNumber || "Assigned on save");
   const [requestDate, setRequestDate] = useState(
@@ -220,10 +230,11 @@ export function CreatePRModal({
     fetchSuppliesAndNumber();
   }, [open, initialData, initialSupplies]);
 
-  // Add Ingredient
-  const handleAddIngredient = () => {
-    if (suppliesList.length === 0) return;
-    const unused = suppliesList.find((s) => !items.some((it) => it.itemId === s.itemId)) || suppliesList[0];
+  // Add Item (prevents duplicates)
+  const handleAddItem = () => {
+    if (uniqueSupplies.length === 0) return;
+    const unused = uniqueSupplies.find((s) => !items.some((it) => it.itemId === s.itemId));
+    if (!unused) return; // All supplies already added
     setItems((prev) => [
       ...prev,
       {
@@ -251,7 +262,7 @@ export function CreatePRModal({
 
   // Select Item in Dropdown
   const handleSelectSupply = (index: number, itemId: number) => {
-    const sup = suppliesList.find((s) => s.itemId === itemId);
+    const sup = uniqueSupplies.find((s) => s.itemId === itemId);
     if (!sup) return;
     setItems((prev) => {
       const copy = [...prev];
@@ -302,7 +313,7 @@ export function CreatePRModal({
     }
 
     if (items.length === 0) {
-      newErrors.items = "At least one supply or ingredient must be requested.";
+      newErrors.items = "At least one item must be requested.";
     } else {
       const duplicateIds = new Set<number>();
       const seenIds = new Set<number>();
@@ -311,7 +322,7 @@ export function CreatePRModal({
         seenIds.add(item.itemId);
       });
       if (duplicateIds.size > 0) {
-        newErrors.items = "Duplicate ingredients must be consolidated before saving.";
+        newErrors.items = "Duplicate items must be consolidated before saving.";
       }
       items.forEach((it, idx) => {
         if (!it.requestedQuantity || it.requestedQuantity <= 0) {
@@ -460,81 +471,24 @@ export function CreatePRModal({
               )}
             </div>
 
-            {/* Requested By */}
+            {/* Requested By (Read-Only from Account) */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Requested By <span className="text-destructive">*</span>
+                Requested By
               </label>
-              <Input aria-label="Requested by" value={staff.name} readOnly />
-              {errors.requestedBy && (
-                <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.requestedBy}</p>
-              )}
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-none">
+                {staff.name || requestedBy || "Inventory Manager"}
+              </div>
             </div>
 
-            {/* Department */}
+            {/* Department (Read-Only from Account) */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Department <span className="text-destructive">*</span>
+                Department
               </label>
-              <select
-                value={department}
-                onChange={(e) => {
-                  setDepartment(e.target.value);
-                  setErrors((prev) => {
-                    const c = { ...prev };
-                    delete c.department;
-                    return c;
-                  });
-                }}
-                className={`w-full h-10 rounded-xl border ${
-                  errors.department ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                } bg-card px-3 py-2 text-xs focus:ring-1 focus:ring-ring ${
-                  department ? "text-foreground" : "text-muted-foreground"
-                }`}
-              >
-                <option value="">Select department...</option>
-                <option value="Inventory" className="text-foreground">Inventory</option>
-                <option value="Production" className="text-foreground">Production</option>
-                <option value="Warehouse" className="text-foreground">Warehouse</option>
-                <option value="Quality Assurance" className="text-foreground">Quality Assurance</option>
-                <option value="Administration" className="text-foreground">Administration</option>
-              </select>
-              {errors.department && (
-                <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.department}</p>
-              )}
-            </div>
-
-            {/* Purpose */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Purpose <span className="text-destructive">*</span>
-              </label>
-              <select
-                value={purpose}
-                onChange={(e) => {
-                  setPurpose(e.target.value);
-                  setErrors((prev) => {
-                    const c = { ...prev };
-                    delete c.purpose;
-                    return c;
-                  });
-                }}
-                className={`w-full h-10 rounded-xl border ${
-                  errors.purpose ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                } bg-card px-3 py-2 text-xs focus:ring-1 focus:ring-ring ${
-                  purpose ? "text-foreground" : "text-muted-foreground"
-                }`}
-              >
-                <option value="">Select purpose...</option>
-                {PR_PURPOSE_CHOICES.map((choice) => (
-                  <option key={choice} value={choice} className="text-foreground">
-                    {choice}
-                  </option>
-                ))}
-              </select>
-              {errors.purpose && (
-                <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.purpose}</p>
-              )}
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-none">
+                {department || "Inventory"}
+              </div>
             </div>
 
             {/* Priority */}
@@ -569,12 +523,37 @@ export function CreatePRModal({
               )}
             </div>
 
-            {/* Status (Read-Only) */}
-            <div className="sm:col-span-2 lg:col-span-1">
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">Status</label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-medium text-foreground">
-                <StatusBadge status={statusText} />
-              </div>
+            {/* Purpose */}
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Purpose <span className="text-destructive">*</span>
+              </label>
+              <select
+                value={purpose}
+                onChange={(e) => {
+                  setPurpose(e.target.value);
+                  setErrors((prev) => {
+                    const c = { ...prev };
+                    delete c.purpose;
+                    return c;
+                  });
+                }}
+                className={`w-full h-10 rounded-xl border ${
+                  errors.purpose ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
+                } bg-card px-3 py-2 text-xs focus:ring-1 focus:ring-ring ${
+                  purpose ? "text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                <option value="">Select purpose...</option>
+                {PR_PURPOSE_CHOICES.map((choice) => (
+                  <option key={choice} value={choice} className="text-foreground">
+                    {choice}
+                  </option>
+                ))}
+              </select>
+              {errors.purpose && (
+                <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.purpose}</p>
+              )}
             </div>
           </div>
 
@@ -582,7 +561,7 @@ export function CreatePRModal({
           <div className="space-y-2 pt-2">
             <div className="flex items-center justify-between mb-2">
               <label className={`block text-xs font-semibold ${errors.items ? "text-destructive" : "text-foreground"}`}>
-                Requested Supplies &amp; Ingredients <span className="text-destructive">*</span>
+                Requested Items <span className="text-destructive">*</span>
               </label>
             </div>
 
@@ -606,7 +585,7 @@ export function CreatePRModal({
                   {items.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="py-6 text-center text-muted-foreground text-xs">
-                        No supplies added yet. Click &quot;+ Add Ingredient&quot; below.
+                        No items added yet. Click &quot;+ Add Item&quot; below.
                       </td>
                     </tr>
                   ) : (
@@ -622,11 +601,19 @@ export function CreatePRModal({
                                 onChange={(e) => handleSelectSupply(idx, parseInt(e.target.value))}
                                 className="w-full rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs text-foreground focus:ring-1 focus:ring-ring"
                               >
-                                {suppliesList.map((sup) => (
-                                  <option key={sup.itemId} value={sup.itemId}>
-                                    {sup.itemName}
-                                  </option>
-                                ))}
+                                {uniqueSupplies.map((sup) => {
+                                  const isChosenElsewhere = items.some((it, i) => i !== idx && it.itemId === sup.itemId);
+                                  return (
+                                    <option
+                                      key={sup.itemId}
+                                      value={sup.itemId}
+                                      disabled={isChosenElsewhere}
+                                      className={isChosenElsewhere ? "text-muted-foreground bg-muted/40" : "text-foreground"}
+                                    >
+                                      {sup.itemName} {isChosenElsewhere ? "(Already added)" : ""}
+                                    </option>
+                                  );
+                                })}
                               </select>
                             </td>
                             <td className="px-3.5 py-2 font-mono text-muted-foreground">
@@ -686,16 +673,16 @@ export function CreatePRModal({
 
             <button
               type="button"
-              onClick={handleAddIngredient}
-              disabled={loadingSupplies || suppliesList.length === 0}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-foreground bg-card border border-border rounded-xl hover:bg-muted transition-colors cursor-pointer"
+              onClick={handleAddItem}
+              disabled={loadingSupplies || uniqueSupplies.length === 0 || items.length >= uniqueSupplies.length}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-foreground bg-card border border-border rounded-xl hover:bg-muted transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Plus size={14} /> Add Ingredient
+              <Plus size={14} /> Add Item
             </button>
           </div>
 
-          {/* Bottom Section: Notes (Optional) retained on bottom right */}
-          <div className="flex flex-col sm:flex-row justify-end pt-3 border-t border-border">
+          {/* Bottom Section: Notes (Optional) on bottom left */}
+          <div className="flex flex-col sm:flex-row justify-start pt-3 border-t border-border">
             <div className="w-full sm:w-1/2 lg:w-5/12 space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-foreground">
@@ -803,8 +790,8 @@ export function CreatePRModal({
                   <tbody className="divide-y divide-border">
                     {items.map((item, idx) => (
                       <tr key={idx} className="hover:bg-muted/10">
-                        <td className="px-3 py-2.5 font-medium">{item.itemName || suppliesList.find(s => s.itemId === item.itemId)?.itemName}</td>
-                        <td className="px-3 py-2.5 text-muted-foreground">{item.uomName || suppliesList.find(s => s.itemId === item.itemId)?.uomName}</td>
+                        <td className="px-3 py-2.5 font-medium">{item.itemName || uniqueSupplies.find(s => s.itemId === item.itemId)?.itemName}</td>
+                        <td className="px-3 py-2.5 text-muted-foreground">{item.uomName || uniqueSupplies.find(s => s.itemId === item.itemId)?.uomName}</td>
                         <td className="px-3 py-2.5 text-right font-mono font-semibold">{item.requestedQuantity}</td>
                       </tr>
                     ))}

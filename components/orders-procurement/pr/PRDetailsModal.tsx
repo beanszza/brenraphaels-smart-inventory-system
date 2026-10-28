@@ -189,7 +189,7 @@ export function PRDetailsModal({
           ))}
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-foreground">
-              Requested Supplies &amp; Ingredients
+              Requested Items
             </h3>
             <span className="text-xs text-muted-foreground">
               {pr.items?.length || 0} item(s) listed
@@ -245,9 +245,9 @@ export function PRDetailsModal({
           </div>
         </div>
 
-        {/* Notes on bottom right */}
+        {/* Notes on bottom left */}
         {pr.notes && (
-          <div className="flex justify-end pt-2 border-t border-border">
+          <div className="flex justify-start pt-2 border-t border-border">
             <div className="w-full sm:w-1/2 lg:w-5/12 space-y-1.5">
               <label className="block text-xs font-semibold text-foreground">
                 Notes

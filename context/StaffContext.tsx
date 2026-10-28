@@ -23,3 +23,4 @@ export function useIsAdmin(): boolean {
   const staff = useContext(StaffContext);
   return isAdminStaff(staff);
 }
+
