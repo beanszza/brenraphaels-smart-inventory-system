@@ -14,6 +14,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 
 interface PODetailsModalProps {
   po: PurchaseOrderPO | null;
+  isAdmin?: boolean;
   onClose: () => void;
   onEdit?: (po: PurchaseOrderPO) => void;
   onApprove?: (po: PurchaseOrderPO) => void;
@@ -26,6 +27,7 @@ interface PODetailsModalProps {
 
 export function PODetailsModal({
   po,
+  isAdmin = false,
   onClose,
   onEdit,
   onApprove,
@@ -61,7 +63,7 @@ export function PODetailsModal({
     <ModalWrapper
       open={!!po}
       title={
-        isPending
+        isAdmin && isPending
           ? `Review Purchase Order — ${po.poNumber}`
           : `Purchase Order Details — ${po.poNumber}`
       }
@@ -235,7 +237,7 @@ export function PODetailsModal({
           </Button>
 
           {/* Admin review buttons for Pending Approval */}
-          {isPending && (
+          {isAdmin && isPending && (
             <>
               {onReturn && (
                 <Button
@@ -270,7 +272,7 @@ export function PODetailsModal({
           )}
 
           {/* Inventory Manager: Edit Draft or Returned PO */}
-          {(po.status === "Draft" || po.status === "Returned") && onEdit && (
+          {!isAdmin && (po.status === "Draft" || po.status === "Returned") && onEdit && (
             <Button
               type="button"
               onClick={() => onEdit(po)}
@@ -281,7 +283,7 @@ export function PODetailsModal({
           )}
 
           {/* Inventory Manager: Cancel PO for Draft/Pending/Returned PO */}
-          {isCancellable && onCancel && (
+          {!isAdmin && isCancellable && onCancel && (
             <Button
               type="button"
               variant="outline"
@@ -293,7 +295,7 @@ export function PODetailsModal({
           )}
 
           {/* Inventory Manager: Schedule Delivery for Approved or Ordered PO */}
-          {(po.status === "Approved" || po.status === "Ordered" || po.status === "Partially Delivered") && onCreateDelivery && (
+          {!isAdmin && (po.status === "Approved" || po.status === "Ordered" || po.status === "Partially Delivered") && onCreateDelivery && (
             <Button
               type="button"
               onClick={() => onCreateDelivery(po)}

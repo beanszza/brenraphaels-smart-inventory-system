@@ -28,6 +28,8 @@ import { PRDetailsModal } from "./PRDetailsModal";
 import { PRActionModal, PRActionType } from "./PRActionModal";
 import { CreatePRModal } from "./CreatePRForm";
 import Pagination from "@/components/Pagination";
+import { useStaff } from "@/context/StaffContext";
+import { isAdminStaff } from "@/lib/auth-roles";
 
 const STATUS_TABS: (PRStatus | "All")[] = [
   "All",
@@ -43,6 +45,8 @@ const STATUS_TABS: (PRStatus | "All")[] = [
 
 export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions: PurchaseRequisition[]; onCreatePo?: (prId: number) => void }) {
   const router = useRouter();
+  const staff = useStaff();
+  const isAdmin = isAdminStaff(staff);
 
   const requisitions = initialRequisitions;
   const [loading, startRefresh] = useTransition();
@@ -178,6 +182,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
             </Link>
           </Button>
 
+          {!isAdmin && (
           <Button
             type="button"
             onClick={() => setOpenCreateModal(true)}
@@ -185,6 +190,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
           >
             <Plus className="w-4 h-4" /> Create Purchase Requisition
           </Button>
+          )}
         </div>
       </div>
 
@@ -234,28 +240,30 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
       {/* Tabs Row */}
       <div className="border-b border-border overflow-x-auto">
         <div className="flex items-center gap-1.5 min-w-max pb-2">
-          {/* Requests Tab (Visible to Admin or with pending requests) */}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("Requests");
-              setPage(1);
-            }}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "Requests"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            <span>Requests</span>
-            {counts.Requests > 0 && (
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                activeTab === "Requests" ? "bg-background text-foreground" : "bg-foreground/20 text-foreground"
-              }`}>
-                {counts.Requests}
-              </span>
-            )}
-          </button>
+          {/* Requests Tab (Visible to Admin only) */}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("Requests");
+                setPage(1);
+              }}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "Requests"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              <span>Requests</span>
+              {counts.Requests > 0 && (
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  activeTab === "Requests" ? "bg-background text-foreground" : "bg-foreground/20 text-foreground"
+                }`}>
+                  {counts.Requests}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Standard Status Tabs */}
           {STATUS_TABS.map((tab) => {
@@ -291,7 +299,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
       </div>
 
       {/* Active Tab Subtitle for Requests tab */}
-      {activeTab === "Requests" && (
+      {isAdmin && activeTab === "Requests" && (
         <div className="p-3 rounded-xl border border-border bg-muted/20 text-xs text-foreground flex items-center gap-2">
           <Inbox className="w-4 h-4 text-foreground shrink-0" />
           <span>Showing all product requisitions pending your review. Approve, Reject, or Return for Revision with mandatory notes.</span>

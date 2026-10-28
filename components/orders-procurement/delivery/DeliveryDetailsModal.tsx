@@ -10,6 +10,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 
 interface DeliveryDetailsModalProps {
   delivery: Delivery | null;
+  isAdmin?: boolean;
   onClose: () => void;
   onArrive?: (delivery: Delivery) => void;
   onCancel?: (delivery: Delivery) => void;
@@ -18,6 +19,7 @@ interface DeliveryDetailsModalProps {
 
 export function DeliveryDetailsModal({
   delivery,
+  isAdmin = false,
   onClose,
   onArrive,
   onCancel,
@@ -272,7 +274,7 @@ export function DeliveryDetailsModal({
             Close
           </Button>
 
-          {isCancellable && onCancel && (
+          {!isAdmin && isCancellable && onCancel && (
             <Button
               type="button"
               variant="outline"
@@ -286,7 +288,7 @@ export function DeliveryDetailsModal({
             </Button>
           )}
 
-          {(isScheduled || isInTransit) && onArrive && (
+          {!isAdmin && (isScheduled || isInTransit) && onArrive && (
             <Button
               type="button"
               onClick={() => {
@@ -299,7 +301,7 @@ export function DeliveryDetailsModal({
             </Button>
           )}
 
-          {isArrived && !delivery.grnNumber && (
+          {!isAdmin && isArrived && !delivery.grnNumber && (
             <Button
               type="button"
               onClick={() => {

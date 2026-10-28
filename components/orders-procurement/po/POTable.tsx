@@ -19,12 +19,13 @@ interface ActionItem {
 
 interface POTableProps {
   orders: PurchaseOrderPO[];
+  isAdmin?: boolean;
   onView: (po: PurchaseOrderPO) => void;
   onEdit?: (po: PurchaseOrderPO) => void;
   onCancel?: (po: PurchaseOrderPO) => void;
 }
 
-export function POTable({ orders, onView, onEdit, onCancel }: POTableProps) {
+export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel }: POTableProps) {
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 

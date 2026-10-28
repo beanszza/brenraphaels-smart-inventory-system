@@ -25,6 +25,7 @@ interface ActionItem {
 
 interface PRTableProps {
   requisitions: PurchaseRequisition[];
+  isAdmin?: boolean;
   isRequestsTab?: boolean;
   onView: (pr: PurchaseRequisition) => void;
   onEdit?: (pr: PurchaseRequisition) => void;
@@ -34,6 +35,7 @@ interface PRTableProps {
 
 export function PRTable({
   requisitions,
+  isAdmin = false,
   onView,
   onEdit,
   onCancel,
@@ -108,43 +110,43 @@ export function PRTable({
               ];
 
               // If NOT admin (Inventory Manager side):
-              // Edit (Draft or Returned)
-              if ((isDraft || isReturned) && onEdit) {
-                actions.push({
-                  label: isReturned ? "Edit & Re-Submit" : "Edit Draft",
-                  icon: <Pencil className="w-4 h-4 text-foreground" />,
-                  onClick: () => {
-                    setOpenDropdownPrId(null);
-                    onEdit(pr);
-                  },
-                });
-              }
+              if (!isAdmin) {
+                // Edit (Draft or Returned)
+                if ((isDraft || isReturned) && onEdit) {
+                  actions.push({
+                    label: isReturned ? "Edit & Re-Submit" : "Edit Draft",
+                    icon: <Pencil className="w-4 h-4 text-foreground" />,
+                    onClick: () => {
+                      setOpenDropdownPrId(null);
+                      onEdit(pr);
+                    },
+                  });
+                }
 
-              // Cancel Requisition (Draft, Pending, Returned)
-              if (isCancellable && onCancel) {
-                actions.push({
-                  label: "Cancel Requisition",
-                  icon: <Ban className="w-4 h-4 text-foreground" />,
-                  onClick: () => {
-                    setOpenDropdownPrId(null);
-                    onCancel(pr);
-                  },
-                });
-              }
+                // Cancel Requisition (Draft, Pending, Returned)
+                if (isCancellable && onCancel) {
+                  actions.push({
+                    label: "Cancel Requisition",
+                    icon: <Ban className="w-4 h-4 text-foreground" />,
+                    onClick: () => {
+                      setOpenDropdownPrId(null);
+                      onCancel(pr);
+                    },
+                  });
+                }
 
-              // Create PO (Approved)
-              if (isApproved && onCreatePo) {
-                actions.push({
-                  label: "Create Purchase Order",
-                  icon: <ShoppingBag className="w-4 h-4 text-foreground" />,
-                  onClick: () => {
-                    setOpenDropdownPrId(null);
-                    onCreatePo(pr);
-                  },
-                });
+                // Create PO (Approved)
+                if (isApproved && onCreatePo) {
+                  actions.push({
+                    label: "Create Purchase Order",
+                    icon: <ShoppingBag className="w-4 h-4 text-foreground" />,
+                    onClick: () => {
+                      setOpenDropdownPrId(null);
+                      onCreatePo(pr);
+                    },
+                  });
+                }
               }
-
-              const isOpen = openDropdownPrId === pr.prId;
 
               return (
                 <tr

@@ -8,6 +8,7 @@ import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 
 interface PRDetailsModalProps {
+  isAdmin?: boolean;
   pr: PurchaseRequisition | null;
   onClose: () => void;
   onApprove?: (pr: PurchaseRequisition) => void;
@@ -18,6 +19,7 @@ interface PRDetailsModalProps {
 
 export function PRDetailsModal({
   pr,
+  isAdmin = false,
   onClose,
   onApprove,
   onReject,
@@ -56,7 +58,7 @@ export function PRDetailsModal({
   return (
     <ModalWrapper
       open={!!pr}
-      title={isPending ? `Review Product Requisition — ${pr.prNumber}` : `Product Requisition Details — ${pr.prNumber}`}
+      title={isAdmin && isPending ? `Review Product Requisition — ${pr.prNumber}` : `Product Requisition Details — ${pr.prNumber}`}
       onClose={onClose}
       size="max-w-5xl"
     >
@@ -263,7 +265,7 @@ export function PRDetailsModal({
             </Button>
 
             {/* Admin Operations for Pending PRs */}
-            {isPending && (
+            {isAdmin && isPending && (
               <>
                 {onReturn && (
                   <Button
@@ -300,7 +302,7 @@ export function PRDetailsModal({
             )}
 
             {/* Create PO for Approved PRs */}
-            {isApproved && onCreatePo && (
+            {!isAdmin && isApproved && onCreatePo && (
               <Button
                 type="button"
                 onClick={() => onCreatePo(pr)}

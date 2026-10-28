@@ -22,6 +22,8 @@ import { MarkDispatchedModal } from "./MarkDispatchedModal";
 import { MarkArrivedModal } from "./MarkArrivedModal";
 import { CancelDeliveryModal } from "./CancelDeliveryModal";
 import Pagination from "@/components/Pagination";
+import { useStaff } from "@/context/StaffContext";
+import { isAdminStaff } from "@/lib/auth-roles";
 import { useRouter } from "next/navigation";
 
 const STATUS_TABS: (DeliveryStatus | "All")[] = [
@@ -34,6 +36,8 @@ const STATUS_TABS: (DeliveryStatus | "All")[] = [
 
 export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery[] }) {
   const router = useRouter();
+  const staff = useStaff();
+  const isAdmin = isAdminStaff(staff);
 
   const deliveries = initialDeliveries.map(d => ({ ...d, status: (String(d.status) === "InTransit" ? "In Transit" : d.status) as DeliveryStatus }));
   const [loading, startRefresh] = useTransition();
@@ -135,6 +139,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
             <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
 
+          {!isAdmin && (
           <Button
             type="button"
             onClick={() => setOpenCreateModal(true)}
@@ -142,6 +147,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
           >
             <Plus className="w-4 h-4" /> Create Delivery Order
           </Button>
+          )}
         </div>
       </div>
 

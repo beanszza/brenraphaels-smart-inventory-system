@@ -25,8 +25,7 @@ function text(value: unknown, max: number) { return typeof value === "string" &&
 function failed(error: unknown): Result {
   if (error instanceof ValidationError) return { success: false, message: error.message };
   console.error("Resources & Suppliers save failed", error);
-  const message = error instanceof Error ? error.message : "Unable to save. Please try again.";
-  return { success: false, message };
+  return { success: false, message: "Unable to save. Please try again." };
 }
 function saved(message: string): Result {
   revalidatePath("/resources-suppliers");

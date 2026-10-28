@@ -27,6 +27,8 @@ import { POActionModal, POActionType } from "./POActionModal";
 import { CreatePOModal } from "./CreatePOModal";
 import { CreateDeliveryModal } from "../delivery/CreateDeliveryModal";
 import Pagination from "@/components/Pagination";
+import { useStaff } from "@/context/StaffContext";
+import { isAdminStaff } from "@/lib/auth-roles";
 
 const STATUS_TABS: (POStatus | "All")[] = [
   "All",
@@ -72,8 +74,9 @@ function mapPO(o: any): PurchaseOrderPO {
 }
 
 export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
-
   const router = useRouter();
+  const staff = useStaff();
+  const isAdmin = isAdminStaff(staff);
   const orders = initialOrders.map(mapPO);
   const [loading, startRefresh] = useTransition();
   const [notice, setNotice] = useState("");
@@ -175,6 +178,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
             <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
 
+          {!isAdmin && (
           <Button
             type="button"
             onClick={() => setOpenCreateModal(true)}
@@ -182,6 +186,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           >
             <Plus className="w-4 h-4" /> Create Purchase Order
           </Button>
+          )}
         </div>
       </div>
 
@@ -229,24 +234,26 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
       <div className="border-b border-border overflow-x-auto">
         <div className="flex items-center gap-1.5 min-w-max pb-2">
           {/* Requests Tab — Admin only */}
-          <button
-            type="button"
-            onClick={() => { setActiveTab("Requests"); setPage(1); }}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "Requests"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            <span>Requests</span>
-            {counts.Requests > 0 && (
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                activeTab === "Requests" ? "bg-background text-foreground" : "bg-foreground/20 text-foreground"
-              }`}>
-                {counts.Requests}
-              </span>
-            )}
-          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => { setActiveTab("Requests"); setPage(1); }}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "Requests"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              <span>Requests</span>
+              {counts.Requests > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  activeTab === "Requests" ? "bg-background text-foreground" : "bg-foreground/20 text-foreground"
+                }`}>
+                  {counts.Requests}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Standard Status Tabs */}
           {STATUS_TABS.map((tab) => {
@@ -276,7 +283,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
       </div>
 
       {/* Requests info banner */}
-      {activeTab === "Requests" && (
+      {isAdmin && activeTab === "Requests" && (
         <div className="p-3 rounded-xl border border-border bg-muted/20 text-xs text-foreground flex items-center gap-2">
           <Inbox className="w-4 h-4 text-foreground shrink-0" />
           <span>Showing all purchase orders pending your review. Approve, Reject, or Return for Revision.</span>
