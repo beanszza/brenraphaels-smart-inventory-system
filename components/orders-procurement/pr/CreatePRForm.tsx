@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { PurchaseRequisition, PRItem } from "../types";
 import { useStaff } from "@/context/StaffContext";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -750,70 +751,79 @@ export function CreatePRModal({
         </div>
       </ModalWrapper>
 
-      {/* Review Modal for Submit/Draft */}
-      {confirmModal && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div
-            style={{ width: "100%", maxWidth: "672px" }}
-            className="w-full rounded-2xl border border-border bg-card shadow-2xl p-6 flex flex-col shrink-0"
-          >
-            <h3 className="text-xl font-bold text-foreground">Review Purchase Requisition</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Please review the details below before {confirmModal.action === "submit" ? "submitting for approval" : "saving as draft"}.
-            </p>
+      {/* Review Modal for Submit/Draft using Radix Dialog */}
+      <Dialog open={!!confirmModal} onOpenChange={(open) => { if (!open) setConfirmModal(null); }}>
+        <DialogContent className="sm:max-w-2xl bg-card border-border p-6 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-foreground">Review Purchase Requisition</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Please review the details below before {confirmModal?.action === "submit" ? "submitting for approval" : "saving as draft"}.
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="space-y-4 text-sm text-foreground">
-              <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
-                <div><span className="text-muted-foreground block text-xs mb-1">Department</span> <span className="font-semibold">{department}</span></div>
-                <div><span className="text-muted-foreground block text-xs mb-1">Requested By</span> <span className="font-semibold">{requestedBy}</span></div>
-                <div><span className="text-muted-foreground block text-xs mb-1">Purpose</span> <span className="font-semibold">{purpose}</span></div>
-                <div><span className="text-muted-foreground block text-xs mb-1">Priority</span> <span className="font-semibold">{priority}</span></div>
-                <div><span className="text-muted-foreground block text-xs mb-1">Required Date</span> <span className="font-semibold">{requiredDate}</span></div>
-              </div>
-
-              {notes && (
-                <div className="bg-muted/20 p-4 rounded-xl border border-border">
-                  <span className="text-muted-foreground block text-xs mb-1">Notes</span>
-                  <span className="font-medium leading-relaxed">{notes}</span>
-                </div>
-              )}
-
-              <div className="mt-4 border border-border rounded-xl overflow-x-auto bg-card">
-                <table className="w-full min-w-[600px] text-xs">
-                  <thead className="bg-muted/40 border-b border-border">
-                    <tr>
-                      <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">ITEM NAME</th>
-                      <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">Unit of Measure</th>
-                      <th className="px-3 py-2.5 text-right font-bold text-muted-foreground">QUANTITY</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {items.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-muted/10">
-                        <td className="px-3 py-2.5 font-medium">{item.itemName || uniqueSupplies.find(s => s.itemId === item.itemId)?.itemName}</td>
-                        <td className="px-3 py-2.5 text-muted-foreground">{item.uomName || uniqueSupplies.find(s => s.itemId === item.itemId)?.uomName}</td>
-                        <td className="px-3 py-2.5 text-right font-mono font-semibold">{item.requestedQuantity}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          <div className="space-y-4 text-sm text-foreground mt-4">
+            <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
+              <div><span className="text-muted-foreground block text-xs mb-1">Department</span> <span className="font-semibold">{department}</span></div>
+              <div><span className="text-muted-foreground block text-xs mb-1">Requested By</span> <span className="font-semibold">{requestedBy}</span></div>
+              <div><span className="text-muted-foreground block text-xs mb-1">Purpose</span> <span className="font-semibold">{purpose}</span></div>
+              <div><span className="text-muted-foreground block text-xs mb-1">Priority</span> <span className="font-semibold">{priority}</span></div>
+              <div><span className="text-muted-foreground block text-xs mb-1">Required Date</span> <span className="font-semibold">{requiredDate}</span></div>
             </div>
 
-            <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-border">
-              <Button variant="outline" onClick={() => setConfirmModal(null)} className="rounded-xl px-6">Back to Edit</Button>
-              <Button onClick={() => {
-                const act = confirmModal.action;
-                setConfirmModal(null);
-                executeSave(act === "submit");
-              }} className="rounded-xl px-6 shadow-sm">
-                Confirm &amp; {confirmModal.action === "submit" ? "Submit" : "Save"}
-              </Button>
+            {notes && (
+              <div className="bg-muted/20 p-4 rounded-xl border border-border">
+                <span className="text-muted-foreground block text-xs mb-1">Notes</span>
+                <span className="font-medium leading-relaxed">{notes}</span>
+              </div>
+            )}
+
+            <div className="mt-4 border border-border rounded-xl overflow-x-auto bg-card">
+              <table className="w-full min-w-[600px] text-xs">
+                <thead className="bg-muted/40 border-b border-border">
+                  <tr>
+                    <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">ITEM NAME</th>
+                    <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">Unit of Measure</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-muted-foreground">QUANTITY</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {items.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-muted/10">
+                      <td className="px-3 py-2.5 font-medium">{item.itemName || uniqueSupplies.find(s => s.itemId === item.itemId)?.itemName}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground">{item.uomName || uniqueSupplies.find(s => s.itemId === item.itemId)?.uomName}</td>
+                      <td className="px-3 py-2.5 text-right font-mono font-semibold">{item.requestedQuantity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>,
-        document.body
-      )}
+
+          <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmModal(null)}
+              disabled={submitting}
+              className="rounded-xl px-6 cursor-pointer"
+            >
+              Back to Edit
+            </Button>
+            <Button
+              type="button"
+              disabled={submitting}
+              onClick={async () => {
+                const act = confirmModal?.action;
+                setConfirmModal(null);
+                await executeSave(act === "submit");
+              }}
+              className="rounded-xl px-6 shadow-sm bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer disabled:opacity-50"
+            >
+              {submitting ? "Submitting..." : `Confirm & ${confirmModal?.action === "submit" ? "Submit" : "Save"}`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

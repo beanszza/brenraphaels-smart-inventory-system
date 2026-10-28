@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { PurchaseRequisition, PurchaseOrderPO } from "../types";
 import { useStaff } from "@/context/StaffContext";
 
@@ -949,93 +950,91 @@ export function CreatePOModal({ open, initialPrId, initialPo, isEdit = false, on
         )}
       </div>
 
-      {/* Review Modal for Submit/Draft (matching PR & Delivery layout) */}
-      {confirmModal && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div
-            style={{ width: "100%", maxWidth: "672px" }}
-            className="w-full rounded-2xl border border-border bg-card shadow-2xl p-6 flex flex-col shrink-0"
-          >
-            <h3 className="text-xl font-bold text-foreground">Review Purchase Order</h3>
-            <p className="text-sm text-muted-foreground mb-6">
+      {/* Review Modal for Submit/Draft using Radix Dialog */}
+      <Dialog open={!!confirmModal} onOpenChange={(open) => { if (!open) setConfirmModal(null); }}>
+        <DialogContent className="sm:max-w-2xl bg-card border-border p-6 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-foreground">Review Purchase Order</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
               Please review the details below before {confirmModal === "Pending Approval" ? "submitting for approval" : "saving as draft"}.
-            </p>
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="space-y-4 text-sm text-foreground">
-              <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
-                <div>
-                  <span className="text-muted-foreground block text-xs mb-1">Purchase Requisition Reference</span>
-                  <span className="font-semibold">{selectedPR?.prNumber || initialPo?.prNumber || "—"}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-xs mb-1">Supplier</span>
-                  <span className="font-semibold">{selectedSupplier?.supplierName || initialPo?.supplierName || "—"}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-xs mb-1">Purchase Order No.</span>
-                  <span className="font-semibold font-mono">{nextPoNumber || "Auto-assigned"}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-xs mb-1">Total Amount</span>
-                  <span className="font-semibold font-mono">{fmtCurrency(totalAmount)}</span>
-                </div>
+          <div className="space-y-4 text-sm text-foreground mt-4">
+            <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
+              <div>
+                <span className="text-muted-foreground block text-xs mb-1">Purchase Requisition Reference</span>
+                <span className="font-semibold">{selectedPR?.prNumber || initialPo?.prNumber || "—"}</span>
               </div>
-
-              <div className="mt-4 border border-border rounded-xl overflow-hidden bg-card">
-                <table className="w-full text-xs">
-                  <thead className="bg-muted/40 border-b border-border">
-                    <tr>
-                      <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">ITEM NAME</th>
-                      <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">Unit of Measure</th>
-                      <th className="px-3 py-2.5 text-right font-bold text-muted-foreground">ORDER QTY</th>
-                      <th className="px-3 py-2.5 text-right font-bold text-muted-foreground">TOTAL PRICE</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {itemRows.filter(row => parseFloat(row.orderQty) > 0).map((row, idx) => (
-                      <tr key={idx} className="hover:bg-muted/10">
-                        <td className="px-3 py-2.5 font-medium">{row.itemName}</td>
-                        <td className="px-3 py-2.5 text-muted-foreground">{row.uomName}</td>
-                        <td className="px-3 py-2.5 text-right font-mono font-semibold">{row.orderQty}</td>
-                        <td className="px-3 py-2.5 text-right font-mono font-semibold">{fmtCurrency(parseFloat(row.totalPrice) || 0)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div>
+                <span className="text-muted-foreground block text-xs mb-1">Supplier</span>
+                <span className="font-semibold">{selectedSupplier?.supplierName || initialPo?.supplierName || "—"}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground block text-xs mb-1">Purchase Order No.</span>
+                <span className="font-semibold font-mono">{nextPoNumber || "Auto-assigned"}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground block text-xs mb-1">Total Amount</span>
+                <span className="font-semibold font-mono">{fmtCurrency(totalAmount)}</span>
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-border">
-              <Button
-                variant="outline"
-                onClick={() => setConfirmModal(null)}
-                disabled={submitting}
-                className="rounded-xl px-6"
-              >
-                Back to Edit
-              </Button>
-              <Button
-                disabled={submitting}
-                onClick={async () => {
-                  const action = confirmModal;
-                  setConfirmModal(null);
-                  await handleSubmit(action);
-                }}
-                className="rounded-xl px-6 shadow-sm bg-primary text-primary-foreground hover:bg-primary/85"
-              >
-                {submitting
-                  ? "Processing..."
-                  : confirmModal === "Pending Approval"
-                  ? isEdit && initialPo?.status === "Returned"
-                    ? "Confirm & Submit Revision"
-                    : "Confirm & Submit"
-                  : "Confirm & Save Draft"}
-              </Button>
+            <div className="mt-4 border border-border rounded-xl overflow-hidden bg-card">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40 border-b border-border">
+                  <tr>
+                    <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">ITEM NAME</th>
+                    <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">Unit of Measure</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-muted-foreground">ORDER QTY</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-muted-foreground">TOTAL PRICE</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {itemRows.filter(row => parseFloat(row.orderQty) > 0).map((row, idx) => (
+                    <tr key={idx} className="hover:bg-muted/10">
+                      <td className="px-3 py-2.5 font-medium">{row.itemName}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground">{row.uomName}</td>
+                      <td className="px-3 py-2.5 text-right font-mono font-semibold">{row.orderQty}</td>
+                      <td className="px-3 py-2.5 text-right font-mono font-semibold">{fmtCurrency(parseFloat(row.totalPrice) || 0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>,
-        document.body
-      )}
+
+          <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmModal(null)}
+              disabled={submitting}
+              className="rounded-xl px-6 cursor-pointer"
+            >
+              Back to Edit
+            </Button>
+            <Button
+              type="button"
+              disabled={submitting}
+              onClick={async () => {
+                const action = confirmModal;
+                setConfirmModal(null);
+                if (action) await handleSubmit(action);
+              }}
+              className="rounded-xl px-6 shadow-sm bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer"
+            >
+              {submitting
+                ? "Processing..."
+                : confirmModal === "Pending Approval"
+                ? isEdit && initialPo?.status === "Returned"
+                  ? "Confirm & Submit Revision"
+                  : "Confirm & Submit"
+                : "Confirm & Save Draft"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </ModalWrapper>
   );
 }

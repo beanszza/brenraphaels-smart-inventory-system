@@ -12,6 +12,7 @@ import { AlertCircle, Upload, Check, Trash2, Search, Calendar, FileText } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ConfirmModal from "@/components/ConfirmModal";
 import { PurchaseOrderPO } from "../types";
 
@@ -857,67 +858,82 @@ export function CreateDeliveryModal({
         />
       )}
 
-      {/* Review Modal for Submission */}
-      {confirmModal && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div
-            style={{ width: "100%", maxWidth: "672px" }}
-            className="w-full rounded-2xl border border-border bg-card shadow-2xl p-6 flex flex-col shrink-0"
-          >
-            <h3 className="text-xl font-bold text-foreground">Review Delivery Schedule</h3>
-            <p className="text-sm text-muted-foreground mb-6">
+      {/* Review Modal for Submission using Radix Dialog */}
+      <Dialog open={confirmModal} onOpenChange={(open) => { if (!open) setConfirmModal(false); }}>
+        <DialogContent className="sm:max-w-2xl bg-card border-border p-6 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-foreground">Review Delivery Schedule</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
               Please review the details below before scheduling this delivery.
-            </p>
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="space-y-4 text-sm text-foreground">
-              <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
-                <div>
-                  <span className="block text-xs text-muted-foreground mb-1">Delivery No</span>
-                  <span className="font-medium">{deliveryNumber}</span>
-                </div>
-                <div>
-                  <span className="block text-xs text-muted-foreground mb-1">Purchase Order</span>
-                  <span className="font-medium">{currentPO?.poNumber || "—"}</span>
-                </div>
-                <div>
-                  <span className="block text-xs text-muted-foreground mb-1">Supplier</span>
-                  <span className="font-medium">{currentPO?.supplierName || "—"}</span>
-                </div>
-                <div>
-                  <span className="block text-xs text-muted-foreground mb-1">Dispatch Date</span>
-                  <span className="font-medium">{plannedDispatchDate || "—"}</span>
-                </div>
-                <div>
-                  <span className="block text-xs text-muted-foreground mb-1">Total Items</span>
-                  <span className="font-medium">{items.filter(i => i.orderQuantity > 0).length}</span>
-                </div>
+          <div className="space-y-4 text-sm text-foreground mt-4">
+            <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
+              <div>
+                <span className="text-muted-foreground block text-xs mb-1">Delivery No</span>
+                <span className="font-semibold font-mono">{deliveryNumber}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground block text-xs mb-1">Purchase Order</span>
+                <span className="font-semibold">{currentPO?.poNumber || "—"}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground block text-xs mb-1">Supplier</span>
+                <span className="font-semibold">{currentPO?.supplierName || "—"}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground block text-xs mb-1">Dispatch Date</span>
+                <span className="font-semibold">{plannedDispatchDate || "—"}</span>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-border">
-              <Button
-                variant="outline"
-                onClick={() => setConfirmModal(false)}
-                className="rounded-xl border border-border px-5 py-2.5 text-sm font-semibold hover:bg-muted"
-                disabled={submitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  setConfirmModal(false);
-                  handleSubmit();
-                }}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85"
-                disabled={submitting}
-              >
-                {submitting ? "Submitting..." : "Confirm Schedule"}
-              </Button>
+            <div className="mt-4 border border-border rounded-xl overflow-hidden bg-card">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40 border-b border-border">
+                  <tr>
+                    <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">ITEM NAME</th>
+                    <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">Unit of Measure</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-muted-foreground">DELIVERY QTY</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {items.filter(item => item.orderQuantity > 0).map((item, idx) => (
+                    <tr key={idx} className="hover:bg-muted/10">
+                      <td className="px-3 py-2.5 font-medium">{item.itemName}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground">{item.purchaseUomName || "Unit"}</td>
+                      <td className="px-3 py-2.5 text-right font-mono font-semibold">{item.orderQuantity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>,
-        document.body
-      )}
+
+          <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmModal(false)}
+              disabled={submitting}
+              className="rounded-xl px-6 cursor-pointer"
+            >
+              Back to Edit
+            </Button>
+            <Button
+              type="button"
+              disabled={submitting}
+              onClick={() => {
+                setConfirmModal(false);
+                handleSubmit();
+              }}
+              className="rounded-xl px-6 shadow-sm bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer"
+            >
+              {submitting ? "Scheduling..." : "Confirm & Schedule Delivery"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
