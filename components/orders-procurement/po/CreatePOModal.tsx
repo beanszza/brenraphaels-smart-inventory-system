@@ -325,51 +325,57 @@ export function CreatePOModal({
 
         // Reconstruct Email Body asking all questions directly in the email (No links)
         const itemsList = activeRows
-          .map((r, i) => `${i + 1}. ${r.itemName} — ${r.orderQty} ${r.uomName}`)
+          .map((r, i) => `  ${i + 1}. ${r.itemName.toUpperCase()} — ${r.orderQty} ${r.uomName}`)
           .join("\n");
 
-        const itemAccommodationQuestions = activeRows
-          .map((r) => `   • ${r.itemName} (Requested: ${r.orderQty} ${r.uomName}) -> Accommodated Qty: [       ]`)
+        const itemAccommodationLines = activeRows
+          .map((r) => `  • ${r.itemName} (Requested: ${r.orderQty} ${r.uomName})\n    Accommodated Quantity: [                       ]`)
+          .join("\n\n");
+
+        const itemPricingLines = activeRows
+          .map((r) => `  • ${r.itemName}: ₱[                   ] per ${r.uomName}`)
           .join("\n");
 
-        const itemPricingQuestions = activeRows
-          .map((r) => `   • ${r.itemName}: ₱[          ] per ${r.uomName}`)
-          .join("\n");
+        const supplierContact = selectedSupplier?.contactPerson
+          ? `${selectedSupplier.contactPerson} (${selectedSupplier.supplierName})`
+          : selectedSupplier?.supplierName || "Valued Supplier Partner";
 
         const supplierEmail = selectedSupplier?.email || "";
         const emailSubject = `Purchase Order ${poNum} — Bren Raphael's Ube Jam & Halaya`;
         const emailBody =
-          `Dear ${selectedSupplier?.contactPerson || selectedSupplier?.supplierName || "Supplier"},\n\n` +
-          `Good day.\n\n` +
-          `Please find our Purchase Order ${poNum} referencing Purchase Requisition ${selectedPR?.prNumber || ""}.\n\n` +
-          `We have also attached our official Purchase Order document (${poNum}.pdf) for your review and documentation.\n\n` +
-          `============================================================\n` +
+          `Dear ${supplierContact},\n\n` +
+          `Greetings from Bren Raphael's Ube Jam & Halaya!\n\n` +
+          `We are formally issuing Purchase Order ${poNum} referencing Purchase Requisition ${selectedPR?.prNumber || "N/A"}.\n\n` +
+          `Please find our official Purchase Order document attached (${poNum}.pdf) for your complete reference and record.\n\n` +
+          `------------------------------------------------------------\n` +
           `ORDER PARTICULARS REQUESTED:\n` +
-          `============================================================\n` +
+          `------------------------------------------------------------\n` +
           `${itemsList}\n\n` +
-          `============================================================\n` +
-          `SUPPLIER ORDER ACKNOWLEDGMENT & QUOTATION (PLEASE REPLY):\n` +
-          `============================================================\n` +
-          `Kindly reply directly to this email with your confirmation for the following details:\n\n` +
-          `1. ORDER ACCOMMODATION:\n` +
-          `   Can you fulfill the requested quantities in full?\n` +
-          `   If partial or if there are adjustments, please specify the exact quantities you can accommodate:\n` +
-          `${itemAccommodationQuestions}\n\n` +
-          `2. QUOTED UNIT PRICING & TOTAL ORDER AMOUNT:\n` +
-          `   Please indicate your quoted unit prices for each item:\n` +
-          `${itemPricingQuestions}\n` +
-          `   Estimated Total Order Amount: ₱[              ]\n\n` +
-          `3. EXPECTED DELIVERY SCHEDULE:\n` +
-          `   Estimated Delivery Date to our warehouse: [ YYYY-MM-DD ]\n\n` +
-          `4. AUTHORIZED APPROVER / SUPPLIER REPRESENTATIVE:\n` +
-          `   • Approver Name & Title: [                                  ]\n` +
-          `   • Contact Number / Email: [                                  ]\n` +
-          `   • Confirmation Date & Time: [                                  ]\n\n` +
-          `============================================================\n\n` +
-          `Thank you very much.\n\n` +
-          `Sincerely,\n` +
+          `------------------------------------------------------------\n` +
+          `SUPPLIER ORDER ACKNOWLEDGMENT & QUOTATION\n` +
+          `(Kindly click "Reply" to this email and fill out the details below)\n` +
+          `------------------------------------------------------------\n\n` +
+          `[1] ORDER ACCOMMODATION:\n` +
+          `Can your company fulfill the requested items and quantities in full?\n` +
+          `Please specify your accommodated quantities for each line item below:\n\n` +
+          `${itemAccommodationLines}\n\n` +
+          `[2] QUOTED UNIT PRICING & FINAL ORDER TOTAL:\n` +
+          `Please provide your official unit pricing for each item:\n\n` +
+          `${itemPricingLines}\n\n` +
+          `  >> ESTIMATED TOTAL ORDER AMOUNT: ₱[                   ]\n\n` +
+          `[3] COMMITTED DELIVERY DATE:\n` +
+          `  • Target / Estimated Delivery Date: [ YYYY-MM-DD ]\n` +
+          `  • Delivery Lead Time Notes:         [                       ]\n\n` +
+          `[4] AUTHORIZED SUPPLIER REPRESENTATIVE:\n` +
+          `  • Authorized Approver Name: [                               ]\n` +
+          `  • Designation / Position:   [                               ]\n` +
+          `  • Contact Number:           [                               ]\n` +
+          `  • Confirmation Date & Time: [                               ]\n\n` +
+          `------------------------------------------------------------\n\n` +
+          `Thank you very much, and we look forward to your confirmation.\n\n` +
+          `Warm regards,\n\n` +
           `${staff.name || "Vince Neil Madeja"}\n` +
-          `Inventory Management\n` +
+          `Inventory Management & Procurement\n` +
           `Bren Raphael's Ube Jam & Halaya`;
 
         const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(supplierEmail)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
