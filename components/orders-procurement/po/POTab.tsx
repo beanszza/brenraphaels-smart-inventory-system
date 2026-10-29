@@ -282,6 +282,15 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           onView={(po) => setSelectedPO(po)}
           onEdit={(po) => setEditingPO(po)}
           onCancel={(po) => setActionModal({ po, type: "cancel" })}
+          onDiscardDraft={async (po) => {
+            try {
+              await procurement.discardDraftOrder(po.poId);
+              setNotice(`${po.poNumber} was not sent. Draft discarded — you can create and send it again.`);
+              fetchOrders();
+            } catch (e: any) {
+              setNotice(e?.message || "Failed to discard draft purchase order.");
+            }
+          }}
         />
       )}
 
@@ -356,12 +365,43 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
         <CreatePOModal
           open={openCreateModal}
           onClose={() => setOpenCreateModal(false)}
+          onDraftDiscarded={(poNumber) => {
+            fetchOrders();
+            if (poNumber) {
+              setNotice(`${poNumber} was not sent. You can create and send it again.`);
+            }
+          }}
           onSuccess={(created) => {
             setOpenCreateModal(false);
             fetchOrders();
             setActiveTab("Pending Approval");
             if (created?.poNumber) {
-              setNotice(`Purchase Order ${created.poNumber} created and sent automatically to supplier with PO document attached.`);
+              setNotice(`${created.poNumber} marked as sent — awaiting supplier confirmation.`);
+            }
+          }}
+        />
+      )}
+
+      {/* Resend / Edit Draft Purchase Order Modal */}
+      {editingPO && (
+        <CreatePOModal
+          open={!!editingPO}
+          isEdit
+          initialPo={editingPO}
+          onClose={() => setEditingPO(null)}
+          onDraftDiscarded={(poNumber) => {
+            setEditingPO(null);
+            fetchOrders();
+            if (poNumber) {
+              setNotice(`${poNumber} was not sent. You can create and send it again.`);
+            }
+          }}
+          onSuccess={(updated) => {
+            setEditingPO(null);
+            fetchOrders();
+            setActiveTab("Pending Approval");
+            if (updated?.poNumber) {
+              setNotice(`${updated.poNumber} marked as sent — awaiting supplier confirmation.`);
             }
           }}
         />

@@ -19,6 +19,7 @@ export const procurement = {
   createOrder: (...args: Parameters<typeof orders.createOrder>) => actionResponse(orders.createOrder(...args)),
   updateOrder: (...args: Parameters<typeof orders.updateOrder>) => actionResponse(orders.updateOrder(...args)),
   setOrderStatus: (...args: Parameters<typeof orders.setOrderStatus>) => actionResponse(orders.setOrderStatus(...args)),
+  discardDraftOrder: (...args: Parameters<typeof orders.discardDraftOrder>) => actionResponse(orders.discardDraftOrder(...args)),
 
   listDeliveries: (query?: string) => actionResponse(deliveries.listDeliveries(query)),
   outstandingItems: (poId: string | number) => actionResponse(deliveries.outstandingItems(poId)),

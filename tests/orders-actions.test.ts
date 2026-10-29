@@ -201,6 +201,7 @@ const mutations = [
   ["create order", "Draft", () => orders.createOrder(poInput), "record.created", "purchase-order", "6", "PO-2026-0001"],
   ["update order", "Draft", () => orders.updateOrder(6, poInput), "record.updated", "purchase-order", "6", "PO-2026-0001"],
   ["set order status", "Draft", () => orders.setOrderStatus(6, { status: "Cancelled" }), "record.updated", "purchase-order", "6", "PO-2026-0001"],
+  ["discard draft order", "Draft", () => orders.discardDraftOrder(6), "record.deleted", "purchase-order", "6", "PO-2026-0001"],
   ["create delivery", "Approved", () => deliveries.createDelivery(deliveryInput), "record.created", "delivery", "7", "DLV-2026-0001"],
   ["cancel delivery", "Scheduled", () => deliveries.cancelDelivery(7, { reason: "Late" }), "record.updated", "delivery", "7", "DLV-2026-0001"],
   ["dispatch delivery", "Scheduled", () => deliveries.dispatchDelivery(7, {}), "record.updated", "delivery", "7", "DLV-2026-0001"],
@@ -263,6 +264,7 @@ describe("refusals", () => {
     fake.status = "Approved";
     expect(await requisitions.updateRequisition(5, prInput)).toMatchObject({ success: false });
     expect(await orders.updateOrder(6, poInput)).toMatchObject({ success: false });
+    expect(await orders.discardDraftOrder(6)).toMatchObject({ success: false });
     expect(fake.written).toEqual([]);
   });
 

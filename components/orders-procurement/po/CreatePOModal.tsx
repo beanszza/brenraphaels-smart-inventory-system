@@ -22,7 +22,6 @@ import {
   supplierItemsByItem,
   supplierItemsBySupplier,
   getSupplierForOrder,
-  sendPurchaseOrderEmail,
 } from "@/app/actions/orders/catalog";
 import { actionResponse } from "@/lib/resources/action-response";
 import { downloadPurchaseOrderPdf } from "./downloadPurchaseOrderPdf";
@@ -45,6 +44,7 @@ interface CreatePOModalProps {
   isEdit?: boolean;
   onClose: () => void;
   onSuccess: (createdPo?: PurchaseOrderPO) => void;
+  onDraftDiscarded?: (poNumber?: string) => void;
 }
 
 export function CreatePOModal({
@@ -54,6 +54,7 @@ export function CreatePOModal({
   isEdit = false,
   onClose,
   onSuccess,
+  onDraftDiscarded,
 }: CreatePOModalProps) {
   const staff = useStaff();
 
@@ -352,6 +353,8 @@ export function CreatePOModal({
   const handleConfirmSendToSupplier = async () => {
     setSubmitting(true);
     setErrors({});
+    // Open tab synchronously on click so the browser never blocks it as a popup
+    const gmailTab = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
     try {
       const activeRows = itemRows.filter((row) => (parseFloat(row.orderQty) || 0) > 0);
       const payload = {
@@ -360,7 +363,7 @@ export function CreatePOModal({
         expectedArrivalDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         paymentType: "Cash",
         requestedBy: staff.name,
-        initialStatus: "Pending Approval",
+        initialStatus: "Draft",
         items: activeRows.map((row) => ({
           itemId: row.itemId,
           poItemQuantity: parseFloat(row.orderQty),
@@ -375,102 +378,74 @@ export function CreatePOModal({
       if (res.data?.success) {
         const created: PurchaseOrderPO = res.data.data;
         const poNum = created?.poNumber || nextPoNumber || "Purchase Order";
+        const prRef = selectedPR?.prNumber || initialPo?.prNumber || "N/A";
 
-        // Auto-download the printable Purchase Order PDF immediately
+        // Build clean, formal email body (message + questionnaire in one email)
+        const orderDetailsLines = activeRows
+          .map((r, i) => `  ${i + 1}. ${r.itemName} ............ ${r.orderQty} ${r.uomName}`)
+          .join("\n");
+
+        const supplyQtyLines = activeRows
+          .map((r) => `       ${r.itemName}: ______ ${r.uomName}`)
+          .join("\n");
+
+        const unitPriceLines = activeRows
+          .map((r) => `       ${r.itemName}: PHP ______ per ${r.uomName}`)
+          .join("\n");
+
+        const contactName = selectedSupplier?.contactPerson
+          ? `Mr./Ms. ${selectedSupplier.contactPerson}`
+          : selectedSupplier?.supplierName || "Valued Supplier Partner";
+        const supplierCompany = selectedSupplier?.supplierName || "your company";
+
+        const supplierEmail = recipientEmail.trim() || selectedSupplier?.email || "";
+        const emailSubject = `Purchase Order ${poNum} | Bren Raphael's Ube Jam & Halaya`;
+        const emailBody =
+          `Dear ${contactName},\n\n` +
+          `Good day!\n\n` +
+          `On behalf of Bren Raphael's Ube Jam & Halaya, we are pleased to issue Purchase Order No. ${poNum} (Ref. ${prRef}) to ${supplierCompany}. The official Purchase Order document (${poNum}.pdf) is attached to this email.\n\n` +
+          `ORDER DETAILS\n` +
+          `${orderDetailsLines}\n\n` +
+          `To proceed, kindly reply to this email with the following information:\n\n` +
+          `  1. Quantity you can supply for each item\n` +
+          `${supplyQtyLines}\n` +
+          `  2. Unit price for each item\n` +
+          `${unitPriceLines}\n` +
+          `  3. Total order amount: PHP ______\n` +
+          `  4. Expected delivery date: ______\n` +
+          `  5. Name, position and contact number of the person confirming this order: ______\n\n` +
+          `Should you have any questions, please feel free to reply to this email.\n\n` +
+          `Thank you, and we look forward to your confirmation.\n\n` +
+          `Respectfully,\n\n` +
+          `${staff.name || "Vince Neil Madeja"}\n` +
+          `Inventory Management & Procurement\n` +
+          `Bren Raphael's Ube Jam & Halaya`;
+
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(supplierEmail)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+
+        if (gmailTab && !gmailTab.closed) {
+          gmailTab.location.href = gmailUrl;
+        } else if (typeof window !== "undefined") {
+          window.open(gmailUrl, "_blank");
+        }
+
+        // Auto-download the printable Purchase Order PDF so the user can attach it
         try {
           await downloadPurchaseOrderPdf(created);
         } catch (e) {
           console.error("Auto download PDF failed:", e);
         }
 
-        // Reconstruct Email Body asking all questions directly in the email (No links)
-        const itemsList = activeRows
-          .map((r, i) => `  ${i + 1}. ${r.itemName.toUpperCase()} — ${r.orderQty} ${r.uomName}`)
-          .join("\n");
-
-        const itemAccommodationLines = activeRows
-          .map((r) => `  • ${r.itemName} (Requested: ${r.orderQty} ${r.uomName})\n    Accommodated Quantity: [                       ]`)
-          .join("\n\n");
-
-        const itemPricingLines = activeRows
-          .map((r) => `  • ${r.itemName}: ₱[                   ] per ${r.uomName}`)
-          .join("\n");
-
-        const supplierContact = selectedSupplier?.contactPerson
-          ? `${selectedSupplier.contactPerson} (${selectedSupplier.supplierName})`
-          : selectedSupplier?.supplierName || "Valued Supplier Partner";
-
-        const targetEmail = recipientEmail.trim() || selectedSupplier?.email || "";
-        const supplierEmail = targetEmail;
-        const emailSubject = `Purchase Order ${poNum} — Bren Raphael's Ube Jam & Halaya`;
-        const emailBody =
-          `Dear ${supplierContact},\n\n` +
-          `Greetings from Bren Raphael's Ube Jam & Halaya!\n\n` +
-          `We are formally issuing Purchase Order ${poNum} referencing Purchase Requisition ${selectedPR?.prNumber || "N/A"}.\n\n` +
-          `Please find our official Purchase Order document attached (${poNum}.pdf) for your complete reference and record.\n\n` +
-          `------------------------------------------------------------\n` +
-          `ORDER PARTICULARS REQUESTED:\n` +
-          `------------------------------------------------------------\n` +
-          `${itemsList}\n\n` +
-          `------------------------------------------------------------\n` +
-          `SUPPLIER ORDER ACKNOWLEDGMENT & QUOTATION\n` +
-          `(Kindly click "Reply" to this email and fill out the details below)\n` +
-          `------------------------------------------------------------\n\n` +
-          `[1] ORDER ACCOMMODATION:\n` +
-          `Can your company fulfill the requested items and quantities in full?\n` +
-          `Please specify your accommodated quantities for each line item below:\n\n` +
-          `${itemAccommodationLines}\n\n` +
-          `[2] QUOTED UNIT PRICING & FINAL ORDER TOTAL:\n` +
-          `Please provide your official unit pricing for each item:\n\n` +
-          `${itemPricingLines}\n\n` +
-          `  >> ESTIMATED TOTAL ORDER AMOUNT: ₱[                   ]\n\n` +
-          `[3] COMMITTED DELIVERY DATE:\n` +
-          `  • Target / Estimated Delivery Date: [ YYYY-MM-DD ]\n` +
-          `  • Delivery Lead Time Notes:         [                       ]\n\n` +
-          `[4] AUTHORIZED SUPPLIER REPRESENTATIVE:\n` +
-          `  • Authorized Approver Name: [                               ]\n` +
-          `  • Designation / Position:   [                               ]\n` +
-          `  • Contact Number:           [                               ]\n` +
-          `  • Confirmation Date & Time: [                               ]\n\n` +
-          `------------------------------------------------------------\n\n` +
-          `Thank you very much, and we look forward to your confirmation.\n\n` +
-          `Warm regards,\n\n` +
-          `${staff.name || "Vince Neil Madeja"}\n` +
-          `Inventory Management & Procurement\n` +
-          `Bren Raphael's Ube Jam & Halaya`;
-
-        // Construct Gmail Web Compose URL
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(supplierEmail)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-
-        // Automatically open the Gmail Web compose draft in a new tab
-        if (typeof window !== "undefined") {
-          window.open(gmailUrl, "_blank");
-        }
-
-        // Also attempt direct server email dispatch if SMTP is configured
-        try {
-          await actionResponse(
-            sendPurchaseOrderEmail({
-              poNumber: poNum,
-              supplierEmail,
-              supplierName: selectedSupplier?.supplierName || "Supplier",
-              emailSubject,
-              emailBody,
-            })
-          );
-        } catch (emailErr) {
-          console.error("Automated email dispatch error:", emailErr);
-        }
-
-        // Keep modal open on the clean Review & Send in Gmail screen!
         setGmailComposeUrl(gmailUrl);
         setCreatedOrder(created);
         setIsConfirmedSent(false);
         setIsReviewing(false);
       } else {
+        if (gmailTab && !gmailTab.closed) gmailTab.close();
         setErrors((p) => ({ ...p, general: res.data?.message || "Failed to create Purchase Order." }));
       }
     } catch (e: any) {
+      if (gmailTab && !gmailTab.closed) gmailTab.close();
       setErrors((p) => ({ ...p, general: e?.message || "Failed to create Purchase Order." }));
     } finally {
       setSubmitting(false);
@@ -481,16 +456,33 @@ export function CreatePOModal({
     if (!createdOrder) return;
     setSubmitting(true);
     try {
-      await procurement.setOrderStatus(createdOrder.poId, { status: "Pending Approval" });
-    } catch (e) {
-      console.error("Failed to update order status:", e);
+      const res = await procurement.setOrderStatus(createdOrder.poId, { status: "Pending Approval" });
+      const updatedOrder: PurchaseOrderPO = res.data?.data || { ...createdOrder, status: "Pending Approval" };
+      setIsConfirmedSent(true);
+      onSuccess(updatedOrder);
+      setCreatedOrder(null);
+      onClose();
+    } catch (e: any) {
+      setErrors((p) => ({ ...p, general: e?.message || "Failed to mark Purchase Order as sent." }));
     } finally {
       setSubmitting(false);
-      onSuccess(createdOrder);
-      setCreatedOrder(null);
-      setIsConfirmedSent(false);
-      onClose();
     }
+  };
+
+  const handleCancelOrCloseWhileWaiting = async () => {
+    const unsentOrder = createdOrder && !isConfirmedSent ? createdOrder : null;
+    setIsReviewing(false);
+    setCreatedOrder(null);
+    setIsConfirmedSent(false);
+    if (unsentOrder?.poId) {
+      try {
+        await procurement.discardDraftOrder(unsentOrder.poId);
+      } catch (e) {
+        console.error("Failed to discard unsent draft PO:", e);
+      }
+      onDraftDiscarded?.(unsentOrder.poNumber);
+    }
+    onClose();
   };
 
   const filteredPRs = useMemo(() => {
@@ -517,8 +509,9 @@ export function CreatePOModal({
           : "Create Purchase Order"
       }
       onClose={() => {
-        if (createdOrder) {
-          onSuccess(createdOrder);
+        if (createdOrder && !isConfirmedSent) {
+          void handleCancelOrCloseWhileWaiting();
+          return;
         }
         setIsReviewing(false);
         setCreatedOrder(null);
@@ -548,16 +541,16 @@ export function CreatePOModal({
         )}
 
         {createdOrder ? (
-          /* Post-Submit Step: Review & Send in Gmail (matches Review Purchase Order layout) */
+          /* Waiting for Gmail Send Step (matches Review Purchase Order layout) */
           <div className="w-full space-y-5">
             <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-300 flex items-center gap-2.5">
               <Mail className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
               <span>
-                We prepared your official Gmail draft and opened it in a new browser tab. Your Purchase Order PDF (<strong>{createdOrder.poNumber}.pdf</strong>) has also been automatically downloaded to your device.
+                Gmail draft opened in a new tab — <strong>not sent yet</strong>. Your PDF (<strong>{createdOrder.poNumber}.pdf</strong>) has been downloaded. This PO will only move to <strong>Pending Approval</strong> after you click <strong>I Have Already Sent the Email</strong>. Closing or cancelling rolls it back so you can try again.
               </span>
             </div>
 
-            {/* Order & Supplier Information Card */}
+            {/* Summary Card (2x2) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-card border border-border text-xs shadow-sm">
               <div>
                 <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Purchase Order Number</span>
@@ -581,25 +574,51 @@ export function CreatePOModal({
               </div>
             </div>
 
-            {/* Next Steps in Gmail Box */}
-            <div className="p-4 rounded-xl bg-muted/30 border border-border text-xs space-y-2.5">
+            {/* Items Table (same as Review screen) */}
+            <div className="border border-border rounded-xl overflow-hidden bg-card">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[11px]">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left font-bold">PARTICULARS</th>
+                    <th className="px-4 py-2.5 text-left font-bold">Unit of Measure</th>
+                    <th className="px-4 py-2.5 text-right font-bold">ORDER QUANTITY</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {itemRows
+                    .filter((row) => (parseFloat(row.orderQty) || 0) > 0)
+                    .map((row, idx) => (
+                      <tr key={idx} className="hover:bg-muted/10">
+                        <td className="px-4 py-2.5 font-medium text-foreground">{row.itemName}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{row.uomName}</td>
+                        <td className="px-4 py-2.5 text-right font-mono font-bold text-foreground">
+                          {row.orderQty}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 3 Short Steps */}
+            <div className="p-4 rounded-xl bg-muted/30 border border-border text-xs space-y-2">
               <span className="font-semibold text-foreground uppercase tracking-wider block">
                 Next Steps in Gmail:
               </span>
-              <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
+              <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
                 <li>
-                  Switch to the opened <strong className="text-foreground">Gmail tab</strong> and review the drafted order particulars and questionnaire.
+                  Attach the downloaded <strong className="text-foreground">{createdOrder.poNumber}.pdf</strong> in the opened Gmail tab.
                 </li>
                 <li>
-                  Drag and drop the downloaded <strong className="text-foreground">{createdOrder.poNumber}.pdf</strong> into your Gmail draft to attach it.
+                  Review the formal email message and supplier questionnaire.
                 </li>
                 <li>
-                  Click <strong className="text-foreground">Send</strong> inside Gmail to dispatch the Purchase Order to <strong className="text-foreground">{selectedSupplier?.supplierName || "the supplier"}</strong>.
+                  Click <strong className="text-foreground">Send</strong> in Gmail, then click <strong className="text-foreground">I Have Already Sent the Email</strong> below.
                 </li>
               </ol>
             </div>
 
-            {/* Clean Footer Action Buttons */}
+            {/* Footer Action Buttons */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-5 border-t border-border mt-4">
               <div className="flex flex-wrap items-center gap-2.5">
                 <a
@@ -609,7 +628,7 @@ export function CreatePOModal({
                   className="rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <Mail className="w-3.5 h-3.5 text-primary" />
-                  Re-open Gmail Draft
+                  Re-open Gmail
                 </a>
                 <Button
                   type="button"
@@ -622,14 +641,25 @@ export function CreatePOModal({
                 </Button>
               </div>
 
-              <Button
-                type="button"
-                disabled={submitting}
-                onClick={handleMarkAsSentInGmail}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
-              >
-                {submitting ? "Confirming..." : "I Have Already Sent the Email"}
-              </Button>
+              <div className="flex items-center gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={submitting}
+                  onClick={handleCancelOrCloseWhileWaiting}
+                  className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={submitting}
+                  onClick={handleMarkAsSentInGmail}
+                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {submitting ? "Confirming..." : "I Have Already Sent the Email"}
+                </Button>
+              </div>
             </div>
           </div>
         ) : isReviewing ? (
@@ -638,7 +668,7 @@ export function CreatePOModal({
             <div className="p-3.5 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground flex items-center gap-2">
               <Mail className="w-4 h-4 text-primary shrink-0" />
               <span>
-                Please review the particulars below. Confirming will create the Purchase Order, automatically download your official PDF document, and automatically dispatch the order details and questionnaire directly to the supplier&apos;s registered email.
+                Please review the particulars below. Confirming will open Gmail in a new tab with the formal email &amp; questionnaire prepared, and download your official PO PDF for you to attach.
               </span>
             </div>
 
@@ -679,10 +709,10 @@ export function CreatePOModal({
               </div>
             </div>
 
-            {/* Transmission Preview Banner */}
+            {/* Gmail Draft Preview Banner */}
             <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 text-xs space-y-2">
               <span className="font-semibold text-primary block">
-                Automated Email Transmission:
+                Gmail Draft &amp; PDF Attachment:
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-muted-foreground">
                 <p>
@@ -693,16 +723,16 @@ export function CreatePOModal({
                 </p>
                 <p>
                   <strong className="text-foreground">Subject:</strong>{" "}
-                  Purchase Order {nextPoNumber || "Auto-assigned"} — Bren Raphael&apos;s Ube Jam &amp; Halaya
+                  Purchase Order {nextPoNumber || "Auto-assigned"} | Bren Raphael&apos;s Ube Jam &amp; Halaya
                 </p>
                 <p>
-                  <strong className="text-foreground">Attachment:</strong>{" "}
-                  Purchase-Order-{nextPoNumber || "PO"}.pdf (Attached automatically)
+                  <strong className="text-foreground">PDF Document:</strong>{" "}
+                  {nextPoNumber || "PO"}.pdf (Downloaded automatically to attach in Gmail)
                 </p>
                 <p>
-                  <strong className="text-foreground">Dispatch:</strong>{" "}
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                    Dispatched automatically upon submission
+                  <strong className="text-foreground">Status:</strong>{" "}
+                  <span className="text-primary font-semibold">
+                    Moves to Pending Approval once you confirm sending in Gmail
                   </span>
                 </p>
               </div>
@@ -750,7 +780,7 @@ export function CreatePOModal({
                 onClick={handleConfirmSendToSupplier}
                 className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
               >
-                {submitting ? "Sending Order..." : "Confirm & Send to Supplier"}
+                {submitting ? "Preparing Gmail Draft..." : "Confirm & Send to Supplier"}
               </Button>
             </div>
           </div>

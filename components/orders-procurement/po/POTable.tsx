@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Eye, Pencil, MoreHorizontal, Ban } from "lucide-react";
+import { Eye, Pencil, MoreHorizontal, Ban, Trash2 } from "lucide-react";
 import { PurchaseOrderPO } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import {
@@ -23,9 +23,10 @@ interface POTableProps {
   onView: (po: PurchaseOrderPO) => void;
   onEdit?: (po: PurchaseOrderPO) => void;
   onCancel?: (po: PurchaseOrderPO) => void;
+  onDiscardDraft?: (po: PurchaseOrderPO) => void;
 }
 
-export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel }: POTableProps) {
+export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onDiscardDraft }: POTableProps) {
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -77,12 +78,19 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel }: P
               // Inventory Manager actions only
               if ((isDraft || isReturned) && onEdit) {
                 actions.push({
-                  label: isReturned ? "Edit & Re-Submit" : "Edit Draft",
+                  label: isReturned ? "Edit & Re-Submit" : "Resend via Gmail",
                   icon: <Pencil className="w-4 h-4 text-foreground" />,
                   onClick: () => { setOpenDropdownId(null); onEdit(po); },
                 });
               }
-              if (isCancellable && onCancel) {
+              if (isDraft && onDiscardDraft) {
+                actions.push({
+                  label: "Discard Draft",
+                  icon: <Trash2 className="w-4 h-4 text-destructive" />,
+                  onClick: () => { setOpenDropdownId(null); onDiscardDraft(po); },
+                });
+              }
+              if (!isDraft && isCancellable && onCancel) {
                 actions.push({
                   label: "Cancel Purchase Order",
                   icon: <Ban className="w-4 h-4 text-foreground" />,

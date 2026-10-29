@@ -67,7 +67,7 @@ export async function orderedQuantities(prIdInput: string | number) {
   await requireModule(MODULE);
   return read(async () => {
     const orders = await prisma.purchaseOrders.findMany({
-      where: { PrId: parseInt(String(prIdInput), 10), Status: { notIn: ["Cancelled", "Rejected"] } },
+      where: { PrId: parseInt(String(prIdInput), 10), Status: { notIn: ["Cancelled", "Rejected", "Draft"] } },
       include: { PurchaseOrderItems: true },
     });
     const ordered = new Map<number, number>();
@@ -280,6 +280,51 @@ export async function approvePurchaseOrder(idInput: string | number, body: Appro
         description: `${staff.name} approved purchase order ${updated.PoNumber} (Supplier Rep: ${body.supplierApprovedBy})`,
       } satisfies AuditAction,
       after: statusNotice(staff, updated.PoNumber, updated.RequestedBy, "Approved"),
+    };
+  });
+}
+
+/** Discards an unsent Draft purchase order and rolls back its sequence number if it was the latest issued. */
+export async function discardDraftOrder(idInput: string | number) {
+  const staff = await requireModule(MODULE);
+  return mutate(staff, async (tx) => {
+    const id = parseInt(String(idInput), 10);
+    const order = await tx.purchaseOrders.findUnique({ where: { PoId: id } });
+    if (!order) return fail(`Purchase order ${id} not found.`);
+    if (order.Status !== "Draft") {
+      return fail(`Only Draft purchase orders can be discarded. Current status: ${order.Status}.`);
+    }
+
+    await tx.purchaseOrderItems.deleteMany({ where: { OR: [{ PoId: id }, { PurchaseOrderPoId: id }] } });
+    await tx.purchaseOrders.deleteMany({ where: { PoId: id } });
+
+    const match = /^PO-(\d{4})-(\d+)$/.exec(order.PoNumber || "");
+    if (match) {
+      const year = parseInt(match[1], 10);
+      const num = parseInt(match[2], 10);
+      const seq = await tx.documentSequences.findUnique({
+        where: { DocType_Year: { DocType: "PurchaseOrder", Year: year } },
+      });
+      if (seq && seq.LastNumber === num && seq.LastNumber > 0) {
+        await tx.documentSequences.update({
+          where: { DocType_Year: { DocType: "PurchaseOrder", Year: year } },
+          data: { LastNumber: seq.LastNumber - 1 },
+        });
+      }
+    }
+
+    return {
+      result: resourceResult({
+        success: true,
+        message: `Unsent draft ${order.PoNumber} discarded.`,
+        data: { poId: order.PoId, poNumber: order.PoNumber },
+      }),
+      audit: {
+        module: MODULE,
+        change: "deleted",
+        target: target(order),
+        description: `${staff.name} discarded unsent draft purchase order ${order.PoNumber}`,
+      } satisfies AuditAction,
     };
   });
 }
