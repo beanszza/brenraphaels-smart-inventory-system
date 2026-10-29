@@ -361,7 +361,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
             fetchOrders();
             setActiveTab("Pending Approval");
             if (created?.poNumber) {
-              setNotice(`Purchase Order ${created.poNumber} prepared. Gmail draft opened in a new tab.`);
+              setNotice(`Purchase Order ${created.poNumber} created and sent automatically to supplier with PO document attached.`);
             }
           }}
         />

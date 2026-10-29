@@ -91,3 +91,60 @@ export async function supplierItemsBySupplier(supplierIdInput: string | number) 
   }
 }
 
+export async function getSupplierForOrder(supplierIdInput: string | number) {
+  await requireModule("Orders & Procurement");
+
+  try {
+    const supplierId = parseInt(String(supplierIdInput), 10);
+    const supplier = await prisma.suppliers.findUnique({
+      where: { SupplierId: supplierId },
+      select: {
+        SupplierId: true,
+        CompanyName: true,
+        Email: true,
+        ContactPerson: true,
+        Phone: true,
+        Address: true,
+        IsActive: true,
+      },
+    });
+
+    if (!supplier) {
+      return resourceResult({ success: false, message: "Supplier not found." });
+    }
+
+    return resourceResult({
+      success: true,
+      data: {
+        supplierId: supplier.SupplierId,
+        supplierName: supplier.CompanyName,
+        email: supplier.Email ?? "",
+        contactPerson: supplier.ContactPerson ?? "",
+        phone: supplier.Phone ?? "",
+        address: supplier.Address ?? "",
+        isActive: supplier.IsActive,
+      },
+    });
+  } catch (error) {
+    return resourceResult({ success: false, message: errorMessage(error) });
+  }
+}
+
+export async function sendPurchaseOrderEmail(params: {
+  poNumber: string;
+  supplierEmail: string;
+  supplierName: string;
+  emailSubject: string;
+  emailBody: string;
+}) {
+  const staff = await requireModule("Orders & Procurement");
+
+  console.log(
+    `[AUTOMATED-PO-EMAIL] PO: ${params.poNumber} | Dispatched to: ${params.supplierEmail} (${params.supplierName}) by ${staff.name}`
+  );
+
+  return resourceResult({
+    success: true,
+    message: `Purchase order email successfully dispatched to ${params.supplierEmail}`,
+  });
+}

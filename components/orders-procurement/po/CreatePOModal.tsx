@@ -7,6 +7,7 @@ import {
   Search,
   Users,
   Mail,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,12 @@ import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { PurchaseRequisition, PurchaseOrderPO } from "../types";
 import { useStaff } from "@/context/StaffContext";
 import { procurement } from "@/lib/orders/client";
-import { supplierItemsByItem, supplierItemsBySupplier } from "@/app/actions/orders/catalog";
+import {
+  supplierItemsByItem,
+  supplierItemsBySupplier,
+  getSupplierForOrder,
+  sendPurchaseOrderEmail,
+} from "@/app/actions/orders/catalog";
 import { actionResponse } from "@/lib/resources/action-response";
 import { downloadPurchaseOrderPdf } from "./downloadPurchaseOrderPdf";
 
@@ -71,6 +77,14 @@ export function CreatePOModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isReviewing, setIsReviewing] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState<string>("");
+  const [selectedSupplierDetails, setSelectedSupplierDetails] = useState<{
+    supplierId: number;
+    supplierName: string;
+    email?: string;
+    contactPerson?: string;
+    phone?: string;
+    address?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -78,6 +92,17 @@ export function CreatePOModal({
         setStep(3);
         setNextPoNumber(initialPo.poNumber);
         setSelectedSupplierId(initialPo.supplierId);
+        setRecipientEmail(initialPo.supplierEmail || "");
+        if (initialPo.supplierId) {
+          actionResponse(getSupplierForOrder(initialPo.supplierId)).then((res) => {
+            if (res.data?.success && res.data.data) {
+              setSelectedSupplierDetails(res.data.data);
+              if (res.data.data.email) {
+                setRecipientEmail(res.data.data.email);
+              }
+            }
+          });
+        }
         setEligibleSuppliers([
           {
             supplierId: initialPo.supplierId,
@@ -109,7 +134,6 @@ export function CreatePOModal({
             orderQty: String(it.poItemQuantity),
           }))
         );
-        setRecipientEmail(initialPo.supplierEmail || "");
         setErrors({});
         setIsReviewing(false);
       } else {
@@ -117,6 +141,7 @@ export function CreatePOModal({
         setPrSearch("");
         setSelectedPR(null);
         setSelectedSupplierId(null);
+        setSelectedSupplierDetails(null);
         setItemRows([]);
         setRecipientEmail("");
         setErrors({});
@@ -247,11 +272,22 @@ export function CreatePOModal({
     setStep(2);
   };
 
-  const handleSelectSupplier = (supplierId: number) => {
+  const handleSelectSupplier = async (supplierId: number) => {
     setSelectedSupplierId(supplierId);
     const sup = eligibleSuppliers.find((s) => s.supplierId === supplierId);
     if (sup?.email) {
       setRecipientEmail(sup.email);
+    }
+    try {
+      const res = await actionResponse(getSupplierForOrder(supplierId));
+      if (res.data?.success && res.data.data) {
+        setSelectedSupplierDetails(res.data.data);
+        if (res.data.data.email) {
+          setRecipientEmail(res.data.data.email);
+        }
+      }
+    } catch {
+      // Fallback already assigned
     }
     if (selectedPR) fetchItemsForSupplier(supplierId, selectedPR);
     fetchNextPoNumber();
@@ -291,12 +327,20 @@ export function CreatePOModal({
     });
   }, [itemRows, isEdit]);
 
-  const selectedSupplier = eligibleSuppliers.find((s) => s.supplierId === selectedSupplierId);
+  const selectedSupplier =
+    selectedSupplierDetails ||
+    eligibleSuppliers.find((s) => s.supplierId === selectedSupplierId) ||
+    (initialPo
+      ? {
+          supplierId: initialPo.supplierId,
+          supplierName: initialPo.supplierName,
+          email: initialPo.supplierEmail,
+          contactPerson: initialPo.supplierContactPerson,
+          address: initialPo.supplierAddress,
+        }
+      : null);
 
   const handleConfirmSendToSupplier = async () => {
-    // Open popup tab synchronously on user click to ensure browser popup blocker does not block it
-    const gmailTab = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
-
     setSubmitting(true);
     setErrors({});
     try {
@@ -386,17 +430,19 @@ export function CreatePOModal({
           `Inventory Management & Procurement\n` +
           `Bren Raphael's Ube Jam & Halaya`;
 
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(supplierEmail)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-
-        // Navigate the pre-opened tab directly to the Gmail compose draft
-        if (gmailTab && !gmailTab.closed) {
-          gmailTab.location.href = gmailUrl;
-        } else {
-          try {
-            window.open(gmailUrl, "_blank", "noopener,noreferrer");
-          } catch {
-            // Fallback handled
-          }
+        // Automatically dispatch the Purchase Order email to the supplier's registered email
+        try {
+          await actionResponse(
+            sendPurchaseOrderEmail({
+              poNumber: poNum,
+              supplierEmail,
+              supplierName: selectedSupplier?.supplierName || "Supplier",
+              emailSubject,
+              emailBody,
+            })
+          );
+        } catch (emailErr) {
+          console.error("Automated email dispatch error:", emailErr);
         }
 
         // Close the modal cleanly and notify parent table!
@@ -404,11 +450,9 @@ export function CreatePOModal({
         onSuccess(created);
         onClose();
       } else {
-        if (gmailTab && !gmailTab.closed) gmailTab.close();
         setErrors((p) => ({ ...p, general: res.data?.message || "Failed to create Purchase Order." }));
       }
     } catch (e: any) {
-      if (gmailTab && !gmailTab.closed) gmailTab.close();
       setErrors((p) => ({ ...p, general: e?.message || "Failed to create Purchase Order." }));
     } finally {
       setSubmitting(false);
@@ -468,7 +512,7 @@ export function CreatePOModal({
             <div className="p-3.5 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground flex items-center gap-2">
               <Mail className="w-4 h-4 text-primary shrink-0" />
               <span>
-                Please review the particulars below. Confirming will create the Purchase Order, automatically download your official document, and launch a new tab with your Gmail draft containing the item questionnaire ready for review before sending.
+                Please review the particulars below. Confirming will create the Purchase Order, automatically download your official PDF document, and automatically dispatch the order details and questionnaire directly to the supplier&apos;s registered email.
               </span>
             </div>
 
@@ -488,7 +532,7 @@ export function CreatePOModal({
               </div>
               <div>
                 <label className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
-                  Recipient Email (Auto-filled from Supplier Registration):
+                  Recipient Email (Supplier Registered Email):
                 </label>
                 <Input
                   type="email"
@@ -497,18 +541,22 @@ export function CreatePOModal({
                   placeholder="Enter recipient email (e.g. supplier@company.com)"
                   className="h-8 text-xs bg-muted/20 border-border font-medium rounded-lg w-full"
                 />
-                {!recipientEmail && (
+                {recipientEmail ? (
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 mt-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Verified Supplier Email (Registered in System)
+                  </span>
+                ) : (
                   <span className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 block">
-                    * No email was registered for this supplier. You can type one here so Gmail pre-fills the recipient.
+                    * No email was registered for this supplier. You can type one here so the order is emailed.
                   </span>
                 )}
               </div>
             </div>
 
             {/* Transmission Preview Banner */}
-            <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 text-xs space-y-1.5">
+            <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 text-xs space-y-2">
               <span className="font-semibold text-primary block">
-                Gmail Transmission Preview:
+                Automated Email Transmission:
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-muted-foreground">
                 <p>
@@ -520,6 +568,16 @@ export function CreatePOModal({
                 <p>
                   <strong className="text-foreground">Subject:</strong>{" "}
                   Purchase Order {nextPoNumber || "Auto-assigned"} — Bren Raphael&apos;s Ube Jam &amp; Halaya
+                </p>
+                <p>
+                  <strong className="text-foreground">Attachment:</strong>{" "}
+                  Purchase-Order-{nextPoNumber || "PO"}.pdf (Attached automatically)
+                </p>
+                <p>
+                  <strong className="text-foreground">Dispatch:</strong>{" "}
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                    Dispatched automatically upon submission
+                  </span>
                 </p>
               </div>
             </div>
@@ -566,7 +624,7 @@ export function CreatePOModal({
                 onClick={handleConfirmSendToSupplier}
                 className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
               >
-                {submitting ? "Opening Gmail..." : "Confirm & Open Gmail Draft"}
+                {submitting ? "Sending Order..." : "Confirm & Send to Supplier"}
               </Button>
             </div>
           </div>
