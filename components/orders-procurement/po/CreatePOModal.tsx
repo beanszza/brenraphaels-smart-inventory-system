@@ -70,6 +70,7 @@ export function CreatePOModal({
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isReviewing, setIsReviewing] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState<string>("");
 
   useEffect(() => {
     if (open) {
@@ -108,6 +109,7 @@ export function CreatePOModal({
             orderQty: String(it.poItemQuantity),
           }))
         );
+        setRecipientEmail(initialPo.supplierEmail || "");
         setErrors({});
         setIsReviewing(false);
       } else {
@@ -116,6 +118,7 @@ export function CreatePOModal({
         setSelectedPR(null);
         setSelectedSupplierId(null);
         setItemRows([]);
+        setRecipientEmail("");
         setErrors({});
         setIsReviewing(false);
         fetchApprovedPRs();
@@ -246,6 +249,10 @@ export function CreatePOModal({
 
   const handleSelectSupplier = (supplierId: number) => {
     setSelectedSupplierId(supplierId);
+    const sup = eligibleSuppliers.find((s) => s.supplierId === supplierId);
+    if (sup?.email) {
+      setRecipientEmail(sup.email);
+    }
     if (selectedPR) fetchItemsForSupplier(supplierId, selectedPR);
     fetchNextPoNumber();
     setStep(3);
@@ -340,7 +347,8 @@ export function CreatePOModal({
           ? `${selectedSupplier.contactPerson} (${selectedSupplier.supplierName})`
           : selectedSupplier?.supplierName || "Valued Supplier Partner";
 
-        const supplierEmail = selectedSupplier?.email || "";
+        const targetEmail = recipientEmail.trim() || selectedSupplier?.email || "";
+        const supplierEmail = targetEmail;
         const emailSubject = `Purchase Order ${poNum} — Bren Raphael's Ube Jam & Halaya`;
         const emailBody =
           `Dear ${supplierContact},\n\n` +
@@ -464,22 +472,55 @@ export function CreatePOModal({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-xl bg-muted/20 border border-border text-xs">
+            {/* Supplier & Requisition Information Card */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-card border border-border text-xs shadow-sm">
               <div>
-                <span className="text-muted-foreground block text-[11px] mb-1">Purchase Requisition Reference</span>
-                <span className="font-mono font-bold text-foreground">{selectedPR?.prNumber || initialPo?.prNumber || "—"}</span>
+                <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Purchase Requisition Reference</span>
+                <span className="font-mono font-bold text-foreground text-sm">{selectedPR?.prNumber || initialPo?.prNumber || "—"}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-[11px] mb-1">Supplier / Vendor</span>
-                <span className="font-bold text-foreground">{selectedSupplier?.supplierName || initialPo?.supplierName || "—"}</span>
+                <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Supplier / Vendor</span>
+                <span className="font-bold text-foreground text-sm">{selectedSupplier?.supplierName || initialPo?.supplierName || "—"}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-[11px] mb-1">Supplier Email</span>
-                <span className="font-medium text-foreground">{selectedSupplier?.email || "No email registered"}</span>
+                <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Purchase Order Number</span>
+                <span className="font-mono font-semibold text-foreground text-sm">{nextPoNumber || "Auto-assigned"}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-[11px] mb-1">Purchase Order Number</span>
-                <span className="font-mono font-semibold text-foreground">{nextPoNumber || "Auto-assigned"}</span>
+                <label className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
+                  Recipient Email (Auto-filled from Supplier Registration):
+                </label>
+                <Input
+                  type="email"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  placeholder="Enter recipient email (e.g. supplier@company.com)"
+                  className="h-8 text-xs bg-muted/20 border-border font-medium rounded-lg w-full"
+                />
+                {!recipientEmail && (
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 block">
+                    * No email was registered for this supplier. You can type one here so Gmail pre-fills the recipient.
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Transmission Preview Banner */}
+            <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 text-xs space-y-1.5">
+              <span className="font-semibold text-primary block">
+                Gmail Transmission Preview:
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-muted-foreground">
+                <p>
+                  <strong className="text-foreground">To:</strong>{" "}
+                  <span className="font-mono text-foreground font-semibold">
+                    {recipientEmail || "(None — please enter recipient above)"}
+                  </span>
+                </p>
+                <p>
+                  <strong className="text-foreground">Subject:</strong>{" "}
+                  Purchase Order {nextPoNumber || "Auto-assigned"} — Bren Raphael&apos;s Ube Jam &amp; Halaya
+                </p>
               </div>
             </div>
 
@@ -824,7 +865,12 @@ export function CreatePOModal({
                     type="button"
                     disabled={submitting || !isStep3Valid}
                     onClick={() => {
-                      if (validate()) setIsReviewing(true);
+                      if (validate()) {
+                        if (!recipientEmail && selectedSupplier?.email) {
+                          setRecipientEmail(selectedSupplier.email);
+                        }
+                        setIsReviewing(true);
+                      }
                     }}
                     className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
                   >

@@ -22,6 +22,10 @@ export async function supplierItemsByItem(itemIdInput: string | number) {
     const data = items.map((si) => ({
       supplierId: si.SupplierId,
       supplierName: si.Suppliers?.CompanyName ?? "",
+      email: si.Suppliers?.Email ?? "",
+      contactPerson: si.Suppliers?.ContactPerson ?? "",
+      phone: si.Suppliers?.Phone ?? "",
+      address: si.Suppliers?.Address ?? "",
       itemId: si.ItemId,
       itemName: si.Items?.ItemName ?? "",
       supplierSku: si.SupplierSku ?? "",
