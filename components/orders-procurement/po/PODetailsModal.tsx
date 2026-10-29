@@ -1,17 +1,18 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Calendar,
   AlertCircle,
   Truck,
-  Printer,
+  Download,
   CheckCircle2,
 } from "lucide-react";
 import { PurchaseOrderPO } from "../types";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { downloadPurchaseOrderPdf } from "./downloadPurchaseOrderPdf";
 
 interface PODetailsModalProps {
   po: PurchaseOrderPO | null;
@@ -34,6 +35,8 @@ export function PODetailsModal({
   onCancel,
   onCreateDelivery,
 }: PODetailsModalProps) {
+  const [downloading, setDownloading] = useState(false);
+
   if (!po) return null;
 
   const isPending = po.status === "Pending Approval";
@@ -55,6 +58,15 @@ export function PODetailsModal({
       currency: "PHP",
       minimumFractionDigits: 2,
     }).format(n);
+
+  const handleDownloadPdf = async () => {
+    try {
+      setDownloading(true);
+      await downloadPurchaseOrderPdf(po);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <ModalWrapper
@@ -243,63 +255,67 @@ export function PODetailsModal({
           </div>
         </div>
 
-        {/* Modal Footer Actions */}
-        <div className="flex items-center justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2 flex-wrap">
-          {/* Print / Save as PDF Button */}
-          {onPrint && (
+        {/* Modal Footer Actions: Styled matching Resources & Suppliers, with Approve Order on the Far Right */}
+        <div className="flex items-center justify-between pt-5 pb-3 border-t border-border mt-6 mb-2 flex-wrap gap-3">
+          {/* Left Side: Cancel Purchase Order */}
+          <div>
+            {!isAdmin && isCancellable && onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onCancel(po)}
+                className="rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 px-5 py-2.5 text-sm font-semibold transition-colors cursor-pointer h-10"
+              >
+                Cancel Purchase Order
+              </Button>
+            )}
+          </div>
+
+          {/* Right Side: Download, Close, and Approve Order on the Far Right */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Direct Instant PDF Download (No preview modal) */}
             <Button
               type="button"
               variant="outline"
-              onClick={() => onPrint(po)}
-              className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              disabled={downloading}
+              onClick={handleDownloadPdf}
+              className="flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer h-10"
             >
-              <Printer className="w-4 h-4" /> Print Purchase Order
+              <Download className="w-4 h-4" /> {downloading ? "Downloading..." : "Download Purchase Order"}
             </Button>
-          )}
 
-          {/* Close Button */}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
-          >
-            Close
-          </Button>
-
-          {/* IMS Manager: Approve Order with Supplier Details (Pending Approval only) */}
-          {!isAdmin && isPending && onApproveWithForm && (
-            <Button
-              type="button"
-              onClick={() => onApproveWithForm(po)}
-              className="flex items-center gap-1.5 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-xs font-semibold hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
-            >
-              <CheckCircle2 className="w-4 h-4" /> Approve Order
-            </Button>
-          )}
-
-          {/* IMS Manager: Cancel Purchase Order */}
-          {!isAdmin && isCancellable && onCancel && (
+            {/* Close Button */}
             <Button
               type="button"
               variant="outline"
-              onClick={() => onCancel(po)}
-              className="rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 px-5 py-2.5 text-xs font-semibold transition-colors cursor-pointer"
+              onClick={onClose}
+              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer h-10"
             >
-              Cancel Purchase Order
+              Close
             </Button>
-          )}
 
-          {/* IMS Manager: Schedule Delivery for Approved Orders */}
-          {!isAdmin && (po.status === "Approved" || po.status === "Ordered" || po.status === "Partially Delivered") && onCreateDelivery && (
-            <Button
-              type="button"
-              onClick={() => onCreateDelivery(po)}
-              className="flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-xs font-semibold hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
-            >
-              <Truck className="w-4 h-4" /> Schedule Delivery
-            </Button>
-          )}
+            {/* IMS Manager: Approve Order (Far Right!) */}
+            {!isAdmin && isPending && onApproveWithForm && (
+              <Button
+                type="button"
+                onClick={() => onApproveWithForm(po)}
+                className="flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer h-10"
+              >
+                <CheckCircle2 className="w-4 h-4" /> Approve Order
+              </Button>
+            )}
+
+            {/* IMS Manager: Schedule Delivery for Approved Orders (Far Right) */}
+            {!isAdmin && (po.status === "Approved" || po.status === "Ordered" || po.status === "Partially Delivered") && onCreateDelivery && (
+              <Button
+                type="button"
+                onClick={() => onCreateDelivery(po)}
+                className="flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer h-10"
+              >
+                <Truck className="w-4 h-4" /> Schedule Delivery
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </ModalWrapper>

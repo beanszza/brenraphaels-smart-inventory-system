@@ -20,6 +20,8 @@ import { useStaff } from "@/context/StaffContext";
 import { procurement } from "@/lib/orders/client";
 import { supplierItemsByItem, supplierItemsBySupplier } from "@/app/actions/orders/catalog";
 import { actionResponse } from "@/lib/resources/action-response";
+import { downloadPurchaseOrderPdf } from "./downloadPurchaseOrderPdf";
+import { Download } from "lucide-react";
 
 interface ItemRow {
   itemId: number;
@@ -77,6 +79,7 @@ export function CreatePOModal({
   // Post-submit success state (Draft opened in Gmail)
   const [createdOrder, setCreatedOrder] = useState<PurchaseOrderPO | null>(null);
   const [gmailComposeUrl, setGmailComposeUrl] = useState<string>("");
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     if (open) {
