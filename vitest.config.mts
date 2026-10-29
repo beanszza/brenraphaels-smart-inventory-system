@@ -6,4 +6,7 @@ export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(import.meta.dirname, ".") },
   },
+  test: {
+    testTimeout: 15000,
+  },
 });
