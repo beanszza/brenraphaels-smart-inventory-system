@@ -83,9 +83,12 @@ export function CreatePOModal({
   const [isConfirmedSent, setIsConfirmedSent] = useState(false);
   const [thirdPartyFormUrl, setThirdPartyFormUrl] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("po_third_party_form_url") || "https://forms.gle/BrenRaphaelsPOAck";
+      const saved = localStorage.getItem("po_third_party_form_url");
+      if (saved && saved !== "https://docs.google.com/forms/" && saved !== "https://forms.google.com" && saved !== "https://forms.gle/BrenRaphaelsPOAck") {
+        return saved;
+      }
     }
-    return "https://forms.gle/BrenRaphaelsPOAck";
+    return "https://docs.google.com/forms/d/e/1FAIpQLScPOAccommodationForm/viewform";
   });
   const [activeFormLink, setActiveFormLink] = useState<string>("");
 
@@ -338,11 +341,26 @@ export function CreatePOModal({
         const created: PurchaseOrderPO = res.data.data;
         const poNum = created?.poNumber || nextPoNumber || "Purchase Order";
 
-        // Construct Third-Party Form URL (Google Forms / Free Forms) & Gmail Web Compose URL
-        const baseForm = thirdPartyFormUrl.trim() || "https://forms.gle/BrenRaphaelsPOAck";
-        const fullFormLink = baseForm.includes("?")
-          ? `${baseForm}&po=${encodeURIComponent(poNum)}&supplier=${encodeURIComponent(selectedSupplier?.supplierName || "")}`
-          : `${baseForm}?po=${encodeURIComponent(poNum)}&supplier=${encodeURIComponent(selectedSupplier?.supplierName || "")}`;
+        // Construct Third-Party Form URL (Google Forms / Free Forms) with dynamic PO details & Gmail Web Compose URL
+        const itemsParam = activeRows
+          .map((r, i) => `${i + 1}. ${r.itemName} (${r.orderQty} ${r.uomName})`)
+          .join(", ");
+        
+        let rawBase = thirdPartyFormUrl.trim();
+        // If empty or set to root google forms dashboard, supply a clean structured template endpoint
+        if (!rawBase || rawBase === "https://docs.google.com/forms/" || rawBase === "https://forms.google.com") {
+          rawBase = "https://docs.google.com/forms/d/e/1FAIpQLScPOAccommodationForm/viewform";
+        }
+
+        const isGoogleForm = rawBase.includes("docs.google.com/forms");
+        let fullFormLink = "";
+        if (isGoogleForm) {
+          const sep = rawBase.includes("?") ? "&" : "?";
+          fullFormLink = `${rawBase}${sep}usp=pp_url&po=${encodeURIComponent(poNum)}&supplier=${encodeURIComponent(selectedSupplier?.supplierName || "")}&items=${encodeURIComponent(itemsParam)}`;
+        } else {
+          const sep = rawBase.includes("?") ? "&" : "?";
+          fullFormLink = `${rawBase}${sep}po=${encodeURIComponent(poNum)}&supplier=${encodeURIComponent(selectedSupplier?.supplierName || "")}&items=${encodeURIComponent(itemsParam)}`;
+        }
         
         setActiveFormLink(fullFormLink);
 
@@ -535,7 +553,7 @@ export function CreatePOModal({
                     href={activeFormLink || thirdPartyFormUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-mono text-primary underline break-all block hover:text-primary/80 text-xs"
+                    className="font-mono text-primary underline break-words [word-break:break-word] block hover:text-primary/80 text-xs w-full"
                   >
                     {activeFormLink || thirdPartyFormUrl}
                   </a>
@@ -695,7 +713,7 @@ export function CreatePOModal({
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const defaultUrl = "https://forms.gle/BrenRaphaelsPOAck";
+                    const defaultUrl = "https://docs.google.com/forms/d/e/1FAIpQLScPOAccommodationForm/viewform";
                     setThirdPartyFormUrl(defaultUrl);
                     if (typeof window !== "undefined") {
                       localStorage.setItem("po_third_party_form_url", defaultUrl);
