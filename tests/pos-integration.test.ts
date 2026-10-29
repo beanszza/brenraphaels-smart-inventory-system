@@ -46,3 +46,4 @@ describe("POS integration security & proxy exemptions", () => {
     expect(isAuthorizedPosRequest(missingReq)).toBe(false);
   });
 });
+
