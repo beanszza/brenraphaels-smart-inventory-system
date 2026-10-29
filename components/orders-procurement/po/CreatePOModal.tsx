@@ -6,11 +6,7 @@ import {
   ChevronLeft,
   Search,
   Users,
-  CheckCircle2,
   Mail,
-  FileText,
-  ExternalLink,
-  Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +17,6 @@ import { procurement } from "@/lib/orders/client";
 import { supplierItemsByItem, supplierItemsBySupplier } from "@/app/actions/orders/catalog";
 import { actionResponse } from "@/lib/resources/action-response";
 import { downloadPurchaseOrderPdf } from "./downloadPurchaseOrderPdf";
-import { Download } from "lucide-react";
 
 interface ItemRow {
   itemId: number;
@@ -76,22 +71,6 @@ export function CreatePOModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isReviewing, setIsReviewing] = useState(false);
 
-  // Post-submit success state (Draft opened in Gmail)
-  const [createdOrder, setCreatedOrder] = useState<PurchaseOrderPO | null>(null);
-  const [gmailComposeUrl, setGmailComposeUrl] = useState<string>("");
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [isConfirmedSent, setIsConfirmedSent] = useState(false);
-  const [thirdPartyFormUrl, setThirdPartyFormUrl] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("po_third_party_form_url");
-      if (saved && saved !== "https://docs.google.com/forms/" && saved !== "https://forms.google.com" && saved !== "https://forms.gle/BrenRaphaelsPOAck") {
-        return saved;
-      }
-    }
-    return "https://docs.google.com/forms/d/e/1FAIpQLScPOAccommodationForm/viewform";
-  });
-  const [activeFormLink, setActiveFormLink] = useState<string>("");
-
   useEffect(() => {
     if (open) {
       if (isEdit && initialPo) {
@@ -131,8 +110,6 @@ export function CreatePOModal({
         );
         setErrors({});
         setIsReviewing(false);
-        setCreatedOrder(null);
-        setGmailComposeUrl("");
       } else {
         setStep(1);
         setPrSearch("");
@@ -141,8 +118,6 @@ export function CreatePOModal({
         setItemRows([]);
         setErrors({});
         setIsReviewing(false);
-        setCreatedOrder(null);
-        setGmailComposeUrl("");
         fetchApprovedPRs();
         fetchNextPoNumber();
       }
@@ -325,7 +300,7 @@ export function CreatePOModal({
         expectedArrivalDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         paymentType: "Cash",
         requestedBy: staff.name,
-        initialStatus: "Draft",
+        initialStatus: "Pending Approval",
         items: activeRows.map((row) => ({
           itemId: row.itemId,
           poItemQuantity: parseFloat(row.orderQty),
@@ -341,28 +316,25 @@ export function CreatePOModal({
         const created: PurchaseOrderPO = res.data.data;
         const poNum = created?.poNumber || nextPoNumber || "Purchase Order";
 
-        // Construct Third-Party Form URL (Google Forms / Free Forms) with dynamic PO details & Gmail Web Compose URL
-        const itemsParam = activeRows
-          .map((r, i) => `${i + 1}. ${r.itemName} (${r.orderQty} ${r.uomName})`)
-          .join(", ");
-        
-        let rawBase = thirdPartyFormUrl.trim();
-        // If empty or set to root google forms dashboard, supply a clean structured template endpoint
-        if (!rawBase || rawBase === "https://docs.google.com/forms/" || rawBase === "https://forms.google.com") {
-          rawBase = "https://docs.google.com/forms/d/e/1FAIpQLScPOAccommodationForm/viewform";
+        // Auto-download the printable Purchase Order PDF immediately
+        try {
+          await downloadPurchaseOrderPdf(created);
+        } catch (e) {
+          console.error("Auto download PDF failed:", e);
         }
 
-        const isGoogleForm = rawBase.includes("docs.google.com/forms");
-        let fullFormLink = "";
-        if (isGoogleForm) {
-          const sep = rawBase.includes("?") ? "&" : "?";
-          fullFormLink = `${rawBase}${sep}usp=pp_url&po=${encodeURIComponent(poNum)}&supplier=${encodeURIComponent(selectedSupplier?.supplierName || "")}&items=${encodeURIComponent(itemsParam)}`;
-        } else {
-          const sep = rawBase.includes("?") ? "&" : "?";
-          fullFormLink = `${rawBase}${sep}po=${encodeURIComponent(poNum)}&supplier=${encodeURIComponent(selectedSupplier?.supplierName || "")}&items=${encodeURIComponent(itemsParam)}`;
-        }
-        
-        setActiveFormLink(fullFormLink);
+        // Reconstruct Email Body asking all questions directly in the email (No links)
+        const itemsList = activeRows
+          .map((r, i) => `${i + 1}. ${r.itemName} — ${r.orderQty} ${r.uomName}`)
+          .join("\n");
+
+        const itemAccommodationQuestions = activeRows
+          .map((r) => `   • ${r.itemName} (Requested: ${r.orderQty} ${r.uomName}) -> Accommodated Qty: [       ]`)
+          .join("\n");
+
+        const itemPricingQuestions = activeRows
+          .map((r) => `   • ${r.itemName}: ₱[          ] per ${r.uomName}`)
+          .join("\n");
 
         const supplierEmail = selectedSupplier?.email || "";
         const emailSubject = `Purchase Order ${poNum} — Bren Raphael's Ube Jam & Halaya`;
@@ -370,29 +342,37 @@ export function CreatePOModal({
           `Dear ${selectedSupplier?.contactPerson || selectedSupplier?.supplierName || "Supplier"},\n\n` +
           `Good day.\n\n` +
           `Please find our Purchase Order ${poNum} referencing Purchase Requisition ${selectedPR?.prNumber || ""}.\n\n` +
-          `Particulars Requested:\n` +
-          activeRows.map((r) => `• ${r.itemName}: ${r.orderQty} ${r.uomName}`).join("\n") +
-          `\n\n` +
-          `Kindly review the order particulars and submit your accommodation confirmation and pricing through our third-party acknowledgment form:\n` +
-          `${fullFormLink}\n\n` +
-          `In the acknowledgment form, please confirm:\n` +
-          `1. Items and quantities you can accommodate\n` +
-          `2. Quoted unit prices and total order amount\n` +
-          `3. Authorized approver representative name and confirmation date\n\n` +
-          `Please also find our official Purchase Order document attached.\n\n` +
-          `Thank you,\n` +
+          `We have also attached our official Purchase Order document (${poNum}.pdf) for your review and documentation.\n\n` +
+          `============================================================\n` +
+          `ORDER PARTICULARS REQUESTED:\n` +
+          `============================================================\n` +
+          `${itemsList}\n\n` +
+          `============================================================\n` +
+          `SUPPLIER ORDER ACKNOWLEDGMENT & QUOTATION (PLEASE REPLY):\n` +
+          `============================================================\n` +
+          `Kindly reply directly to this email with your confirmation for the following details:\n\n` +
+          `1. ORDER ACCOMMODATION:\n` +
+          `   Can you fulfill the requested quantities in full?\n` +
+          `   If partial or if there are adjustments, please specify the exact quantities you can accommodate:\n` +
+          `${itemAccommodationQuestions}\n\n` +
+          `2. QUOTED UNIT PRICING & TOTAL ORDER AMOUNT:\n` +
+          `   Please indicate your quoted unit prices for each item:\n` +
+          `${itemPricingQuestions}\n` +
+          `   Estimated Total Order Amount: ₱[              ]\n\n` +
+          `3. EXPECTED DELIVERY SCHEDULE:\n` +
+          `   Estimated Delivery Date to our warehouse: [ YYYY-MM-DD ]\n\n` +
+          `4. AUTHORIZED APPROVER / SUPPLIER REPRESENTATIVE:\n` +
+          `   • Approver Name & Title: [                                  ]\n` +
+          `   • Contact Number / Email: [                                  ]\n` +
+          `   • Confirmation Date & Time: [                                  ]\n\n` +
+          `============================================================\n\n` +
+          `Thank you very much.\n\n` +
+          `Sincerely,\n` +
           `${staff.name || "Vince Neil Madeja"}\n` +
           `Inventory Management\n` +
           `Bren Raphael's Ube Jam & Halaya`;
 
         const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(supplierEmail)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-        
-        // Auto-download the printable Purchase Order PDF immediately
-        try {
-          await downloadPurchaseOrderPdf(created);
-        } catch (e) {
-          console.error("Auto download PDF failed:", e);
-        }
 
         // Navigate the pre-opened tab directly to the Gmail compose draft
         if (gmailTab && !gmailTab.closed) {
@@ -401,14 +381,14 @@ export function CreatePOModal({
           try {
             window.open(gmailUrl, "_blank", "noopener,noreferrer");
           } catch {
-            // Fallback handled by in-modal button
+            // Fallback handled
           }
         }
 
-        // Store created order and URL for in-modal actions
-        setGmailComposeUrl(gmailUrl);
-        setCreatedOrder(created);
-        setIsConfirmedSent(false);
+        // Close the modal cleanly and notify parent table!
+        setIsReviewing(false);
+        onSuccess(created);
+        onClose();
       } else {
         if (gmailTab && !gmailTab.closed) gmailTab.close();
         setErrors((p) => ({ ...p, general: res.data?.message || "Failed to create Purchase Order." }));
@@ -418,41 +398,6 @@ export function CreatePOModal({
       setErrors((p) => ({ ...p, general: e?.message || "Failed to create Purchase Order." }));
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleMarkAsSentInGmail = async () => {
-    if (!createdOrder) return;
-    setSubmitting(true);
-    try {
-      const res = await procurement.setOrderStatus(createdOrder.poId, { status: "Pending Approval" });
-      if (res.data?.success || res.data) {
-        setIsConfirmedSent(true);
-      } else {
-        setErrors((p) => ({ ...p, general: "Failed to update order status." }));
-      }
-    } catch (e: any) {
-      setErrors((p) => ({ ...p, general: e?.message || "Failed to update order status." }));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleDiscardDraft = async () => {
-    if (!createdOrder) {
-      onClose();
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await procurement.setOrderStatus(createdOrder.poId, { status: "Cancelled" });
-    } catch (e) {
-      console.error("Discard failed:", e);
-    } finally {
-      setSubmitting(false);
-      setCreatedOrder(null);
-      setIsConfirmedSent(false);
-      onClose();
     }
   };
 
@@ -471,26 +416,17 @@ export function CreatePOModal({
     <ModalWrapper
       open={open}
       title={
-        createdOrder
-          ? isConfirmedSent
-            ? "Purchase Order Placed"
-            : "Review & Send in Gmail"
-          : isReviewing
+        isReviewing
           ? "Review Purchase Order"
           : isEdit
           ? `Edit Purchase Order — ${initialPo?.poNumber}`
           : "Create Purchase Order"
       }
       onClose={() => {
-        if (createdOrder && isConfirmedSent) {
-          onSuccess(createdOrder);
-        }
         setIsReviewing(false);
-        setCreatedOrder(null);
-        setIsConfirmedSent(false);
         onClose();
       }}
-      size={createdOrder ? "max-w-2xl" : isReviewing ? "max-w-3xl" : "max-w-5xl"}
+      size={isReviewing ? "max-w-3xl" : "max-w-5xl"}
     >
       <div className="space-y-6">
         {errors.general && (
@@ -512,137 +448,13 @@ export function CreatePOModal({
           </div>
         )}
 
-        {/* Post-Submit Confirmation: Gmail Draft Opened in New Tab */}
-        {createdOrder ? (
-          <div className="w-full space-y-6 text-center py-2">
-            {!isConfirmedSent ? (
-              /* Stage 1: Waiting for user to review & send in Gmail */
-              <div className="w-full space-y-5">
-                <div className="w-14 h-14 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center">
-                  <Mail className="w-7 h-7" />
-                </div>
-
-                <div className="w-full space-y-2">
-                  <div className="inline-block px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                    Draft Opened in Gmail &bull; Not Sent Yet
-                  </div>
-                  <h3 className="text-lg font-bold text-foreground">
-                    Review &amp; Send in Gmail — {createdOrder.poNumber}
-                  </h3>
-                  <p className="text-xs text-muted-foreground w-full max-w-lg mx-auto leading-relaxed">
-                    We prepared your Gmail draft and opened it in a new tab. Your official Purchase Order PDF has also been automatically downloaded.
-                  </p>
-                </div>
-
-                {/* Steps Callout Box */}
-                <div className="w-full max-w-lg mx-auto rounded-xl border border-border bg-muted/30 p-4 text-left text-xs space-y-2.5">
-                  <p className="font-semibold text-foreground">Next Steps in Gmail:</p>
-                  <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
-                    <li>Switch to the opened <strong>Gmail tab</strong> and review the email text.</li>
-                    <li>Drag and drop the downloaded <strong>{createdOrder.poNumber}.pdf</strong> into Gmail to attach it.</li>
-                    <li>Click <strong>Send</strong> inside Gmail.</li>
-                  </ol>
-                </div>
-
-                {/* Third-Party Form Link Display */}
-                <div className="w-full max-w-lg mx-auto p-3.5 rounded-xl bg-card border border-border text-left text-xs space-y-1.5 shadow-sm">
-                  <span className="text-[11px] font-semibold text-muted-foreground block uppercase">
-                    Third-Party Acknowledgment Form Link (Included in Gmail):
-                  </span>
-                  <a
-                    href={activeFormLink || thirdPartyFormUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-primary underline break-words [word-break:break-word] block hover:text-primary/80 text-xs w-full"
-                  >
-                    {activeFormLink || thirdPartyFormUrl}
-                  </a>
-                </div>
-
-                {/* Stage 1 Action Buttons */}
-                <div className="w-full max-w-lg mx-auto pt-2 space-y-3">
-                  <Button
-                    type="button"
-                    disabled={submitting}
-                    onClick={handleMarkAsSentInGmail}
-                    className="w-full rounded-xl bg-primary text-primary-foreground py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
-                  >
-                    {submitting ? "Confirming..." : "I Have Sent the Email in Gmail"}
-                  </Button>
-
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
-                    <a
-                      href={gmailComposeUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors text-center cursor-pointer w-full sm:w-auto"
-                    >
-                      Re-open Gmail Draft
-                    </a>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => downloadPurchaseOrderPdf(createdOrder)}
-                      className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer w-full sm:w-auto"
-                    >
-                      Download PDF Again
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={submitting}
-                      onClick={handleDiscardDraft}
-                      className="rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 px-4 py-2 text-xs font-semibold transition-colors cursor-pointer w-full sm:w-auto"
-                    >
-                      Discard Draft
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* Stage 2: Confirmed Sent -> Placed in Pending Approval */
-              <div className="w-full space-y-5">
-                <div className="w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-
-                <div className="w-full space-y-2">
-                  <div className="inline-block px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
-                    Status: Pending Approval
-                  </div>
-                  <h3 className="text-xl font-bold text-foreground">
-                    Purchase Order {createdOrder.poNumber} Sent to Supplier!
-                  </h3>
-                  <p className="text-xs text-muted-foreground w-full max-w-lg mx-auto leading-relaxed">
-                    Your confirmation has been saved. This Purchase Order is now officially placed in the <strong>Pending Approval</strong> tab while awaiting the supplier&apos;s acknowledgment and pricing confirmation.
-                  </p>
-                </div>
-
-                <div className="w-full max-w-lg mx-auto pt-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      onSuccess(createdOrder);
-                      onClose();
-                    }}
-                    className="w-full rounded-xl border border-border bg-card py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
-                  >
-                    Done &bull; Go to Pending Approval Tab
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : isReviewing ? (
+        {isReviewing ? (
           /* In-Modal Review Step */
           <div className="space-y-5">
             <div className="p-3.5 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground flex items-center gap-2">
               <Mail className="w-4 h-4 text-primary shrink-0" />
               <span>
-                Please review the details below. Confirming will set status to <strong>Pending Approval</strong>, generate your official printable document, and launch a new tab with your Gmail draft so you can review the email and form link before sending.
+                Please review the particulars below. Confirming will create the Purchase Order, automatically download your official document, and launch a new tab with your Gmail draft containing the item questionnaire ready for review before sending.
               </span>
             </div>
 
@@ -690,45 +502,6 @@ export function CreatePOModal({
               </table>
             </div>
 
-            {/* Third-Party Form Configuration */}
-            <div className="p-4 rounded-xl bg-muted/20 border border-border text-xs space-y-2">
-              <label className="block text-xs font-semibold text-foreground">
-                Third-Party Acknowledgment Form Link (Google Form / Free Form)
-              </label>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Input
-                  type="url"
-                  placeholder="https://docs.google.com/forms/... or https://forms.gle/..."
-                  value={thirdPartyFormUrl}
-                  onChange={(e) => {
-                    setThirdPartyFormUrl(e.target.value);
-                    if (typeof window !== "undefined") {
-                      localStorage.setItem("po_third_party_form_url", e.target.value);
-                    }
-                  }}
-                  className="h-9 text-xs bg-card border-border font-mono w-full"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const defaultUrl = "https://docs.google.com/forms/d/e/1FAIpQLScPOAccommodationForm/viewform";
-                    setThirdPartyFormUrl(defaultUrl);
-                    if (typeof window !== "undefined") {
-                      localStorage.setItem("po_third_party_form_url", defaultUrl);
-                    }
-                  }}
-                  className="rounded-xl border border-border text-xs font-semibold hover:bg-muted shrink-0 cursor-pointer"
-                >
-                  Reset Default
-                </Button>
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                This external third-party form URL is included in your Gmail draft so the supplier can view the order particulars and submit their accommodation confirmation.
-              </p>
-            </div>
-
             {/* Review Footer */}
             <div className="flex justify-end gap-3 pt-5 border-t border-border mt-4">
               <Button
@@ -746,7 +519,7 @@ export function CreatePOModal({
                 onClick={handleConfirmSendToSupplier}
                 className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
               >
-                {submitting ? "Opening Gmail..." : "Submit and Open Gmail Draft"}
+                {submitting ? "Opening Gmail..." : "Confirm & Open Gmail Draft"}
               </Button>
             </div>
           </div>

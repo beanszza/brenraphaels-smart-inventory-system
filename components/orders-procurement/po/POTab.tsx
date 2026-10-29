@@ -360,8 +360,8 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
             setOpenCreateModal(false);
             fetchOrders();
             setActiveTab("Pending Approval");
-            if (created) {
-              setPrintingPO(created);
+            if (created?.poNumber) {
+              setNotice(`Purchase Order ${created.poNumber} prepared. Gmail draft opened in a new tab.`);
             }
           }}
         />
