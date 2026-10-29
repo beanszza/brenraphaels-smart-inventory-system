@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { TransferSkeleton } from "./TransferSkeleton";
@@ -65,7 +65,7 @@ export function STRTable({
             {requests.map((req) => {
               const isPending = req.status === "Pending Approval";
               const isApproved = req.status === "Approved";
-              const isScheduled = req.status === "Scheduled";
+              const hasScheduledTransfer = req.transfers?.some((t) => t.status === "Scheduled") ?? false;
               const isDispatched = req.status === "Dispatched" || req.status === "Completed";
               const isCancelled = req.status === "Cancelled" || req.status === "Rejected";
 
@@ -78,13 +78,13 @@ export function STRTable({
                 ? new Date(transferRef.scheduledDate).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
                 : req.requiredDate
                 ? new Date(req.requiredDate).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
-                : "—";
+                : "â€”";
 
               const courierDriver = transferRef?.courierName
                 ? transferRef.courierName
                 : transferRef?.driverName
                 ? transferRef.driverName
-                : "—";
+                : "â€”";
 
               return (
                 <tr
@@ -114,7 +114,7 @@ export function STRTable({
                         )}
                       </div>
                     ) : (
-                      <span className="text-muted-foreground font-mono">—</span>
+                      <span className="text-muted-foreground font-mono">â€”</span>
                     )}
                   </td>
 
@@ -125,7 +125,7 @@ export function STRTable({
                         {firstItem.variant}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground font-mono">—</span>
+                      <span className="text-muted-foreground font-mono">â€”</span>
                     )}
                   </td>
 
@@ -151,7 +151,7 @@ export function STRTable({
 
                   {/* Status */}
                   <td className="px-5 py-4 whitespace-nowrap">
-                    <StatusBadge status={req.status} />
+                    <StatusBadge status={hasScheduledTransfer ? "Scheduled" : req.status} />
                   </td>
 
                   {/* Actions (Three dots Menu) */}
@@ -215,7 +215,7 @@ export function STRTable({
                         )}
 
                         {/* Inventory Manager: Dispatch Transfer */}
-                        {isScheduled && onDispatch && (
+                        {hasScheduledTransfer && onDispatch && (
                           <DropdownMenuItem
                             onClick={() => onDispatch(req)}
                             className="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs font-semibold text-foreground"

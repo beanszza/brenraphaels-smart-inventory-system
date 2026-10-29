@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Retain existing transfer DTOs during migration. */
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
@@ -138,7 +138,7 @@ validateInput(body);
       return { updatedTransfer, lotDeductions };
     })();
 
-    // Post transfer manifest to POS (SCMS ➔ POS)
+    // Post transfer manifest to POS (SCMS âž” POS)
     dispatchTransferManifestToPos({
       transferId: transfer.TransferNumber || `TRANS-${transfer.TransferId}`,
       sourceLocation: {

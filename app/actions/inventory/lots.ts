@@ -1,14 +1,12 @@
-"use server";
+﻿"use server";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { read, pageNumber, positiveId } from "@/lib/inventory/mutate";
-import { ensureInitialInventoryStock } from "@/lib/inventory/initial-stock";
 
 export async function listLots(query = "") {
   await requireModule("Inventory");
-  await ensureInitialInventoryStock();
   return read(async () => {
     const searchParams = new URLSearchParams(query);
     const page = pageNumber(searchParams.get("page"), 1, 1000000);

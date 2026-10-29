@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -14,6 +14,7 @@ interface STRDetailsModalProps {
   onReject?: (req: StockTransferRequest) => void;
   onSchedule?: (req: StockTransferRequest) => void;
   onCancel?: (req: StockTransferRequest) => void;
+  onDispatch?: (req: StockTransferRequest) => void;
 }
 
 export function STRDetailsModal({
@@ -24,6 +25,7 @@ export function STRDetailsModal({
   onReject,
   onSchedule,
   onCancel,
+  onDispatch,
 }: STRDetailsModalProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -190,7 +192,7 @@ export function STRDetailsModal({
                             )}
                           </td>
                           <td className="px-5 py-4 font-mono text-muted-foreground whitespace-nowrap">
-                            {item.sku || "—"}
+                            {item.sku || "â€”"}
                           </td>
                           <td className="px-5 py-4 text-foreground font-medium whitespace-nowrap">
                             {item.variant || "Standard"}
@@ -216,7 +218,7 @@ export function STRDetailsModal({
                                 )}
                               </div>
                             ) : (
-                              <span className="text-muted-foreground text-xs">—</span>
+                              <span className="text-muted-foreground text-xs">â€”</span>
                             )}
                           </td>
                           <td className="px-5 py-4 whitespace-nowrap">
@@ -256,8 +258,8 @@ export function STRDetailsModal({
                       </div>
                       <div className="text-muted-foreground text-[11px] mt-0.5">
                         Quantity: <strong className="text-foreground">{st.transferQuantity}</strong>
-                        {st.courierName && ` • Courier: ${st.courierName}`}
-                        {st.driverName && ` • Driver: ${st.driverName}`}
+                        {st.courierName && ` â€¢ Courier: ${st.courierName}`}
+                        {st.driverName && ` â€¢ Driver: ${st.driverName}`}
                         {st.vehiclePlate && ` [${st.vehiclePlate}]`}
                       </div>
                     </div>
