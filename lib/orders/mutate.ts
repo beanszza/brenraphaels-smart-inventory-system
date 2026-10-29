@@ -16,7 +16,10 @@ export const fail = (message: string): Saved => ({ result: resourceResult({ succ
  */
 export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) => Promise<Saved>): Promise<ResourceResult> {
   try {
-    const saved = await prisma.$transaction(work);
+    const saved = await prisma.$transaction(work, {
+      maxWait: 15000,
+      timeout: 30000,
+    });
     if (saved.audit) await recordAudit(staff, saved.audit);
     if (saved.audit && saved.after) await saved.after().catch((error) => console.error("Notification could not be sent", error));
     if (saved.result.success) {

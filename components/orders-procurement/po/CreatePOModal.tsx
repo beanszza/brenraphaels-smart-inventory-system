@@ -6,11 +6,10 @@ import {
   ChevronLeft,
   Search,
   Users,
-  ClipboardList,
   CheckCircle2,
-  AlertTriangle,
   Mail,
   FileText,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,8 +71,11 @@ export function CreatePOModal({
   const [nextPoNumber, setNextPoNumber] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [itemSearch, setItemSearch] = useState("");
   const [isReviewing, setIsReviewing] = useState(false);
+
+  // Post-submit success state
+  const [createdOrder, setCreatedOrder] = useState<PurchaseOrderPO | null>(null);
+  const [gmailComposeUrl, setGmailComposeUrl] = useState<string>("");
 
   useEffect(() => {
     if (open) {
@@ -113,8 +115,9 @@ export function CreatePOModal({
           }))
         );
         setErrors({});
-        setItemSearch("");
         setIsReviewing(false);
+        setCreatedOrder(null);
+        setGmailComposeUrl("");
       } else {
         setStep(1);
         setPrSearch("");
@@ -122,8 +125,9 @@ export function CreatePOModal({
         setSelectedSupplierId(null);
         setItemRows([]);
         setErrors({});
-        setItemSearch("");
         setIsReviewing(false);
+        setCreatedOrder(null);
+        setGmailComposeUrl("");
         fetchApprovedPRs();
         fetchNextPoNumber();
       }
@@ -318,6 +322,7 @@ export function CreatePOModal({
 
   const handleConfirmSendToSupplier = async () => {
     setSubmitting(true);
+    setErrors({});
     try {
       const activeRows = itemRows.filter((row) => (parseFloat(row.orderQty) || 0) > 0);
       const payload = {
@@ -339,14 +344,14 @@ export function CreatePOModal({
         : await procurement.createOrder(payload);
 
       if (res.data?.success) {
-        const created = res.data.data;
+        const created: PurchaseOrderPO = res.data.data;
         const poNum = created?.poNumber || nextPoNumber || "Purchase Order";
 
-        // Open Gmail with prefilled subject, recipient and body containing Google Form link
+        // Construct Gmail Web Compose URL (opens directly in a new tab)
         const supplierEmail = selectedSupplier?.email || "";
         const googleFormUrl = "https://forms.google.com/";
-        const emailSubject = encodeURIComponent(`Purchase Order ${poNum} — Bren Raphael's Ube Jam & Halaya`);
-        const emailBody = encodeURIComponent(
+        const emailSubject = `Purchase Order ${poNum} — Bren Raphael's Ube Jam & Halaya`;
+        const emailBody =
           `Dear ${selectedSupplier?.contactPerson || selectedSupplier?.supplierName || "Supplier"},\n\n` +
           `Good day.\n\n` +
           `Please find our Purchase Order ${poNum} referencing Purchase Requisition ${selectedPR?.prNumber || ""}.\n\n` +
@@ -360,14 +365,20 @@ export function CreatePOModal({
           `Thank you,\n` +
           `${staff.name || "Vince Neil Madeja"}\n` +
           `Inventory Management\n` +
-          `Bren Raphael's Ube Jam & Halaya`
-        );
+          `Bren Raphael's Ube Jam & Halaya`;
 
-        const mailtoUrl = `mailto:${supplierEmail}?subject=${emailSubject}&body=${emailBody}`;
-        window.open(mailtoUrl, "_blank");
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(supplierEmail)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        
+        // Save state to present the confirmation screen
+        setGmailComposeUrl(gmailUrl);
+        setCreatedOrder(created);
 
-        onSuccess(created);
-        onClose();
+        // Try opening Gmail in a new tab immediately
+        try {
+          window.open(gmailUrl, "_blank", "noopener,noreferrer");
+        } catch {
+          // If popup blocked, the user has the direct link button on the modal screen
+        }
       } else {
         setErrors((p) => ({ ...p, general: res.data?.message || "Failed to create Purchase Order." }));
       }
@@ -393,17 +404,23 @@ export function CreatePOModal({
     <ModalWrapper
       open={open}
       title={
-        isReviewing
+        createdOrder
+          ? "Purchase Order Sent"
+          : isReviewing
           ? "Review Purchase Order"
           : isEdit
           ? `Edit Purchase Order — ${initialPo?.poNumber}`
           : "Create Purchase Order"
       }
       onClose={() => {
+        if (createdOrder) {
+          onSuccess(createdOrder);
+        }
         setIsReviewing(false);
+        setCreatedOrder(null);
         onClose();
       }}
-      size={isReviewing ? "max-w-3xl" : "max-w-5xl"}
+      size={createdOrder ? "max-w-xl" : isReviewing ? "max-w-3xl" : "max-w-5xl"}
     >
       <div className="space-y-6">
         {errors.general && (
@@ -425,13 +442,70 @@ export function CreatePOModal({
           </div>
         )}
 
-        {/* In-Modal Review Step */}
-        {isReviewing ? (
+        {/* Post-Submit Success View with Direct Gmail Link */}
+        {createdOrder ? (
+          <div className="space-y-6 text-center py-4">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
+              <CheckCircle2 className="w-9 h-9" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-bold text-foreground">
+                Purchase Order {createdOrder.poNumber} Sent!
+              </h3>
+              <div className="inline-block mt-1 px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                Status: Pending Approval
+              </div>
+              <p className="text-xs text-muted-foreground mt-3 max-w-md mx-auto leading-relaxed">
+                Your Purchase Order has been placed in the <strong>Pending Approval</strong> tab. A new tab has been launched with your Gmail draft so you can review and click send.
+              </p>
+            </div>
+
+            {/* Direct Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <a
+                href={gmailComposeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-xs font-semibold hover:bg-primary/90 transition-colors shadow-sm w-full sm:w-auto cursor-pointer"
+              >
+                <Mail className="w-4 h-4" /> Open Gmail in New Tab <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+              </a>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  onSuccess(createdOrder);
+                  onClose();
+                }}
+                className="flex items-center justify-center gap-2 rounded-xl border border-border px-5 py-2.5 text-xs font-semibold hover:bg-muted text-foreground w-full sm:w-auto cursor-pointer"
+              >
+                <FileText className="w-4 h-4" /> Print / Save Document
+              </Button>
+            </div>
+
+            <div className="pt-4 border-t border-border">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  onSuccess(createdOrder);
+                  onClose();
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                Done &bull; View in Pending Approval Tab
+              </Button>
+            </div>
+          </div>
+        ) : isReviewing ? (
+          /* In-Modal Review Step */
           <div className="space-y-5">
             <div className="p-3.5 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground flex items-center gap-2">
               <Mail className="w-4 h-4 text-primary shrink-0" />
               <span>
-                Please review the details below. Confirming will set status to <strong>Pending Approval</strong>, generate your official printable document, and launch Gmail with the supplier request email and form link.
+                Please review the details below. Confirming will set status to <strong>Pending Approval</strong>, generate your official printable document, and launch Gmail in a new tab with the supplier request email and form link.
               </span>
             </div>
 

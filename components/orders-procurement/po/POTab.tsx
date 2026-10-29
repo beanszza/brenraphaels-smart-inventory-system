@@ -321,6 +321,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           onSuccess={(updated) => {
             setApprovingPO(null);
             fetchOrders();
+            setActiveTab("Approved");
             setPrintingPO(updated);
           }}
         />
@@ -358,6 +359,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           onSuccess={(created) => {
             setOpenCreateModal(false);
             fetchOrders();
+            setActiveTab("Pending Approval");
             if (created) {
               setPrintingPO(created);
             }
