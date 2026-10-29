@@ -10,6 +10,7 @@ import {
   Mail,
   FileText,
   ExternalLink,
+  Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,7 +74,7 @@ export function CreatePOModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isReviewing, setIsReviewing] = useState(false);
 
-  // Post-submit success state
+  // Post-submit success state (Draft opened in Gmail)
   const [createdOrder, setCreatedOrder] = useState<PurchaseOrderPO | null>(null);
   const [gmailComposeUrl, setGmailComposeUrl] = useState<string>("");
 
@@ -151,31 +152,7 @@ export function CreatePOModal({
       const res = await procurement.listRequisitions("Approved");
       if (res.data?.success) {
         const prs: PurchaseRequisition[] = res.data.data || [];
-        const eligible: PurchaseRequisition[] = [];
-        await Promise.all(
-          prs.map(async (pr) => {
-            try {
-              const ordRes = await procurement.orderedQuantities(pr.prId);
-              const orderedMap: Record<number, number> = {};
-              if (ordRes.data?.success && Array.isArray(ordRes.data.data)) {
-                ordRes.data.data.forEach((o: any) => {
-                  orderedMap[o.itemId] = Number(o.orderedQty) || 0;
-                });
-              }
-              const hasRemaining = (pr.items || []).some((item) => {
-                const ordered = orderedMap[item.itemId] || 0;
-                return item.requestedQuantity > ordered;
-              });
-              if (hasRemaining) {
-                eligible.push(pr);
-              }
-            } catch {
-              eligible.push(pr);
-            }
-          })
-        );
-        eligible.sort((a, b) => b.prId - a.prId);
-        setApprovedPRs(eligible);
+        setApprovedPRs(prs);
       }
     } catch {
       setErrors((p) => ({ ...p, general: "Purchase Requisitions could not be loaded. Please retry." }));
@@ -347,7 +324,7 @@ export function CreatePOModal({
         const created: PurchaseOrderPO = res.data.data;
         const poNum = created?.poNumber || nextPoNumber || "Purchase Order";
 
-        // Construct Gmail Web Compose URL (opens directly in a new tab)
+        // Construct Gmail Web Compose URL (opens in new tab as draft)
         const supplierEmail = selectedSupplier?.email || "";
         const googleFormUrl = "https://forms.google.com/";
         const emailSubject = `Purchase Order ${poNum} — Bren Raphael's Ube Jam & Halaya`;
@@ -369,15 +346,15 @@ export function CreatePOModal({
 
         const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(supplierEmail)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
         
-        // Save state to present the confirmation screen
+        // Store created order and URL for in-modal actions
         setGmailComposeUrl(gmailUrl);
         setCreatedOrder(created);
 
-        // Try opening Gmail in a new tab immediately
+        // Open Gmail in a new tab immediately so user can review the draft
         try {
           window.open(gmailUrl, "_blank", "noopener,noreferrer");
         } catch {
-          // If popup blocked, the user has the direct link button on the modal screen
+          // Fallback handled by in-modal button
         }
       } else {
         setErrors((p) => ({ ...p, general: res.data?.message || "Failed to create Purchase Order." }));
@@ -405,7 +382,7 @@ export function CreatePOModal({
       open={open}
       title={
         createdOrder
-          ? "Purchase Order Sent"
+          ? "Purchase Order Draft Ready"
           : isReviewing
           ? "Review Purchase Order"
           : isEdit
@@ -442,7 +419,7 @@ export function CreatePOModal({
           </div>
         )}
 
-        {/* Post-Submit Success View with Direct Gmail Link */}
+        {/* Post-Submit Confirmation: Gmail Draft Opened in New Tab */}
         {createdOrder ? (
           <div className="space-y-6 text-center py-4">
             <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
@@ -451,13 +428,13 @@ export function CreatePOModal({
 
             <div>
               <h3 className="text-xl font-bold text-foreground">
-                Purchase Order {createdOrder.poNumber} Sent!
+                Purchase Order {createdOrder.poNumber} Created!
               </h3>
               <div className="inline-block mt-1 px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
                 Status: Pending Approval
               </div>
               <p className="text-xs text-muted-foreground mt-3 max-w-md mx-auto leading-relaxed">
-                Your Purchase Order has been placed in the <strong>Pending Approval</strong> tab. A new tab has been launched with your Gmail draft so you can review and click send.
+                Your Purchase Order has been placed in the <strong>Pending Approval</strong> tab. A new tab has been launched with your Gmail draft so you can review the message, check the Google Form link, attach the PDF document below, and click Send.
               </p>
             </div>
 
@@ -469,7 +446,7 @@ export function CreatePOModal({
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-xs font-semibold hover:bg-primary/90 transition-colors shadow-sm w-full sm:w-auto cursor-pointer"
               >
-                <Mail className="w-4 h-4" /> Open Gmail in New Tab <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                <Mail className="w-4 h-4" /> Open Gmail Draft in New Tab <ExternalLink className="w-3.5 h-3.5 opacity-80" />
               </a>
 
               <Button
@@ -481,7 +458,7 @@ export function CreatePOModal({
                 }}
                 className="flex items-center justify-center gap-2 rounded-xl border border-border px-5 py-2.5 text-xs font-semibold hover:bg-muted text-foreground w-full sm:w-auto cursor-pointer"
               >
-                <FileText className="w-4 h-4" /> Print / Save Document
+                <FileText className="w-4 h-4" /> Print / Save PDF Document
               </Button>
             </div>
 
@@ -505,7 +482,7 @@ export function CreatePOModal({
             <div className="p-3.5 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground flex items-center gap-2">
               <Mail className="w-4 h-4 text-primary shrink-0" />
               <span>
-                Please review the details below. Confirming will set status to <strong>Pending Approval</strong>, generate your official printable document, and launch Gmail in a new tab with the supplier request email and form link.
+                Please review the details below. Confirming will set status to <strong>Pending Approval</strong>, generate your official printable document, and launch a new tab with your Gmail draft so you can review the email and form link before sending.
               </span>
             </div>
 
@@ -571,7 +548,7 @@ export function CreatePOModal({
                 className="flex items-center gap-2 rounded-xl px-6 font-semibold shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-50"
               >
                 <Mail className="w-4 h-4" />
-                {submitting ? "Sending..." : "Confirm & Send to Supplier"}
+                {submitting ? "Opening..." : "Confirm & Open Gmail Draft"}
               </Button>
             </div>
           </div>
@@ -617,7 +594,7 @@ export function CreatePOModal({
                       Select an Approved Purchase Requisition
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      Only requisitions approved by Admin with remaining unfulfilled items are shown.
+                      Choose an approved requisition to begin creating a Purchase Order.
                     </p>
                   </div>
                   <div className="relative w-64">
