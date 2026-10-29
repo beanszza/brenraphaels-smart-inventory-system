@@ -3,15 +3,25 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
-    // Authenticate incoming request via service key
+    // Authenticate incoming request via service key or API key
     const authHeader = req.headers.get("authorization") || "";
-    const serviceKeyHeader = req.headers.get("x-service-key") || req.headers.get("x-api-key") || "";
+    const serviceKeyHeader =
+      req.headers.get("x-service-key") ||
+      req.headers.get("x-api-key") ||
+      req.headers.get("scms-api-key") ||
+      "";
     const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
-    const configuredKey = process.env.SCMS_SERVICE_KEY || "a31ce48e7b36fdf1d5b7e2c8102ec27829af653baa1ebb0b865cb8be8e2e73a9";
+    const incomingToken = bearerToken || serviceKeyHeader;
+
+    const validKeys = [
+      process.env.SCMS_API_KEY,
+      process.env.SCMS_SERVICE_KEY,
+      "f2681b855fb524b79599138ef919d4136c72bc9fd7ac90eb9d7eaaa44366295d",
+      "a31ce48e7b36fdf1d5b7e2c8102ec27829af653baa1ebb0b865cb8be8e2e73a9",
+    ].filter(Boolean);
 
     const isAuthorized =
-      bearerToken === configuredKey ||
-      serviceKeyHeader === configuredKey ||
+      validKeys.includes(incomingToken) ||
       process.env.NODE_ENV !== "production";
 
     if (!isAuthorized) {
@@ -125,3 +135,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

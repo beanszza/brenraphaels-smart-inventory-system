@@ -34,3 +34,25 @@ export interface PosBranchLocationDto {
   address?: string;
   isActive?: boolean;
 }
+
+export interface PosTransferManifestDto {
+  transferId: string;
+  sourceLocation: {
+    locationId: string;
+    locationName: string;
+  };
+  destinationLocation: {
+    branchId: string;
+    branchName: string;
+  };
+  transferDate: string;
+  status: string;
+  products: {
+    productId: string;
+    sku: string;
+    productName: string;
+    quantity: number;
+    batchNumber?: string;
+    expirationDate?: string;
+  }[];
+}

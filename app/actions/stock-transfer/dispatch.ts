@@ -3,6 +3,7 @@
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId, validateInput, saved } from "@/lib/stock-transfer/operations";
+import { dispatchTransferManifestToPos } from "@/lib/pos/client";
 export async function dispatchTransfer(idInput: number, body: any = {}) {
   const staff = await requireModule("Stock Transfer");
   return mutate(staff, async (tx) => {
@@ -16,7 +17,9 @@ validateInput(body);
     const transfer = await tx.stockTransfers.findUnique({
       where: { TransferId: transferId },
       include: {
-        FinishedProducts: true,
+        FinishedProducts: { include: { Items: true } },
+        Locations_StockTransfers_SourceLocationIdToLocations: true,
+        Locations_StockTransfers_DestLocationIdToLocations: true,
       },
     });
 
@@ -134,6 +137,35 @@ validateInput(body);
 
       return { updatedTransfer, lotDeductions };
     })();
+
+    // Post transfer manifest to POS (SCMS ➔ POS)
+    dispatchTransferManifestToPos({
+      transferId: transfer.TransferNumber || `TRANS-${transfer.TransferId}`,
+      sourceLocation: {
+        locationId: String(transfer.SourceLocationId),
+        locationName:
+          transfer.Locations_StockTransfers_SourceLocationIdToLocations?.LocationName ||
+          "Commissary Warehouse",
+      },
+      destinationLocation: {
+        branchId: String(transfer.DestLocationId),
+        branchName:
+          transfer.Locations_StockTransfers_DestLocationIdToLocations?.LocationName ||
+          "Store Branch",
+      },
+      transferDate: new Date().toISOString(),
+      status: "In Transit",
+      products: [
+        {
+          productId: transfer.FinishedProducts?.Items?.ItemCode || `SCM-PRD-${transfer.ProductId}`,
+          sku: transfer.FinishedProducts?.Sku || `SKU-${transfer.ProductId}`,
+          productName: transfer.FinishedProducts?.Items?.ItemName || "Finished Product",
+          quantity: transferQty,
+        },
+      ],
+    }).catch((err) => {
+      console.warn("[POS-TRANSFER-DISPATCH-WARN]", err?.message);
+    });
 
     return saved(staff, "stock-transfer", transfer.TransferId, transfer.TransferNumber || String(transfer.TransferId), "updated", resourceResult({
       success: true,

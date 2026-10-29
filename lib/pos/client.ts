@@ -32,6 +32,10 @@ export function posRequestHeaders(additional?: Record<string, string>): HeadersI
 export async function syncProductToPos(
   dto: SyncProductDto
 ): Promise<{ success: boolean; message: string; data?: any }> {
+  if (process.env.NODE_ENV === "test" || process.env.VITEST) {
+    return { success: true, message: "Skipped POS sync in test environment." };
+  }
+
   const baseUrl = getPosApiBaseUrl();
   const url = `${baseUrl}/api-pos/product-catalog/sync-product`;
 
@@ -83,6 +87,10 @@ export async function fetchLocationsFromPos(): Promise<{
   locations?: PosBranchLocationDto[];
   message?: string;
 }> {
+  if (process.env.NODE_ENV === "test" || process.env.VITEST) {
+    return { success: true, locations: [] };
+  }
+
   const baseUrl = getPosApiBaseUrl();
   const candidateUrls = [
     `${baseUrl}/api-pos/branches`,
@@ -130,3 +138,57 @@ export async function fetchLocationsFromPos(): Promise<{
     message: "Could not retrieve branch list from POS endpoints.",
   };
 }
+
+/**
+ * Posts an Advanced Shipping Notice (ASN) / Stock Transfer manifest to POS when SCMS dispatches goods.
+ * POST /api-pos/transfers
+ */
+export async function dispatchTransferManifestToPos(
+  dto: import("./types").PosTransferManifestDto
+): Promise<{ success: boolean; message: string; data?: any }> {
+  if (process.env.NODE_ENV === "test" || process.env.VITEST) {
+    return { success: true, message: "Skipped POS transfer manifest post in test environment." };
+  }
+
+  const baseUrl = getPosApiBaseUrl();
+  const url = `${baseUrl}/api-pos/transfers`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: posRequestHeaders(),
+      body: JSON.stringify(dto),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    const responseText = await res.text();
+    let parsed: any;
+    try {
+      parsed = JSON.parse(responseText);
+    } catch {
+      parsed = { message: responseText };
+    }
+
+    if (!res.ok) {
+      return {
+        success: false,
+        message: parsed?.message || `POS responded with HTTP ${res.status}: ${res.statusText}`,
+        data: parsed,
+      };
+    }
+
+    return {
+      success: true,
+      message: parsed?.message || "Transfer manifest successfully sent to POS.",
+      data: parsed?.data || parsed,
+    };
+  } catch (error: any) {
+    console.error(`[POS-TRANSFER-DISPATCH-ERROR] Failed to post transfer ${dto.transferId} to POS:`, error);
+    return {
+      success: false,
+      message: error?.message || "Failed to reach POS transfer service.",
+    };
+  }
+}
+
+
