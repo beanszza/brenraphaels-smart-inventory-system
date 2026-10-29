@@ -4,6 +4,10 @@ import { listFinishedProducts as productionListFinishedProducts } from "@/app/ac
 import { createFinishedProduct as productionCreateFinishedProduct } from "@/app/actions/production/products";
 import { updateFinishedProduct as productionUpdateFinishedProduct } from "@/app/actions/production/product-detail";
 import { deleteFinishedProduct as productionDeleteFinishedProduct } from "@/app/actions/production/product-detail";
+import {
+  syncProductCatalogToPos,
+  syncAllFinishedProductsToPos,
+} from "@/app/actions/production/pos-sync";
 import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -84,6 +88,7 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
+  const [syncingPos, setSyncingPos] = useState(false);
 
   // ── Add Full Product Modal (with multiple variations) ──
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
@@ -149,6 +154,23 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
       toast.error(err?.response?.data?.message || "Failed to load finished products");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSyncAllToPos = async () => {
+    try {
+      setSyncingPos(true);
+      toast.loading("Synchronizing products with Point-of-Sale (POS)...", { id: "pos-sync" });
+      const res = await actionResponse(syncAllFinishedProductsToPos());
+      if (res.data?.success) {
+        toast.success(res.data.message || "All products synced to POS successfully!", { id: "pos-sync" });
+      } else {
+        toast.error(res.data?.message || "POS sync returned an error.", { id: "pos-sync" });
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to communicate with POS service.", { id: "pos-sync" });
+    } finally {
+      setSyncingPos(false);
     }
   };
 
@@ -269,6 +291,16 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
       setIsAddProductOpen(false);
       setPhotoVersion((v) => v + 1);
       fetchProducts();
+
+      // Automatically sync newly created product & variations with POS
+      const targetName = productName.trim();
+      actionResponse(syncProductCatalogToPos(targetName))
+        .then((posRes) => {
+          if (posRes.data?.success) {
+            toast.success(`Synced "${targetName}" to POS catalog!`);
+          }
+        })
+        .catch(() => {});
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to create product variations", {
         id: "save-prod",
@@ -317,6 +349,15 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
       toast.success(`Variant "${variantLabel}" added to ${targetProductName}!`);
       setIsAddVariantOpen(false);
       fetchProducts();
+
+      // Automatically sync updated variations with POS
+      actionResponse(syncProductCatalogToPos(targetProductName.trim()))
+        .then((posRes) => {
+          if (posRes.data?.success) {
+            toast.success(`Updated "${targetProductName.trim()}" variations in POS!`);
+          }
+        })
+        .catch(() => {});
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to add variant");
     } finally {
@@ -350,6 +391,15 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
       toast.success("Variant details updated successfully");
       setIsEditVariantOpen(false);
       fetchProducts();
+
+      // Automatically sync updated variant with POS
+      actionResponse(syncProductCatalogToPos(editProductName.trim()))
+        .then((posRes) => {
+          if (posRes.data?.success) {
+            toast.success(`Updated "${editProductName.trim()}" in POS!`);
+          }
+        })
+        .catch(() => {});
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to update variant");
     } finally {
@@ -445,8 +495,21 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
             disabled={loading}
             className="flex items-center gap-1.5 h-9 rounded-xl border-border hover:bg-muted font-semibold text-xs text-foreground cursor-pointer shadow-sm"
           >
-            <RefreshCw className={`w-3.5 h-3.5 `} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
+          </Button>
+
+          {/* Sync with POS button */}
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={syncingPos}
+            onClick={handleSyncAllToPos}
+            className="flex items-center justify-center gap-1.5 h-9 rounded-xl border-border hover:bg-muted font-semibold text-xs text-foreground cursor-pointer shadow-sm"
+            title="Sync all finished products and packaging variations with the Point-of-Sale (POS) system"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-primary ${syncingPos ? "animate-spin" : ""}`} />
+            {syncingPos ? "Syncing POS..." : "Sync with POS"}
           </Button>
 
           {/* Dedicated "+ Add Variant" button */}
