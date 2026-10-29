@@ -4,9 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { read, pageNumber } from "@/lib/inventory/mutate";
+import { ensureInitialInventoryStock } from "@/lib/inventory/initial-stock";
 
 export async function listInventory(query = "") {
   await requireModule("Inventory");
+  await ensureInitialInventoryStock();
   return read(async () => {
     const searchParams = new URLSearchParams(query);
     const page = pageNumber(searchParams.get("page"), 1, 1000000);
@@ -124,11 +126,16 @@ export async function listInventory(query = "") {
         }
       });
 
+      // Ensure variant has stock either from batch lots or directly from inventory
+      const matchingInv = records.find((r) => r.ItemId === fp.ItemId);
+      const invStock = matchingInv ? Number(matchingInv.CurrentStock || 0) : 0;
+      const effectiveStock = variantStock > 0 ? variantStock : invStock;
+
       variantsMap[fp.ItemId].push({
         productId: fp.ProductId,
         variant: fp.Variant || "",
         sku: fp.Sku || "",
-        currentStock: variantStock,
+        currentStock: effectiveStock,
         reservedStock: variantReserved,
       });
     }
