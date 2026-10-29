@@ -264,7 +264,7 @@ export function PODetailsModal({
                 type="button"
                 variant="outline"
                 onClick={() => onCancel(po)}
-                className="rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 px-5 py-2.5 text-sm font-semibold transition-colors cursor-pointer h-10"
+                className="rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 px-5 py-2.5 text-sm font-semibold transition-colors cursor-pointer"
               >
                 Cancel Purchase Order
               </Button>
@@ -279,9 +279,9 @@ export function PODetailsModal({
               variant="outline"
               disabled={downloading}
               onClick={handleDownloadPdf}
-              className="flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer h-10"
+              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
-              <Download className="w-4 h-4" /> {downloading ? "Downloading..." : "Download Purchase Order"}
+              {downloading ? "Downloading..." : "Download Purchase Order"}
             </Button>
 
             {/* Close Button */}
@@ -289,7 +289,7 @@ export function PODetailsModal({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer h-10"
+              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               Close
             </Button>
@@ -299,9 +299,9 @@ export function PODetailsModal({
               <Button
                 type="button"
                 onClick={() => onApproveWithForm(po)}
-                className="flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer h-10"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
               >
-                <CheckCircle2 className="w-4 h-4" /> Approve Order
+                Approve Order
               </Button>
             )}
 
@@ -310,9 +310,9 @@ export function PODetailsModal({
               <Button
                 type="button"
                 onClick={() => onCreateDelivery(po)}
-                className="flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer h-10"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
               >
-                <Truck className="w-4 h-4" /> Schedule Delivery
+                Schedule Delivery
               </Button>
             )}
           </div>

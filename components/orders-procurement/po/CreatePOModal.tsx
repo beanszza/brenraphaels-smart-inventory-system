@@ -301,6 +301,9 @@ export function CreatePOModal({
   const selectedSupplier = eligibleSuppliers.find((s) => s.supplierId === selectedSupplierId);
 
   const handleConfirmSendToSupplier = async () => {
+    // Open popup tab synchronously on user click to ensure browser popup blocker does not block it
+    const gmailTab = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
+
     setSubmitting(true);
     setErrors({});
     try {
@@ -329,19 +332,19 @@ export function CreatePOModal({
 
         // Construct Gmail Web Compose URL (opens in new tab as draft)
         const supplierEmail = selectedSupplier?.email || "";
-        const googleFormUrl = "https://forms.google.com/";
+        const googleDocsFormUrl = "https://docs.google.com/forms/";
         const emailSubject = `Purchase Order ${poNum} — Bren Raphael's Ube Jam & Halaya`;
         const emailBody =
           `Dear ${selectedSupplier?.contactPerson || selectedSupplier?.supplierName || "Supplier"},\n\n` +
           `Good day.\n\n` +
           `Please find our Purchase Order ${poNum} referencing Purchase Requisition ${selectedPR?.prNumber || ""}.\n\n` +
           `Kindly review the order particulars and submit your accommodation confirmation and pricing through our form:\n` +
-          `${googleFormUrl}\n\n` +
+          `${googleDocsFormUrl}\n\n` +
           `In the acknowledgment form, please confirm:\n` +
           `1. Items and quantities you can accommodate\n` +
           `2. Unit price and total order amount\n` +
           `3. Authorized approver name and approval date\n\n` +
-          `Please also find our official printable Purchase Order document attached.\n\n` +
+          `We have attached our official Purchase Order document.\n\n` +
           `Thank you,\n` +
           `${staff.name || "Vince Neil Madeja"}\n` +
           `Inventory Management\n` +
@@ -349,20 +352,33 @@ export function CreatePOModal({
 
         const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(supplierEmail)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
         
+        // Auto-download the printable Purchase Order PDF immediately
+        try {
+          await downloadPurchaseOrderPdf(created);
+        } catch (e) {
+          console.error("Auto download PDF failed:", e);
+        }
+
+        // Navigate the pre-opened tab directly to the Gmail compose draft
+        if (gmailTab && !gmailTab.closed) {
+          gmailTab.location.href = gmailUrl;
+        } else {
+          try {
+            window.open(gmailUrl, "_blank", "noopener,noreferrer");
+          } catch {
+            // Fallback handled by in-modal button
+          }
+        }
+
         // Store created order and URL for in-modal actions
         setGmailComposeUrl(gmailUrl);
         setCreatedOrder(created);
-
-        // Open Gmail in a new tab immediately so user can review the draft
-        try {
-          window.open(gmailUrl, "_blank", "noopener,noreferrer");
-        } catch {
-          // Fallback handled by in-modal button
-        }
       } else {
+        if (gmailTab && !gmailTab.closed) gmailTab.close();
         setErrors((p) => ({ ...p, general: res.data?.message || "Failed to create Purchase Order." }));
       }
     } catch (e: any) {
+      if (gmailTab && !gmailTab.closed) gmailTab.close();
       setErrors((p) => ({ ...p, general: e?.message || "Failed to create Purchase Order." }));
     } finally {
       setSubmitting(false);
@@ -437,7 +453,7 @@ export function CreatePOModal({
                 Status: Pending Approval
               </div>
               <p className="text-xs text-muted-foreground mt-3 max-w-md mx-auto leading-relaxed">
-                Your Purchase Order has been placed in the <strong>Pending Approval</strong> tab. A new tab has been launched with your Gmail draft so you can review the message, check the Google Form link, attach the PDF document below, and click Send.
+                Your Purchase Order has been placed in the <strong>Pending Approval</strong> tab. A new tab has opened with your Gmail draft containing the email text and Google Docs / Form link. The official Purchase Order PDF has also been automatically downloaded to your computer — simply attach it in Gmail and click Send!
               </p>
             </div>
 
@@ -447,11 +463,24 @@ export function CreatePOModal({
                 href={gmailComposeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-xs font-semibold hover:bg-primary/90 transition-colors shadow-sm w-full sm:w-auto cursor-pointer"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm text-center cursor-pointer"
               >
-                <Mail className="w-4 h-4" /> Open Gmail Draft in New Tab <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                Open Gmail Draft in New Tab
               </a>
 
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (createdOrder) downloadPurchaseOrderPdf(createdOrder);
+                }}
+                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              >
+                Download Purchase Order PDF
+              </Button>
+            </div>
+
+            <div className="pt-4 border-t border-border">
               <Button
                 type="button"
                 variant="outline"
@@ -459,23 +488,9 @@ export function CreatePOModal({
                   onSuccess(createdOrder);
                   onClose();
                 }}
-                className="flex items-center justify-center gap-2 rounded-xl border border-border px-5 py-2.5 text-xs font-semibold hover:bg-muted text-foreground w-full sm:w-auto cursor-pointer"
+                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
-                <FileText className="w-4 h-4" /> Print / Save PDF Document
-              </Button>
-            </div>
-
-            <div className="pt-4 border-t border-border">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  onSuccess(createdOrder);
-                  onClose();
-                }}
-                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                Done &bull; View in Pending Approval Tab
+                Close &bull; Go to Pending Approval Tab
               </Button>
             </div>
           </div>
@@ -540,7 +555,7 @@ export function CreatePOModal({
                 variant="outline"
                 onClick={() => setIsReviewing(false)}
                 disabled={submitting}
-                className="rounded-xl px-6 font-semibold border-border bg-card hover:bg-muted text-foreground cursor-pointer"
+                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
                 Back to Edit
               </Button>
@@ -548,10 +563,9 @@ export function CreatePOModal({
                 type="button"
                 disabled={submitting}
                 onClick={handleConfirmSendToSupplier}
-                className="flex items-center gap-2 rounded-xl px-6 font-semibold shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-50"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
               >
-                <Mail className="w-4 h-4" />
-                {submitting ? "Opening..." : "Confirm & Open Gmail Draft"}
+                {submitting ? "Opening Gmail..." : "Submit and Open Gmail Draft"}
               </Button>
             </div>
           </div>
@@ -842,7 +856,7 @@ export function CreatePOModal({
                     type="button"
                     variant="outline"
                     onClick={onClose}
-                    className="rounded-xl px-5 font-semibold border-border bg-card hover:bg-muted text-foreground cursor-pointer"
+                    className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
                   >
                     Cancel
                   </Button>
@@ -852,9 +866,9 @@ export function CreatePOModal({
                     onClick={() => {
                       if (validate()) setIsReviewing(true);
                     }}
-                    className="flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary/90 shadow-sm cursor-pointer disabled:opacity-50"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
                   >
-                    <Mail className="w-4 h-4" /> Send to Supplier
+                    Review Purchase Order
                   </Button>
                 </div>
               </div>
