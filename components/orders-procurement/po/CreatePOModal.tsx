@@ -81,6 +81,13 @@ export function CreatePOModal({
   const [gmailComposeUrl, setGmailComposeUrl] = useState<string>("");
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [isConfirmedSent, setIsConfirmedSent] = useState(false);
+  const [thirdPartyFormUrl, setThirdPartyFormUrl] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("po_third_party_form_url") || "https://forms.gle/BrenRaphaelsPOAck";
+    }
+    return "https://forms.gle/BrenRaphaelsPOAck";
+  });
+  const [activeFormLink, setActiveFormLink] = useState<string>("");
 
   useEffect(() => {
     if (open) {
@@ -331,20 +338,25 @@ export function CreatePOModal({
         const created: PurchaseOrderPO = res.data.data;
         const poNum = created?.poNumber || nextPoNumber || "Purchase Order";
 
-        // Construct unique Supplier Acknowledgment Web Form URL & Gmail Web Compose URL
-        const origin = typeof window !== "undefined" && window.location.origin
-          ? window.location.origin
-          : (process.env.NEXT_PUBLIC_SCMS_URL || "http://localhost:3003");
-        const uniqueFormUrl = `${origin}/supplier-acknowledgment?poNumber=${encodeURIComponent(poNum)}`;
+        // Construct Third-Party Form URL (Google Forms / Free Forms) & Gmail Web Compose URL
+        const baseForm = thirdPartyFormUrl.trim() || "https://forms.gle/BrenRaphaelsPOAck";
+        const fullFormLink = baseForm.includes("?")
+          ? `${baseForm}&po=${encodeURIComponent(poNum)}&supplier=${encodeURIComponent(selectedSupplier?.supplierName || "")}`
+          : `${baseForm}?po=${encodeURIComponent(poNum)}&supplier=${encodeURIComponent(selectedSupplier?.supplierName || "")}`;
+        
+        setActiveFormLink(fullFormLink);
+
         const supplierEmail = selectedSupplier?.email || "";
         const emailSubject = `Purchase Order ${poNum} — Bren Raphael's Ube Jam & Halaya`;
         const emailBody =
           `Dear ${selectedSupplier?.contactPerson || selectedSupplier?.supplierName || "Supplier"},\n\n` +
           `Good day.\n\n` +
           `Please find our Purchase Order ${poNum} referencing Purchase Requisition ${selectedPR?.prNumber || ""}.\n\n` +
-          `Kindly review the order particulars and submit your accommodation confirmation and pricing through your unique Supplier Acknowledgment Form:\n` +
-          `${uniqueFormUrl}\n\n` +
-          `Through the link above, you can also view and download our official printable Purchase Order document at any time.\n\n` +
+          `Particulars Requested:\n` +
+          activeRows.map((r) => `• ${r.itemName}: ${r.orderQty} ${r.uomName}`).join("\n") +
+          `\n\n` +
+          `Kindly review the order particulars and submit your accommodation confirmation and pricing through our third-party acknowledgment form:\n` +
+          `${fullFormLink}\n\n` +
           `In the acknowledgment form, please confirm:\n` +
           `1. Items and quantities you can accommodate\n` +
           `2. Quoted unit prices and total order amount\n` +
@@ -514,18 +526,18 @@ export function CreatePOModal({
                   </ol>
                 </div>
 
-                {/* Unique Form Link Display */}
+                {/* Third-Party Form Link Display */}
                 <div className="w-full max-w-lg mx-auto p-3.5 rounded-xl bg-card border border-border text-left text-xs space-y-1.5 shadow-sm">
                   <span className="text-[11px] font-semibold text-muted-foreground block uppercase">
-                    Unique Supplier Acknowledgment Form Link:
+                    Third-Party Acknowledgment Form Link (Included in Gmail):
                   </span>
                   <a
-                    href={`${typeof window !== "undefined" ? window.location.origin : ""}/supplier-acknowledgment?poNumber=${encodeURIComponent(createdOrder.poNumber)}`}
+                    href={activeFormLink || thirdPartyFormUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-mono text-primary underline break-all block hover:text-primary/80 text-xs"
                   >
-                    {typeof window !== "undefined" ? window.location.origin : ""}/supplier-acknowledgment?poNumber={createdOrder.poNumber}
+                    {activeFormLink || thirdPartyFormUrl}
                   </a>
                 </div>
 
@@ -658,6 +670,45 @@ export function CreatePOModal({
                     ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Third-Party Form Configuration */}
+            <div className="p-4 rounded-xl bg-muted/20 border border-border text-xs space-y-2">
+              <label className="block text-xs font-semibold text-foreground">
+                Third-Party Acknowledgment Form Link (Google Form / Free Form)
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Input
+                  type="url"
+                  placeholder="https://docs.google.com/forms/... or https://forms.gle/..."
+                  value={thirdPartyFormUrl}
+                  onChange={(e) => {
+                    setThirdPartyFormUrl(e.target.value);
+                    if (typeof window !== "undefined") {
+                      localStorage.setItem("po_third_party_form_url", e.target.value);
+                    }
+                  }}
+                  className="h-9 text-xs bg-card border-border font-mono w-full"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const defaultUrl = "https://forms.gle/BrenRaphaelsPOAck";
+                    setThirdPartyFormUrl(defaultUrl);
+                    if (typeof window !== "undefined") {
+                      localStorage.setItem("po_third_party_form_url", defaultUrl);
+                    }
+                  }}
+                  className="rounded-xl border border-border text-xs font-semibold hover:bg-muted shrink-0 cursor-pointer"
+                >
+                  Reset Default
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                This external third-party form URL is included in your Gmail draft so the supplier can view the order particulars and submit their accommodation confirmation.
+              </p>
             </div>
 
             {/* Review Footer */}
