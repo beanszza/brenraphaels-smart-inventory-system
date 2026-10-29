@@ -180,16 +180,46 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
     new Set(products.map((p) => p.itemName).filter(Boolean))
   );
 
-  // Auto-generate suggested SKU when product name or size changes
+  // Auto-generate canonical system SKU from product name, packaging type, and size
   const generateSku = (prodName: string, type: string, size: string) => {
-    const pCode = (prodName || "PRD")
-      .split(/\s+/)
-      .map((w) => w[0])
-      .join("")
-      .slice(0, 3)
-      .toUpperCase();
-    const tCode = (type || "PKG").slice(0, 3).toUpperCase();
-    const sCode = (size || "STD").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    const cleanName = (prodName || "").trim().toLowerCase();
+
+    // Check known product abbreviations
+    let pCode = "";
+    if (cleanName.includes("smooth")) {
+      pCode = "UBH-SM";
+    } else if (cleanName.includes("tidbit")) {
+      pCode = "UBH-TB";
+    } else if (cleanName.includes("ube") && cleanName.includes("halaya")) {
+      pCode = "UBH";
+    } else {
+      const words = (prodName || "PRD").trim().split(/\s+/).filter(Boolean);
+      pCode = words
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 4)
+        .toUpperCase();
+      if (!pCode) pCode = "PRD";
+    }
+
+    // Packaging Type Code
+    const cleanType = (type || "").trim().toLowerCase();
+    let tCode = "";
+    if (cleanType.includes("tub")) tCode = "TUB";
+    else if (cleanType.includes("jar")) tCode = "JAR";
+    else if (cleanType.includes("pouch")) tCode = "POU";
+    else if (cleanType.includes("bottle")) tCode = "BTL";
+    else if (cleanType.includes("can")) tCode = "CAN";
+    else if (cleanType.includes("box")) tCode = "BOX";
+    else tCode = (type || "PKG").trim().slice(0, 3).toUpperCase();
+
+    // Size Code
+    const cleanSize = (size || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const sCode = cleanSize || "STD";
+
+    if (pCode.includes("-")) {
+      return `${pCode}-${sCode}`;
+    }
     return `${pCode}-${tCode}-${sCode}`;
   };
 
@@ -200,11 +230,11 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
     setProductPhotoFile(null);
     setProductPhotoPreview("");
     setVariationsList([
-      { packagingType: "Tub", size: "250g", sku: "UBH-TUB-250G", price: 150 },
+      { packagingType: "Tub", size: "250g", sku: generateSku("Ube Halaya", "Tub", "250g"), price: 150 },
     ]);
     setNewVarType("Jar");
     setNewVarSize("500g");
-    setNewVarSku("UBH-JAR-500G");
+    setNewVarSku(generateSku("Ube Halaya", "Jar", "500g"));
     setNewVarPrice(280);
     setIsAddProductOpen(true);
   };
@@ -215,9 +245,7 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
       toast.error("Please enter a size (e.g. 500g, 1kg)");
       return;
     }
-    const skuCode =
-      newVarSku.trim() ||
-      generateSku(productName || "PRD", newVarType, newVarSize);
+    const skuCode = generateSku(productName || "PRD", newVarType, newVarSize);
     const priceVal = Number(newVarPrice) || 0;
 
     setVariationsList((prev) => [
@@ -231,7 +259,7 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
     ]);
 
     setNewVarSize("");
-    setNewVarSku("");
+    setNewVarSku(generateSku(productName || "PRD", newVarType, ""));
     setNewVarPrice(150);
   };
 
@@ -335,9 +363,7 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
     try {
       setSubmitting(true);
       const variantLabel = `${quickVarSize.trim()} ${quickVarType}`.trim();
-      const skuVal =
-        quickVarSku.trim() ||
-        generateSku(targetProductName, quickVarType, quickVarSize);
+      const skuVal = generateSku(targetProductName, quickVarType, quickVarSize);
 
       await actionResponse(productionCreateFinishedProduct({
         productName: targetProductName.trim(),
@@ -720,7 +746,17 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
               <Input
                 placeholder="e.g. Ube Halaya Supreme"
                 value={productName}
-                onChange={(e) => setProductName(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setProductName(val);
+                  setVariationsList((prev) =>
+                    prev.map((v) => ({
+                      ...v,
+                      sku: generateSku(val || "PRD", v.packagingType, v.size),
+                    }))
+                  );
+                  setNewVarSku(generateSku(val || "PRD", newVarType, newVarSize));
+                }}
                 className="h-9 text-xs"
                 required
               />
@@ -864,7 +900,13 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {/* Packaging Type */}
-                  <Select value={newVarType} onValueChange={setNewVarType}>
+                  <Select
+                    value={newVarType}
+                    onValueChange={(val) => {
+                      setNewVarType(val);
+                      setNewVarSku(generateSku(productName || "PRD", val, newVarSize));
+                    }}
+                  >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
@@ -881,17 +923,26 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
                   <Input
                     placeholder="Size (e.g. 500g)"
                     value={newVarSize}
-                    onChange={(e) => setNewVarSize(e.target.value)}
+                    onChange={(e) => {
+                      setNewVarSize(e.target.value);
+                      setNewVarSku(generateSku(productName || "PRD", newVarType, e.target.value));
+                    }}
                     className="h-8 text-xs"
                   />
 
-                  {/* SKU */}
-                  <Input
-                    placeholder="SKU Code"
-                    value={newVarSku}
-                    onChange={(e) => setNewVarSku(e.target.value)}
-                    className="h-8 text-xs font-mono"
-                  />
+                  {/* System-Generated SKU */}
+                  <div className="relative">
+                    <Input
+                      readOnly
+                      title="System-Generated SKU"
+                      placeholder="SKU Code"
+                      value={newVarSku || generateSku(productName || "PRD", newVarType, newVarSize)}
+                      className="h-8 text-xs font-mono bg-muted/40 text-muted-foreground cursor-not-allowed select-none border-dashed pr-10"
+                    />
+                    <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] uppercase font-semibold tracking-wider text-muted-foreground/70 pointer-events-none">
+                      Auto
+                    </span>
+                  </div>
 
                   {/* Price */}
                   <Input
@@ -1040,16 +1091,25 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">
-                  SKU Code <span className="text-foreground">*</span>
-                </label>
-                <Input
-                  placeholder="e.g. UBH-JAR-500G"
-                  value={quickVarSku}
-                  onChange={(e) => setQuickVarSku(e.target.value)}
-                  className="h-9 text-xs font-mono"
-                  required
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-foreground">
+                    SKU Code
+                  </label>
+                  <span className="text-[10px] uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono font-medium">
+                    System Generated
+                  </span>
+                </div>
+                <div className="relative">
+                  <Input
+                    readOnly
+                    title="SKU is automatically generated by the system"
+                    value={quickVarSku || generateSku(targetProductName, quickVarType, quickVarSize)}
+                    className="h-9 text-xs font-mono bg-muted/40 text-muted-foreground cursor-not-allowed border-dashed select-none pr-12"
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] uppercase font-semibold tracking-wider text-muted-foreground/70 pointer-events-none">
+                    Locked
+                  </span>
+                </div>
               </div>
 
               <div>
@@ -1136,16 +1196,25 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">
-                  SKU Code <span className="text-foreground">*</span>
-                </label>
-                <Input
-                  placeholder="e.g. UBH-JAR-500G"
-                  value={editSku}
-                  onChange={(e) => setEditSku(e.target.value)}
-                  className="h-9 text-xs font-mono"
-                  required
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-foreground">
+                    SKU Code
+                  </label>
+                  <span className="text-[10px] uppercase tracking-wide bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-mono font-medium">
+                    System Identifier
+                  </span>
+                </div>
+                <div className="relative">
+                  <Input
+                    readOnly
+                    title="SKU is an immutable system identifier"
+                    value={editSku}
+                    className="h-9 text-xs font-mono bg-muted/40 text-muted-foreground cursor-not-allowed border-dashed select-none pr-12"
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] uppercase font-semibold tracking-wider text-muted-foreground/70 pointer-events-none">
+                    Locked
+                  </span>
+                </div>
               </div>
 
               <div>

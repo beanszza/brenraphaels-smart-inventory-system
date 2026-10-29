@@ -142,10 +142,10 @@ validateInput(body);
     dispatchTransferManifestToPos({
       transferId: transfer.TransferNumber || `TRANS-${transfer.TransferId}`,
       sourceLocation: {
-        locationId: String(transfer.SourceLocationId),
+        locationId: "999", // POS Commissary ID
         locationName:
           transfer.Locations_StockTransfers_SourceLocationIdToLocations?.LocationName ||
-          "Commissary Warehouse",
+          "Commissary",
       },
       destinationLocation: {
         branchId: String(transfer.DestLocationId),

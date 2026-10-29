@@ -12,10 +12,22 @@ const PUBLIC_PATHS = new Set([
   "/unavailable",
 ]);
 
+/** External server-to-server endpoints called by external systems (e.g. POS) */
+function isExternalIntegrationPath(pathname: string): boolean {
+  return (
+    pathname === "/api/pos/locations/sync" ||
+    pathname === "/api/scms/locations/sync" ||
+    pathname.startsWith("/api/scms/transfers/") ||
+    (pathname.startsWith("/api/StockTransfers/") && pathname.endsWith("/status"))
+  );
+}
+
 /** Presence is only an early check. Each protected operation must also use its Module guard. */
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
+  if (PUBLIC_PATHS.has(pathname) || isExternalIntegrationPath(pathname)) {
+    return NextResponse.next();
+  }
   const bypass = devBypassEnabled(request.url);
   if (request.nextUrl.origin !== appOrigin()) {
     return NextResponse.json({ error: "untrusted_origin" }, { status: 400 });

@@ -4,3 +4,4 @@ import { POST as handlePosLocationsSync } from "@/app/api/pos/locations/sync/rou
 export async function POST(req: NextRequest) {
   return handlePosLocationsSync(req);
 }
+

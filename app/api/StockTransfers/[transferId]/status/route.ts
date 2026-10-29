@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isAuthorizedPosRequest } from "@/lib/pos/auth";
 
 export async function PUT(
   req: NextRequest,
   context: { params: Promise<{ transferId: string }> }
 ) {
   try {
+    if (!isAuthorizedPosRequest(req)) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. Invalid or missing SCMS service key." },
+        { status: 401 }
+      );
+    }
     const { transferId } = await context.params;
     const body = await req.json().catch(() => ({}));
     const newStatus = body.status || "Completed";
@@ -45,3 +52,4 @@ export async function PUT(
     );
   }
 }
+

@@ -1,4 +1,4 @@
-import { SyncProductDto, SyncProductResponse, PosBranchLocationDto } from "./types";
+import { SyncProductDto, PosBranchLocationDto, PosTransferManifestDto } from "./types";
 
 export function getPosApiBaseUrl(): string {
   const url = process.env.POS_API_BASE_URL || "https://api-pos-sb5g.onrender.com";
@@ -7,6 +7,7 @@ export function getPosApiBaseUrl(): string {
 
 export function getScmsServiceKey(): string {
   return (
+    process.env.POS_API_KEY ||
     process.env.SCMS_SERVICE_KEY ||
     "a31ce48e7b36fdf1d5b7e2c8102ec27829af653baa1ebb0b865cb8be8e2e73a9"
   );
@@ -26,6 +27,54 @@ export function posRequestHeaders(additional?: Record<string, string>): HeadersI
 }
 
 /**
+ * Resilient fetch wrapper with 60s timeout and exponential backoff retry.
+ * Handles Render free-tier cold starts and transient network hiccups.
+ * Does not retry client errors (400, 401, 404).
+ */
+async function posFetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retries = 3
+): Promise<Response> {
+  const delays = [1000, 2000, 4000];
+  let attempt = 0;
+
+  while (true) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        // 60-second timeout for Render free tier wakeups
+        signal: AbortSignal.timeout(60000),
+      });
+
+      // Never retry 2xx or 4xx client errors (400, 401, etc.)
+      if (response.ok || (response.status >= 400 && response.status < 500)) {
+        return response;
+      }
+
+      // Retry on 5xx server errors if retry attempts remain
+      if (attempt < retries) {
+        const delay = delays[attempt] || 4000;
+        attempt++;
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+
+      return response;
+    } catch (err: any) {
+      // Retry on network errors or timeouts if retry attempts remain
+      if (attempt < retries) {
+        const delay = delays[attempt] || 4000;
+        attempt++;
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+/**
  * Pushes product and variation catalog data to the Point-of-Sale (POS) system.
  * POST /api-pos/product-catalog/sync-product
  */
@@ -40,12 +89,10 @@ export async function syncProductToPos(
   const url = `${baseUrl}/api-pos/product-catalog/sync-product`;
 
   try {
-    const res = await fetch(url, {
+    const res = await posFetchWithRetry(url, {
       method: "POST",
       headers: posRequestHeaders(),
       body: JSON.stringify(dto),
-      // 10s timeout to prevent UI hang if service is spinning up
-      signal: AbortSignal.timeout(10000),
     });
 
     const responseText = await res.text();
@@ -99,10 +146,9 @@ export async function fetchLocationsFromPos(): Promise<{
 
   for (const url of candidateUrls) {
     try {
-      const res = await fetch(url, {
+      const res = await posFetchWithRetry(url, {
         method: "GET",
         headers: posRequestHeaders(),
-        signal: AbortSignal.timeout(8000),
       });
 
       if (res.ok) {
@@ -144,7 +190,7 @@ export async function fetchLocationsFromPos(): Promise<{
  * POST /api-pos/transfers
  */
 export async function dispatchTransferManifestToPos(
-  dto: import("./types").PosTransferManifestDto
+  dto: PosTransferManifestDto
 ): Promise<{ success: boolean; message: string; data?: any }> {
   if (process.env.NODE_ENV === "test" || process.env.VITEST) {
     return { success: true, message: "Skipped POS transfer manifest post in test environment." };
@@ -154,11 +200,10 @@ export async function dispatchTransferManifestToPos(
   const url = `${baseUrl}/api-pos/transfers`;
 
   try {
-    const res = await fetch(url, {
+    const res = await posFetchWithRetry(url, {
       method: "POST",
       headers: posRequestHeaders(),
       body: JSON.stringify(dto),
-      signal: AbortSignal.timeout(10000),
     });
 
     const responseText = await res.text();
@@ -190,5 +235,3 @@ export async function dispatchTransferManifestToPos(
     };
   }
 }
-
-

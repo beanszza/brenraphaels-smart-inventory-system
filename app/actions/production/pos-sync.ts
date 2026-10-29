@@ -233,3 +233,4 @@ export async function pullAndSyncLocationsFromPos() {
     return resourceResult({ success: false, message: errorMessage(error) });
   }
 }
+
