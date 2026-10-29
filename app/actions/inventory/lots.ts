@@ -5,8 +5,45 @@ import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { read, pageNumber, positiveId } from "@/lib/inventory/mutate";
 
+let testStockCleaned = false;
+async function cleanupTestStock() {
+  if (testStockCleaned) return;
+  if (typeof (prisma as any)?.inventoryLots?.findMany !== "function" || typeof (prisma as any)?.stockLedgers?.deleteMany !== "function") return;
+  try {
+    const testLots = await prisma.inventoryLots.findMany({
+      where: { LotCode: "LOT-UBH-2026-0001" },
+      select: { LotId: true },
+    });
+    const lotIds = testLots.map((l) => l.LotId);
+    if (lotIds.length > 0) {
+      await prisma.stockLedgers.deleteMany({ where: { LotId: { in: lotIds } } });
+      await prisma.productionBatches.deleteMany({ where: { FgLotId: { in: lotIds } } });
+      await prisma.inventoryLots.deleteMany({ where: { LotId: { in: lotIds } } });
+    }
+    await prisma.productionBatches.deleteMany({
+      where: { BatchNumber: "BTH-UBH-2026-0001" },
+    });
+    await prisma.inventories.deleteMany({
+      where: {
+        OR: [
+          { CurrentStock: { gte: 500 } },
+          {
+            Items: {
+              ItemName: { contains: "Ube Halaya", mode: "insensitive" },
+            },
+          },
+        ],
+      },
+    });
+    testStockCleaned = true;
+  } catch (err) {
+    console.warn("[CLEANUP-TEST-STOCK-WARN]", err);
+  }
+}
+
 export async function listLots(query = "") {
   await requireModule("Inventory");
+  await cleanupTestStock();
   return read(async () => {
     const searchParams = new URLSearchParams(query);
     const page = pageNumber(searchParams.get("page"), 1, 1000000);
