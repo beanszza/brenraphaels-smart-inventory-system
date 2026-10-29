@@ -80,6 +80,7 @@ export function CreatePOModal({
   const [createdOrder, setCreatedOrder] = useState<PurchaseOrderPO | null>(null);
   const [gmailComposeUrl, setGmailComposeUrl] = useState<string>("");
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [isConfirmedSent, setIsConfirmedSent] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -314,7 +315,7 @@ export function CreatePOModal({
         expectedArrivalDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         paymentType: "Cash",
         requestedBy: staff.name,
-        initialStatus: "Pending Approval",
+        initialStatus: "Draft",
         items: activeRows.map((row) => ({
           itemId: row.itemId,
           poItemQuantity: parseFloat(row.orderQty),
@@ -377,6 +378,7 @@ export function CreatePOModal({
         // Store created order and URL for in-modal actions
         setGmailComposeUrl(gmailUrl);
         setCreatedOrder(created);
+        setIsConfirmedSent(false);
       } else {
         if (gmailTab && !gmailTab.closed) gmailTab.close();
         setErrors((p) => ({ ...p, general: res.data?.message || "Failed to create Purchase Order." }));
@@ -386,6 +388,41 @@ export function CreatePOModal({
       setErrors((p) => ({ ...p, general: e?.message || "Failed to create Purchase Order." }));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleMarkAsSentInGmail = async () => {
+    if (!createdOrder) return;
+    setSubmitting(true);
+    try {
+      const res = await procurement.setOrderStatus(createdOrder.poId, { status: "Pending Approval" });
+      if (res.data?.success || res.data) {
+        setIsConfirmedSent(true);
+      } else {
+        setErrors((p) => ({ ...p, general: "Failed to update order status." }));
+      }
+    } catch (e: any) {
+      setErrors((p) => ({ ...p, general: e?.message || "Failed to update order status." }));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDiscardDraft = async () => {
+    if (!createdOrder) {
+      onClose();
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await procurement.setOrderStatus(createdOrder.poId, { status: "Cancelled" });
+    } catch (e) {
+      console.error("Discard failed:", e);
+    } finally {
+      setSubmitting(false);
+      setCreatedOrder(null);
+      setIsConfirmedSent(false);
+      onClose();
     }
   };
 
@@ -405,7 +442,9 @@ export function CreatePOModal({
       open={open}
       title={
         createdOrder
-          ? "Purchase Order Draft Ready"
+          ? isConfirmedSent
+            ? "Purchase Order Placed"
+            : "Review & Send in Gmail"
           : isReviewing
           ? "Review Purchase Order"
           : isEdit
@@ -413,14 +452,15 @@ export function CreatePOModal({
           : "Create Purchase Order"
       }
       onClose={() => {
-        if (createdOrder) {
+        if (createdOrder && isConfirmedSent) {
           onSuccess(createdOrder);
         }
         setIsReviewing(false);
         setCreatedOrder(null);
+        setIsConfirmedSent(false);
         onClose();
       }}
-      size={createdOrder ? "max-w-xl" : isReviewing ? "max-w-3xl" : "max-w-5xl"}
+      size={createdOrder ? "max-w-2xl" : isReviewing ? "max-w-3xl" : "max-w-5xl"}
     >
       <div className="space-y-6">
         {errors.general && (
@@ -444,72 +484,127 @@ export function CreatePOModal({
 
         {/* Post-Submit Confirmation: Gmail Draft Opened in New Tab */}
         {createdOrder ? (
-          <div className="space-y-6 text-center py-4">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
-              <CheckCircle2 className="w-9 h-9" />
-            </div>
+          <div className="w-full space-y-6 text-center py-2">
+            {!isConfirmedSent ? (
+              /* Stage 1: Waiting for user to review & send in Gmail */
+              <div className="w-full space-y-5">
+                <div className="w-14 h-14 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center">
+                  <Mail className="w-7 h-7" />
+                </div>
 
-            <div>
-              <h3 className="text-xl font-bold text-foreground">
-                Purchase Order {createdOrder.poNumber} Created!
-              </h3>
-              <div className="inline-block mt-1 px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                Status: Pending Approval
+                <div className="w-full space-y-2">
+                  <div className="inline-block px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                    Draft Opened in Gmail &bull; Not Sent Yet
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground">
+                    Review &amp; Send in Gmail — {createdOrder.poNumber}
+                  </h3>
+                  <p className="text-xs text-muted-foreground w-full max-w-lg mx-auto leading-relaxed">
+                    We prepared your Gmail draft and opened it in a new tab. Your official Purchase Order PDF has also been automatically downloaded.
+                  </p>
+                </div>
+
+                {/* Steps Callout Box */}
+                <div className="w-full max-w-lg mx-auto rounded-xl border border-border bg-muted/30 p-4 text-left text-xs space-y-2.5">
+                  <p className="font-semibold text-foreground">Next Steps in Gmail:</p>
+                  <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
+                    <li>Switch to the opened <strong>Gmail tab</strong> and review the email text.</li>
+                    <li>Drag and drop the downloaded <strong>{createdOrder.poNumber}.pdf</strong> into Gmail to attach it.</li>
+                    <li>Click <strong>Send</strong> inside Gmail.</li>
+                  </ol>
+                </div>
+
+                {/* Unique Form Link Display */}
+                <div className="w-full max-w-lg mx-auto p-3.5 rounded-xl bg-card border border-border text-left text-xs space-y-1.5 shadow-sm">
+                  <span className="text-[11px] font-semibold text-muted-foreground block uppercase">
+                    Unique Supplier Acknowledgment Form Link:
+                  </span>
+                  <a
+                    href={`${typeof window !== "undefined" ? window.location.origin : ""}/supplier-acknowledgment?poNumber=${encodeURIComponent(createdOrder.poNumber)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-primary underline break-all block hover:text-primary/80 text-xs"
+                  >
+                    {typeof window !== "undefined" ? window.location.origin : ""}/supplier-acknowledgment?poNumber={createdOrder.poNumber}
+                  </a>
+                </div>
+
+                {/* Stage 1 Action Buttons */}
+                <div className="w-full max-w-lg mx-auto pt-2 space-y-3">
+                  <Button
+                    type="button"
+                    disabled={submitting}
+                    onClick={handleMarkAsSentInGmail}
+                    className="w-full rounded-xl bg-primary text-primary-foreground py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                  >
+                    {submitting ? "Confirming..." : "I Have Sent the Email in Gmail"}
+                  </Button>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                    <a
+                      href={gmailComposeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors text-center cursor-pointer w-full sm:w-auto"
+                    >
+                      Re-open Gmail Draft
+                    </a>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => downloadPurchaseOrderPdf(createdOrder)}
+                      className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer w-full sm:w-auto"
+                    >
+                      Download PDF Again
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={submitting}
+                      onClick={handleDiscardDraft}
+                      className="rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 px-4 py-2 text-xs font-semibold transition-colors cursor-pointer w-full sm:w-auto"
+                    >
+                      Discard Draft
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-3 max-w-md mx-auto leading-relaxed">
-                Your Purchase Order has been placed in the <strong>Pending Approval</strong> tab. A new tab has opened with your pre-filled Gmail draft containing your unique Supplier Acknowledgment Form link. The official Purchase Order PDF has also been downloaded — simply drag it from your download bar into Gmail to attach, and click Send!
-              </p>
-              <div className="p-3 rounded-xl bg-muted/40 border border-border text-left text-xs max-w-md mx-auto space-y-1">
-                <span className="text-[11px] font-semibold text-muted-foreground block uppercase">
-                  Unique Supplier Acknowledgment Form:
-                </span>
-                <a
-                  href={`${typeof window !== "undefined" ? window.location.origin : ""}/supplier-acknowledgment?poNumber=${encodeURIComponent(createdOrder.poNumber)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-mono text-primary underline break-all block hover:text-primary/80"
-                >
-                  {typeof window !== "undefined" ? window.location.origin : ""}/supplier-acknowledgment?poNumber={createdOrder.poNumber}
-                </a>
+            ) : (
+              /* Stage 2: Confirmed Sent -> Placed in Pending Approval */
+              <div className="w-full space-y-5">
+                <div className="w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+
+                <div className="w-full space-y-2">
+                  <div className="inline-block px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                    Status: Pending Approval
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground">
+                    Purchase Order {createdOrder.poNumber} Sent to Supplier!
+                  </h3>
+                  <p className="text-xs text-muted-foreground w-full max-w-lg mx-auto leading-relaxed">
+                    Your confirmation has been saved. This Purchase Order is now officially placed in the <strong>Pending Approval</strong> tab while awaiting the supplier&apos;s acknowledgment and pricing confirmation.
+                  </p>
+                </div>
+
+                <div className="w-full max-w-lg mx-auto pt-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      onSuccess(createdOrder);
+                      onClose();
+                    }}
+                    className="w-full rounded-xl border border-border bg-card py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    Done &bull; Go to Pending Approval Tab
+                  </Button>
+                </div>
               </div>
-            </div>
-
-            {/* Direct Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-              <a
-                href={gmailComposeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm text-center cursor-pointer"
-              >
-                Open Gmail Draft in New Tab
-              </a>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  if (createdOrder) downloadPurchaseOrderPdf(createdOrder);
-                }}
-                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
-              >
-                Download Purchase Order PDF
-              </Button>
-            </div>
-
-            <div className="pt-4 border-t border-border">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  onSuccess(createdOrder);
-                  onClose();
-                }}
-                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
-              >
-                Close &bull; Go to Pending Approval Tab
-              </Button>
-            </div>
+            )}
           </div>
         ) : isReviewing ? (
           /* In-Modal Review Step */
