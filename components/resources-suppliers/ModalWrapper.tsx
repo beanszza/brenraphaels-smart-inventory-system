@@ -23,7 +23,7 @@ export default function ModalWrapper({ open, title, onClose, children, size }: M
         <Dialog.Overlay className="fixed inset-0 z-[200] bg-foreground/45" />
         <Dialog.Content
           aria-describedby={undefined}
-          style={{ maxWidth: widths[size ?? ""] ?? 900 }}
+          style={{ maxWidth: widths[size ?? ""] ?? 900, width: "100%" }}
           className="fixed left-1/2 top-1/2 z-[201] flex max-h-[90dvh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl outline-none"
         >
           <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border-subtle px-6 py-5">
@@ -34,7 +34,7 @@ export default function ModalWrapper({ open, title, onClose, children, size }: M
               <img src="/images/resources/dialog-close.svg" width={18} height={18} alt="" />
             </Dialog.Close>
           </div>
-          <div className="min-h-0 overflow-y-auto px-6 py-5">{children}</div>
+          <div className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-6 py-5">{children}</div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

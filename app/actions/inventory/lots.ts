@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
