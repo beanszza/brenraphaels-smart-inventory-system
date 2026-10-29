@@ -64,3 +64,17 @@ export type DeliveryUpdateInput = {
 };
 
 export type MrpInput = { plannedBatches?: { recipeId: number; batchCount: number }[] };
+
+export type ApproveOrderLine = {
+  itemId: number;
+  poItemQuantity: number;
+  unitPrice: number;
+};
+
+export type ApproveOrderInput = {
+  confirmedItems: ApproveOrderLine[];
+  supplierApprovedBy: string;
+  supplierApprovedDate?: string;
+  notes?: string;
+  expectedArrivalDate?: string;
+};

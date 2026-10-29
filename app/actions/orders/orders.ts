@@ -6,13 +6,13 @@ import { requireModule } from "@/lib/portal/staff";
 import type { AuditAction } from "@/lib/audit";
 import { resourceResult } from "@/lib/resources/result";
 import { PO_INCLUDE, poDto } from "@/lib/orders/dto";
-import type { OrderInput, StatusInput } from "@/lib/orders/inputs";
+import type { OrderInput, StatusInput, ApproveOrderInput } from "@/lib/orders/inputs";
 import { fail, mutate, read } from "@/lib/orders/mutate";
 import { changeFor, statusNotice } from "@/lib/orders/notify";
 import { queryOrder, queryOrders } from "@/lib/orders/queries";
 
 const MODULE = "Orders & Procurement";
-const STATUSES = ["Draft", "PendingApproval", "Approved", "Rejected", "Returned", "PartiallyDelivered", "Delivered", "Cancelled"];
+const STATUSES = ["Draft", "Pending Approval", "PendingApproval", "Approved", "Rejected", "Returned", "Partially Delivered", "PartiallyDelivered", "Delivered", "Cancelled", "Ordered"];
 
 const target = (po: { PoId: number; PoNumber: string }) => ({ type: "purchase-order", id: po.PoId, name: po.PoNumber });
 
@@ -27,15 +27,14 @@ async function priceLines(tx: Prisma.TransactionClient, body: OrderInput): Promi
     const item = await tx.items.findUnique({ where: { ItemId: line.itemId } });
     if (!item) return { problem: `Item with ID ${line.itemId} not found.` };
     const catalog = await tx.supplierItems.findFirst({ where: { SupplierId: body.supplierId ?? 0, ItemId: line.itemId } });
-    if (!catalog) return { problem: `No supplier price is configured for '${item.ItemName}'.` };
-    if (Number(catalog.UnitPrice) <= 0) return { problem: `Supplier price for '${item.ItemName}' must be greater than zero.` };
-    let uomId = line.purchaseUomId ?? catalog.PurchaseUomId;
+    const unitPrice = catalog && Number(catalog.UnitPrice) > 0 ? Number(catalog.UnitPrice) : 0;
+    let uomId = line.purchaseUomId ?? (catalog ? catalog.PurchaseUomId : null);
     if (!uomId || uomId <= 0) uomId = item.StockUomId;
     lines.push({
       ItemId: line.itemId,
       SupplierId: body.supplierId ?? 0,
       PoItemQuantity: line.poItemQuantity,
-      TotalPrice: Number(catalog.UnitPrice) * Number(line.poItemQuantity),
+      TotalPrice: unitPrice * Number(line.poItemQuantity),
       PurchaseUomId: uomId,
       ReceivedQuantity: 0,
     });
@@ -112,7 +111,7 @@ export async function createOrder(body: OrderInput) {
         SupplierId: body.supplierId ?? 0,
         OrderDate: new Date(),
         ExpectedArrivalDate: expected,
-        Status: body.initialStatus && body.initialStatus !== "Unspecified" ? body.initialStatus : "Draft",
+        Status: body.initialStatus && body.initialStatus !== "Unspecified" ? body.initialStatus : "Pending Approval",
         PaymentType: body.paymentType || "Cash",
         ProofImageUrl: "",
         TotalAmount: priced.total,
@@ -210,6 +209,77 @@ export async function setOrderStatus(idInput: string | number, body: StatusInput
         description: `${staff.name} ${change === "updated" ? `set purchase order ${updated.PoNumber} to ${what}` : `${change} purchase order ${updated.PoNumber}`}`,
       } satisfies AuditAction,
       after: statusNotice(staff, updated.PoNumber, updated.RequestedBy, body.status),
+    };
+  });
+}
+
+export async function approvePurchaseOrder(idInput: string | number, body: ApproveOrderInput) {
+  const staff = await requireModule(MODULE);
+  return mutate(staff, async (tx) => {
+    const id = parseInt(String(idInput), 10);
+    const order = await tx.purchaseOrders.findUnique({
+      where: { PoId: id },
+      include: { PurchaseOrderItems: true },
+    });
+    if (!order) return fail(`Purchase order with ID ${id} not found.`);
+    if (order.Status !== "Pending Approval" && order.Status !== "PendingApproval" && order.Status !== "Draft") {
+      return fail(`Only pending purchase orders can be approved. Current status: ${order.Status}.`);
+    }
+
+    if (!body.confirmedItems || body.confirmedItems.length === 0) {
+      return fail("Purchase order must have at least one confirmed item.");
+    }
+
+    let calculatedTotal = 0;
+    for (const conf of body.confirmedItems) {
+      if (conf.poItemQuantity <= 0) {
+        return fail("Confirmed quantity must be greater than zero.");
+      }
+      const lineTotal = Number(conf.poItemQuantity) * Number(conf.unitPrice || 0);
+      calculatedTotal += lineTotal;
+
+      const existingItem = order.PurchaseOrderItems.find((i) => i.ItemId === conf.itemId);
+      if (existingItem) {
+        await tx.purchaseOrderItems.update({
+          where: { PoItemId: existingItem.PoItemId },
+          data: {
+            PoItemQuantity: conf.poItemQuantity,
+            TotalPrice: lineTotal,
+          },
+        });
+      }
+    }
+
+    const metadata = JSON.stringify({
+      supplierApprovedBy: body.supplierApprovedBy,
+      supplierApprovedDate: body.supplierApprovedDate || new Date().toISOString().split("T")[0],
+      notes: body.notes || "",
+    });
+
+    const updated = await tx.purchaseOrders.update({
+      where: { PoId: id },
+      data: {
+        Status: "Approved",
+        TotalAmount: calculatedTotal,
+        AdminNotes: metadata,
+        ...(body.expectedArrivalDate ? { ExpectedArrivalDate: new Date(body.expectedArrivalDate) } : {}),
+      },
+      include: PO_INCLUDE,
+    });
+
+    return {
+      result: resourceResult({
+        success: true,
+        message: "Purchase order approved successfully with supplier confirmation.",
+        data: poDto(updated),
+      }),
+      audit: {
+        module: MODULE,
+        change: "approved",
+        target: target(updated),
+        description: `${staff.name} approved purchase order ${updated.PoNumber} (Supplier Rep: ${body.supplierApprovedBy})`,
+      } satisfies AuditAction,
+      after: statusNotice(staff, updated.PoNumber, updated.RequestedBy, "Approved"),
     };
   });
 }

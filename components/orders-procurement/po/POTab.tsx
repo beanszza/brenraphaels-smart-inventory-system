@@ -1,15 +1,11 @@
 "use client";
-import { OrdersSkeleton } from "@/components/orders-procurement/OrdersSkeleton";
 
-import { procurement } from "@/lib/orders/client";
-
-import { useRouter } from "next/navigation";
 import React, { useState, useMemo, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Plus,
   Search,
   RefreshCw,
-  Inbox,
 } from "lucide-react";
 import {
   Select,
@@ -20,9 +16,13 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { OrdersSkeleton } from "@/components/orders-procurement/OrdersSkeleton";
+import { procurement } from "@/lib/orders/client";
 import { PurchaseOrderPO, POStatus } from "../types";
 import { POTable } from "./POTable";
 import { PODetailsModal } from "./PODetailsModal";
+import { POApprovalModal } from "./POApprovalModal";
+import { PurchaseOrderPrintDocument } from "./PurchaseOrderPrintDocument";
 import { POActionModal, POActionType } from "./POActionModal";
 import { CreatePOModal } from "./CreatePOModal";
 import { CreateDeliveryModal } from "../delivery/CreateDeliveryModal";
@@ -32,14 +32,11 @@ import { isAdminStaff } from "@/lib/auth-roles";
 
 const STATUS_TABS: (POStatus | "All")[] = [
   "All",
-  "Draft",
   "Pending Approval",
-  "Returned",
   "Approved",
   "Ordered",
   "Partially Delivered",
   "Delivered",
-  "Rejected",
   "Cancelled",
 ];
 
@@ -51,6 +48,12 @@ function mapPO(o: any): PurchaseOrderPO {
     prNumber: o.prNumber ?? undefined,
     supplierId: o.supplierId,
     supplierName: o.supplierName || "—",
+    supplierAddress: o.supplierAddress,
+    supplierEmail: o.supplierEmail,
+    supplierContactPerson: o.supplierContactPerson,
+    supplierPhone: o.supplierPhone,
+    supplierApprovedBy: o.supplierApprovedBy,
+    supplierApprovedDate: o.supplierApprovedDate,
     requestedBy: o.requestedBy || "—",
     orderDate: o.orderDate,
     expectedArrivalDate: o.expectedArrivalDate,
@@ -62,13 +65,13 @@ function mapPO(o: any): PurchaseOrderPO {
       poItemId: i.poItemId,
       itemId: i.itemId,
       itemName: i.itemName,
-      poItemQuantity: i.poItemQuantity,
-      receivedQuantity: i.receivedQuantity,
-      unitPrice: i.unitPrice ?? (Number(i.totalPrice) / Math.max(1, Number(i.poItemQuantity))),
-      totalPrice: i.totalPrice ?? i.lineTotal ?? (i.poItemQuantity * (i.unitPrice || 0)),
+      poItemQuantity: Number(i.poItemQuantity),
+      receivedQuantity: Number(i.receivedQuantity || 0),
+      unitPrice: Number(i.unitPrice ?? (Number(i.totalPrice) / Math.max(1, Number(i.poItemQuantity)))),
+      totalPrice: Number(i.totalPrice ?? i.lineTotal ?? (Number(i.poItemQuantity) * (i.unitPrice || 0))),
       purchaseUomId: i.purchaseUomId,
       purchaseUomName: i.purchaseUomName || "Unit",
-      lineTotal: i.lineTotal ?? i.totalPrice ?? (i.poItemQuantity * (i.unitPrice || 0)),
+      lineTotal: Number(i.lineTotal ?? i.totalPrice ?? (Number(i.poItemQuantity) * (i.unitPrice || 0))),
     })),
   };
 }
@@ -86,29 +89,32 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  // Extract unique suppliers from orders for the filter
-  const uniqueSuppliers = useMemo(() => {
-    const suppliers = new Set(orders.map((po) => po.supplierName).filter(Boolean));
-    return Array.from(suppliers).sort();
-  }, [orders]);
-
+  // Modals state
   const [selectedPO, setSelectedPO] = useState<PurchaseOrderPO | null>(null);
+  const [approvingPO, setApprovingPO] = useState<PurchaseOrderPO | null>(null);
+  const [printingPO, setPrintingPO] = useState<PurchaseOrderPO | null>(null);
   const [actionModal, setActionModal] = useState<{ po: PurchaseOrderPO; type: POActionType } | null>(null);
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [editingPO, setEditingPO] = useState<PurchaseOrderPO | null>(null);
   const [deliveryPO, setDeliveryPO] = useState<PurchaseOrderPO | null>(null);
 
-  const fetchOrders = () => startRefresh(() => router.refresh());
+  // Extract unique suppliers for filter
+  const uniqueSuppliers = useMemo(() => {
+    const suppliers = new Set(orders.map((po) => po.supplierName).filter(Boolean));
+    return Array.from(suppliers).sort();
+  }, [orders]);
 
+  const fetchOrders = () => startRefresh(() => router.refresh());
 
   // Counts per tab
   const counts = useMemo(() => {
-    const map: Record<string, number> = { All: orders.length, Requests: 0 };
-    STATUS_TABS.forEach((t) => { map[t] = 0; });
+    const map: Record<string, number> = { All: orders.length };
+    STATUS_TABS.forEach((t) => {
+      map[t] = 0;
+    });
     orders.forEach((po) => {
       const st = po.status;
       if (map[st] !== undefined) map[st]++;
-      if (st === "Pending Approval") map.Requests++;
     });
     map.All = orders.length;
     return map;
@@ -117,13 +123,10 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
   // Filtered list
   const filteredList = useMemo(() => {
     return orders.filter((po) => {
-      if (activeTab === "Requests") {
-        if (po.status !== "Pending Approval") return false;
-      } else if (activeTab !== "All") {
-        if (po.status !== activeTab) return false;
+      if (activeTab !== "All" && po.status !== activeTab) {
+        return false;
       }
 
-      // Supplier filter
       if (supplierFilter && po.supplierName !== supplierFilter) return false;
 
       if (search.trim()) {
@@ -146,25 +149,29 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
     return filteredList.slice(start, start + pageSize);
   }, [filteredList, page, pageSize]);
 
-  // Status update handler
   const handleStatusUpdate = async (poId: number, status: string, adminNotes?: string) => {
     await procurement.setOrderStatus(poId, {
       status,
       adminNotes: adminNotes || null,
     });
-    setNotice("Status updated successfully.");
+    setNotice("Purchase order updated successfully.");
     fetchOrders();
   };
 
   return (
     <div className="space-y-6 animate-page-in">
-      {notice && <p role="status" className="rounded-lg bg-primary/10 p-3 text-sm text-primary">{notice}</p>}
+      {notice && (
+        <p role="status" className="rounded-xl bg-primary/10 p-3 text-xs text-primary font-medium">
+          {notice}
+        </p>
+      )}
+
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Purchase Orders</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage supplier purchase orders based on approved requisitions
+          <p className="mt-1 text-xs text-muted-foreground">
+            Manage supplier purchase orders referencing approved purchase requisitions.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -173,19 +180,19 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
             size="sm"
             onClick={fetchOrders}
             disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
+            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
 
           {!isAdmin && (
-          <Button
-            type="button"
-            onClick={() => setOpenCreateModal(true)}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
-          >
-            <Plus className="w-4 h-4" /> Create Purchase Order
-          </Button>
+            <Button
+              type="button"
+              onClick={() => setOpenCreateModal(true)}
+              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm h-10 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Create Purchase Order
+            </Button>
           )}
         </div>
       </div>
@@ -197,35 +204,36 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
             <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
               type="text"
-              placeholder="Search by Purchase Order No., Purchase Requisition Ref., Supplier, or Requested By..."
+              placeholder="Search by Purchase Order No., Purchase Requisition Reference, Supplier, or Requester..."
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-sm flex-1 text-foreground placeholder:text-muted-foreground"
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-xs flex-1 text-foreground placeholder:text-muted-foreground"
             />
           </div>
 
           <div className="flex items-center gap-3 pl-4 border-l border-border/50">
-            <div className="flex items-center">
-              <Select
-                value={supplierFilter === "" ? "all" : supplierFilter}
-                onValueChange={(val) => {
-                  setSupplierFilter(val === "all" ? "" : val);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
-                  <SelectValue placeholder="All Suppliers" />
-                </SelectTrigger>
-                <SelectContent className="min-w-[210px]">
-                  <SelectItem value="all">All Suppliers</SelectItem>
-                  {uniqueSuppliers.map((sup) => (
-                    <SelectItem key={sup} value={sup}>
-                      {sup}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              value={supplierFilter === "" ? "all" : supplierFilter}
+              onValueChange={(val) => {
+                setSupplierFilter(val === "all" ? "" : val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-9 min-w-[210px] w-auto rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground shadow-xs focus:ring-1 focus:ring-ring">
+                <SelectValue placeholder="All Suppliers" />
+              </SelectTrigger>
+              <SelectContent className="min-w-[210px]">
+                <SelectItem value="all">All Suppliers</SelectItem>
+                {uniqueSuppliers.map((sup) => (
+                  <SelectItem key={sup} value={sup}>
+                    {sup}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -233,29 +241,6 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
       {/* Status Tabs */}
       <div className="border-b border-border overflow-x-auto">
         <div className="flex items-center gap-1.5 min-w-max pb-2">
-          {/* Requests Tab — Admin only */}
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => { setActiveTab("Requests"); setPage(1); }}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === "Requests"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <span>Requests</span>
-              {counts.Requests > 0 && (
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                  activeTab === "Requests" ? "bg-background text-foreground" : "bg-foreground/20 text-foreground"
-                }`}>
-                  {counts.Requests}
-                </span>
-              )}
-            </button>
-          )}
-
-          {/* Standard Status Tabs */}
           {STATUS_TABS.map((tab) => {
             const count = counts[tab] || 0;
             const isSelected = activeTab === tab;
@@ -263,17 +248,22 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
               <button
                 key={tab}
                 type="button"
-                onClick={() => { setActiveTab(tab); setPage(1); }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                onClick={() => {
+                  setActiveTab(tab);
+                  setPage(1);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   isSelected
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
                 <span>{tab}</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-medium ${
-                  isSelected ? "bg-background text-foreground" : "bg-muted text-muted-foreground"
-                }`}>
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-medium ${
+                    isSelected ? "bg-background text-foreground" : "bg-muted text-muted-foreground"
+                  }`}
+                >
                   {count}
                 </span>
               </button>
@@ -282,22 +272,18 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
         </div>
       </div>
 
-      {/* Requests info banner */}
-      {isAdmin && activeTab === "Requests" && (
-        <div className="p-3 rounded-xl border border-border bg-muted/20 text-xs text-foreground flex items-center gap-2">
-          <Inbox className="w-4 h-4 text-foreground shrink-0" />
-          <span>Showing all purchase orders pending your review. Approve, Reject, or Return for Revision.</span>
-        </div>
+      {/* Table */}
+      {loading ? (
+        <OrdersSkeleton />
+      ) : (
+        <POTable
+          orders={paginatedList}
+          isAdmin={isAdmin}
+          onView={(po) => setSelectedPO(po)}
+          onEdit={(po) => setEditingPO(po)}
+          onCancel={(po) => setActionModal({ po, type: "cancel" })}
+        />
       )}
-
-      {/* PO Table */}
-      {loading ? <OrdersSkeleton /> : (<POTable
-        orders={paginatedList}
-        isAdmin={isAdmin}
-        onView={(po) => setSelectedPO(po)}
-        onEdit={(po) => setEditingPO(po)}
-        onCancel={(po) => setActionModal({ po, type: "cancel" })}
-      />)}
 
       {/* Pagination */}
       <Pagination
@@ -307,20 +293,48 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
         onPageChange={setPage}
       />
 
-      {/* PO Details / Review Modal */}
+      {/* Purchase Order Details Modal */}
       <PODetailsModal
         po={selectedPO}
         isAdmin={isAdmin}
         onClose={() => setSelectedPO(null)}
-        onEdit={(po) => { setSelectedPO(null); setEditingPO(po); }}
-        onApprove={(po) => { setSelectedPO(null); setActionModal({ po, type: "approve" }); }}
-        onReject={(po) => { setSelectedPO(null); setActionModal({ po, type: "reject" }); }}
-        onReturn={(po) => { setSelectedPO(null); setActionModal({ po, type: "return" }); }}
-        onCancel={(po) => { setSelectedPO(null); setActionModal({ po, type: "cancel" }); }}
-        onCreateDelivery={(po) => { setSelectedPO(null); setDeliveryPO(po); }}
+        onPrint={(po) => setPrintingPO(po)}
+        onApproveWithForm={(po) => {
+          setSelectedPO(null);
+          setApprovingPO(po);
+        }}
+        onCancel={(po) => {
+          setSelectedPO(null);
+          setActionModal({ po, type: "cancel" });
+        }}
+        onCreateDelivery={(po) => {
+          setSelectedPO(null);
+          setDeliveryPO(po);
+        }}
       />
 
-      {/* Action Confirmation Modal */}
+      {/* Supplier Approval Modal */}
+      {approvingPO && (
+        <POApprovalModal
+          po={approvingPO}
+          onClose={() => setApprovingPO(null)}
+          onSuccess={(updated) => {
+            setApprovingPO(null);
+            fetchOrders();
+            setPrintingPO(updated);
+          }}
+        />
+      )}
+
+      {/* Printable Document Modal */}
+      {printingPO && (
+        <PurchaseOrderPrintDocument
+          po={printingPO}
+          onClose={() => setPrintingPO(null)}
+        />
+      )}
+
+      {/* Action Confirmation Modal (Cancel only) */}
       {actionModal && (
         <POActionModal
           actionType={actionModal.type}
@@ -328,13 +342,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           onClose={() => setActionModal(null)}
           onConfirm={async (notes) => {
             const { po, type } = actionModal;
-            if (type === "approve") {
-              await handleStatusUpdate(po.poId, "Approved");
-            } else if (type === "reject") {
-              await handleStatusUpdate(po.poId, "Rejected", notes);
-            } else if (type === "return") {
-              await handleStatusUpdate(po.poId, "Returned", notes);
-            } else if (type === "cancel") {
+            if (type === "cancel") {
               await handleStatusUpdate(po.poId, "Cancelled", notes);
             }
             setActionModal(null);
@@ -342,35 +350,22 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
         />
       )}
 
-      {/* Create PO Modal */}
+      {/* Create Purchase Order Modal */}
       {openCreateModal && (
         <CreatePOModal
           open={openCreateModal}
           onClose={() => setOpenCreateModal(false)}
-          onSuccess={() => {
+          onSuccess={(created) => {
             setOpenCreateModal(false);
-            setNotice("Saved successfully.");
             fetchOrders();
+            if (created) {
+              setPrintingPO(created);
+            }
           }}
         />
       )}
 
-      {/* Edit PO Modal */}
-      {editingPO && (
-        <CreatePOModal
-          open={!!editingPO}
-          initialPo={editingPO}
-          isEdit={true}
-          onClose={() => setEditingPO(null)}
-          onSuccess={() => {
-            setEditingPO(null);
-            setNotice("Saved successfully.");
-            fetchOrders();
-          }}
-        />
-      )}
-
-      {/* Schedule Delivery Modal */}
+      {/* Create Delivery Modal */}
       {deliveryPO && (
         <CreateDeliveryModal
           open={!!deliveryPO}
@@ -378,7 +373,6 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           onClose={() => setDeliveryPO(null)}
           onSuccess={() => {
             setDeliveryPO(null);
-            setNotice("Saved successfully.");
             fetchOrders();
           }}
         />

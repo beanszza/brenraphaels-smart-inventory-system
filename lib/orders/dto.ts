@@ -99,15 +99,46 @@ export function prDto(pr: PR, labelled = false) {
   };
 }
 
+
+function parseApprovalMetadata(notes: string | null | undefined) {
+  if (!notes) return { supplierApprovedBy: undefined, supplierApprovedDate: undefined, cleanNotes: "" };
+  try {
+    if (notes.startsWith("{") && notes.endsWith("}")) {
+      const parsed = JSON.parse(notes);
+      return {
+        supplierApprovedBy: parsed.supplierApprovedBy,
+        supplierApprovedDate: parsed.supplierApprovedDate,
+        cleanNotes: parsed.notes || "",
+      };
+    }
+  } catch {}
+  const match = notes.match(/Approved by:\s*(.*?)\s*on\s*([\d\-\/]+)/i);
+  if (match) {
+    return {
+      supplierApprovedBy: match[1]?.trim(),
+      supplierApprovedDate: match[2]?.trim(),
+      cleanNotes: notes,
+    };
+  }
+  return { supplierApprovedBy: undefined, supplierApprovedDate: undefined, cleanNotes: notes };
+}
+
 type PO = Prisma.PurchaseOrdersGetPayload<{ include: typeof PO_INCLUDE }>;
 
 export function poDto(po: PO) {
+  const approval = parseApprovalMetadata(po.AdminNotes);
   return {
     poId: po.PoId,
     prId: po.PrId,
     prNumber: po.PurchaseRequisition?.PrNumber,
     supplierId: po.SupplierId,
     supplierName: po.Suppliers?.CompanyName || "",
+    supplierAddress: po.Suppliers?.Address || "",
+    supplierEmail: po.Suppliers?.Email || "",
+    supplierContactPerson: po.Suppliers?.ContactPerson || "",
+    supplierPhone: po.Suppliers?.Phone || "",
+    supplierApprovedBy: approval.supplierApprovedBy,
+    supplierApprovedDate: approval.supplierApprovedDate,
     orderDate: po.OrderDate,
     poNumber: po.PoNumber,
     expectedArrivalDate: po.ExpectedArrivalDate,
@@ -115,22 +146,28 @@ export function poDto(po: PO) {
     paymentType: po.PaymentType,
     totalAmount: Number(po.TotalAmount),
     requestedBy: resolveStaffName(po.RequestedBy),
-    adminNotes: po.AdminNotes,
+    adminNotes: approval.cleanNotes || po.AdminNotes,
     qaNotes: po.QaNotes,
     qaInspectedDate: po.QaInspectedDate,
     qaStatus: po.QaStatus,
     inspectedBy: po.InspectedBy,
-    items: po.PurchaseOrderItems.map((i) => ({
-      poItemId: i.PoItemId,
-      itemId: i.ItemId,
-      itemName: i.Items?.ItemName || "",
-      poItemQuantity: Number(i.PoItemQuantity),
-      receivedQuantity: Number(i.ReceivedQuantity),
-      totalPrice: Number(i.TotalPrice),
-      purchaseUomId: i.PurchaseUomId,
-      purchaseUomName:
-        i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit",
-    })),
+    items: po.PurchaseOrderItems.map((i) => {
+      const qty = Number(i.PoItemQuantity);
+      const total = Number(i.TotalPrice);
+      const unit = qty > 0 ? total / qty : 0;
+      return {
+        poItemId: i.PoItemId,
+        itemId: i.ItemId,
+        itemName: i.Items?.ItemName || "",
+        poItemQuantity: qty,
+        receivedQuantity: Number(i.ReceivedQuantity),
+        totalPrice: total,
+        unitPrice: unit,
+        purchaseUomId: i.PurchaseUomId,
+        purchaseUomName:
+          i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit",
+      };
+    }),
   };
 }
 

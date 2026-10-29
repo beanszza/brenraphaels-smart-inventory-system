@@ -117,6 +117,12 @@ export type PurchaseOrderPO = {
   prNumber?: string;
   supplierId: number;
   supplierName: string;
+  supplierAddress?: string;
+  supplierEmail?: string;
+  supplierContactPerson?: string;
+  supplierPhone?: string;
+  supplierApprovedBy?: string;
+  supplierApprovedDate?: string;
   requestedBy: string;
   orderDate: string;
   expectedArrivalDate: string;

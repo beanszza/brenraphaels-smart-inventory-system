@@ -5,10 +5,11 @@ import {
   Calendar,
   AlertCircle,
   Truck,
+  Printer,
+  CheckCircle2,
 } from "lucide-react";
 import { PurchaseOrderPO } from "../types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 
@@ -17,10 +18,8 @@ interface PODetailsModalProps {
   isAdmin?: boolean;
   onClose: () => void;
   onEdit?: (po: PurchaseOrderPO) => void;
-  onApprove?: (po: PurchaseOrderPO) => void;
-  onReject?: (po: PurchaseOrderPO) => void;
-  onReturn?: (po: PurchaseOrderPO) => void;
-  onOrder?: (po: PurchaseOrderPO) => void;
+  onApproveWithForm?: (po: PurchaseOrderPO) => void;
+  onPrint?: (po: PurchaseOrderPO) => void;
   onCancel?: (po: PurchaseOrderPO) => void;
   onCreateDelivery?: (po: PurchaseOrderPO) => void;
 }
@@ -30,10 +29,8 @@ export function PODetailsModal({
   isAdmin = false,
   onClose,
   onEdit,
-  onApprove,
-  onReject,
-  onReturn,
-  onOrder,
+  onApproveWithForm,
+  onPrint,
   onCancel,
   onCreateDelivery,
 }: PODetailsModalProps) {
@@ -41,7 +38,7 @@ export function PODetailsModal({
 
   const isPending = po.status === "Pending Approval";
   const isApproved = po.status === "Approved";
-  const isCancellable = po.status === "Draft" || po.status === "Pending Approval" || po.status === "Returned";
+  const isCancellable = po.status === "Pending Approval";
 
   const fmt = (d?: string) =>
     d
@@ -62,147 +59,168 @@ export function PODetailsModal({
   return (
     <ModalWrapper
       open={!!po}
-      title={
-        isAdmin && isPending
-          ? `Review Purchase Order — ${po.poNumber}`
-          : `Purchase Order Details — ${po.poNumber}`
-      }
+      title={`Purchase Order Details — ${po.poNumber}`}
       onClose={onClose}
-      size="max-w-5xl"
+      size="max-w-4xl"
     >
       <div className="space-y-6">
-        {/* Top Header Row with Status Badge & Document No */}
-        <div className="flex items-center justify-between pb-3 border-b border-border">
+        {/* Top Header: Status and Quick Metadata */}
+        <div className="flex items-center justify-between pb-3 border-b border-border flex-wrap gap-2">
           <div className="flex items-center gap-3">
             <StatusBadge status={po.status} />
+            <span className="text-xs text-muted-foreground font-mono">
+              {po.poNumber}
+            </span>
           </div>
           <div className="text-xs text-muted-foreground">
-            Supplier: <span className="font-medium text-foreground">{po.supplierName || "—"}</span>
+            Order Date: <span className="font-medium text-foreground">{fmt(po.orderDate)}</span>
           </div>
         </div>
 
-        {/* Admin Notes / Return / Rejection / Cancellation Reason */}
-        {po.adminNotes && (
-          <div
-            className={`p-4 rounded-xl border space-y-1.5 ${
-              po.status === "Rejected"
-                ? "border-destructive/30 bg-destructive/10 text-destructive"
-                : po.status === "Cancelled"
-                ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                : "border-border bg-muted/40 text-foreground"
-            }`}
-          >
-            <div className="flex items-center gap-2 text-xs font-semibold">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+        {/* Supplier Approval Confirmation Box */}
+        {po.supplierApprovedBy && (
+          <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 flex items-center justify-between flex-wrap gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>
-                {po.status === "Rejected"
-                  ? "Admin Rejection Reason:"
-                  : po.status === "Cancelled"
-                  ? "Cancellation Reason:"
-                  : "Admin Feedback / Revision Reason:"}
+                <strong>Supplier Approved by:</strong> {po.supplierApprovedBy}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground pl-6 whitespace-pre-wrap">{po.adminNotes}</p>
+            {po.supplierApprovedDate && (
+              <span className="text-muted-foreground">
+                Date: {fmt(po.supplierApprovedDate)}
+              </span>
+            )}
           </div>
         )}
 
-        {/* Header Details — 3-column / 2-column clean grid */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">Purchase Order Number</label>
-              <Input
-                readOnly
-                value={po.poNumber}
-                className="w-full rounded-xl border border-border bg-muted/40 px-4 py-2.5 font-mono text-sm text-foreground cursor-not-allowed shadow-none focus-visible:ring-0"
-              />
+        {/* Cancellation or Admin Notes */}
+        {po.adminNotes && !po.supplierApprovedBy && (
+          <div className={`p-4 rounded-xl border space-y-1.5 ${
+            po.status === "Cancelled"
+              ? "border-destructive/30 bg-destructive/5 text-destructive"
+              : "border-border bg-muted/40 text-foreground"
+          }`}>
+            <div className="flex items-center gap-2 text-xs font-bold">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>
+                {po.status === "Cancelled" ? "Cancellation Reason:" : "Notes / Remarks:"}
+              </span>
             </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">Purchase Requisition Reference</label>
-              <Input
-                readOnly
-                value={po.prNumber || "— (No PR reference)"}
-                className="w-full rounded-xl border border-border bg-muted/40 px-4 py-2.5 font-mono text-sm text-foreground cursor-not-allowed shadow-none focus-visible:ring-0"
-              />
+            <p className="text-xs pl-6 whitespace-pre-wrap leading-relaxed opacity-95">{po.adminNotes}</p>
+          </div>
+        )}
+
+        {/* 3-Column Info Details */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
+          {/* Purchase Order Number */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Purchase Order Number
+            </label>
+            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 font-mono text-xs text-muted-foreground select-all">
+              {po.poNumber}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">Supplier</label>
-              <Input
-                readOnly
-                value={po.supplierName || "—"}
-                className="w-full rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-sm text-foreground cursor-not-allowed shadow-none focus-visible:ring-0"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">Requested By</label>
-              <Input
-                readOnly
-                value={po.requestedBy || "—"}
-                className="w-full rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-sm text-foreground cursor-not-allowed shadow-none focus-visible:ring-0"
-              />
+          {/* Purchase Requisition Reference */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Purchase Requisition Reference
+            </label>
+            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 font-mono text-xs text-foreground select-all font-semibold">
+              {po.prNumber || "—"}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">Order Date</label>
-              <Input
-                readOnly
-                value={fmt(po.orderDate)}
-                className="w-full rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-sm text-foreground cursor-not-allowed shadow-none focus-visible:ring-0"
-              />
+          {/* Supplier */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Supplier / Vendor
+            </label>
+            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground font-semibold">
+              {po.supplierName}
             </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">Payment Type</label>
-              <Input
-                readOnly
-                value={po.paymentType || "Payable"}
-                className="w-full rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-sm text-foreground cursor-not-allowed shadow-none focus-visible:ring-0"
-              />
+          </div>
+
+          {/* Order Date */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Order Date
+            </label>
+            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+              {fmt(po.orderDate)}
+            </div>
+          </div>
+
+          {/* Expected Arrival Date */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Expected Arrival Date
+            </label>
+            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+              <Calendar className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+              {fmt(po.expectedArrivalDate)}
+            </div>
+          </div>
+
+          {/* Requested By */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Requested By
+            </label>
+            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+              {po.requestedBy}
             </div>
           </div>
         </div>
 
-        {/* Items Table */}
-        <div className="space-y-3">
+        {/* Ordered Particulars Table */}
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-foreground">Order Items</h3>
-            <span className="text-xs text-muted-foreground">
-              {po.items?.length || 0} item(s)
+            <label className="text-xs font-semibold text-foreground">
+              Ordered Particulars
+            </label>
+            <span className="text-[11px] text-muted-foreground">
+              {po.items?.length || 0} item(s) listed
             </span>
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-border bg-card">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-xs">
               <thead className="border-b border-border bg-muted/40 uppercase text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">ITEM NAME</th>
-                  <th className="px-4 py-3 font-semibold">Unit of Measure</th>
-                  <th className="px-4 py-3 text-right font-semibold">QTY TO ORDER</th>
-                  <th className="px-4 py-3 text-right font-semibold">UNIT PRICE</th>
-                  <th className="px-4 py-3 text-right font-semibold">TOTAL PRICE</th>
+                  <th className="px-4 py-2.5 text-left font-bold">PARTICULARS</th>
+                  <th className="px-4 py-2.5 text-left font-bold">Unit of Measure</th>
+                  <th className="px-4 py-2.5 text-right font-bold">ORDER QUANTITY</th>
+                  <th className="px-4 py-2.5 text-right font-bold">UNIT PRICE</th>
+                  <th className="px-4 py-2.5 text-right font-bold">TOTAL AMOUNT</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {po.items && po.items.length > 0 ? (
-                  po.items.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-3 font-medium text-foreground">{item.itemName}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{item.purchaseUomName || "Unit"}</td>
-                      <td className="px-4 py-3 text-right font-mono text-foreground">
-                        {Number(item.poItemQuantity || 0).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono text-muted-foreground">
-                        {fmtCurrency(Number(item.unitPrice || 0))}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono font-bold text-foreground">
-                        {fmtCurrency(Number(item.totalPrice ?? item.lineTotal ?? item.poItemQuantity * (item.unitPrice || 0)))}
-                      </td>
-                    </tr>
-                  ))
+                  po.items.map((item, idx) => {
+                    const unitPrice = item.unitPrice || (item.poItemQuantity > 0 ? item.totalPrice / item.poItemQuantity : 0);
+                    return (
+                      <tr key={idx} className="hover:bg-muted/10 transition-colors">
+                        <td className="px-4 py-3 font-semibold text-foreground uppercase">
+                          {item.itemName}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {item.purchaseUomName || "Unit"}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono font-bold text-foreground">
+                          {Number(item.poItemQuantity).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-muted-foreground">
+                          {unitPrice > 0 ? fmtCurrency(unitPrice) : "Pending Confirmation"}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono font-bold text-foreground">
+                          {item.totalPrice > 0 ? fmtCurrency(Number(item.totalPrice)) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={5} className="px-4 py-8 text-center text-xs text-muted-foreground">
@@ -217,92 +235,69 @@ export function PODetailsModal({
           {/* Total Amount Summary */}
           <div className="flex items-center justify-end">
             <div className="rounded-xl border border-border bg-muted/30 px-5 py-3 text-right min-w-[220px]">
-              <p className="text-xs text-muted-foreground mb-1">Total Amount</p>
+              <p className="text-xs text-muted-foreground mb-1">TOTAL AMOUNT DUE</p>
               <p className="text-lg font-bold text-foreground font-mono">
-                {fmtCurrency(po.totalAmount || 0)}
+                {po.totalAmount > 0 ? fmtCurrency(po.totalAmount) : (isApproved ? "₱0.00" : "Pending Confirmation")}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Modal Footer Actions */}
         <div className="flex items-center justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2 flex-wrap">
+          {/* Print / Save as PDF Button */}
+          {onPrint && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onPrint(po)}
+              className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+            >
+              <Printer className="w-4 h-4" /> Print Purchase Order
+            </Button>
+          )}
+
+          {/* Close Button */}
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+            className="rounded-xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
           >
             Close
           </Button>
 
-          {/* Admin review buttons for Pending Approval */}
-          {isAdmin && isPending && (
-            <>
-              {onReturn && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onReturn(po)}
-                  className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
-                >
-                  Return for Revision
-                </Button>
-              )}
-              {onReject && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onReject(po)}
-                  className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
-                >
-                  Reject
-                </Button>
-              )}
-              {onApprove && (
-                <Button
-                  type="button"
-                  onClick={() => onApprove(po)}
-                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
-                >
-                  Approve
-                </Button>
-              )}
-            </>
-          )}
-
-          {/* Inventory Manager: Edit Draft or Returned PO */}
-          {!isAdmin && (po.status === "Draft" || po.status === "Returned") && onEdit && (
+          {/* IMS Manager: Approve Order with Supplier Details (Pending Approval only) */}
+          {!isAdmin && isPending && onApproveWithForm && (
             <Button
               type="button"
-              onClick={() => onEdit(po)}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
+              onClick={() => onApproveWithForm(po)}
+              className="flex items-center gap-1.5 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-xs font-semibold hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
             >
-              {po.status === "Returned" ? "Edit & Re-Submit" : "Edit Draft"}
+              <CheckCircle2 className="w-4 h-4" /> Approve Order
             </Button>
           )}
 
-          {/* Inventory Manager: Cancel PO for Draft/Pending/Returned PO */}
+          {/* IMS Manager: Cancel Purchase Order */}
           {!isAdmin && isCancellable && onCancel && (
             <Button
               type="button"
               variant="outline"
               onClick={() => onCancel(po)}
-              className="rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 px-5 py-2.5 text-sm font-semibold transition-colors"
+              className="rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 px-5 py-2.5 text-xs font-semibold transition-colors cursor-pointer"
             >
               Cancel Purchase Order
             </Button>
           )}
 
-          {/* Inventory Manager: Schedule Delivery for Approved or Ordered PO */}
+          {/* IMS Manager: Schedule Delivery for Approved Orders */}
           {!isAdmin && (po.status === "Approved" || po.status === "Ordered" || po.status === "Partially Delivered") && onCreateDelivery && (
             <Button
               type="button"
               onClick={() => onCreateDelivery(po)}
-              className="flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
+              className="flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-xs font-semibold hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
             >
-              <Truck className="w-4 h-4" />
-              Schedule Delivery
+              <Truck className="w-4 h-4" /> Schedule Delivery
             </Button>
           )}
         </div>
