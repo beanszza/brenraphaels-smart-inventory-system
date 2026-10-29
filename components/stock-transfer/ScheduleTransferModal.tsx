@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { toast } from "sonner";
 import { actionResponse } from "@/lib/resources/action-response";
 import { scheduleTransfer } from "@/app/actions/stock-transfer/transfers";
@@ -246,7 +246,7 @@ export function ScheduleTransferModal({
                     {selectedItem?.variant || "Standard"}
                   </span>
                   <span className="font-mono text-muted-foreground text-[11px]">
-                    SKU: {selectedItem?.sku || "—"}
+                    SKU: {selectedItem?.sku || "â€”"}
                   </span>
                 </div>
               </div>

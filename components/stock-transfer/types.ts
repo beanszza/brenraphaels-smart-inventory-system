@@ -1,4 +1,4 @@
-export type STRStatus =
+﻿export type STRStatus =
   | "Pending Approval"
   | "Approved"
   | "Rejected"
