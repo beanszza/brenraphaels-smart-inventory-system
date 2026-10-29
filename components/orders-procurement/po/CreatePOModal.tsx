@@ -330,21 +330,25 @@ export function CreatePOModal({
         const created: PurchaseOrderPO = res.data.data;
         const poNum = created?.poNumber || nextPoNumber || "Purchase Order";
 
-        // Construct Gmail Web Compose URL (opens in new tab as draft)
+        // Construct unique Supplier Acknowledgment Web Form URL & Gmail Web Compose URL
+        const origin = typeof window !== "undefined" && window.location.origin
+          ? window.location.origin
+          : (process.env.NEXT_PUBLIC_SCMS_URL || "http://localhost:3003");
+        const uniqueFormUrl = `${origin}/supplier-acknowledgment?poNumber=${encodeURIComponent(poNum)}`;
         const supplierEmail = selectedSupplier?.email || "";
-        const googleDocsFormUrl = "https://docs.google.com/forms/";
         const emailSubject = `Purchase Order ${poNum} — Bren Raphael's Ube Jam & Halaya`;
         const emailBody =
           `Dear ${selectedSupplier?.contactPerson || selectedSupplier?.supplierName || "Supplier"},\n\n` +
           `Good day.\n\n` +
           `Please find our Purchase Order ${poNum} referencing Purchase Requisition ${selectedPR?.prNumber || ""}.\n\n` +
-          `Kindly review the order particulars and submit your accommodation confirmation and pricing through our form:\n` +
-          `${googleDocsFormUrl}\n\n` +
+          `Kindly review the order particulars and submit your accommodation confirmation and pricing through your unique Supplier Acknowledgment Form:\n` +
+          `${uniqueFormUrl}\n\n` +
+          `Through the link above, you can also view and download our official printable Purchase Order document at any time.\n\n` +
           `In the acknowledgment form, please confirm:\n` +
           `1. Items and quantities you can accommodate\n` +
-          `2. Unit price and total order amount\n` +
-          `3. Authorized approver name and approval date\n\n` +
-          `We have attached our official Purchase Order document.\n\n` +
+          `2. Quoted unit prices and total order amount\n` +
+          `3. Authorized approver representative name and confirmation date\n\n` +
+          `Please also find our official Purchase Order document attached.\n\n` +
           `Thank you,\n` +
           `${staff.name || "Vince Neil Madeja"}\n` +
           `Inventory Management\n` +
@@ -453,8 +457,21 @@ export function CreatePOModal({
                 Status: Pending Approval
               </div>
               <p className="text-xs text-muted-foreground mt-3 max-w-md mx-auto leading-relaxed">
-                Your Purchase Order has been placed in the <strong>Pending Approval</strong> tab. A new tab has opened with your Gmail draft containing the email text and Google Docs / Form link. The official Purchase Order PDF has also been automatically downloaded to your computer — simply attach it in Gmail and click Send!
+                Your Purchase Order has been placed in the <strong>Pending Approval</strong> tab. A new tab has opened with your pre-filled Gmail draft containing your unique Supplier Acknowledgment Form link. The official Purchase Order PDF has also been downloaded — simply drag it from your download bar into Gmail to attach, and click Send!
               </p>
+              <div className="p-3 rounded-xl bg-muted/40 border border-border text-left text-xs max-w-md mx-auto space-y-1">
+                <span className="text-[11px] font-semibold text-muted-foreground block uppercase">
+                  Unique Supplier Acknowledgment Form:
+                </span>
+                <a
+                  href={`${typeof window !== "undefined" ? window.location.origin : ""}/supplier-acknowledgment?poNumber=${encodeURIComponent(createdOrder.poNumber)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-primary underline break-all block hover:text-primary/80"
+                >
+                  {typeof window !== "undefined" ? window.location.origin : ""}/supplier-acknowledgment?poNumber={createdOrder.poNumber}
+                </a>
+              </div>
             </div>
 
             {/* Direct Action Buttons */}
