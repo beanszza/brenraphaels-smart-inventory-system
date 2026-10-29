@@ -19,7 +19,7 @@ interface POApprovalModalProps {
 export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps) {
   if (!po) return null;
 
-  // Initialize lines state with existing items
+  // Initialize lines state with existing items (using Total Price directly)
   const [items, setItems] = useState(() =>
     po.items.map((item) => ({
       itemId: item.itemId,
@@ -27,7 +27,9 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
       purchaseUomName: item.purchaseUomName || "Unit",
       sentQuantity: Number(item.poItemQuantity),
       confirmedQuantity: Number(item.poItemQuantity),
-      unitPrice: Number(item.unitPrice || (item.poItemQuantity > 0 ? item.totalPrice / item.poItemQuantity : 0)),
+      totalPrice: Number(
+        item.totalPrice || (Number(item.poItemQuantity) * Number(item.unitPrice || 0)) || 0
+      ),
     }))
   );
 
@@ -63,23 +65,23 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
     });
   };
 
-  // Handle unit price modification
-  const handlePriceChange = (index: number, value: string) => {
+  // Handle total price modification
+  const handleTotalPriceChange = (index: number, value: string) => {
     const clean = value.replace(/[-+e]/gi, "");
     const num = parseFloat(clean);
     setItems((prev) => {
       const copy = [...prev];
       copy[index] = {
         ...copy[index],
-        unitPrice: isNaN(num) ? 0 : Math.max(0, num),
+        totalPrice: isNaN(num) ? 0 : Math.max(0, num),
       };
       return copy;
     });
   };
 
-  // Auto-calculated grand total
+  // Auto-calculated grand total from item total prices
   const calculatedGrandTotal = useMemo(() => {
-    return items.reduce((sum, item) => sum + (item.confirmedQuantity * item.unitPrice), 0);
+    return items.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
   }, [items]);
 
   // Check if any item quantity was reduced (partial fulfillment)
@@ -101,8 +103,8 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
       if (item.confirmedQuantity <= 0) {
         newErrors[`qty_${idx}`] = "Confirmed quantity must be greater than 0.";
       }
-      if (item.unitPrice <= 0) {
-        newErrors[`price_${idx}`] = "Unit price must be greater than ₱0.00.";
+      if (item.totalPrice <= 0) {
+        newErrors[`price_${idx}`] = "Total price must be greater than ₱0.00.";
       }
     });
 
@@ -119,7 +121,8 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
         confirmedItems: items.map((i) => ({
           itemId: i.itemId,
           poItemQuantity: i.confirmedQuantity,
-          unitPrice: i.unitPrice,
+          unitPrice: i.confirmedQuantity > 0 ? i.totalPrice / i.confirmedQuantity : 0,
+          totalPrice: i.totalPrice,
         })),
         supplierApprovedBy: supplierApprovedBy.trim(),
         supplierApprovedDate,
@@ -159,7 +162,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
         <div className="p-3.5 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>
-            Enter the confirmed quantities, agreed unit prices, and authorized supplier representative details from the supplier&apos;s reply.
+            Enter the confirmed accommodated quantities, total prices, and authorized supplier representative details from the supplier&apos;s reply.
           </span>
         </div>
 
@@ -191,7 +194,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-foreground uppercase tracking-wider">
-              Confirmed Particulars &amp; Final Pricing
+              Confirmed Particulars &amp; Total Pricing
             </label>
             <span className="text-[11px] text-muted-foreground">
               {items.length} item(s)
@@ -204,14 +207,12 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
                 <tr>
                   <th className="px-3.5 py-2.5 text-left font-bold">PARTICULARS</th>
                   <th className="px-3 py-2.5 text-center font-bold">SENT QTY</th>
-                  <th className="px-3 py-2.5 text-center font-bold w-32">CONFIRMED QTY *</th>
-                  <th className="px-3 py-2.5 text-right font-bold w-32">UNIT PRICE (₱) *</th>
-                  <th className="px-3.5 py-2.5 text-right font-bold">LINE TOTAL (₱)</th>
+                  <th className="px-3 py-2.5 text-center font-bold w-36">CONFIRMED QTY *</th>
+                  <th className="px-3.5 py-2.5 text-right font-bold w-40">TOTAL PRICE (₱) *</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {items.map((item, idx) => {
-                  const lineTotal = item.confirmedQuantity * item.unitPrice;
                   const isReduced = item.confirmedQuantity < item.sentQuantity;
                   return (
                     <tr key={idx} className="hover:bg-muted/10 transition-colors">
@@ -239,24 +240,21 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
                           <p className="text-[10px] text-destructive mt-0.5">{errors[`qty_${idx}`]}</p>
                         )}
                       </td>
-                      <td className="px-3 py-2.5 text-right">
+                      <td className="px-3.5 py-2.5 text-right">
                         <Input
                           type="number"
                           min={0.01}
                           step="any"
                           placeholder="0.00"
-                          value={item.unitPrice || ""}
-                          onChange={(e) => handlePriceChange(idx, e.target.value)}
-                          className={`h-8 w-28 ml-auto text-right font-mono font-bold text-xs bg-card ${
+                          value={item.totalPrice || ""}
+                          onChange={(e) => handleTotalPriceChange(idx, e.target.value)}
+                          className={`h-8 w-32 ml-auto text-right font-mono font-bold text-xs bg-card ${
                             errors[`price_${idx}`] ? "border-destructive" : "border-border"
                           }`}
                         />
                         {errors[`price_${idx}`] && (
                           <p className="text-[10px] text-destructive mt-0.5">{errors[`price_${idx}`]}</p>
                         )}
-                      </td>
-                      <td className="px-3.5 py-2.5 text-right font-mono font-bold text-foreground">
-                        ₱{lineTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
                   );
@@ -270,7 +268,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
             <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>
-                <strong>Partial Accommodation Notice:</strong> One or more items were accommodated with a lower quantity than requested. The remaining balance will stay available on Purchase Requisition <strong>{po.prNumber}</strong> so you can create another Purchase Order with a different supplier.
+                <strong>Partial Accommodation Notice:</strong> One or more items were accommodated with a lower quantity than requested. The remaining balance will stay available on Purchase Requisition <strong>{po.prNumber}</strong> so you can create another Purchase Order for the remaining quantity.
               </span>
             </div>
           )}
@@ -383,4 +381,3 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
     </ModalWrapper>
   );
 }
-

@@ -66,8 +66,12 @@ export async function nextOrderNumber() {
 export async function orderedQuantities(prIdInput: string | number) {
   await requireModule(MODULE);
   return read(async () => {
+    const prId = parseInt(String(prIdInput), 10);
     const orders = await prisma.purchaseOrders.findMany({
-      where: { PrId: parseInt(String(prIdInput), 10), Status: { notIn: ["Cancelled", "Rejected", "Draft"] } },
+      where: {
+        OR: [{ PrId: prId }, { PurchaseRequisitionPrId: prId }],
+        Status: { notIn: ["Cancelled", "Rejected", "Draft"] },
+      },
       include: { PurchaseOrderItems: true },
     });
     const ordered = new Map<number, number>();
@@ -235,7 +239,10 @@ export async function approvePurchaseOrder(idInput: string | number, body: Appro
       if (conf.poItemQuantity <= 0) {
         return fail("Confirmed quantity must be greater than zero.");
       }
-      const lineTotal = Number(conf.poItemQuantity) * Number(conf.unitPrice || 0);
+      const lineTotal =
+        conf.totalPrice !== undefined && conf.totalPrice !== null
+          ? Number(conf.totalPrice)
+          : Number(conf.poItemQuantity) * Number(conf.unitPrice || 0);
       calculatedTotal += lineTotal;
 
       const existingItem = order.PurchaseOrderItems.find((i) => i.ItemId === conf.itemId);

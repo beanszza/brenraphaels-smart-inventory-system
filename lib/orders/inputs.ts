@@ -69,6 +69,7 @@ export type ApproveOrderLine = {
   itemId: number;
   poItemQuantity: number;
   unitPrice: number;
+  totalPrice?: number;
 };
 
 export type ApproveOrderInput = {

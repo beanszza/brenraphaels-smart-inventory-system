@@ -101,8 +101,8 @@ export function CreatePRModal({
   );
 
   const [department, setDepartment] = useState(initialData?.department || "");
-  const [purpose, setPurpose] = useState(initialData?.purpose || initialData?.requestType || "");
-  const [priority, setPriority] = useState(initialData?.priority || "");
+  const [purpose, setPurpose] = useState(initialData?.purpose || initialData?.requestType || PR_PURPOSE_CHOICES[0]);
+  const [priority, setPriority] = useState(initialData?.priority || "Low");
   const [requiredDate, setRequiredDate] = useState(
     initialData?.requiredDate
       ? new Date(initialData.requiredDate).toISOString().split("T")[0]
@@ -148,8 +148,8 @@ export function CreatePRModal({
             : defaultAccountName || ""
         );
         setDepartment(initialData.department || "");
-        setPurpose(initialData.purpose || initialData.requestType || "");
-        setPriority(initialData.priority || "");
+        setPurpose(initialData.purpose || initialData.requestType || PR_PURPOSE_CHOICES[0]);
+        setPriority(initialData.priority || "Low");
         setRequiredDate(
           initialData.requiredDate
             ? new Date(initialData.requiredDate).toISOString().split("T")[0]
@@ -165,7 +165,7 @@ export function CreatePRModal({
         );
         setErrors({});
       } else {
-        // Completely empty form when creating a new PR
+        // Default purpose and priority to match the first dropdown options
         setRequestDate(
           new Date().toLocaleDateString("en-US", {
             month: "short",
@@ -175,8 +175,8 @@ export function CreatePRModal({
         );
         setRequestedBy(defaultAccountName || "Inventory Manager");
         setDepartment(detectedDepartment);
-        setPurpose("");
-        setPriority("");
+        setPurpose(PR_PURPOSE_CHOICES[0]);
+        setPriority("Low");
         setRequiredDate("");
         setStatusText("Draft");
         setNotes("");
@@ -600,8 +600,6 @@ export function CreatePRModal({
                   ))}
                 </select>
               </div>
-
-              
 
               {/* Priority */}
               <div>

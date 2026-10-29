@@ -9,8 +9,6 @@ import {
   Mail,
   CheckCircle2,
   Download,
-  Copy,
-  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,7 +83,6 @@ export function CreatePOModal({
   const [createdOrder, setCreatedOrder] = useState<PurchaseOrderPO | null>(null);
   const [gmailComposeUrl, setGmailComposeUrl] = useState<string>("");
   const [isConfirmedSent, setIsConfirmedSent] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
 
   const [selectedSupplierDetails, setSelectedSupplierDetails] = useState<{
     supplierId: number;
@@ -179,7 +176,29 @@ export function CreatePOModal({
       const res = await procurement.listRequisitions("Approved");
       if (res.data?.success) {
         const prs: PurchaseRequisition[] = res.data.data || [];
-        setApprovedPRs(prs);
+        // Ensure only PRs with remaining un-ordered balance > 0 are shown
+        const checks = await Promise.all(
+          prs.map(async (pr) => {
+            const items = pr.items || [];
+            if (items.length === 0) return null;
+            try {
+              const ordRes = await procurement.orderedQuantities(pr.prId);
+              const orderedMap: Record<number, number> = {};
+              if (ordRes.data?.success && Array.isArray(ordRes.data.data)) {
+                ordRes.data.data.forEach((o: any) => {
+                  orderedMap[o.itemId] = Number(o.orderedQty) || 0;
+                });
+              }
+              const hasRemaining = items.some(
+                (item) => Number(item.requestedQuantity) - (orderedMap[item.itemId] || 0) > 0
+              );
+              return hasRemaining ? pr : null;
+            } catch {
+              return pr;
+            }
+          })
+        );
+        setApprovedPRs(checks.filter((pr): pr is PurchaseRequisition => pr !== null));
       }
     } catch {
       setErrors((p) => ({ ...p, general: "Purchase Requisitions could not be loaded. Please retry." }));
@@ -380,17 +399,9 @@ export function CreatePOModal({
         const poNum = created?.poNumber || nextPoNumber || "Purchase Order";
         const prRef = selectedPR?.prNumber || initialPo?.prNumber || "N/A";
 
-        // Build clean, formal email body (message + questionnaire in one email)
+        // Build clean, formal email body (direct questions, no brackets/underscores/dots)
         const orderDetailsLines = activeRows
-          .map((r, i) => `  ${i + 1}. ${r.itemName} ............ ${r.orderQty} ${r.uomName}`)
-          .join("\n");
-
-        const supplyQtyLines = activeRows
-          .map((r) => `       ${r.itemName}: ______ ${r.uomName}`)
-          .join("\n");
-
-        const unitPriceLines = activeRows
-          .map((r) => `       ${r.itemName}: PHP ______ per ${r.uomName}`)
+          .map((r, i) => `${i + 1}. ${r.itemName} - ${r.orderQty} ${r.uomName}`)
           .join("\n");
 
         const contactName = selectedSupplier?.contactPerson
@@ -399,23 +410,20 @@ export function CreatePOModal({
         const supplierCompany = selectedSupplier?.supplierName || "your company";
 
         const supplierEmail = recipientEmail.trim() || selectedSupplier?.email || "";
-        const emailSubject = `Purchase Order ${poNum} | Bren Raphael's Ube Jam & Halaya`;
+        const emailSubject = `Purchase Order ${poNum} - Bren Raphael's Ube Jam & Halaya`;
         const emailBody =
           `Dear ${contactName},\n\n` +
           `Good day!\n\n` +
-          `On behalf of Bren Raphael's Ube Jam & Halaya, we are pleased to issue Purchase Order No. ${poNum} (Ref. ${prRef}) to ${supplierCompany}. The official Purchase Order document (${poNum}.pdf) is attached to this email.\n\n` +
-          `ORDER DETAILS\n` +
+          `On behalf of Bren Raphael's Ube Jam & Halaya, we would like to formally place Purchase Order No. ${poNum} (Ref. ${prRef}) with ${supplierCompany}. Please find the official Purchase Order document (${poNum}.pdf) attached to this email for your reference.\n\n` +
+          `Requested Order Particulars:\n` +
           `${orderDetailsLines}\n\n` +
-          `To proceed, kindly reply to this email with the following information:\n\n` +
-          `  1. Quantity you can supply for each item\n` +
-          `${supplyQtyLines}\n` +
-          `  2. Unit price for each item\n` +
-          `${unitPriceLines}\n` +
-          `  3. Total order amount: PHP ______\n` +
-          `  4. Expected delivery date: ______\n` +
-          `  5. Name, position and contact number of the person confirming this order: ______\n\n` +
-          `Should you have any questions, please feel free to reply to this email.\n\n` +
-          `Thank you, and we look forward to your confirmation.\n\n` +
+          `To confirm this order, kindly reply to this email with the following details:\n` +
+          `1. The exact quantity you can accommodate for each requested item.\n` +
+          `2. The total price for each item and the overall total order amount.\n` +
+          `3. Your committed delivery date.\n` +
+          `4. The full name, position, and contact number of the authorized representative confirming this order.\n\n` +
+          `Should you have any questions, please feel free to reach out to us.\n\n` +
+          `Thank you very much, and we look forward to your confirmation.\n\n` +
           `Respectfully,\n\n` +
           `${staff.name || "Vince Neil Madeja"}\n` +
           `Inventory Management & Procurement\n` +
@@ -723,7 +731,7 @@ export function CreatePOModal({
                 </p>
                 <p>
                   <strong className="text-foreground">Subject:</strong>{" "}
-                  Purchase Order {nextPoNumber || "Auto-assigned"} | Bren Raphael&apos;s Ube Jam &amp; Halaya
+                  Purchase Order {nextPoNumber || "Auto-assigned"} - Bren Raphael&apos;s Ube Jam &amp; Halaya
                 </p>
                 <p>
                   <strong className="text-foreground">PDF Document:</strong>{" "}
@@ -826,7 +834,7 @@ export function CreatePOModal({
                       Select an Approved Purchase Requisition
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      Choose an approved requisition to begin creating a Purchase Order.
+                      Choose an approved requisition with remaining un-ordered items to create a Purchase Order.
                     </p>
                   </div>
                   <div className="relative w-64">
@@ -875,7 +883,7 @@ export function CreatePOModal({
                                 type="button"
                                 size="sm"
                                 onClick={() => handleSelectPR(pr)}
-                                className="h-7 px-3 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+                                className="h-7 px-3 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
                               >
                                 Select
                               </Button>
@@ -906,7 +914,7 @@ export function CreatePOModal({
                     variant="outline"
                     size="sm"
                     onClick={() => setStep(1)}
-                    className="flex items-center gap-1 text-xs rounded-xl"
+                    className="flex items-center gap-1 text-xs rounded-xl cursor-pointer"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" /> Back to Requisitions
                   </Button>
@@ -954,7 +962,7 @@ export function CreatePOModal({
                         <Button
                           type="button"
                           size="sm"
-                          className="w-full mt-3 h-7 text-xs rounded-lg"
+                          className="w-full mt-3 h-7 text-xs rounded-lg cursor-pointer"
                         >
                           Select Supplier
                         </Button>
@@ -983,7 +991,7 @@ export function CreatePOModal({
                       variant="outline"
                       size="sm"
                       onClick={() => setStep(2)}
-                      className="flex items-center gap-1 text-xs rounded-xl"
+                      className="flex items-center gap-1 text-xs rounded-xl cursor-pointer"
                     >
                       <ChevronLeft className="w-3.5 h-3.5" /> Change Supplier
                     </Button>

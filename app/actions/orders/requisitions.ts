@@ -41,6 +41,37 @@ export async function listRequisitions(status = "All") {
   return read(async () => {
     const where: Prisma.PurchaseRequisitionsWhereInput = status !== "All" ? { Status: status } : {};
     const prs = await prisma.purchaseRequisitions.findMany({ where, orderBy: { PrId: "desc" }, include: PR_INCLUDE });
+
+    if (status === "Approved" && prs.length > 0) {
+      const prIds = prs.map((p) => p.PrId);
+      const activeOrders = await prisma.purchaseOrders.findMany({
+        where: {
+          OR: [{ PrId: { in: prIds } }, { PurchaseRequisitionPrId: { in: prIds } }],
+          Status: { notIn: ["Cancelled", "Rejected", "Draft"] },
+        },
+        include: { PurchaseOrderItems: true },
+      });
+
+      const orderedByPrAndItem = new Map<string, number>();
+      for (const ord of activeOrders) {
+        const pid = ord.PrId ?? ord.PurchaseRequisitionPrId;
+        if (!pid) continue;
+        for (const item of ord.PurchaseOrderItems) {
+          const key = `${pid}:${item.ItemId}`;
+          orderedByPrAndItem.set(key, (orderedByPrAndItem.get(key) ?? 0) + Number(item.PoItemQuantity));
+        }
+      }
+
+      const availablePrs = prs.filter((pr) =>
+        pr.PurchaseRequisitionItems.some((item) => {
+          const ordered = orderedByPrAndItem.get(`${pr.PrId}:${item.ItemId}`) ?? 0;
+          return Number(item.RequestedQuantity) - ordered > 0;
+        })
+      );
+
+      return resourceResult({ success: true, data: availablePrs.map((pr) => prDto(pr, true)) });
+    }
+
     return resourceResult({ success: true, data: prs.map((pr) => prDto(pr, true)) });
   });
 }

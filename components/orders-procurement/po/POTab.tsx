@@ -329,9 +329,9 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           onClose={() => setApprovingPO(null)}
           onSuccess={(updated) => {
             setApprovingPO(null);
-            fetchOrders();
+            setNotice(`Purchase Order ${updated.poNumber} confirmed and moved to Approved.`);
             setActiveTab("Approved");
-            setPrintingPO(updated);
+            fetchOrders();
           }}
         />
       )}
