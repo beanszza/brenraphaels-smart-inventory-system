@@ -94,9 +94,10 @@ export async function completeInspection(idInput: string | number, body: Inspect
     }
 
     if (existingInspection.Status === "Completed") refuse("QA inspection is already completed.");
-    if (!body.items?.length) refuse("Include the inspection item results.");
-    if (new Set(body.items.map(item => item.inspectionItemId)).size !== body.items.length) refuse("Each inspection line may appear only once.");
-    for (const item of body.items) {
+    const items = body.items ?? [];
+    if (!items.length) refuse("Include the inspection item results.");
+    if (new Set(items.map(item => item.inspectionItemId)).size !== items.length) refuse("Each inspection line may appear only once.");
+    for (const item of items) {
       const source = existingInspection.QualityInspectionItems.find(line => line.InspectionItemId === item.inspectionItemId);
       if (!source) refuse("An item does not belong to this inspection.");
       const total = (item.acceptedQuantity ?? 0) + (item.rejectedQuantity ?? 0) + (item.concessionQuantity ?? 0);
@@ -104,12 +105,12 @@ export async function completeInspection(idInput: string | number, body: Inspect
     }
 
     const now = new Date();
-    const totalReceived = body.items.reduce((sum, i) => {
+    const totalReceived = items.reduce((sum, i) => {
       const src = existingInspection.QualityInspectionItems.find(l => l.InspectionItemId === i.inspectionItemId);
       return sum + Number(src?.DeliveredQuantity ?? 0);
     }, 0);
-    const totalAccepted = body.items.reduce((sum, i) => sum + Number(i.acceptedQuantity ?? 0), 0);
-    const totalRejected = body.items.reduce((sum, i) => sum + Number(i.rejectedQuantity ?? 0), 0);
+    const totalAccepted = items.reduce((sum, i) => sum + Number(i.acceptedQuantity ?? 0), 0);
+    const totalRejected = items.reduce((sum, i) => sum + Number(i.rejectedQuantity ?? 0), 0);
 
     const updatedInspection = await (async () => {
       // 1. Update main inspection record
@@ -129,20 +130,18 @@ export async function completeInspection(idInput: string | number, body: Inspect
       });
 
       // 2. Update each item
-      if (Array.isArray(body.items)) {
-        for (const item of body.items) {
-          if (item.inspectionItemId) {
-            await tx.qualityInspectionItems.update({
-              where: { InspectionItemId: item.inspectionItemId },
-              data: {
-                AcceptedQuantity: item.acceptedQuantity ?? 0,
-                RejectedQuantity: item.rejectedQuantity ?? 0,
-                ConcessionQuantity: item.concessionQuantity ?? 0,
-                DefectReason: item.defectReason || null,
-                Notes: item.notes || null,
-              },
-            });
-          }
+      for (const item of items) {
+        if (item.inspectionItemId) {
+          await tx.qualityInspectionItems.update({
+            where: { InspectionItemId: item.inspectionItemId },
+            data: {
+              AcceptedQuantity: item.acceptedQuantity ?? 0,
+              RejectedQuantity: item.rejectedQuantity ?? 0,
+              ConcessionQuantity: item.concessionQuantity ?? 0,
+              DefectReason: item.defectReason || null,
+              Notes: item.notes || null,
+            },
+          });
         }
       }
 
@@ -167,7 +166,7 @@ export async function completeInspection(idInput: string | number, body: Inspect
         if (grn.GoodsReceiptItems.length === existingInspection.QualityInspectionItems.length) {
           for (let idx = 0; idx < existingInspection.QualityInspectionItems.length; idx++) {
             const qi = existingInspection.QualityInspectionItems[idx];
-            const inputLine = body.items?.find(b => b.inspectionItemId === qi.InspectionItemId);
+            const inputLine = items.find(b => b.inspectionItemId === qi.InspectionItemId);
             const grnLine = grn.GoodsReceiptItems[idx];
             if (inputLine && grnLine && grnLine.ItemId === qi.ItemId) {
               const accepted = Number(inputLine.acceptedQuantity ?? grnLine.DeliveredQuantity);
@@ -234,7 +233,7 @@ export async function completeInspection(idInput: string | number, body: Inspect
         }
 
         // 3b. QA Rejection discrepancies for any rejected units
-        for (const item of body.items) {
+        for (const item of items) {
           const rejQty = Number(item.rejectedQuantity ?? 0);
           if (rejQty > 0) {
             const source = existingInspection.QualityInspectionItems.find(l => l.InspectionItemId === item.inspectionItemId);
