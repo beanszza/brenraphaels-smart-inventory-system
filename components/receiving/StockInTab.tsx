@@ -113,22 +113,22 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
       {/* Top action bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Sub-Tab Navigation */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
             onClick={() => {
               setActiveSubTab("pending");
               setPage(1);
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeSubTab === "pending"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted/60 text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
             }`}
           >
             <span>Pending Approval</span>
             <span
-              className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
                 activeSubTab === "pending"
                   ? "bg-background text-foreground"
                   : "bg-muted text-muted-foreground"
@@ -144,15 +144,15 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
               setActiveSubTab("approved");
               setPage(1);
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeSubTab === "approved"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted/60 text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
             }`}
           >
             <span>Approved</span>
             <span
-              className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
                 activeSubTab === "approved"
                   ? "bg-background text-foreground"
                   : "bg-muted text-muted-foreground"
@@ -168,15 +168,15 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
               setActiveSubTab("committed");
               setPage(1);
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeSubTab === "committed"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted/60 text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
             }`}
           >
             <span>Committed</span>
             <span
-              className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
                 activeSubTab === "committed"
                   ? "bg-background text-foreground"
                   : "bg-muted text-muted-foreground"
@@ -192,15 +192,15 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
               setActiveSubTab("draft");
               setPage(1);
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeSubTab === "draft"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted/60 text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
             }`}
           >
             <span>Drafts</span>
             <span
-              className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
                 activeSubTab === "draft"
                   ? "bg-background text-foreground"
                   : "bg-muted text-muted-foreground"
@@ -216,15 +216,15 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
               setActiveSubTab("rejected");
               setPage(1);
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeSubTab === "rejected"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted/60 text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
             }`}
           >
             <span>Rejected</span>
             <span
-              className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
                 activeSubTab === "rejected"
                   ? "bg-background text-foreground"
                   : "bg-muted text-muted-foreground"

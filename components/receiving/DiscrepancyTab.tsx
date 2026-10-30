@@ -119,7 +119,7 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
       {/* Top action row */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Subtab Pill Navigation */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {tabs.map((t) => {
             const isActive = activeSubTab === t.id;
             return (
@@ -130,22 +130,20 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
                   setActiveSubTab(t.id);
                   setPage(1);
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted/60 text-muted-foreground hover:text-foreground"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
                 <span>{t.label}</span>
-                {t.count > 0 && (
-                  <span
-                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                      isActive ? "bg-background text-foreground" : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {t.count}
-                  </span>
-                )}
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
+                    isActive ? "bg-background text-foreground" : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {t.count}
+                </span>
               </button>
             );
           })}

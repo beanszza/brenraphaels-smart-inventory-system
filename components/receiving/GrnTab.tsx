@@ -158,7 +158,7 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
       {/* Top Header Controls */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Receive deliveries</h2>
+          <h2 className="text-2xl font-bold text-foreground">Receive Deliveries</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Record physical counts and send received goods to Quality Assurance.
           </p>
@@ -252,24 +252,22 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
               setActiveSubTab("pending");
               setPage(1);
             }}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeSubTab === "pending"
                 ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
             }`}
           >
             <span>Pending Receiving</span>
-            {counts.pending > 0 && (
-              <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  activeSubTab === "pending"
-                    ? "bg-background text-foreground"
-                    : "bg-foreground/20 text-foreground"
-                }`}
-              >
-                {counts.pending}
-              </span>
-            )}
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
+                activeSubTab === "pending"
+                  ? "bg-background text-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {counts.pending}
+            </span>
           </button>
 
           <button
@@ -278,24 +276,22 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
               setActiveSubTab("posted");
               setPage(1);
             }}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeSubTab === "posted"
                 ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
             }`}
           >
             <span>Posted GRNs</span>
-            {counts.posted > 0 && (
-              <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  activeSubTab === "posted"
-                    ? "bg-background text-foreground"
-                    : "bg-foreground/20 text-foreground"
-                }`}
-              >
-                {counts.posted}
-              </span>
-            )}
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
+                activeSubTab === "posted"
+                  ? "bg-background text-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {counts.posted}
+            </span>
           </button>
         </div>
       </div>
