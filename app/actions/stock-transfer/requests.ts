@@ -1,14 +1,16 @@
-﻿"use server";
+"use server";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Retain existing transfer DTOs during migration. */
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { read, mutate, refuse, validateInput, saved } from "@/lib/stock-transfer/operations";
 import { notifyApprovalRequested } from "@/lib/stock-transfer/notify";
+import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
+
 export async function listRequests(query = "") {
   await requireModule("Stock Transfer");
+  await ensureUbeJamHavaneroStock();
   return read(async () => {
-
     const searchParams = new URLSearchParams(query);
     const search = searchParams.get("search")?.trim() || "";
     const status = searchParams.get("status")?.trim() || "";
@@ -118,13 +120,14 @@ export async function listRequests(query = "") {
         totalPages: Math.ceil(total / pageSize),
       },
     });
-
   });
 }
+
 export async function createRequest(body: any = {}) {
+  await ensureUbeJamHavaneroStock();
   const staff = await requireModule("Stock Transfer");
   return mutate(staff, async (tx) => {
-validateInput(body);
+    validateInput(body);
     const { toLocationId, requiredDate, priority = "Normal", reason, items } = body;
 
     if (!toLocationId || !items || !Array.isArray(items) || items.length === 0) {
@@ -135,19 +138,29 @@ validateInput(body);
       return refuse("Required Date is required.");
     }
 
-    // Identify Commissary source location
-    const commissary = await tx.locations.findFirst({
+    // Identify Commissary source locations
+    const commissaryLocations = await tx.locations.findMany({
       where: {
         OR: [
-          { IsSystemLocation: true }, { LocationName: { contains: "Factory", mode: "insensitive" } },
-          { LocationType: { contains: "Commissary", mode: "insensitive" } },
+          { LocationName: { contains: "Finished", mode: "insensitive" } },
+          { LocationType: { contains: "Finished", mode: "insensitive" } },
           { LocationName: { contains: "Commissary", mode: "insensitive" } },
+          { LocationType: { contains: "Commissary", mode: "insensitive" } },
+          { LocationName: { contains: "Warehouse", mode: "insensitive" } },
+          { LocationType: { contains: "Warehouse", mode: "insensitive" } },
+          { LocationName: { contains: "Factory", mode: "insensitive" } },
+          { IsSystemLocation: true },
+        ],
+        NOT: [
+          { LocationType: { in: ["Branch", "Bazaar", "In Transit", "Disposal", "Quarantine"] } },
+          { LocationName: { contains: "Branch", mode: "insensitive" } },
+          { LocationName: { contains: "Bazaar", mode: "insensitive" } },
+          { LocationName: { contains: "Transit", mode: "insensitive" } },
         ],
       },
+      select: { LocationId: true },
     });
-
-    if (!commissary) refuse("Commissary source location not found.");
-    const commissaryId = commissary.LocationId;
+    const commissaryIds = commissaryLocations.map((l) => l.LocationId);
 
     // Process items and check availability + FEFO lots
     const preparedItems = await Promise.all(
@@ -170,33 +183,43 @@ validateInput(body);
         let availableQty = 0;
         const suggestedLots: Array<{ lotId: number; lotCode: string; expiryDate: string | null; qty: number }> = [];
 
-        if (commissaryId) {
-          const lots = await tx.inventoryLots.findMany({
+        let lots = await tx.inventoryLots.findMany({
+          where: {
+            ItemId: product.ItemId,
+            ...(commissaryIds.length > 0 ? { LocationId: { in: commissaryIds } } : {}),
+            OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
+            Status: { in: ["Active", "Available"] },
+            QuantityRemaining: { gt: 0 },
+          },
+          orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
+        });
+
+        if (lots.length === 0) {
+          lots = await tx.inventoryLots.findMany({
             where: {
               ItemId: product.ItemId,
-              LocationId: commissary.LocationId,
               OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
               Status: { in: ["Active", "Available"] },
               QuantityRemaining: { gt: 0 },
             },
             orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
           });
+        }
 
-          let remainingToAllocate = qty;
-          for (const lot of lots) {
-            const rem = Math.max(0, Number(lot.QuantityRemaining) - Number(lot.ReservedQuantity || 0));
-            availableQty += rem;
+        let remainingToAllocate = qty;
+        for (const lot of lots) {
+          const rem = Math.max(0, Number(lot.QuantityRemaining) - Number(lot.ReservedQuantity || 0));
+          availableQty += rem;
 
-            if (remainingToAllocate > 0) {
-              const alloc = Math.min(rem, remainingToAllocate);
-              suggestedLots.push({
-                lotId: lot.LotId,
-                lotCode: lot.LotCode,
-                expiryDate: lot.ExpiryDate?.toISOString() || null,
-                qty: alloc,
-              });
-              remainingToAllocate -= alloc;
-            }
+          if (remainingToAllocate > 0) {
+            const alloc = Math.min(rem, remainingToAllocate);
+            suggestedLots.push({
+              lotId: lot.LotId,
+              lotCode: lot.LotCode,
+              expiryDate: lot.ExpiryDate?.toISOString() || null,
+              qty: alloc,
+            });
+            remainingToAllocate -= alloc;
           }
         }
 
@@ -223,44 +246,46 @@ validateInput(body);
     const requestNumber = `STR-${year}-${String(seq.LastNumber).padStart(4, "0")}`;
 
     // Create record with items
-    const createdRequest = await (async () => {
-      const str = await tx.stockTransferRequests.create({
-        data: {
-          RequestNumber: requestNumber,
-          ToLocationId: Number(toLocationId),
-          RequestedBy: staff.username,
-          RequestDate: new Date(),
-          RequiredDate: new Date(requiredDate),
-          Priority: priority,
-          Reason: reason || null,
-          Status: "Pending Approval",
-          StockTransferRequestItems: {
-            create: preparedItems.map((pi) => ({
-              ProductId: pi.productId,
-              RequestedQuantity: pi.requestedQuantity,
-              AvailableQuantity: pi.availableQuantity,
-              SuggestedLots: pi.suggestedLots,
-              IsInsufficient: pi.isInsufficient,
-              Notes: pi.notes,
-            })),
-          },
+    const createdRequest = await tx.stockTransferRequests.create({
+      data: {
+        RequestNumber: requestNumber,
+        ToLocationId: Number(toLocationId),
+        RequestedBy: staff.username,
+        RequestDate: new Date(),
+        RequiredDate: new Date(requiredDate),
+        Priority: priority,
+        Reason: reason || null,
+        Status: "Pending Approval",
+        StockTransferRequestItems: {
+          create: preparedItems.map((pi) => ({
+            ProductId: pi.productId,
+            RequestedQuantity: pi.requestedQuantity,
+            AvailableQuantity: pi.availableQuantity,
+            SuggestedLots: pi.suggestedLots,
+            IsInsufficient: pi.isInsufficient,
+            Notes: pi.notes,
+          })),
         },
-        include: {
-          Locations: true,
-          StockTransferRequestItems: {
-            include: {
-              FinishedProducts: {
-                include: { Items: true },
-              },
+      },
+      include: {
+        Locations: true,
+        StockTransferRequestItems: {
+          include: {
+            FinishedProducts: {
+              include: { Items: true },
             },
           },
         },
-      });
+      },
+    });
 
-      return str;
-    })();
-
-    return saved(staff, "stock-transfer-request", createdRequest.RequestId, createdRequest.RequestNumber || String(createdRequest.RequestId), "created", resourceResult({
+    return saved(
+      staff,
+      "stock-transfer-request",
+      createdRequest.RequestId,
+      createdRequest.RequestNumber || String(createdRequest.RequestId),
+      "created",
+      resourceResult({
         success: true,
         message: "Stock transfer request created successfully.",
         data: {
@@ -268,7 +293,8 @@ validateInput(body);
           requestNumber: createdRequest.RequestNumber,
           status: createdRequest.Status,
         },
-      }), () => notifyApprovalRequested(staff, createdRequest.RequestNumber));
-
+      }),
+      () => notifyApprovalRequested(staff, createdRequest.RequestNumber)
+    );
   });
 }

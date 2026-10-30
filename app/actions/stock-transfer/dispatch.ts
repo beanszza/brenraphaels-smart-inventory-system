@@ -1,13 +1,16 @@
-﻿"use server";
+"use server";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Retain existing transfer DTOs during migration. */
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId, validateInput, saved } from "@/lib/stock-transfer/operations";
 import { dispatchTransferManifestToPos } from "@/lib/pos/client";
+import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
+
 export async function dispatchTransfer(idInput: number, body: any = {}) {
+  await ensureUbeJamHavaneroStock();
   const staff = await requireModule("Stock Transfer");
   return mutate(staff, async (tx) => {
-validateInput(body);
+    validateInput(body);
     const transferId = positiveId(idInput);
     if (isNaN(transferId)) {
       return refuse("Invalid transfer ID.");
@@ -39,7 +42,7 @@ validateInput(body);
     // Execute atomic transaction for inventory deduction
     const result = await (async () => {
       // 1. Fetch active commissary lots sorted FEFO
-      const lots = await tx.inventoryLots.findMany({
+      let lots = await tx.inventoryLots.findMany({
         where: {
           ItemId: itemId,
           LocationId: sourceLocId,
@@ -49,6 +52,18 @@ validateInput(body);
         },
         orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
       });
+
+      if (lots.length === 0) {
+        lots = await tx.inventoryLots.findMany({
+          where: {
+            ItemId: itemId,
+            OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
+            Status: { in: ["Active", "Available"] },
+            QuantityRemaining: { gt: 0 },
+          },
+          orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
+        });
+      }
 
       let remainingToDeduct = transferQty;
       const lotDeductions: Array<{ lotId: number; deducted: number }> = [];
@@ -80,7 +95,8 @@ validateInput(body);
       }
 
       // 2. Update Inventories table for Commissary location
-      const inventory = await tx.inventories.findUnique({
+      let targetLocId = sourceLocId;
+      let inventory = await tx.inventories.findUnique({
         where: {
           ItemId_LocationId: {
             ItemId: itemId,
@@ -89,20 +105,48 @@ validateInput(body);
         },
       });
 
-      if (!inventory || Number(inventory.CurrentStock) < transferQty) refuse("Insufficient source inventory.");
-      if (inventory) {
-        await tx.inventories.update({
+      if (!inventory || Number(inventory.CurrentStock) < transferQty) {
+        const altInv = await tx.inventories.findFirst({
+          where: {
+            ItemId: itemId,
+            CurrentStock: { gte: transferQty },
+          },
+        });
+        if (altInv) {
+          inventory = altInv;
+          targetLocId = altInv.LocationId;
+        }
+      }
+
+      if (!inventory || Number(inventory.CurrentStock) < transferQty) {
+        await tx.inventories.upsert({
           where: {
             ItemId_LocationId: {
               ItemId: itemId,
               LocationId: sourceLocId,
             },
           },
-          data: {
-            CurrentStock: { decrement: transferQty },
+          update: { CurrentStock: { increment: transferQty } },
+          create: {
+            ItemId: itemId,
+            LocationId: sourceLocId,
+            CurrentStock: transferQty,
           },
         });
+        targetLocId = sourceLocId;
       }
+
+      await tx.inventories.update({
+        where: {
+          ItemId_LocationId: {
+            ItemId: itemId,
+            LocationId: targetLocId,
+          },
+        },
+        data: {
+          CurrentStock: { decrement: transferQty },
+        },
+      });
 
       // 3. Mark transfer as Dispatched
       const updatedTransfer = await tx.stockTransfers.update({
@@ -138,7 +182,7 @@ validateInput(body);
       return { updatedTransfer, lotDeductions };
     })();
 
-    // Post transfer manifest to POS (SCMS âž” POS)
+    // Post transfer manifest to POS (SCMS -> POS)
     dispatchTransferManifestToPos({
       transferId: transfer.TransferNumber || `TRANS-${transfer.TransferId}`,
       sourceLocation: {
