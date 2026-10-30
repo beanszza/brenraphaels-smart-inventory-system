@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Toaster } from "@/components/ui/sonner";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useStaff } from "@/context/StaffContext";
+import { isQaStaff, isImsManager, isAdminStaff } from "@/lib/auth-roles";
 
 export type ReceivingTab = "grn" | "discrepancies" | "stockin" | "rtv" | "loss";
 export type ReceivingCounts = Record<ReceivingTab, number>;
@@ -22,15 +24,34 @@ export default function ViewGoodsReceiving({
   activeTab: ReceivingTab;
   children: ReactNode;
 }) {
+  const staff = useStaff();
+  const isQa = isQaStaff(staff);
+  const isManager = isImsManager(staff);
+  const isAdmin = isAdminStaff(staff);
+
+  const visibleTabs = tabs.filter(([id]) => {
+    if (isQa && !isAdmin) {
+      return id === "grn";
+    }
+    if (isManager && !isAdmin) {
+      return id !== "grn";
+    }
+    return true;
+  });
+
   return (
     <div className="w-full min-h-full py-7 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
       <PageHeader
         title="Goods Receiving & Inbound Logistics"
-        description="Receive deliveries, verify quantities, resolve discrepancies and commit stock into inventory."
+        description={
+          isQa && !isAdmin
+            ? "Receive inbound supplier deliveries, verify batch counts, and conduct Quality Assurance inspections."
+            : "Review put-away stock, resolve delivery discrepancies, manage supplier returns, and handle inventory loss."
+        }
       />
       <nav aria-label="Goods Receiving" className="border-b border-border">
         <div className="flex items-center gap-2 overflow-x-auto">
-          {tabs.map(([id, label]) => (
+          {visibleTabs.map(([id, label]) => (
             <Link
               key={id}
               href={`/goods-receiving?tab=${id}`}

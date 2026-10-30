@@ -5,6 +5,7 @@ import type { Prisma } from "@prisma/client";
 const STAFF_NAME_MAP: Record<string, string> = {
   "2026-VM-007": "Vince Neil Madeja",
   "2026-ADMIN-001": "Jude Nitram",
+  "2026-JP-008": "Quality Assurance Officer",
 };
 
 export function resolveStaffName(usernameOrName: string | null | undefined): string {

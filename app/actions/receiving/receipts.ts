@@ -163,6 +163,21 @@ export async function createReceipt(body: ReceiptInput) {
       });
     }
 
+    // Aggregate total delivered per delivery item to handle multi-batch splits accurately
+    const totalDeliveredByDeliveryItem = new Map<number, number>();
+    for (const itemReq of body.items) {
+      const delItem = delivery.DeliveryItems.find(i =>
+        itemReq.deliveryItemId ? i.DeliveryItemId === itemReq.deliveryItemId : i.ItemId === itemReq.itemId
+      );
+      if (delItem) {
+        const qty = Number(itemReq.deliveredQuantity ?? itemReq.actualReceivedQuantity ?? 0);
+        totalDeliveredByDeliveryItem.set(
+          delItem.DeliveryItemId,
+          (totalDeliveredByDeliveryItem.get(delItem.DeliveryItemId) || 0) + qty
+        );
+      }
+    }
+
     const grnItems = [];
     for (const itemReq of body.items) {
       const delItem = delivery.DeliveryItems.find(i =>
@@ -184,7 +199,8 @@ export async function createReceipt(body: ReceiptInput) {
         return refuse(`Actual received quantity cannot be negative.`);
       }
 
-      const variance = delivered - declared;
+      const totalDeliveredForItem = totalDeliveredByDeliveryItem.get(delItem.DeliveryItemId) ?? delivered;
+      const netVariance = totalDeliveredForItem - declared;
 
       grnItems.push({
         PoItemId: poItem.PoItemId,
@@ -193,8 +209,8 @@ export async function createReceipt(body: ReceiptInput) {
         PreviouslyReceivedQuantity: 0,
         DeclaredQuantity: declared,
         DeliveredQuantity: delivered,
-        VarianceQuantity: Math.abs(variance),
-        VarianceType: variance < 0 ? "Short" : variance > 0 ? "Over" : "Exact",
+        VarianceQuantity: Math.abs(netVariance),
+        VarianceType: netVariance < 0 ? "Short" : netVariance > 0 ? "Over" : "Exact",
         DeliveryItemId: delItem.DeliveryItemId,
         PurchaseUomId: poItem.PurchaseUomId,
         SupplierLotCode: itemReq.supplierLotCode?.trim() || null,
@@ -381,6 +397,17 @@ export async function updateReceipt(idInput: string | number, body: ReceiptInput
       return refuse("GRN must contain at least one item.");
     }
 
+    // Aggregate total delivered per delivery item to handle multi-batch splits accurately
+    const totalDeliveredByItem = new Map<number, number>();
+    for (const itemReq of body.items) {
+      const delItem = grn.Deliveries?.DeliveryItems?.find(i =>
+        itemReq.deliveryItemId ? i.DeliveryItemId === itemReq.deliveryItemId : i.ItemId === itemReq.itemId
+      );
+      const key = delItem ? delItem.DeliveryItemId : itemReq.itemId;
+      const qty = Number(itemReq.deliveredQuantity ?? itemReq.actualReceivedQuantity ?? 0);
+      totalDeliveredByItem.set(key, (totalDeliveredByItem.get(key) || 0) + qty);
+    }
+
     const grnItems = [];
     for (const itemReq of body.items) {
       const oldItem = grn.GoodsReceiptItems?.find(i =>
@@ -406,7 +433,9 @@ export async function updateReceipt(idInput: string | number, body: ReceiptInput
         return refuse(`Actual received quantity cannot be negative.`);
       }
 
-      const variance = delivered - declared;
+      const key = delItem ? delItem.DeliveryItemId : itemReq.itemId;
+      const totalDeliveredForItem = totalDeliveredByItem.get(key) ?? delivered;
+      const netVariance = totalDeliveredForItem - declared;
 
       grnItems.push({
         PoItemId: oldItem?.PoItemId ?? poItem?.PoItemId ?? itemReq.poItemId!,
@@ -415,8 +444,8 @@ export async function updateReceipt(idInput: string | number, body: ReceiptInput
         PreviouslyReceivedQuantity: oldItem?.PreviouslyReceivedQuantity ?? 0,
         DeclaredQuantity: declared,
         DeliveredQuantity: delivered,
-        VarianceQuantity: Math.abs(variance),
-        VarianceType: variance < 0 ? "Short" : variance > 0 ? "Over" : "Exact",
+        VarianceQuantity: Math.abs(netVariance),
+        VarianceType: netVariance < 0 ? "Short" : netVariance > 0 ? "Over" : "Exact",
         DeliveryItemId: oldItem?.DeliveryItemId ?? delItem?.DeliveryItemId ?? itemReq.deliveryItemId ?? null,
         PurchaseUomId: oldItem?.PurchaseUomId ?? poItem?.PurchaseUomId ?? 1,
         SupplierLotCode: itemReq.supplierLotCode?.trim() || oldItem?.SupplierLotCode || null,

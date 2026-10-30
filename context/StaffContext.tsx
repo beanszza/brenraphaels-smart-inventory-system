@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext } from "react";
 import type { Staff } from "@/lib/portal/client";
-import { isAdminStaff } from "@/lib/auth-roles";
+import { isAdminStaff, isQaStaff, isImsManager } from "@/lib/auth-roles";
 
-export { isAdminStaff } from "@/lib/auth-roles";
+export { isAdminStaff, isQaStaff, isImsManager } from "@/lib/auth-roles";
 
 const StaffContext = createContext<Staff | null>(null);
 
@@ -24,3 +24,12 @@ export function useIsAdmin(): boolean {
   return isAdminStaff(staff);
 }
 
+export function useIsQa(): boolean {
+  const staff = useContext(StaffContext);
+  return isQaStaff(staff);
+}
+
+export function useIsImsManager(): boolean {
+  const staff = useContext(StaffContext);
+  return isImsManager(staff);
+}

@@ -1,5 +1,6 @@
 import ViewGoodsReceiving, { type ReceivingTab } from "@/components/pages/ViewGoodsReceiving";
 import { requireModule } from "@/lib/portal/staff";
+import { isQaStaff, isImsManager, isAdminStaff } from "@/lib/auth-roles";
 import { getReceivingCounts } from "@/app/actions/receiving/lookups";
 import { listReceipts } from "@/app/actions/receiving/receipts";
 import { listDeliveriesForReceiving } from "@/app/actions/receiving/procurement-reads";
@@ -17,12 +18,32 @@ import LossReportTab from "@/components/receiving/LossReportTab";
 export default async function GoodsReceivingPage({ searchParams }: {
   searchParams: Promise<{ tab?: string | string[] }>;
 }) {
-  await requireModule("Goods Receiving");
+  const staff = await requireModule("Goods Receiving");
+  const isQa = isQaStaff(staff);
+  const isManager = isImsManager(staff);
+  const isAdmin = isAdminStaff(staff);
+
   const { tab } = await searchParams;
-  const activeTab: ReceivingTab =
-    typeof tab === "string" && ["discrepancies", "stockin", "rtv", "loss"].includes(tab)
-      ? (tab as ReceivingTab)
-      : "grn";
+  const requestedTab = typeof tab === "string" ? tab : undefined;
+
+  let activeTab: ReceivingTab;
+  if (isQa && !isAdmin) {
+    // Quality Assurance Officer (2026-JP-008) operates Goods Receipt Notes / Receive
+    activeTab = "grn";
+  } else if (isManager && !isAdmin) {
+    // IMS Manager (2026-VM-007) operates Discrepancies, Stock In, Supplier Returns, Loss / Disposal
+    if (requestedTab && ["discrepancies", "stockin", "rtv", "loss"].includes(requestedTab)) {
+      activeTab = requestedTab as ReceivingTab;
+    } else {
+      activeTab = "stockin";
+    }
+  } else {
+    // Admin or test staff access
+    activeTab =
+      requestedTab && ["discrepancies", "stockin", "rtv", "loss", "grn"].includes(requestedTab)
+        ? (requestedTab as ReceivingTab)
+        : "grn";
+  }
 
   const loadContent = async () => {
     switch (activeTab) {

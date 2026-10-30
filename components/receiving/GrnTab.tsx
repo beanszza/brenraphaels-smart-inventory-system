@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import GrnTable from "./GrnTable";
 import PendingReceivingTable from "./PendingReceivingTable";
 import Pagination from "@/components/Pagination";
+import { useStaff } from "@/context/StaffContext";
+import { isQaStaff } from "@/lib/auth-roles";
 import { GRN, ArrivedDelivery } from "./types";
 
 const CreateGrnModal = dynamic(() => import("./CreateGrnModal"), { ssr: false });
@@ -31,8 +33,15 @@ interface GrnTabProps {
 
 export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabProps) {
   const router = useRouter();
+  const staff = useStaff();
+  const isQa = isQaStaff(staff);
   const onPosted = () => {
-    window.dispatchEvent(new CustomEvent("receiving:switch-tab", { detail: "stockin" }));
+    if (isQa) {
+      setActiveSubTab("posted");
+      startRefresh(() => router.refresh());
+    } else {
+      window.dispatchEvent(new CustomEvent("receiving:switch-tab", { detail: "stockin" }));
+    }
   };
   const [activeSubTab, setActiveSubTab] = useState<SubTab>("pending");
   const [loading, startRefresh] = useTransition();

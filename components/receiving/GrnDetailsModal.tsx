@@ -226,41 +226,59 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {grn.items.map((item) => (
-                  <tr key={item.grnItemId} className="hover:bg-muted/15 transition-colors">
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      <div>{item.itemName}</div>
-                    </td>
-                    <td className="px-3 py-3 text-center text-muted-foreground">
-                      {item.purchaseUomName}
-                    </td>
-                    <td className="px-3 py-3 text-right font-mono text-muted-foreground">
-                      {item.orderedQuantity.toLocaleString()}
-                    </td>
-                    <td className="px-3 py-3 text-right font-mono font-semibold text-foreground">
-                      {item.deliveredQuantity.toLocaleString()}
-                    </td>
-                    <td className="px-3 py-3 text-center font-mono">
-                      {item.varianceType === "Short" ? (
-                        <span className="text-[11px] font-semibold text-foreground bg-muted/60 border border-border px-2 py-0.5 rounded">
-                          Short ({item.varianceQuantity})
-                        </span>
-                      ) : item.varianceType === "Over" ? (
-                        <span className="text-[11px] font-semibold text-foreground bg-muted/60 border border-border px-2 py-0.5 rounded">
-                          Over (+{item.varianceQuantity})
-                        </span>
-                      ) : (
-                        <span className="text-[11px] font-semibold text-muted-foreground">Match</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-foreground font-mono text-xs whitespace-nowrap">
-                      {item.supplierLotCode || "—"}
-                    </td>
-                    <td className="px-3 py-3 text-center text-muted-foreground whitespace-nowrap">
-                      {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—"}
-                    </td>
-                  </tr>
-                ))}
+                {grn.items.map((item) => {
+                  const itemRows = grn.items.filter((i) => i.itemId === item.itemId);
+                  const isMultiBatch = itemRows.length > 1;
+                  const totalDeliveredForItem = itemRows.reduce((sum, r) => sum + Number(r.deliveredQuantity || 0), 0);
+                  const declaredForItem = Number(item.declaredQuantity ?? item.orderedQuantity ?? 0);
+                  const netVariance = totalDeliveredForItem - declaredForItem;
+
+                  const isExact = netVariance === 0 || item.varianceType === "Exact" || (isMultiBatch && netVariance === 0);
+                  const isShort = !isExact && (netVariance < 0 || item.varianceType === "Short");
+                  const isOver = !isExact && (netVariance > 0 || item.varianceType === "Over");
+                  const displayVarianceQty = Math.abs(netVariance !== 0 ? netVariance : item.varianceQuantity);
+
+                  return (
+                    <tr key={item.grnItemId} className="hover:bg-muted/15 transition-colors">
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        <div>{item.itemName}</div>
+                        {isMultiBatch && (
+                          <div className="text-[10px] text-muted-foreground font-normal">
+                            Batch received: {item.deliveredQuantity} (Item total: {totalDeliveredForItem} of {declaredForItem})
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3 text-center text-muted-foreground">
+                        {item.purchaseUomName}
+                      </td>
+                      <td className="px-3 py-3 text-right font-mono text-muted-foreground">
+                        {item.orderedQuantity.toLocaleString()}
+                      </td>
+                      <td className="px-3 py-3 text-right font-mono font-semibold text-foreground">
+                        {item.deliveredQuantity.toLocaleString()}
+                      </td>
+                      <td className="px-3 py-3 text-center font-mono">
+                        {isShort ? (
+                          <span className="text-[11px] font-semibold text-destructive bg-destructive/10 border border-destructive/20 px-2 py-0.5 rounded">
+                            Short ({displayVarianceQty})
+                          </span>
+                        ) : isOver ? (
+                          <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                            Over (+{displayVarianceQty})
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-semibold text-muted-foreground">Match</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-foreground font-mono text-xs whitespace-nowrap">
+                        {item.supplierLotCode || "—"}
+                      </td>
+                      <td className="px-3 py-3 text-center text-muted-foreground whitespace-nowrap">
+                        {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
