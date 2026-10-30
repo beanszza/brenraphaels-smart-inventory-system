@@ -29,10 +29,6 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
       SellingPrice: body.sellingPrice !== undefined ? body.sellingPrice : product.SellingPrice,
     };
 
-    if (body.unitCost !== undefined && body.unitCost !== null && body.unitCost !== "") {
-      updateData.UnitCost = Number(body.unitCost);
-    }
-
     // Keep SKU strictly immutable to preserve POS and Stock Transfer mapping
     if (body.sku && !product.Sku) {
       updateData.Sku = body.sku;
@@ -66,7 +62,6 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
       productId: updatedProduct.ProductId,
       itemId: updatedProduct.ItemId,
       sellingPrice: Number(updatedProduct.SellingPrice),
-      unitCost: Number(updatedProduct.UnitCost),
       sku: updatedProduct.Sku,
       itemName: updatedProduct.Items?.ItemName || "",
       variant: updatedProduct.Variant,

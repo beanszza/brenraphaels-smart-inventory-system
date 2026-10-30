@@ -55,7 +55,6 @@ export async function listFinishedProducts() {
       productId: fp.ProductId,
       itemId: fp.ItemId,
       sellingPrice: Number(fp.SellingPrice),
-      unitCost: Number(fp.UnitCost ?? 0),
       sku: fp.Sku,
       itemName: fp.Items?.ItemName || "",
       variant: fp.Variant,
@@ -63,7 +62,6 @@ export async function listFinishedProducts() {
       productCode: fp.Items?.ItemCode || "",
       categoryName: fp.Items?.Category?.CategoryName || "Finished Goods",
       uomName: fp.Items?.Uom?.Abbreviation || "pcs",
-      description: fp.Items?.Description || "",
     }));
     return resourceResult({ success: true, data: response });
   });
@@ -97,7 +95,6 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
 
     const categoryId = positiveId(body.categoryId);
     const uomId = positiveId(body.uomId);
-    const productUnitCost = Number(body.unitCost) >= 0 ? Number(body.unitCost) : 0;
 
     // Check duplicate variant names in the submitted payload
     const seenNames = new Set<string>();
@@ -123,7 +120,6 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
         data: {
           ItemCode: productCode,
           ItemName: trimmedName,
-          Description: body.description?.trim() || null,
           UomId: uomId,
           StockUomId: uomId,
           CategoryId: categoryId,
@@ -136,7 +132,6 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
       item = await tx.items.update({
         where: { ItemId: item.ItemId },
         data: {
-          Description: body.description?.trim() || item.Description,
           UomId: uomId,
           StockUomId: uomId,
           CategoryId: categoryId,
@@ -149,13 +144,11 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
       const cleanVarName = v.variantName.trim();
       const baseSku = buildBaseVariantSku(trimmedName, cleanVarName);
       const uniqueSku = await getUniqueVariantSku(tx, baseSku);
-      const varCost = Number(v.unitCost) > 0 ? Number(v.unitCost) : productUnitCost;
 
       const created = await tx.finishedProducts.create({
         data: {
           ItemId: item.ItemId,
           SellingPrice: v.sellingPrice,
-          UnitCost: varCost,
           Sku: uniqueSku,
           Variant: cleanVarName,
         },
@@ -173,7 +166,6 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
         productId: created.ProductId,
         itemId: created.ItemId,
         sellingPrice: Number(created.SellingPrice),
-        unitCost: Number(created.UnitCost),
         sku: created.Sku,
         variant: created.Variant,
         itemName: created.Items?.ItemName || "",
@@ -191,7 +183,6 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
             itemId: item.ItemId,
             itemName: item.ItemName,
             itemCode: item.ItemCode,
-            description: item.Description,
           },
           variants: createdVariants,
         },
@@ -251,7 +242,6 @@ export async function createFinishedProduct(body: any = {}) {
         data: {
           ItemCode: productCode,
           ItemName: trimmedName,
-          Description: body.description?.trim() || null,
           UomId: uom?.UomId || 1,
           StockUomId: uom?.UomId || 1,
           CategoryId: category?.CategoryId || 1,
@@ -272,13 +262,10 @@ export async function createFinishedProduct(body: any = {}) {
       finalSku = await getUniqueVariantSku(tx, finalSku);
     }
 
-    const unitCost = Number(body.unitCost) >= 0 ? Number(body.unitCost) : 0;
-
     const newProduct = await tx.finishedProducts.create({
       data: {
         ItemId: item.ItemId,
         SellingPrice: body.sellingPrice,
-        UnitCost: unitCost,
         Sku: finalSku,
         Variant: variantLabel,
       },
@@ -296,7 +283,6 @@ export async function createFinishedProduct(body: any = {}) {
       productId: newProduct.ProductId,
       itemId: newProduct.ItemId,
       sellingPrice: Number(newProduct.SellingPrice),
-      unitCost: Number(newProduct.UnitCost),
       sku: newProduct.Sku,
       itemName: newProduct.Items?.ItemName || "",
       variant: newProduct.Variant,
