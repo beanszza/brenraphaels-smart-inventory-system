@@ -92,7 +92,11 @@ export async function mutate(
 ): Promise<ResourceResult> {
   let savedResult: Saved;
   try {
-    savedResult = await prisma.$transaction(work, { isolationLevel: "Serializable" });
+    savedResult = await prisma.$transaction(work, {
+      isolationLevel: "Serializable",
+      maxWait: 15000,
+      timeout: 30000,
+    });
   } catch (error) {
     return failed(error);
   }

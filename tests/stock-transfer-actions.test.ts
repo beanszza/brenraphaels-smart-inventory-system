@@ -78,7 +78,7 @@ vi.mock("@/lib/prisma", () => {
   return { prisma: new Proxy({}, { get: (_, key: string) => {
     fake.dataAccess(key);
     if (key === "$transaction") return async (work: (tx: unknown) => Promise<unknown>, options: unknown) => {
-      expect(options).toEqual({ isolationLevel: "Serializable" }); fake.open = true;
+      expect(options).toMatchObject({ isolationLevel: "Serializable" }); fake.open = true;
       try {
         const result = await work(tx);
         if (fake.commitFails) throw new Error("Commit failed");
