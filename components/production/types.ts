@@ -279,6 +279,7 @@ export interface FinishedProductItem {
   categoryName?: string;
   uomName?: string;
   description?: string;
+  isActive?: boolean;
 }
 
 export interface ProductionBatchItem {

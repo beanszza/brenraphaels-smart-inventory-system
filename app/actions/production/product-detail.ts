@@ -24,9 +24,13 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
       return refuse("Finished product not found.");
     }
 
+    const effectivePrice = body.sellingPrice !== undefined 
+      ? body.sellingPrice 
+      : (body.unitCost !== undefined ? body.unitCost : product.SellingPrice);
+
     const updateData: any = {
       Variant: body.variant !== undefined ? body.variant : product.Variant,
-      SellingPrice: body.sellingPrice !== undefined ? body.sellingPrice : product.SellingPrice,
+      SellingPrice: effectivePrice,
     };
 
     // Keep SKU strictly immutable to preserve POS and Stock Transfer mapping
@@ -34,15 +38,18 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
       updateData.Sku = body.sku;
     }
 
+    const hasItemUpdate = body.productName !== undefined || body.isActive !== undefined;
+
     const updatedProduct = await tx.finishedProducts.update({
       where: { ProductId: id },
       data: {
         ...updateData,
-        ...(body.productName
+        ...(hasItemUpdate
           ? {
               Items: {
                 update: {
-                  ItemName: body.productName,
+                  ...(body.productName !== undefined ? { ItemName: body.productName } : {}),
+                  ...(body.isActive !== undefined ? { IsActive: Boolean(body.isActive) } : {}),
                 },
               },
             }
@@ -68,6 +75,7 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
       productCode: updatedProduct.Items?.ItemCode || "",
       categoryName: updatedProduct.Items?.Category?.CategoryName || "",
       uomName: updatedProduct.Items?.Uom?.Abbreviation || "",
+      isActive: updatedProduct.Items?.IsActive ?? true,
     };
 
     return {

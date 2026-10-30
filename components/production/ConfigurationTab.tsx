@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/dialog";
 import { FinishedProductItem } from "./types";
 import AddFinishedProductModal from "./AddFinishedProductModal";
+import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { uploadProductionImage } from "@/lib/production/image-client";
 import { ProductionImage } from "./ProductionImage";
@@ -115,15 +116,14 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
   const [quickVarSku, setQuickVarSku] = useState("");
   const [quickVarPrice, setQuickVarPrice] = useState<number | "">(150);
 
-  // ── Edit Single Variant Modal ──
-  const [isEditVariantOpen, setIsEditVariantOpen] = useState(false);
+  // ── Edit Finished Product Modal ──
+  const [isEditProductOpen, setIsEditProductOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FinishedProductItem | null>(null);
   const [editProductName, setEditProductName] = useState("");
   const [editVariantStr, setEditVariantStr] = useState("");
   const [editSku, setEditSku] = useState("");
   const [editPrice, setEditPrice] = useState<number | "">(0);
-  const [editUnitCost, setEditUnitCost] = useState<number | "">(0);
-  const [quickVarUnitCost, setQuickVarUnitCost] = useState<number | "">(0);
+  const [editActive, setEditActive] = useState<boolean>(true);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -394,61 +394,64 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
     }
   };
 
-  // ── Open Edit Single Variant Modal ──
-  const handleOpenEditVariant = (prod: FinishedProductItem) => {
+  // ── Open Edit Finished Product Modal ──
+  const handleOpenEditProduct = (prod: FinishedProductItem) => {
     setEditingItem(prod);
     setEditProductName(prod.itemName);
     setEditVariantStr(prod.variant || "");
     setEditSku(prod.sku || "");
     setEditPrice(prod.sellingPrice || 0);
-    setIsEditVariantOpen(true);
+    setEditActive(prod.isActive !== false);
+    setIsEditProductOpen(true);
   };
 
-  const handleSaveEditVariant = async (e: React.FormEvent) => {
+  const handleSaveEditProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingItem) return;
+
+    const trimmedName = editProductName.trim();
+    if (!trimmedName) {
+      toast.error("Product Name is required.");
+      return;
+    }
+    const trimmedVariant = editVariantStr.trim();
+    if (!trimmedVariant) {
+      toast.error("Variant packaging is required.");
+      return;
+    }
+    const cost = Number(editPrice);
+    if (isNaN(cost) || cost < 0) {
+      toast.error("Please enter a valid Unit Cost (₱).");
+      return;
+    }
 
     try {
       setSubmitting(true);
       await actionResponse(productionUpdateFinishedProduct(editingItem.productId, {
-        productName: editProductName.trim(),
-        variant: editVariantStr.trim(),
-        sellingPrice: Number(editPrice) || 0,
+        productName: trimmedName,
+        variant: trimmedVariant,
+        sellingPrice: cost,
+        unitCost: cost,
         sku: editSku.trim().toUpperCase(),
+        isActive: editActive,
       }));
 
-      toast.success("Variant details updated successfully");
-      setIsEditVariantOpen(false);
+      toast.success("Product details updated successfully");
+      setIsEditProductOpen(false);
       fetchProducts();
 
       // Automatically sync updated variant with POS
-      actionResponse(syncProductCatalogToPos(editProductName.trim()))
+      actionResponse(syncProductCatalogToPos(trimmedName))
         .then((posRes) => {
           if (posRes.data?.success) {
-            toast.success(`Updated "${editProductName.trim()}" in POS!`);
+            toast.success(`Updated "${trimmedName}" in POS!`);
           }
         })
         .catch(() => {});
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to update variant");
+      toast.error(err?.response?.data?.message || err?.message || "Failed to update product");
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  // ── Delete Variant ──
-  const handleDeleteVariant = async (productId: number, variantLabel: string) => {
-    if (!confirm(`Are you sure you want to remove variant "${variantLabel}"?`)) return;
-
-    try {
-      await actionResponse(productionDeleteFinishedProduct(productId));
-      toast.success("Variant removed successfully");
-      fetchProducts();
-    } catch (err: any) {
-      toast.error(
-        err?.response?.data?.message ||
-          "Cannot delete variant because it may be linked to recipes or batches"
-      );
     }
   };
 
@@ -539,17 +542,6 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
           >
             <RefreshCw className={`w-3.5 h-3.5 text-primary ${syncingPos ? "animate-spin" : ""}`} />
             {syncingPos ? "Syncing POS..." : "Sync with POS"}
-          </Button>
-
-          {/* Dedicated "+ Add Variant" button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleOpenAddVariant()}
-            className="flex items-center justify-center gap-1.5 h-9 rounded-xl border-border hover:bg-muted font-semibold text-xs text-foreground cursor-pointer shadow-sm"
-          >
-            <Plus className="w-3.5 h-3.5 text-foreground" />
-            Add Variant
           </Button>
 
           {/* "+ Add Product" button */}
@@ -651,10 +643,10 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
 
                       {/* Status */}
                       <td className="py-2.5 px-4">
-                        <StatusBadge status="Active" />
+                        <StatusBadge status={product.isActive === false ? "Inactive" : "Active"} />
                       </td>
 
-                      {/* Actions: 3-dots Dropdown Menu (Pattern from PRTable.tsx) */}
+                      {/* Actions: 3-dots Dropdown Menu */}
                       <td className="py-2.5 px-4 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -666,53 +658,15 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
                               <MoreHorizontal className="w-4 h-4 text-foreground" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 z-[200]">
-                            {/* Add Variant to this product */}
+                          <DropdownMenuContent align="end" className="w-40 z-[200]">
+                            {/* Edit Product */}
                             <DropdownMenuItem
-                              onClick={() => handleOpenAddVariant(product.itemName)}
-                              className="flex items-center gap-2.5 px-3 py-2 cursor-pointer"
-                            >
-                              <Plus className="w-3.5 h-3.5 text-foreground shrink-0" />
-                              <span className="truncate text-foreground">
-                                Add Variant
-                              </span>
-                            </DropdownMenuItem>
-
-                            {/* Edit Variant */}
-                            <DropdownMenuItem
-                              onClick={() => handleOpenEditVariant(product)}
+                              onClick={() => handleOpenEditProduct(product)}
                               className="flex items-center gap-2.5 px-3 py-2 cursor-pointer"
                             >
                               <Pencil className="w-3.5 h-3.5 text-foreground shrink-0" />
-                              <span className="truncate text-foreground">
-                                Edit Variant
-                              </span>
-                            </DropdownMenuItem>
-
-                            {/* Upload Photo */}
-                            <DropdownMenuItem
-                              onClick={() => handleRowUploadClick(product.productId)}
-                              className="flex items-center gap-2.5 px-3 py-2 cursor-pointer"
-                            >
-                              <Upload className="w-3.5 h-3.5 text-foreground shrink-0" />
-                              <span className="truncate text-foreground">
-                                Upload Photo
-                              </span>
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator />
-
-                            {/* Delete Variant */}
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteVariant(
-                                product.productId,
-                                product.variant || product.itemName
-                              )}
-                              className="flex items-center gap-2.5 px-3 py-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                              <span className="truncate">
-                                Delete Variant
+                              <span className="truncate text-foreground font-medium">
+                                Edit Product
                               </span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -740,267 +694,116 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
       />
 
       {/* ─────────────────────────────────────────────────────────────
-          2. QUICK ADD SINGLE VARIANT MODAL
+          2. EDIT FINISHED PRODUCT MODAL (Reference: SupplyModal)
           ───────────────────────────────────────────────────────────── */}
-      <Dialog open={isAddVariantOpen} onOpenChange={setIsAddVariantOpen}>
-        <DialogContent className="sm:max-w-md bg-card border-border p-6 shadow-2xl">
-          <DialogHeader className="border-b border-border pb-3">
-            <DialogTitle className="text-base font-bold text-foreground">
-              Add Variant to Product
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Add a new size, packaging type, SKU, and price to a finished product
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSaveQuickVariant} className="space-y-4 pt-2">
+      {isEditProductOpen && (
+        <ModalWrapper
+          open={isEditProductOpen}
+          title="Edit Finished Product"
+          onClose={() => setIsEditProductOpen(false)}
+          size="max-w-xl"
+        >
+          <form onSubmit={handleSaveEditProduct} className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-foreground mb-1 block">
-                Target Product <span className="text-foreground">*</span>
-              </label>
-              {distinctProductNames.length > 0 ? (
-                <Select
-                  value={targetProductName}
-                  onValueChange={(val) => {
-                    setTargetProductName(val);
-                    setQuickVarSku(generateSku(val, quickVarType, quickVarSize));
-                  }}
-                >
-                  <SelectTrigger className="h-9 text-xs">
-                    <SelectValue placeholder="Select Product" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {distinctProductNames.map((name) => (
-                      <SelectItem key={name} value={name} className="text-xs">
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  placeholder="e.g. Ube Halaya Supreme"
-                  value={targetProductName}
-                  onChange={(e) => setTargetProductName(e.target.value)}
-                  className="h-9 text-xs"
-                  required
-                />
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">
-                  Packaging Type <span className="text-foreground">*</span>
-                </label>
-                <Select
-                  value={quickVarType}
-                  onValueChange={(val) => {
-                    setQuickVarType(val);
-                    setQuickVarSku(generateSku(targetProductName, val, quickVarSize));
-                  }}
-                >
-                  <SelectTrigger className="h-9 text-xs">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PACKAGING_TYPES.map((t) => (
-                      <SelectItem key={t} value={t} className="text-xs">
-                        {t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">
-                  Size / Net Weight <span className="text-foreground">*</span>
-                </label>
-                <Input
-                  placeholder="e.g. 500g, 1kg"
-                  value={quickVarSize}
-                  onChange={(e) => {
-                    setQuickVarSize(e.target.value);
-                    setQuickVarSku(
-                      generateSku(targetProductName, quickVarType, e.target.value)
-                    );
-                  }}
-                  className="h-9 text-xs"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-foreground">
-                    SKU Code
-                  </label>
-                  <span className="text-[10px] uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono font-medium">
-                    System Generated
-                  </span>
-                </div>
-                <div className="relative">
-                  <Input
-                    readOnly
-                    title="SKU is automatically generated by the system"
-                    value={quickVarSku || generateSku(targetProductName, quickVarType, quickVarSize)}
-                    className="h-9 text-xs font-mono bg-muted/40 text-muted-foreground cursor-not-allowed border-dashed select-none pr-12"
-                  />
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] uppercase font-semibold tracking-wider text-muted-foreground/70 pointer-events-none">
-                    Locked
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">
-                  Selling Price (₱) <span className="text-foreground">*</span>
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="250.00"
-                  value={quickVarPrice}
-                  onChange={(e) =>
-                    setQuickVarPrice(
-                      e.target.value === "" ? "" : Number(e.target.value)
-                    )
-                  }
-                  className="h-9 text-xs font-mono"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-3 border-t border-border">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAddVariantOpen(false)}
-                className="text-xs font-semibold border-border hover:bg-muted cursor-pointer"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-              >
-                {submitting ? "Adding..." : "Add Variant"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* ─────────────────────────────────────────────────────────────
-          3. EDIT SINGLE VARIANT MODAL
-          ───────────────────────────────────────────────────────────── */}
-      <Dialog open={isEditVariantOpen} onOpenChange={setIsEditVariantOpen}>
-        <DialogContent className="sm:max-w-md bg-card border-border p-6 shadow-2xl">
-          <DialogHeader className="border-b border-border pb-3">
-            <DialogTitle className="text-base font-bold text-foreground">
-              Edit Product Variant
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Update variant size, SKU code, or selling price
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSaveEditVariant} className="space-y-4 pt-2">
-            <div>
-              <label className="text-xs font-semibold text-foreground mb-1 block">
-                Product Name
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Product Name <span className="text-destructive">*</span>
               </label>
               <Input
+                type="text"
                 value={editProductName}
                 onChange={(e) => setEditProductName(e.target.value)}
-                className="h-9 text-xs"
+                className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-foreground mb-1 block">
-                Variant / Size &amp; Packaging <span className="text-foreground">*</span>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Variant / Packaging <span className="text-destructive">*</span>
               </label>
               <Input
-                placeholder="e.g. 500g Jar"
+                placeholder="e.g. 500g Jar, 250g Container"
                 value={editVariantStr}
                 onChange={(e) => setEditVariantStr(e.target.value)}
-                className="h-9 text-xs"
+                className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
                 required
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-foreground">
-                    SKU Code
-                  </label>
-                  <span className="text-[10px] uppercase tracking-wide bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-mono font-medium">
-                    System Identifier
-                  </span>
-                </div>
-                <div className="relative">
-                  <Input
-                    readOnly
-                    title="SKU is an immutable system identifier"
-                    value={editSku}
-                    className="h-9 text-xs font-mono bg-muted/40 text-muted-foreground cursor-not-allowed border-dashed select-none pr-12"
-                  />
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] uppercase font-semibold tracking-wider text-muted-foreground/70 pointer-events-none">
-                    Locked
-                  </span>
-                </div>
+                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                  SKU Code
+                </label>
+                <Input
+                  readOnly
+                  disabled
+                  value={editSku}
+                  className="w-full rounded-xl border border-border bg-muted/40 text-muted-foreground px-3 py-2 text-sm font-mono cursor-not-allowed"
+                />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">
-                  Selling Price (₱) <span className="text-foreground">*</span>
+                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                  Unit Cost (₱) <span className="text-destructive">*</span>
                 </label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="250.00"
-                  value={editPrice}
-                  onChange={(e) =>
-                    setEditPrice(
-                      e.target.value === "" ? "" : Number(e.target.value)
-                    )
-                  }
-                  className="h-9 text-xs font-mono"
-                  required
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    ₱
+                  </span>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={editPrice}
+                    onChange={(e) =>
+                      setEditPrice(
+                        e.target.value === "" ? "" : Number(e.target.value)
+                      )
+                    }
+                    className="w-full rounded-xl border border-border bg-card text-foreground pl-7 pr-3 py-2 text-sm font-semibold"
+                    required
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-border">
+            {/* Status (Active / Inactive) */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Status
+              </label>
+              <select
+                value={editActive ? "true" : "false"}
+                onChange={(e) => setEditActive(e.target.value === "true")}
+                className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
+              >
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsEditVariantOpen(false)}
-                className="text-xs font-semibold border-border hover:bg-muted cursor-pointer"
+                onClick={() => setIsEditProductOpen(false)}
+                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={submitting}
-                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </ModalWrapper>
+      )}
     </div>
   );
 }

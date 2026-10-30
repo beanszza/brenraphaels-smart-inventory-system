@@ -1,16 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, Image as ImageIcon, Sparkles } from "lucide-react";
+import { Plus, Trash2, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 import { actionResponse } from "@/lib/resources/action-response";
 import {
@@ -26,7 +19,6 @@ interface VariantRow {
   id: string;
   variantName: string;
   unitCost: string;
-  sellingPrice: string;
 }
 
 interface AddFinishedProductModalProps {
@@ -54,16 +46,13 @@ export default function AddFinishedProductModal({
   const [uomId, setUomId] = useState<string>("1");
   const [description, setDescription] = useState("");
 
-  // Pricing Information
-  const [unitCost, setUnitCost] = useState<string>("");
-
   // Product Photo
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
 
   // Product Variants
   const [variants, setVariants] = useState<VariantRow[]>([
-    { id: "var-1", variantName: "250g Container", unitCost: "", sellingPrice: "150" },
+    { id: "var-1", variantName: "250g Container", unitCost: "150" },
   ]);
 
   const [submitting, setSubmitting] = useState(false);
@@ -98,16 +87,15 @@ export default function AddFinishedProductModal({
     };
   }, [open]);
 
-  // Reset form when modal closes or opens
+  // Reset form when modal opens
   useEffect(() => {
     if (open) {
       setProductName("");
       setDescription("");
-      setUnitCost("");
       setPhotoFile(null);
       setPhotoPreview("");
       setVariants([
-        { id: `var-${Date.now()}-1`, variantName: "250g Container", unitCost: "", sellingPrice: "150" },
+        { id: `var-${Date.now()}-1`, variantName: "250g Container", unitCost: "150" },
       ]);
     }
   }, [open]);
@@ -118,8 +106,7 @@ export default function AddFinishedProductModal({
       {
         id: `var-${Date.now()}-${prev.length + 1}`,
         variantName: "",
-        unitCost: unitCost || "",
-        sellingPrice: "",
+        unitCost: "",
       },
     ]);
   };
@@ -168,12 +155,6 @@ export default function AddFinishedProductModal({
       return;
     }
 
-    const prodUnitCost = parseFloat(unitCost);
-    if (isNaN(prodUnitCost) || prodUnitCost < 0) {
-      toast.error("Please enter a valid Unit Cost (₱) for manufacturing one unit.");
-      return;
-    }
-
     if (variants.length === 0) {
       toast.error("Please add at least one variant.");
       return;
@@ -186,9 +167,9 @@ export default function AddFinishedProductModal({
         toast.error(`Variant ${i + 1} requires a Variant Name (e.g. '250g Jar').`);
         return;
       }
-      const sPrice = parseFloat(v.sellingPrice);
-      if (isNaN(sPrice) || sPrice < 0) {
-        toast.error(`Variant ${i + 1} requires a valid Selling Price.`);
+      const cost = parseFloat(v.unitCost);
+      if (isNaN(cost) || cost < 0) {
+        toast.error(`Variant ${i + 1} requires a valid Unit Cost (₱).`);
         return;
       }
     }
@@ -205,11 +186,10 @@ export default function AddFinishedProductModal({
         uomId: parseInt(uomId, 10),
         uomName: selectedUom?.name,
         description: description.trim() || undefined,
-        unitCost: prodUnitCost,
         variants: variants.map((v) => ({
           variantName: v.variantName.trim(),
-          unitCost: v.unitCost.trim() ? parseFloat(v.unitCost) : prodUnitCost,
-          sellingPrice: parseFloat(v.sellingPrice),
+          unitCost: parseFloat(v.unitCost),
+          sellingPrice: parseFloat(v.unitCost),
         })),
       };
 
@@ -258,28 +238,28 @@ export default function AddFinishedProductModal({
   };
 
   return (
-    <ModalWrapper open={open} title="Add Finished Product" onClose={onClose} size="max-w-4xl">
+    <ModalWrapper open={open} title="Add Finished Product" onClose={onClose} size="max-w-3xl">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* ── Section 1: Product Information ── */}
         <div className="space-y-4">
-          <div className="border-b border-border-subtle pb-2 flex items-center justify-between">
+          <div className="border-b border-border pb-2 flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
                 Product Information
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Basic product catalog metadata and identification
+                Basic product details and catalog classification
               </p>
             </div>
-            <span className="text-[11px] font-medium bg-muted/60 text-muted-foreground px-2.5 py-1 rounded-md border border-border/50">
-              Category: <strong className="text-foreground">Finished Product</strong>
+            <span className="text-xs font-semibold bg-muted px-2.5 py-1 rounded-lg border border-border text-foreground">
+              Category: Finished Product
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Product Name */}
             <div>
-              <label className="text-xs font-semibold text-foreground mb-1 block">
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
                 Product Name <span className="text-destructive">*</span>
               </label>
               <Input
@@ -287,54 +267,51 @@ export default function AddFinishedProductModal({
                 placeholder="e.g. Ube Halaya Supreme"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
-                className="text-xs h-9"
+                className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
                 required
               />
             </div>
 
-            {/* Unit of Measurement: Only Jar, Container, or Pouch */}
+            {/* Unit of Measurement: Jar, Container, or Pouch */}
             <div>
-              <label className="text-xs font-semibold text-foreground mb-1 block">
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
                 Unit of Measurement <span className="text-destructive">*</span>
               </label>
-              <Select value={uomId} onValueChange={setUomId} disabled={loadingLookups}>
-                <SelectTrigger className="text-xs h-9 bg-background">
-                  <SelectValue placeholder="Select unit" />
-                </SelectTrigger>
-                <SelectContent className="z-[300]">
-                  {uoms.map((u) => (
-                    <SelectItem key={u.uomId} value={String(u.uomId)} className="text-xs">
-                      {u.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                value={uomId}
+                onChange={(e) => setUomId(e.target.value)}
+                disabled={loadingLookups}
+                className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
+              >
+                {uoms.map((u) => (
+                  <option key={u.uomId} value={String(u.uomId)}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Product Code / SKU (Read-only, System Generated) */}
-            <div>
-              <label className="text-xs font-semibold text-foreground mb-1 flex items-center justify-between">
-                <span>Product Code / SKU <span className="text-destructive">*</span></span>
-                <span className="text-[10px] font-medium text-primary flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> System Generated
-                </span>
+            {/* Product Code / SKU */}
+            <div className="md:col-span-2">
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Product Code / SKU
               </label>
               <Input
                 type="text"
                 value={
                   productName.trim()
-                    ? `FP-2026-XXXX (${buildBaseVariantSku(productName, "STD")})`
-                    : "FP-2026-XXXX (Auto-generated on save)"
+                    ? buildBaseVariantSku(productName, "STD")
+                    : "Auto-generated upon save"
                 }
                 readOnly
                 disabled
-                className="text-xs h-9 bg-muted/60 text-muted-foreground cursor-not-allowed font-mono"
+                className="w-full rounded-xl border border-border bg-muted/40 text-muted-foreground px-3 py-2 text-sm font-mono cursor-not-allowed"
               />
             </div>
 
             {/* Product Description */}
-            <div className="md:col-span-3">
-              <label className="text-xs font-semibold text-foreground mb-1 block">
+            <div className="md:col-span-2">
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
                 Product Description
               </label>
               <textarea
@@ -342,23 +319,23 @@ export default function AddFinishedProductModal({
                 placeholder="Detailed description of finished product, ingredients summary, or production notes..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full text-xs rounded-md border border-input bg-background px-3 py-2 text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
 
-            {/* Optional Photo Attachment */}
-            <div className="md:col-span-3">
-              <label className="text-xs font-semibold text-foreground mb-1 block">
+            {/* Optional Photo Upload */}
+            <div className="md:col-span-2">
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
                 Product Photo <span className="text-muted-foreground font-normal">(Optional)</span>
               </label>
               <div className="flex items-center gap-4">
                 {photoPreview ? (
-                  <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-border shrink-0">
+                  <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-border shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                   </div>
                 ) : (
-                  <div className="w-14 h-14 rounded-lg border border-dashed border-border bg-muted/30 flex items-center justify-center shrink-0 text-muted-foreground">
+                  <div className="w-14 h-14 rounded-xl border border-dashed border-border bg-muted/30 flex items-center justify-center shrink-0 text-muted-foreground">
                     <ImageIcon className="w-6 h-6" />
                   </div>
                 )}
@@ -372,7 +349,7 @@ export default function AddFinishedProductModal({
                   />
                   <label
                     htmlFor="product-photo-upload"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-border bg-background hover:bg-muted cursor-pointer transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer transition-colors shadow-xs"
                   >
                     <ImageIcon className="w-3.5 h-3.5" />
                     {photoFile ? "Change Photo" : "Upload Photo"}
@@ -386,51 +363,15 @@ export default function AddFinishedProductModal({
           </div>
         </div>
 
-        {/* ── Section 2: Pricing Information ── */}
-        <div className="space-y-3 pt-2">
-          <div className="border-b border-border-subtle pb-2">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
-              Pricing Information
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Standard manufacturing unit cost
-            </p>
-          </div>
-
-          <div className="max-w-xs">
-            <label className="text-xs font-semibold text-foreground mb-1 block">
-              Unit Cost (₱) <span className="text-destructive">*</span>
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
-                ₱
-              </span>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={unitCost}
-                onChange={(e) => setUnitCost(e.target.value)}
-                className="pl-7 text-xs h-9"
-                required
-              />
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Cost to manufacture one unit.
-            </p>
-          </div>
-        </div>
-
-        {/* ── Section 3: Product Variants ── */}
+        {/* ── Section 2: Product Variants ── */}
         <div className="space-y-4 pt-2">
-          <div className="flex items-center justify-between border-b border-border-subtle pb-2">
+          <div className="flex items-center justify-between border-b border-border pb-2">
             <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
                 Product Variants
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Define packaging sizes, SKUs, and retail prices (synchronized with POS)
+                Define packaging sizes, SKUs, and unit cost
               </p>
             </div>
             <Button
@@ -438,7 +379,7 @@ export default function AddFinishedProductModal({
               variant="outline"
               size="sm"
               onClick={handleAddVariant}
-              className="text-xs h-8 gap-1.5 cursor-pointer border-border hover:bg-muted"
+              className="rounded-xl border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Variant
@@ -455,7 +396,7 @@ export default function AddFinishedProductModal({
               return (
                 <div
                   key={v.id}
-                  className="p-4 rounded-xl border border-border bg-card/60 space-y-3 transition-all"
+                  className="p-4 rounded-xl border border-border bg-muted/20 space-y-3 transition-all"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
@@ -477,10 +418,10 @@ export default function AddFinishedProductModal({
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {/* Variant Name */}
                     <div>
-                      <label className="text-[11px] font-semibold text-foreground mb-1 block">
+                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
                         Variant Name <span className="text-destructive">*</span>
                       </label>
                       <Input
@@ -488,54 +429,32 @@ export default function AddFinishedProductModal({
                         placeholder="e.g. 250g Container, 300g Jar"
                         value={v.variantName}
                         onChange={(e) => handleUpdateVariant(v.id, "variantName", e.target.value)}
-                        className="text-xs h-8"
+                        className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
                         required
                       />
                     </div>
 
-                    {/* Variant SKU (System Generated Preview) */}
+                    {/* Variant SKU */}
                     <div>
-                      <label className="text-[11px] font-semibold text-foreground mb-1 flex items-center justify-between">
-                        <span>Variant SKU</span>
-                        <span className="text-[10px] text-primary">Auto</span>
+                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                        Variant SKU
                       </label>
                       <Input
                         type="text"
                         value={previewSku}
                         readOnly
                         disabled
-                        className="text-xs h-8 bg-muted/60 text-muted-foreground font-mono cursor-not-allowed"
+                        className="w-full rounded-xl border border-border bg-muted/40 text-muted-foreground px-3 py-2 text-sm font-mono cursor-not-allowed"
                       />
                     </div>
 
                     {/* Unit Cost */}
                     <div>
-                      <label className="text-[11px] font-semibold text-foreground mb-1 block">
-                        Unit Cost (₱)
+                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                        Unit Cost (₱) <span className="text-destructive">*</span>
                       </label>
                       <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                          ₱
-                        </span>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder={unitCost || "0.00"}
-                          value={v.unitCost}
-                          onChange={(e) => handleUpdateVariant(v.id, "unitCost", e.target.value)}
-                          className="pl-6 text-xs h-8"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Selling Price */}
-                    <div>
-                      <label className="text-[11px] font-semibold text-foreground mb-1 block">
-                        Selling Price (₱) <span className="text-destructive">*</span>
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                           ₱
                         </span>
                         <Input
@@ -543,9 +462,9 @@ export default function AddFinishedProductModal({
                           step="0.01"
                           min="0"
                           placeholder="0.00"
-                          value={v.sellingPrice}
-                          onChange={(e) => handleUpdateVariant(v.id, "sellingPrice", e.target.value)}
-                          className="pl-6 text-xs h-8 font-semibold"
+                          value={v.unitCost}
+                          onChange={(e) => handleUpdateVariant(v.id, "unitCost", e.target.value)}
+                          className="w-full rounded-xl border border-border bg-card text-foreground pl-7 pr-3 py-2 text-sm font-semibold"
                           required
                         />
                       </div>
@@ -557,21 +476,21 @@ export default function AddFinishedProductModal({
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-border-subtle">
+        {/* ── Footer Actions (Exact SupplyModal pattern) ── */}
+        <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={submitting}
-            className="text-xs h-9 px-4 cursor-pointer border-border hover:bg-muted"
+            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={submitting}
-            className="text-xs h-9 px-5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer font-semibold"
+            className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? "Saving & Syncing POS..." : "Save Finished Product"}
           </Button>

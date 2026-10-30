@@ -103,6 +103,7 @@ export async function listFinishedProducts() {
       productCode: fp.Items?.ItemCode || "",
       categoryName: fp.Items?.Category?.CategoryName || "Finished Goods",
       uomName: fp.Items?.Uom?.Abbreviation || "pcs",
+      isActive: fp.Items?.IsActive ?? true,
     }));
     return resourceResult({ success: true, data: response });
   });
@@ -111,7 +112,7 @@ export async function listFinishedProducts() {
 export interface CreateProductVariantInput {
   variantName: string;
   unitCost?: number;
-  sellingPrice: number;
+  sellingPrice?: number;
 }
 
 export interface CreateFullProductInput {
@@ -120,7 +121,7 @@ export interface CreateFullProductInput {
   uomId?: number;
   uomName?: string;
   description?: string;
-  unitCost: number;
+  unitCost?: number;
   variants: CreateProductVariantInput[];
 }
 
@@ -180,9 +181,13 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
       if (!vName) refuse("All variants must have a name (e.g. '250g Tub').");
       if (seenNames.has(vName)) refuse(`Duplicate variant '${v.variantName}' in product definition.`);
       seenNames.add(vName);
-      if (typeof v.sellingPrice !== "number" || v.sellingPrice < 0) {
-        refuse("Selling price must be a valid non-negative number.");
+      const effectivePrice = typeof v.unitCost === "number" && !isNaN(v.unitCost)
+        ? v.unitCost
+        : (typeof v.sellingPrice === "number" && !isNaN(v.sellingPrice) ? v.sellingPrice : 0);
+      if (effectivePrice < 0) {
+        refuse("Unit cost must be a valid non-negative number.");
       }
+      v.sellingPrice = effectivePrice;
     }
 
     // Check if an Item record already exists with this name
@@ -222,10 +227,10 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
       const baseSku = buildBaseVariantSku(trimmedName, cleanVarName);
       const uniqueSku = await getUniqueVariantSku(tx, baseSku);
 
-      const created = await tx.finishedProducts.create({
+      const created: any = await (tx as any).finishedProducts.create({
         data: {
           ItemId: item.ItemId,
-          SellingPrice: v.sellingPrice,
+          SellingPrice: v.sellingPrice ?? 0,
           Sku: uniqueSku,
           Variant: cleanVarName,
         },
