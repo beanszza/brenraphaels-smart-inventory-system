@@ -18,8 +18,7 @@ export function positiveId(input: string | number): number {
 function failed(error: unknown): ResourceResult {
   if (error instanceof Refusal) return resourceResult({ success: false, message: error.message });
   console.error("Inventory action failed", error);
-  const detail = error instanceof Error && error.message ? ` (${error.message})` : "";
-  return resourceResult({ success: false, message: `Unable to complete the inventory action. Please try again.${detail}` });
+  return resourceResult({ success: false, message: "Unable to complete the inventory action. Please try again." });
 }
 
 export async function read(work: () => Promise<ResourceResult>): Promise<ResourceResult> {
