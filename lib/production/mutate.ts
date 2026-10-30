@@ -41,14 +41,21 @@ export function validateInput(input: unknown): void {
 function failed(error: unknown): ResourceResult {
   if (error instanceof Refusal) return resourceResult({ success: false, message: error.message });
   console.error("Production action failed", error);
-  return resourceResult({ success: false, message: "Unable to complete the production action. Please try again." });
+  const detailed = error instanceof Error ? error.message : String(error);
+  return resourceResult({ success: false, message: detailed || "Unable to complete the production action. Please try again." });
 }
 export async function read(work: () => Promise<ResourceResult>): Promise<ResourceResult> {
   try { return await work(); } catch (error) { return failed(error); }
 }
 export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) => Promise<Saved>): Promise<ResourceResult> {
   let saved: Saved;
-  try { saved = await prisma.$transaction(work, { isolationLevel: "Serializable" }); }
+  try {
+    saved = await prisma.$transaction(work, {
+      isolationLevel: "Serializable",
+      maxWait: 15000,
+      timeout: 30000,
+    });
+  }
   catch (error) { return failed(error); }
   if (saved.audit) await recordAudit(staff, saved.audit);
   if (saved.after) await saved.after().catch(error => console.error("Notification could not be sent", error));

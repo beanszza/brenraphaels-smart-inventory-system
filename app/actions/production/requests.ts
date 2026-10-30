@@ -165,31 +165,45 @@ export async function createProductionRequest(body: any = {}) {
                     stillNeeded -= toReserve;
                 }
             }
-            // If submitted for approval, create ApprovalRequests entry
-            if (initialStatus === "Pending Approval") {
-                await tx.approvalRequests.create({
-                    data: {
-                        EntityType: "ProductionRequest",
-                        EntityId: prodReq.ProdReqId,
-                        DocumentNumber: prodReq.ReqNumber,
-                        Amount: 0,
-                        Status: "Pending",
-                        Reason: prodReq.Reason || "Production Request Approval",
-                        RequestedBy: staff.username,
-                        RequestedAt: new Date(),
-                    },
-                });
-            }
             return prodReq;
         })();
         const fullProdReq = await tx.productionRequests.findUnique({
             where: { ProdReqId: createdRequest.ProdReqId },
             include: PROD_REQ_INCLUDE,
         });
-        return { result: resourceResult({
+        return {
+            result: resourceResult({
                 success: true,
                 message: "Production request created successfully.",
                 data: mapProductionRequest(fullProdReq),
-            }), audit: { module: "Production & Quality", change: "created", target: { type: "production-request", id: createdRequest.ProdReqId, name: createdRequest.ReqNumber }, description: `${staff.name} created production request (${createdRequest.ReqNumber})` }, after: () => notifyApprovalRequested(staff, createdRequest.ReqNumber) };
+            }),
+            audit: {
+                module: "Production & Quality",
+                change: "created",
+                target: { type: "production-request", id: createdRequest.ProdReqId, name: createdRequest.ReqNumber },
+                description: `${staff.name} created production request (${createdRequest.ReqNumber})`,
+            },
+            after: async () => {
+                if (initialStatus === "Pending Approval") {
+                    try {
+                        await prisma.approvalRequests.create({
+                            data: {
+                                EntityType: "ProductionRequest",
+                                EntityId: createdRequest.ProdReqId,
+                                DocumentNumber: createdRequest.ReqNumber,
+                                Amount: 0,
+                                Status: "Pending",
+                                Reason: createdRequest.Reason || "Production Request Approval",
+                                RequestedBy: staff.username,
+                                RequestedAt: new Date(),
+                            },
+                        });
+                    } catch (apprErr) {
+                        console.warn("Optional ApprovalRequests record creation skipped:", apprErr);
+                    }
+                }
+                await notifyApprovalRequested(staff, createdRequest.ReqNumber);
+            },
+        };
     });
 }

@@ -121,7 +121,7 @@ export default function ProductionRequestModal({
   const [selectedVariant, setSelectedVariant] = useState<string>("");
   const [productId, setProductId] = useState<string>("");
   const [recipeId, setRecipeId] = useState<string>("");
-  const [quantity, setQuantity] = useState<number>(100);
+  const [quantity, setQuantity] = useState<number>(0);
   const [priority, setPriority] = useState<"Low" | "Medium" | "High">("Medium");
   const [requiredDate, setRequiredDate] = useState<string>("");
   const [requiredTime, setRequiredTime] = useState<string>("08:00");
@@ -303,14 +303,16 @@ export default function ProductionRequestModal({
       setFilteredRecipes(matched);
       if (matched.length === 1) {
         setRecipeId(String(matched[0].recipeId));
-        setQuantity(Number(matched[0].outputQuantity) || 100);
+        setQuantity(Number(matched[0].outputQuantity) || 0);
       } else if (!matched.some((r) => String(r.recipeId) === recipeId)) {
         setRecipeId("");
+        setQuantity(0);
         setLotSuggestions(null);
       }
     } else {
       setFilteredRecipes([]);
       setRecipeId("");
+      setQuantity(0);
       setLotSuggestions(null);
     }
   }, [productId, recipes, recipeId, selectedProductName, products]);
@@ -379,7 +381,7 @@ export default function ProductionRequestModal({
   // Handle Save (Draft or Submit)
   const handleSubmit = async (submitForApproval: boolean) => {
     if (!productId || !recipeId || !quantity || quantity <= 0) {
-      toast.error("Please select a product, variant, recipe, and valid target quantity.");
+      toast.error("Please select a product, variant, and recipe.");
       return;
     }
 
@@ -698,6 +700,8 @@ export default function ProductionRequestModal({
                     const selected = filteredRecipes.find((r) => String(r.recipeId) === val);
                     if (selected && Number(selected.outputQuantity) > 0) {
                       setQuantity(Number(selected.outputQuantity));
+                    } else {
+                      setQuantity(0);
                     }
                   }}
                   disabled={!productId || filteredRecipes.length === 0}
@@ -743,11 +747,12 @@ export default function ProductionRequestModal({
               ) : (
                 <Input
                   type="number"
-                  min="1"
-                  value={quantity || ""}
-                  onChange={(e) => setQuantity(Number(e.target.value))}
-                  className="h-10 text-xs rounded-xl border-border bg-card font-mono font-medium"
-                  placeholder="e.g. 100"
+                  value={recipeId && quantity > 0 ? quantity : ""}
+                  readOnly
+                  disabled
+                  tabIndex={-1}
+                  className="h-10 text-xs rounded-xl border-border bg-muted/50 cursor-not-allowed font-mono font-bold text-foreground opacity-90 select-none"
+                  placeholder={recipeId ? String(quantity) : "Select recipe first"}
                 />
               )}
             </div>

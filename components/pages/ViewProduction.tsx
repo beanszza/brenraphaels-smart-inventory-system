@@ -108,7 +108,7 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
               <Link
                 key={tab.key}
                 href={`/production-quality?tab=${tab.key}`}
-                onNavigate={(event) => { event.preventDefault(); navigate(`/production-quality?tab=${tab.key}`); }}
+                onClick={(event) => { event.preventDefault(); navigate(`/production-quality?tab=${tab.key}`); }}
                 aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                   isActive
