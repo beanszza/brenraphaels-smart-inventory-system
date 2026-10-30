@@ -424,61 +424,7 @@ export default function ProductionRequestsTab({
 
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Quick Start Production for Head Cook on Ready for Production items */}
-                          {isHeadCook && isReadyForProd && (
-                            <Button
-                              size="sm"
-                              onClick={(e) => handleStartProduction(req, e)}
-                              disabled={startingId === req.prodReqId}
-                              className="h-7 text-xs font-semibold px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
-                            >
-                              <Play className="w-3 h-3 mr-1 fill-current" />
-                              <span>{startingId === req.prodReqId ? "Starting..." : "Start"}</span>
-                            </Button>
-                          )}
-
-                          {/* Quick Accept/Reject for Admin on Pending Approval items */}
-                          {isAdmin && req.status === "Pending Approval" && (
-                            <div className="flex items-center gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setAdminActionModal({ open: true, type: "reject", request: req });
-                                }}
-                                className="h-7 text-xs font-semibold px-2.5 rounded-lg border-border hover:bg-muted text-foreground cursor-pointer"
-                              >
-                                Reject
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setAdminActionModal({ open: true, type: "approve", request: req });
-                                }}
-                                className="h-7 text-xs font-semibold px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
-                              >
-                                Approve
-                              </Button>
-                            </div>
-                          )}
-
-                          {/* Quick Issue Materials for IMS Manager on Approved items */}
-                          {isImsManager && req.status === "Approved" && onNavigateToIssuance && (
-                            <Button
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onNavigateToIssuance(req.prodReqId);
-                              }}
-                              className="h-7 text-xs font-semibold px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
-                            >
-                              Issue Materials
-                            </Button>
-                          )}
-
+                        <div className="flex items-center justify-end">
                           {/* Three Dots Menu Container */}
                           <div className="relative inline-block text-left action-menu-container">
                             <button

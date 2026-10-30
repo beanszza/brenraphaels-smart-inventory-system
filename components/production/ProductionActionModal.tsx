@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -22,14 +22,9 @@ export function ProductionActionModal({
   onConfirm,
   onClose,
 }: ProductionActionModalProps) {
-  const [mounted, setMounted] = useState(false);
   const [reason, setReason] = useState("");
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (open) {
@@ -38,8 +33,6 @@ export function ProductionActionModal({
       setLoading(false);
     }
   }, [open]);
-
-  if (!mounted || !open) return null;
 
   const isReject = actionType === "reject";
 
@@ -68,83 +61,81 @@ export function ProductionActionModal({
     }
   };
 
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-      onClick={onClose}
-    >
-      <div
-        style={{ width: "100%", maxWidth: "440px" }}
-        className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex flex-col items-center justify-center text-center">
-          {/* Circular Alert Icon */}
-          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
-            <AlertTriangle className="w-6 h-6 text-foreground" />
-          </div>
-
-          {/* Title */}
-          <h2 className="text-xl font-bold text-foreground mb-1">
-            {getTitle()}
-          </h2>
-
-          {/* Description */}
-          <p className="text-sm text-muted-foreground mb-4">
-            {getDescription()}
-          </p>
-
-          {/* Reason Textarea (Required for Reject) */}
-          {isReject && (
-            <div className="w-full text-left mb-4">
-              <label className="text-xs font-semibold text-foreground mb-1.5 block">
-                Rejection Reason <span className="text-destructive">*</span>
-              </label>
-              <textarea
-                value={reason}
-                onChange={(e) => {
-                  setReason(e.target.value);
-                  if (error && e.target.value.trim()) setError(false);
-                }}
-                placeholder="State the reason why this production request is being rejected..."
-                rows={3}
-                className={`w-full text-xs p-3 rounded-xl border bg-card text-foreground focus:outline-none transition-colors ${
-                  error
-                    ? "border-destructive focus:ring-1 focus:ring-destructive"
-                    : "border-border focus:ring-1 focus:ring-foreground"
-                }`}
-              />
-              {error && (
-                <p className="text-xs text-destructive mt-1 font-medium">
-                  A rejection reason is required before confirming.
-                </p>
-              )}
+  return (
+    <DialogPrimitive.Root open={open} onOpenChange={(val) => { if (!val && !loading) onClose(); }}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" />
+        <DialogPrimitive.Content
+          aria-describedby={undefined}
+          className="fixed left-1/2 top-1/2 z-[301] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 bg-card rounded-2xl shadow-2xl border border-border p-6 text-foreground outline-none animate-in fade-in zoom-in-95 duration-150"
+        >
+          <div className="flex flex-col items-center justify-center text-center">
+            {/* Circular Alert Icon */}
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+              <AlertTriangle className="w-6 h-6 text-foreground" />
             </div>
-          )}
 
-          {/* Action Buttons matching PR / PO confirmation */}
-          <div className="flex justify-center gap-3 w-full pt-1">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={loading}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={handleConfirm}
-              disabled={loading}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors shadow-sm cursor-pointer"
-            >
-              {loading ? "Confirming..." : isReject ? "Confirm Rejection" : "Confirm Approval"}
-            </Button>
+            {/* Title */}
+            <DialogPrimitive.Title className="text-xl font-bold text-foreground mb-1">
+              {getTitle()}
+            </DialogPrimitive.Title>
+
+            {/* Description */}
+            <p className="text-sm text-muted-foreground mb-4">
+              {getDescription()}
+            </p>
+
+            {/* Reason Textarea (Required for Reject) */}
+            {isReject && (
+              <div className="w-full text-left mb-4">
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">
+                  Rejection Reason <span className="text-destructive">*</span>
+                </label>
+                <textarea
+                  value={reason}
+                  onChange={(e) => {
+                    setReason(e.target.value);
+                    if (error && e.target.value.trim()) setError(false);
+                  }}
+                  placeholder="State the reason why this production request is being rejected..."
+                  rows={3}
+                  className={`w-full text-xs p-3 rounded-xl border bg-card text-foreground focus:outline-none transition-colors ${
+                    error
+                      ? "border-destructive focus:ring-1 focus:ring-destructive"
+                      : "border-border focus:ring-1 focus:ring-foreground"
+                  }`}
+                />
+                {error && (
+                  <p className="text-xs text-destructive mt-1 font-medium">
+                    A rejection reason is required before confirming.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons matching PR / PO confirmation */}
+            <div className="flex justify-center gap-3 w-full pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={loading}
+                className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleConfirm}
+                disabled={loading}
+                className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors shadow-sm cursor-pointer"
+              >
+                {loading ? "Confirming..." : isReject ? "Confirm Rejection" : "Confirm Approval"}
+              </Button>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>,
-    document.body
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

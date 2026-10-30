@@ -483,6 +483,9 @@ export default function ProductionRequestModal({
       if (action === "reject") {
         payload.rejectionReason = notes || rejectionReason;
       }
+      if (action === "approve") {
+        payload.adminNotes = notes || "Approved";
+      }
 
       const res = await actionResponse(productionUpdateProductionRequest(initialRequest.prodReqId, payload));
       if (res.data?.success) {
