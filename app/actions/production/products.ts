@@ -13,25 +13,66 @@ import {
 export async function listProductFormLookups() {
   await requireModule("Production & Quality");
   return read(async () => {
-    const [categories, uoms] = await Promise.all([
-      prisma.categories.findMany({
-        orderBy: { CategoryName: "asc" },
-        select: { CategoryId: true, CategoryName: true },
-      }),
-      prisma.unitOfMeasures.findMany({
-        orderBy: { Name: "asc" },
-        select: { UomId: true, Name: true, Abbreviation: true },
-      }),
-    ]);
+    // Only standard finished goods UOMs: Jar, Container, Pouch
+    const standardUomDefs = [
+      { name: "Jar", abbreviation: "jar", code: "jar" },
+      { name: "Container", abbreviation: "container", code: "container" },
+      { name: "Pouch", abbreviation: "pouch", code: "pouch" },
+    ];
+
+    const dbUoms = await prisma.unitOfMeasures.findMany({
+      where: {
+        OR: [
+          { Name: { in: ["Jar", "Container", "Pouch", "Tub"], mode: "insensitive" } },
+          { Abbreviation: { in: ["jar", "container", "pouch", "tub"], mode: "insensitive" } },
+        ],
+      },
+      select: { UomId: true, Name: true, Abbreviation: true },
+    });
+
+    const standardChoices = [];
+    for (const def of standardUomDefs) {
+      let match = dbUoms.find(
+        (u) =>
+          u.Name.toLowerCase() === def.name.toLowerCase() ||
+          (def.name === "Container" && u.Name.toLowerCase() === "tub")
+      );
+
+      if (!match) {
+        try {
+          match = await prisma.unitOfMeasures.create({
+            data: {
+              Name: def.name,
+              Abbreviation: def.abbreviation,
+              Code: def.code,
+              ConversionFactor: 1,
+              IsBaseUnit: false,
+              UomType: "Count",
+            },
+            select: { UomId: true, Name: true, Abbreviation: true },
+          });
+        } catch {
+          match = dbUoms[0] || { UomId: standardChoices.length + 1, Name: def.name, Abbreviation: def.abbreviation };
+        }
+      }
+
+      standardChoices.push({
+        uomId: match.UomId,
+        name: def.name,
+        abbreviation: match.Abbreviation || def.abbreviation,
+      });
+    }
+
+    const finishedCategory = await prisma.categories.findFirst({
+      where: { CategoryName: { contains: "finished", mode: "insensitive" } },
+      select: { CategoryId: true, CategoryName: true },
+    });
+
     return resourceResult({
       success: true,
       data: {
-        categories,
-        uoms: uoms.map((u) => ({
-          uomId: u.UomId,
-          name: u.Name,
-          abbreviation: u.Abbreviation,
-        })),
+        defaultCategoryId: finishedCategory?.CategoryId || 1,
+        uoms: standardChoices,
       },
     });
   });
@@ -75,8 +116,9 @@ export interface CreateProductVariantInput {
 
 export interface CreateFullProductInput {
   productName: string;
-  categoryId: number;
-  uomId: number;
+  categoryId?: number;
+  uomId?: number;
+  uomName?: string;
   description?: string;
   unitCost: number;
   variants: CreateProductVariantInput[];
@@ -93,8 +135,43 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
       refuse("Add at least one product variant.");
     }
 
-    const categoryId = positiveId(body.categoryId);
-    const uomId = positiveId(body.uomId);
+    // Automatically resolve category: Finished Goods / Finished Product
+    let category = null;
+    if (body.categoryId) {
+      category = await tx.categories.findUnique({ where: { CategoryId: positiveId(body.categoryId) } });
+    }
+    if (!category) {
+      category = await tx.categories.findFirst({
+        where: { CategoryName: { contains: "finished", mode: "insensitive" } },
+      });
+    }
+    if (!category) {
+      category = await tx.categories.findFirst();
+    }
+    if (!category) {
+      category = await tx.categories.create({
+        data: { CategoryName: "Finished Goods", Description: "Finished Goods" },
+      });
+    }
+    const categoryId = category.CategoryId;
+
+    // Automatically resolve UOM (Jar, Container, Pouch, or provided uomId)
+    let uomId = body.uomId ? positiveId(body.uomId) : null;
+    if (!uomId && body.uomName) {
+      const matchUom = await tx.unitOfMeasures.findFirst({
+        where: {
+          OR: [
+            { Name: { equals: body.uomName, mode: "insensitive" } },
+            { Abbreviation: { equals: body.uomName, mode: "insensitive" } },
+          ],
+        },
+      });
+      if (matchUom) uomId = matchUom.UomId;
+    }
+    if (!uomId) {
+      const defaultUom = await tx.unitOfMeasures.findFirst();
+      uomId = defaultUom?.UomId || 1;
+    }
 
     // Check duplicate variant names in the submitted payload
     const seenNames = new Set<string>();

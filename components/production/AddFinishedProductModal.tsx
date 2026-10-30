@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, Image as ImageIcon, Sparkles, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Image as ImageIcon, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,15 +40,18 @@ export default function AddFinishedProductModal({
   onClose,
   onSuccess,
 }: AddFinishedProductModalProps) {
-  // Lookups state
-  const [categories, setCategories] = useState<{ CategoryId: number; CategoryName: string }[]>([]);
-  const [uoms, setUoms] = useState<{ uomId: number; name: string; abbreviation: string }[]>([]);
+  // UOM Lookups (Jar, Container, Pouch)
+  const [uoms, setUoms] = useState<{ uomId: number; name: string; abbreviation: string }[]>([
+    { uomId: 1, name: "Jar", abbreviation: "jar" },
+    { uomId: 2, name: "Container", abbreviation: "container" },
+    { uomId: 3, name: "Pouch", abbreviation: "pouch" },
+  ]);
+  const [defaultCategoryId, setDefaultCategoryId] = useState<number | undefined>(undefined);
   const [loadingLookups, setLoadingLookups] = useState(false);
 
   // Basic Information
   const [productName, setProductName] = useState("");
-  const [categoryId, setCategoryId] = useState<string>("");
-  const [uomId, setUomId] = useState<string>("");
+  const [uomId, setUomId] = useState<string>("1");
   const [description, setDescription] = useState("");
 
   // Pricing Information
@@ -60,12 +63,12 @@ export default function AddFinishedProductModal({
 
   // Product Variants
   const [variants, setVariants] = useState<VariantRow[]>([
-    { id: "var-1", variantName: "250g Tub", unitCost: "", sellingPrice: "150" },
+    { id: "var-1", variantName: "250g Container", unitCost: "", sellingPrice: "150" },
   ]);
 
   const [submitting, setSubmitting] = useState(false);
 
-  // Load categories & UOMs whenever modal opens
+  // Load UOM lookup IDs whenever modal opens
   useEffect(() => {
     if (!open) return;
     let isMounted = true;
@@ -75,27 +78,16 @@ export default function AddFinishedProductModal({
         const res = await actionResponse(listProductFormLookups());
         const payload: any = (res.data as any)?.data || res.data;
         if (isMounted && payload) {
-          const catList = payload.categories || [];
-          const uomList = payload.uoms || [];
-          setCategories(catList);
-          setUoms(uomList);
-
-          // Defaults
-          if (catList.length > 0 && !categoryId) {
-            const finishedGoodCat = catList.find((c: any) =>
-              c.CategoryName.toLowerCase().includes("finished")
-            );
-            setCategoryId(String(finishedGoodCat?.CategoryId || catList[0].CategoryId));
+          if (Array.isArray(payload.uoms) && payload.uoms.length > 0) {
+            setUoms(payload.uoms);
+            setUomId(String(payload.uoms[0].uomId));
           }
-          if (uomList.length > 0 && !uomId) {
-            const pcsUom = uomList.find((u: any) =>
-              (u.abbreviation || "").toLowerCase() === "pcs" || (u.name || "").toLowerCase().includes("piece")
-            );
-            setUomId(String(pcsUom?.uomId || uomList[0].uomId));
+          if (payload.defaultCategoryId) {
+            setDefaultCategoryId(payload.defaultCategoryId);
           }
         }
       } catch (err: any) {
-        toast.error("Failed to load categories or measurement units");
+        console.warn("Could not load packaging UOM list, using standard choices:", err);
       } finally {
         if (isMounted) setLoadingLookups(false);
       }
@@ -115,7 +107,7 @@ export default function AddFinishedProductModal({
       setPhotoFile(null);
       setPhotoPreview("");
       setVariants([
-        { id: `var-${Date.now()}-1`, variantName: "250g Tub", unitCost: "", sellingPrice: "150" },
+        { id: `var-${Date.now()}-1`, variantName: "250g Container", unitCost: "", sellingPrice: "150" },
       ]);
     }
   }, [open]);
@@ -171,10 +163,6 @@ export default function AddFinishedProductModal({
       toast.error("Product Name is required.");
       return;
     }
-    if (!categoryId) {
-      toast.error("Category is required.");
-      return;
-    }
     if (!uomId) {
       toast.error("Unit of Measurement is required.");
       return;
@@ -195,7 +183,7 @@ export default function AddFinishedProductModal({
     for (let i = 0; i < variants.length; i++) {
       const v = variants[i];
       if (!v.variantName.trim()) {
-        toast.error(`Variant ${i + 1} requires a Variant Name (e.g. '250g Tub').`);
+        toast.error(`Variant ${i + 1} requires a Variant Name (e.g. '250g Jar').`);
         return;
       }
       const sPrice = parseFloat(v.sellingPrice);
@@ -209,10 +197,13 @@ export default function AddFinishedProductModal({
       setSubmitting(true);
       toast.loading("Creating finished product & generating SKUs...", { id: "save-prod" });
 
+      const selectedUom = uoms.find((u) => String(u.uomId) === String(uomId));
+
       const payload = {
         productName: trimmedName,
-        categoryId: parseInt(categoryId, 10),
+        categoryId: defaultCategoryId,
         uomId: parseInt(uomId, 10),
+        uomName: selectedUom?.name,
         description: description.trim() || undefined,
         unitCost: prodUnitCost,
         variants: variants.map((v) => ({
@@ -271,16 +262,21 @@ export default function AddFinishedProductModal({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* ── Section 1: Product Information ── */}
         <div className="space-y-4">
-          <div className="border-b border-border-subtle pb-2">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
-              Product Information
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Basic product catalog metadata and identification
-            </p>
+          <div className="border-b border-border-subtle pb-2 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+                Product Information
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Basic product catalog metadata and identification
+              </p>
+            </div>
+            <span className="text-[11px] font-medium bg-muted/60 text-muted-foreground px-2.5 py-1 rounded-md border border-border/50">
+              Category: <strong className="text-foreground">Finished Product</strong>
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Product Name */}
             <div>
               <label className="text-xs font-semibold text-foreground mb-1 block">
@@ -294,6 +290,25 @@ export default function AddFinishedProductModal({
                 className="text-xs h-9"
                 required
               />
+            </div>
+
+            {/* Unit of Measurement: Only Jar, Container, or Pouch */}
+            <div>
+              <label className="text-xs font-semibold text-foreground mb-1 block">
+                Unit of Measurement <span className="text-destructive">*</span>
+              </label>
+              <Select value={uomId} onValueChange={setUomId} disabled={loadingLookups}>
+                <SelectTrigger className="text-xs h-9 bg-background">
+                  <SelectValue placeholder="Select unit" />
+                </SelectTrigger>
+                <SelectContent className="z-[300]">
+                  {uoms.map((u) => (
+                    <SelectItem key={u.uomId} value={String(u.uomId)} className="text-xs">
+                      {u.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Product Code / SKU (Read-only, System Generated) */}
@@ -317,46 +332,8 @@ export default function AddFinishedProductModal({
               />
             </div>
 
-            {/* Category */}
-            <div>
-              <label className="text-xs font-semibold text-foreground mb-1 block">
-                Category <span className="text-destructive">*</span>
-              </label>
-              <Select value={categoryId} onValueChange={setCategoryId} disabled={loadingLookups}>
-                <SelectTrigger className="text-xs h-9 bg-background">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent className="z-[300]">
-                  {categories.map((c) => (
-                    <SelectItem key={c.CategoryId} value={String(c.CategoryId)} className="text-xs">
-                      {c.CategoryName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Unit of Measurement */}
-            <div>
-              <label className="text-xs font-semibold text-foreground mb-1 block">
-                Unit of Measurement <span className="text-destructive">*</span>
-              </label>
-              <Select value={uomId} onValueChange={setUomId} disabled={loadingLookups}>
-                <SelectTrigger className="text-xs h-9 bg-background">
-                  <SelectValue placeholder="Select unit" />
-                </SelectTrigger>
-                <SelectContent className="z-[300]">
-                  {uoms.map((u) => (
-                    <SelectItem key={u.uomId} value={String(u.uomId)} className="text-xs">
-                      {u.name} ({u.abbreviation})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Product Description */}
-            <div className="md:col-span-2">
+            <div className="md:col-span-3">
               <label className="text-xs font-semibold text-foreground mb-1 block">
                 Product Description
               </label>
@@ -370,7 +347,7 @@ export default function AddFinishedProductModal({
             </div>
 
             {/* Optional Photo Attachment */}
-            <div className="md:col-span-2">
+            <div className="md:col-span-3">
               <label className="text-xs font-semibold text-foreground mb-1 block">
                 Product Photo <span className="text-muted-foreground font-normal">(Optional)</span>
               </label>
@@ -508,7 +485,7 @@ export default function AddFinishedProductModal({
                       </label>
                       <Input
                         type="text"
-                        placeholder="e.g. 250g Tub, 300g Jar"
+                        placeholder="e.g. 250g Container, 300g Jar"
                         value={v.variantName}
                         onChange={(e) => handleUpdateVariant(v.id, "variantName", e.target.value)}
                         className="text-xs h-8"
