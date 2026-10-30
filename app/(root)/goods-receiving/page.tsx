@@ -67,7 +67,13 @@ export default async function GoodsReceivingPage({ searchParams }: {
 
   const [counts, content] = await Promise.all([getReceivingCounts(), loadContent()]);
   return (
-    <ViewGoodsReceiving counts={receivingData(counts)} activeTab={activeTab}>
+    <ViewGoodsReceiving
+      counts={receivingData(counts)}
+      activeTab={activeTab}
+      isQa={isQa}
+      isManager={isManager}
+      isAdmin={isAdmin}
+    >
       {content}
     </ViewGoodsReceiving>
   );

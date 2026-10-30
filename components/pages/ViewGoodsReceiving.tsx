@@ -2,8 +2,6 @@ import Link from "next/link";
 import { Toaster } from "@/components/ui/sonner";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { useStaff } from "@/context/StaffContext";
-import { isQaStaff, isImsManager, isAdminStaff } from "@/lib/auth-roles";
 
 export type ReceivingTab = "grn" | "discrepancies" | "stockin" | "rtv" | "loss";
 export type ReceivingCounts = Record<ReceivingTab, number>;
@@ -18,17 +16,18 @@ const tabs = [
 export default function ViewGoodsReceiving({
   counts: _counts,
   activeTab,
+  isQa = false,
+  isManager = false,
+  isAdmin = false,
   children,
 }: {
   counts?: ReceivingCounts;
   activeTab: ReceivingTab;
+  isQa?: boolean;
+  isManager?: boolean;
+  isAdmin?: boolean;
   children: ReactNode;
 }) {
-  const staff = useStaff();
-  const isQa = isQaStaff(staff);
-  const isManager = isImsManager(staff);
-  const isAdmin = isAdminStaff(staff);
-
   const visibleTabs = tabs.filter(([id]) => {
     if (isQa && !isAdmin) {
       return id === "grn";
