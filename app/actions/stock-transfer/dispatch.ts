@@ -39,189 +39,176 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
     const itemId = transfer.FinishedProducts.ItemId;
     const sourceLocId = transfer.SourceLocationId;
 
-    // Execute atomic transaction for inventory deduction
-    const result = await (async () => {
-      // 1. Fetch active commissary lots sorted FEFO
-      let lots = await tx.inventoryLots.findMany({
+    // 1. Fetch active commissary lots sorted FEFO
+    let lots = await tx.inventoryLots.findMany({
+      where: {
+        ItemId: itemId,
+        LocationId: sourceLocId,
+        OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
+        Status: { in: ["Active", "Available"] },
+        QuantityRemaining: { gt: 0 },
+      },
+      orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
+    });
+
+    if (lots.length === 0) {
+      lots = await tx.inventoryLots.findMany({
         where: {
           ItemId: itemId,
-          LocationId: sourceLocId,
           OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
           Status: { in: ["Active", "Available"] },
           QuantityRemaining: { gt: 0 },
         },
         orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
       });
+    }
 
-      if (lots.length === 0) {
-        lots = await tx.inventoryLots.findMany({
-          where: {
-            ItemId: itemId,
-            OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
-            Status: { in: ["Active", "Available"] },
-            QuantityRemaining: { gt: 0 },
-          },
-          orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
-        });
-      }
+    let remainingToDeduct = transferQty;
+    const lotDeductions: Array<{ lotId: number; deducted: number }> = [];
 
-      let remainingToDeduct = transferQty;
-      const lotDeductions: Array<{ lotId: number; deducted: number }> = [];
+    for (const lot of lots) {
+      if (remainingToDeduct <= 0) break;
 
-      for (const lot of lots) {
-        if (remainingToDeduct <= 0) break;
+      const currentRem = Number(lot.QuantityRemaining);
+      const available = Math.max(0, currentRem - Number(lot.ReservedQuantity || 0));
+      const toDeduct = Math.min(available, remainingToDeduct);
+      if (toDeduct <= 0) continue;
 
-        const currentRem = Number(lot.QuantityRemaining);
-        const available = Math.max(0, currentRem - Number(lot.ReservedQuantity || 0));
-        const toDeduct = Math.min(available, remainingToDeduct);
-        if (toDeduct <= 0) continue;
-
-        await tx.inventoryLots.update({
-          where: { LotId: lot.LotId },
-          data: {
-            QuantityRemaining: { decrement: toDeduct },
-            Status: currentRem - toDeduct <= 0 ? "Depleted" : "Active",
-          },
-        });
-
-        lotDeductions.push({ lotId: lot.LotId, deducted: toDeduct });
-        remainingToDeduct -= toDeduct;
-      }
-
-      if (remainingToDeduct > 0.001) {
-        refuse(
-          `Insufficient commissary stock to dispatch ${transferQty} units. Shortage of ${remainingToDeduct.toFixed(2)} units.`
-        );
-      }
-
-      // 2. Update Inventories table for Commissary location
-      let targetLocId = sourceLocId;
-      let inventory = await tx.inventories.findUnique({
-        where: {
-          ItemId_LocationId: {
-            ItemId: itemId,
-            LocationId: sourceLocId,
-          },
+      await tx.inventoryLots.update({
+        where: { LotId: lot.LotId },
+        data: {
+          QuantityRemaining: { decrement: toDeduct },
+          Status: currentRem - toDeduct <= 0 ? "Depleted" : "Active",
         },
       });
 
-      if (!inventory || Number(inventory.CurrentStock) < transferQty) {
-        const altInv = await tx.inventories.findFirst({
-          where: {
-            ItemId: itemId,
-            CurrentStock: { gte: transferQty },
-          },
-        });
-        if (altInv) {
-          inventory = altInv;
-          targetLocId = altInv.LocationId;
-        }
-      }
+      lotDeductions.push({ lotId: lot.LotId, deducted: toDeduct });
+      remainingToDeduct -= toDeduct;
+    }
 
-      if (!inventory || Number(inventory.CurrentStock) < transferQty) {
-        await tx.inventories.upsert({
-          where: {
-            ItemId_LocationId: {
-              ItemId: itemId,
-              LocationId: sourceLocId,
-            },
-          },
-          update: { CurrentStock: { increment: transferQty } },
-          create: {
-            ItemId: itemId,
-            LocationId: sourceLocId,
-            CurrentStock: transferQty,
-          },
-        });
-        targetLocId = sourceLocId;
-      }
+    if (remainingToDeduct > 0.001) {
+      return refuse(
+        `Insufficient commissary stock to dispatch ${transferQty} units. Shortage of ${remainingToDeduct.toFixed(2)} units.`
+      );
+    }
 
+    // 2. Update Inventories table for Commissary location
+    const inventory = await tx.inventories.findUnique({
+      where: {
+        ItemId_LocationId: {
+          ItemId: itemId,
+          LocationId: sourceLocId,
+        },
+      },
+    });
+
+    if (!inventory || Number(inventory.CurrentStock) < transferQty) {
+      const altInv = await tx.inventories.findFirst({
+        where: { ItemId: itemId, CurrentStock: { gte: transferQty } },
+      });
+      if (altInv) {
+        await tx.inventories.update({
+          where: { ItemId_LocationId: { ItemId: itemId, LocationId: altInv.LocationId } },
+          data: { CurrentStock: { decrement: transferQty } },
+        });
+      } else {
+        return refuse("Insufficient source inventory.");
+      }
+    } else {
       await tx.inventories.update({
         where: {
           ItemId_LocationId: {
             ItemId: itemId,
-            LocationId: targetLocId,
+            LocationId: sourceLocId,
           },
         },
         data: {
           CurrentStock: { decrement: transferQty },
         },
       });
+    }
 
-      // 3. Mark transfer as Dispatched
-      const updatedTransfer = await tx.stockTransfers.update({
-        where: { TransferId: transferId },
-        data: {
-          Status: "Dispatched",
-          DispatchedDate: new Date(),
-          DriverName: driverName || transfer.DriverName,
-          VehiclePlate: vehiclePlate || transfer.VehiclePlate,
-          CourierName: courierName || transfer.CourierName,
-          Notes: notes ? (transfer.Notes ? `${transfer.Notes} | ${notes}` : notes) : transfer.Notes,
+    // 3. Mark transfer as Dispatched
+    const updatedTransfer = await tx.stockTransfers.update({
+      where: { TransferId: transferId },
+      data: {
+        Status: "Dispatched",
+        DispatchedDate: new Date(),
+        DriverName: driverName || transfer.DriverName,
+        VehiclePlate: vehiclePlate || transfer.VehiclePlate,
+        CourierName: courierName || transfer.CourierName,
+        Notes: notes ? (transfer.Notes ? `${transfer.Notes} | ${notes}` : notes) : transfer.Notes,
+      },
+    });
+
+    // 4. Update parent STR if present
+    if (transfer.RequestId) {
+      const remainingScheduled = await tx.stockTransfers.count({
+        where: {
+          RequestId: transfer.RequestId,
+          Status: { in: ["Pending", "Scheduled"] },
+          TransferId: { not: transferId },
         },
       });
 
-      // 4. Update parent STR if present
-      if (transfer.RequestId) {
-        const remainingScheduled = await tx.stockTransfers.count({
-          where: {
-            RequestId: transfer.RequestId,
-            Status: { in: ["Pending", "Scheduled"] },
-            TransferId: { not: transferId },
-          },
+      if (remainingScheduled === 0) {
+        await tx.stockTransferRequests.update({
+          where: { RequestId: transfer.RequestId },
+          data: { Status: "Dispatched" },
         });
+      }
+    }
 
-        if (remainingScheduled === 0) {
-          await tx.stockTransferRequests.update({
-            where: { RequestId: transfer.RequestId },
-            data: { Status: "Dispatched" },
+    const destBranchName =
+      transfer.Locations_StockTransfers_DestLocationIdToLocations?.LocationName || "Store Branch";
+
+    return saved(
+      staff,
+      "stock-transfer",
+      transfer.TransferId,
+      transfer.TransferNumber || String(transfer.TransferId),
+      "updated",
+      resourceResult({
+        success: true,
+        message: "Transfer dispatched successfully and commissary stock deducted.",
+        data: {
+          transferId: updatedTransfer.TransferId,
+          transferNumber: updatedTransfer.TransferNumber,
+          status: updatedTransfer.Status,
+          dispatchedDate: updatedTransfer.DispatchedDate?.toISOString(),
+          lotDeductions,
+        },
+      }),
+      // External POS sync runs asynchronously after the DB transaction commits
+      async () => {
+        try {
+          await dispatchTransferManifestToPos({
+            transferId: transfer.TransferNumber || `TRANS-${transfer.TransferId}`,
+            sourceLocation: {
+              locationId: "999",
+              locationName:
+                transfer.Locations_StockTransfers_SourceLocationIdToLocations?.LocationName ||
+                "Commissary",
+            },
+            destinationLocation: {
+              branchId: String(transfer.DestLocationId),
+              branchName: destBranchName,
+            },
+            transferDate: new Date().toISOString(),
+            status: "In Transit",
+            products: [
+              {
+                productId: transfer.FinishedProducts?.Items?.ItemCode || `SCM-PRD-${transfer.ProductId}`,
+                sku: transfer.FinishedProducts?.Sku || `SKU-${transfer.ProductId}`,
+                productName: transfer.FinishedProducts?.Items?.ItemName || "Finished Product",
+                quantity: transferQty,
+              },
+            ],
           });
+        } catch (err: any) {
+          console.warn("[POS-TRANSFER-DISPATCH-WARN]", err?.message);
         }
       }
-
-      return { updatedTransfer, lotDeductions };
-    })();
-
-    // Post transfer manifest to POS (SCMS -> POS)
-    dispatchTransferManifestToPos({
-      transferId: transfer.TransferNumber || `TRANS-${transfer.TransferId}`,
-      sourceLocation: {
-        locationId: "999", // POS Commissary ID
-        locationName:
-          transfer.Locations_StockTransfers_SourceLocationIdToLocations?.LocationName ||
-          "Commissary",
-      },
-      destinationLocation: {
-        branchId: String(transfer.DestLocationId),
-        branchName:
-          transfer.Locations_StockTransfers_DestLocationIdToLocations?.LocationName ||
-          "Store Branch",
-      },
-      transferDate: new Date().toISOString(),
-      status: "In Transit",
-      products: [
-        {
-          productId: transfer.FinishedProducts?.Items?.ItemCode || `SCM-PRD-${transfer.ProductId}`,
-          sku: transfer.FinishedProducts?.Sku || `SKU-${transfer.ProductId}`,
-          productName: transfer.FinishedProducts?.Items?.ItemName || "Finished Product",
-          quantity: transferQty,
-        },
-      ],
-    }).catch((err) => {
-      console.warn("[POS-TRANSFER-DISPATCH-WARN]", err?.message);
-    });
-
-    return saved(staff, "stock-transfer", transfer.TransferId, transfer.TransferNumber || String(transfer.TransferId), "updated", resourceResult({
-      success: true,
-      message: "Transfer dispatched successfully and commissary stock deducted.",
-      data: {
-        transferId: result.updatedTransfer.TransferId,
-        transferNumber: result.updatedTransfer.TransferNumber,
-        status: result.updatedTransfer.Status,
-        dispatchedDate: result.updatedTransfer.DispatchedDate?.toISOString(),
-        lotDeductions: result.lotDeductions,
-      },
-    }));
-
+    );
   });
 }

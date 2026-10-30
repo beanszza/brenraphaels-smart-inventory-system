@@ -49,8 +49,8 @@ export async function listTransfers(query = "") {
   await ensureUbeJamHavaneroStock();
   return read(async () => {
     const searchParams = new URLSearchParams(query);
-    const page = Math.max(1, (parseInt(searchParams.get("page") || "1", 10) || 1));
-    const pageSize = Math.min(100, Math.max(1, (parseInt(searchParams.get("pageSize") || "10", 10) || 10)));
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "10", 10) || 10));
     const status = searchParams.get("status")?.trim() || "";
     const search = searchParams.get("search")?.trim() || "";
 
@@ -166,7 +166,10 @@ export async function scheduleTransfer(body: any = {}) {
       _sum: { TransferQuantity: true },
     });
     const limit = requested.reduce((sum, item) => sum + Number(item.RequestedQuantity), 0);
-    if (Number(scheduled._sum.TransferQuantity || 0) + Number(transferQuantity) > limit) {
+    const alreadyScheduled = Number(scheduled._sum.TransferQuantity || 0);
+    const requestedQty = Number(transferQuantity);
+
+    if (alreadyScheduled + requestedQty > limit) {
       refuse("The quantity exceeds the unscheduled request quantity.");
     }
 
@@ -207,7 +210,7 @@ export async function scheduleTransfer(body: any = {}) {
         ProductId: Number(productId),
         SourceLocationId: commissary.LocationId,
         DestLocationId: str.ToLocationId,
-        TransferQuantity: Number(transferQuantity),
+        TransferQuantity: requestedQty,
         Status: "Scheduled",
         ScheduledDate: new Date(scheduledDate),
         TransferDate: new Date(),
