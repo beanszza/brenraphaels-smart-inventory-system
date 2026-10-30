@@ -66,7 +66,11 @@ export async function listReceipts(query = "") {
         varianceType: i.VarianceType,
         deliveryItemId: i.DeliveryItemId,
         purchaseUomId: i.PurchaseUomId,
-        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit"
+        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit",
+        supplierLotCode: i.SupplierLotCode || undefined,
+        manufactureDate: i.ManufactureDate ? i.ManufactureDate.toISOString() : undefined,
+        expiryDate: i.ExpiryDate ? i.ExpiryDate.toISOString() : undefined,
+        notes: i.Notes || undefined
       }))
     }));
 
@@ -113,9 +117,16 @@ export async function createReceipt(body: ReceiptInput) {
     });
     const grnNumber = `GRN-${year}-${String(seq.LastNumber).padStart(4, '0')}`;
 
-    const receivingLocation = await tx.locations.findFirst({
-      where: { IsSystemLocation: true, LocationType: "Warehouse", IsActive: true },
-    });
+    const receivingLocation =
+      (await tx.locations.findFirst({
+        where: { IsSystemLocation: true, LocationType: "Warehouse", IsActive: true },
+      })) ??
+      (await tx.locations.findFirst({
+        where: { LocationType: "Warehouse", IsActive: true },
+      })) ??
+      (await tx.locations.findFirst({
+        where: { IsSystemLocation: true, IsActive: true },
+      }));
     if (!receivingLocation) {
       return refuse("No active system warehouse is configured for receiving.");
     }
@@ -218,7 +229,11 @@ export async function createReceipt(body: ReceiptInput) {
         varianceType: i.VarianceType,
         deliveryItemId: i.DeliveryItemId,
         purchaseUomId: i.PurchaseUomId,
-        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit"
+        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit",
+        supplierLotCode: i.SupplierLotCode || undefined,
+        manufactureDate: i.ManufactureDate ? i.ManufactureDate.toISOString() : undefined,
+        expiryDate: i.ExpiryDate ? i.ExpiryDate.toISOString() : undefined,
+        notes: i.Notes || undefined
       }))
     };
 
@@ -272,7 +287,11 @@ export async function getReceipt(idInput: string | number) {
         varianceType: i.VarianceType,
         deliveryItemId: i.DeliveryItemId,
         purchaseUomId: i.PurchaseUomId,
-        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit"
+        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit",
+        supplierLotCode: i.SupplierLotCode || undefined,
+        manufactureDate: i.ManufactureDate ? i.ManufactureDate.toISOString() : undefined,
+        expiryDate: i.ExpiryDate ? i.ExpiryDate.toISOString() : undefined,
+        notes: i.Notes || undefined
       }))
     };
 
@@ -289,7 +308,7 @@ export async function updateReceipt(idInput: string | number, body: ReceiptInput
 
     const grn = await tx.goodsReceipts.findUnique({
       where: { GrnId: id },
-      include: { GoodsReceiptItems: true }
+      include: { GoodsReceiptItems: true, Deliveries: { include: { DeliveryItems: true, PurchaseOrders: { include: { PurchaseOrderItems: true } } } } }
     });
 
     if (!grn) {
@@ -306,34 +325,46 @@ export async function updateReceipt(idInput: string | number, body: ReceiptInput
 
     const grnItems = [];
     for (const itemReq of body.items) {
-      const oldItem = grn.GoodsReceiptItems.find(i => i.ItemId === itemReq.itemId);
-      const declared = oldItem?.DeclaredQuantity == null ? 0 : Number(oldItem.DeclaredQuantity);
+      const oldItem = grn.GoodsReceiptItems.find(i =>
+        itemReq.deliveryItemId ? i.DeliveryItemId === itemReq.deliveryItemId : i.ItemId === itemReq.itemId
+      );
+      const delItem = grn.Deliveries?.DeliveryItems.find(i =>
+        itemReq.deliveryItemId ? i.DeliveryItemId === itemReq.deliveryItemId : i.ItemId === itemReq.itemId
+      );
+      const poItem = grn.Deliveries?.PurchaseOrders?.PurchaseOrderItems.find(i =>
+        delItem ? i.PoItemId === delItem.PoItemId : i.ItemId === itemReq.itemId
+      );
+
+      if (!oldItem && !delItem) {
+        return refuse(`Item ${itemReq.itemId} is not part of this GRN.`);
+      }
+
+      const declared = oldItem?.DeclaredQuantity != null
+        ? Number(oldItem.DeclaredQuantity)
+        : Number(delItem?.DeclaredQuantity ?? 0);
       const delivered = Number(itemReq.deliveredQuantity ?? itemReq.actualReceivedQuantity ?? 0);
 
       if (delivered < 0) {
         return refuse(`Actual received quantity cannot be negative.`);
       }
 
-      if (!oldItem) {
-        return refuse(`Item ${itemReq.itemId} is not part of this GRN.`);
-      }
       const variance = delivered - declared;
 
       grnItems.push({
-        PoItemId: oldItem.PoItemId,
-        ItemId: oldItem.ItemId,
-        OrderedQuantity: oldItem.OrderedQuantity,
-        PreviouslyReceivedQuantity: oldItem.PreviouslyReceivedQuantity,
+        PoItemId: oldItem?.PoItemId ?? poItem?.PoItemId ?? itemReq.poItemId!,
+        ItemId: oldItem?.ItemId ?? delItem!.ItemId,
+        OrderedQuantity: oldItem?.OrderedQuantity ?? poItem?.PoItemQuantity ?? declared,
+        PreviouslyReceivedQuantity: oldItem?.PreviouslyReceivedQuantity ?? 0,
         DeclaredQuantity: declared,
         DeliveredQuantity: delivered,
         VarianceQuantity: Math.abs(variance),
         VarianceType: variance < 0 ? "Short" : variance > 0 ? "Over" : "Exact",
-        DeliveryItemId: oldItem.DeliveryItemId,
-        PurchaseUomId: oldItem.PurchaseUomId,
-        SupplierLotCode: itemReq.supplierLotCode?.trim() || oldItem.SupplierLotCode,
-        ManufactureDate: itemReq.manufactureDate ? new Date(itemReq.manufactureDate) : oldItem.ManufactureDate,
-        ExpiryDate: itemReq.expiryDate ? new Date(itemReq.expiryDate) : oldItem.ExpiryDate,
-        Notes: itemReq.notes?.trim() || oldItem.Notes,
+        DeliveryItemId: oldItem?.DeliveryItemId ?? delItem?.DeliveryItemId ?? itemReq.deliveryItemId ?? null,
+        PurchaseUomId: oldItem?.PurchaseUomId ?? poItem?.PurchaseUomId ?? 1,
+        SupplierLotCode: itemReq.supplierLotCode?.trim() || oldItem?.SupplierLotCode || null,
+        ManufactureDate: itemReq.manufactureDate ? new Date(itemReq.manufactureDate) : oldItem?.ManufactureDate ?? null,
+        ExpiryDate: itemReq.expiryDate ? new Date(itemReq.expiryDate) : oldItem?.ExpiryDate ?? null,
+        Notes: itemReq.notes?.trim() || oldItem?.Notes || null,
       });
     }
 
@@ -382,7 +413,11 @@ export async function updateReceipt(idInput: string | number, body: ReceiptInput
         varianceType: i.VarianceType,
         deliveryItemId: i.DeliveryItemId,
         purchaseUomId: i.PurchaseUomId,
-        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit"
+        purchaseUomName: i.UnitOfMeasures?.Abbreviation || i.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures?.Abbreviation || "Unit",
+        supplierLotCode: i.SupplierLotCode || undefined,
+        manufactureDate: i.ManufactureDate ? i.ManufactureDate.toISOString() : undefined,
+        expiryDate: i.ExpiryDate ? i.ExpiryDate.toISOString() : undefined,
+        notes: i.Notes || undefined
       }))
     };
 
@@ -418,49 +453,70 @@ export async function postReceipt(idInput: string | number) {
         data: { Status: "QaPending", PostedBy: staff.username, PostedAt: new Date() }
       });
 
-      // 2. Automatically generate a QA Inspection
-      const year = new Date().getFullYear();
-
-      // Get max inspection number
-      const maxQc = await tx.qualityInspections.findFirst({
-        orderBy: { InspectionId: "desc" },
+      // 2. Automatically generate or refresh QA Inspection keyed by GRN number (no separate QC number)
+      const existingInspection = await tx.qualityInspections.findFirst({
+        where: { ReferenceType: "GRN", ReferenceId: grn.GrnId },
       });
-      let nextSeq = 1;
-      if (maxQc && maxQc.InspectionNumber) {
-        const match = maxQc.InspectionNumber.match(/QC-\d{4}-(\d+)/);
-        if (match) {
-          nextSeq = parseInt(match[1], 10) + 1;
-        }
-      }
-      const inspectionNumber = `QC-${year}-${String(nextSeq).padStart(4, "0")}`;
 
-      await tx.qualityInspections.create({
-        data: {
-          InspectionNumber: inspectionNumber,
-          InspectionType: "Receiving",
-          ReferenceType: "GRN",
-          ReferenceId: grn.GrnId,
-          ReferenceNumber: grn.GrnNumber,
-          InspectorId: staff.username,
-          InspectorName: staff.name,
-          InspectionDate: new Date(),
-          Status: "Pending",
-          QualityInspectionItems: {
-            create: grn.GoodsReceiptItems.map((item) => ({
-              ItemId: item.ItemId,
-              DeliveredQuantity: item.DeliveredQuantity,
-              AcceptedQuantity: 0,
-              RejectedQuantity: 0,
-              ConcessionQuantity: 0,
-            }))
+      if (existingInspection) {
+        await tx.qualityInspectionItems.deleteMany({
+          where: { InspectionId: existingInspection.InspectionId },
+        });
+        await tx.qualityInspections.update({
+          where: { InspectionId: existingInspection.InspectionId },
+          data: {
+            Status: "Pending",
+            InspectorId: staff.username,
+            InspectorName: staff.name,
+            InspectionDate: new Date(),
+            QualityInspectionItems: {
+              create: grn.GoodsReceiptItems.map((item) => ({
+                ItemId: item.ItemId,
+                DeliveredQuantity: item.DeliveredQuantity,
+                AcceptedQuantity: 0,
+                RejectedQuantity: 0,
+                ConcessionQuantity: 0,
+              }))
+            }
           }
+        });
+      } else {
+        let inspectionNumber = grn.GrnNumber;
+        const collision = await tx.qualityInspections.findUnique({
+          where: { InspectionNumber: inspectionNumber },
+        });
+        if (collision) {
+          inspectionNumber = `${grn.GrnNumber}-${grn.GrnId}`;
         }
-      });
+
+        await tx.qualityInspections.create({
+          data: {
+            InspectionNumber: inspectionNumber,
+            InspectionType: "Receiving",
+            ReferenceType: "GRN",
+            ReferenceId: grn.GrnId,
+            ReferenceNumber: grn.GrnNumber,
+            InspectorId: staff.username,
+            InspectorName: staff.name,
+            InspectionDate: new Date(),
+            Status: "Pending",
+            QualityInspectionItems: {
+              create: grn.GoodsReceiptItems.map((item) => ({
+                ItemId: item.ItemId,
+                DeliveredQuantity: item.DeliveredQuantity,
+                AcceptedQuantity: 0,
+                RejectedQuantity: 0,
+                ConcessionQuantity: 0,
+              }))
+            }
+          }
+        });
+      }
 
       return result;
     })();
 
-    return { result: resourceResult({ success: true, message: "GRN posted and QA inspection generated successfully.", data: updatedGrn }), audit: { module: MODULE, change: "updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} posted goods receipt for QA ${updatedGrn.GrnNumber}` } };
+    return { result: resourceResult({ success: true, message: "GRN posted for QA inspection.", data: updatedGrn }), audit: { module: MODULE, change: "updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} posted goods receipt for QA ${updatedGrn.GrnNumber}` } };
 
   });
 }
@@ -508,7 +564,16 @@ export async function rejectReceipt(idInput: string | number, body: ReceiptInput
 
     const grn = await tx.goodsReceipts.findUnique({
       where: { GrnId: id },
-      include: { Deliveries: true }
+      include: {
+        Deliveries: {
+          include: {
+            DeliveryItems: true,
+            PurchaseOrders: { include: { PurchaseOrderItems: true } },
+          },
+        },
+        PurchaseOrders: true,
+        GoodsReceiptItems: true,
+      },
     });
 
     if (!grn) {
@@ -520,13 +585,15 @@ export async function rejectReceipt(idInput: string | number, body: ReceiptInput
     }
 
     const reason = body.reason?.trim() || "Rejected by user.";
+    const now = new Date();
 
     const updatedGrn = await tx.goodsReceipts.update({
       where: { GrnId: id },
       data: {
         Status: "Rejected",
         RejectedBy: staff.username,
-        RejectedAt: new Date(),
+        RejectedAt: now,
+        RejectionReason: reason,
         Notes: grn.Notes ? `${grn.Notes}\nRejected: ${reason}` : `Rejected: ${reason}`
       }
     });
@@ -538,7 +605,71 @@ export async function rejectReceipt(idInput: string | number, body: ReceiptInput
       });
     }
 
-    return { result: resourceResult({ success: true, message: "GRN rejected successfully.", data: updatedGrn }), audit: { module: MODULE, change: "rejected", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} rejected goods receipt ${updatedGrn.GrnNumber}` }, after: () => notifyRequester(grn.CreatedBy, "rejected", updatedGrn.GrnNumber) };
+    // Automatically log Discrepancy records for every line item on this rejected shipment
+    const existingDiscrepancies = await tx.discrepancies.count({
+      where: { GrnId: grn.GrnId },
+    });
+
+    if (existingDiscrepancies === 0) {
+      const year = now.getFullYear();
+      const poNumber = grn.Deliveries?.PurchaseOrders?.PoNumber || grn.PurchaseOrders?.PoNumber || "";
+      const deliveryNumber = grn.Deliveries?.DeliveryNumber || null;
+
+      // Aggregate by ItemId in case multiple batches were recorded for the same item
+      const itemMap = new Map<number, { orderedQty: number; declaredQty: number }>();
+      if (grn.GoodsReceiptItems.length > 0) {
+        for (const line of grn.GoodsReceiptItems) {
+          const prev = itemMap.get(line.ItemId);
+          const declared = line.DeclaredQuantity != null ? Number(line.DeclaredQuantity) : Number(line.OrderedQuantity);
+          if (!prev) {
+            itemMap.set(line.ItemId, {
+              orderedQty: Number(line.OrderedQuantity),
+              declaredQty: declared,
+            });
+          }
+        }
+      } else if (grn.Deliveries?.DeliveryItems?.length) {
+        for (const delItem of grn.Deliveries.DeliveryItems) {
+          const poItem = grn.Deliveries.PurchaseOrders?.PurchaseOrderItems.find(p => p.PoItemId === delItem.PoItemId);
+          itemMap.set(delItem.ItemId, {
+            orderedQty: Number(poItem?.PoItemQuantity ?? delItem.DeclaredQuantity),
+            declaredQty: Number(delItem.DeclaredQuantity),
+          });
+        }
+      }
+
+      for (const [itemId, qtys] of itemMap.entries()) {
+        const dscSeq = await tx.documentSequences.upsert({
+          where: { DocType_Year: { DocType: "Discrepancy", Year: year } },
+          update: { LastNumber: { increment: 1 } },
+          create: { DocType: "Discrepancy", Year: year, LastNumber: 1 },
+        });
+        const dscNumber = `DSC-${year}-${String(dscSeq.LastNumber).padStart(4, "0")}`;
+
+        await tx.discrepancies.create({
+          data: {
+            DiscrepancyNumber: dscNumber,
+            DiscrepancyType: "Rejected",
+            GrnId: grn.GrnId,
+            GrnNumber: grn.GrnNumber,
+            PoId: grn.PoId,
+            PoNumber: poNumber,
+            DeliveryId: grn.DeliveryId,
+            DeliveryNumber: deliveryNumber,
+            ItemId: itemId,
+            OrderedQuantity: qtys.orderedQty,
+            PreviouslyReceivedQty: 0,
+            CurrentReceivedQty: 0,
+            DiscrepancyQuantity: Math.max(1, qtys.declaredQty || qtys.orderedQty),
+            Status: "Open",
+            ResolutionNotes: `Entire shipment rejected: ${reason}`,
+            CreatedAt: now,
+          },
+        });
+      }
+    }
+
+    return { result: resourceResult({ success: true, message: "GRN rejected and discrepancy records logged.", data: updatedGrn }), audit: { module: MODULE, change: "rejected", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} rejected goods receipt ${updatedGrn.GrnNumber}` }, after: () => notifyRequester(grn.CreatedBy, "rejected", updatedGrn.GrnNumber) };
 
   });
 }

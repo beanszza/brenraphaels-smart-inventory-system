@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 
 import React, { useState, useMemo, useTransition } from "react";
 import { Search, RefreshCw, Plus } from "lucide-react";
@@ -14,11 +15,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import GrnTable from "./GrnTable";
 import PendingReceivingTable from "./PendingReceivingTable";
-import CreateGrnModal from "./CreateGrnModal";
-import GrnDetailsModal from "./GrnDetailsModal";
-import DeliveryDetailsModal from "./DeliveryDetailsModal";
 import Pagination from "@/components/Pagination";
 import { GRN, ArrivedDelivery } from "./types";
+
+const CreateGrnModal = dynamic(() => import("./CreateGrnModal"), { ssr: false });
+const GrnDetailsModal = dynamic(() => import("./GrnDetailsModal"), { ssr: false });
+const DeliveryDetailsModal = dynamic(() => import("./DeliveryDetailsModal"), { ssr: false });
 
 type SubTab = "pending" | "posted";
 
@@ -29,7 +31,9 @@ interface GrnTabProps {
 
 export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabProps) {
   const router = useRouter();
-  const onPosted = () => router.push("/goods-receiving?tab=stockin");
+  const onPosted = () => {
+    window.dispatchEvent(new CustomEvent("receiving:switch-tab", { detail: "stockin" }));
+  };
   const [activeSubTab, setActiveSubTab] = useState<SubTab>("pending");
   const [loading, startRefresh] = useTransition();
   const [search, setSearch] = useState("");
@@ -38,10 +42,15 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
   const pageSize = 10;
 
   // Data states
-  const postedGrns = useMemo(() => initialReceipts.filter(g => g.status !== "Draft"), [initialReceipts]);
+  const postedGrns = useMemo(
+    () => initialReceipts.filter((g) => g.status !== "Draft" && g.status !== "Cancelled"),
+    [initialReceipts]
+  );
   const pendingDeliveries = useMemo(() => {
-    const postedDeliveryIds = new Set(postedGrns.map(g => g.deliveryId));
-    return initialDeliveries.filter(d => d.status === "Arrived" && !postedDeliveryIds.has(d.deliveryId));
+    const postedDeliveryIds = new Set(postedGrns.map((g) => g.deliveryId));
+    return initialDeliveries.filter(
+      (d) => d.status === "Arrived" && !postedDeliveryIds.has(d.deliveryId)
+    );
   }, [initialDeliveries, postedGrns]);
 
   // Modals
@@ -57,10 +66,13 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
   const fetchData = () => startRefresh(() => router.refresh());
 
   // Counts
-  const counts = useMemo(() => ({
-    pending: pendingDeliveries.length,
-    posted: postedGrns.length,
-  }), [pendingDeliveries, postedGrns]);
+  const counts = useMemo(
+    () => ({
+      pending: pendingDeliveries.length,
+      posted: postedGrns.length,
+    }),
+    [pendingDeliveries, postedGrns]
+  );
 
   // Unique Suppliers from both pending deliveries and posted GRNs
   const uniqueSuppliers = useMemo(() => {
@@ -160,7 +172,7 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
         <div>
           <h2 className="text-2xl font-bold text-foreground">Receive Deliveries</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Record physical counts and send received goods to Quality Assurance.
+            Record physical counts and complete Quality Assurance review for incoming deliveries.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -171,7 +183,7 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
             disabled={loading}
             className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
           >
-            <RefreshCw className={`w-4 h-4 `} /> Refresh
+            <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
 
           <Button
@@ -320,40 +332,47 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
       />
 
       {/* Delivery Details Modal (read-only) */}
-      <DeliveryDetailsModal
-        open={deliveryDetailsOpen}
-        delivery={viewDelivery}
-        onClose={() => setDeliveryDetailsOpen(false)}
-        onCreateGrn={(deliveryId) => handleCreateGrn(deliveryId)}
-      />
+      {deliveryDetailsOpen && (
+        <DeliveryDetailsModal
+          open={deliveryDetailsOpen}
+          delivery={viewDelivery}
+          onClose={() => setDeliveryDetailsOpen(false)}
+          onCreateGrn={(deliveryId) => handleCreateGrn(deliveryId)}
+        />
+      )}
 
       {/* Create / Count GRN Modal */}
-      <CreateGrnModal
-        open={createModalOpen}
-        initialDeliveryId={targetDeliveryId}
-        onClose={() => {
-          setCreateModalOpen(false);
-          setTargetDeliveryId(undefined);
-        }}
-        onSuccess={(grn) => {
-          fetchData();
-          setActiveSubTab("posted");
-          // Open the details modal so the user can post & print
-          setSelectedGrn(grn);
-          setDetailsModalOpen(true);
-        }}
-      />
+      {createModalOpen && (
+        <CreateGrnModal
+          open={createModalOpen}
+          initialDeliveryId={targetDeliveryId}
+          initialDeliveries={pendingDeliveries}
+          initialReceipts={initialReceipts}
+          onClose={() => {
+            setCreateModalOpen(false);
+            setTargetDeliveryId(undefined);
+          }}
+          onSuccess={(grn) => {
+            fetchData();
+            setActiveSubTab("posted");
+            setSelectedGrn(grn);
+            setDetailsModalOpen(true);
+          }}
+        />
+      )}
 
       {/* GRN Details Modal */}
-      <GrnDetailsModal
-        open={detailsModalOpen}
-        grn={selectedGrn}
-        onClose={() => setDetailsModalOpen(false)}
-        onUpdated={() => {
-          fetchData();
-        }}
-        onPosted={onPosted}
-      />
+      {detailsModalOpen && (
+        <GrnDetailsModal
+          open={detailsModalOpen}
+          grn={selectedGrn}
+          onClose={() => setDetailsModalOpen(false)}
+          onUpdated={() => {
+            fetchData();
+          }}
+          onPosted={onPosted}
+        />
+      )}
     </div>
   );
 }

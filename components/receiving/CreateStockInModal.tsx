@@ -1,12 +1,11 @@
 "use client";
 import { ReceivingSkeleton } from "./ReceivingSkeleton";
-
 import { receiving } from "@/lib/receiving/client";
 
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { AlertTriangle } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import NestedDialog from "./NestedDialog";
 import { GRN, StockIn } from "./types";
 
 interface Props {
@@ -38,11 +37,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [confirmModal, setConfirmModal] = useState<{
-    open: boolean;
-    submitForApproval: boolean;
-  }>({ open: false, submitForApproval: false });
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -51,6 +46,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
     setLines([]);
     setNotes("");
     setError(null);
+    setConfirmOpen(false);
     setLoading(true);
 
     receiving.listReceipts()
@@ -58,9 +54,10 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
         const list: GRN[] = Array.isArray(data?.data) ? data.data : [];
         const eligible = list.filter(
           (g) =>
-            g.status === "QaCompleted" ||
-            g.status === "Received" ||
-            g.status === "PartiallyPutAway"
+            (g.status === "QaCompleted" ||
+              g.status === "Received" ||
+              g.status === "PartiallyPutAway") &&
+            (g.items || []).some((item) => Number(item.deliveredQuantity) > 0)
         );
         setGrns(eligible);
       })
@@ -98,25 +95,27 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
       const cleanGrn = (fullGrn.grnNumber || `${dateStr}`).replace(/^GRN-?/i, "");
       let seq = 1;
 
-      const draftedLines: StockInLineDraft[] = (fullGrn.items || []).map((item) => {
-        const invMatch = invList.find((i: any) => i.itemId === item.itemId);
-        const currentStock = Number(invMatch?.currentStock ?? invMatch?.quantityOnHand ?? 0);
-        const generatedLot = `LOT-${cleanGrn}-${item.itemId}-${String(seq).padStart(2, "0")}`;
-        seq++;
+      const draftedLines: StockInLineDraft[] = (fullGrn.items || [])
+        .filter((item) => Number(item.deliveredQuantity) > 0)
+        .map((item) => {
+          const invMatch = invList.find((i: any) => i.itemId === item.itemId);
+          const currentStock = Number(invMatch?.currentStock ?? invMatch?.quantityOnHand ?? 0);
+          const generatedLot = `LOT-${cleanGrn}-${item.itemId}-${String(seq).padStart(2, "0")}`;
+          seq++;
 
-        return {
-          grnItemId: item.grnItemId,
-          itemId: item.itemId,
-          itemName: item.itemName || `Item #${item.itemId}`,
-          purchaseUomId: item.purchaseUomId,
-          purchaseUomName: item.purchaseUomName || "Unit",
-          quantityToStock: Number(item.deliveredQuantity) || 0,
-          currentStock,
-          lotCode: generatedLot,
-          expiryDate: item.expiryDate ? item.expiryDate.split("T")[0] : "",
-          notes: item.notes || "",
-        };
-      });
+          return {
+            grnItemId: item.grnItemId,
+            itemId: item.itemId,
+            itemName: item.itemName || `Item #${item.itemId}`,
+            purchaseUomId: item.purchaseUomId,
+            purchaseUomName: item.purchaseUomName || "Unit",
+            quantityToStock: Number(item.deliveredQuantity) || 0,
+            currentStock,
+            lotCode: generatedLot,
+            expiryDate: item.expiryDate ? item.expiryDate.split("T")[0] : "",
+            notes: item.notes || "",
+          };
+        });
 
       setLines(draftedLines);
     } catch {
@@ -126,7 +125,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
     }
   };
 
-  const handleTrySubmit = (submitForApproval: boolean) => {
+  const handleTryCommit = () => {
     if (!selectedGrnId || lines.length === 0) {
       setError("Please select a valid Goods Receipt Note with item lines.");
       return;
@@ -144,10 +143,10 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
       return;
     }
 
-    setConfirmModal({ open: true, submitForApproval });
+    setConfirmOpen(true);
   };
 
-  const executeSubmit = async (submitForApproval: boolean) => {
+  const executeCommit = async () => {
     setSubmitting(true);
     setError(null);
 
@@ -155,7 +154,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
       const payload = {
         grnId: Number(selectedGrnId),
         notes: notes.trim() || undefined,
-        submitForApproval,
+        submitForApproval: false,
         lines: lines.map((l) => ({
           grnItemId: l.grnItemId,
           itemId: l.itemId,
@@ -170,27 +169,28 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
 
       const { data } = await receiving.createStockIn(payload);
       if (!data?.success) {
-        throw new Error(data?.message || "Failed to create Stock-In record.");
+        throw new Error(data?.message || "Failed to create and commit Stock-In record.");
       }
 
+      setConfirmOpen(false);
       onSuccess(data.data);
       onClose();
     } catch (err: any) {
       setError(
         err.response?.data?.message ||
           err.message ||
-          "An unexpected error occurred while creating Stock-In."
+          "An unexpected error occurred while committing Stock-In."
       );
+      setConfirmOpen(false);
     } finally {
       setSubmitting(false);
-      setConfirmModal({ open: false, submitForApproval: false });
     }
   };
 
   return (
     <ModalWrapper
       open={open}
-      title="Create Stock-In Report"
+      title="Create & Commit Stock-In"
       onClose={onClose}
       size="max-w-5xl"
     >
@@ -220,30 +220,28 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
                 const id = Number(e.target.value);
                 if (id) handleSelectGrn(id);
               }}
-              className="w-56 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+              className="w-64 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
             >
               <option value="" disabled>
                 Select Goods Receipt Note
               </option>
               {grns.map((g) => (
                 <option key={g.grnId} value={g.grnId}>
-                  {g.grnNumber}
+                  {g.grnNumber} — {g.supplierName}
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        {loading && (
-          <ReceivingSkeleton />
-        )}
+        {loading && <ReceivingSkeleton />}
 
         {/* Stock-In Items Table */}
         {selectedGrn && !loading && lines.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                Items
+                Items to Commit to Inventory ({lines.length})
               </span>
             </div>
 
@@ -322,73 +320,58 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
           <button
             type="button"
             disabled={lines.length === 0 || submitting}
-            onClick={() => handleTrySubmit(true)}
+            onClick={handleTryCommit}
             className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
           >
-            {submitting ? "Submitting…" : "Submit for Approval"}
+            {submitting ? "Committing…" : "Commit to Inventory"}
           </button>
         </div>
       </div>
 
-      {/* Review Confirmation Modal (Matching POActionModal layout) */}
-      {confirmModal.open &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-            onClick={() => setConfirmModal({ open: false, submitForApproval: false })}
-          >
-            <div
-              style={{ width: "100%", maxWidth: "440px" }}
-              className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
-              onClick={(e) => e.stopPropagation()}
+      {/* Confirmation Modal (Nested Radix Dialog) */}
+      <NestedDialog
+        open={confirmOpen}
+        title="Commit Stock-In to Inventory"
+        onClose={() => setConfirmOpen(false)}
+        maxWidth={440}
+      >
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+
+          <h2 className="text-xl font-bold text-foreground mb-1">
+            Commit Stock-In to Inventory
+          </h2>
+
+          <p className="text-xs font-mono font-semibold text-muted-foreground mb-3">
+            GRN Reference: {grns.find((g) => g.grnId === Number(selectedGrnId))?.grnNumber || "N/A"}
+          </p>
+
+          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+            Are you sure you want to commit this Stock-In with {lines.length} item{lines.length === 1 ? "" : "s"} directly to commissary inventory? Stock balances and traceability lots will be updated immediately, and QR labels will be ready for download.
+          </p>
+
+          <div className="flex justify-center gap-3 w-full">
+            <button
+              type="button"
+              onClick={() => setConfirmOpen(false)}
+              disabled={submitting}
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
             >
-              <div className="flex flex-col items-center justify-center text-center">
-                {/* Circular Alert Icon */}
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
-                  <AlertTriangle className="w-6 h-6" />
-                </div>
-
-                {/* Title */}
-                <h2 className="text-xl font-bold text-foreground mb-1">
-                  {confirmModal.submitForApproval ? "Submit Stock-In Report" : "Save Stock-In as Draft"}
-                </h2>
-
-                {/* Reference */}
-                <p className="text-xs font-mono font-semibold text-muted-foreground mb-3">
-                  GRN Reference: {grns.find((g) => g.grnId === Number(selectedGrnId))?.grnNumber || "N/A"}
-                </p>
-
-                {/* Description */}
-                <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                  {confirmModal.submitForApproval
-                    ? `Are you sure you want to submit this stock-in report with ${lines.length} item${lines.length === 1 ? "" : "s"} for admin approval? Once submitted, it will be routed for review.`
-                    : `Save this stock-in report with ${lines.length} item${lines.length === 1 ? "" : "s"} as a draft? You can continue editing or submit it later.`}
-                </p>
-
-                {/* Action Buttons */}
-                <div className="flex justify-center gap-3 w-full">
-                  <button
-                    type="button"
-                    onClick={() => setConfirmModal({ open: false, submitForApproval: false })}
-                    disabled={submitting}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => executeSubmit(confirmModal.submitForApproval)}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
-                  >
-                    {submitting ? "Processing…" : "Confirm"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={executeCommit}
+              className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+            >
+              {submitting ? "Committing…" : "Confirm & Commit"}
+            </button>
+          </div>
+        </div>
+      </NestedDialog>
     </ModalWrapper>
   );
 }

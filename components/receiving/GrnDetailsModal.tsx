@@ -3,9 +3,9 @@
 import { receiving } from "@/lib/receiving/client";
 
 import React, { useState } from "react";
-import { createPortal } from "react-dom";
-import { Printer, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import NestedDialog from "./NestedDialog";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { GRN } from "./types";
 
@@ -106,7 +106,6 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
       doc.text(`Received Date: ${receivedDate}`, 105, 47);
       doc.text(`Receiving Bay: ${grn.receivingBay || "Main Receiving Bay"}`, 105, 55);
 
-      // Table
       const tableData = grn.items.map((item) => {
         const variance = item.varianceType === "Short"
           ? `Short (${item.varianceQuantity})`
@@ -145,7 +144,6 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
         finalY += 25;
       }
 
-      // Signatures
       finalY += 20;
       doc.setFontSize(9);
       doc.text("Received By / Signature:", 14, finalY);
@@ -191,13 +189,11 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
 
         {/* HEADER SUMMARY CARD */}
         <div className="rounded-2xl border border-border bg-muted/20 p-4 text-xs space-y-3">
-          {/* Status Row */}
           <div className="flex items-center justify-between border-b border-border/60 pb-3">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Receipt Overview</span>
             <StatusBadge status={grn.status} />
           </div>
 
-          {/* Clean Information Grid without PO / PR clutter */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <span className="text-[10px] font-bold uppercase text-muted-foreground block">Delivery No.</span>
@@ -221,7 +217,6 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
             </div>
           </div>
 
-          {/* Personnel Row (Only show Posted By if actually present) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2.5 border-t border-border/60">
             <div>
               <span className="text-[10px] font-bold uppercase text-muted-foreground block">Received By</span>
@@ -262,14 +257,14 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
         </div>
 
         {/* WORKFLOW STATUS BANNER */}
-        {grn.status === "Received" && (
+        {(grn.status === "Received" || grn.status === "QaPending") && (
           <div className="bg-muted/30 border border-border text-foreground rounded-2xl p-3.5 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2.5">
               <span className="w-2 h-2 rounded-full bg-foreground shrink-0" />
               <div>
-                <div className="font-semibold text-foreground">Awaiting Quality Assurance Inspection</div>
+                <div className="font-semibold text-foreground">Awaiting Quality Assurance Review</div>
                 <div className="text-muted-foreground text-[11px] mt-0.5">
-                  Warehouse Put Away tasks and inventory lot codes will be generated automatically once incoming inspection is completed in the QA Tab.
+                  Complete the QA review for {grn.grnNumber} to release accepted items for Stock-In.
                 </div>
               </div>
             </div>
@@ -281,9 +276,11 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
             <div className="flex items-center gap-2.5">
               <span className="w-2 h-2 rounded-full bg-foreground shrink-0" />
               <div>
-                <div className="font-semibold text-foreground">Quality Assurance Inspection Completed</div>
+                <div className="font-semibold text-foreground">Quality Assurance Completed</div>
                 <div className="text-muted-foreground text-[11px] mt-0.5">
-                  Accepted items have been queued for warehouse Put Away. View assigned storage locations in the Put Away tab.
+                  {grn.status === "FullyPutAway"
+                    ? "All accepted items from this Goods Receipt Note have been stocked into inventory."
+                    : "Accepted items from this Goods Receipt Note are ready for Stock-In."}
                 </div>
               </div>
             </div>
@@ -302,7 +299,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
                   <th className="px-4 py-3">Item Name</th>
                   <th className="px-3 py-3 text-center">Unit of Measure</th>
                   <th className="px-3 py-3 text-right">Ordered</th>
-                  <th className="px-3 py-3 text-right">Delivered Qty</th>
+                  <th className="px-3 py-3 text-right">Accepted / Received Qty</th>
                   <th className="px-3 py-3 text-center">Variance</th>
                   <th className="px-4 py-3">Supplier Lot #</th>
                   <th className="px-3 py-3 text-center">Expiry Date</th>
@@ -351,7 +348,6 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
 
         {/* FOOTER ACTIONS */}
         <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-border">
-          {/* Cancel draft button */}
           {isDraft && (
             <button
               type="button"
@@ -363,7 +359,6 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
             </button>
           )}
 
-          {/* Export button */}
           <button
             type="button"
             onClick={handleExport}
@@ -373,7 +368,6 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
             Export Goods Receipt Note
           </button>
 
-          {/* Close button in black primary style */}
           <button
             type="button"
             onClick={onClose}
@@ -383,7 +377,6 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
             Close
           </button>
 
-          {/* Post GRN — primary action for Draft */}
           {isDraft && (
             <button
               type="button"
@@ -398,53 +391,45 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
       </div>
 
       {/* Confirmation Modal: Cancel Draft GRN */}
-      {cancelModalOpen &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-            onClick={() => setCancelModalOpen(false)}
-          >
-            <div
-              style={{ width: "100%", maxWidth: "440px" }}
-              className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
-              onClick={(e) => e.stopPropagation()}
+      <NestedDialog
+        open={cancelModalOpen}
+        title="Cancel Goods Receipt Note"
+        onClose={() => setCancelModalOpen(false)}
+        maxWidth={440}
+      >
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground mb-1">
+            Cancel Goods Receipt Note
+          </h2>
+          <p className="text-xs font-mono font-semibold text-muted-foreground mb-3">
+            GRN No: {grn.grnNumber}
+          </p>
+          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+            Are you sure you want to cancel Draft Goods Receipt Note {grn.grnNumber}? This action cannot be undone.
+          </p>
+          <div className="flex justify-center gap-3 w-full">
+            <button
+              type="button"
+              onClick={() => setCancelModalOpen(false)}
+              disabled={loading}
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
             >
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
-                  <AlertTriangle className="w-6 h-6" />
-                </div>
-                <h2 className="text-xl font-bold text-foreground mb-1">
-                  Cancel Goods Receipt Note
-                </h2>
-                <p className="text-xs font-mono font-semibold text-muted-foreground mb-3">
-                  GRN No: {grn.grnNumber}
-                </p>
-                <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                  Are you sure you want to cancel Draft Goods Receipt Note {grn.grnNumber}? This action cannot be undone.
-                </p>
-                <div className="flex justify-center gap-3 w-full">
-                  <button
-                    type="button"
-                    onClick={() => setCancelModalOpen(false)}
-                    disabled={loading}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={executeCancel}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
-                  >
-                    {loading ? "Cancelling…" : "Confirm Cancel"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={executeCancel}
+              className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+            >
+              {loading ? "Cancelling…" : "Confirm Cancel"}
+            </button>
+          </div>
+        </div>
+      </NestedDialog>
     </ModalWrapper>
   );
 }

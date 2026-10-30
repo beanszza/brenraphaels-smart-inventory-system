@@ -1,8 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { ReceivingSkeleton } from "./ReceivingSkeleton";
-
-
 
 import React, { useState, useMemo, useTransition } from "react";
 import { Search, MoreHorizontal, Eye, RefreshCw, Plus } from "lucide-react";
@@ -18,14 +17,12 @@ import {
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import Pagination from "@/components/Pagination";
 import { StockIn } from "./types";
-import CreateStockInModal from "./CreateStockInModal";
-import StockInDetailsModal from "./StockInDetailsModal";
 
-type SubTab = "pending" | "approved" | "committed" | "draft" | "rejected";
+const CreateStockInModal = dynamic(() => import("./CreateStockInModal"), { ssr: false });
+const StockInDetailsModal = dynamic(() => import("./StockInDetailsModal"), { ssr: false });
 
 export default function StockInTab({ initialStockIns }: { initialStockIns: StockIn[] }) {
   const router = useRouter();
-  const [activeSubTab, setActiveSubTab] = useState<SubTab>("pending");
   const stockIns = initialStockIns;
   const [loading, startRefresh] = useTransition();
   const [search, setSearch] = useState("");
@@ -43,41 +40,23 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
 
   const fetchStockIns = () => startRefresh(() => router.refresh());
 
-  // SubTab counts
-  const counts = useMemo(() => {
-    return {
-      draft: stockIns.filter((s) => s.status === "Draft").length,
-      pending: stockIns.filter((s) => s.status === "PendingApproval" || s.status === "Pending Approval" || s.status === "Pending").length,
-      approved: stockIns.filter((s) => s.status === "Approved").length,
-      committed: stockIns.filter((s) => s.status === "Committed").length,
-      rejected: stockIns.filter((s) => s.status === "Rejected").length,
-    };
+  // Committed Stock-Ins only
+  const committedStockIns = useMemo(() => {
+    return stockIns.filter((s) => s.status === "Committed");
   }, [stockIns]);
-
-  // Filter by SubTab
-  const tabFiltered = useMemo(() => {
-    return stockIns.filter((s) => {
-      if (activeSubTab === "draft") return s.status === "Draft";
-      if (activeSubTab === "pending") return s.status === "PendingApproval" || s.status === "Pending Approval" || s.status === "Pending";
-      if (activeSubTab === "approved") return s.status === "Approved";
-      if (activeSubTab === "committed") return s.status === "Committed";
-      if (activeSubTab === "rejected") return s.status === "Rejected";
-      return true;
-    });
-  }, [stockIns, activeSubTab]);
 
   // Unique Suppliers
   const uniqueSuppliers = useMemo(() => {
     const set = new Set<string>();
-    stockIns.forEach((s) => {
+    committedStockIns.forEach((s) => {
       if (s.supplierName) set.add(s.supplierName);
     });
     return Array.from(set).sort();
-  }, [stockIns]);
+  }, [committedStockIns]);
 
   // Search & Supplier Filter
   const searchFiltered = useMemo(() => {
-    let filtered = tabFiltered;
+    let filtered = committedStockIns;
 
     if (supplierFilter !== "All") {
       filtered = filtered.filter((s) => s.supplierName === supplierFilter);
@@ -91,14 +70,13 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
           s.grnNumber?.toLowerCase().includes(q) ||
           s.supplierName?.toLowerCase().includes(q) ||
           s.createdBy?.toLowerCase().includes(q) ||
-          s.approvedBy?.toLowerCase().includes(q) ||
           s.committedBy?.toLowerCase().includes(q)
         );
       });
     }
 
     return filtered;
-  }, [tabFiltered, search, supplierFilter]);
+  }, [committedStockIns, search, supplierFilter]);
 
   // Pagination
   const totalCount = searchFiltered.length;
@@ -112,125 +90,16 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
     <div className="space-y-4">
       {/* Top action bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Sub-Tab Navigation */}
+        {/* Committed Sub-Tab Pill */}
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
-            onClick={() => {
-              setActiveSubTab("pending");
-              setPage(1);
-            }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeSubTab === "pending"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            }`}
-          >
-            <span>Pending Approval</span>
-            <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
-                activeSubTab === "pending"
-                  ? "bg-background text-foreground"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {counts.pending}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveSubTab("approved");
-              setPage(1);
-            }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeSubTab === "approved"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            }`}
-          >
-            <span>Approved</span>
-            <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
-                activeSubTab === "approved"
-                  ? "bg-background text-foreground"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {counts.approved}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveSubTab("committed");
-              setPage(1);
-            }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeSubTab === "committed"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            }`}
+            onClick={() => setPage(1)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer bg-primary text-primary-foreground shadow-sm"
           >
             <span>Committed</span>
-            <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
-                activeSubTab === "committed"
-                  ? "bg-background text-foreground"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {counts.committed}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveSubTab("draft");
-              setPage(1);
-            }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeSubTab === "draft"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            }`}
-          >
-            <span>Drafts</span>
-            <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
-                activeSubTab === "draft"
-                  ? "bg-background text-foreground"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {counts.draft}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveSubTab("rejected");
-              setPage(1);
-            }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeSubTab === "rejected"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            }`}
-          >
-            <span>Rejected</span>
-            <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
-                activeSubTab === "rejected"
-                  ? "bg-background text-foreground"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {counts.rejected}
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium bg-background text-foreground">
+              {committedStockIns.length}
             </span>
           </button>
         </div>
@@ -244,7 +113,7 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
             disabled={loading}
             className="h-10 px-4 text-xs font-semibold rounded-xl border border-border bg-card hover:bg-muted text-foreground flex items-center gap-2 cursor-pointer shadow-xs"
           >
-            <RefreshCw className={`w-3.5 h-3.5 `} />
+            <RefreshCw className="w-3.5 h-3.5" />
             Refresh
           </Button>
           <Button
@@ -322,7 +191,7 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
               {paginatedList.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-xs text-muted-foreground">
-                    No records found
+                    No committed stock-in records found
                   </td>
                 </tr>
               ) : (
@@ -345,7 +214,7 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
                       {s.supplierName}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                      {new Date(s.createdAt).toLocaleDateString()}
+                      {new Date(s.committedAt || s.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-3 py-3 text-center font-bold text-foreground">
                       {s.lines.length}
@@ -356,7 +225,10 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
                     <td className="px-4 py-3 text-center relative">
                       <button
                         type="button"
-                        onClick={() => setActiveMenuId(activeMenuId === s.stockInId ? null : s.stockInId)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenuId(activeMenuId === s.stockInId ? null : s.stockInId);
+                        }}
                         className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none"
                       >
                         <MoreHorizontal size={18} />
@@ -365,14 +237,15 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
                         <div className="absolute right-6 top-2 z-[100] w-36 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left">
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setSelectedStockIn(s);
                               setDetailsModalOpen(true);
                               setActiveMenuId(null);
                             }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
                           >
-                            <Eye size={14} className="shrink-0" /> View Details
+                            <Eye size={14} className="shrink-0" /> View &amp; QR Tags
                           </button>
                         </div>
                       )}
@@ -396,13 +269,8 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
         <CreateStockInModal
           open={createModalOpen}
           onClose={() => setCreateModalOpen(false)}
-          onSuccess={(newStockIn) => {
+          onSuccess={() => {
             fetchStockIns();
-            if (newStockIn.status === "PendingApproval" || newStockIn.status === "Pending Approval" || newStockIn.status === "Pending") {
-              setActiveSubTab("pending");
-            } else if (newStockIn.status === "Draft") {
-              setActiveSubTab("draft");
-            }
             setPage(1);
           }}
         />
