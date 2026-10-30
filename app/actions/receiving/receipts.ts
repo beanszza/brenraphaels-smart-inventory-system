@@ -102,7 +102,22 @@ export async function createReceipt(body: ReceiptInput) {
       where: { DeliveryId: body.deliveryId, Status: { notIn: ["Cancelled", "Rejected"] } }
     });
     if (existing) {
-      return refuse(`An active GRN already exists for this delivery.`);
+      if (existing.Status === "Draft") {
+        await tx.qualityInspectionItems.deleteMany({
+          where: { QualityInspections: { ReferenceType: "GRN", ReferenceId: existing.GrnId } },
+        });
+        await tx.qualityInspections.deleteMany({
+          where: { ReferenceType: "GRN", ReferenceId: existing.GrnId },
+        });
+        await tx.goodsReceiptItems.deleteMany({
+          where: { GrnId: existing.GrnId },
+        });
+        await tx.goodsReceipts.delete({
+          where: { GrnId: existing.GrnId },
+        });
+      } else {
+        return refuse(`An active GRN already exists for this delivery.`);
+      }
     }
 
     if (!body.items || body.items.length === 0) {
@@ -117,7 +132,7 @@ export async function createReceipt(body: ReceiptInput) {
     });
     const grnNumber = `GRN-${year}-${String(seq.LastNumber).padStart(4, '0')}`;
 
-    const receivingLocation =
+    let receivingLocation =
       (await tx.locations.findFirst({
         where: { IsSystemLocation: true, LocationType: "Warehouse", IsActive: true },
       })) ??
@@ -128,7 +143,16 @@ export async function createReceipt(body: ReceiptInput) {
         where: { IsSystemLocation: true, IsActive: true },
       }));
     if (!receivingLocation) {
-      return refuse("No active system warehouse is configured for receiving.");
+      receivingLocation = await tx.locations.create({
+        data: {
+          LocationName: "Main Warehouse",
+          LocationType: "Warehouse",
+          Status: "Active",
+          Address: "Commissary",
+          IsActive: true,
+          IsSystemLocation: true,
+        },
+      });
     }
 
     const grnItems = [];
