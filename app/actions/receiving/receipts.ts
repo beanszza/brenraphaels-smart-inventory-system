@@ -141,14 +141,23 @@ export async function createReceipt(body: ReceiptInput) {
       })) ??
       (await tx.locations.findFirst({
         where: { IsSystemLocation: true, IsActive: true },
+      })) ??
+      (await tx.locations.findFirst({
+        where: {
+          IsActive: true,
+          OR: [
+            { LocationType: { contains: "Commissary", mode: "insensitive" } },
+            { LocationName: { contains: "Commissary", mode: "insensitive" } },
+          ],
+        },
       }));
     if (!receivingLocation) {
       receivingLocation = await tx.locations.create({
         data: {
-          LocationName: "Main Warehouse",
+          LocationName: "Commissary",
           LocationType: "Warehouse",
           Status: "Active",
-          Address: "Commissary",
+          Address: "Central Commissary",
           IsActive: true,
           IsSystemLocation: true,
         },
