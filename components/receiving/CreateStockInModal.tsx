@@ -3,7 +3,8 @@ import { ReceivingSkeleton } from "./ReceivingSkeleton";
 import { receiving } from "@/lib/receiving/client";
 
 import React, { useState, useEffect } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Download } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import NestedDialog from "./NestedDialog";
 import { GRN, StockIn } from "./types";
@@ -125,6 +126,112 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
     }
   };
 
+  const buildSingleLabelHtml = (line: StockInLineDraft, index: number) => {
+    const svgElem = document.getElementById(`create-stockin-qr-svg-${index}`);
+    const svgHtml = svgElem ? svgElem.outerHTML : "";
+    const grnNo = selectedGrn?.grnNumber || "GRN";
+    const supplier = selectedGrn?.supplierName || "—";
+
+    return `
+      <div style="width:340px;border:2px solid #222;border-radius:8px;padding:14px;font-family:system-ui,sans-serif;background:#fff;margin-bottom:16px;page-break-inside:avoid;box-sizing:border-box;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1.5px solid #222;padding-bottom:8px;margin-bottom:10px;">
+          <div>
+            <div style="font-weight:900;font-size:13px;letter-spacing:0.5px;">BREN RAPHAEL'S</div>
+            <div style="font-size:9px;color:#555;font-weight:600;">INVENTORY IDENTIFICATION LABEL</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;font-weight:bold;font-family:monospace;">${line.lotCode}</div>
+            <div style="font-size:9px;color:#777;">GRN: ${grnNo}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="flex-shrink:0;width:95px;height:95px;border:1px solid #ddd;padding:4px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#fff;">
+            ${svgHtml || '<div style="font-size:9px;color:#999;text-align:center;">QR Code</div>'}
+          </div>
+          <div style="flex:1;font-size:11px;line-height:1.4;">
+            <div style="font-size:13px;font-weight:bold;margin-bottom:2px;">${line.itemName}</div>
+            <div style="margin-top:4px;">
+              <span style="color:#666;">Quantity to Stock:</span> <strong>${line.quantityToStock} ${line.purchaseUomName}</strong>
+            </div>
+            <div>
+              <span style="color:#666;">Supplier:</span> <span>${supplier}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;padding-top:8px;border-top:1px dashed #ccc;display:flex;justify-content:space-between;font-size:10px;">
+          <div>
+            <div style="color:#666;font-size:9px;text-transform:uppercase;">Lot Number</div>
+            <div style="font-family:monospace;font-weight:bold;font-size:11px;">${line.lotCode}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="color:#666;font-size:9px;text-transform:uppercase;">Expiry Date</div>
+            <div style="font-family:monospace;font-weight:bold;font-size:11px;">
+              ${line.expiryDate ? new Date(line.expiryDate).toLocaleDateString() : "N/A"}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  const handleDownloadLabel = (line: StockInLineDraft, index: number) => {
+    const content = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Lot Label - ${line.lotCode}</title>
+  <style>
+    body { margin: 20px; background: #fafafa; font-family: system-ui, sans-serif; }
+    @media print {
+      body { margin: 0; background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  ${buildSingleLabelHtml(line, index)}
+</body>
+</html>`;
+
+    const blob = new Blob([content], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Label-${line.lotCode || `item-${line.itemId}`}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadAllLabels = () => {
+    const allHtml = lines.map((line, idx) => buildSingleLabelHtml(line, idx)).join("\n");
+    const grnNo = selectedGrn?.grnNumber || "GRN";
+    const content = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>QR Labels Package - ${grnNo}</title>
+  <style>
+    body { margin: 20px; background: #fafafa; font-family: system-ui, sans-serif; }
+    @media print {
+      body { margin: 0; background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  ${allHtml}
+</body>
+</html>`;
+
+    const blob = new Blob([content], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Labels-${grnNo}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleTryCommit = () => {
     if (!selectedGrnId || lines.length === 0) {
       setError("Please select a valid Goods Receipt Note with item lines.");
@@ -195,6 +302,31 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
       size="max-w-5xl"
     >
       <div className="space-y-5 text-foreground">
+        {/* Hidden QR Code SVGs for printable label generation */}
+        <div className="hidden" aria-hidden="true">
+          {lines.map((line, idx) => {
+            const qrPayload = JSON.stringify({
+              lot: line.lotCode,
+              supply: line.itemName,
+              grn: selectedGrn?.grnNumber || "GRN",
+              supplier: selectedGrn?.supplierName || "—",
+              qty: line.quantityToStock,
+              uom: line.purchaseUomName,
+              expiry: line.expiryDate || "N/A",
+            });
+            return (
+              <div key={`qr-${line.itemId}-${idx}`}>
+                <QRCodeSVG
+                  id={`create-stockin-qr-svg-${idx}`}
+                  value={qrPayload}
+                  size={100}
+                  level="M"
+                />
+              </div>
+            );
+          })}
+        </div>
+
         {error && (
           <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-xs text-destructive flex items-center justify-between">
             <span>{error}</span>
@@ -243,6 +375,14 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
               <span className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                 Items to Commit to Inventory ({lines.length})
               </span>
+              <button
+                type="button"
+                onClick={handleDownloadAllLabels}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-xs"
+              >
+                <Download className="w-3.5 h-3.5 text-primary" />
+                <span>Download All QR Labels</span>
+              </button>
             </div>
 
             <div className="rounded-xl border border-border bg-card overflow-x-auto">
@@ -255,6 +395,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
                     <th className="px-3 py-3 text-right">Current Stock</th>
                     <th className="px-4 py-3 whitespace-nowrap">Lot No.</th>
                     <th className="px-4 py-3 text-center whitespace-nowrap">Expiry Date</th>
+                    <th className="px-4 py-3 text-center whitespace-nowrap">QR Label</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -286,6 +427,17 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
                               day: "2-digit",
                             })
                           : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadLabel(line, lineIndex)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
+                          title="Download printable QR label"
+                        >
+                          <Download className="w-3 h-3 text-muted-foreground" />
+                          <span>Download</span>
+                        </button>
                       </td>
                     </tr>
                   ))}

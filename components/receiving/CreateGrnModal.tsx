@@ -12,6 +12,7 @@ import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import NestedDialog from "./NestedDialog";
 import { ArrivedDelivery, GRN, QAInspection } from "./types";
 import { HR_EMPLOYEES } from "@/lib/employees";
+import { downloadGrnReportPdf } from "./downloadGrnReportPdf";
 
 interface Props {
   open: boolean;
@@ -140,12 +141,10 @@ export default function CreateGrnModal({
   // Confirmations
   const [confirmFinishGrnOpen, setConfirmFinishGrnOpen] = useState(false);
 
-  // Step 2: QA state
+  // Step 2: Quality Assurance state
   const [activeGrn, setActiveGrn] = useState<GRN | null>(null);
   const [qaInspection, setQaInspection] = useState<QAInspection | null>(null);
   const [qaItems, setQaItems] = useState<QaItemRow[]>([]);
-  const [inspectorName, setInspectorName] = useState("");
-  const [qaOverallNotes, setQaOverallNotes] = useState("");
   const [qaVerificationChoice, setQaVerificationChoice] = useState("");
   const [expandedQaItems, setExpandedQaItems] = useState<Record<number, boolean>>({});
 
@@ -160,8 +159,6 @@ export default function CreateGrnModal({
     setActiveGrn(null);
     setQaInspection(null);
     setQaItems([]);
-    setInspectorName("");
-    setQaOverallNotes("");
     setQaVerificationChoice("");
     setExpandedQaItems({});
     setShowRejectModal(false);
@@ -682,14 +679,11 @@ export default function CreateGrnModal({
           defectReason: "",
           notes: "",
           checks: Object.fromEntries(
-            [...rawMaterialChecks, ...toolAndSupplyChecks].map((c) => [c.id, true])
+            [...rawMaterialChecks, ...toolAndSupplyChecks].map((c) => [c.id, false])
           ),
         };
       });
 
-      if (!inspectorName && HR_EMPLOYEES.length > 0) {
-        setInspectorName(HR_EMPLOYEES[0]);
-      }
       setQaItems(qaRows);
       setExpandedQaItems(Object.fromEntries(qaRows.map((r) => [r.inspectionItemId, true])));
       setStep(2);
@@ -697,7 +691,7 @@ export default function CreateGrnModal({
       const errorMsg =
         err?.response?.data?.message ||
         err?.message ||
-        "An error occurred while proceeding to QA inspection.";
+        "An error occurred while proceeding to Quality Assurance inspection.";
       setError(errorMsg);
     } finally {
       setSubmitting(false);
@@ -794,10 +788,9 @@ export default function CreateGrnModal({
     else setQaVerificationChoice("Partial Accept - Acceptable Quality");
   }, [isQaAllAccepted, isQaAllRejected, qaItems.length]);
 
-  // Check if Step 2 QA is fully completed (Mirrors Production & Quality QA rules)
+  // Check if Step 2 Quality Assurance is fully completed
   const isQaDone = Boolean(
-    inspectorName.trim() &&
-      qaItems.length > 0 &&
+    qaItems.length > 0 &&
       qaItems.every((i) => {
         const hasAccepted = typeof i.acceptedQuantity === "number" && !isNaN(i.acceptedQuantity);
         const hasRejected = typeof i.rejectedQuantity === "number" && !isNaN(i.rejectedQuantity);
@@ -809,7 +802,7 @@ export default function CreateGrnModal({
       })
   );
 
-  // STEP 2 Action: Finish GRN (Complete QA)
+  // STEP 2 Action: Finish GRN (Complete Quality Assurance)
   const executeFinishGrn = async () => {
     if (!activeGrn || !isQaDone) return;
 
@@ -827,15 +820,13 @@ export default function CreateGrnModal({
       }
 
       if (!resolvedInspectionId) {
-        throw new Error("Unable to locate active quality inspection for this GRN.");
+        throw new Error("Unable to locate active quality inspection for this Goods Receipt Note.");
       }
 
       const payload = {
         overallNotes: [
           `GRN: ${activeGrn.grnNumber}`,
-          `Inspector: ${inspectorName.trim()}`,
           `Outcome: ${qaVerificationChoice || "Completed"}`,
-          qaOverallNotes.trim(),
         ].filter(Boolean).join(" | "),
         items: qaItems.map((i) => ({
           inspectionItemId: i.inspectionItemId,
@@ -849,7 +840,7 @@ export default function CreateGrnModal({
           notes: [
             Number(i.acceptedQuantity) > 0 && i.acceptedReason ? `[ACCEPTED: ${i.acceptedReason}]` : "",
             Number(i.rejectedQuantity) > 0 && i.defectReason ? `[REJECTED: ${i.defectReason}]` : "",
-            `[QA CHECKS: ${getQaChecks(i).filter((check) => i.checks[check.id]).map((check) => check.id).join(", ") || "none recorded"}]`,
+            `[CHECKS: ${getQaChecks(i).filter((check) => i.checks[check.id]).map((check) => check.id).join(", ") || "none recorded"}]`,
             i.notes.trim(),
           ].filter(Boolean).join(" "),
         })),
@@ -857,7 +848,7 @@ export default function CreateGrnModal({
 
       const res = await receiving.completeInspection(resolvedInspectionId, payload);
       if (!res.data?.success) {
-        throw new Error(res.data?.message || "Failed to complete QA inspection.");
+        throw new Error(res.data?.message || "Failed to complete Quality Assurance inspection.");
       }
 
       const grnRes = await receiving.getReceipt(activeGrn.grnId);
@@ -874,114 +865,41 @@ export default function CreateGrnModal({
     }
   };
 
-  // Export Report Generation (PDF) — keyed strictly by GRN number
+  // Export Report Generation (PDF) — using official Bren Raphael's template
   const handleExportGrnReport = async () => {
     if (!isQaDone) return;
 
     try {
-      const { jsPDF } = await import("jspdf");
-      const autoTable = (await import("jspdf-autotable")).default;
-
       const grnNo = activeGrn?.grnNumber || previewGrnNo;
-      const now = new Date().toLocaleString("en-PH");
-
-      const doc = new jsPDF({ format: "a4", orientation: "portrait" });
-
-      doc.setFontSize(18);
-      doc.text("GOODS RECEIPT & QUALITY ASSURANCE REPORT", 14, 22);
-
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text("Commissary Central Receiving & Quality Control", 14, 28);
-
-      doc.setFontSize(12);
-      doc.setTextColor(0);
-      doc.text(grnNo, 196, 22, { align: "right" });
-
-      doc.setFontSize(9);
-      doc.setTextColor(100);
-      doc.text(`Printed: ${now}`, 196, 28, { align: "right" });
-
-      // Info box
-      doc.setDrawColor(200);
-      doc.setFillColor(248, 250, 252);
-      doc.rect(14, 35, 182, 20, "FD");
-
-      doc.setFontSize(9);
-      doc.setTextColor(0);
-      doc.text(`Supplier: ${selected?.supplierName || "—"}`, 18, 42);
-      doc.text(`Carrier: ${selected?.carrier || "—"}`, 18, 49);
-
-      doc.text(`Delivery No: ${selected?.deliveryNumber || "—"}`, 105, 42);
-      doc.text(`Inspector: ${inspectorName || "—"}`, 105, 49);
-
-      const tableData = qaItems.map((item) => {
-        const source = items.find((s) => s.itemId === item.itemId);
-        const expiry = item.expiryDate || source?.batches[0]?.expiryDate || "—";
-        const hasRejected = Number(item.rejectedQuantity) > 0;
-        const hasAccepted = Number(item.acceptedQuantity) > 0;
-        const statusParts = [
-          hasAccepted ? `Accepted (${item.acceptedReason})` : "",
-          hasRejected ? `Rejected (${item.defectReason})` : "",
-          item.notes || "",
-        ].filter(Boolean).join(" | ");
-        return [
-          item.itemName,
-          source?.declared ?? item.deliveredQuantity,
-          item.deliveredQuantity,
-          item.acceptedQuantity,
-          item.rejectedQuantity,
-          expiry,
-          statusParts,
-        ];
+      await downloadGrnReportPdf({
+        grnNumber: grnNo,
+        deliveryNumber: selected?.deliveryNumber || activeGrn?.deliveryNumber,
+        poNumber: selected?.poNumber || activeGrn?.poNumber,
+        supplierName: selected?.supplierName || activeGrn?.supplierName,
+        carrier: selected?.carrier || activeGrn?.carrier,
+        deliveryNoteNumber: activeGrn?.deliveryNoteNumber || selected?.deliveryNumber,
+        receivedDate: activeGrn?.receivedDate || new Date().toISOString(),
+        status: "QaCompleted",
+        receivedBy: activeGrn?.receivedBy || "Commissary Warehouse Receiving",
+        inspectorName: "Quality Assurance Department",
+        notes: notes.trim() || undefined,
+        items: qaItems.map((item) => {
+          const source = items.find((s) => s.itemId === item.itemId);
+          return {
+            itemId: item.itemId,
+            itemName: item.itemName,
+            categoryName: item.categoryName,
+            declaredQuantity: source?.declared ?? item.deliveredQuantity,
+            deliveredQuantity: item.deliveredQuantity,
+            acceptedQuantity: item.acceptedQuantity,
+            rejectedQuantity: item.rejectedQuantity,
+            acceptedReason: item.acceptedReason,
+            defectReason: item.defectReason,
+            expiryDate: item.expiryDate || source?.batches[0]?.expiryDate || null,
+            notes: item.notes,
+          };
+        }),
       });
-
-      autoTable(doc, {
-        startY: 65,
-        head: [["Item Description", "Declared", "Received", "Accepted", "Rejected", "Expiry", "Quality Assurance Status & Notes"]],
-        body: tableData,
-        theme: "grid",
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [244, 244, 245], textColor: 0, fontStyle: "bold" },
-      });
-
-      let finalY = (doc as any).lastAutoTable.finalY + 15;
-
-      if (qaOverallNotes) {
-        doc.setFillColor(248, 250, 252);
-        doc.rect(14, finalY, 182, 20, "FD");
-        doc.text("Inspector Notes:", 18, finalY + 7);
-        doc.setFont("helvetica", "normal");
-        const lines = doc.splitTextToSize(qaOverallNotes, 174);
-        doc.text(lines, 18, finalY + 14);
-        finalY += 30;
-      }
-
-      finalY += 20;
-      doc.setFontSize(9);
-      doc.text("Received & Counted By:", 14, finalY);
-      doc.line(14, finalY + 15, 64, finalY + 15);
-      doc.setFontSize(8);
-      doc.setTextColor(100);
-      doc.text("Warehouse Receiving Officer", 14, finalY + 20);
-
-      doc.setFontSize(9);
-      doc.setTextColor(0);
-      doc.text("Quality Inspected By:", 75, finalY);
-      doc.line(75, finalY + 15, 125, finalY + 15);
-      doc.setFontSize(8);
-      doc.setTextColor(100);
-      doc.text(inspectorName || "Quality Assurance Specialist", 75, finalY + 20);
-
-      doc.setFontSize(9);
-      doc.setTextColor(0);
-      doc.text("Acknowledged / Noted:", 136, finalY);
-      doc.line(136, finalY + 15, 196, finalY + 15);
-      doc.setFontSize(8);
-      doc.setTextColor(100);
-      doc.text("Commissary Supervisor", 136, finalY + 20);
-
-      doc.save(`${grnNo}.pdf`);
     } catch (err) {
       console.error("Failed to generate PDF:", err);
     }
@@ -1394,26 +1312,11 @@ export default function CreateGrnModal({
             <>
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-2 border-b border-border/60">
                 <div>
-                  <h3 className="text-base font-bold text-foreground">QA Review</h3>
+                  <h3 className="text-base font-bold text-foreground">Quality Assurance Review</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Count what passed and what failed for each received item. Passed units proceed to Stock-In; rejected units log a Discrepancy.
                   </p>
                 </div>
-                <label className="block space-y-1 sm:w-64">
-                  <span className="text-xs font-semibold text-foreground">
-                    Inspector Name <span className="text-destructive">*</span>
-                  </span>
-                  <select
-                    value={inspectorName}
-                    onChange={(e) => setInspectorName(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-card px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
-                  >
-                    <option value="" disabled>Select inspector...</option>
-                    {HR_EMPLOYEES.map((emp) => (
-                      <option key={emp} value={emp}>{emp}</option>
-                    ))}
-                  </select>
-                </label>
               </div>
 
               {/* Item QA Cards */}
@@ -1488,7 +1391,7 @@ export default function CreateGrnModal({
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               {/* Accepted (Good) Box */}
                               <div className="space-y-2 p-3 rounded-xl border border-border bg-card">
-                                <label className="text-xs font-bold text-foreground block">
+                                <label className="text-xs font-semibold text-foreground block">
                                   Accepted / Good (units) <span className="text-destructive">*</span>
                                 </label>
                                 <input
@@ -1497,12 +1400,12 @@ export default function CreateGrnModal({
                                   max={qaItem.deliveredQuantity}
                                   value={qaItem.acceptedQuantity}
                                   onChange={(e) => handleSetAccepted(idx, e.target.value)}
-                                  className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs font-mono font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                                  className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs font-mono font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
                                 />
 
                                 {accNum > 0 && (
                                   <div className="space-y-1 pt-1 animate-in fade-in">
-                                    <label className="text-[11px] text-muted-foreground block">
+                                    <label className="text-xs font-semibold text-muted-foreground block">
                                       Acceptance Reason <span className="text-destructive">*</span>
                                     </label>
                                     <select
@@ -1515,7 +1418,7 @@ export default function CreateGrnModal({
                                           return c;
                                         });
                                       }}
-                                      className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                                      className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
                                     >
                                       {acceptanceReasons.map((r) => (
                                         <option key={r} value={r}>
@@ -1529,7 +1432,7 @@ export default function CreateGrnModal({
 
                               {/* Rejected (Bad) Box */}
                               <div className="space-y-2 p-3 rounded-xl border border-border bg-card">
-                                <label className="text-xs font-bold text-foreground block">
+                                <label className="text-xs font-semibold text-foreground block">
                                   Rejected / Bad (units) <span className="text-destructive">*</span>
                                 </label>
                                 <input
@@ -1538,12 +1441,12 @@ export default function CreateGrnModal({
                                   max={qaItem.deliveredQuantity}
                                   value={qaItem.rejectedQuantity}
                                   onChange={(e) => handleSetRejected(idx, e.target.value)}
-                                  className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs font-mono font-bold text-destructive focus:outline-none focus:ring-1 focus:ring-foreground"
+                                  className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs font-mono font-bold text-destructive focus:outline-none focus:ring-1 focus:ring-foreground"
                                 />
 
                                 {rejNum > 0 && (
                                   <div className="space-y-1 pt-1 animate-in fade-in">
-                                    <label className="text-[11px] text-muted-foreground block">
+                                    <label className="text-xs font-semibold text-muted-foreground block">
                                       Rejection Reason <span className="text-destructive">*</span>
                                     </label>
                                     <select
@@ -1556,7 +1459,7 @@ export default function CreateGrnModal({
                                           return c;
                                         });
                                       }}
-                                      className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                                      className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
                                     >
                                       <option value="">Select defect reason</option>
                                       {defectReasons.map((r) => (
@@ -1573,16 +1476,16 @@ export default function CreateGrnModal({
                               </div>
                             </div>
 
-                            {/* 2. Retained Quality Inspection Checklist */}
+                            {/* 2. Retained Quality Assurance Checklist */}
                             <div className="p-3 rounded-xl border border-border bg-card space-y-2">
                               <div className="flex items-center justify-between">
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                                  Quality Inspection Checklist
+                                <p className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                  Quality Assurance Checklist
                                 </p>
                                 <button
                                   type="button"
                                   onClick={() => toggleCheckAll(idx)}
-                                  className="text-[11px] font-semibold text-foreground hover:underline cursor-pointer"
+                                  className="text-xs font-semibold text-primary hover:underline cursor-pointer"
                                 >
                                   {allChecked ? "Uncheck All" : "Check All"}
                                 </button>
@@ -1622,7 +1525,7 @@ export default function CreateGrnModal({
                                   });
                                 }}
                                 placeholder="Add sensory findings, packaging observations, or batch notes..."
-                                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                                className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
                               />
                             </div>
                           </div>
@@ -1631,20 +1534,6 @@ export default function CreateGrnModal({
                     );
                   })}
                 </div>
-              </div>
-
-              {/* Overall Remarks */}
-              <div className="pt-1 space-y-1.5">
-                <label className="block space-y-1">
-                  <span className="text-xs font-semibold text-foreground">Overall Remarks (Optional)</span>
-                  <textarea
-                    value={qaOverallNotes}
-                    onChange={(e) => setQaOverallNotes(e.target.value)}
-                    rows={2}
-                    placeholder="Add general quality observations or inspection summary..."
-                    className="w-full rounded-xl border border-border bg-card px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-foreground"
-                  />
-                </label>
               </div>
 
               {/* Step 2 Footer Actions */}
@@ -1673,7 +1562,7 @@ export default function CreateGrnModal({
                     onClick={() => setConfirmFinishGrnOpen(true)}
                     className="rounded-xl bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
                   >
-                    {submitting ? "Finishing…" : "Confirm & Sign Off QA Review"}
+                    {submitting ? "Finishing…" : "Confirm & Sign Off Quality Assurance Review"}
                   </button>
                 </div>
               </div>
@@ -1760,65 +1649,130 @@ export default function CreateGrnModal({
         </div>
       </NestedDialog>
 
-      {/* Confirmation before Finish GRN (Nested Radix Dialog) */}
+      {/* Confirmation before Finish GRN (Nested Radix Dialog matching Orders & Procurement) */}
       <NestedDialog
         open={confirmFinishGrnOpen}
-        title="Confirm Quality Assurance Review"
+        title="Review Quality Assurance Inspection"
         onClose={() => setConfirmFinishGrnOpen(false)}
-        maxWidth={480}
+        maxWidth={640}
       >
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
-              <ClipboardCheck className="w-5 h-5 text-blue-500" />
+        <div className="space-y-4 text-foreground">
+          <div className="p-3.5 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground flex items-center gap-2">
+            <ClipboardCheck className="w-4 h-4 text-primary shrink-0" />
+            <span>
+              Please review the Quality Assurance inspection summary below before finalizing this Goods Receipt Note.
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border text-xs">
+            <div>
+              <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
+                Goods Receipt Note #
+              </span>
+              <span className="font-mono font-bold text-foreground text-sm">
+                {activeGrn?.grnNumber || previewGrnNo || "—"}
+              </span>
             </div>
             <div>
-              <h3 className="text-base font-bold text-foreground">
-                Confirm Quality Assurance Review
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                You are about to sign off QA and finalize this Goods Receipt Note.
-              </p>
+              <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
+                Delivery Reference
+              </span>
+              <span className="font-mono font-bold text-foreground text-sm">
+                {selected?.deliveryNumber || activeGrn?.deliveryNumber || "—"}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
+                Supplier
+              </span>
+              <span className="font-bold text-foreground text-sm">
+                {selected?.supplierName || activeGrn?.supplierName || "—"}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
+                Inspection Status
+              </span>
+              <span className="font-semibold text-primary text-sm">
+                {qaVerificationChoice || "Quality Assurance Completed"}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
+                Total Accepted (Good)
+              </span>
+              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+                {qaItems.reduce((s, i) => s + Number(i.acceptedQuantity || 0), 0)} units
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
+                Total Rejected (Bad)
+              </span>
+              <span className="font-mono font-bold text-destructive text-sm">
+                {qaItems.reduce((s, i) => s + Number(i.rejectedQuantity || 0), 0)} units
+              </span>
             </div>
           </div>
 
-          <div className="bg-muted/30 rounded-xl p-4 space-y-2 border border-border text-xs">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Goods Receipt Note #:</span>
-              <span className="font-mono font-bold text-foreground">
-                {activeGrn?.grnNumber || previewGrnNo || "N/A"}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Total Accepted (Good):</span>
-              <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
-                {qaItems.reduce((s, i) => s + Number(i.acceptedQuantity || 0), 0)}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Total Rejected (Bad):</span>
-              <span className="font-mono font-semibold text-destructive">
-                {qaItems.reduce((s, i) => s + Number(i.rejectedQuantity || 0), 0)}
-              </span>
-            </div>
+          <div className="border border-border rounded-xl overflow-hidden bg-card">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[11px]">
+                <tr>
+                  <th className="px-3 py-2.5 text-left font-bold">ITEM DESCRIPTION</th>
+                  <th className="px-3 py-2.5 text-right font-bold">RECEIVED</th>
+                  <th className="px-3 py-2.5 text-right font-bold text-emerald-600 dark:text-emerald-400">ACCEPTED</th>
+                  <th className="px-3 py-2.5 text-right font-bold text-destructive">REJECTED</th>
+                  <th className="px-3 py-2.5 text-left font-bold">REASON / REMARKS</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {qaItems.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-muted/10">
+                    <td className="px-3 py-2.5 font-medium text-foreground">
+                      <div>{item.itemName}</div>
+                      {item.expiryDate && (
+                        <div className="text-[10px] text-muted-foreground font-mono">Exp: {item.expiryDate}</div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-mono font-semibold text-foreground">
+                      {item.deliveredQuantity}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                      {item.acceptedQuantity}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-mono font-semibold text-destructive">
+                      {item.rejectedQuantity}
+                    </td>
+                    <td className="px-3 py-2.5 text-muted-foreground text-[11px]">
+                      {Number(item.rejectedQuantity) > 0 ? (
+                        <span className="text-destructive font-medium">{item.defectReason || "Rejected"}</span>
+                      ) : (
+                        item.acceptedReason || item.notes || "Meets Specifications"
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-border pt-3">
+          <div className="flex justify-end gap-3 pt-4 border-t border-border mt-4">
             <button
               type="button"
               onClick={() => setConfirmFinishGrnOpen(false)}
               disabled={submitting}
-              className="rounded-xl border border-border bg-card px-5 py-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50 transition-colors cursor-pointer"
+              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
-              Cancel
+              Back to Edit
             </button>
             <button
               type="button"
               disabled={submitting}
               onClick={executeFinishGrn}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-xs font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
             >
-              {submitting ? "Signing Off..." : "Sign Off & Complete"}
+              {submitting ? "Signing Off..." : "Confirm & Complete Quality Assurance"}
             </button>
           </div>
         </div>

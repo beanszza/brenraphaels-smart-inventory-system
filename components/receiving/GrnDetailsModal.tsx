@@ -8,6 +8,7 @@ import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import NestedDialog from "./NestedDialog";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { GRN } from "./types";
+import { downloadGrnReportPdf } from "./downloadGrnReportPdf";
 
 interface GrnDetailsModalProps {
   grn: GRN | null;
@@ -67,112 +68,31 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
 
   const handleExport = async () => {
     try {
-      const jspdfModule = await import("jspdf");
-      const jsPDF = jspdfModule.jsPDF || (jspdfModule as any).default;
-      const autoTableModule = await import("jspdf-autotable");
-      const autoTable = (autoTableModule as any).default || autoTableModule;
-
-      const receivedDate = new Date(grn.receivedDate).toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" });
-      const printedAt = new Date().toLocaleString("en-PH");
-
-      const doc = new jsPDF({ format: "a4", orientation: "portrait" });
-
-      doc.setFontSize(18);
-      doc.text("GOODS RECEIPT NOTE", 14, 22);
-
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text("Commissary / Warehouse Inbound Document", 14, 28);
-
-      doc.setFontSize(12);
-      doc.setTextColor(0);
-      doc.text(grn.grnNumber, 196, 22, { align: "right" });
-
-      doc.setFontSize(9);
-      doc.setTextColor(100);
-      doc.text(`Status: ${grn.status}`, 196, 28, { align: "right" });
-      doc.text(`Exported: ${printedAt}`, 196, 33, { align: "right" });
-
-      // Info box
-      doc.setDrawColor(200);
-      doc.setFillColor(248, 250, 252);
-      doc.rect(14, 40, 182, 28, "FD");
-
-      doc.setFontSize(9);
-      doc.setTextColor(0);
-      doc.text(`Supplier: ${grn.supplierName}`, 18, 47);
-      doc.text(`Delivery No.: ${grn.deliveryNumber || "—"}`, 18, 55);
-
-      doc.text(`Received Date: ${receivedDate}`, 105, 47);
-      doc.text(`Receiving Bay: ${grn.receivingBay || "Main Receiving Bay"}`, 105, 55);
-
-      const tableData = grn.items.map((item) => {
-        const variance = item.varianceType === "Short"
-          ? `Short (${item.varianceQuantity})`
-          : item.varianceType === "Over"
-            ? `Over (+${item.varianceQuantity})`
-            : "Match";
-
-        const expiry = item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—";
-
-        return [
-          item.itemName,
-          item.purchaseUomName,
-          item.orderedQuantity,
-          item.deliveredQuantity,
-          variance,
-          item.supplierLotCode || "—",
-          expiry
-        ];
+      await downloadGrnReportPdf({
+        grnNumber: grn.grnNumber,
+        deliveryNumber: grn.deliveryNumber,
+        poNumber: grn.poNumber,
+        supplierName: grn.supplierName,
+        carrier: grn.carrier,
+        deliveryNoteNumber: grn.deliveryNoteNumber,
+        receivedDate: grn.receivedDate,
+        status: grn.status,
+        receivedBy: grn.receivedBy || "Commissary Warehouse Staff",
+        inspectorName: "Quality Assurance Department",
+        notes: grn.notes,
+        items: (grn.items || []).map((item) => ({
+          itemId: item.itemId,
+          itemName: item.itemName,
+          purchaseUomName: item.purchaseUomName,
+          declaredQuantity: item.declaredQuantity ?? item.orderedQuantity,
+          deliveredQuantity: item.deliveredQuantity,
+          acceptedQuantity: item.deliveredQuantity,
+          rejectedQuantity: 0,
+          supplierLotCode: item.supplierLotCode,
+          expiryDate: item.expiryDate,
+          notes: item.notes,
+        })),
       });
-
-      autoTable(doc, {
-        startY: 75,
-        head: [["Item Name", "Unit of Measure", "Ordered Quantity", "Delivered Quantity", "Variance", "Supplier Lot #", "Expiry Date"]],
-        body: tableData,
-        theme: "grid",
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [244, 244, 245], textColor: 0, fontStyle: "bold" },
-      });
-
-      let finalY = (doc as any).lastAutoTable.finalY + 15;
-
-      if (grn.notes) {
-        doc.setFillColor(248, 250, 252);
-        doc.rect(14, finalY, 182, 15, "FD");
-        doc.text(`Notes: ${grn.notes}`, 18, finalY + 9);
-        finalY += 25;
-      }
-
-      finalY += 20;
-      doc.setFontSize(9);
-      doc.text("Received By / Signature:", 14, finalY);
-      doc.line(14, finalY + 15, 64, finalY + 15);
-      doc.setFontSize(8);
-      doc.setTextColor(100);
-      doc.text(grn.receivedBy || "Receiving Officer", 14, finalY + 20);
-
-      doc.setFontSize(9);
-      doc.setTextColor(0);
-      doc.text("Quality Assurance Officer / Signature:", 75, finalY);
-      doc.line(75, finalY + 15, 125, finalY + 15);
-
-      doc.setFontSize(9);
-      doc.setTextColor(0);
-      doc.text("Authorized By / Signature:", 136, finalY);
-      doc.line(136, finalY + 15, 196, finalY + 15);
-
-      if (grn.postedBy) {
-        doc.setFontSize(8);
-        doc.setTextColor(100);
-        doc.text(grn.postedBy, 136, finalY + 20);
-      }
-
-      doc.setFontSize(8);
-      doc.setTextColor(150);
-      doc.text(`This document is a system-generated Goods Receipt Note: ${grn.grnNumber} · ${receivedDate}`, 105, finalY + 40, { align: "center" });
-
-      doc.save(`${grn.grnNumber}.pdf`);
     } catch (err) {
       console.error("Failed to generate PDF:", err);
     }
@@ -264,7 +184,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
               <div>
                 <div className="font-semibold text-foreground">Awaiting Quality Assurance Review</div>
                 <div className="text-muted-foreground text-[11px] mt-0.5">
-                  Complete the QA review for {grn.grnNumber} to release accepted items for Stock-In.
+                  Complete the Quality Assurance review for {grn.grnNumber} to release accepted items for Stock-In.
                 </div>
               </div>
             </div>
