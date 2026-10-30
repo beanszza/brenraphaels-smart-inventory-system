@@ -40,9 +40,9 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
 
   const fetchStockIns = () => startRefresh(() => router.refresh());
 
-  // Committed Stock-Ins only
+  // Active/Committed Stock-Ins (excluding rejected/cancelled records)
   const committedStockIns = useMemo(() => {
-    return stockIns.filter((s) => s.status === "Committed");
+    return stockIns.filter((s) => s.status !== "Rejected" && s.status !== "Cancelled");
   }, [stockIns]);
 
   // Unique Suppliers

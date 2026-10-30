@@ -273,7 +273,15 @@ export async function completeInspection(idInput: string | number, body: Inspect
     })();
 
     const refGrnNumber = existingInspection.ReferenceNumber || updatedInspection.InspectionNumber;
-    return { result: resourceResult({ success: true, data: updatedInspection, message: `Quality Assurance completed for ${refGrnNumber}.` }), audit: { module: MODULE, change: "updated", target: { type: "goods-receipt", id: existingInspection.ReferenceId, name: refGrnNumber }, description: `${staff.name} completed quality inspection for ${refGrnNumber}` } };
+    return {
+      result: resourceResult({ success: true, data: updatedInspection, message: `Quality Assurance completed for ${refGrnNumber}.` }),
+      audit: {
+        module: MODULE,
+        change: "updated",
+        target: { type: "quality-inspection", id: updatedInspection.InspectionId, name: updatedInspection.InspectionNumber },
+        description: `${staff.name} completed quality inspection ${updatedInspection.InspectionNumber}`,
+      },
+    };
 
   });
 }

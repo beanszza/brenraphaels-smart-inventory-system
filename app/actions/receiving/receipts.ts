@@ -325,13 +325,13 @@ export async function updateReceipt(idInput: string | number, body: ReceiptInput
 
     const grnItems = [];
     for (const itemReq of body.items) {
-      const oldItem = grn.GoodsReceiptItems.find(i =>
+      const oldItem = grn.GoodsReceiptItems?.find(i =>
         itemReq.deliveryItemId ? i.DeliveryItemId === itemReq.deliveryItemId : i.ItemId === itemReq.itemId
       );
-      const delItem = grn.Deliveries?.DeliveryItems.find(i =>
+      const delItem = grn.Deliveries?.DeliveryItems?.find(i =>
         itemReq.deliveryItemId ? i.DeliveryItemId === itemReq.deliveryItemId : i.ItemId === itemReq.itemId
       );
-      const poItem = grn.Deliveries?.PurchaseOrders?.PurchaseOrderItems.find(i =>
+      const poItem = grn.Deliveries?.PurchaseOrders?.PurchaseOrderItems?.find(i =>
         delItem ? i.PoItemId === delItem.PoItemId : i.ItemId === itemReq.itemId
       );
 
@@ -617,7 +617,7 @@ export async function rejectReceipt(idInput: string | number, body: ReceiptInput
 
       // Aggregate by ItemId in case multiple batches were recorded for the same item
       const itemMap = new Map<number, { orderedQty: number; declaredQty: number }>();
-      if (grn.GoodsReceiptItems.length > 0) {
+      if (grn.GoodsReceiptItems?.length > 0) {
         for (const line of grn.GoodsReceiptItems) {
           const prev = itemMap.get(line.ItemId);
           const declared = line.DeclaredQuantity != null ? Number(line.DeclaredQuantity) : Number(line.OrderedQuantity);
@@ -630,7 +630,7 @@ export async function rejectReceipt(idInput: string | number, body: ReceiptInput
         }
       } else if (grn.Deliveries?.DeliveryItems?.length) {
         for (const delItem of grn.Deliveries.DeliveryItems) {
-          const poItem = grn.Deliveries.PurchaseOrders?.PurchaseOrderItems.find(p => p.PoItemId === delItem.PoItemId);
+          const poItem = grn.Deliveries.PurchaseOrders?.PurchaseOrderItems?.find(p => p.PoItemId === delItem.PoItemId);
           itemMap.set(delItem.ItemId, {
             orderedQty: Number(poItem?.PoItemQuantity ?? delItem.DeclaredQuantity),
             declaredQty: Number(delItem.DeclaredQuantity),

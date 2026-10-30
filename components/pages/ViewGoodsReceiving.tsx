@@ -1,12 +1,11 @@
-"use client";
-
-import React, { useState, useEffect, type ReactNode } from "react";
+import Link from "next/link";
 import { Toaster } from "@/components/ui/sonner";
+import type { ReactNode } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 
 export type ReceivingTab = "grn" | "discrepancies" | "stockin" | "rtv" | "loss";
 export type ReceivingCounts = Record<ReceivingTab, number>;
-export const RECEIVING_TABS = [
+const tabs = [
   ["grn", "Goods receipt notes / Receive"],
   ["discrepancies", "Discrepancies"],
   ["stockin", "Stock in"],
@@ -14,49 +13,15 @@ export const RECEIVING_TABS = [
   ["loss", "Loss / Disposal"],
 ] as const;
 
-interface ViewGoodsReceivingProps {
+export default function ViewGoodsReceiving({
+  counts: _counts,
+  activeTab,
+  children,
+}: {
   counts?: ReceivingCounts;
   activeTab: ReceivingTab;
-  children?: ReactNode;
-  panels?: Record<ReceivingTab, ReactNode>;
-}
-
-export default function ViewGoodsReceiving({
-  activeTab: initialTab,
-  children,
-  panels,
-}: ViewGoodsReceivingProps) {
-  const [currentTab, setCurrentTab] = useState<ReceivingTab>(initialTab);
-
-  useEffect(() => {
-    setCurrentTab(initialTab);
-  }, [initialTab]);
-
-  useEffect(() => {
-    const onSwitchTab = (e: Event) => {
-      const detail = (e as CustomEvent<ReceivingTab>).detail;
-      if (detail) {
-        setCurrentTab(detail);
-        if (typeof window !== "undefined") {
-          const url = new URL(window.location.href);
-          url.searchParams.set("tab", detail);
-          window.history.replaceState(null, "", url.toString());
-        }
-      }
-    };
-    window.addEventListener("receiving:switch-tab", onSwitchTab);
-    return () => window.removeEventListener("receiving:switch-tab", onSwitchTab);
-  }, []);
-
-  const handleSelectTab = (id: ReceivingTab) => {
-    setCurrentTab(id);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("tab", id);
-      window.history.replaceState(null, "", url.toString());
-    }
-  };
-
+  children: ReactNode;
+}) {
   return (
     <div className="w-full min-h-full py-7 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
       <PageHeader
@@ -65,34 +30,24 @@ export default function ViewGoodsReceiving({
       />
       <nav aria-label="Goods Receiving" className="border-b border-border">
         <div className="flex items-center gap-2 overflow-x-auto">
-          {RECEIVING_TABS.map(([id, label]) => (
-            <button
+          {tabs.map(([id, label]) => (
+            <Link
               key={id}
-              type="button"
-              onClick={() => handleSelectTab(id)}
-              aria-current={currentTab === id ? "page" : undefined}
+              href={`/goods-receiving?tab=${id}`}
+              prefetch={true}
+              aria-current={activeTab === id ? "page" : undefined}
               className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase border-b-2 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-2 focus-visible:outline-primary ${
-                currentTab === id
+                activeTab === id
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               <span>{label}</span>
-            </button>
+            </Link>
           ))}
         </div>
       </nav>
-      {panels ? (
-        <div>
-          {RECEIVING_TABS.map(([id]) => (
-            <div key={id} className={currentTab === id ? "block" : "hidden"}>
-              {panels[id]}
-            </div>
-          ))}
-        </div>
-      ) : (
-        children
-      )}
+      {children}
       <Toaster />
     </div>
   );
