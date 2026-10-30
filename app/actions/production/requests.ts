@@ -91,8 +91,6 @@ export async function createProductionRequest(body: any = {}) {
         if (!recipe) {
             return refuse("Recipe not found.");
         }
-        if (recipe.ProductId !== productId)
-            refuse("The recipe does not belong to the selected product.");
         const year = new Date().getFullYear();
         const seq = await tx.documentSequences.upsert({
             where: { DocType_Year: { DocType: "ProdReq", Year: year } },

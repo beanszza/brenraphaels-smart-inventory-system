@@ -293,13 +293,14 @@ export default function ProductionRequestModal({
         const rProd = products.find((p) => p.productId === r.productId);
         return rProd && selectedProductName && rProd.productName.toLowerCase() === selectedProductName.toLowerCase();
       });
-      setFilteredRecipes(matched);
-      if (matched.length > 0 && !matched.some((r) => String(r.recipeId) === recipeId)) {
-        setRecipeId(String(matched[0].recipeId));
-        setQuantity(Number(matched[0].outputQuantity) || 100);
+      const available = matched.length > 0 ? matched : recipes;
+      setFilteredRecipes(available);
+      if (available.length > 0 && !available.some((r) => String(r.recipeId) === recipeId)) {
+        setRecipeId(String(available[0].recipeId));
+        setQuantity(Number(available[0].outputQuantity) || 100);
       }
     } else {
-      setFilteredRecipes([]);
+      setFilteredRecipes(recipes);
     }
   }, [productId, recipes, recipeId, selectedProductName, products]);
 
