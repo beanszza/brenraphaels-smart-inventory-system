@@ -101,23 +101,8 @@ export async function createReceipt(body: ReceiptInput) {
     const existing = await tx.goodsReceipts.findFirst({
       where: { DeliveryId: body.deliveryId, Status: { notIn: ["Cancelled", "Rejected"] } }
     });
-    if (existing) {
-      if (existing.Status === "Draft") {
-        await tx.qualityInspectionItems.deleteMany({
-          where: { QualityInspections: { ReferenceType: "GRN", ReferenceId: existing.GrnId } },
-        });
-        await tx.qualityInspections.deleteMany({
-          where: { ReferenceType: "GRN", ReferenceId: existing.GrnId },
-        });
-        await tx.goodsReceiptItems.deleteMany({
-          where: { GrnId: existing.GrnId },
-        });
-        await tx.goodsReceipts.delete({
-          where: { GrnId: existing.GrnId },
-        });
-      } else {
-        return refuse(`An active GRN already exists for this delivery.`);
-      }
+    if (existing && existing.Status !== "Draft") {
+      return refuse(`An active GRN already exists for this delivery.`);
     }
 
     if (!body.items || body.items.length === 0) {
@@ -130,7 +115,20 @@ export async function createReceipt(body: ReceiptInput) {
       update: { LastNumber: { increment: 1 } },
       create: { DocType: "GoodsReceiptNote", Year: year, LastNumber: 1 },
     });
-    const grnNumber = `GRN-${year}-${String(seq.LastNumber).padStart(4, '0')}`;
+    let nextGrnSeq = Number(seq.LastNumber || 1);
+    const existingGrnRows = await tx.goodsReceipts.findMany({
+      select: { GrnNumber: true },
+    });
+    if (existingGrnRows.length > 0) {
+      for (const row of existingGrnRows) {
+        const match = row.GrnNumber?.match(new RegExp(`^GRN-${year}-(\\d+)$`));
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num >= nextGrnSeq) nextGrnSeq = num + 1;
+        }
+      }
+    }
+    const grnNumber = existing?.GrnNumber || `GRN-${year}-${String(nextGrnSeq).padStart(4, '0')}`;
 
     let receivingLocation =
       (await tx.locations.findFirst({
@@ -152,8 +150,16 @@ export async function createReceipt(body: ReceiptInput) {
         },
       }));
     if (!receivingLocation) {
+      const existingLocations = await tx.locations.findMany({
+        select: { LocationId: true },
+      });
+      const maxLocationId = existingLocations.reduce(
+        (max, l) => (l.LocationId > max ? l.LocationId : max),
+        0
+      );
       receivingLocation = await tx.locations.create({
         data: {
+          ...(maxLocationId > 0 ? { LocationId: maxLocationId + 1 } : {}),
           LocationName: "Commissary",
           LocationType: "Warehouse",
           Status: "Active",
@@ -205,35 +211,61 @@ export async function createReceipt(body: ReceiptInput) {
       });
     }
 
-    const newGrn = await tx.goodsReceipts.create({
-      data: {
-        GrnNumber: grnNumber,
-        PoId: delivery.PoId,
-        DeliveryId: delivery.DeliveryId,
-        SupplierId: delivery.SupplierId,
-        ReceivingLocationId: receivingLocation.LocationId,
-        Status: "Draft",
-        ReceivedDate: new Date(),
-        DeliveryNoteNumber: body.deliveryNoteNumber?.trim() || delivery.DeliveryNoteNumber || grnNumber,
-        SupplierDrNumber: body.supplierDrNumber?.trim() || null,
-        SupplierInvoiceNumber: body.supplierInvoiceNumber?.trim() || null,
-        ReceivingBay: body.receivingBay?.trim() || null,
-        Carrier: body.carrier?.trim() || delivery.Carrier,
-        ReceivedBy: staff.username,
-        CreatedBy: staff.username,
-        Notes: body.notes?.trim(),
-        CreatedAt: new Date(),
-        GoodsReceiptItems: {
-          create: grnItems
-        }
-      },
-      include: {
-        Deliveries: { include: { PurchaseOrders: { include: { Suppliers: true } } } },
-        GoodsReceiptItems: {
-          include: { Items: { include: { UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: true } }, UnitOfMeasures: true }
-        }
-      }
-    });
+    const newGrn = existing
+      ? (await tx.goodsReceiptItems.deleteMany({ where: { GrnId: existing.GrnId } }),
+        await tx.goodsReceipts.update({
+          where: { GrnId: existing.GrnId },
+          data: {
+            ReceivingLocationId: receivingLocation.LocationId,
+            Status: "Draft",
+            ReceivedDate: new Date(),
+            DeliveryNoteNumber: body.deliveryNoteNumber?.trim() || delivery.DeliveryNoteNumber || grnNumber,
+            SupplierDrNumber: body.supplierDrNumber?.trim() || null,
+            SupplierInvoiceNumber: body.supplierInvoiceNumber?.trim() || null,
+            ReceivingBay: body.receivingBay?.trim() || null,
+            Carrier: body.carrier?.trim() || delivery.Carrier,
+            ReceivedBy: staff.username,
+            Notes: body.notes?.trim(),
+            GoodsReceiptItems: {
+              create: grnItems,
+            },
+          },
+          include: {
+            Deliveries: { include: { PurchaseOrders: { include: { Suppliers: true } } } },
+            GoodsReceiptItems: {
+              include: { Items: { include: { UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: true } }, UnitOfMeasures: true },
+            },
+          },
+        }))
+      : await tx.goodsReceipts.create({
+          data: {
+            GrnNumber: grnNumber,
+            PoId: delivery.PoId,
+            DeliveryId: delivery.DeliveryId,
+            SupplierId: delivery.SupplierId,
+            ReceivingLocationId: receivingLocation.LocationId,
+            Status: "Draft",
+            ReceivedDate: new Date(),
+            DeliveryNoteNumber: body.deliveryNoteNumber?.trim() || delivery.DeliveryNoteNumber || grnNumber,
+            SupplierDrNumber: body.supplierDrNumber?.trim() || null,
+            SupplierInvoiceNumber: body.supplierInvoiceNumber?.trim() || null,
+            ReceivingBay: body.receivingBay?.trim() || null,
+            Carrier: body.carrier?.trim() || delivery.Carrier,
+            ReceivedBy: staff.username,
+            CreatedBy: staff.username,
+            Notes: body.notes?.trim(),
+            CreatedAt: new Date(),
+            GoodsReceiptItems: {
+              create: grnItems,
+            },
+          },
+          include: {
+            Deliveries: { include: { PurchaseOrders: { include: { Suppliers: true } } } },
+            GoodsReceiptItems: {
+              include: { Items: { include: { UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: true } }, UnitOfMeasures: true },
+            },
+          },
+        });
 
     const response = {
       grnId: newGrn.GrnId,
