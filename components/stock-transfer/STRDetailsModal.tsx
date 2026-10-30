@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Calendar, MapPin, User, AlertCircle, CheckCircle, Package, Truck } from "lucide-react";
+import { X, Calendar, MapPin, User, AlertCircle, CheckCircle, Package, Truck, Send } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransferRequest } from "./types";
 
@@ -14,7 +14,7 @@ interface STRDetailsModalProps {
   onReject?: (req: StockTransferRequest) => void;
   onSchedule?: (req: StockTransferRequest) => void;
   onCancel?: (req: StockTransferRequest) => void;
-  onDispatch?: (req: StockTransferRequest) => void;
+  onDispatch?: (req: StockTransferRequest, transferId?: number) => void;
 }
 
 export function STRDetailsModal({
@@ -45,6 +45,10 @@ export function STRDetailsModal({
 
   if (!open || !mounted || !request) return null;
 
+  const hasScheduledTransfer = request.transfers?.some((t) => t.status === "Scheduled") ?? false;
+  const isFullyScheduledOrDispatched =
+    request.status === "Scheduled" || request.status === "Dispatched" || hasScheduledTransfer;
+
   return createPortal(
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
@@ -63,7 +67,7 @@ export function STRDetailsModal({
                 <h2 className="text-xl font-bold text-foreground">
                   Stock Transfer Request Details
                 </h2>
-                <StatusBadge status={request.status} />
+                <StatusBadge status={hasScheduledTransfer && request.status === "Approved" ? "Scheduled" : request.status} />
               </div>
               <p className="text-xs font-mono font-semibold text-muted-foreground mt-0.5">
                 {request.requestNumber}
@@ -81,7 +85,7 @@ export function STRDetailsModal({
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Metadata Grid (Source origin removed per user instruction!) */}
+          {/* Metadata Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl border border-border bg-muted/20 p-5 text-xs">
             <div className="space-y-1">
               <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
@@ -155,7 +159,7 @@ export function STRDetailsModal({
             </div>
           )}
 
-          {/* Items Table with Explicit Expiry Column */}
+          {/* Items Table */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -192,7 +196,7 @@ export function STRDetailsModal({
                             )}
                           </td>
                           <td className="px-5 py-4 font-mono text-muted-foreground whitespace-nowrap">
-                            {item.sku || "â€”"}
+                            {item.sku || "—"}
                           </td>
                           <td className="px-5 py-4 text-foreground font-medium whitespace-nowrap">
                             {item.variant || "Standard"}
@@ -218,7 +222,7 @@ export function STRDetailsModal({
                                 )}
                               </div>
                             ) : (
-                              <span className="text-muted-foreground text-xs">â€”</span>
+                              <span className="text-muted-foreground text-xs">—</span>
                             )}
                           </td>
                           <td className="px-5 py-4 whitespace-nowrap">
@@ -258,16 +262,31 @@ export function STRDetailsModal({
                       </div>
                       <div className="text-muted-foreground text-[11px] mt-0.5">
                         Quantity: <strong className="text-foreground">{st.transferQuantity}</strong>
-                        {st.courierName && ` â€¢ Courier: ${st.courierName}`}
-                        {st.driverName && ` â€¢ Driver: ${st.driverName}`}
+                        {st.courierName && ` • Courier: ${st.courierName}`}
+                        {st.driverName && ` • Driver: ${st.driverName}`}
                         {st.vehiclePlate && ` [${st.vehiclePlate}]`}
                       </div>
                     </div>
-                    {st.scheduledDate && (
-                      <span className="text-muted-foreground text-[11px]">
-                        Scheduled: {new Date(st.scheduledDate).toLocaleDateString()}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {st.scheduledDate && (
+                        <span className="text-muted-foreground text-[11px]">
+                          Scheduled: {new Date(st.scheduledDate).toLocaleDateString()}
+                        </span>
+                      )}
+                      {st.status === "Scheduled" && onDispatch && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClose();
+                            onDispatch(request, st.transferId);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors shadow-xs cursor-pointer shrink-0"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          Dispatch Transfer
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -318,15 +337,30 @@ export function STRDetailsModal({
 
             {/* Inventory Manager actions */}
             <>
-              {request.status === "Approved" && onSchedule && (
+              {hasScheduledTransfer && onDispatch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onDispatch(request);
+                  }}
+                  className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer flex items-center gap-2"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  Dispatch Transfer
+                </button>
+              )}
+
+              {!isFullyScheduledOrDispatched && request.status === "Approved" && onSchedule && (
                 <button
                   type="button"
                   onClick={() => {
                     onClose();
                     onSchedule(request);
                   }}
-                  className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+                  className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer flex items-center gap-2"
                 >
+                  <Truck className="w-3.5 h-3.5" />
                   Schedule Transfer
                 </button>
               )}

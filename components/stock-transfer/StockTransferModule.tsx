@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 import { actionResponse } from "@/lib/resources/action-response";
-import { listTransfers } from "@/app/actions/stock-transfer/transfers";
+import { listTransfers, getTransfer } from "@/app/actions/stock-transfer/transfers";
 import { cancelRequest } from "@/app/actions/stock-transfer/request-cancel";
 
 import { reviewRequest } from "@/app/actions/stock-transfer/request-status";
@@ -132,17 +132,35 @@ export default function StockTransferModule({ requests, metrics, locations, acti
     refreshAll();
   };
 
-  const handleOpenDispatch = (req: StockTransferRequest) => {
-    const scheduled = req.transfers?.find(transfer => transfer.status === "Scheduled");
-    if (!scheduled) {
+  const handleOpenDispatch = (req: StockTransferRequest, explicitTransferId?: number) => {
+    const targetTransfer = explicitTransferId
+      ? req.transfers?.find((t) => t.transferId === explicitTransferId)
+      : req.transfers?.find((transfer) => transfer.status === "Scheduled");
+
+    if (!targetTransfer) {
       toast.error("No scheduled transfer is available to dispatch.");
       return;
     }
     startTransition(async () => {
       try {
-        const result = await actionResponse(listTransfers(new URLSearchParams({ search: scheduled.transferNumber, pageSize: "100" }).toString()));
-        const transfer: StockTransfer | undefined = result.data.data?.find((row: StockTransfer) => row.transferId === scheduled.transferId);
-        if (!transfer || transfer.status !== "Scheduled") throw new Error("This transfer is no longer scheduled. Refresh and retry.");
+        const directRes = await actionResponse(getTransfer(targetTransfer.transferId));
+        if (directRes.data?.success && directRes.data?.data) {
+          setSelectedSTRForDetails(null);
+          setDispatchTargetTransfer(directRes.data.data);
+          return;
+        }
+
+        const result = await actionResponse(
+          listTransfers(
+            new URLSearchParams({ search: targetTransfer.transferNumber, pageSize: "100" }).toString()
+          )
+        );
+        const transfer: StockTransfer | undefined = result.data.data?.find(
+          (row: StockTransfer) => row.transferId === targetTransfer.transferId
+        );
+        if (!transfer || transfer.status !== "Scheduled")
+          throw new Error("This transfer is no longer scheduled. Refresh and retry.");
+        setSelectedSTRForDetails(null);
         setDispatchTargetTransfer(transfer);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Unable to load transfer.");
@@ -366,6 +384,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
         onApprove={(req) => setStrAction({ request: req, type: "approve" })}
         onReject={(req) => setStrAction({ request: req, type: "reject" })}
         onSchedule={(req) => setScheduleTargetReq(req)}
+        onDispatch={(req, transferId) => handleOpenDispatch(req, transferId)}
         onCancel={(req) => setStrAction({ request: req, type: "cancel" })}
       />
 

@@ -1,9 +1,11 @@
-﻿"use server";
+"use server";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Retain existing transfer DTOs during migration. */
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
-import { read, mutate, refuse, validateInput, saved } from "@/lib/stock-transfer/operations";
+import { read, mutate, refuse, positiveId, validateInput, saved } from "@/lib/stock-transfer/operations";
+import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
+
 const TRANSFER_INCLUDE = {
   FinishedProducts: { include: { Items: true } },
   Locations_StockTransfers_SourceLocationIdToLocations: true,
@@ -44,8 +46,8 @@ function mapTransfer(t: any) {
 
 export async function listTransfers(query = "") {
   await requireModule("Stock Transfer");
+  await ensureUbeJamHavaneroStock();
   return read(async () => {
-
     const searchParams = new URLSearchParams(query);
     const page = Math.max(1, (parseInt(searchParams.get("page") || "1", 10) || 1));
     const pageSize = Math.min(100, Math.max(1, (parseInt(searchParams.get("pageSize") || "10", 10) || 10)));
@@ -105,13 +107,28 @@ export async function listTransfers(query = "") {
         totalPages: Math.ceil(total / pageSize),
       },
     });
-
   });
 }
+
+export async function getTransfer(idInput: number) {
+  await requireModule("Stock Transfer");
+  await ensureUbeJamHavaneroStock();
+  return read(async () => {
+    const transferId = positiveId(idInput);
+    const transfer = await prisma.stockTransfers.findUnique({
+      where: { TransferId: transferId },
+      include: TRANSFER_INCLUDE,
+    });
+    if (!transfer) return refuse("Transfer not found.");
+    return resourceResult({ success: true, data: mapTransfer(transfer) });
+  });
+}
+
 export async function scheduleTransfer(body: any = {}) {
+  await ensureUbeJamHavaneroStock();
   const staff = await requireModule("Stock Transfer");
   return mutate(staff, async (tx) => {
-validateInput(body);
+    validateInput(body);
     const {
       requestId,
       productId,
@@ -138,28 +155,36 @@ validateInput(body);
       return refuse("Stock Transfer Request not found.");
     }
 
-    if (str.Status !== "Approved") {
-      return refuse(`Only Approved requests can be scheduled. Current request status is '${str.Status}'.`);
+    if (str.Status !== "Approved" && str.Status !== "Scheduled") {
+      return refuse(`Only Approved or Scheduled requests can be scheduled. Current request status is '${str.Status}'.`);
     }
 
-    const requested = str.StockTransferRequestItems.filter(item => item.ProductId === Number(productId));
+    const requested = str.StockTransferRequestItems.filter((item) => item.ProductId === Number(productId));
     if (!requested.length) refuse("The product is not part of this request.");
     const scheduled = await tx.stockTransfers.aggregate({
       where: { RequestId: str.RequestId, ProductId: Number(productId), Status: { not: "Cancelled" } },
       _sum: { TransferQuantity: true },
     });
     const limit = requested.reduce((sum, item) => sum + Number(item.RequestedQuantity), 0);
-    if (Number(scheduled._sum.TransferQuantity || 0) + Number(transferQuantity) > limit) refuse("The quantity exceeds the unscheduled request quantity.");
+    if (Number(scheduled._sum.TransferQuantity || 0) + Number(transferQuantity) > limit) {
+      refuse("The quantity exceeds the unscheduled request quantity.");
+    }
 
     // Identify Commissary source location
     const commissary = await tx.locations.findFirst({
       where: {
         OR: [
-          { IsSystemLocation: true }, { LocationName: { contains: "Factory", mode: "insensitive" } },
+          { LocationName: { contains: "Finished", mode: "insensitive" } },
+          { LocationType: { contains: "Finished", mode: "insensitive" } },
+          { IsSystemLocation: true },
+          { LocationName: { contains: "Factory", mode: "insensitive" } },
           { LocationType: { contains: "Commissary", mode: "insensitive" } },
           { LocationName: { contains: "Commissary", mode: "insensitive" } },
+          { LocationType: { contains: "Warehouse", mode: "insensitive" } },
+          { LocationName: { contains: "Warehouse", mode: "insensitive" } },
         ],
       },
+      orderBy: { LocationId: "asc" },
     });
 
     if (!commissary) {
@@ -196,11 +221,23 @@ validateInput(body);
       include: TRANSFER_INCLUDE,
     });
 
-    return saved(staff, "stock-transfer", transfer.TransferId, transfer.TransferNumber || String(transfer.TransferId), "created", resourceResult({
+    // Update parent request status to "Scheduled"
+    await tx.stockTransferRequests.update({
+      where: { RequestId: str.RequestId },
+      data: { Status: "Scheduled" },
+    });
+
+    return saved(
+      staff,
+      "stock-transfer",
+      transfer.TransferId,
+      transfer.TransferNumber || String(transfer.TransferId),
+      "created",
+      resourceResult({
         success: true,
         message: "Stock transfer scheduled successfully.",
         data: mapTransfer(transfer),
-      }));
-
+      })
+    );
   });
 }

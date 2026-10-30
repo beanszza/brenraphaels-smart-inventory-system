@@ -15,8 +15,8 @@ export async function listRequests(query = "") {
     const search = searchParams.get("search")?.trim() || "";
     const status = searchParams.get("status")?.trim() || "";
     const priority = searchParams.get("priority")?.trim() || "";
-    const page = Math.max(1, (parseInt(searchParams.get("page") || "1", 10) || 1));
-    const pageSize = Math.min(100, Math.max(1, (parseInt(searchParams.get("pageSize") || "10", 10) || 10)));
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "10", 10) || 10));
 
     const where: any = {};
 
@@ -54,6 +54,7 @@ export async function listRequests(query = "") {
             select: {
               TransferId: true,
               TransferNumber: true,
+              ProductId: true,
               Status: true,
               TransferQuantity: true,
               ScheduledDate: true,
@@ -70,45 +71,104 @@ export async function listRequests(query = "") {
       }),
     ]);
 
-    const data = requests.map((req) => ({
-      requestId: req.RequestId,
-      requestNumber: req.RequestNumber,
-      toLocationId: req.ToLocationId,
-      toLocationName: req.Locations?.LocationName || "",
-      requestedBy: req.RequestedBy,
-      requestDate: req.RequestDate.toISOString(),
-      requiredDate: req.RequiredDate.toISOString(),
-      priority: req.Priority,
-      reason: req.Reason || "",
-      status: req.Status,
-      adminNotes: req.AdminNotes || "",
-      reviewedBy: req.ReviewedBy || null,
-      reviewedAt: req.ReviewedAt?.toISOString() || null,
-      createdAt: req.CreatedAt.toISOString(),
-      items: req.StockTransferRequestItems.map((item) => ({
-        requestItemId: item.RequestItemId,
-        productId: item.ProductId,
-        productName: item.FinishedProducts?.Items?.ItemName || "Unknown Product",
-        variant: item.FinishedProducts?.Variant || "",
-        sku: item.FinishedProducts?.Sku || "",
-        requestedQuantity: Number(item.RequestedQuantity),
-        availableQuantity: Number(item.AvailableQuantity),
-        isInsufficient: item.IsInsufficient,
-        suggestedLots: item.SuggestedLots,
-        notes: item.Notes || "",
-      })),
-      transfers: req.StockTransfers.map((st) => ({
-        transferId: st.TransferId,
-        transferNumber: st.TransferNumber,
-        status: st.Status,
-        transferQuantity: Number(st.TransferQuantity),
-        scheduledDate: st.ScheduledDate?.toISOString() || null,
-        dispatchedDate: st.DispatchedDate?.toISOString() || null,
-        driverName: st.DriverName || null,
-        vehiclePlate: st.VehiclePlate || null,
-        courierName: st.CourierName || null,
-      })),
-    }));
+    const itemIds = requests
+      .flatMap((r) => r.StockTransferRequestItems.map((i) => i.FinishedProducts?.ItemId))
+      .filter(Boolean) as number[];
+
+    const activeLots = itemIds.length > 0
+      ? await prisma.inventoryLots.findMany({
+          where: {
+            ItemId: { in: itemIds },
+            Status: { in: ["Active", "Available"] },
+            QuantityRemaining: { gt: 0 },
+            OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
+          },
+          orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
+        })
+      : [];
+
+    const lotsByItem: Record<number, typeof activeLots> = {};
+    for (const lot of activeLots) {
+      if (!lotsByItem[lot.ItemId]) lotsByItem[lot.ItemId] = [];
+      lotsByItem[lot.ItemId].push(lot);
+    }
+
+    const data = requests.map((req) => {
+      const hasScheduledTransfer = req.StockTransfers?.some((st) => st.Status === "Scheduled");
+      const hasDispatchedTransfer = req.StockTransfers?.some((st) => st.Status === "Dispatched");
+      let effectiveStatus = req.Status;
+      if (req.Status === "Approved" && hasScheduledTransfer) {
+        effectiveStatus = "Scheduled";
+      } else if (req.Status === "Scheduled" && hasDispatchedTransfer && !hasScheduledTransfer) {
+        effectiveStatus = "Dispatched";
+      }
+
+      return {
+        requestId: req.RequestId,
+        requestNumber: req.RequestNumber,
+        toLocationId: req.ToLocationId,
+        toLocationName: req.Locations?.LocationName || "",
+        requestedBy: req.RequestedBy,
+        requestDate: req.RequestDate.toISOString(),
+        requiredDate: req.RequiredDate.toISOString(),
+        priority: req.Priority,
+        reason: req.Reason || "",
+        status: effectiveStatus,
+        adminNotes: req.AdminNotes || "",
+        reviewedBy: req.ReviewedBy || null,
+        reviewedAt: req.ReviewedAt?.toISOString() || null,
+        createdAt: req.CreatedAt.toISOString(),
+        items: req.StockTransferRequestItems.map((item) => {
+          let avail = Number(item.AvailableQuantity);
+          let isInsuff = item.IsInsufficient;
+          let suggestedLots = (item.SuggestedLots as any[]) || [];
+
+          const matchingLots = item.FinishedProducts?.ItemId ? lotsByItem[item.FinishedProducts.ItemId] || [] : [];
+          const totalLotsAvail = matchingLots.reduce(
+            (sum, l) => sum + Math.max(0, Number(l.QuantityRemaining) - Number(l.ReservedQuantity || 0)),
+            0
+          );
+
+          if (totalLotsAvail > 0) {
+            avail = totalLotsAvail;
+            isInsuff = avail < Number(item.RequestedQuantity);
+            if (!suggestedLots || suggestedLots.length === 0) {
+              suggestedLots = matchingLots.map((l) => ({
+                lotId: l.LotId,
+                lotCode: l.LotCode,
+                expiryDate: l.ExpiryDate?.toISOString() || null,
+                qty: Math.min(Number(l.QuantityRemaining), Number(item.RequestedQuantity)),
+              }));
+            }
+          }
+
+          return {
+            requestItemId: item.RequestItemId,
+            productId: item.ProductId,
+            productName: item.FinishedProducts?.Items?.ItemName || "Unknown Product",
+            variant: item.FinishedProducts?.Variant || "",
+            sku: item.FinishedProducts?.Sku || "",
+            requestedQuantity: Number(item.RequestedQuantity),
+            availableQuantity: avail,
+            isInsufficient: isInsuff,
+            suggestedLots,
+            notes: item.Notes || "",
+          };
+        }),
+        transfers: req.StockTransfers.map((st) => ({
+          transferId: st.TransferId,
+          transferNumber: st.TransferNumber,
+          productId: st.ProductId,
+          status: st.Status,
+          transferQuantity: Number(st.TransferQuantity),
+          scheduledDate: st.ScheduledDate?.toISOString() || null,
+          dispatchedDate: st.DispatchedDate?.toISOString() || null,
+          driverName: st.DriverName || null,
+          vehiclePlate: st.VehiclePlate || null,
+          courierName: st.CourierName || null,
+        })),
+      };
+    });
 
     return resourceResult({
       success: true,

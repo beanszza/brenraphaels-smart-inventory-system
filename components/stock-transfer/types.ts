@@ -1,4 +1,4 @@
-﻿export type STRStatus =
+export type STRStatus =
   | "Pending Approval"
   | "Approved"
   | "Rejected"
@@ -37,6 +37,7 @@ export interface STRItem {
 export interface STRTransferRef {
   transferId: number;
   transferNumber: string;
+  productId?: number;
   status: string;
   transferQuantity: number;
   scheduledDate: string | null;
