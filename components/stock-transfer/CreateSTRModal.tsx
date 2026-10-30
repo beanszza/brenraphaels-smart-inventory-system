@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createRequest } from "@/app/actions/stock-transfer/requests";
@@ -97,7 +97,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
         // Exclude commissary / system locations from destination options
         const allLocs: LocationOption[] = locRes.data.data || [];
         const destinations = allLocs.filter(
-          (l) => !l.isSystemLocation && !l.locationName.toLowerCase().includes("commissary")
+          (l) => !l.isSystemLocation && !l.locationName.toLowerCase().includes("factory")
         );
         setLocations(destinations);
       }
@@ -436,7 +436,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                           </td>
 
                           <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
-                            {row.sku || "—"}
+                            {row.sku || "â€”"}
                           </td>
 
                           <td className="px-4 py-3 font-medium whitespace-nowrap">
@@ -456,7 +456,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                                 )}
                               </div>
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-muted-foreground">â€”</span>
                             )}
                           </td>
 
@@ -486,7 +486,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                                 <span className="text-muted-foreground text-xs">No lot</span>
                               )
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-muted-foreground">â€”</span>
                             )}
                           </td>
 

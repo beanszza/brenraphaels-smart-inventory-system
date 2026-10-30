@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import type { TransferLocation } from "@/lib/stock-transfer/screen-data";
@@ -89,7 +89,7 @@ export function LocationsTab({ locations, loading, onRefresh }: {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredLocations.map((loc) => {
-            const isCommissary = loc.isSystemLocation || loc.locationName.toLowerCase().includes("commissary");
+            const isCommissary = loc.isSystemLocation || loc.locationName.toLowerCase().includes("factory");
             return (
               <div
                 key={loc.locationId}

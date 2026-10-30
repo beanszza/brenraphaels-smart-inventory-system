@@ -28,7 +28,7 @@ export async function suggestLots(query = "") {
     const commissary = await prisma.locations.findFirst({
       where: {
         OR: [
-          { IsSystemLocation: true },
+          { IsSystemLocation: true }, { LocationName: { contains: "Factory", mode: "insensitive" } },
           { LocationType: { contains: "Commissary", mode: "insensitive" } },
           { LocationName: { contains: "Commissary", mode: "insensitive" } },
         ],

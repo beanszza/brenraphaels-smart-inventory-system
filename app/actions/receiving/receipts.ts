@@ -130,25 +130,18 @@ export async function createReceipt(body: ReceiptInput) {
     }
     const grnNumber = existing?.GrnNumber || `GRN-${year}-${String(nextGrnSeq).padStart(4, '0')}`;
 
-    let receivingLocation =
-      (await tx.locations.findFirst({
-        where: { IsSystemLocation: true, LocationType: "Warehouse", IsActive: true },
-      })) ??
-      (await tx.locations.findFirst({
-        where: { LocationType: "Warehouse", IsActive: true },
-      })) ??
-      (await tx.locations.findFirst({
-        where: { IsSystemLocation: true, IsActive: true },
-      })) ??
-      (await tx.locations.findFirst({
-        where: {
-          IsActive: true,
-          OR: [
-            { LocationType: { contains: "Commissary", mode: "insensitive" } },
-            { LocationName: { contains: "Commissary", mode: "insensitive" } },
-          ],
-        },
-      }));
+    let receivingLocation = await tx.locations.findFirst({
+      where: {
+        IsActive: true,
+        OR: [
+          { LocationName: { equals: "Factory", mode: "insensitive" } },
+          { IsSystemLocation: true, LocationType: "Warehouse" },
+          { LocationType: "Warehouse" },
+          { IsSystemLocation: true },
+        ],
+      },
+      orderBy: { IsSystemLocation: "desc" },
+    });
     if (!receivingLocation) {
       const existingLocations = await tx.locations.findMany({
         select: { LocationId: true },
@@ -160,10 +153,10 @@ export async function createReceipt(body: ReceiptInput) {
       receivingLocation = await tx.locations.create({
         data: {
           ...(maxLocationId > 0 ? { LocationId: maxLocationId + 1 } : {}),
-          LocationName: "Commissary",
+          LocationName: "Factory",
           LocationType: "Warehouse",
           Status: "Active",
-          Address: "Central Commissary",
+          Address: "Central Factory",
           IsActive: true,
           IsSystemLocation: true,
         },

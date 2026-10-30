@@ -39,7 +39,8 @@ export function validateInput(input: unknown): void {
 function failed(error: unknown): ResourceResult {
   if (error instanceof Refusal) return resourceResult({ success: false, message: error.message });
   console.error("Goods Receiving action failed", error);
-  return resourceResult({ success: false, message: "Unable to complete the receiving action. Please try again." });
+  const detail = error instanceof Error && error.message ? ` (${error.message})` : "";
+  return resourceResult({ success: false, message: `Unable to complete the receiving action. Please try again.${detail}` });
 }
 
 export async function read(work: () => Promise<ResourceResult>): Promise<ResourceResult> {
@@ -50,7 +51,11 @@ export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) 
   let saved: Saved;
   try {
     // Serialize state transitions so concurrent approvals/posts cannot both save.
-    saved = await prisma.$transaction(work, { isolationLevel: "Serializable" });
+    saved = await prisma.$transaction(work, {
+      isolationLevel: "Serializable",
+      maxWait: 15000,
+      timeout: 30000,
+    });
   } catch (error) { return failed(error); }
   await recordAudit(staff, saved.audit);
   if (saved.after) await saved.after().catch(error => console.error("Notification could not be sent", error));
