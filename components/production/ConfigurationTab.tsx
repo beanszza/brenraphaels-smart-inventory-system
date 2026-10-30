@@ -48,6 +48,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { FinishedProductItem } from "./types";
+import AddFinishedProductModal from "./AddFinishedProductModal";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { uploadProductionImage } from "@/lib/production/image-client";
 import { ProductionImage } from "./ProductionImage";
@@ -121,6 +122,8 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
   const [editVariantStr, setEditVariantStr] = useState("");
   const [editSku, setEditSku] = useState("");
   const [editPrice, setEditPrice] = useState<number | "">(0);
+  const [editUnitCost, setEditUnitCost] = useState<number | "">(0);
+  const [quickVarUnitCost, setQuickVarUnitCost] = useState<number | "">(0);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -727,274 +730,14 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
       {/* ─────────────────────────────────────────────────────────────
           1. ADD PRODUCT MODAL (WITH MULTIPLE VARIATIONS)
           ───────────────────────────────────────────────────────────── */}
-      <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-card border-border p-6 shadow-2xl">
-          <DialogHeader className="border-b border-border pb-3">
-            <DialogTitle className="text-base font-bold text-foreground">
-              Add Finished Product &amp; Variants
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Configure product name, photo, and add one or multiple packaged variations
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSaveFullProduct} className="space-y-4 pt-2">
-            <div>
-              <label className="text-xs font-semibold text-foreground mb-1 block">
-                Product Name <span className="text-foreground">*</span>
-              </label>
-              <Input
-                placeholder="e.g. Ube Halaya Supreme"
-                value={productName}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setProductName(val);
-                  setVariationsList((prev) =>
-                    prev.map((v) => ({
-                      ...v,
-                      sku: generateSku(val || "PRD", v.packagingType, v.size),
-                    }))
-                  );
-                  setNewVarSku(generateSku(val || "PRD", newVarType, newVarSize));
-                }}
-                className="h-9 text-xs"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-foreground mb-1 block">
-                Category
-              </label>
-              <Select value={productCategory} onValueChange={setProductCategory}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Select Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRODUCT_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat} className="text-xs">
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Photo Upload */}
-            <div>
-              <label className="text-xs font-semibold text-foreground mb-1.5 block">
-                Product Photo
-              </label>
-              <input
-                type="file"
-                ref={fullProductFileRef}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    if (file.size > 10 * 1024 * 1024) {
-                      toast.error("File exceeds 10MB limit");
-                      return;
-                    }
-                    setProductPhotoFile(file);
-                    setProductPhotoPreview(URL.createObjectURL(file));
-                  }
-                }}
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-              />
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-lg border border-border bg-muted/20 overflow-hidden flex items-center justify-center shrink-0">
-                  {productPhotoPreview ? (
-                    <img
-                      src={productPhotoPreview}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <ImageIcon className="w-6 h-6 text-muted-foreground/30" />
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fullProductFileRef.current?.click()}
-                      className="h-8 text-xs font-semibold border-border hover:bg-muted cursor-pointer"
-                    >
-                      {productPhotoPreview ? "Change Photo" : "Upload Photo"}
-                    </Button>
-                    {productPhotoPreview && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setProductPhotoFile(null);
-                          setProductPhotoPreview("");
-                        }}
-                        className="h-8 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-                      >
-                        Remove
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    JPG, PNG, or WEBP up to 10MB.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Configured Variations Section ── */}
-            <div className="pt-3 border-t border-border space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Configured Variations ({variationsList.length})
-                </span>
-                <span className="text-[11px] text-muted-foreground">
-                  You can configure multiple sizes/packaging
-                </span>
-              </div>
-
-              {/* List of added variations */}
-              <div className="space-y-2 max-h-40 overflow-y-auto">
-                {variationsList.map((v, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-muted/20 text-xs"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-foreground">
-                        {v.sku}
-                      </span>
-                      <span className="text-foreground font-semibold">
-                        {v.size} ({v.packagingType})
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono font-semibold text-foreground">
-                        ₱{v.price.toFixed(2)}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveDraftVariation(i)}
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Inline Add Variation Sub-form */}
-              <div className="p-3 rounded-lg border border-border bg-muted/10 space-y-2">
-                <span className="text-[11px] font-semibold text-foreground block">
-                  Add Variation
-                </span>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {/* Packaging Type */}
-                  <Select
-                    value={newVarType}
-                    onValueChange={(val) => {
-                      setNewVarType(val);
-                      setNewVarSku(generateSku(productName || "PRD", val, newVarSize));
-                    }}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PACKAGING_TYPES.map((t) => (
-                        <SelectItem key={t} value={t} className="text-xs">
-                          {t}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {/* Size */}
-                  <Input
-                    placeholder="Size (e.g. 500g)"
-                    value={newVarSize}
-                    onChange={(e) => {
-                      setNewVarSize(e.target.value);
-                      setNewVarSku(generateSku(productName || "PRD", newVarType, e.target.value));
-                    }}
-                    className="h-8 text-xs"
-                  />
-
-                  {/* System-Generated SKU */}
-                  <div className="relative">
-                    <Input
-                      readOnly
-                      title="System-Generated SKU"
-                      placeholder="SKU Code"
-                      value={newVarSku || generateSku(productName || "PRD", newVarType, newVarSize)}
-                      className="h-8 text-xs font-mono bg-muted/40 text-muted-foreground cursor-not-allowed select-none border-dashed pr-10"
-                    />
-                    <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] uppercase font-semibold tracking-wider text-muted-foreground/70 pointer-events-none">
-                      Auto
-                    </span>
-                  </div>
-
-                  {/* Price */}
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Price ₱"
-                    value={newVarPrice}
-                    onChange={(e) =>
-                      setNewVarPrice(
-                        e.target.value === "" ? "" : Number(e.target.value)
-                      )
-                    }
-                    className="h-8 text-xs font-mono"
-                  />
-                </div>
-
-                <div className="flex justify-end pt-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddDraftVariation}
-                    className="h-7 text-xs font-semibold border-border hover:bg-muted cursor-pointer flex items-center gap-1"
-                  >
-                    <Plus className="w-3 h-3" />
-                    Add Variation
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-3 border-t border-border">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAddProductOpen(false)}
-                className="text-xs font-semibold border-border hover:bg-muted cursor-pointer"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-              >
-                {submitting ? "Creating..." : "Save Product & Variations"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <AddFinishedProductModal
+        open={isAddProductOpen}
+        onClose={() => setIsAddProductOpen(false)}
+        onSuccess={() => {
+          fetchProducts();
+          setPhotoVersion((v) => v + 1);
+        }}
+      />
 
       {/* ─────────────────────────────────────────────────────────────
           2. QUICK ADD SINGLE VARIANT MODAL

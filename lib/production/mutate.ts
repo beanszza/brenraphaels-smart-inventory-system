@@ -22,8 +22,11 @@ export function validateInput(input: unknown): void {
     if (["userId", "userName", "requestedBy", "issuedBy", "scannedBy", "assignedCook", "packagedBy", "packedBy", "completedBy", "inspectorName", "approvedBy", "rejectedBy", "authorisedBy"].includes(key)) continue;
     if (value === undefined || value === null) continue;
     if (/Id$/.test(key)) positiveId(value);
-    else if (/quantity|price/i.test(key)) {
-      if (typeof value !== "number" || !Number.isFinite(value) || value < 0) refuse("Quantities and prices must be finite, non-negative numbers.");
+    else if (/quantity|price|cost/i.test(key)) {
+      if (typeof value !== "number" || !Number.isFinite(value) || value < 0) refuse("Quantities, prices, and costs must be finite, non-negative numbers.");
+    } else if (["variants", "items"].includes(key)) {
+      if (!Array.isArray(value) || value.length === 0 || value.length > 500) refuse("Include between 1 and 500 variant lines.");
+      value.forEach(validateInput);
     } else if (/date$/i.test(key)) {
       if (value === "") continue;
       if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) refuse("Enter a valid date.");

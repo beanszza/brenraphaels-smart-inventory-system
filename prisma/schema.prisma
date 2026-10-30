@@ -313,6 +313,7 @@ model FinishedProducts {
   Sku                String
   Variant            String               @default("")
   ImageUrl           String?
+  UnitCost           Decimal              @default(0.0) @db.Decimal(18, 4)
   BranchRequestItems BranchRequestItems[]
   BranchReturnItems  BranchReturnItems[]
   Items              Items                @relation(fields: [ItemId], references: [ItemId], onDelete: Cascade, onUpdate: NoAction, map: "FK_FinishedProducts_Items_ItemId")
@@ -486,6 +487,7 @@ model InventoryMovementLogs {
 model Items {
   ItemId                                          Int                        @id(map: "PK_Items") @default(autoincrement())
   ItemName                                        String
+  Description                                     String?
   UomId                                           Int
   CategoryId                                      Int
   MinStockLevel                                   Decimal                    @db.Decimal(18, 3)

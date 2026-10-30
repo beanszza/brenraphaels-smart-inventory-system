@@ -271,9 +271,14 @@ export interface FinishedProductItem {
   itemId: number;
   itemName: string;
   sellingPrice: number;
+  unitCost?: number;
   sku: string;
   variant: string;
   imageUrl?: string;
+  productCode?: string;
+  categoryName?: string;
+  uomName?: string;
+  description?: string;
 }
 
 export interface ProductionBatchItem {
