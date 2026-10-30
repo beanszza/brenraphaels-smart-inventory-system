@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useIsAdmin } from "@/context/StaffContext";
 
 interface ProductionQaTabProps {
   initialRows: any[];
@@ -19,6 +20,7 @@ interface ProductionQaTabProps {
 }
 
 export default function ProductionQaTab({ initialRows, currentUser }: ProductionQaTabProps) {
+  const isAdmin = useIsAdmin();
   const [mounted, setMounted] = useState<boolean>(false);
   const [allBatches, setBatches] = useState<any[]>(initialRows);
   const [loading, setLoading] = useState<boolean>(false);
@@ -438,14 +440,20 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
 
                   {/* Action Buttons */}
                   <div className="flex items-center justify-end pt-2">
-                    <Button
-                      type="button"
-                      disabled={submitting}
-                      onClick={() => setConfirmModal(true)}
-                      className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
-                    >
-                      Confirm & Sign Off QA Review
-                    </Button>
+                    {!isAdmin ? (
+                      <Button
+                        type="button"
+                        disabled={submitting}
+                        onClick={() => setConfirmModal(true)}
+                        className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
+                      >
+                        Confirm & Sign Off QA Review
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">
+                        Admin View-Only Mode (Inspection operated by Quality Assurance Officer)
+                      </span>
+                    )}
                   </div>
                 </div>
               ) : (

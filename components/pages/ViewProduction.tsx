@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import type { ProductionTab } from "@/lib/production/screen-data";
 // The action boundary preserves the existing serializable production DTOs.
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useStaff } from "@/context/StaffContext";
+import { useStaff, useIsAdmin, useIsImsManager, useIsHeadCook, useIsQa } from "@/context/StaffContext";
 import { PageHeader } from "@/components/shared/PageHeader";
 import ProductionRequestsTab from "@/components/production/ProductionRequestsTab";
 import MaterialIssuanceTab from "@/components/production/MaterialIssuanceTab";
@@ -37,6 +37,35 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
   const [pending, startTransition] = useTransition();
   const navigate = (href: string) => startTransition(() => router.push(href));
   const staff = useStaff();
+  const isAdmin = useIsAdmin();
+  const isIms = useIsImsManager();
+  const isCook = useIsHeadCook();
+  const isQa = useIsQa();
+
+  // Role-based tab visibility
+  const allowedTabs = React.useMemo(() => {
+    if (isAdmin) {
+      return TABS; // Admin can view all tabs
+    }
+    if (isQa) {
+      return TABS.filter((t) => t.key === "qa");
+    }
+    if (isCook) {
+      return TABS.filter((t) => ["requests", "tracking"].includes(t.key));
+    }
+    if (isIms) {
+      return TABS.filter((t) => ["requests", "issuance", "stockin", "configuration", "loss"].includes(t.key));
+    }
+    return TABS;
+  }, [isAdmin, isQa, isCook, isIms]);
+
+  // Gracefully redirect if current activeTab is not in user's allowed tabs
+  React.useEffect(() => {
+    if (allowedTabs.length > 0 && !allowedTabs.some((t) => t.key === activeTab)) {
+      navigate(`/production-quality?tab=${allowedTabs[0].key}`);
+    }
+  }, [allowedTabs, activeTab]);
+
   // Navigate from Production Requests -> Material Issuance
   const handleNavigateToIssuance = async (prodReqId?: number) => {
     if (prodReqId) {
@@ -73,7 +102,7 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
       {/* Main Tab Bar matching Resources & Suppliers styling */}
       <div className="border-b border-border">
         <div className="flex items-center gap-2 overflow-x-auto">
-          {TABS.map((tab) => {
+          {allowedTabs.map((tab) => {
             const isActive = activeTab === tab.key;
             return (
               <Link

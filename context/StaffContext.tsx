@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext } from "react";
 import type { Staff } from "@/lib/portal/client";
-import { isAdminStaff, isQaStaff, isImsManager } from "@/lib/auth-roles";
+import { isAdminStaff, isQaStaff, isImsManager, isHeadCook } from "@/lib/auth-roles";
 
-export { isAdminStaff, isQaStaff, isImsManager } from "@/lib/auth-roles";
+export { isAdminStaff, isQaStaff, isImsManager, isHeadCook } from "@/lib/auth-roles";
 
 const StaffContext = createContext<Staff | null>(null);
 
@@ -32,4 +32,9 @@ export function useIsQa(): boolean {
 export function useIsImsManager(): boolean {
   const staff = useContext(StaffContext);
   return isImsManager(staff);
+}
+
+export function useIsHeadCook(): boolean {
+  const staff = useContext(StaffContext);
+  return isHeadCook(staff);
 }

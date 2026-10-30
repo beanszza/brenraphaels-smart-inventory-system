@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { ProductionRequestEntity, LotSuggestionsResponse } from "./types";
 import { ProductionActionModal, ProductionActionType } from "./ProductionActionModal";
+import { useIsAdmin } from "@/context/StaffContext";
 
 interface ProductionRequestModalProps {
   open: boolean;
@@ -113,6 +114,7 @@ export default function ProductionRequestModal({
   onStartProduction,
 }: ProductionRequestModalProps) {
   const isViewMode = Boolean(initialRequest);
+  const isAdmin = useIsAdmin();
 
   // Form State
   const [selectedProductName, setSelectedProductName] = useState<string>("");
@@ -209,6 +211,7 @@ export default function ProductionRequestModal({
         setSelectedVariant("");
         setProductId("");
         setRecipeId("");
+        setFilteredRecipes([]);
         setQuantity(100);
         setPriority("Medium");
         const tomorrowDate = new Date(Date.now() + 86400000);
@@ -271,6 +274,8 @@ export default function ProductionRequestModal({
     } else {
       setProductId("");
     }
+    setRecipeId("");
+    setLotSuggestions(null);
   };
 
   // Handle Variant selection
@@ -282,6 +287,8 @@ export default function ProductionRequestModal({
     if (matchedProd) {
       setProductId(String(matchedProd.productId));
     }
+    setRecipeId("");
+    setLotSuggestions(null);
   };
 
   // Filter recipes when product changes
@@ -293,14 +300,18 @@ export default function ProductionRequestModal({
         const rProd = products.find((p) => p.productId === r.productId);
         return rProd && selectedProductName && rProd.productName.toLowerCase() === selectedProductName.toLowerCase();
       });
-      const available = matched.length > 0 ? matched : recipes;
-      setFilteredRecipes(available);
-      if (available.length > 0 && !available.some((r) => String(r.recipeId) === recipeId)) {
-        setRecipeId(String(available[0].recipeId));
-        setQuantity(Number(available[0].outputQuantity) || 100);
+      setFilteredRecipes(matched);
+      if (matched.length === 1) {
+        setRecipeId(String(matched[0].recipeId));
+        setQuantity(Number(matched[0].outputQuantity) || 100);
+      } else if (!matched.some((r) => String(r.recipeId) === recipeId)) {
+        setRecipeId("");
+        setLotSuggestions(null);
       }
     } else {
-      setFilteredRecipes(recipes);
+      setFilteredRecipes([]);
+      setRecipeId("");
+      setLotSuggestions(null);
     }
   }, [productId, recipes, recipeId, selectedProductName, products]);
 
@@ -318,8 +329,8 @@ export default function ProductionRequestModal({
         })
         .catch(console.error)
         .finally(() => setLoadingSuggestions(false));
-    } else if (recipeId && quantity > 0) {
-      // In create mode, fetch preview
+    } else if (!isViewMode && productId && recipeId && quantity > 0) {
+      // In create mode, fetch preview only when both productId and recipeId are present
       setLoadingSuggestions(true);
       actionResponse(productionSuggestRequestLots("preview", `recipeId=${recipeId}&quantity=${quantity}`))
         .then((res: any) => {
@@ -331,8 +342,9 @@ export default function ProductionRequestModal({
         .finally(() => setLoadingSuggestions(false));
     } else {
       setLotSuggestions(null);
+      setLoadingSuggestions(false);
     }
-  }, [open, isViewMode, initialRequest, recipeId, quantity]);
+  }, [open, isViewMode, initialRequest, productId, recipeId, quantity]);
 
   // Validation handlers for Date and Time
   const handleDateChange = (val: string) => {
@@ -453,7 +465,7 @@ export default function ProductionRequestModal({
       }
     } catch (err: any) {
       console.error(err);
-      toast.error(err.response?.data?.message || "An error occurred.");
+      toast.error(err.response?.data?.message || err.message || "An error occurred.");
     } finally {
       setSubmitting(false);
     }
@@ -679,7 +691,17 @@ export default function ProductionRequestModal({
                   {initialRequest?.recipeName}
                 </div>
               ) : (
-                <Select value={recipeId} onValueChange={setRecipeId} disabled={!productId || filteredRecipes.length === 0}>
+                <Select
+                  value={recipeId}
+                  onValueChange={(val) => {
+                    setRecipeId(val);
+                    const selected = filteredRecipes.find((r) => String(r.recipeId) === val);
+                    if (selected && Number(selected.outputQuantity) > 0) {
+                      setQuantity(Number(selected.outputQuantity));
+                    }
+                  }}
+                  disabled={!productId || filteredRecipes.length === 0}
+                >
                   <SelectTrigger className="w-full h-10 text-xs rounded-xl border-border bg-card">
                     <SelectValue
                       placeholder={
@@ -970,7 +992,7 @@ export default function ProductionRequestModal({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {lotSuggestions?.ingredients?.map((item) => {
+                  {(isViewMode || (productId && recipeId)) && lotSuggestions?.ingredients?.map((item) => {
                     const isRejected = initialRequest?.status === "Rejected";
                     const isApproved = initialRequest?.status === "Approved";
                     const isPending = initialRequest?.status === "Pending Approval";
@@ -1078,7 +1100,7 @@ export default function ProductionRequestModal({
                       </tr>
                     );
                   })}
-                  {(!lotSuggestions || lotSuggestions.ingredients.length === 0) && (
+                  {(!lotSuggestions || lotSuggestions.ingredients.length === 0 || (!isViewMode && (!productId || !recipeId))) && (
                     <tr>
                       <td colSpan={8} className="py-8 text-center text-xs text-muted-foreground">
                         Select a product and recipe to preview bill of materials and suggested lots.
@@ -1107,8 +1129,8 @@ export default function ProductionRequestModal({
               <Button
                 type="button"
                 onClick={() => handleSubmit(true)}
-                disabled={submitting || !recipeId}
-                className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm"
+                disabled={submitting || !productId || !recipeId || !quantity || quantity <= 0 || !requiredDate}
+                className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting
                   ? "Processing..."
@@ -1119,7 +1141,7 @@ export default function ProductionRequestModal({
             ) : (
               <>
                 {/* Admin Approval Actions (PR/PO style confirmation modal) */}
-                {initialRequest?.status === "Pending Approval" && (
+                {isAdmin && initialRequest?.status === "Pending Approval" && (
                   <>
                     <Button
                       type="button"

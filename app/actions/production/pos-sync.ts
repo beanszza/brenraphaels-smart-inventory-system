@@ -58,12 +58,14 @@ export async function syncProductCatalogToPos(productName: string) {
     const variations: PosVariationDto[] = items.map((fp) => {
       const { packagingType, size } = parseVariantParts(fp.Variant);
       const sku = fp.Sku?.trim() || `SKU-${fp.ProductId}`;
+      const price = Number(fp.SellingPrice) || 0;
       return {
         sku,
         variationName: `${sku}|${packagingType}|${size}`,
         packagingType,
         size,
         isActive: true,
+        price,
       };
     });
 
@@ -140,12 +142,14 @@ export async function syncAllFinishedProductsToPos() {
       const variations: PosVariationDto[] = fps.map((fp) => {
         const { packagingType, size } = parseVariantParts(fp.Variant);
         const sku = fp.Sku?.trim() || `SKU-${fp.ProductId}`;
+        const price = Number(fp.SellingPrice) || 0;
         return {
           sku,
           variationName: `${sku}|${packagingType}|${size}`,
           packagingType,
           size,
           isActive: true,
+          price,
         };
       });
 

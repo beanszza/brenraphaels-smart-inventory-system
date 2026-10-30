@@ -4,6 +4,7 @@ export interface PosVariationDto {
   packagingType: string;
   size: string;
   isActive: boolean;
+  price?: number;
 }
 
 export interface SyncProductDto {

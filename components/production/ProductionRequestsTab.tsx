@@ -2,7 +2,10 @@
 import { ProductionSkeleton } from "./ProductionSkeleton";
 import { listProductionRequests as productionListProductionRequests } from "@/app/actions/production/requests";
 import { createBatch as productionCreateBatch } from "@/app/actions/production/batches";
+import { updateProductionRequest as productionUpdateProductionRequest } from "@/app/actions/production/request-detail";
 import { actionResponse } from "@/lib/resources/action-response";
+import { useIsAdmin, useIsImsManager, useIsHeadCook } from "@/context/StaffContext";
+import { ProductionActionModal } from "./ProductionActionModal";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
@@ -40,6 +43,10 @@ export default function ProductionRequestsTab({
   onStartBatchAndTrack,
   currentUser,
 }: ProductionRequestsTabProps) {
+  const isAdmin = useIsAdmin();
+  const isImsManager = useIsImsManager();
+  const isHeadCook = useIsHeadCook();
+
   const [requests, setRequests] = useState<ProductionRequestEntity[]>(initialRows);
   const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -48,14 +55,40 @@ export default function ProductionRequestsTab({
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const [startingId, setStartingId] = useState<number | null>(null);
 
-  // NO DRAFT, NO CANCELLED!
-  const statusTabs = STATUS_TABS;
-  const [activeTab, setActiveTab] = useState<string>("All");
+  // Sub-tabs based on role
+  const statusTabs = useMemo(() => {
+    if (isAdmin) {
+      return ["Requests", ...STATUS_TABS];
+    }
+    if (isHeadCook) {
+      return ["Ready for Production", "In Progress", "Completed", "All"];
+    }
+    return STATUS_TABS;
+  }, [isAdmin, isHeadCook]);
+
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (isAdmin) return "Requests";
+    if (isHeadCook) return "Ready for Production";
+    return "All";
+  });
+
+  useEffect(() => {
+    if (isAdmin && !["Requests", ...STATUS_TABS].includes(activeTab)) {
+      setActiveTab("Requests");
+    } else if (isHeadCook && !["Ready for Production", "In Progress", "Completed", "All"].includes(activeTab)) {
+      setActiveTab("Ready for Production");
+    }
+  }, [isAdmin, isHeadCook, activeTab]);
 
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedRequest, setSelectedRequest] = useState<ProductionRequestEntity | null>(null);
   const [prSummaryData, setPrSummaryData] = useState<any | null>(null);
+  const [adminActionModal, setAdminActionModal] = useState<{
+    open: boolean;
+    type: "approve" | "reject";
+    request: ProductionRequestEntity;
+  } | null>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -87,6 +120,7 @@ export default function ProductionRequestsTab({
 
   // Status helper mapping
   const matchesTab = (reqStatus: string, tabName: string) => {
+    if (tabName === "Requests") return reqStatus === "Pending Approval";
     if (tabName === "All") return true;
     if (tabName === "Ready for Production") {
       return reqStatus === "Materials Issued" || reqStatus === "Ready for Production";
@@ -123,6 +157,29 @@ export default function ProductionRequestsTab({
   const handleViewRequest = (req: ProductionRequestEntity) => {
     setSelectedRequest(req);
     setIsModalOpen(true);
+  };
+
+  // Admin Accept / Reject with Confirmation
+  const handleAdminAction = async (notes?: string) => {
+    if (!adminActionModal) return;
+    const { type, request } = adminActionModal;
+    try {
+      const payload: any = { action: type };
+      if (type === "reject") {
+        payload.rejectionReason = notes || "Requirements not met";
+      } else {
+        payload.adminNotes = notes || "Approved";
+      }
+      const res = await actionResponse(productionUpdateProductionRequest(request.prodReqId, payload));
+      if (res.data?.success) {
+        toast.success(`Production Request ${request.reqNumber} ${type === "approve" ? "approved" : "rejected"}!`);
+        setAdminActionModal(null);
+        fetchRequests();
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || err.message || `Failed to ${type} request.`);
+    }
   };
 
   // Start Production -> Creates batch and navigates straight to Production Tracking
@@ -171,13 +228,15 @@ export default function ProductionRequestsTab({
             Plan production volumes, verify automated BOM lot reservations, review and approve requests, and start kitchen batches.
           </p>
         </div>
-        <Button
-          onClick={handleOpenNewModal}
-          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Production Request</span>
-        </Button>
+        {isImsManager && (
+          <Button
+            onClick={handleOpenNewModal}
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>New Production Request</span>
+          </Button>
+        )}
       </div>
 
       {/* Filters Bar (Search & Priority Filter - Top orientation matching PR) */}
@@ -363,11 +422,11 @@ export default function ProductionRequestsTab({
                         <div>{req.requiredDate ? new Date(req.requiredDate).toLocaleDateString() : "—"}</div>
                       </td>
 
-                      {/* Actions (Three Dots Menu + Quick Start for Head Cook) */}
+                      {/* Actions */}
                       <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Quick Start Production on Ready for Production items */}
-                          {isReadyForProd && (
+                          {/* Quick Start Production for Head Cook on Ready for Production items */}
+                          {isHeadCook && isReadyForProd && (
                             <Button
                               size="sm"
                               onClick={(e) => handleStartProduction(req, e)}
@@ -376,6 +435,47 @@ export default function ProductionRequestsTab({
                             >
                               <Play className="w-3 h-3 mr-1 fill-current" />
                               <span>{startingId === req.prodReqId ? "Starting..." : "Start"}</span>
+                            </Button>
+                          )}
+
+                          {/* Quick Accept/Reject for Admin on Pending Approval items */}
+                          {isAdmin && req.status === "Pending Approval" && (
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAdminActionModal({ open: true, type: "reject", request: req });
+                                }}
+                                className="h-7 text-xs font-semibold px-2.5 rounded-lg border-border hover:bg-muted text-foreground cursor-pointer"
+                              >
+                                Reject
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAdminActionModal({ open: true, type: "approve", request: req });
+                                }}
+                                className="h-7 text-xs font-semibold px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
+                              >
+                                Approve
+                              </Button>
+                            </div>
+                          )}
+
+                          {/* Quick Issue Materials for IMS Manager on Approved items */}
+                          {isImsManager && req.status === "Approved" && onNavigateToIssuance && (
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onNavigateToIssuance(req.prodReqId);
+                              }}
+                              className="h-7 text-xs font-semibold px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
+                            >
+                              Issue Materials
                             </Button>
                           )}
 
@@ -403,8 +503,8 @@ export default function ProductionRequestsTab({
                                   View Details
                                 </button>
 
-                                {/* Issue Materials shortcut for Inventory Manager & Admin on Approved */}
-                                {req.status === "Approved" && onNavigateToIssuance && (
+                                {/* Issue Materials shortcut for IMS Manager on Approved */}
+                                {isImsManager && req.status === "Approved" && onNavigateToIssuance && (
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -417,8 +517,8 @@ export default function ProductionRequestsTab({
                                   </button>
                                 )}
 
-                                {/* Start Production on Ready for Production */}
-                                {isReadyForProd && (
+                                {/* Start Production for Head Cook on Ready for Production */}
+                                {isHeadCook && isReadyForProd && (
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -432,21 +532,33 @@ export default function ProductionRequestsTab({
                                 )}
 
                                 {/* Admin Approval Action on Pending Approval */}
-                                {req.status === "Pending Approval" && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setOpenDropdownId(null);
-                                      handleViewRequest(req);
-                                    }}
-                                    className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border"
-                                  >
-                                    Approve / Reject
-                                  </button>
+                                {isAdmin && req.status === "Pending Approval" && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setOpenDropdownId(null);
+                                        setAdminActionModal({ open: true, type: "approve", request: req });
+                                      }}
+                                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setOpenDropdownId(null);
+                                        setAdminActionModal({ open: true, type: "reject", request: req });
+                                      }}
+                                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border"
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
                                 )}
 
-                                {/* In Progress items shortcut to track (Head Cook & Admin only) */}
-                                {isInProd && onStartBatchAndTrack && req.batches?.[0]?.batchId && (
+                                {/* In Progress items shortcut to track (Head Cook & Admin) */}
+                                {isInProd && onStartBatchAndTrack && req.batches?.[0]?.batchId && (isHeadCook || isAdmin) && (
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -506,6 +618,17 @@ export default function ProductionRequestsTab({
         onClose={() => setPrSummaryData(null)}
         prData={prSummaryData}
       />
+
+      {/* Admin Approve / Reject Confirmation Modal */}
+      {adminActionModal && (
+        <ProductionActionModal
+          open={adminActionModal.open}
+          actionType={adminActionModal.type}
+          reqNumber={adminActionModal.request.reqNumber}
+          onConfirm={handleAdminAction}
+          onClose={() => setAdminActionModal(null)}
+        />
+      )}
     </div>
   );
 }

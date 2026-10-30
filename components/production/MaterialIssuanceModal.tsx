@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import jsQR from "jsqr";
 import { MaterialIssuanceDTO, LotReservationDTO } from "./types";
+import { useIsAdmin } from "@/context/StaffContext";
 
 interface MaterialIssuanceModalProps {
   open: boolean;
@@ -88,6 +89,7 @@ export default function MaterialIssuanceModal({
   issuanceId,
   onSuccess,
 }: MaterialIssuanceModalProps) {
+  const isAdmin = useIsAdmin();
   const [issuance, setIssuance] = useState<MaterialIssuanceDTO | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [issuing, setIssuing] = useState<boolean>(false);
@@ -874,18 +876,24 @@ export default function MaterialIssuanceModal({
           </Button>
 
           {!isAlreadyIssued ? (
-            <Button
-              type="button"
-              onClick={handleIssueMaterials}
-              disabled={!allVerified || issuing}
-              className={`text-xs font-semibold px-6 py-2 rounded-xl transition-all shadow-sm ${
-                allVerified
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
-              }`}
-            >
-              {issuing ? "Issuing..." : "Issue Materials"}
-            </Button>
+            !isAdmin ? (
+              <Button
+                type="button"
+                onClick={handleIssueMaterials}
+                disabled={!allVerified || issuing}
+                className={`text-xs font-semibold px-6 py-2 rounded-xl transition-all shadow-sm ${
+                  allVerified
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                    : "bg-muted text-muted-foreground cursor-not-allowed"
+                }`}
+              >
+                {issuing ? "Issuing..." : "Issue Materials"}
+              </Button>
+            ) : (
+              <span className="text-xs text-muted-foreground italic">
+                Admin View-Only Mode (Materials issued by IMS Manager)
+              </span>
+            )
           ) : (
             <span className="text-xs font-semibold text-foreground bg-muted border border-border px-3 py-1.5 rounded-xl">
               Materials Issued

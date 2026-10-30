@@ -13,6 +13,7 @@ import { listItems } from "@/app/actions/production/lookups";
 import { actionResponse } from "@/lib/resources/action-response";
 import { toast } from "sonner";
 import { Search, Plus, MoreHorizontal, Eye, ArrowDownToLine, X } from "lucide-react";
+import { useIsAdmin } from "@/context/StaffContext";
 
 interface ProductionStockInTabProps {
   initialRows: any[];
@@ -21,6 +22,7 @@ interface ProductionStockInTabProps {
 }
 
 export default function ProductionStockInTab({ initialRows, initialItems,  currentUser = "Inventory Manager" }: ProductionStockInTabProps) {
+  const isAdmin = useIsAdmin();
   const [mounted, setMounted] = useState<boolean>(false);
   const [batches, setBatches] = useState<any[]>(initialRows);
   const [inventoryItems, setInventoryItems] = useState<any[]>(initialItems);
@@ -221,12 +223,14 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
           >
             Refresh
           </Button>
-          <Button
-            onClick={handleOpenCreateModal}
-            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
-          >
-            <Plus size={16} /> Create Stock-In
-          </Button>
+          {!isAdmin && (
+            <Button
+              onClick={handleOpenCreateModal}
+              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+            >
+              <Plus size={16} /> Create Stock-In
+            </Button>
+          )}
         </div>
       </div>
 
@@ -394,7 +398,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                           <Eye size={14} className="shrink-0" />
                           <span>View Details</span>
                         </button>
-                        {b.status === "For Stock-in" && (
+                        {!isAdmin && b.status === "For Stock-in" && (
                           <button
                             type="button"
                             onClick={() => handleOpenForBatch(b)}
@@ -541,7 +545,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                 >
                   Cancel
                 </Button>
-                {selectedBatchInModal && (
+                {selectedBatchInModal && !isAdmin && (
                   <Button
                     type="button"
                     disabled={committing || selectedBatchInModal.status !== "For Stock-in"}

@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useIsAdmin } from "@/context/StaffContext";
 import { ProductionBatchEntity } from "./types";
 
 import { BatchProofField } from "./BatchProofField";
@@ -76,6 +77,7 @@ export default function ProductionBatchDetailView({
   currentUser = "Head Cook",
   onRefreshList,
 }:ProductionBatchDetailViewProps) {
+  const isAdmin = useIsAdmin();
   const [mounted, setMounted] = useState<boolean>(false);
   const [batch, setBatch] = useState<ProductionBatchEntity | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -586,15 +588,21 @@ export default function ProductionBatchDetailView({
                             </div>
 
                             <div className="flex justify-end pt-1">
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => setConfirmStageModal(true)}
-                                disabled={stageLoading}
-                                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
-                              >
-                                {stageLoading ? "Completing..." : `Complete ${stName} (${formattedStageEndTime})`}
-                              </Button>
+                              {!isAdmin ? (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => setConfirmStageModal(true)}
+                                  disabled={stageLoading}
+                                  className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
+                                >
+                                  {stageLoading ? "Completing..." : `Complete ${stName} (${formattedStageEndTime})`}
+                                </Button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground italic">
+                                  Admin View-Only Mode (Kitchen stages operated by Head Cook)
+                                </span>
+                              )}
                             </div>
                           </div>
                         )}
@@ -736,14 +744,20 @@ export default function ProductionBatchDetailView({
 
               {/* In Packaging phase: strictly no Reject Batch button (rejection is production only) */}
               <div className="pt-3 border-t border-border flex items-center justify-end">
-                <Button
-                  type="button"
-                  onClick={() => setConfirmPackagingModal(true)}
-                  disabled={pkgLoading || !pkgPackedBy || !pkgProofUrl || pkgQuantity <= 0}
-                  className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
-                >
-                  Finish Packaging & Send to QA
-                </Button>
+                {!isAdmin ? (
+                  <Button
+                    type="button"
+                    onClick={() => setConfirmPackagingModal(true)}
+                    disabled={pkgLoading || !pkgPackedBy || !pkgProofUrl || pkgQuantity <= 0}
+                    className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
+                  >
+                    Finish Packaging & Send to QA
+                  </Button>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">
+                    Admin View-Only Mode (Packaging operated by Head Cook)
+                  </span>
+                )}
               </div>
             </div>
           )}
