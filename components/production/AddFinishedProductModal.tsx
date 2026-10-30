@@ -10,10 +10,12 @@ import {
   listProductFormLookups,
   createFinishedProductWithVariants,
 } from "@/app/actions/production/products";
+import { updateFinishedProduct as productionUpdateFinishedProduct } from "@/app/actions/production/product-detail";
 import { syncProductCatalogToPos } from "@/app/actions/production/pos-sync";
 import { uploadProductionImage } from "@/lib/production/image-client";
 import { buildBaseVariantSku } from "@/lib/production/sku";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { FinishedProductItem } from "./types";
 
 interface VariantRow {
   id: string;
@@ -23,15 +25,19 @@ interface VariantRow {
 
 interface AddFinishedProductModalProps {
   open: boolean;
+  editingItem?: FinishedProductItem | null;
   onClose: () => void;
   onSuccess: () => void;
 }
 
 export default function AddFinishedProductModal({
   open,
+  editingItem,
   onClose,
   onSuccess,
 }: AddFinishedProductModalProps) {
+  const isEditing = Boolean(editingItem);
+
   // UOM Lookups (Jar, Container, Pouch)
   const [uoms, setUoms] = useState<{ uomId: number; name: string; abbreviation: string }[]>([
     { uomId: 1, name: "Jar", abbreviation: "jar" },
@@ -45,6 +51,7 @@ export default function AddFinishedProductModal({
   const [productName, setProductName] = useState("");
   const [uomId, setUomId] = useState<string>("1");
   const [description, setDescription] = useState("");
+  const [isActive, setIsActive] = useState(true);
 
   // Product Photo
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -69,7 +76,9 @@ export default function AddFinishedProductModal({
         if (isMounted && payload) {
           if (Array.isArray(payload.uoms) && payload.uoms.length > 0) {
             setUoms(payload.uoms);
-            setUomId(String(payload.uoms[0].uomId));
+            if (!editingItem) {
+              setUomId(String(payload.uoms[0].uomId));
+            }
           }
           if (payload.defaultCategoryId) {
             setDefaultCategoryId(payload.defaultCategoryId);
@@ -85,20 +94,47 @@ export default function AddFinishedProductModal({
     return () => {
       isMounted = false;
     };
-  }, [open]);
+  }, [open, editingItem]);
 
-  // Reset form when modal opens
+  // Reset or prefill form when modal opens
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+
+    if (editingItem) {
+      setProductName(editingItem.itemName || "");
+      setDescription(editingItem.description || "");
+      setIsActive(editingItem.isActive !== false);
+      setPhotoFile(null);
+      setPhotoPreview(editingItem.imageUrl || "");
+
+      // Match UOM by abbreviation or name if available
+      if (editingItem.uomName) {
+        const found = uoms.find(
+          (u) =>
+            u.name.toLowerCase() === editingItem.uomName?.toLowerCase() ||
+            u.abbreviation.toLowerCase() === editingItem.uomName?.toLowerCase()
+        );
+        if (found) setUomId(String(found.uomId));
+      }
+
+      setVariants([
+        {
+          id: String(editingItem.productId),
+          variantName: editingItem.variant || "Standard",
+          unitCost: String(editingItem.sellingPrice || "0"),
+        },
+      ]);
+    } else {
       setProductName("");
       setDescription("");
+      setIsActive(true);
       setPhotoFile(null);
       setPhotoPreview("");
       setVariants([
         { id: `var-${Date.now()}-1`, variantName: "250g Container", unitCost: "150" },
       ]);
     }
-  }, [open]);
+  }, [open, editingItem, uoms]);
 
   const handleAddVariant = () => {
     setVariants((prev) => [
@@ -176,69 +212,97 @@ export default function AddFinishedProductModal({
 
     try {
       setSubmitting(true);
-      toast.loading("Creating finished product & generating SKUs...", { id: "save-prod" });
 
-      const selectedUom = uoms.find((u) => String(u.uomId) === String(uomId));
+      if (isEditing && editingItem) {
+        // ── EDIT FLOW ──
+        const firstVariant = variants[0];
+        const cost = parseFloat(firstVariant.unitCost);
 
-      const payload = {
-        productName: trimmedName,
-        categoryId: defaultCategoryId,
-        uomId: parseInt(uomId, 10),
-        uomName: selectedUom?.name,
-        description: description.trim() || undefined,
-        variants: variants.map((v) => ({
-          variantName: v.variantName.trim(),
-          unitCost: parseFloat(v.unitCost),
-          sellingPrice: parseFloat(v.unitCost),
-        })),
-      };
+        const res = await actionResponse(
+          productionUpdateFinishedProduct(editingItem.productId, {
+            productName: trimmedName,
+            variant: firstVariant.variantName.trim(),
+            sellingPrice: cost,
+            unitCost: cost,
+            sku: editingItem.sku,
+            isActive: isActive,
+          })
+        );
 
-      const res = await actionResponse(createFinishedProductWithVariants(payload));
-      if (!res.data?.success) {
-        throw new Error(res.data?.message || "Failed to create product");
-      }
-
-      const createdVariants = res.data?.data?.variants || [];
-      const createdIds = createdVariants.map((v: any) => v.productId).filter(Boolean);
-
-      // Upload photo if provided
-      if (photoFile && createdIds.length > 0) {
-        for (const pid of createdIds) {
-          try {
-            await uploadProductionImage("product", pid, photoFile);
-          } catch (uploadErr) {
-            console.warn("Photo upload warning:", uploadErr);
-          }
+        if (!res.data?.success) {
+          throw new Error(res.data?.message || "Failed to update finished product");
         }
+
+        // Upload photo asynchronously in background if provided
+        if (photoFile) {
+          uploadProductionImage("product", editingItem.productId, photoFile).catch((err) =>
+            console.warn("Photo upload warning:", err)
+          );
+        }
+
+        // Silently sync with POS in background (no annoying popups)
+        syncProductCatalogToPos(trimmedName).catch(() => {});
+
+        toast.success("Finished product updated successfully!");
+        onSuccess();
+        onClose();
+      } else {
+        // ── CREATE FLOW ──
+        const selectedUom = uoms.find((u) => String(u.uomId) === String(uomId));
+
+        const payload = {
+          productName: trimmedName,
+          categoryId: defaultCategoryId,
+          uomId: parseInt(uomId, 10),
+          uomName: selectedUom?.name,
+          description: description.trim() || undefined,
+          variants: variants.map((v) => ({
+            variantName: v.variantName.trim(),
+            unitCost: parseFloat(v.unitCost),
+            sellingPrice: parseFloat(v.unitCost),
+          })),
+        };
+
+        const res = await actionResponse(createFinishedProductWithVariants(payload));
+        if (!res.data?.success) {
+          throw new Error(res.data?.message || "Failed to create product");
+        }
+
+        const createdVariants = res.data?.data?.variants || [];
+        const createdIds = createdVariants.map((v: any) => v.productId).filter(Boolean);
+
+        // Upload photo asynchronously in background if provided
+        if (photoFile && createdIds.length > 0) {
+          Promise.all(
+            createdIds.map((pid: number) =>
+              uploadProductionImage("product", pid, photoFile).catch((err) =>
+                console.warn("Photo upload warning:", err)
+              )
+            )
+          );
+        }
+
+        // Silently sync with POS in background (no annoying popups)
+        syncProductCatalogToPos(trimmedName).catch(() => {});
+
+        toast.success("Finished product created successfully!");
+        onSuccess();
+        onClose();
       }
-
-      toast.success(
-        `Finished Product "${trimmedName}" created with ${createdVariants.length} variant(s)!`,
-        { id: "save-prod" }
-      );
-
-      // Trigger automatic POS sync
-      actionResponse(syncProductCatalogToPos(trimmedName))
-        .then((posRes) => {
-          if (posRes.data?.success) {
-            toast.success(`Synced "${trimmedName}" to POS catalog!`);
-          }
-        })
-        .catch((err) => {
-          console.warn("POS sync deferred notice:", err?.message);
-        });
-
-      onSuccess();
-      onClose();
     } catch (err: any) {
-      toast.error(err?.message || "Failed to save finished product", { id: "save-prod" });
+      toast.error(err?.message || "Failed to save finished product");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <ModalWrapper open={open} title="Add Finished Product" onClose={onClose} size="max-w-3xl">
+    <ModalWrapper
+      open={open}
+      title={isEditing ? "Edit Finished Product" : "Add Finished Product"}
+      onClose={onClose}
+      size="max-w-3xl"
+    >
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* ── Section 1: Product Information ── */}
         <div className="space-y-4">
@@ -292,14 +356,16 @@ export default function AddFinishedProductModal({
             </div>
 
             {/* Product Code / SKU */}
-            <div className="md:col-span-2">
+            <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
                 Product Code / SKU
               </label>
               <Input
                 type="text"
                 value={
-                  productName.trim()
+                  isEditing && editingItem
+                    ? editingItem.sku || editingItem.productCode || "—"
+                    : productName.trim()
                     ? buildBaseVariantSku(productName, "STD")
                     : "Auto-generated upon save"
                 }
@@ -307,6 +373,21 @@ export default function AddFinishedProductModal({
                 disabled
                 className="w-full rounded-xl border border-border bg-muted/40 text-muted-foreground px-3 py-2 text-sm font-mono cursor-not-allowed"
               />
+            </div>
+
+            {/* Status (Active / Inactive) */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Status
+              </label>
+              <select
+                value={isActive ? "true" : "false"}
+                onChange={(e) => setIsActive(e.target.value === "true")}
+                className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
+              >
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
             </div>
 
             {/* Product Description */}
@@ -352,7 +433,7 @@ export default function AddFinishedProductModal({
                     className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer transition-colors shadow-xs"
                   >
                     <ImageIcon className="w-3.5 h-3.5" />
-                    {photoFile ? "Change Photo" : "Upload Photo"}
+                    {photoFile || photoPreview ? "Change Photo" : "Upload Photo"}
                   </label>
                   <p className="text-[11px] text-muted-foreground mt-1">
                     JPG, PNG, or WebP up to 5MB
@@ -374,24 +455,28 @@ export default function AddFinishedProductModal({
                 Define packaging sizes, SKUs, and unit cost
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAddVariant}
-              className="rounded-xl border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer gap-1.5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Variant
-            </Button>
+            {!isEditing && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddVariant}
+                className="rounded-xl border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Variant
+              </Button>
+            )}
           </div>
 
           <div className="space-y-3">
             {variants.map((v, index) => {
-              const previewSku = buildBaseVariantSku(
-                productName || "PRD",
-                v.variantName || `VAR-${index + 1}`
-              );
+              const previewSku = isEditing && editingItem
+                ? editingItem.sku
+                : buildBaseVariantSku(
+                    productName || "PRD",
+                    v.variantName || `VAR-${index + 1}`
+                  );
 
               return (
                 <div
@@ -405,7 +490,7 @@ export default function AddFinishedProductModal({
                       </span>
                       Variant {index + 1}
                     </span>
-                    {variants.length > 1 && (
+                    {!isEditing && variants.length > 1 && (
                       <Button
                         type="button"
                         variant="ghost"
@@ -492,7 +577,7 @@ export default function AddFinishedProductModal({
             disabled={submitting}
             className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? "Saving & Syncing POS..." : "Save Finished Product"}
+            {submitting ? "Saving..." : isEditing ? "Save Changes" : "Save Finished Product"}
           </Button>
         </div>
       </form>

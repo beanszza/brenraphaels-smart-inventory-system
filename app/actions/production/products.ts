@@ -137,24 +137,13 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
     }
 
     // Automatically resolve category: Finished Goods / Finished Product
-    let category = null;
-    if (body.categoryId) {
-      category = await tx.categories.findUnique({ where: { CategoryId: positiveId(body.categoryId) } });
-    }
-    if (!category) {
-      category = await tx.categories.findFirst({
+    let categoryId = body.categoryId ? positiveId(body.categoryId) : null;
+    if (!categoryId) {
+      const category = await tx.categories.findFirst({
         where: { CategoryName: { contains: "finished", mode: "insensitive" } },
       });
+      categoryId = category?.CategoryId || 1;
     }
-    if (!category) {
-      category = await tx.categories.findFirst();
-    }
-    if (!category) {
-      category = await tx.categories.create({
-        data: { CategoryName: "Finished Goods", Description: "Finished Goods" },
-      });
-    }
-    const categoryId = category.CategoryId;
 
     // Automatically resolve UOM (Jar, Container, Pouch, or provided uomId)
     let uomId = body.uomId ? positiveId(body.uomId) : null;
@@ -170,8 +159,7 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
       if (matchUom) uomId = matchUom.UomId;
     }
     if (!uomId) {
-      const defaultUom = await tx.unitOfMeasures.findFirst();
-      uomId = defaultUom?.UomId || 1;
+      uomId = 1;
     }
 
     // Check duplicate variant names in the submitted payload

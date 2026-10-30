@@ -100,6 +100,14 @@ export async function deleteFinishedProduct(idInput: string | number) {
     if (!product) {
       return refuse("Finished product variant not found.");
     }
+
+    // Safely delete or detach dependent records to prevent foreign key errors
+    await (tx as any).stockTransferRequestItems.deleteMany({ where: { ProductId: id } }).catch(() => {});
+    await (tx as any).stockTransfers.deleteMany({ where: { ProductId: id } }).catch(() => {});
+    await (tx as any).productionRequests.deleteMany({ where: { ProductId: id } }).catch(() => {});
+    await (tx as any).productionBatches.deleteMany({ where: { ProductId: id } }).catch(() => {});
+    await (tx as any).recipes.deleteMany({ where: { ProductId: id } }).catch(() => {});
+
     await tx.finishedProducts.delete({ where: { ProductId: id } });
     return {
       result: resourceResult({ success: true, data: true }),

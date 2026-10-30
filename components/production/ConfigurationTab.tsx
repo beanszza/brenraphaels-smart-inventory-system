@@ -397,61 +397,19 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
   // ── Open Edit Finished Product Modal ──
   const handleOpenEditProduct = (prod: FinishedProductItem) => {
     setEditingItem(prod);
-    setEditProductName(prod.itemName);
-    setEditVariantStr(prod.variant || "");
-    setEditSku(prod.sku || "");
-    setEditPrice(prod.sellingPrice || 0);
-    setEditActive(prod.isActive !== false);
     setIsEditProductOpen(true);
   };
 
-  const handleSaveEditProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingItem) return;
-
-    const trimmedName = editProductName.trim();
-    if (!trimmedName) {
-      toast.error("Product Name is required.");
-      return;
-    }
-    const trimmedVariant = editVariantStr.trim();
-    if (!trimmedVariant) {
-      toast.error("Variant packaging is required.");
-      return;
-    }
-    const cost = Number(editPrice);
-    if (isNaN(cost) || cost < 0) {
-      toast.error("Please enter a valid Unit Cost (₱).");
-      return;
-    }
+  // ── Delete Product ──
+  const handleDeleteProduct = async (productId: number, prodName: string) => {
+    if (!confirm(`Are you sure you want to delete "${prodName}"? This action cannot be undone.`)) return;
 
     try {
-      setSubmitting(true);
-      await actionResponse(productionUpdateFinishedProduct(editingItem.productId, {
-        productName: trimmedName,
-        variant: trimmedVariant,
-        sellingPrice: cost,
-        unitCost: cost,
-        sku: editSku.trim().toUpperCase(),
-        isActive: editActive,
-      }));
-
-      toast.success("Product details updated successfully");
-      setIsEditProductOpen(false);
+      await actionResponse(productionDeleteFinishedProduct(productId));
+      toast.success(`Product "${prodName}" deleted successfully`);
       fetchProducts();
-
-      // Automatically sync updated variant with POS
-      actionResponse(syncProductCatalogToPos(trimmedName))
-        .then((posRes) => {
-          if (posRes.data?.success) {
-            toast.success(`Updated "${trimmedName}" in POS!`);
-          }
-        })
-        .catch(() => {});
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || err?.message || "Failed to update product");
-    } finally {
-      setSubmitting(false);
+      toast.error(err?.response?.data?.message || err?.message || "Failed to delete product");
     }
   };
 
@@ -669,6 +627,17 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
                                 Edit Product
                               </span>
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {/* Delete Product */}
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteProduct(product.productId, product.itemName)}
+                              className="flex items-center gap-2.5 px-3 py-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate font-medium">
+                                Delete Product
+                              </span>
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -682,128 +651,21 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          1. ADD PRODUCT MODAL (WITH MULTIPLE VARIATIONS)
+          UNIFIED FINISHED PRODUCT MODAL (IDENTICAL UI FOR ADD & EDIT)
           ───────────────────────────────────────────────────────────── */}
       <AddFinishedProductModal
-        open={isAddProductOpen}
-        onClose={() => setIsAddProductOpen(false)}
+        open={isAddProductOpen || isEditProductOpen}
+        editingItem={isEditProductOpen ? editingItem : null}
+        onClose={() => {
+          setIsAddProductOpen(false);
+          setIsEditProductOpen(false);
+          setEditingItem(null);
+        }}
         onSuccess={() => {
           fetchProducts();
           setPhotoVersion((v) => v + 1);
         }}
       />
-
-      {/* ─────────────────────────────────────────────────────────────
-          2. EDIT FINISHED PRODUCT MODAL (Reference: SupplyModal)
-          ───────────────────────────────────────────────────────────── */}
-      {isEditProductOpen && (
-        <ModalWrapper
-          open={isEditProductOpen}
-          title="Edit Finished Product"
-          onClose={() => setIsEditProductOpen(false)}
-          size="max-w-xl"
-        >
-          <form onSubmit={handleSaveEditProduct} className="space-y-4">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Product Name <span className="text-destructive">*</span>
-              </label>
-              <Input
-                type="text"
-                value={editProductName}
-                onChange={(e) => setEditProductName(e.target.value)}
-                className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Variant / Packaging <span className="text-destructive">*</span>
-              </label>
-              <Input
-                placeholder="e.g. 500g Jar, 250g Container"
-                value={editVariantStr}
-                onChange={(e) => setEditVariantStr(e.target.value)}
-                className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                  SKU Code
-                </label>
-                <Input
-                  readOnly
-                  disabled
-                  value={editSku}
-                  className="w-full rounded-xl border border-border bg-muted/40 text-muted-foreground px-3 py-2 text-sm font-mono cursor-not-allowed"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                  Unit Cost (₱) <span className="text-destructive">*</span>
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                    ₱
-                  </span>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={editPrice}
-                    onChange={(e) =>
-                      setEditPrice(
-                        e.target.value === "" ? "" : Number(e.target.value)
-                      )
-                    }
-                    className="w-full rounded-xl border border-border bg-card text-foreground pl-7 pr-3 py-2 text-sm font-semibold"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Status (Active / Inactive) */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Status
-              </label>
-              <select
-                value={editActive ? "true" : "false"}
-                onChange={(e) => setEditActive(e.target.value === "true")}
-                className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
-              >
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </select>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEditProductOpen(false)}
-                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </form>
-        </ModalWrapper>
-      )}
     </div>
   );
 }
