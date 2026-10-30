@@ -47,6 +47,7 @@ export type DeliveryInput = {
   paymentType?: string | null;
   notes?: string | null;
   attachmentUrl?: string | null;
+  scheduledAttachmentBase64?: string | null;
   items: { poItemId: number; declaredQuantity: number }[];
 };
 
@@ -61,6 +62,9 @@ export type DeliveryUpdateInput = {
   vehiclePlateNumber?: string | null;
   deliveryNoteNumber?: string | null;
   notes?: string | null;
+  receivedBy?: string | null;
+  arrivalAttachmentBase64?: string | null;
+  attachmentUrl?: string | null;
 };
 
 export type MrpInput = { plannedBatches?: { recipeId: number; batchCount: number }[] };

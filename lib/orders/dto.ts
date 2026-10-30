@@ -13,7 +13,6 @@ export function resolveStaffName(usernameOrName: string | null | undefined): str
   return STAFF_NAME_MAP[trimmed] || trimmed;
 }
 
-
 export const PR_INCLUDE = {
   PurchaseRequisitionItems: {
     include: {
@@ -21,7 +20,7 @@ export const PR_INCLUDE = {
         include: {
           Inventories: true,
           UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: true,
-          },
+        },
       },
       SuggestedSuppliers: true,
       UnitOfMeasures: true,
@@ -81,7 +80,7 @@ export function prDto(pr: PR, labelled = false) {
         prItemId: i.PrItemId,
         itemId: i.ItemId,
         itemName: i.Items?.ItemName || "",
-        itemCode: i.Items?.ItemCode || `SPL-${i.ItemId}`,
+        itemCode: i.Items?.ItemCode || `SPL-${String(i.ItemId).padStart(4, "0")}`,
         uomName: uom,
         actualInventory: actualInventory,
         suggestedSupplierId: i.SuggestedSupplierId,
@@ -98,7 +97,6 @@ export function prDto(pr: PR, labelled = false) {
     }),
   };
 }
-
 
 function parseApprovalMetadata(notes: string | null | undefined) {
   if (!notes) return { supplierApprovedBy: undefined, supplierApprovedDate: undefined, cleanNotes: "" };
@@ -158,6 +156,7 @@ export function poDto(po: PO) {
       return {
         poItemId: i.PoItemId,
         itemId: i.ItemId,
+        itemCode: i.Items?.ItemCode || `SPL-${String(i.ItemId).padStart(4, "0")}`,
         itemName: i.Items?.ItemName || "",
         poItemQuantity: qty,
         receivedQuantity: Number(i.ReceivedQuantity),
@@ -182,6 +181,7 @@ export function deliveryDto(d: Delivery) {
     supplierId: d.SupplierId,
     supplierName: d.PurchaseOrders?.Suppliers?.CompanyName || "",
     receivingLocationId: d.ReceivingLocationId,
+    receivingLocationName: "Commissary (Receiving Bay)",
     status: d.Status,
     scheduledDate: d.ScheduledDate,
     dispatchedDate: d.DispatchedDate,
@@ -195,12 +195,23 @@ export function deliveryDto(d: Delivery) {
     paymentType: d.PaymentType,
     notes: d.Notes,
     attachmentUrl: d.AttachmentUrl,
+    scheduledAttachment: d.ScheduledAttachment || d.AttachmentUrl,
+    arrivalAttachment: d.ArrivalAttachment,
+    createdBy: resolveStaffName(d.CreatedBy),
+    receivedBy: resolveStaffName(d.ReceivedBy),
     createdAt: d.CreatedAt,
     items: d.DeliveryItems.map((i) => ({
       deliveryItemId: i.DeliveryItemId,
       poItemId: i.PoItemId,
       itemId: i.ItemId,
+      itemCode: i.Items?.ItemCode || `SPL-${String(i.ItemId).padStart(4, "0")}`,
       itemName: i.Items?.ItemName || "",
+      poOrderedQuantity: Number(i.PurchaseOrderItems?.PoItemQuantity || i.DeclaredQuantity || 0),
+      poTotalReceivedQuantity: Number(i.PurchaseOrderItems?.ReceivedQuantity || 0),
+      poOutstandingQuantity: Math.max(
+        0,
+        Number(i.PurchaseOrderItems?.PoItemQuantity || 0) - Number(i.PurchaseOrderItems?.ReceivedQuantity || 0)
+      ),
       declaredQuantity: Number(i.DeclaredQuantity),
       purchaseUomId: i.PurchaseUomId,
       purchaseUomName:

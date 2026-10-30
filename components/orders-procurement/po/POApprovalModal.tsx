@@ -315,7 +315,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
                 type="date"
                 value={supplierApprovedDate}
                 onChange={(e) => setSupplierApprovedDate(e.target.value)}
-                className={`h-10 text-xs bg-card ${
+                className={`h-10 text-xs bg-card pr-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer ${
                   errors.supplierApprovedDate ? "border-destructive" : "border-border"
                 }`}
               />
@@ -336,7 +336,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
                 type="date"
                 value={expectedArrivalDate}
                 onChange={(e) => setExpectedArrivalDate(e.target.value)}
-                className="h-10 text-xs bg-card border-border"
+                className="h-10 text-xs bg-card border-border pr-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
               <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>

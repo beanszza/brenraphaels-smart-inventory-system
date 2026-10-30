@@ -64,6 +64,7 @@ function mapPO(o: any): PurchaseOrderPO {
     items: (o.items || []).map((i: any) => ({
       poItemId: i.poItemId,
       itemId: i.itemId,
+      itemCode: i.itemCode || `SPL-${String(i.itemId || 0).padStart(4, "0")}`,
       itemName: i.itemName,
       poItemQuantity: Number(i.poItemQuantity),
       receivedQuantity: Number(i.receivedQuantity || 0),

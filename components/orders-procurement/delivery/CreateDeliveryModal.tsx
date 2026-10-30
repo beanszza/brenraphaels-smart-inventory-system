@@ -7,8 +7,7 @@ import { listDeliveries } from "@/app/actions/orders/deliveries";
 import { procurement } from "@/lib/orders/client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { createPortal } from "react-dom";
-import { AlertCircle, Upload, Check, Trash2, Search, Calendar, FileText } from "lucide-react";
+import { AlertCircle, Upload, Trash2, Search, Calendar, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
@@ -42,7 +41,7 @@ export function CreateDeliveryModal({
   onClose,
   onSuccess,
 }: CreateDeliveryModalProps) {
-  const [deliveryNumber, setDeliveryNumber] = useState("DEL-2026-0001");
+  const [deliveryNumber, setDeliveryNumber] = useState(`DLV-${new Date().getFullYear()}-0001`);
   const [orderedPOs, setOrderedPOs] = useState<PurchaseOrderPO[]>([]);
   const [selectedPoId, setSelectedPoId] = useState<number | null>(initialPo?.poId ?? null);
   const [pendingPoId, setPendingPoId] = useState<number | null>(null);
@@ -109,7 +108,7 @@ export function CreateDeliveryModal({
 
         if (delivRes.status === "rejected" || poRes.status === "rejected") throw new Error("Data unavailable");
         let deliveryList: any[] = [];
-        // Calculate next unique Delivery Number & store deliveries
+        // Calculate next unique Delivery Number (uniform DLV-YYYY-XXXX format) & store deliveries
         if (delivRes.status === "fulfilled" && delivRes.value.data?.success) {
           deliveryList = delivRes.value.data.data?.items || delivRes.value.data.data || [];
           setExistingDeliveries(deliveryList);
@@ -118,7 +117,7 @@ export function CreateDeliveryModal({
           let maxSeq = 0;
           deliveryList.forEach((d) => {
             if (d.deliveryNumber) {
-              const match = d.deliveryNumber.match(/DEL-\d{4}-(\d+)/);
+              const match = String(d.deliveryNumber).match(/(?:DLV|DEL)-\d{4}-(\d+)/i);
               if (match) {
                 const num = parseInt(match[1], 10);
                 if (num > maxSeq) maxSeq = num;
@@ -126,7 +125,7 @@ export function CreateDeliveryModal({
             }
           });
           const nextSeq = String(maxSeq + 1).padStart(4, "0");
-          setDeliveryNumber(`DEL-${year}-${nextSeq}`);
+          setDeliveryNumber(`DLV-${year}-${nextSeq}`);
         }
 
         // Available POs (do NOT auto-select if initialPo is null)
@@ -255,11 +254,15 @@ export function CreateDeliveryModal({
             );
             const inFlight = Math.max(apiScheduled, delivScheduled);
             const available = Math.max(0, ordered - received - inFlight);
+            const fallbackCode =
+              i.itemCode ||
+              currentPO?.items?.find((p: any) => p.itemId === i.itemId)?.itemCode ||
+              `SPL-${String(i.itemId || 0).padStart(4, "0")}`;
             return {
               poItemId: i.poItemId,
               itemId: i.itemId,
               itemName: i.itemName,
-              itemCode: i.itemCode || currentPO?.items?.find((p: any) => p.itemId === i.itemId)?.itemCode || "",
+              itemCode: fallbackCode,
               purchaseUomName: i.purchaseUomName || "Unit",
               poOrderedQuantity: ordered,
               poTotalReceivedQuantity: received,
@@ -287,7 +290,7 @@ export function CreateDeliveryModal({
                 poItemId: i.poItemId || 0,
                 itemId: i.itemId,
                 itemName: i.itemName,
-                itemCode: "",
+                itemCode: i.itemCode || `SPL-${String(i.itemId || 0).padStart(4, "0")}`,
                 purchaseUomName: i.purchaseUomName || "Unit",
                 poOrderedQuantity: ordered,
                 poTotalReceivedQuantity: received,
@@ -591,7 +594,9 @@ export function CreateDeliveryModal({
                           <tr key={`ref-${item.poItemId || idx}`} className="hover:bg-muted/20">
                             <td className="px-3 py-2.5 text-center text-muted-foreground font-mono">{idx + 1}</td>
                             <td className="px-3 py-2.5 font-medium text-foreground">{item.itemName}</td>
-                            <td className="px-3 py-2.5 font-mono text-[11px] text-muted-foreground">{item.itemCode || "—"}</td>
+                            <td className="px-3 py-2.5 font-mono text-[11px] font-semibold text-muted-foreground">
+                              {item.itemCode || `SPL-${String(item.itemId || idx + 1).padStart(4, "0")}`}
+                            </td>
                             <td className="px-3 py-2.5 text-muted-foreground">{item.purchaseUomName}</td>
                             <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{item.poOrderedQuantity}</td>
                             <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{item.poTotalReceivedQuantity}</td>
@@ -636,6 +641,7 @@ export function CreateDeliveryModal({
                       <thead>
                         <tr className="border-b border-border bg-muted/40 text-muted-foreground font-semibold text-xs">
                           <th className="px-3.5 py-2.5">Ingredient / Supply</th>
+                          <th className="px-3.5 py-2.5">Supply No</th>
                           <th className="px-3.5 py-2.5">Unit of Measure</th>
                           <th className="px-3.5 py-2.5 text-right">Purchase Order Quantity</th>
                           <th className="px-3.5 py-2.5 text-right font-medium">Left to Order</th>
@@ -662,6 +668,9 @@ export function CreateDeliveryModal({
                             >
                               <td className="px-3.5 py-2.5 font-medium text-foreground">
                                 {item.itemName}
+                              </td>
+                              <td className="px-3.5 py-2.5 font-mono text-[11px] font-semibold text-muted-foreground">
+                                {item.itemCode || `SPL-${String(item.itemId || 0).padStart(4, "0")}`}
                               </td>
                               <td className="px-3.5 py-2.5 text-muted-foreground">
                                 {item.purchaseUomName}
@@ -893,6 +902,7 @@ export function CreateDeliveryModal({
                 <thead className="bg-muted/40 border-b border-border">
                   <tr>
                     <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">ITEM NAME</th>
+                    <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">SUPPLY NO</th>
                     <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">Unit of Measure</th>
                     <th className="px-3 py-2.5 text-right font-bold text-muted-foreground">DELIVERY QTY</th>
                   </tr>
@@ -901,6 +911,7 @@ export function CreateDeliveryModal({
                   {items.filter(item => item.orderQuantity > 0).map((item, idx) => (
                     <tr key={idx} className="hover:bg-muted/10">
                       <td className="px-3 py-2.5 font-medium">{item.itemName}</td>
+                      <td className="px-3 py-2.5 font-mono text-muted-foreground">{item.itemCode}</td>
                       <td className="px-3 py-2.5 text-muted-foreground">{item.purchaseUomName || "Unit"}</td>
                       <td className="px-3 py-2.5 text-right font-mono font-semibold">{item.orderQuantity}</td>
                     </tr>

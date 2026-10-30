@@ -53,6 +53,7 @@ export async function outstandingItems(poIdInput: string | number) {
         return {
           poItemId: item.PoItemId,
           itemId: item.ItemId,
+          itemCode: item.Items?.ItemCode || `SPL-${String(item.ItemId).padStart(4, "0")}`,
           itemName: item.Items?.ItemName || "",
           orderedQuantity: Number(item.PoItemQuantity),
           receivedQuantity: Number(item.ReceivedQuantity),
@@ -105,6 +106,7 @@ export async function createDelivery(body: DeliveryInput) {
       create: { DocType: "Delivery", Year: year, LastNumber: 1 },
     });
 
+    const scheduledProof = body.scheduledAttachmentBase64?.trim() || body.attachmentUrl?.trim();
     const delivery = await tx.deliveries.create({
       data: {
         DeliveryNumber: `DLV-${year}-${String(seq.LastNumber).padStart(4, "0")}`,
@@ -122,7 +124,8 @@ export async function createDelivery(body: DeliveryInput) {
         DeliveryNoteNumber: body.deliveryNoteNumber?.trim(),
         PaymentType: body.paymentType || po.PaymentType,
         Notes: body.notes?.trim(),
-        AttachmentUrl: body.attachmentUrl?.trim(),
+        AttachmentUrl: scheduledProof,
+        ScheduledAttachment: scheduledProof,
         CreatedBy: staff.username,
         CreatedAt: new Date(),
         DeliveryItems: { create: lines },
@@ -217,6 +220,7 @@ export async function arriveDelivery(idInput: string | number, body: DeliveryUpd
       return fail(`Only Scheduled or In-Transit deliveries can be marked as arrived. Current status: ${delivery.Status}.`);
     }
 
+    const arrivalProof = body.arrivalAttachmentBase64?.trim() || body.attachmentUrl?.trim();
     const updated = await tx.deliveries.update({
       where: { DeliveryId: id },
       data: {
@@ -225,6 +229,7 @@ export async function arriveDelivery(idInput: string | number, body: DeliveryUpd
         ActualArrivalDate: body.actualArrivalDate ? new Date(body.actualArrivalDate) : new Date(),
         DeliveryNoteNumber: body.deliveryNoteNumber?.trim() || delivery.DeliveryNoteNumber,
         Notes: body.notes?.trim() || delivery.Notes,
+        ...(arrivalProof ? { ArrivalAttachment: arrivalProof } : {}),
       },
     });
     return {

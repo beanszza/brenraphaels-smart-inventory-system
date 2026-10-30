@@ -3,14 +3,14 @@
 import { procurement } from "@/lib/orders/client";
 
 import React, { useState } from "react";
-import { AlertCircle, Upload, Check, Trash2, Calendar, FileText } from "lucide-react";
+import { AlertCircle, Upload, Trash2, Calendar, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Delivery } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useStaff } from "@/context/StaffContext";
-import { HR_EMPLOYEES } from "@/lib/employees";
+import { downloadDeliveryReportPdf } from "./downloadDeliveryReportPdf";
 
 interface MarkArrivedModalProps {
   delivery: Delivery | null;
@@ -23,13 +23,13 @@ export function MarkArrivedModal({
   onClose,
   onSuccess,
 }: MarkArrivedModalProps) {
-  const defaultReceiver = useStaff().name;
+  const staff = useStaff();
+  const receiverAccountName = staff.name || "Vince Neil Madeja";
   if (!delivery) return null;
 
   const [actualArrivalDate, setActualArrivalDate] = useState(
     new Date().toISOString().slice(0, 10)
   );
-  const [receivedBy, setReceivedBy] = useState(defaultReceiver);
   const [arrivalAttachmentBase64, setArrivalAttachmentBase64] = useState("");
   const [attachmentFileName, setAttachmentFileName] = useState("");
 
@@ -63,11 +63,6 @@ export function MarkArrivedModal({
       return;
     }
 
-    if (!receivedBy.trim()) {
-      setError("Please specify who received the delivery.");
-      return;
-    }
-
     if (!arrivalAttachmentBase64) {
       setError("Arrival proof photo is required before confirming arrival.");
       return;
@@ -79,23 +74,20 @@ export function MarkArrivedModal({
 
       const payload = {
         actualArrivalDate: combinedDateTime,
-        receivedBy: receivedBy.trim(),
+        receivedBy: receiverAccountName,
         arrivalAttachmentBase64: arrivalAttachmentBase64,
         attachmentUrl: arrivalAttachmentBase64,
       };
 
       // Try direct arrive endpoint
-      let res = await procurement.arriveDelivery(delivery.deliveryId, payload
-      ).catch(async (err) => {
-        // If transitioning from Scheduled requires dispatch first on older backend
+      const res = await procurement.arriveDelivery(delivery.deliveryId, payload).catch(async (err) => {
         if (delivery.status === "Scheduled") {
           try {
             await procurement.dispatchDelivery(delivery.deliveryId, {
               dispatchedDate: new Date().toISOString(),
               carrier: delivery.carrier || "In-House Logistics",
             });
-            return await procurement.arriveDelivery(delivery.deliveryId, payload
-            );
+            return await procurement.arriveDelivery(delivery.deliveryId, payload);
           } catch {
             throw err;
           }
@@ -104,6 +96,18 @@ export function MarkArrivedModal({
       });
 
       if (res?.data?.success) {
+        // Generate & download official Delivery Arrival Report PDF upon arrival confirmation
+        try {
+          await downloadDeliveryReportPdf({
+            ...delivery,
+            status: "Arrived",
+            actualArrivalDate: combinedDateTime,
+            receivedBy: receiverAccountName,
+            arrivalAttachment: arrivalAttachmentBase64,
+          });
+        } catch (pdfErr) {
+          console.error("Failed to auto-download delivery report PDF:", pdfErr);
+        }
         onSuccess();
         onClose();
       } else {
@@ -122,7 +126,6 @@ export function MarkArrivedModal({
 
   const isFormValid = Boolean(
     actualArrivalDate &&
-    receivedBy.trim() &&
     arrivalAttachmentBase64.trim()
   );
 
@@ -172,6 +175,7 @@ export function MarkArrivedModal({
                 <thead>
                   <tr className="border-b border-border bg-muted/40 text-muted-foreground font-semibold text-xs">
                     <th className="px-3.5 py-2">Item Name</th>
+                    <th className="px-3.5 py-2">Supply No</th>
                     <th className="px-3.5 py-2">Unit of Measure</th>
                     <th className="px-3.5 py-2 text-right">Shipment Qty</th>
                   </tr>
@@ -180,6 +184,9 @@ export function MarkArrivedModal({
                   {delivery.items.map((item, idx) => (
                     <tr key={idx} className="hover:bg-muted/10">
                       <td className="px-3.5 py-2 font-medium text-foreground">{item.itemName}</td>
+                      <td className="px-3.5 py-2 font-mono text-[11px] font-semibold text-muted-foreground">
+                        {item.itemCode || `SPL-${String(item.itemId || idx + 1).padStart(4, "0")}`}
+                      </td>
                       <td className="px-3.5 py-2 text-muted-foreground">{item.purchaseUomName}</td>
                       <td className="px-3.5 py-2 text-right font-mono font-bold text-foreground">
                         {item.declaredQuantity}
@@ -192,7 +199,7 @@ export function MarkArrivedModal({
           </div>
         )}
 
-        {/* Streamlined Arrival Details: Date & Receiver (2 Columns, NO arrival time) */}
+        {/* Streamlined Arrival Details: Date & Read-Only Account Receiver */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-foreground">
@@ -204,7 +211,7 @@ export function MarkArrivedModal({
                 min={new Date().toISOString().split("T")[0]}
                 value={actualArrivalDate}
                 onChange={(e) => setActualArrivalDate(e.target.value)}
-                className="w-full rounded-xl border border-border bg-card px-4 py-2.5 pr-10 text-sm text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                className="w-full h-10 rounded-xl border border-border bg-card px-3.5 py-2 pr-10 text-xs text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
               <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
@@ -212,20 +219,11 @@ export function MarkArrivedModal({
 
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Received By <span className="text-destructive">*</span>
+              Received By
             </label>
-            <select
-              value={receivedBy}
-              onChange={(e) => setReceivedBy(e.target.value)}
-              className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              {receivedBy && !HR_EMPLOYEES.includes(receivedBy as (typeof HR_EMPLOYEES)[number]) && (
-                <option value={receivedBy}>{receivedBy}</option>
-              )}
-              {HR_EMPLOYEES.map((employee) => (
-                <option key={employee} value={employee}>{employee}</option>
-              ))}
-            </select>
+            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-semibold text-foreground select-none">
+              {receiverAccountName}
+            </div>
           </div>
         </div>
 
@@ -249,7 +247,7 @@ export function MarkArrivedModal({
                     <img
                       src={arrivalAttachmentBase64}
                       alt="Arrival proof"
-                      className="max-h-56 rounded-lg object-contain border border-border shadow-xs"
+                      className="max-h-48 rounded-lg object-contain border border-border shadow-xs"
                     />
                   ) : (
                     <div className="flex items-center gap-2.5 p-4 text-xs font-medium text-foreground">
@@ -312,7 +310,7 @@ export function MarkArrivedModal({
             variant="outline"
             disabled={submitting}
             onClick={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
           >
             Close
           </Button>
@@ -321,7 +319,7 @@ export function MarkArrivedModal({
             disabled={submitting || !isFormValid}
             className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
-            {submitting ? "Confirming..." : "Confirm Arrival"}
+            {submitting ? "Confirming & Generating Report..." : "Confirm Arrival"}
           </Button>
         </div>
       </form>
