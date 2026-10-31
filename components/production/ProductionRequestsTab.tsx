@@ -101,9 +101,9 @@ export default function ProductionRequestsTab({
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  // Fetch Requests
-  const fetchRequests = useCallback(async () => {
-    setLoading(true);
+  // Fetch Requests (background refresh without blanking table)
+  const fetchRequests = useCallback(async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const res = await actionResponse(productionListProductionRequests());
       if (res.data?.success && Array.isArray(res.data.data)) {

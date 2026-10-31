@@ -108,7 +108,7 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
               <Link
                 key={tab.key}
                 href={`/production-quality?tab=${tab.key}`}
-                onClick={(event) => { event.preventDefault(); navigate(`/production-quality?tab=${tab.key}`); }}
+                prefetch={true}
                 aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                   isActive
@@ -123,7 +123,7 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
         </div>
       </div>
 
-      {pending ? <ProductionSkeleton /> : <>
+      <div className={`transition-opacity duration-150 ${pending ? "opacity-60 pointer-events-none" : "opacity-100"}`}>
       {activeTab === "requests" && (
         <ProductionRequestsTab initialRows={initialRows}
           onNavigateToIssuance={handleNavigateToIssuance}
@@ -153,7 +153,7 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
       {activeTab === "configuration" && <ConfigurationTab initialRows={initialRows} />}
 
       {activeTab === "loss" && <LossTab initialRows={initialRows} />}
-      </>}
+      </div>
     </div>
   );
 }

@@ -97,6 +97,9 @@ export function convert12HTo24H(hour: string, minute: string, period: "AM" | "PM
   return `${String(h).padStart(2, "0")}:${mStr}`;
 }
 
+let cachedProducts: ProductOption[] | null = null;
+let cachedRecipes: RecipeOption[] | null = null;
+
 export function formatTimeTo12Hour(timeStr?: string | null): string {
   if (!timeStr) return "—";
   if (/am|pm/i.test(timeStr)) return timeStr;
@@ -229,34 +232,41 @@ export default function ProductionRequestModal({
     }
   }, [open, initialRequest]);
 
-  // Load products and recipes
+  // Load products and recipes (with instant memory cache)
   useEffect(() => {
     if (open) {
+      if (cachedProducts) {
+        setProducts(cachedProducts);
+      }
+      if (cachedRecipes) {
+        setRecipes(cachedRecipes);
+      }
+
       actionResponse(productionListFinishedProducts()).then((res: any) => {
         if (res.data?.success && Array.isArray(res.data.data)) {
-          setProducts(
-            res.data.data.map((p: any) => ({
-              productId: p.productId,
-              productName: p.itemName || p.productName || "Product",
-              sku: p.sku || "",
-              variant: p.variant || "",
-            }))
-          );
+          const prods = res.data.data.map((p: any) => ({
+            productId: p.productId,
+            productName: p.itemName || p.productName || "Product",
+            sku: p.sku || "",
+            variant: p.variant || "",
+          }));
+          cachedProducts = prods;
+          setProducts(prods);
         }
       }).catch(console.error);
 
       actionResponse(listRecipes()).then((res: any) => {
         const rawRecipes = Array.isArray(res.data) ? res.data : (res.data?.data || []);
         if (Array.isArray(rawRecipes)) {
-          setRecipes(
-            rawRecipes.map((r: any) => ({
-              recipeId: r.recipeId,
-              recipeName: r.recipeName,
-              productId: r.productId,
-              outputQuantity: Number(r.outputQuantity) > 0 ? Number(r.outputQuantity) : 100,
-              yieldUom: r.yieldUom || "pcs",
-            }))
-          );
+          const recs = rawRecipes.map((r: any) => ({
+            recipeId: r.recipeId,
+            recipeName: r.recipeName,
+            productId: r.productId,
+            outputQuantity: Number(r.outputQuantity) > 0 ? Number(r.outputQuantity) : 100,
+            yieldUom: r.yieldUom || "pcs",
+          }));
+          cachedRecipes = recs;
+          setRecipes(recs);
         }
       }).catch(console.error);
     }
