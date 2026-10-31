@@ -1,19 +1,36 @@
-import { uploadWith } from "@/lib/file-upload";
-import { actionResponse } from "@/lib/resources/action-response";
-import { requestProductImageUpload, confirmProductImageUpload, resolveProductImage, requestBatchImageUpload, confirmBatchImageUpload, resolveBatchImage } from "@/app/actions/production/images";
+import {
+  requestProductImageUpload,
+  confirmProductImageUpload,
+  resolveProductImage,
+  requestBatchImageUpload,
+  confirmBatchImageUpload,
+  resolveBatchImage,
+  uploadBatchImageDirect,
+  uploadProductImageDirect,
+} from "@/app/actions/production/images";
 import { FILE_PLACEHOLDER } from "@/lib/files";
 
-export function uploadProductionImage(kind: "product" | "batch", id: number, file: File) {
-  const request = kind === "product" ? requestProductImageUpload : requestBatchImageUpload;
-  const confirm = kind === "product" ? confirmProductImageUpload : confirmBatchImageUpload;
-  return uploadWith({
-    request: async meta => (await actionResponse(request(id, meta))).data.data,
-    confirm: async fileId => { await actionResponse(confirm(id, fileId)); },
-  }, file);
+export async function uploadProductionImage(kind: "product" | "batch", id: number, file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res =
+    kind === "batch"
+      ? await uploadBatchImageDirect(id, formData)
+      : await uploadProductImageDirect(id, formData);
+
+  if (res.success && res.data?.fileId) {
+    return res.data.fileId;
+  }
+
+  throw new Error(res.message || "Upload failed. Please try again.");
 }
+
 export async function resolveProductionImage(kind: "product" | "batch", id: number) {
   try {
     const result = await (kind === "product" ? resolveProductImage(id) : resolveBatchImage(id));
-    return result.success ? result.data.url as string : FILE_PLACEHOLDER;
-  } catch { return FILE_PLACEHOLDER; }
+    return result.success ? (result.data.url as string) : FILE_PLACEHOLDER;
+  } catch {
+    return FILE_PLACEHOLDER;
+  }
 }

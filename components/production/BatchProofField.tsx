@@ -82,7 +82,8 @@ export function BatchProofField({
                 Change File
                 <input
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/*"
+                  onClick={(e) => { (e.target as HTMLInputElement).value = ""; }}
                   onChange={handleFileChange}
                   className="hidden"
                 />
@@ -108,7 +109,8 @@ export function BatchProofField({
             </span>
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/*"
+              onClick={(e) => { (e.target as HTMLInputElement).value = ""; }}
               onChange={handleFileChange}
               className="hidden"
             />
