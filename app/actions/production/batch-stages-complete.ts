@@ -18,6 +18,7 @@ export async function completeBatchStage(idInput: string | number, body: any = {
         validateInput(body);
         const stage = String(body.stage || "").trim();
         const endTime = String(body.endTime || "").trim();
+        const endDate = String(body.endDate || "").trim();
         const notes = String(body.notes || "").trim();
         const completedBy = staff.username;
         if (!stage || !COOKING_STAGES.includes(stage as any)) {
@@ -39,7 +40,8 @@ export async function completeBatchStage(idInput: string | number, body: any = {
         const nextStage = stageIdx < COOKING_STAGES.length - 1
             ? COOKING_STAGES[stageIdx + 1]
             : "Packaging"; // After Cooling -> Packaging
-        const logEntry = `[STAGE:${stage}|END:${endTime}|BY:${completedBy}${notes ? `|NOTES:${notes}` : ""}]`;
+        const fullEnd = endDate ? `${endDate} ${endTime}` : endTime;
+        const logEntry = `[STAGE:${stage}|END:${fullEnd}|BY:${completedBy}${notes ? `|NOTES:${notes}` : ""}]`;
         const updatedNotes = batch.Notes ? `${batch.Notes}\n${logEntry}` : logEntry;
         const updated = await tx.productionBatches.update({
             where: { BatchId: id },

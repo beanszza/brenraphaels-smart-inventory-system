@@ -64,6 +64,14 @@ export function getCurrent12HourTime(): { hour: string; minute: string; period: 
   };
 }
 
+export function getTodayDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 interface ProductionBatchDetailViewProps {
   batchId: number;
   onBack: () => void;
@@ -82,7 +90,8 @@ export default function ProductionBatchDetailView({
   const [batch, setBatch] = useState<ProductionBatchEntity | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Active cooking stage inputs (12-hour time)
+  // Active cooking stage inputs (date and 12-hour time)
+  const [stageDate, setStageDate] = useState<string>(getTodayDateString());
   const [stageHour, setStageHour] = useState<string>("08");
   const [stageMinute, setStageMinute] = useState<string>("00");
   const [stagePeriod, setStagePeriod] = useState<"AM" | "PM">("AM");
@@ -92,6 +101,7 @@ export default function ProductionBatchDetailView({
 
   useEffect(() => {
     setMounted(true);
+    setStageDate(getTodayDateString());
     const cur = getCurrent12HourTime();
     setStageHour(cur.hour);
     setStageMinute(cur.minute);
@@ -198,22 +208,64 @@ export default function ProductionBatchDetailView({
 
   const formattedStageEndTime = `${stageHour}:${stageMinute} ${stagePeriod}`;
 
+  // Validate that completion date and time are not in the past
+  const validateStageDateTime = (): string | null => {
+    const todayStr = getTodayDateString();
+    if (!stageDate) {
+      return "Please select a completion date.";
+    }
+    if (stageDate < todayStr) {
+      return "Completion date cannot be in the past.";
+    }
+    if (stageDate === todayStr) {
+      const now = new Date();
+      let hour24 = parseInt(stageHour, 10) % 12;
+      if (stagePeriod === "PM") hour24 += 12;
+      const min = parseInt(stageMinute, 10);
+      const curHour = now.getHours();
+      const curMin = now.getMinutes();
+      if (hour24 < curHour || (hour24 === curHour && min < curMin)) {
+        const cur = getCurrent12HourTime();
+        return `Completion time cannot be in the past for today (current time: ${cur.hour}:${cur.minute} ${cur.period}).`;
+      }
+    }
+    return null;
+  };
+
+  const handleOpenCompleteModal = () => {
+    const errorMsg = validateStageDateTime();
+    if (errorMsg) {
+      toast.error(errorMsg);
+      return;
+    }
+    setConfirmStageModal(true);
+  };
+
   // Handle Complete Stage
   const handleCompleteCurrentStage = async () => {
     const stageToComplete =
       currentCookingStageIndex >= 0 ? COOKING_STAGES[currentCookingStageIndex] : COOKING_STAGES[0];
 
+    const errorMsg = validateStageDateTime();
+    if (errorMsg) {
+      toast.error(errorMsg);
+      setConfirmStageModal(false);
+      return;
+    }
+
     setStageLoading(true);
     try {
       const res = await actionResponse(productionCompleteBatchStage(batchId, {
         stage: stageToComplete,
+        endDate: stageDate,
         endTime: formattedStageEndTime,
         notes: stageNotes,
         completedBy: currentUser,
       }));
 
       if (res.data?.success) {
-        toast.success(`Stage ${stageToComplete} completed at ${formattedStageEndTime}!`);
+        toast.success(`Stage ${stageToComplete} completed successfully!`);
+        setStageDate(getTodayDateString());
         const cur = getCurrent12HourTime();
         setStageHour(cur.hour);
         setStageMinute(cur.minute);
@@ -512,7 +564,22 @@ export default function ProductionBatchDetailView({
                         {/* Interactive inputs only for Current active stage */}
                         {isCurrent && (
                           <div className="mt-3 pt-3 border-t border-border/80 space-y-3 animate-in fade-in">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
+                              {/* 1. End Date (Separate Field) */}
+                              <div className="space-y-1">
+                                <Label className="text-[11px] text-muted-foreground font-semibold">
+                                  End Date <span className="text-destructive">*</span>
+                                </Label>
+                                <Input
+                                  type="date"
+                                  min={getTodayDateString()}
+                                  value={stageDate}
+                                  onChange={(e) => setStageDate(e.target.value)}
+                                  className="h-8 text-xs border-border bg-background font-mono font-medium"
+                                />
+                              </div>
+
+                              {/* 2. End Time (Separate Field, 12-Hour) */}
                               <div className="space-y-1">
                                 <div className="flex items-center justify-between">
                                   <Label className="text-[11px] text-muted-foreground font-semibold">
@@ -521,6 +588,7 @@ export default function ProductionBatchDetailView({
                                   <button
                                     type="button"
                                     onClick={() => {
+                                      setStageDate(getTodayDateString());
                                       const cur = getCurrent12HourTime();
                                       setStageHour(cur.hour);
                                       setStageMinute(cur.minute);
@@ -574,7 +642,8 @@ export default function ProductionBatchDetailView({
                                 </div>
                               </div>
 
-                              <div className="space-y-1">
+                              {/* 3. Stage Notes (Separate Field) */}
+                              <div className="space-y-1 sm:col-span-2 lg:col-span-1">
                                 <Label className="text-[11px] text-muted-foreground font-semibold">
                                   Stage Notes (Optional)
                                 </Label>
@@ -592,11 +661,11 @@ export default function ProductionBatchDetailView({
                                 <Button
                                   type="button"
                                   size="sm"
-                                  onClick={() => setConfirmStageModal(true)}
+                                  onClick={handleOpenCompleteModal}
                                   disabled={stageLoading}
                                   className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
                                 >
-                                  {stageLoading ? "Completing..." : `Complete ${stName} (${formattedStageEndTime})`}
+                                  {stageLoading ? "Completing..." : `Complete ${stName}`}
                                 </Button>
                               ) : (
                                 <span className="text-xs text-muted-foreground italic">
@@ -914,7 +983,8 @@ export default function ProductionBatchDetailView({
                 <strong className="text-foreground">
                   {currentCookingStageIndex >= 0 ? COOKING_STAGES[currentCookingStageIndex] : "Current Stage"}
                 </strong>{" "}
-                as complete at <strong className="text-foreground">{formattedStageEndTime}</strong>?
+                as complete on <strong className="text-foreground">{stageDate}</strong> at{" "}
+                <strong className="text-foreground">{formattedStageEndTime}</strong>?
               </p>
               <p className="text-[11px] text-muted-foreground/80 mt-1">
                 You cannot return to this stage once confirmed.
