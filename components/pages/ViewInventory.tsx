@@ -156,7 +156,7 @@ export default function ViewInventory({
       itemMap.forEach((item) => {
         if (item.finishedProductVariants && item.finishedProductVariants.length > 0) {
           item.finishedProductVariants.forEach((v) => {
-            const variantStock = (v.currentStock && v.currentStock > 0) ? v.currentStock : (item.currentStock ?? 0);
+            const variantStock = v.currentStock !== undefined ? Number(v.currentStock) : (item.currentStock ?? 0);
             const variantReserved = v.reservedStock ?? 0;
             const minStock = item.minStockLevel || 0;
             rows.push({

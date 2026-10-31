@@ -70,9 +70,13 @@ export async function suggestLots(query = "") {
     });
     const commissaryIds = commissaryLocations.map((l) => l.LocationId);
 
+    // Query lots strictly belonging to this product variant
     let lots = await prisma.inventoryLots.findMany({
       where: {
         ItemId: product.ItemId,
+        ProductionBatches: {
+          some: { ProductId: product.ProductId },
+        },
         ...(commissaryIds.length > 0 ? { LocationId: { in: commissaryIds } } : {}),
         OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
         Status: { in: ["Active", "Available"] },
@@ -85,12 +89,33 @@ export async function suggestLots(query = "") {
       lots = await prisma.inventoryLots.findMany({
         where: {
           ItemId: product.ItemId,
+          ProductionBatches: {
+            some: { ProductId: product.ProductId },
+          },
           OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
           Status: { in: ["Active", "Available"] },
           QuantityRemaining: { gt: 0 },
         },
         orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
       });
+    }
+
+    // Fallback if no batch-linked lots exist and item only has one variant
+    if (lots.length === 0) {
+      const variantCount = await prisma.finishedProducts.count({
+        where: { ItemId: product.ItemId },
+      });
+      if (variantCount <= 1) {
+        lots = await prisma.inventoryLots.findMany({
+          where: {
+            ItemId: product.ItemId,
+            OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
+            Status: { in: ["Active", "Available"] },
+            QuantityRemaining: { gt: 0 },
+          },
+          orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
+        });
+      }
     }
 
     if (lots.length === 0) {
@@ -119,6 +144,25 @@ export async function suggestLots(query = "") {
           UnitCost: Number(product.SellingPrice || 150),
           Status: "Available",
           IsOpeningBalance: true,
+          ProductionBatches: {
+            create: {
+              BatchNumber: `BTH-${product.Sku || "PRD"}-AUTO`,
+              ProductId: product.ProductId,
+              RecipeId: 1,
+              BatchMultiplier: 1,
+              EstimatedQuantity: stockQty,
+              ActualQuantity: stockQty,
+              ProductionDate: new Date(),
+              Stage: "Completed",
+              CurrentStage: "Completed",
+              QualityStatus: "Passed",
+              RejectionReason: "",
+              ImageUrl: "",
+              Notes: "Auto-seeded batch",
+              Status: "Completed",
+              UnitCost: Number(product.SellingPrice || 150),
+            },
+          },
         },
       });
       lots = [newLot as any];

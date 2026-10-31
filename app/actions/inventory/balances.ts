@@ -112,6 +112,7 @@ export async function listInventory(query = "") {
         where: {
           ItemId: { in: itemIds },
           Status: { in: ["Available", "Active"] },
+          QuantityRemaining: { gt: 0 },
         },
         _sum: {
           ReservedQuantity: true,
@@ -129,6 +130,7 @@ export async function listInventory(query = "") {
             select: {
               InventoryLots: {
                 select: {
+                  LotId: true,
                   QuantityRemaining: true,
                   ReservedQuantity: true,
                   Status: true,
@@ -155,24 +157,21 @@ export async function listInventory(query = "") {
       if (!variantsMap[fp.ItemId]) variantsMap[fp.ItemId] = [];
       let variantStock = 0;
       let variantReserved = 0;
+      const seenLots = new Set<number>();
       fp.ProductionBatches?.forEach((batch) => {
         const lot = batch.InventoryLots;
-        if (lot && (lot.Status === "Available" || lot.Status === "Active")) {
+        if (lot && (lot.Status === "Available" || lot.Status === "Active") && !seenLots.has(lot.LotId)) {
+          seenLots.add(lot.LotId);
           variantStock += Number(lot.QuantityRemaining || 0);
           variantReserved += Number(lot.ReservedQuantity || 0);
         }
       });
 
-      // Ensure variant has stock either from batch lots or directly from inventory
-      const matchingInv = records.find((r) => r.ItemId === fp.ItemId);
-      const invStock = matchingInv ? Number(matchingInv.CurrentStock || 0) : 0;
-      const effectiveStock = variantStock > 0 ? variantStock : invStock;
-
       variantsMap[fp.ItemId].push({
         productId: fp.ProductId,
         variant: fp.Variant || "",
         sku: fp.Sku || "",
-        currentStock: effectiveStock,
+        currentStock: variantStock,
         reservedStock: variantReserved,
       });
     }

@@ -4,13 +4,28 @@ import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { read, positiveId } from "@/lib/inventory/mutate";
 
-export async function listItemLots(itemIdInput: number) {
+export async function listItemLots(itemIdInput: number, productIdInput?: number) {
   await requireModule("Inventory");
   return read(async () => {
     const itemId = positiveId(itemIdInput);
+    const productId = productIdInput ? positiveId(productIdInput) : undefined;
+
+    const whereClause: any = {
+      ItemId: itemId,
+      Status: { in: ["Available", "Active"] },
+      QuantityRemaining: { gt: 0 },
+    };
+
+    if (productId) {
+      whereClause.ProductionBatches = {
+        some: {
+          ProductId: productId,
+        },
+      };
+    }
 
     const lots = await prisma.inventoryLots.findMany({
-      where: { ItemId: itemId, Status: { in: ["Available", "Active"] }, QuantityRemaining: { gt: 0 } },
+      where: whereClause,
       include: {
         Locations: true,
         Suppliers: true,

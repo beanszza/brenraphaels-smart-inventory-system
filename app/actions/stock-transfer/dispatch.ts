@@ -39,10 +39,13 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
     const itemId = transfer.FinishedProducts.ItemId;
     const sourceLocId = transfer.SourceLocationId;
 
-    // 1. Fetch active commissary lots sorted FEFO
+    // 1. Fetch active commissary lots sorted FEFO strictly belonging to this product variant
     let lots = await tx.inventoryLots.findMany({
       where: {
         ItemId: itemId,
+        ProductionBatches: {
+          some: { ProductId: transfer.ProductId },
+        },
         LocationId: sourceLocId,
         OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
         Status: { in: ["Active", "Available"] },
@@ -55,12 +58,45 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
       lots = await tx.inventoryLots.findMany({
         where: {
           ItemId: itemId,
+          ProductionBatches: {
+            some: { ProductId: transfer.ProductId },
+          },
           OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
           Status: { in: ["Active", "Available"] },
           QuantityRemaining: { gt: 0 },
         },
         orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
       });
+    }
+
+    // Fallback if no batch-linked lots exist and item only has one variant
+    if (lots.length === 0) {
+      const variantCount = await tx.finishedProducts.count({
+        where: { ItemId: itemId },
+      });
+      if (variantCount <= 1) {
+        lots = await tx.inventoryLots.findMany({
+          where: {
+            ItemId: itemId,
+            LocationId: sourceLocId,
+            OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
+            Status: { in: ["Active", "Available"] },
+            QuantityRemaining: { gt: 0 },
+          },
+          orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
+        });
+        if (lots.length === 0) {
+          lots = await tx.inventoryLots.findMany({
+            where: {
+              ItemId: itemId,
+              OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
+              Status: { in: ["Active", "Available"] },
+              QuantityRemaining: { gt: 0 },
+            },
+            orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
+          });
+        }
+      }
     }
 
     let remainingToDeduct = transferQty;

@@ -64,27 +64,31 @@ export default function InventoryTable({
   onOrderNow,
   isFinishedGoods,
 }: InventoryTableProps) {
-  const [expandedItemIds, setExpandedItemIds] = useState<Record<number, boolean>>({});
-  const [itemLots, setItemLots] = useState<Record<number, LotItem[]>>({});
-  const [lotErrors, setLotErrors] = useState<Record<number, string>>({});
-  const [loadingLots, setLoadingLots] = useState<Record<number, boolean>>({});
+  const [expandedItemIds, setExpandedItemIds] = useState<Record<string, boolean>>({});
+  const [itemLots, setItemLots] = useState<Record<string, LotItem[]>>({});
+  const [lotErrors, setLotErrors] = useState<Record<string, string>>({});
+  const [loadingLots, setLoadingLots] = useState<Record<string, boolean>>({});
 
-  const toggleRow = async (itemId: number) => {
-    const isExpanded = !!expandedItemIds[itemId];
+  const toggleRow = async (item: InventoryItem) => {
+    const key = item.productId ? `fp-${item.productId}` : String(item.itemId);
+    const isExpanded = !!expandedItemIds[key];
     const nextState = !isExpanded;
-    setExpandedItemIds((prev) => ({ ...prev, [itemId]: nextState }));
+    setExpandedItemIds((prev) => ({ ...prev, [key]: nextState }));
 
-    if (nextState && !itemLots[itemId] && !loadingLots[itemId]) {
-      setLoadingLots((prev) => ({ ...prev, [itemId]: true }));
+    if (nextState && !itemLots[key] && !loadingLots[key]) {
+      setLoadingLots((prev) => ({ ...prev, [key]: true }));
       try {
-        setLotErrors(prev => ({ ...prev, [itemId]: "" }));
-        const result = await listItemLots(itemId);
+        setLotErrors((prev) => ({ ...prev, [key]: "" }));
+        const result = await listItemLots(item.itemId, item.productId);
         if (!result.success) throw new Error(result.message || "Lots could not be loaded.");
-        setItemLots(prev => ({ ...prev, [itemId]: result.data }));
+        setItemLots((prev) => ({ ...prev, [key]: result.data }));
       } catch (error) {
-        setLotErrors(prev => ({ ...prev, [itemId]: error instanceof Error ? error.message : "Lots could not be loaded." }));
+        setLotErrors((prev) => ({
+          ...prev,
+          [key]: error instanceof Error ? error.message : "Lots could not be loaded.",
+        }));
       } finally {
-        setLoadingLots((prev) => ({ ...prev, [itemId]: false }));
+        setLoadingLots((prev) => ({ ...prev, [key]: false }));
       }
     }
   };
@@ -131,7 +135,7 @@ export default function InventoryTable({
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y border-border">
           {items.length === 0 ? (
             <tr>
               <td
@@ -143,12 +147,13 @@ export default function InventoryTable({
             </tr>
           ) : (
             items.map((item, idx) => {
-              const isExpanded = !!expandedItemIds[item.itemId];
-              const rawLots = itemLots[item.itemId] || [];
+              const rowKey = item.productId ? `fp-${item.productId}` : String(item.itemId);
+              const isExpanded = !!expandedItemIds[rowKey];
+              const rawLots = itemLots[rowKey] || [];
               const availableLots = rawLots.filter(
                 (lot) => lot.status === "Available" || (lot.reservedQuantity && lot.reservedQuantity > 0)
               );
-              const isLoading = !!loadingLots[item.itemId];
+              const isLoading = !!loadingLots[rowKey];
 
               const isLow =
                 item.isLowStock || item.currentStock <= item.minStockLevel;
@@ -157,12 +162,12 @@ export default function InventoryTable({
                   ? item.maxStockLevel
                   : Math.max(item.minStockLevel * 2, item.currentStock, 10);
               const percentage = Math.min(
-                100,
-                Math.max(0, Math.round((item.currentStock / maxStock) * 100))
+                Math.round((item.currentStock / maxStock) * 100),
+                100
               );
 
               const statusText =
-                item.currentStock <= 0
+                item.currentStock === 0
                   ? "Out of Stock"
                   : isLow
                   ? "Low Stock"
@@ -171,17 +176,25 @@ export default function InventoryTable({
               return (
                 <React.Fragment key={item.inventoryId}>
                   <tr
-                    onClick={() => toggleRow(item.itemId)}
+                    onClick={() => toggleRow(item)}
                     className="hover:bg-muted/30 transition-colors cursor-pointer select-none group"
                   >
                     <td className="px-2 py-3.5 text-center text-muted-foreground group-hover:text-foreground">
-                      <button type="button" aria-label={`Show lots for ${item.itemName}`} aria-expanded={isExpanded}
-                        onClick={event => { event.stopPropagation(); void toggleRow(item.itemId); }}>
-                      {isExpanded ? (
-                        <ChevronDown size={14} className="text-foreground" />
-                      ) : (
-                        <ChevronRight size={14} />
-                      )}</button>
+                      <button
+                        type="button"
+                        aria-label={`Show lots for ${item.itemName}`}
+                        aria-expanded={isExpanded}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void toggleRow(item);
+                        }}
+                      >
+                        {isExpanded ? (
+                          <ChevronDown size={14} className="text-foreground" />
+                        ) : (
+                          <ChevronRight size={14} />
+                        )}
+                      </button>
                     </td>
                     <td className="px-3 py-3.5 font-bold text-foreground whitespace-nowrap">
                       {(currentPage - 1) * pageSize + idx + 1}
@@ -268,7 +281,8 @@ export default function InventoryTable({
                         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                           <div className="flex items-center justify-between border-b border-border pb-2">
                             <span className="font-semibold text-xs text-foreground">
-                              Available Lots Breakdown ({item.itemName}{item.variantName ? ` - ${item.variantName}` : ""})
+                              Available Lots Breakdown ({item.itemName}
+                              {item.variantName ? ` - ${item.variantName}` : ""})
                             </span>
                             <span className="text-[11px] text-muted-foreground">
                               Showing active lots and reserved quantities
@@ -277,12 +291,21 @@ export default function InventoryTable({
 
                           {isLoading ? (
                             <InventorySkeleton compact />
-                          ) : lotErrors[item.itemId] ? (
+                          ) : lotErrors[rowKey] ? (
                             <div role="alert" className="space-y-2">
-                              <p>{lotErrors[item.itemId]}</p>
-                              <Button variant="outline" size="sm" onClick={() => {
-                                setExpandedItemIds(prev => ({ ...prev, [item.itemId]: false }));
-                              }}>Close and retry</Button>
+                              <p>{lotErrors[rowKey]}</p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setExpandedItemIds((prev) => ({
+                                    ...prev,
+                                    [rowKey]: false,
+                                  }));
+                                }}
+                              >
+                                Close and retry
+                              </Button>
                             </div>
                           ) : availableLots.length === 0 ? (
                             <div className="py-5 text-center text-xs text-muted-foreground">
@@ -320,10 +343,15 @@ export default function InventoryTable({
                                   {availableLots.map((lot) => {
                                     const resQty = Number(lot.reservedQuantity || 0);
                                     const sharePercent =
-                                      lot.sharePercent !== null && lot.sharePercent !== undefined
+                                      lot.sharePercent !== null &&
+                                      lot.sharePercent !== undefined
                                         ? Number(lot.sharePercent)
                                         : item.currentStock > 0
-                                        ? Math.round((lot.quantityRemaining / item.currentStock) * 100)
+                                        ? Math.round(
+                                            (lot.quantityRemaining /
+                                              item.currentStock) *
+                                              100
+                                          )
                                         : 0;
 
                                     return (
