@@ -563,27 +563,27 @@ export default function ProductionBatchDetailView({
 
                         {/* Interactive inputs only for Current active stage */}
                         {isCurrent && (
-                          <div className="mt-3 pt-3 border-t border-border/80 space-y-3 animate-in fade-in">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
-                              {/* 1. End Date (Separate Field) */}
-                              <div className="space-y-1">
-                                <Label className="text-[11px] text-muted-foreground font-semibold">
-                                  End Date <span className="text-destructive">*</span>
+                          <div className="mt-4 pt-4 border-t border-border/70 space-y-4 animate-in fade-in">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {/* 1. Dedicated Date Field */}
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold text-foreground">
+                                  Completion Date <span className="text-destructive">*</span>
                                 </Label>
                                 <Input
                                   type="date"
                                   min={getTodayDateString()}
                                   value={stageDate}
                                   onChange={(e) => setStageDate(e.target.value)}
-                                  className="h-8 text-xs border-border bg-background font-mono font-medium"
+                                  className="h-10 text-xs border-border bg-card rounded-xl font-mono px-3 text-foreground"
                                 />
                               </div>
 
-                              {/* 2. End Time (Separate Field, 12-Hour) */}
-                              <div className="space-y-1">
+                              {/* 2. Dedicated Time Field (12-Hour) */}
+                              <div className="space-y-1.5">
                                 <div className="flex items-center justify-between">
-                                  <Label className="text-[11px] text-muted-foreground font-semibold">
-                                    End Time (12-Hour) <span className="text-destructive">*</span>
+                                  <Label className="text-xs font-semibold text-foreground">
+                                    Completion Time (12-Hour) <span className="text-destructive">*</span>
                                   </Label>
                                   <button
                                     type="button"
@@ -594,37 +594,45 @@ export default function ProductionBatchDetailView({
                                       setStageMinute(cur.minute);
                                       setStagePeriod(cur.period);
                                     }}
-                                    className="text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer"
+                                    className="text-[11px] font-medium text-primary hover:underline cursor-pointer"
                                   >
                                     Set to Now
                                   </button>
                                 </div>
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-2 h-10">
+                                  {/* Hour Selector */}
                                   <select
                                     value={stageHour}
                                     onChange={(e) => setStageHour(e.target.value)}
-                                    className="h-8 px-2 text-xs border border-border rounded-lg bg-background text-foreground font-mono font-bold"
+                                    className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-mono font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                                   >
                                     {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0")).map((h) => (
                                       <option key={h} value={h}>{h}</option>
                                     ))}
                                   </select>
-                                  <span className="text-muted-foreground font-bold">:</span>
+
+                                  <span className="text-muted-foreground font-bold text-sm shrink-0">:</span>
+
+                                  {/* Minute Selector */}
                                   <select
                                     value={stageMinute}
                                     onChange={(e) => setStageMinute(e.target.value)}
-                                    className="h-8 px-2 text-xs border border-border rounded-lg bg-background text-foreground font-mono font-bold"
+                                    className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-mono font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                                   >
                                     {Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0")).map((m) => (
                                       <option key={m} value={m}>{m}</option>
                                     ))}
                                   </select>
-                                  <div className="flex rounded-lg border border-border overflow-hidden bg-background">
+
+                                  {/* AM / PM Segmented Control */}
+                                  <div className="flex h-10 rounded-xl border border-border p-1 bg-muted/30 shrink-0 items-center">
                                     <button
                                       type="button"
                                       onClick={() => setStagePeriod("AM")}
-                                      className={`px-2 py-1 text-[11px] font-bold cursor-pointer transition-colors ${
-                                        stagePeriod === "AM" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                                      className={`h-full px-3 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                                        stagePeriod === "AM"
+                                          ? "bg-primary text-primary-foreground shadow-xs"
+                                          : "text-muted-foreground hover:text-foreground"
                                       }`}
                                     >
                                       AM
@@ -632,8 +640,10 @@ export default function ProductionBatchDetailView({
                                     <button
                                       type="button"
                                       onClick={() => setStagePeriod("PM")}
-                                      className={`px-2 py-1 text-[11px] font-bold cursor-pointer transition-colors ${
-                                        stagePeriod === "PM" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                                      className={`h-full px-3 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                                        stagePeriod === "PM"
+                                          ? "bg-primary text-primary-foreground shadow-xs"
+                                          : "text-muted-foreground hover:text-foreground"
                                       }`}
                                     >
                                       PM
@@ -641,37 +651,54 @@ export default function ProductionBatchDetailView({
                                   </div>
                                 </div>
                               </div>
-
-                              {/* 3. Stage Notes (Separate Field) */}
-                              <div className="space-y-1 sm:col-span-2 lg:col-span-1">
-                                <Label className="text-[11px] text-muted-foreground font-semibold">
-                                  Stage Notes (Optional)
-                                </Label>
-                                <Input
-                                  placeholder="Chef observations, temp, consistency"
-                                  value={stageNotes}
-                                  onChange={(e) => setStageNotes(e.target.value)}
-                                  className="h-8 text-xs border-border bg-background"
-                                />
-                              </div>
                             </div>
 
-                            <div className="flex justify-end pt-1">
-                              {!isAdmin ? (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onClick={handleOpenCompleteModal}
-                                  disabled={stageLoading}
-                                  className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
-                                >
-                                  {stageLoading ? "Completing..." : `Complete ${stName}`}
-                                </Button>
-                              ) : (
-                                <span className="text-xs text-muted-foreground italic">
-                                  Admin View-Only Mode (Kitchen stages operated by Head Cook)
-                                </span>
-                              )}
+                            {/* 3. Stage Notes (Full Width) */}
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-foreground">
+                                Stage Notes / Observations <span className="text-muted-foreground font-normal">(Optional)</span>
+                              </Label>
+                              <Input
+                                placeholder="Chef observations, temperature, consistency..."
+                                value={stageNotes}
+                                onChange={(e) => setStageNotes(e.target.value)}
+                                className="h-10 text-xs border-border bg-card rounded-xl text-foreground placeholder:text-muted-foreground"
+                              />
+                            </div>
+
+                            {/* Bottom Controls with Live Validation Status */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border/60">
+                              <div className="text-xs text-muted-foreground">
+                                {validateStageDateTime() ? (
+                                  <span className="text-destructive font-medium flex items-center gap-1.5">
+                                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                    <span>{validateStageDateTime()}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground flex items-center gap-1.5">
+                                    <span>Recorded End:</span>
+                                    <strong className="text-foreground font-mono">{stageDate} at {stageHour}:{stageMinute} {stagePeriod}</strong>
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center justify-end">
+                                {!isAdmin ? (
+                                  <Button
+                                    type="button"
+                                    onClick={handleOpenCompleteModal}
+                                    disabled={stageLoading || Boolean(validateStageDateTime())}
+                                    className="h-10 px-5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    <span>{stageLoading ? "Completing..." : `Complete ${stName}`}</span>
+                                  </Button>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground italic">
+                                    Admin View-Only Mode (Kitchen stages operated by Head Cook)
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         )}
