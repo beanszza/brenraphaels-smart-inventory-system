@@ -147,18 +147,19 @@ export default function ProductionBatchDetailView({
 
   // Active cooking stage inputs (date and 12-hour time)
   const [stageDate, setStageDate] = useState<string>(getTodayDateString());
-  const [stageHour, setStageHour] = useState<string>("08");
-  const [stageMinute, setStageMinute] = useState<string>("00");
-  const [stagePeriod, setStagePeriod] = useState<"AM" | "PM">("AM");
+  const initialCurTime = getCurrent12HourTime();
+  const [stageHour, setStageHour] = useState<string>(initialCurTime.hour);
+  const [stageMinute, setStageMinute] = useState<string>(initialCurTime.minute);
+  const [stagePeriod, setStagePeriod] = useState<"AM" | "PM">(initialCurTime.period);
   const [stageNotes, setStageNotes] = useState<string>("");
   const [stageLoading, setStageLoading] = useState<boolean>(false);
   const [confirmStageModal, setConfirmStageModal] = useState<boolean>(false);
 
   // Packaging form state
   const [pkgDate, setPkgDate] = useState<string>(getTodayDateString());
-  const [pkgHour, setPkgHour] = useState<string>("08");
-  const [pkgMinute, setPkgMinute] = useState<string>("00");
-  const [pkgPeriod, setPkgPeriod] = useState<"AM" | "PM">("AM");
+  const [pkgHour, setPkgHour] = useState<string>(initialCurTime.hour);
+  const [pkgMinute, setPkgMinute] = useState<string>(initialCurTime.minute);
+  const [pkgPeriod, setPkgPeriod] = useState<"AM" | "PM">(initialCurTime.period);
   const [pkgExpiryDate, setPkgExpiryDate] = useState<string>("");
   const [pkgProofUrl, setPkgProofUrl] = useState<string>("");
   const [pkgQuantity, setPkgQuantity] = useState<number>(0);
@@ -218,11 +219,14 @@ export default function ProductionBatchDetailView({
 
   useEffect(() => {
     fetchBatchDetail();
+    const cur = getCurrent12HourTime();
+    setStageDate(getTodayDateString());
+    setStageHour(cur.hour);
+    setStageMinute(cur.minute);
+    setStagePeriod(cur.period);
   }, [batchId]);
 
-  // Derived current stage and step index
-  const currentStage = batch?.currentStage || batch?.stage || "Steaming";
-  const status = batch?.status || "In Production";
+    const status = batch?.status || "In Production";
 
   // Parse stage logs from batch.notes
   const stageLogs = useMemo(() => {
@@ -231,7 +235,7 @@ export default function ProductionBatchDetailView({
     const lines = notesStr.split("\n");
 
     for (const line of lines) {
-      const stageMatch = line.match(/\[STAGE:([^|]+)\|END:([^|]+)\|BY:([^|\]]+)(?:\|NOTES:([^\]]+))?\]/);
+      const stageMatch = line.match(/\[STAGE:([^|]+)\|END:([^|]+)\|BY:([^\]|]+)(?:\|NOTES:([^\]]+))?\]/);
       if (stageMatch) {
         sLogs[stageMatch[1]] = {
           endTime: stageMatch[2],
@@ -243,17 +247,37 @@ export default function ProductionBatchDetailView({
     return sLogs;
   }, [batch?.notes]);
 
-  // Determine stage progression in cooking
-  const currentCookingStageIndex = COOKING_STAGES.indexOf(currentStage as any);
-  const isCookingComplete =
-    currentCookingStageIndex === -1 &&
-    (currentStage === "Packaging" || status === "For QA" || status === "For Stock-in" || status === "Stocked In");
+  // Derive active cooking stage:
+  // 1. If batch.currentStage is a valid cooking stage and its log is not yet completed, use it.
+  // 2. Otherwise find the first cooking stage whose log is not done.
+  const activeCookingStage = useMemo(() => {
+    if (batch?.currentStage && COOKING_STAGES.includes(batch.currentStage as any)) {
+      if (!stageLogs[batch.currentStage]?.endTime) {
+        return batch.currentStage;
+      }
+    }
+    if (batch?.stage && COOKING_STAGES.includes(batch.stage as any)) {
+      if (!stageLogs[batch.stage]?.endTime) {
+        return batch.stage;
+      }
+    }
+    for (const st of COOKING_STAGES) {
+      if (!stageLogs[st]?.endTime) {
+        return st;
+      }
+    }
+    return "Packaging";
+  }, [batch?.currentStage, batch?.stage, stageLogs]);
+
+  const currentStage = activeCookingStage;
+  const currentCookingStageIndex = COOKING_STAGES.indexOf(activeCookingStage as any);
 
   // Stepper current active index calculation for kitchen lifecycle:
   // 0: Production (Cooking Stages) | 1: Packaging
   const currentStepIndex = useMemo(() => {
     if (
-      currentStage === "Packaging" ||
+      batch?.currentStage === "Packaging" ||
+      activeCookingStage === "Packaging" ||
       status === "For QA" ||
       status === "For Stock-in" ||
       status === "Stocked In" ||
@@ -262,11 +286,13 @@ export default function ProductionBatchDetailView({
       return 1;
     }
     return 0;
-  }, [status, currentStage]);
+  }, [status, batch?.currentStage, activeCookingStage]);
+
+  const isCookingComplete = currentStepIndex === 1;
 
   const formattedStageEndTime = `${stageHour}:${stageMinute} ${stagePeriod}`;
 
-  // Validate that completion date and time are not earlier than previous stage, nor in the past
+    // Validate that completion date and time are not earlier than previous stage
   const validateStageDateTime = (): string | null => {
     const todayStr = getTodayDateString();
     if (!stageDate) {
@@ -278,7 +304,7 @@ export default function ProductionBatchDetailView({
 
     const currentSelectedTimestamp = toTimestampFrom12H(stageDate, stageHour, stageMinute, stagePeriod);
 
-    // 1. Sequential stage check: completion cannot be earlier than previous stage!
+    // Sequential stage check: completion cannot be earlier than previous stage!
     if (currentCookingStageIndex > 0) {
       const prevStageName = COOKING_STAGES[currentCookingStageIndex - 1];
       const prevLog = stageLogs[prevStageName];
@@ -287,20 +313,6 @@ export default function ProductionBatchDetailView({
         if (prevTimestamp && currentSelectedTimestamp < prevTimestamp) {
           return `Completion time cannot be earlier than previous stage (${prevStageName} completed on ${formatTo12Hour(prevLog.endTime)}).`;
         }
-      }
-    }
-
-    // 2. Cannot be in the past for today's date
-    if (stageDate === todayStr) {
-      const now = new Date();
-      let hour24 = parseInt(stageHour, 10) % 12;
-      if (stagePeriod === "PM") hour24 += 12;
-      const min = parseInt(stageMinute, 10);
-      const curHour = now.getHours();
-      const curMin = now.getMinutes();
-      if (hour24 < curHour || (hour24 === curHour && min < curMin)) {
-        const cur = getCurrent12HourTime();
-        return `Completion time cannot be in the past for today (current time: ${cur.hour}:${cur.minute} ${cur.period}).`;
       }
     }
 
@@ -329,20 +341,6 @@ export default function ProductionBatchDetailView({
           return `Packaging time cannot be earlier than ${stName} completion (${formatTo12Hour(log.endTime)}).`;
         }
         break;
-      }
-    }
-
-    // Cannot be in the past for today
-    if (pkgDate === todayStr) {
-      const now = new Date();
-      let hour24 = parseInt(pkgHour, 10) % 12;
-      if (pkgPeriod === "PM") hour24 += 12;
-      const min = parseInt(pkgMinute, 10);
-      const curHour = now.getHours();
-      const curMin = now.getMinutes();
-      if (hour24 < curHour || (hour24 === curHour && min < curMin)) {
-        const cur = getCurrent12HourTime();
-        return `Packaging time cannot be in the past for today (current time: ${cur.hour}:${cur.minute} ${cur.period}).`;
       }
     }
 
@@ -682,7 +680,7 @@ export default function ProductionBatchDetailView({
                 <div className="space-y-2.5">
                   {COOKING_STAGES.map((stName, idx) => {
                     const isDone = Boolean(stageLogs[stName]?.endTime);
-                    const isCurrent = currentStage === stName;
+                    const isCurrent = !isDone && activeCookingStage === stName && currentStepIndex === 0;
 
                     return (
                       <div
