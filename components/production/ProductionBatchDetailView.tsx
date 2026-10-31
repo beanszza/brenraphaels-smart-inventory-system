@@ -146,6 +146,7 @@ export default function ProductionBatchDetailView({
   const [loading, setLoading] = useState<boolean>(true);
 
   // Active cooking stage inputs (date and 12-hour time)
+  const [selectedWorkflowStep, setSelectedWorkflowStep] = useState<0 | 1>(0);
   const [stageDate, setStageDate] = useState<string>(getTodayDateString());
   const initialCurTime = getCurrent12HourTime();
   const [stageHour, setStageHour] = useState<string>(initialCurTime.hour);
@@ -218,6 +219,8 @@ export default function ProductionBatchDetailView({
   };
 
   useEffect(() => {
+    setBatch(null);
+    setLoading(true);
     fetchBatchDetail();
     const cur = getCurrent12HourTime();
     setStageDate(getTodayDateString());
@@ -226,7 +229,7 @@ export default function ProductionBatchDetailView({
     setStagePeriod(cur.period);
   }, [batchId]);
 
-    const status = batch?.status || "In Production";
+  const status = batch?.status || "In Production";
 
   // Parse stage logs from batch.notes
   const stageLogs = useMemo(() => {
@@ -237,58 +240,61 @@ export default function ProductionBatchDetailView({
     for (const line of lines) {
       const stageMatch = line.match(/\[STAGE:([^|]+)\|END:([^|]+)\|BY:([^\]|]+)(?:\|NOTES:([^\]]+))?\]/);
       if (stageMatch) {
-        sLogs[stageMatch[1]] = {
-          endTime: stageMatch[2],
-          by: stageMatch[3],
-          notes: stageMatch[4],
-        };
+        const stageName = stageMatch[1].trim();
+        if (COOKING_STAGES.includes(stageName as any)) {
+          sLogs[stageName] = {
+            endTime: stageMatch[2].trim(),
+            by: stageMatch[3].trim(),
+            notes: stageMatch[4]?.trim(),
+          };
+        }
       }
     }
     return sLogs;
   }, [batch?.notes]);
 
-  // Derive active cooking stage:
-  // 1. If batch.currentStage is a valid cooking stage and its log is not yet completed, use it.
-  // 2. Otherwise find the first cooking stage whose log is not done.
+  // True ONLY if all 6 cooking stages have been recorded in stageLogs
+  const allCookingStagesDone = useMemo(() => {
+    return COOKING_STAGES.every((st) => Boolean(stageLogs[st]?.endTime));
+  }, [stageLogs]);
+
+  // Derive active cooking stage: sequentially find the FIRST cooking stage not yet logged
   const activeCookingStage = useMemo(() => {
-    if (batch?.currentStage && COOKING_STAGES.includes(batch.currentStage as any)) {
-      if (!stageLogs[batch.currentStage]?.endTime) {
-        return batch.currentStage;
-      }
-    }
-    if (batch?.stage && COOKING_STAGES.includes(batch.stage as any)) {
-      if (!stageLogs[batch.stage]?.endTime) {
-        return batch.stage;
-      }
-    }
     for (const st of COOKING_STAGES) {
       if (!stageLogs[st]?.endTime) {
         return st;
       }
     }
     return "Packaging";
-  }, [batch?.currentStage, batch?.stage, stageLogs]);
+  }, [stageLogs]);
 
   const currentStage = activeCookingStage;
   const currentCookingStageIndex = COOKING_STAGES.indexOf(activeCookingStage as any);
 
-  // Stepper current active index calculation for kitchen lifecycle:
-  // 0: Production (Cooking Stages) | 1: Packaging
-  const currentStepIndex = useMemo(() => {
-    if (
+  // Determine if this batch has reached packaging lifecycle
+  const isAtPackagingPhase = useMemo(() => {
+    return (
+      allCookingStagesDone ||
       batch?.currentStage === "Packaging" ||
-      activeCookingStage === "Packaging" ||
+      batch?.stage === "Packaging" ||
       status === "For QA" ||
       status === "For Stock-in" ||
       status === "Stocked In" ||
       status === "Completed"
-    ) {
-      return 1;
-    }
-    return 0;
-  }, [status, batch?.currentStage, activeCookingStage]);
+    );
+  }, [allCookingStagesDone, batch?.currentStage, batch?.stage, status]);
 
-  const isCookingComplete = currentStepIndex === 1;
+  // Synchronize default workflow tab with batch progression
+  useEffect(() => {
+    if (isAtPackagingPhase) {
+      setSelectedWorkflowStep(1);
+    } else {
+      setSelectedWorkflowStep(0);
+    }
+  }, [isAtPackagingPhase]);
+
+  const currentStepIndex = selectedWorkflowStep;
+  const isCookingComplete = isAtPackagingPhase;
 
   const formattedStageEndTime = `${stageHour}:${stageMinute} ${stagePeriod}`;
 
@@ -359,7 +365,9 @@ export default function ProductionBatchDetailView({
   // Handle Complete Stage
   const handleCompleteCurrentStage = async () => {
     const stageToComplete =
-      currentCookingStageIndex >= 0 ? COOKING_STAGES[currentCookingStageIndex] : COOKING_STAGES[0];
+      activeCookingStage && activeCookingStage !== "Packaging"
+        ? activeCookingStage
+        : COOKING_STAGES[0];
 
     const errorMsg = validateStageDateTime();
     if (errorMsg) {
@@ -519,7 +527,13 @@ export default function ProductionBatchDetailView({
   const isRejected = batch.status === "Rejected";
 
   const isCookingPhase = currentStepIndex === 0 && !isRejected;
-  const isPackagingActive = currentStepIndex === 1 && currentStage === "Packaging" && status !== "For QA" && status !== "For Stock-in" && status !== "Stocked In" && !isRejected;
+  const isPackagingActive =
+    currentStepIndex === 1 &&
+    isAtPackagingPhase &&
+    status !== "For QA" &&
+    status !== "For Stock-in" &&
+    status !== "Stocked In" &&
+    !isRejected;
   const isQaPhase = status === "For QA";
   const isPostQaPhase = status === "For Stock-in" || status === "Stocked In" || status === "Completed";
 
@@ -616,14 +630,25 @@ export default function ProductionBatchDetailView({
           </p>
           <div className="flex items-center gap-3">
             {WORKFLOW_STEPS.map((step, idx) => {
-              const isPast = currentStepIndex > idx;
-              const isCurrentStep = currentStepIndex === idx;
+              const isPast = isAtPackagingPhase && idx === 0;
+              const isCurrentStep = selectedWorkflowStep === idx;
+              const canClick = idx === 0 || isAtPackagingPhase;
 
               return (
                 <React.Fragment key={step}>
-                  <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={!canClick}
+                    onClick={() => {
+                      if (canClick) setSelectedWorkflowStep(idx as 0 | 1);
+                    }}
+                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl transition-all text-left ${
+                      canClick ? "cursor-pointer hover:bg-muted/40" : "cursor-not-allowed opacity-50"
+                    }`}
+                    title={!canClick ? "Complete all 6 kitchen production stages first" : undefined}
+                  >
                     <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors shrink-0 ${
                         isPast
                           ? "bg-primary text-primary-foreground"
                           : isCurrentStep
@@ -644,7 +669,7 @@ export default function ProductionBatchDetailView({
                     >
                       {step}
                     </span>
-                  </div>
+                  </button>
                   {idx < WORKFLOW_STEPS.length - 1 && (
                     <div className="flex-1 max-w-[80px] h-0.5 bg-border rounded-full" />
                   )}
@@ -858,6 +883,23 @@ export default function ProductionBatchDetailView({
                     );
                   })}
                 </div>
+
+                {allCookingStagesDone && (
+                  <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 flex items-center justify-between gap-3 animate-in fade-in">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                      <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                      <span>All 6 kitchen production stages completed! Proceed to packaging.</span>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => setSelectedWorkflowStep(1)}
+                      className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl cursor-pointer"
+                    >
+                      Proceed to Packaging →
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1198,7 +1240,7 @@ export default function ProductionBatchDetailView({
               <p className="text-sm text-muted-foreground mb-6">
                 Are you sure you want to mark{" "}
                 <strong className="text-foreground">
-                  {currentCookingStageIndex >= 0 ? COOKING_STAGES[currentCookingStageIndex] : "Current Stage"}
+                  {activeCookingStage !== "Packaging" ? activeCookingStage : "Current Stage"}
                 </strong>{" "}
                 as complete on <strong className="text-foreground">{stageDate}</strong> at{" "}
                 <strong className="text-foreground">{formattedStageEndTime}</strong>? This action cannot be reversed.
