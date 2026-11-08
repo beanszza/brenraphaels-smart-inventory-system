@@ -33,3 +33,22 @@ it("opens supply edits with the linked suppliers already selected", () => {
   expect(html).toContain("Sample Supplier");
   expect(html).toContain('value="2.5"');
 });
+
+it("hides inactive categories from the SupplyModal Category dropdown", () => {
+  const html = renderToStaticMarkup(
+    <SupplyModal
+      open
+      editingItem={null}
+      suppliers={[{ supplierId: 7, companyName: "Sample Supplier" }]}
+      categories={[
+        { categoryId: 1, categoryName: "Raw Materials", isActive: true },
+        { categoryId: 2, categoryName: "Ingredients", isActive: false },
+      ]}
+      uoms={[{ uomId: 1, code: "KG", name: "Kilogram", abbreviation: "kg", uomType: "Weight", conversionFactor: 1 }]}
+      onClose={() => {}}
+      onSave={async () => {}}
+    />
+  );
+  expect(html).toContain("Raw Materials");
+  expect(html).not.toContain("Ingredients");
+});

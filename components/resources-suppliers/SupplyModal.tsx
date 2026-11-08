@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -20,6 +20,7 @@ interface Supplier {
 export interface SupplyCategory {
   categoryId: number;
   categoryName: string;
+  isActive?: boolean;
 }
 
 interface SupplyModalProps {
@@ -65,24 +66,150 @@ const DEFAULT_FALLBACK_CATS: SupplyCategory[] = [
   { categoryId: 3, categoryName: "Tools and Supplies" },
 ];
 
+export function getRecommendedUoms(
+  supplyName: string,
+  availableUoms: UomOption[],
+  categoryName?: string
+): UomOption[] {
+  const name = supplyName.trim().toLowerCase();
+  if (!name) return [];
+
+  const findByAbbrOrName = (keys: string[]): UomOption[] => {
+    const matched: UomOption[] = [];
+    for (const k of keys) {
+      const lowerKey = k.toLowerCase();
+      const found = availableUoms.find(
+        (u) =>
+          u.abbreviation.toLowerCase() === lowerKey ||
+          u.code.toLowerCase() === lowerKey ||
+          u.name.toLowerCase().includes(lowerKey)
+      );
+      if (found && !matched.some((m) => m.uomId === found.uomId)) {
+        matched.push(found);
+      }
+    }
+    return matched;
+  };
+
+  // 1. Sack-specific
+  if (/\bsack\b/.test(name)) {
+    return findByAbbrOrName(["sack", "kg", "g"]);
+  }
+
+  // 2. Bottle-specific
+  if (/\bbottle\b/.test(name)) {
+    return findByAbbrOrName(["bottle", "L", "mL", "pcs", "box"]);
+  }
+
+  // 3. Liquids, milk, oils, extracts, syrups, water, cleaning liquids
+  if (
+    /\b(milk|evaporated|condensed|cream|water|oil|vanilla|extract|flavor|syrup|honey|vinegar|sauce|juice|liquid|alcohol|sanitizer|detergent|soap|bleach|disinfectant)\b/.test(
+      name
+    )
+  ) {
+    return findByAbbrOrName(["L", "mL", "bottle"]);
+  }
+
+  // 4. Rolls, wraps, films, foils, tapes, ribbons, length-based materials
+  if (
+    /\b(wrap|cling|foil|film|tape|ribbon|twine|string|cord|hose|cloth|fabric|roll|shrink|tissue)\b/.test(
+      name
+    )
+  ) {
+    return findByAbbrOrName(["roll", "m", "pack", "pcs"]);
+  }
+
+  // 5. Boxes, cartons, cases, crates
+  if (/\b(box|boxes|carton|case|crate|corrugated)\b/.test(name)) {
+    return findByAbbrOrName(["box", "pack", "pcs"]);
+  }
+
+  // 6. Packs, pouches, stickers, labels, bags, disposable PPE
+  if (
+    /\b(pack|pouch|bag|sachet|sticker|label|seal|plastic|glove|hairnet|mask|napkin|straw|liner|wrapper)\b/.test(
+      name
+    )
+  ) {
+    return findByAbbrOrName(["pack", "pcs", "box", "roll"]);
+  }
+
+  // 7. Solid produce, root crops (Ube, Gabi, etc.), sugar, flour, dairy solids, dry ingredients
+  if (
+    /\b(ube|halaya|yam|gabi|taro|camote|cassava|potato|sugar|flour|starch|cornstarch|powder|cocoa|salt|cheese|butter|margarine|shortening|latik|coconut|grated|bean|mongo|mung|peanut|nut|pili|cashew|macapuno|langka|jackfruit|saba|banana|fruit|meat|pork|chicken|beef|fish|vegetable|kangkong|patola|kondol|carrot|cabbage|onion|garlic|ginger|ice|wax|rice|corn|malagkit|glutinous)\b/.test(
+      name
+    )
+  ) {
+    return findByAbbrOrName(["kg", "g", "sack"]);
+  }
+
+  // 8. Containers, jars, lids, kitchen tools, equipment, individual items
+  if (
+    /\b(jar|lid|cap|container|tub|cup|tray|can|tin|spoon|fork|spatula|ladle|pan|pot|bowl|knife|peeler|strainer|scale|thermometer|apron|net|brush|sponge|towel|rag|mop|broom|bucket|pail|charger|tool|equipment|machine|burner|tank|lpg|egg)\b/.test(
+      name
+    )
+  ) {
+    return findByAbbrOrName(["pcs", "pack", "box"]);
+  }
+
+  // 9. Fallback recommendation based on selected category when a custom name is typed
+  if (categoryName && /tool|suppl|packag/i.test(categoryName)) {
+    return findByAbbrOrName(["pcs", "pack", "box"]);
+  }
+
+  return findByAbbrOrName(["kg", "g", "L", "pcs"]);
+}
+
 function SupplyModalForm({
   open,
   editingItem,
   existingSupplies = [],
   suppliers = [],
-  categories = [],
+  categories,
   uoms = [],
   onClose,
   onSave,
 }: SupplyModalProps) {
-  const availableUoms = uoms && uoms.length > 0 ? uoms : DEFAULT_FALLBACK_UOMS;
-  const availableCategories = categories && categories.length > 0 ? categories : DEFAULT_FALLBACK_CATS;
+  const availableUoms = useMemo(() => {
+    if (!uoms || uoms.length === 0) return DEFAULT_FALLBACK_UOMS;
+    const merged = [...uoms];
+    for (const fb of DEFAULT_FALLBACK_UOMS) {
+      const exists = merged.some(
+        (u) =>
+          u.uomId === fb.uomId ||
+          u.code.toLowerCase() === fb.code.toLowerCase() ||
+          u.name.toLowerCase() === fb.name.toLowerCase()
+      );
+      if (!exists) merged.push(fb);
+    }
+    return merged;
+  }, [uoms]);
+  const rawCategories = categories !== undefined ? categories : DEFAULT_FALLBACK_CATS;
+  const availableCategories = rawCategories.filter((c) => c.isActive !== false);
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [itemName, setItemName] = useState(editingItem?.itemName ?? "");
-  const [categoryId, setCategoryId] = useState(editingItem?.categoryId ?? availableCategories[0]?.categoryId ?? 1);
+  const [categoryId, setCategoryId] = useState(() => {
+    if (editingItem?.categoryId && availableCategories.some((c) => c.categoryId === editingItem.categoryId)) {
+      return editingItem.categoryId;
+    }
+    return availableCategories[0]?.categoryId ?? 0;
+  });
   const [uomId, setUomId] = useState(editingItem?.uomId ?? availableUoms[0]?.uomId ?? 1);
+  const [uomManuallySelected, setUomManuallySelected] = useState(Boolean(editingItem));
+
+  const selectedCategoryName = availableCategories.find((c) => c.categoryId === categoryId)?.categoryName;
+  const recommendedUoms = useMemo(
+    () => getRecommendedUoms(itemName, availableUoms, selectedCategoryName),
+    [itemName, availableUoms, selectedCategoryName]
+  );
+  const remainingUoms = useMemo(
+    () =>
+      recommendedUoms.length > 0
+        ? availableUoms.filter((u) => !recommendedUoms.some((r) => r.uomId === u.uomId))
+        : availableUoms,
+    [availableUoms, recommendedUoms]
+  );
   const [minStock, setMinStock] = useState(editingItem ? String(editingItem.minStockLevel) : "");
   const [maxStock, setMaxStock] = useState(editingItem ? String(editingItem.maxStockLevel) : "");
   const [supplyActive, setSupplyActive] = useState(editingItem?.isActive ?? true);
@@ -141,7 +268,14 @@ function SupplyModalForm({
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/[^a-zA-Z\s]/g, "").slice(0, 50);
-    setItemName(val); validateItemName(val);
+    setItemName(val);
+    validateItemName(val);
+    if (!uomManuallySelected) {
+      const recs = getRecommendedUoms(val, availableUoms, selectedCategoryName);
+      if (recs.length > 0) {
+        setUomId(recs[0].uomId);
+      }
+    }
   };
 
   const handleMinStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -241,15 +375,45 @@ function SupplyModalForm({
             <label className="mb-1.5 block text-xs font-semibold text-foreground">Unit of Measurement</label>
             <select
               value={uomId}
-              onChange={(e) => setUomId(Number(e.target.value))}
+              onChange={(e) => {
+                setUomManuallySelected(true);
+                setUomId(Number(e.target.value));
+              }}
               className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring focus:outline-none"
             >
-              {availableUoms.map((uom) => (
-                <option key={uom.uomId} value={uom.uomId}>
-                  {uom.name} ({uom.abbreviation})
-                </option>
-              ))}
+              {recommendedUoms.length > 0 ? (
+                <>
+                  <optgroup label={`Recommended for "${itemName.trim()}"`}>
+                    {recommendedUoms.map((uom, idx) => (
+                      <option key={`rec-${uom.uomId}`} value={uom.uomId}>
+                        {uom.name} ({uom.abbreviation}){idx === 0 ? " — Recommended" : ""}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="All Other Units of Measurement">
+                    {remainingUoms.map((uom) => (
+                      <option key={`all-${uom.uomId}`} value={uom.uomId}>
+                        {uom.name} ({uom.abbreviation})
+                      </option>
+                    ))}
+                  </optgroup>
+                </>
+              ) : (
+                availableUoms.map((uom) => (
+                  <option key={uom.uomId} value={uom.uomId}>
+                    {uom.name} ({uom.abbreviation})
+                  </option>
+                ))
+              )}
             </select>
+            {recommendedUoms.length > 0 && (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Recommended for <span className="font-semibold text-foreground">{itemName.trim()}</span>:{" "}
+                <span className="font-medium text-foreground">
+                  {recommendedUoms.map((u) => `${u.name} (${u.abbreviation})`).join(", ")}
+                </span>
+              </p>
+            )}
           </div>
         </div>
 

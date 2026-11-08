@@ -4,7 +4,9 @@ import { recordAudit } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
+import { isAdminStaff, isImsManager } from "@/lib/auth-roles";
 import { getSupplierDetails, getSupplyDetails } from "./data";
+import { encodeCategoryDescription, decodeCategoryDescription } from "./category-status";
 import { syncRecipeIngredients } from "@/lib/resources/recipe-ingredients";
 
 type Result = { success: boolean; message: string };
@@ -29,6 +31,7 @@ function failed(error: unknown): Result {
 }
 function saved(message: string): Result {
   revalidatePath("/resources-suppliers");
+  revalidatePath("/inventory");
   return { success: true, message };
 }
 const linkDefaults = { UnitPrice: 0, Currency: "PHP", PackSize: 1, LeadTimeDays: 3,
@@ -37,6 +40,7 @@ const linkDefaults = { UnitPrice: 0, Currency: "PHP", PackSize: 1, LeadTimeDays:
 export async function saveSupply(input: SupplyInput, id?: number): Promise<Result> {
   const staff = await requireModule("Resources & Suppliers");
   try {
+    check(!isAdminStaff(staff), "Administrators have view-only access to Supplies.");
     check(id === undefined || validId(id), "Invalid supply item.");
     check(text(input.itemName, 50) && /^[a-zA-Z\s]+$/.test(input.itemName), "Supply name must contain letters only (max 50 characters).");
     check(validId(input.categoryId) && validId(input.uomId), "Select a category and unit of measure.");
@@ -45,7 +49,12 @@ export async function saveSupply(input: SupplyInput, id?: number): Promise<Resul
     check(Array.isArray(input.supplierIds) && input.supplierIds.length > 0 && input.supplierIds.every(validId), "Select at least one supplier.");
     const targetId = await prisma.$transaction(async tx => {
       const category = await tx.categories.findUnique({ where: { CategoryId: input.categoryId } });
-      check(category && !category.CategoryName.toLowerCase().includes("finished good"), "Select an active supply category.");
+      check(
+        category &&
+          !category.CategoryName.toLowerCase().includes("finished good") &&
+          decodeCategoryDescription((category as any).Description, (category as any).IsActive).isActive,
+        "Select an active supply category."
+      );
       check(await tx.unitOfMeasures.findUnique({ where: { UomId: input.uomId } }), "Invalid unit of measure.");
       check(!await tx.items.findFirst({ where: { ItemName: { equals: input.itemName.trim(), mode: "insensitive" }, ...(id ? { ItemId: { not: id } } : {}) } }), "An item with this name already exists.");
       const supplierIds = [...new Set(input.supplierIds)];
@@ -80,6 +89,7 @@ export async function saveSupply(input: SupplyInput, id?: number): Promise<Resul
 export async function saveSupplier(input: SupplierInput, id?: number): Promise<Result> {
   const staff = await requireModule("Resources & Suppliers");
   try {
+    check(!isAdminStaff(staff), "Administrators have view-only access to Suppliers.");
     check(id === undefined || validId(id), "Invalid supplier.");
     check(text(input.companyName, 50), "Supplier name is required (max 50 characters).");
     check(text(input.contactPerson, 50) && !/\d/.test(input.contactPerson), "Enter a contact name without numbers (max 50 characters).");
@@ -115,6 +125,7 @@ export async function saveSupplier(input: SupplierInput, id?: number): Promise<R
 export async function saveRecipe(input: RecipeInput, id?: number): Promise<Result> {
   const staff = await requireModule("Resources & Suppliers");
   try {
+    check(!isImsManager(staff), "IMS Managers do not have access to Bill of Materials.");
     check(id === undefined || validId(id), "Invalid recipe.");
     check(text(input.recipeName, 100), "Recipe name is required (max 100 characters).");
     check(validId(input.productId), "Select a finished product.");
@@ -170,6 +181,7 @@ export async function loadSupplierDetails(id: number) {
 export async function saveCategory(input: CategoryInput, id?: number): Promise<Result> {
   const staff = await requireModule("Resources & Suppliers");
   try {
+    check(!isAdminStaff(staff), "Administrators have view-only access to Categories.");
     check(id === undefined || validId(id), "Invalid category.");
     check(text(input.categoryName, 100), "Category name is required (max 100 characters).");
     const categoryName = input.categoryName.trim();
@@ -184,9 +196,10 @@ export async function saveCategory(input: CategoryInput, id?: number): Promise<R
     });
     check(!existing, "A category with this name already exists.");
 
+    const isActive = input.isActive !== false;
     const data = {
       CategoryName: categoryName,
-      Description: input.description?.trim() || "",
+      Description: encodeCategoryDescription(input.description, isActive),
     };
 
     let targetId: number = id ?? 0;
@@ -204,7 +217,7 @@ export async function saveCategory(input: CategoryInput, id?: number): Promise<R
       module: "Resources & Suppliers",
       change: id ? "updated" : "created",
       target: { type: "category", id: targetId, name: categoryName },
-      description: `${staff.name} ${id ? "updated" : "created"} category ${categoryName}`,
+      description: `${staff.name} ${id ? "updated" : "created"} category ${categoryName} (${isActive ? "Active" : "Inactive"})`,
     });
     return saved("Category saved successfully.");
   } catch (error) {
@@ -215,9 +228,19 @@ export async function saveCategory(input: CategoryInput, id?: number): Promise<R
 export async function toggleCategoryStatus(id: number, isActive: boolean): Promise<Result> {
   const staff = await requireModule("Resources & Suppliers");
   try {
+    check(!isAdminStaff(staff), "Administrators have view-only access to Categories.");
     check(validId(id), "Invalid category.");
-    const cat = await prisma.categories.findUnique({ where: { CategoryId: id }, select: { CategoryId: true, CategoryName: true } });
+    const cat = await prisma.categories.findUnique({
+      where: { CategoryId: id },
+      select: { CategoryId: true, CategoryName: true, Description: true },
+    });
     check(cat, "Category not found.");
+    await prisma.categories.update({
+      where: { CategoryId: id },
+      data: {
+        Description: encodeCategoryDescription(cat.Description, isActive),
+      },
+    });
     await recordAudit(staff, {
       module: "Resources & Suppliers",
       change: "updated",

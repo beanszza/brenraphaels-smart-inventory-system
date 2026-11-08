@@ -1,6 +1,7 @@
 "use client";
 
-import { kpiData } from "./mock-data";
+import type { DashboardKpis } from "@/lib/dashboard/types";
+import { Badge } from "@/components/ui/badge";
 import {
   Package,
   AlertTriangle,
@@ -13,94 +14,85 @@ import {
 interface KpiCardProps {
   title: string;
   value: number;
-  unit: string;
-  trend: number;
+  subtitle: string;
+  trend: number | null;
   icon: React.ReactNode;
-  iconBg: string;
-  accentColor: string;
 }
 
-function KpiCard({ title, value, unit, trend, icon, iconBg, accentColor }: KpiCardProps) {
-  const isPositive = trend >= 0;
+function KpiCard({ title, value, subtitle, trend, icon }: KpiCardProps) {
+  const isPositive = (trend ?? 0) >= 0;
   const TrendIcon = isPositive ? TrendingUp : TrendingDown;
-  const trendColor = isPositive ? "text-foreground" : "text-destructive";
-  const trendBg = isPositive ? "bg-success-50" : "bg-error-50";
 
   return (
-    <div className="bg-card rounded-2xl border border-border p-5 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-4">
-      {/* Top row */}
-      <div className="flex items-center justify-between">
-        <div
-          className={`w-11 h-11 rounded-xl flex items-center justify-center ${iconBg}`}
-        >
-          {icon}
-        </div>
-        <span
-          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${trendBg} ${trendColor}`}
-        >
-          <TrendIcon size={12} />
-          {Math.abs(trend)}%
+    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+          {title}
         </span>
+        <div className="flex items-center gap-2">
+          {trend !== null && (
+            <Badge variant={isPositive ? "success" : "destructive"} className="gap-1">
+              <TrendIcon className="w-3 h-3" />
+              {Math.abs(trend)}%
+            </Badge>
+          )}
+          <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-foreground shrink-0">
+            {icon}
+          </div>
+        </div>
       </div>
 
-      {/* Value */}
-      <div>
-        <p className="text-3xl font-bold text-foreground/90 tracking-tight">
+      <div className="mt-4">
+        <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground tabular-nums">
           {value.toLocaleString()}
-        </p>
-        <p className="text-xs text-muted-foreground mt-0.5 font-medium uppercase tracking-wide">
-          {unit}
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          {subtitle}
         </p>
       </div>
-
-      {/* Title */}
-      <div className={`h-0.5 w-8 rounded-full ${accentColor}`} />
-      <p className="text-sm font-semibold text-foreground -mt-2">
-        {title}
-      </p>
     </div>
   );
 }
 
-export default function KpiCards() {
+export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-      <KpiCard
-        title="Active Inventory"
-        value={kpiData.activeInventory.value}
-        unit={kpiData.activeInventory.unit}
-        trend={kpiData.activeInventory.trend}
-        icon={<Package size={20} className="text-foreground" />}
-        iconBg="bg-muted"
-        accentColor="bg-primary"
-      />
-      <KpiCard
-        title="Low Stock Alerts"
-        value={kpiData.lowStockAlerts.value}
-        unit={kpiData.lowStockAlerts.unit}
-        trend={kpiData.lowStockAlerts.trend}
-        icon={<AlertTriangle size={20} className="text-muted-foreground" />}
-        iconBg="bg-muted"
-        accentColor="bg-error-500"
-      />
-      <KpiCard
-        title="Production Batches"
-        value={kpiData.productionBatches.value}
-        unit={kpiData.productionBatches.unit}
-        trend={kpiData.productionBatches.trend}
-        icon={<Factory size={20} className="text-foreground" />}
-        iconBg="bg-muted"
-        accentColor="bg-theme-purple-500"
-      />
-      <KpiCard
-        title="Active Suppliers"
-        value={kpiData.activeSuppliers.value}
-        unit={kpiData.activeSuppliers.unit}
-        trend={kpiData.activeSuppliers.trend}
-        icon={<Handshake size={20} className="text-muted-foreground" />}
-        iconBg="bg-muted"
-        accentColor="bg-success-500"
-      />
+      {kpiData.activeInventory && (
+        <KpiCard
+          title="Active Inventory"
+          value={kpiData.activeInventory.value}
+          subtitle="Active items across all categories"
+          trend={kpiData.activeInventory.trend}
+          icon={<Package className="w-4 h-4 text-primary" />}
+        />
+      )}
+      {kpiData.lowStockAlerts && (
+        <KpiCard
+          title="Low Stock Alerts"
+          value={kpiData.lowStockAlerts.value}
+          subtitle="Items at or below minimum stock level"
+          trend={kpiData.lowStockAlerts.trend}
+          icon={<AlertTriangle className="w-4 h-4 text-destructive" />}
+        />
+      )}
+      {kpiData.productionBatches && (
+        <KpiCard
+          title="Production Batches"
+          value={kpiData.productionBatches.value}
+          subtitle="Batches scheduled or completed this month"
+          trend={kpiData.productionBatches.trend}
+          icon={<Factory className="w-4 h-4 text-primary" />}
+        />
+      )}
+      {kpiData.activeSuppliers && (
+        <KpiCard
+          title="Active Suppliers"
+          value={kpiData.activeSuppliers.value}
+          subtitle="Registered and active vendor partners"
+          trend={kpiData.activeSuppliers.trend}
+          icon={<Handshake className="w-4 h-4 text-primary" />}
+        />
+      )}
     </div>
   );
 }

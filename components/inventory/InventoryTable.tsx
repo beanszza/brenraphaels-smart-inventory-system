@@ -135,7 +135,7 @@ export default function InventoryTable({
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y border-border">
+        <tbody className="divide-y divide-border">
           {items.length === 0 ? (
             <tr>
               <td

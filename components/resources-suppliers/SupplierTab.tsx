@@ -20,6 +20,7 @@ interface SupplierTabProps {
   currentPage: number;
   onPageChange: (page: number) => void;
   isAuthorizedForReports: boolean;
+  canConfigure?: boolean;
   onAddNew: () => void;
   onEdit: (supplier: Supplier) => void;
   onView: (supplier: Supplier) => void;
@@ -34,6 +35,7 @@ export default function SupplierTab({
   currentPage,
   onPageChange,
   isAuthorizedForReports,
+  canConfigure = true,
   onAddNew,
   onEdit,
   onView,
@@ -104,13 +106,15 @@ export default function SupplierTab({
               </Link>
             </Button>
           )}
-          <Button
-            type="button"
-            onClick={onAddNew}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
-          >
-            <Plus className="w-4 h-4" /> Add Supplier
-          </Button>
+          {canConfigure && (
+            <Button
+              type="button"
+              onClick={onAddNew}
+              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+            >
+              <Plus className="w-4 h-4" /> Add Supplier
+            </Button>
+          )}
         </div>
       </div>
 
@@ -145,6 +149,7 @@ export default function SupplierTab({
         suppliers={paginatedSuppliers}
         currentPage={currentPage}
         pageSize={pageSize}
+        canConfigure={canConfigure}
         onEdit={onEdit}
         onView={onView}
       />

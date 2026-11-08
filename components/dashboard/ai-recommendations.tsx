@@ -1,92 +1,96 @@
 "use client";
 
-import {
-  procurementRecommendations,
-  inventoryForecasts,
-  type ProcurementRec,
-  type InventoryForecast,
-} from "./mock-data";
-import { Bot, Zap, TrendingUp } from "lucide-react";
+import type {
+  ProcurementRecommendation as ProcurementRec,
+  InventoryForecast,
+  Urgency,
+} from "@/lib/dashboard/types";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { EmptyChart } from "./EmptyChart";
 
-// ── Urgency badge ──────────────────────────────────────────────────────────────
-function UrgencyBadge({ level }: { level: "High" | "Medium" | "Low" }) {
-  const styles: Record<string, string> = {
-    High: "bg-error-50 text-error-700",
-    Medium:
-      "bg-warning-50 text-warning-700",
-    Low: "bg-success-50 text-success-700",
-  };
-  return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${styles[level]}`}
-    >
-      {level}
-    </span>
-  );
+const URGENCY_VARIANT: Record<Urgency, NonNullable<BadgeProps["variant"]>> = {
+  High: "destructive",
+  Medium: "warning",
+  Low: "success",
+};
+
+function UrgencyBadge({ level }: { level: Urgency }) {
+  return <Badge variant={URGENCY_VARIANT[level]}>{level}</Badge>;
 }
 
-// ── Procurement AI Table ───────────────────────────────────────────────────────
-function ProcurementRecommendationCard() {
+function ProcurementRecommendationCard({
+  procurementRecommendations,
+}: {
+  procurementRecommendations: ProcurementRec[];
+}) {
+  if (!procurementRecommendations.length) {
+    return (
+      <EmptyChart
+        title="Procurement Recommendations"
+        subtitle="Suggested reorders based on stock levels, open orders, and usage"
+        message="All active items are above their reorder thresholds."
+      />
+    );
+  }
+
   return (
-    <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-          <Bot size={16} className="text-foreground" />
-        </div>
-        <div>
-          <h3 className="text-sm font-bold text-foreground/90">
-            AI Procurement Recommendations
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            Auto-generated · {procurementRecommendations.length} suggestions
-          </p>
-        </div>
-        <span className="ml-auto px-2 py-0.5 rounded-full bg-muted text-foreground text-xs font-medium animate-pulse">
-          AI
-        </span>
+    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-foreground">
+          Procurement Recommendations
+        </h3>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {procurementRecommendations.length} reorder suggestions based on stock levels, open orders, and usage
+        </p>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto rounded-xl border border-border">
+        <table className="w-full text-xs text-left">
           <thead>
-            <tr className="border-b border-border">
-              {["ID", "Item", "Supplier", "Qty", "Urgency", "Reason"].map(
-                (h) => (
-                  <th
-                    key={h}
-                    className="py-2 pr-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
-                  >
-                    {h}
-                  </th>
-                )
-              )}
+            <tr className="border-b border-border bg-muted/40">
+              <th className="px-3.5 py-2.5 font-bold text-muted-foreground uppercase tracking-wider">
+                Item &amp; Basis
+              </th>
+              <th className="px-3.5 py-2.5 font-bold text-muted-foreground uppercase tracking-wider">
+                Preferred Supplier
+              </th>
+              <th className="px-3.5 py-2.5 font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap text-right">
+                Order Qty
+              </th>
+              <th className="px-3.5 py-2.5 font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap text-center">
+                Urgency
+              </th>
             </tr>
           </thead>
-          <tbody>
-            {procurementRecommendations.map((rec: ProcurementRec) => (
-              <tr
-                key={rec.id}
-                className="border-b border-border/60 hover:bg-muted transition-colors"
-              >
-                <td className="py-2.5 pr-4 text-xs font-mono font-semibold text-foreground">
-                  {rec.id}
+          <tbody className="divide-y divide-border">
+            {procurementRecommendations.map((rec) => (
+              <tr key={rec.id} className="hover:bg-muted/30 transition-colors">
+                <td className="px-3.5 py-3 align-top">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-foreground">
+                      {rec.item}
+                    </span>
+                    <span className="text-[11px] font-mono text-muted-foreground">
+                      {rec.id}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                    {rec.reason}
+                  </p>
                 </td>
-                <td className="py-2.5 pr-4 text-xs font-medium text-foreground whitespace-nowrap">
-                  {rec.item}
+                <td className="px-3.5 py-3 align-top text-muted-foreground max-w-[180px]">
+                  <span className="block truncate" title={rec.supplier}>
+                    {rec.supplier}
+                  </span>
                 </td>
-                <td className="py-2.5 pr-4 text-xs text-muted-foreground whitespace-nowrap">
-                  {rec.supplier}
+                <td className="px-3.5 py-3 align-top text-right font-bold tabular-nums text-foreground whitespace-nowrap">
+                  {rec.recommendedQty.toLocaleString()}{" "}
+                  <span className="font-normal text-muted-foreground">
+                    {rec.unit}
+                  </span>
                 </td>
-                <td className="py-2.5 pr-4 text-xs font-semibold text-foreground whitespace-nowrap">
-                  {rec.recommendedQty.toLocaleString()} {rec.unit}
-                </td>
-                <td className="py-2.5 pr-4">
+                <td className="px-3.5 py-3 align-top text-center whitespace-nowrap">
                   <UrgencyBadge level={rec.urgency} />
-                </td>
-                <td className="py-2.5 text-xs text-muted-foreground max-w-[220px]">
-                  {rec.reason}
                 </td>
               </tr>
             ))}
@@ -97,87 +101,93 @@ function ProcurementRecommendationCard() {
   );
 }
 
-// ── Inventory Forecast Cards ───────────────────────────────────────────────────
-function InventoryForecastCard() {
-  const urgencyOrder = { High: 0, Medium: 1, Low: 2 };
+function InventoryForecastCard({
+  inventoryForecasts,
+}: {
+  inventoryForecasts: InventoryForecast[];
+}) {
+  if (!inventoryForecasts.length) {
+    return (
+      <EmptyChart
+        title="Inventory Demand Forecast"
+        subtitle="30-day stock projection from recent consumption velocity"
+        message="No production consumption recorded yet to project from."
+      />
+    );
+  }
+
   const sorted = [...inventoryForecasts].sort(
-    (a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]
+    (a, b) => a.daysRemaining - b.daysRemaining,
   );
 
   return (
-    <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-          <TrendingUp size={16} className="text-foreground" />
-        </div>
-        <div>
-          <h3 className="text-sm font-bold text-foreground/90">
-            AI Inventory Demand Forecast
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            30-day forward projection · sorted by urgency
-          </p>
-        </div>
-        <span className="ml-auto px-2 py-0.5 rounded-full bg-muted text-foreground text-xs font-medium animate-pulse">
-          AI
-        </span>
+    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-foreground">
+          Inventory Demand Forecast
+        </h3>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          30-day projection from production consumption · sorted by days remaining
+        </p>
       </div>
 
-      {/* Forecast Items */}
-      <div className="space-y-2.5">
-        {sorted.map((fc: InventoryForecast) => {
+      <div className="space-y-3">
+        {sorted.map((fc) => {
           const fillPct = Math.min(
             100,
-            Math.round((fc.currentStock / fc.forecastedDemand) * 100)
+            fc.forecastedDemand > 0
+              ? Math.round((fc.currentStock / fc.forecastedDemand) * 100)
+              : 100,
           );
-          const barColor =
+          const barClass =
             fc.urgency === "High"
-              ? "#f04438"
+              ? "bg-destructive"
               : fc.urgency === "Medium"
-                ? "#fdb022"
-                : "#12b76a";
+                ? "bg-warning"
+                : "bg-success";
 
           return (
             <div
               key={fc.sku}
-              className="rounded-xl border border-border p-3 hover:bg-muted transition-colors"
+              className="rounded-xl border border-border bg-muted/20 p-3.5 hover:bg-muted/40 transition-colors"
             >
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-muted-foreground">
+                    <span className="text-xs font-semibold text-foreground truncate">
+                      {fc.item}
+                    </span>
+                    <span className="text-[11px] font-mono text-muted-foreground shrink-0">
                       {fc.sku}
                     </span>
-                    <UrgencyBadge level={fc.urgency} />
                   </div>
-                  <p className="text-xs font-semibold text-foreground mt-0.5 truncate">
-                    {fc.item}
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {fillPct}% of 30-day projected demand covered
                   </p>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-xs font-bold text-foreground">
-                    {fc.currentStock.toLocaleString()}{" "}
-                    <span className="font-normal text-muted-foreground">
-                      / {fc.forecastedDemand.toLocaleString()} {fc.unit}
-                    </span>
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    ~{fc.daysRemaining}d remaining
-                  </p>
+
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <div className="text-right">
+                    <p className="text-xs font-bold tabular-nums text-foreground">
+                      {fc.currentStock.toLocaleString()}{" "}
+                      <span className="font-normal text-muted-foreground">
+                        / {fc.forecastedDemand.toLocaleString()} {fc.unit}
+                      </span>
+                    </p>
+                    <p className="text-[11px] font-medium tabular-nums text-muted-foreground">
+                      ~{fc.daysRemaining}d remaining
+                    </p>
+                  </div>
+                  <UrgencyBadge level={fc.urgency} />
                 </div>
               </div>
 
-              {/* Stock progress bar */}
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${fillPct}%`, background: barColor }}
+                  className={`h-full rounded-full transition-all duration-300 ${barClass}`}
+                  style={{ width: `${Math.max(fillPct > 0 ? 4 : 0, fillPct)}%` }}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {fillPct}% stock coverage
-              </p>
             </div>
           );
         })}
@@ -186,12 +196,19 @@ function InventoryForecastCard() {
   );
 }
 
-// ── Combined export ────────────────────────────────────────────────────────────
-export default function AiRecommendations() {
+export default function AiRecommendations({
+  procurement,
+  forecasts,
+}: {
+  procurement: ProcurementRec[] | null;
+  forecasts: InventoryForecast[] | null;
+}) {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-      <ProcurementRecommendationCard />
-      <InventoryForecastCard />
+      {procurement && (
+        <ProcurementRecommendationCard procurementRecommendations={procurement} />
+      )}
+      {forecasts && <InventoryForecastCard inventoryForecasts={forecasts} />}
     </div>
   );
 }

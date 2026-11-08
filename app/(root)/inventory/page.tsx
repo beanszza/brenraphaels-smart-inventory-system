@@ -4,6 +4,7 @@ import { listInventory } from "@/app/actions/inventory/balances";
 import { listLots } from "@/app/actions/inventory/lots";
 import { inventoryPages } from "@/lib/inventory/screen-data";
 import { prisma } from "@/lib/prisma";
+import { decodeCategoryDescription } from "@/lib/resources-suppliers/category-status";
 import type { InventoryItem } from "@/components/inventory/types";
 import type { LotItem } from "@/components/lots/types";
 
@@ -17,13 +18,14 @@ export default async function InventoryPage() {
     (async () => {
       try {
         if (typeof prisma?.categories?.findMany !== "function") return [];
-        return await prisma.categories.findMany({
+        const rows = await prisma.categories.findMany({
           where: {
             NOT: { CategoryName: { contains: "Finished", mode: "insensitive" } },
           },
-          select: { CategoryId: true, CategoryName: true },
+          select: { CategoryId: true, CategoryName: true, Description: true },
           orderBy: { CategoryName: "asc" },
         });
+        return rows.filter((c) => decodeCategoryDescription(c.Description, (c as any).IsActive).isActive);
       } catch {
         return [];
       }

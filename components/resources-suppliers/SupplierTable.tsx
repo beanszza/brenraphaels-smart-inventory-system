@@ -10,11 +10,19 @@ interface SupplierTableProps {
   suppliers: Supplier[];
   currentPage: number;
   pageSize: number;
+  canConfigure?: boolean;
   onEdit: (supplier: Supplier) => void;
   onView: (supplier: Supplier) => void;
 }
 
-export default function SupplierTable({ suppliers, currentPage, pageSize, onEdit, onView }: SupplierTableProps) {
+export default function SupplierTable({
+  suppliers,
+  currentPage,
+  pageSize,
+  canConfigure = true,
+  onEdit,
+  onView,
+}: SupplierTableProps) {
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
 
   return (
@@ -101,16 +109,18 @@ export default function SupplierTable({ suppliers, currentPage, pageSize, onEdit
                       >
                         <Eye size={14} className="shrink-0" /> View Details
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onEdit(supplier);
-                          setActiveDropdownId(null);
-                        }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
-                      >
-                        <Pencil size={14} className="shrink-0" /> Edit Supplier
-                      </button>
+                      {canConfigure && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onEdit(supplier);
+                            setActiveDropdownId(null);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                        >
+                          <Pencil size={14} className="shrink-0" /> Edit Supplier
+                        </button>
+                      )}
                     </div>
                   )}
                 </td>

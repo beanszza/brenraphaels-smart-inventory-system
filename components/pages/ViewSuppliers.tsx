@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   saveSupply,
   saveSupplier,
@@ -10,17 +10,15 @@ import {
   type SupplyInput,
   type SupplierInput,
   type RecipeInput,
-  type CategoryInput,
 } from "@/lib/resources-suppliers/actions";
 import type { ResourcesData } from "@/lib/resources-suppliers/data";
 import { useRouter } from "next/navigation";
+import { useIsAdmin, useIsImsManager } from "@/context/StaffContext";
 import {
   SupplyItem,
   Supplier,
   Recipe,
   CategoryItem,
-  FinishedProduct,
-  UomOption,
 } from "@/components/resources-suppliers/types";
 import CategoryTab from "@/components/resources-suppliers/CategoryTab";
 import CategoryModal from "@/components/resources-suppliers/CategoryModal";
@@ -36,10 +34,24 @@ import { PageHeader } from "@/components/shared/PageHeader";
 
 export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }) {
   const router = useRouter();
+  const isAdmin = useIsAdmin();
+  const isImsManager = useIsImsManager();
+
+  // Admin: can see & configure BOM, but can ONLY see (cannot configure) Categories, Suppliers, and Supply.
+  // IMS Manager: cannot see or configure BOM, but can see & configure Categories, Suppliers, and Supply.
+  const canConfigureCatalog = !isAdmin;
+  const canSeeBom = !isImsManager;
+
   const [message, setMessage] = useState("");
 
   // Process Tab Order: Categories -> Supplier List -> Supply List -> BOM
   const [activeTab, setActiveTab] = useState<"category" | "supplier" | "supply" | "recipe">("category");
+
+  useEffect(() => {
+    if (!canSeeBom && activeTab === "recipe") {
+      setActiveTab("category");
+    }
+  }, [canSeeBom, activeTab]);
 
   const {
     supplies: supplyData,
@@ -51,6 +63,21 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
     units: uoms,
   } = data;
 
+  const [categoriesState, setCategoriesState] = useState<CategoryItem[]>(categoryData);
+  useEffect(() => {
+    setCategoriesState(categoryData);
+  }, [categoryData]);
+
+  // Active categories for Supply dropdowns (excludes inactive categories immediately)
+  const activeSupplyCategories = useMemo(() => {
+    if (categoriesState.length > 0) {
+      return categoriesState
+        .filter((c) => c.isActive !== false)
+        .map((c) => ({ categoryId: c.categoryId, categoryName: c.categoryName, isActive: true }));
+    }
+    return supplyCategories.filter((c: any) => c.isActive !== false);
+  }, [categoriesState, supplyCategories]);
+
   // Search & Filter State
   const [categoryStatusFilter, setCategoryStatusFilter] = useState("All");
   const [categorySearchQuery, setCategorySearchQuery] = useState("");
@@ -60,6 +87,15 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
   const [supplyStatusFilter, setSupplyStatusFilter] = useState("All");
   const [supplySearchQuery, setSupplySearchQuery] = useState("");
   const [supplyPage, setSupplyPage] = useState(1);
+
+  useEffect(() => {
+    if (
+      supplyFilter !== "All" &&
+      !activeSupplyCategories.some((c) => c.categoryName === supplyFilter)
+    ) {
+      setSupplyFilter("All");
+    }
+  }, [activeSupplyCategories, supplyFilter]);
 
   const [supplierFilter, setSupplierFilter] = useState("All");
   const [supplierSearchQuery, setSupplierSearchQuery] = useState("");
@@ -87,10 +123,38 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
   const handleSaveCategory = async (input: { categoryName: string; description: string; isActive: boolean }) => {
     const result = await saveCategory(input, editingCategory?.categoryId);
     if (!result.success) throw new Error(result.message);
+    if (editingCategory) {
+      setCategoriesState((prev) =>
+        prev.map((c) =>
+          c.categoryId === editingCategory.categoryId
+            ? {
+                ...c,
+                categoryName: input.categoryName.trim(),
+                description: input.description.trim(),
+                isActive: input.isActive,
+              }
+            : c
+        )
+      );
+    }
     setMessage(result.message);
     setOpenCategoryModal(false);
     setEditingCategory(null);
     setCategoryPage(1);
+    router.refresh();
+  };
+
+  const handleToggleCategoryStatus = async (cat: CategoryItem) => {
+    const nextActive = cat.isActive === false;
+    const result = await toggleCategoryStatus(cat.categoryId, nextActive);
+    if (!result.success) {
+      setMessage(result.message);
+      return;
+    }
+    setCategoriesState((prev) =>
+      prev.map((c) => (c.categoryId === cat.categoryId ? { ...c, isActive: nextActive } : c))
+    );
+    setMessage(result.message);
     router.refresh();
   };
 
@@ -124,11 +188,22 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
     router.refresh();
   };
 
+  const visibleTabs = [
+    { id: "category", label: "CATEGORIES" },
+    { id: "supplier", label: "SUPPLIER LIST" },
+    { id: "supply", label: "SUPPLY LIST" },
+    ...(canSeeBom ? [{ id: "recipe", label: "BILL OF MATERIAL" }] : []),
+  ];
+
   return (
     <div className="w-full min-h-full py-7 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
       <PageHeader
         title="Resources & Suppliers"
-        description="Manage your foundation data - Categories, Suppliers, Supply, and Recipes"
+        description={
+          canSeeBom
+            ? "Manage your foundation data - Categories, Suppliers, Supply, and Recipes"
+            : "Manage your foundation data - Categories, Suppliers, and Supply"
+        }
       />
 
       {message && (
@@ -140,12 +215,7 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
       {/* Process Tabs in Uniform Order: Categories -> Supplier List -> Supply List -> BOM */}
       <div className="border-b border-border">
         <div className="flex items-center gap-2 overflow-x-auto">
-          {[
-            { id: "category", label: "CATEGORIES" },
-            { id: "supplier", label: "SUPPLIER LIST" },
-            { id: "supply", label: "SUPPLY LIST" },
-            { id: "recipe", label: "BILL OF MATERIAL" },
-          ].map((tab) => {
+          {visibleTabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
@@ -167,18 +237,21 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
 
       {activeTab === "category" && (
         <CategoryTab
-          categories={categoryData}
+          categories={categoriesState}
           searchQuery={categorySearchQuery}
           onSearchChange={setCategorySearchQuery}
           statusFilter={categoryStatusFilter}
           onStatusFilterChange={setCategoryStatusFilter}
           currentPage={categoryPage}
           onPageChange={setCategoryPage}
+          canConfigure={canConfigureCatalog}
           onAddNew={() => {
+            if (!canConfigureCatalog) return;
             setEditingCategory(null);
             setOpenCategoryModal(true);
           }}
           onEdit={(cat) => {
+            if (!canConfigureCatalog) return;
             setEditingCategory(cat);
             setOpenCategoryModal(true);
           }}
@@ -195,11 +268,14 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
           currentPage={supplierPage}
           onPageChange={setSupplierPage}
           isAuthorizedForReports={true}
+          canConfigure={canConfigureCatalog}
           onAddNew={() => {
+            if (!canConfigureCatalog) return;
             setEditingSupplier(null);
             setOpenSupplierModal(true);
           }}
           onEdit={(s) => {
+            if (!canConfigureCatalog) return;
             setEditingSupplier(s);
             setOpenSupplierModal(true);
           }}
@@ -210,7 +286,7 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
       {activeTab === "supply" && (
         <SupplyTab
           supplies={supplyData}
-          categories={supplyCategories}
+          categories={activeSupplyCategories}
           searchQuery={supplySearchQuery}
           onSearchChange={setSupplySearchQuery}
           categoryFilter={supplyFilter}
@@ -220,11 +296,14 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
           currentPage={supplyPage}
           onPageChange={setSupplyPage}
           isAuthorizedForReports={true}
+          canConfigure={canConfigureCatalog}
           onAddNew={() => {
+            if (!canConfigureCatalog) return;
             setEditingSupply(null);
             setOpenSupplyModal(true);
           }}
           onEdit={(item) => {
+            if (!canConfigureCatalog) return;
             setEditingSupply(item);
             setOpenSupplyModal(true);
           }}
@@ -232,7 +311,7 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
         />
       )}
 
-      {activeTab === "recipe" && (
+      {canSeeBom && activeTab === "recipe" && (
         <RecipeTab
           recipes={recipeData}
           searchQuery={recipeSearchQuery}
@@ -254,65 +333,77 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
       )}
 
       {/* Category Modal */}
-      <CategoryModal
-        open={openCategoryModal}
-        editingCategory={editingCategory}
-        existingCategories={categoryData}
-        onClose={() => {
-          setOpenCategoryModal(false);
-          setEditingCategory(null);
-        }}
-        onSave={handleSaveCategory}
-      />
+      {canConfigureCatalog && (
+        <CategoryModal
+          open={openCategoryModal}
+          editingCategory={editingCategory}
+          existingCategories={categoriesState}
+          onClose={() => {
+            setOpenCategoryModal(false);
+            setEditingCategory(null);
+          }}
+          onSave={handleSaveCategory}
+        />
+      )}
 
       {/* Supply Modal */}
-      <SupplyModal
-        open={openSupplyModal}
-        editingItem={editingSupply}
-        existingSupplies={supplyData}
-        suppliers={supplierData.map((s) => ({
-          supplierId: s.supplierId,
-          companyName: s.companyName,
-          supplierCode: s.supplierCode,
-        }))}
-        categories={supplyCategories}
-        uoms={uoms}
-        onClose={() => {
-          setOpenSupplyModal(false);
-          setEditingSupply(null);
-        }}
-        onSave={handleSaveSupply}
-      />
+      {canConfigureCatalog && (
+        <SupplyModal
+          open={openSupplyModal}
+          editingItem={editingSupply}
+          existingSupplies={supplyData}
+          suppliers={supplierData.map((s) => ({
+            supplierId: s.supplierId,
+            companyName: s.companyName,
+            supplierCode: s.supplierCode,
+          }))}
+          categories={activeSupplyCategories}
+          uoms={uoms}
+          onClose={() => {
+            setOpenSupplyModal(false);
+            setEditingSupply(null);
+          }}
+          onSave={handleSaveSupply}
+        />
+      )}
       <SupplyDetailsModal
         item={viewSupply}
         onClose={() => setViewSupply(null)}
-        onEdit={(item) => {
-          setViewSupply(null);
-          setEditingSupply(item);
-          setOpenSupplyModal(true);
-        }}
+        onEdit={
+          canConfigureCatalog
+            ? (item) => {
+                setViewSupply(null);
+                setEditingSupply(item);
+                setOpenSupplyModal(true);
+              }
+            : undefined
+        }
       />
-      <SupplierModal
-        open={openSupplierModal}
-        editingSupplier={editingSupplier}
-        onClose={() => {
-          setOpenSupplierModal(false);
-          setEditingSupplier(null);
-        }}
-        onSave={handleSaveSupplier}
-      />
+      {canConfigureCatalog && (
+        <SupplierModal
+          open={openSupplierModal}
+          editingSupplier={editingSupplier}
+          onClose={() => {
+            setOpenSupplierModal(false);
+            setEditingSupplier(null);
+          }}
+          onSave={handleSaveSupplier}
+        />
+      )}
       <SupplierDetailsModal supplier={viewSupplier} onClose={() => setViewSupplier(null)} />
-      <RecipeModal
-        open={openRecipeModal}
-        editingRecipe={editingRecipe}
-        finishedProducts={finishedProductData}
-        baseSupplies={supplyData}
-        onClose={() => {
-          setOpenRecipeModal(false);
-          setEditingRecipe(null);
-        }}
-        onSave={handleSaveRecipe}
-      />
+      {canSeeBom && (
+        <RecipeModal
+          open={openRecipeModal}
+          editingRecipe={editingRecipe}
+          finishedProducts={finishedProductData}
+          baseSupplies={supplyData}
+          onClose={() => {
+            setOpenRecipeModal(false);
+            setEditingRecipe(null);
+          }}
+          onSave={handleSaveRecipe}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import {
   BarChart,
   Bar,
@@ -12,13 +12,10 @@ import {
   ResponsiveContainer,
   LabelList,
 } from "recharts";
-import { Trophy, Package, ArrowRightLeft, MapPin } from "lucide-react";
-import { distributionAnalytics } from "./mock-data";
-
-// Sort by batchesReceived descending so top receivers appear first
-const sorted = [...distributionAnalytics].sort(
-  (a, b) => b.batchesReceived - a.batchesReceived
-);
+import { Package, ArrowRightLeft } from "lucide-react";
+import type { BranchFlow } from "@/lib/dashboard/types";
+import { Badge } from "@/components/ui/badge";
+import { EmptyChart } from "./EmptyChart";
 
 function CustomTooltip({
   active,
@@ -31,22 +28,19 @@ function CustomTooltip({
 }) {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card border border-border rounded-xl px-3.5 py-3 shadow-lg min-w-[200px] transition-all">
-        <p className="text-xs font-bold text-foreground mb-2.5 flex items-center gap-1.5">
-          <span className="w-1.5 h-4 rounded-sm bg-blue-600 inline-block animate-pulse" />
-          {label}
-        </p>
-        <div className="space-y-1.5">
+      <div className="bg-card border border-border rounded-xl px-3.5 py-2.5 shadow-md min-w-[180px]">
+        <p className="text-xs font-bold text-foreground mb-1.5">{label}</p>
+        <div className="space-y-1">
           {payload.map((p, i) => (
-            <div key={i} className="flex items-center justify-between gap-6">
+            <div key={i} className="flex items-center justify-between gap-4">
               <span className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span
-                  className="w-2.5 h-2.5 rounded-full border border-white shadow-sm"
+                  className="w-2 h-2 rounded-full"
                   style={{ background: p.color }}
                 />
                 {p.name}
               </span>
-              <span className="text-xs font-bold text-foreground">
+              <span className="text-xs font-bold tabular-nums text-foreground">
                 {p.value.toLocaleString()}
               </span>
             </div>
@@ -58,142 +52,115 @@ function CustomTooltip({
   return null;
 }
 
-export default function DistributionAnalyticsChart() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+/** Follows the html "dark" class so chart colours match the active theme. */
+function subscribeToTheme(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  return () => observer.disconnect();
+}
+const isDark = () => document.documentElement.classList.contains("dark");
 
-  useEffect(() => {
-    // Check initial dark mode state
-    const isDark = document.documentElement.classList.contains("dark");
-    setIsDarkMode(isDark);
-
-    // Observe changes to the html classList to react dynamically
-    const observer = new MutationObserver(() => {
-      setIsDarkMode(document.documentElement.classList.contains("dark"));
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
+export default function DistributionAnalyticsChart({ data }: { data: BranchFlow[] }) {
+  const sorted = [...data].sort((a, b) => b.received - a.received || b.transfers - a.transfers);
+  const isDarkMode = useSyncExternalStore(subscribeToTheme, isDark, () => false);
 
   const topBranch = sorted[0];
+  if (!topBranch) {
+    return (
+      <EmptyChart
+        title="Distribution Analytics"
+        subtitle="Stock transfers sent and received by destination location"
+      />
+    );
+  }
 
   return (
-    <div className="bg-card rounded-2xl border border-border p-5 shadow-sm transition-all duration-300 hover:shadow-md">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs">
+      <div className="flex items-center justify-between gap-2 mb-4">
         <div>
-          <h3 className="text-xl font-bold text-foreground/90 tracking-tight">
+          <h3 className="text-base font-bold text-foreground">
             Distribution Analytics
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Batches received &amp; transfer count · ranked by volume
+            Transfers received and dispatched across branch locations
           </p>
         </div>
-        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-foreground text-xs font-semibold border border-border/50 shadow-sm">
-          <MapPin className="w-3.5 h-3.5" />
-          All Branches
-        </span>
       </div>
 
       {/* Top receiver callout */}
-      <div className="relative overflow-hidden mb-6 mt-4 p-5 rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50/85 to-orange-50/40 shadow-sm">
-        {/* Decorative glows */}
-        <div className="absolute -right-12 -top-12 w-32 h-32 rounded-full bg-amber-400/10 blur-2xl pointer-events-none" />
-        <div className="absolute -left-12 -bottom-12 w-32 h-32 rounded-full bg-orange-400/10 blur-2xl pointer-events-none" />
-        
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+      <div className="mb-5 p-4 rounded-xl border border-border bg-muted/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="min-w-0">
+          <Badge variant="purple">Top Receiver</Badge>
+          <h4 className="text-sm font-bold text-foreground mt-1.5 truncate">
+            {topBranch.branch}
+          </h4>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2 min-w-[110px]">
+            <div className="p-1.5 rounded-lg bg-muted text-foreground">
+              <Package className="w-4 h-4" />
+            </div>
             <div>
-              <span className="inline-block text-[10px] font-extrabold tracking-wider uppercase text-amber-700 bg-amber-100 px-2 py-0.5 rounded">
-                Top Receiver
-              </span>
-              <h4 className="text-base sm:text-lg font-bold text-foreground mt-1.5">
-                {topBranch.branch}
-              </h4>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                Received
+              </p>
+              <p className="text-sm font-bold tabular-nums text-foreground">
+                {topBranch.received}
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="flex-1 sm:flex-none flex items-center gap-3 bg-card/80/40 border border-border/50/80 p-2.5 rounded-xl min-w-[110px] shadow-sm">
-              <div className="p-1.5 rounded-lg bg-muted text-foreground">
-                <Package className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Batches
-                </p>
-                <p className="text-sm font-extrabold text-foreground">
-                  {topBranch.batchesReceived}
-                </p>
-              </div>
+          <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2 min-w-[110px]">
+            <div className="p-1.5 rounded-lg bg-muted text-foreground">
+              <ArrowRightLeft className="w-4 h-4" />
             </div>
-
-            <div className="flex-1 sm:flex-none flex items-center gap-3 bg-card/80/40 border border-border/50/80 p-2.5 rounded-xl min-w-[110px] shadow-sm">
-              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
-                <ArrowRightLeft className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Transfers
-                </p>
-                <p className="text-sm font-extrabold text-foreground">
-                  {topBranch.transfers}
-                </p>
-              </div>
+            <div>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                Transfers
+              </p>
+              <p className="text-sm font-bold tabular-nums text-foreground">
+                {topBranch.transfers}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Bar Chart */}
-      <div className="w-full h-[300px]">
+      <div className="w-full h-[260px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={sorted}
             layout="vertical"
-            margin={{ top: 0, right: 40, left: 8, bottom: 0 }}
+            margin={{ top: 0, right: 36, left: 8, bottom: 0 }}
             barCategoryGap="28%"
             barGap={3}
           >
-            <defs>
-              <linearGradient id="batchesGradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#60a5fa" stopOpacity={0.85} />
-                <stop offset="100%" stopColor="#2563eb" stopOpacity={1} />
-              </linearGradient>
-              <linearGradient id="transfersGradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#34d399" stopOpacity={0.85} />
-                <stop offset="100%" stopColor="#16a34a" stopOpacity={1} />
-              </linearGradient>
-            </defs>
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke={isDarkMode ? "#334155" : "#e4e7ec"}
+              stroke="var(--border)"
               horizontal={false}
-              opacity={0.5}
             />
             <XAxis
               type="number"
-              tick={{ fontSize: 11, fill: isDarkMode ? "#98a2b3" : "#667085" }}
+              allowDecimals={false}
+              tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
               type="category"
               dataKey="branch"
-              tick={{ fontSize: 11, fill: isDarkMode ? "#98a2b3" : "#667085" }}
+              tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
               axisLine={false}
               tickLine={false}
-              width={110}
+              width={120}
             />
             <Tooltip
               content={<CustomTooltip />}
               cursor={{
-                fill: isDarkMode ? "#1e293b" : "#f8fafc",
-                opacity: 0.3,
+                fill: isDarkMode ? "#2a2236" : "#f7f5fa",
+                opacity: 0.5,
               }}
             />
             <Legend
@@ -207,17 +174,17 @@ export default function DistributionAnalyticsChart() {
               )}
             />
             <Bar
-              dataKey="batchesReceived"
-              name="Batches Received"
-              fill="url(#batchesGradient)"
+              dataKey="received"
+              name="Received"
+              fill="var(--primary)"
               radius={[0, 4, 4, 0]}
             >
               <LabelList
-                dataKey="batchesReceived"
+                dataKey="received"
                 position="right"
                 style={{
                   fontSize: 11,
-                  fill: isDarkMode ? "#98a2b3" : "#667085",
+                  fill: "var(--muted-foreground)",
                   fontWeight: 600,
                 }}
                 dx={6}
@@ -226,7 +193,7 @@ export default function DistributionAnalyticsChart() {
             <Bar
               dataKey="transfers"
               name="Transfers"
-              fill="url(#transfersGradient)"
+              fill="#16a34a"
               radius={[0, 4, 4, 0]}
             >
               <LabelList
@@ -234,7 +201,7 @@ export default function DistributionAnalyticsChart() {
                 position="right"
                 style={{
                   fontSize: 11,
-                  fill: isDarkMode ? "#98a2b3" : "#667085",
+                  fill: "var(--muted-foreground)",
                   fontWeight: 600,
                 }}
                 dx={6}

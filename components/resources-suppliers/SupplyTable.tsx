@@ -10,11 +10,19 @@ interface SupplyTableProps {
   items: SupplyItem[];
   currentPage: number;
   pageSize: number;
+  canConfigure?: boolean;
   onEdit: (item: SupplyItem) => void;
   onView?: (item: SupplyItem) => void;
 }
 
-export default function SupplyTable({ items, currentPage, pageSize, onEdit, onView }: SupplyTableProps) {
+export default function SupplyTable({
+  items,
+  currentPage,
+  pageSize,
+  canConfigure = true,
+  onEdit,
+  onView,
+}: SupplyTableProps) {
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
 
   return (
@@ -100,16 +108,18 @@ export default function SupplyTable({ items, currentPage, pageSize, onEdit, onVi
                           <Eye size={14} className="shrink-0" /> View Details
                         </button>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onEdit(item);
-                          setActiveDropdownId(null);
-                        }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
-                      >
-                        <Pencil size={14} className="shrink-0" /> Edit Supply
-                      </button>
+                      {canConfigure && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onEdit(item);
+                            setActiveDropdownId(null);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                        >
+                          <Pencil size={14} className="shrink-0" /> Edit Supply
+                        </button>
+                      )}
                     </div>
                   )}
                 </td>

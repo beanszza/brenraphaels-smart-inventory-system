@@ -18,6 +18,7 @@ interface CategoryTabProps {
   onStatusFilterChange: (status: string) => void;
   currentPage: number;
   onPageChange: (page: number) => void;
+  canConfigure?: boolean;
   onAddNew: () => void;
   onEdit: (item: CategoryItem) => void;
 }
@@ -30,6 +31,7 @@ export default function CategoryTab({
   onStatusFilterChange,
   currentPage,
   onPageChange,
+  canConfigure = true,
   onAddNew,
   onEdit,
 }: CategoryTabProps) {
@@ -89,13 +91,15 @@ export default function CategoryTab({
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
           </Button>
-          <Button
-            type="button"
-            onClick={onAddNew}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
-          >
-            <Plus className="w-4 h-4" /> Add New Category
-          </Button>
+          {canConfigure && (
+            <Button
+              type="button"
+              onClick={onAddNew}
+              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+            >
+              <Plus className="w-4 h-4" /> Add New Category
+            </Button>
+          )}
         </div>
       </div>
 
@@ -130,6 +134,7 @@ export default function CategoryTab({
         items={paginatedCategories}
         currentPage={currentPage}
         pageSize={pageSize}
+        canConfigure={canConfigure}
         onEdit={onEdit}
       />
 

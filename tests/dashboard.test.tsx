@@ -39,8 +39,19 @@ vi.mock("@/lib/prisma", () => ({ prisma: new Proxy({}, { get: (_, model: string)
   return model === "$queryRaw" ? read : { count: read };
 } }) }));
 
+// The analytics queries are covered in dashboard-analytics.test.ts; here only the Module hand-off matters.
+const analytics = vi.hoisted(() => ({ load: vi.fn() }));
+vi.mock("@/lib/dashboard/screen-data", () => ({ loadDashboardAnalytics: analytics.load }));
+const noAnalytics = {
+  generatedAt: "2026-11-06T00:00:00.000Z",
+  kpis: { activeInventory: null, lowStockAlerts: null, productionBatches: null, activeSuppliers: null },
+  inventoryDistribution: null, procurementTrend: null, productionQuality: null, supplierPerformance: null,
+  distribution: null, procurementRecommendations: null, inventoryForecasts: null,
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
+  analytics.load.mockResolvedValue(noAnalytics);
   vi.stubEnv("IMS_DEV_BYPASS", "false");
   fake.held = ["Inventory"];
   fake.signed = true;
@@ -97,17 +108,25 @@ it("rechecks grants and omits revoked data on the next read", async () => {
   expect(fake.reads.mock.calls.map(call => call[0])).toEqual(["stockTransferRequests", "stockTransfers"]);
 });
 it("renders persisted data on the server without disclosing other Modules", async () => {
+  analytics.load.mockResolvedValue({
+    ...noAnalytics,
+    kpis: {
+      ...noAnalytics.kpis,
+      activeInventory: { value: 16, unit: "Items", trend: null },
+      lowStockAlerts: { value: 3, unit: "Items", trend: null },
+    },
+  });
   const html = renderToStaticMarkup(await Dashboard());
-  expect(html).toContain("Inventory balances");
+  expect(html).toContain("Active Inventory");
   expect(html).toContain(">16<");
-  expect(html).toContain("Low stock balances");
+  expect(html).toContain("Low Stock Alerts");
   expect(html).toContain(">3<");
   expect(html).not.toContain("Production");
   expect(html).not.toContain("Suppliers");
   expect(html).not.toContain("localhost");
 });
 it("propagates database failure instead of showing invented zeros", async () => {
-  fake.fail = true;
+  analytics.load.mockRejectedValue(new Error("Database offline"));
   await expect(Dashboard()).rejects.toThrow("Database offline");
 });
 it("renders an empty database as zero counts", async () => {
@@ -115,16 +134,23 @@ it("renders an empty database as zero counts", async () => {
   fake.empty = true;
   const sections = await getDashboardData();
   expect(sections.flatMap(section => section.figures).every(figure => figure.value === 0)).toBe(true);
+  analytics.load.mockResolvedValue({
+    ...noAnalytics,
+    kpis: {
+      activeInventory: { value: 0, unit: "Items", trend: null },
+      lowStockAlerts: { value: 0, unit: "Items", trend: null },
+      productionBatches: { value: 0, unit: "This month", trend: null },
+      activeSuppliers: { value: 0, unit: "Suppliers", trend: null },
+    },
+  });
   expect(renderToStaticMarkup(await Dashboard())).toContain(">0<");
 });
 
-it("renders all authorized Module links through the route", async () => {
+it("renders the dashboard header without the legacy module overview", async () => {
   fake.held = [...MODULES];
   const html = renderToStaticMarkup(await DashboardPage());
-  for (const href of ["resources-suppliers", "orders-procurement", "goods-receiving", "inventory", "production-quality", "stock-transfer"]) {
-    expect(html).toContain(`href="/${href}"`);
-  }
-  expect(html).toContain("Module overview");
+  expect(html).toContain("Dashboard");
+  expect(html).not.toContain("Module overview");
   expect(html).not.toContain("Loading Dashboard");
 });
 
@@ -137,4 +163,25 @@ it("provides an accessible card skeleton without reading or revealing Module dat
   expect(html).not.toContain("href=");
   expect(fake.reads).not.toHaveBeenCalled();
   expect(fake.validate).not.toHaveBeenCalled();
+});
+
+it("hands the analytics only the Modules the Staff member holds", async () => {
+  fake.held = ["Inventory", "Stock Transfer"];
+  await DashboardPage();
+  expect(analytics.load).toHaveBeenCalledTimes(1);
+  expect([...analytics.load.mock.calls[0][0]].sort()).toEqual(["Dashboard", "Inventory", "Stock Transfer"]);
+});
+
+it("renders the live analytics sections the loader returns and hides the rest", async () => {
+  fake.held = ["Inventory"];
+  analytics.load.mockResolvedValue({
+    ...noAnalytics,
+    kpis: { ...noAnalytics.kpis, activeInventory: { value: 25, unit: "Items", trend: null } },
+    inventoryDistribution: [{ name: "Raw Materials", value: 25, color: "#2563eb" }],
+  });
+  const html = renderToStaticMarkup(await DashboardPage());
+  expect(html).toContain("Active Inventory");
+  expect(html).toContain("Inventory Distribution");
+  expect(html).not.toContain("Production Quality");
+  expect(html).not.toContain("Supplier Performance");
 });

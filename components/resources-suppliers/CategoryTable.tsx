@@ -9,6 +9,7 @@ interface CategoryTableProps {
   items: CategoryItem[];
   currentPage: number;
   pageSize: number;
+  canConfigure?: boolean;
   onEdit: (item: CategoryItem) => void;
 }
 
@@ -16,6 +17,7 @@ export default function CategoryTable({
   items,
   currentPage,
   pageSize,
+  canConfigure = true,
   onEdit,
 }: CategoryTableProps) {
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
@@ -30,14 +32,14 @@ export default function CategoryTable({
             <th className="px-5 py-4">Description</th>
             <th className="px-5 py-4">Linked Items</th>
             <th className="px-5 py-4">Status</th>
-            <th className="px-5 py-4 text-center">Actions</th>
+            {canConfigure && <th className="px-5 py-4 text-center">Actions</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
           {items.length === 0 ? (
             <tr>
               <td
-                colSpan={6}
+                colSpan={canConfigure ? 6 : 5}
                 className="px-5 py-12 text-center text-sm font-normal text-muted-foreground"
               >
                 No categories found.
@@ -63,33 +65,36 @@ export default function CategoryTable({
                 <td className="px-5 py-4 whitespace-nowrap">
                   <StatusBadge status={item.isActive !== false ? "Active" : "Inactive"} />
                 </td>
-                <td className="px-5 py-4 text-center relative whitespace-nowrap">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveDropdownId(
-                        activeDropdownId === item.categoryId ? null : item.categoryId
-                      )
-                    }
-                    className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none"
-                  >
-                    <MoreHorizontal size={18} />
-                  </button>
-                  {activeDropdownId === item.categoryId && (
-                    <div className="absolute right-10 top-2 z-[100] w-36 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onEdit(item);
-                          setActiveDropdownId(null);
-                        }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
-                      >
-                        <Pencil size={14} className="shrink-0" /> Edit Category
-                      </button>
-                    </div>
-                  )}
-                </td>
+                {canConfigure && (
+                  <td className="px-5 py-4 text-center relative whitespace-nowrap">
+                    <button
+                      type="button"
+                      aria-label="Record actions"
+                      onClick={() =>
+                        setActiveDropdownId(
+                          activeDropdownId === item.categoryId ? null : item.categoryId
+                        )
+                      }
+                      className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none cursor-pointer"
+                    >
+                      <MoreHorizontal size={18} />
+                    </button>
+                    {activeDropdownId === item.categoryId && (
+                      <div className="absolute right-10 top-2 z-[100] w-36 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onEdit(item);
+                            setActiveDropdownId(null);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+                        >
+                          <Pencil size={14} className="shrink-0" /> Edit Category
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                )}
               </tr>
             ))
           )}

@@ -12,7 +12,7 @@ interface ModalWrapperProps {
 }
 
 const widths: Record<string, number> = {
-  "max-w-xl": 600, "max-w-2xl": 672, "max-w-3xl": 800,
+  "max-w-md": 480, "max-w-xl": 600, "max-w-2xl": 672, "max-w-3xl": 800,
   "max-w-4xl": 950, "max-w-5xl": 1050, "max-w-6xl": 1240, "max-w-7xl": 1380,
 };
 

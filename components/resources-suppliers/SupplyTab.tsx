@@ -24,6 +24,7 @@ interface SupplyTabProps {
   currentPage: number;
   onPageChange: (page: number) => void;
   isAuthorizedForReports: boolean;
+  canConfigure?: boolean;
   onAddNew: () => void;
   onEdit: (item: SupplyItem) => void;
   onView?: (item: SupplyItem) => void;
@@ -41,6 +42,7 @@ export default function SupplyTab({
   currentPage,
   onPageChange,
   isAuthorizedForReports,
+  canConfigure = true,
   onAddNew,
   onEdit,
   onView,
@@ -109,13 +111,15 @@ export default function SupplyTab({
               </Link>
             </Button>
           )}
-          <Button
-            type="button"
-            onClick={onAddNew}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
-          >
-            <Plus className="w-4 h-4" /> Add New Supply
-          </Button>
+          {canConfigure && (
+            <Button
+              type="button"
+              onClick={onAddNew}
+              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+            >
+              <Plus className="w-4 h-4" /> Add New Supply
+            </Button>
+          )}
         </div>
       </div>
 
@@ -171,6 +175,7 @@ export default function SupplyTab({
         items={paginatedSupplies}
         currentPage={currentPage}
         pageSize={pageSize}
+        canConfigure={canConfigure}
         onEdit={onEdit}
         onView={onView}
       />

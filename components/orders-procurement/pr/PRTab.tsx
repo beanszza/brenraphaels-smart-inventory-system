@@ -48,7 +48,14 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
   const staff = useStaff();
   const isAdmin = isAdminStaff(staff);
 
-  const requisitions = initialRequisitions;
+  const requisitions = useMemo(
+    () => (isAdmin ? initialRequisitions.filter((pr) => pr.status !== "Draft") : initialRequisitions),
+    [initialRequisitions, isAdmin]
+  );
+  const visibleStatusTabs = useMemo(
+    () => (isAdmin ? STATUS_TABS.filter((tab) => tab !== "Draft") : STATUS_TABS),
+    [isAdmin]
+  );
   const [loading, startRefresh] = useTransition();
   const [notice, setNotice] = useState("");
   const [activeTab, setActiveTab] = useState<string>("All");
@@ -266,7 +273,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
           )}
 
           {/* Standard Status Tabs */}
-          {STATUS_TABS.map((tab) => {
+          {visibleStatusTabs.map((tab) => {
             const count = counts[tab] || 0;
             const isSelected = activeTab === tab;
 

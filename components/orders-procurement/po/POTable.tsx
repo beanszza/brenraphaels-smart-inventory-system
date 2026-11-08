@@ -76,26 +76,28 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onD
               ];
 
               // Inventory Manager actions only
-              if ((isDraft || isReturned) && onEdit) {
-                actions.push({
-                  label: isReturned ? "Edit & Re-Submit" : "Resend via Gmail",
-                  icon: <Pencil className="w-4 h-4 text-foreground" />,
-                  onClick: () => { setOpenDropdownId(null); onEdit(po); },
-                });
-              }
-              if (isDraft && onDiscardDraft) {
-                actions.push({
-                  label: "Discard Draft",
-                  icon: <Trash2 className="w-4 h-4 text-destructive" />,
-                  onClick: () => { setOpenDropdownId(null); onDiscardDraft(po); },
-                });
-              }
-              if (!isDraft && isCancellable && onCancel) {
-                actions.push({
-                  label: "Cancel Purchase Order",
-                  icon: <Ban className="w-4 h-4 text-foreground" />,
-                  onClick: () => { setOpenDropdownId(null); onCancel(po); },
-                });
+              if (!isAdmin) {
+                if ((isDraft || isReturned) && onEdit) {
+                  actions.push({
+                    label: isReturned ? "Edit & Re-Submit" : "Resend via Gmail",
+                    icon: <Pencil className="w-4 h-4 text-foreground" />,
+                    onClick: () => { setOpenDropdownId(null); onEdit(po); },
+                  });
+                }
+                if (isDraft && onDiscardDraft) {
+                  actions.push({
+                    label: "Discard Draft",
+                    icon: <Trash2 className="w-4 h-4 text-destructive" />,
+                    onClick: () => { setOpenDropdownId(null); onDiscardDraft(po); },
+                  });
+                }
+                if (!isDraft && isCancellable && onCancel) {
+                  actions.push({
+                    label: "Cancel Purchase Order",
+                    icon: <Ban className="w-4 h-4 text-foreground" />,
+                    onClick: () => { setOpenDropdownId(null); onCancel(po); },
+                  });
+                }
               }
 
               const isOpen = openDropdownId === po.poId;

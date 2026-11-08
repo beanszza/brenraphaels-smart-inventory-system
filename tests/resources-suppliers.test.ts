@@ -1,6 +1,6 @@
 import type { AuditEventInput } from "@/lib/gateway/audit";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { saveSupply, saveSupplier, saveRecipe, loadSupplyDetails, loadSupplierDetails } from "@/lib/resources-suppliers/actions";
+import { saveSupply, saveSupplier, saveRecipe, saveCategory, toggleCategoryStatus, loadSupplyDetails, loadSupplierDetails } from "@/lib/resources-suppliers/actions";
 import { getResources } from "@/lib/resources-suppliers/data";
 
 vi.mock("server-only", () => ({}));
@@ -27,7 +27,8 @@ const db = vi.hoisted(() => ({
   $transaction: vi.fn(),
   items: { findMany: vi.fn() }, suppliers: { findMany: vi.fn() },
   recipes: { findMany: vi.fn() }, finishedProducts: { findMany: vi.fn() },
-  categories: { findMany: vi.fn() }, unitOfMeasures: { findMany: vi.fn() },
+  categories: { findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(), update: vi.fn(), create: vi.fn() },
+  unitOfMeasures: { findMany: vi.fn() },
   inventoryMovementLogs: { findMany: vi.fn() }, supplierItems: { findMany: vi.fn() },
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
@@ -205,4 +206,91 @@ it("keeps a committed form successful when the audit gateway fails", async () =>
   expect(committed).toBe(true);
   expect(log).toHaveBeenCalled();
   log.mockRestore();
+});
+
+it("allows editing a category to inactive and excludes inactive categories from supply category options", async () => {
+  const catRecord = { CategoryId: 2, CategoryName: "Ingredients", Description: "Edible ingredients", _count: { Items: 3 } };
+  db.categories.findFirst.mockResolvedValue(null);
+  db.categories.findUnique.mockResolvedValue(catRecord);
+  db.categories.update.mockImplementation(async ({ data }: { data: { CategoryName?: string; Description?: string } }) => {
+    if (data.CategoryName !== undefined) catRecord.CategoryName = data.CategoryName;
+    if (data.Description !== undefined) catRecord.Description = data.Description;
+    return catRecord;
+  });
+
+  const editRes = await saveCategory({ categoryName: "Ingredients", description: "Edible ingredients", isActive: false }, 2);
+  expect(editRes).toEqual({ success: true, message: "Category saved successfully." });
+
+  db.items.findMany.mockResolvedValue([]);
+  db.suppliers.findMany.mockResolvedValue([]);
+  db.recipes.findMany.mockResolvedValue([]);
+  db.finishedProducts.findMany.mockResolvedValue([]);
+  db.unitOfMeasures.findMany.mockResolvedValue([{ UomId: 1, Code: "kg", Name: "Kilogram", Abbreviation: "kg", UomType: "Weight", ConversionFactor: 1 }]);
+  db.categories.findMany.mockResolvedValue([
+    { CategoryId: 1, CategoryName: "Raw Materials", Description: "Unprocessed materials", _count: { Items: 1 } },
+    catRecord,
+  ]);
+
+  const resources = await getResources();
+  const editedInAll = resources.allCategories.find((c) => c.categoryId === 2);
+  expect(editedInAll).toMatchObject({
+    categoryId: 2,
+    categoryName: "Ingredients",
+    description: "Edible ingredients",
+    isActive: false,
+  });
+  // Inactive category must not appear in Supply category dropdown options
+  expect(resources.categories).toEqual([{ categoryId: 1, categoryName: "Raw Materials" }]);
+
+  // Reactivating restores it to Supply category options
+  await toggleCategoryStatus(2, true);
+  const afterReactivate = await getResources();
+  expect(afterReactivate.categories).toEqual([
+    { categoryId: 1, categoryName: "Raw Materials" },
+    { categoryId: 2, categoryName: "Ingredients" },
+  ]);
+});
+
+it("restricts Admin to configuring BOM only and IMS Manager to configuring Categories, Suppliers, and Supply only", async () => {
+  // 1. Admin staff: cannot configure Categories, Suppliers, or Supply, but CAN configure BOM
+  vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
+    const { module } = JSON.parse(init.body as string);
+    return Response.json({
+      active: true,
+      user_id: "admin-1",
+      system: "IMS",
+      module,
+      staff: { name: "Jude Nitram", username: "2026-ADMIN-001", email: "admin@creoms.com" },
+    });
+  });
+
+  expect(await saveCategory({ categoryName: "Test Cat", description: "Desc", isActive: true })).toMatchObject({
+    success: false,
+    message: expect.stringContaining("view-only"),
+  });
+  expect(await saveSupplier(supplier)).toMatchObject({
+    success: false,
+    message: expect.stringContaining("view-only"),
+  });
+  expect(await saveSupply(supply)).toMatchObject({
+    success: false,
+    message: expect.stringContaining("view-only"),
+  });
+
+  // 2. IMS Manager: cannot configure BOM
+  vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
+    const { module } = JSON.parse(init.body as string);
+    return Response.json({
+      active: true,
+      user_id: "ims-1",
+      system: "IMS",
+      module,
+      staff: { name: "Vince Neil", username: "2026-VM-007", email: "madejavinceneil@example.com" },
+    });
+  });
+
+  expect(await saveRecipe(recipe)).toMatchObject({
+    success: false,
+    message: expect.stringContaining("do not have access to Bill of Materials"),
+  });
 });

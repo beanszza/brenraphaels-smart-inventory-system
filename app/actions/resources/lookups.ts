@@ -3,8 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
-
-const SUPPLY_CATEGORY_NAMES = ["Raw Materials", "Ingredients", "Tools and Supplies"];
+import { decodeCategoryDescription } from "@/lib/resources-suppliers/category-status";
 
 export async function listSupplyCategories() {
   await requireModule("Resources & Suppliers");
@@ -12,8 +11,8 @@ export async function listSupplyCategories() {
   try {
     const categories = await prisma.categories.findMany({
       where: {
-        CategoryName: {
-          in: SUPPLY_CATEGORY_NAMES,
+        NOT: {
+          CategoryName: { in: ["Finished Goods", "Finished Good"] },
         },
       },
       select: {
@@ -23,11 +22,13 @@ export async function listSupplyCategories() {
       },
     });
 
-    const formattedCategories = categories.map((cat) => ({
-      categoryId: cat.CategoryId,
-      categoryName: cat.CategoryName,
-      description: cat.Description,
-    }));
+    const formattedCategories = categories
+      .filter((cat) => decodeCategoryDescription(cat.Description, (cat as any).IsActive).isActive)
+      .map((cat) => ({
+        categoryId: cat.CategoryId,
+        categoryName: cat.CategoryName,
+        description: decodeCategoryDescription(cat.Description, (cat as any).IsActive).description,
+      }));
 
     // Custom sorting to match the C# backend logic
     const sortedCategories = formattedCategories.sort((a, b) => {

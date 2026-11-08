@@ -234,10 +234,10 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
       {loading ? <OrdersSkeleton /> : (<DeliveryTable
         deliveries={paginatedList}
         onView={(d) => setSelectedDelivery(d)}
-        onDispatch={(d) => setDispatchDelivery(d)}
-        onArrive={(d) => setArriveDelivery(d)}
-        onCancel={(d) => setCancelDelivery(d)}
-        onCreateGrn={(d) => handleCreateGrn(d)}
+        onDispatch={!isAdmin ? (d) => setDispatchDelivery(d) : undefined}
+        onArrive={!isAdmin ? (d) => setArriveDelivery(d) : undefined}
+        onCancel={!isAdmin ? (d) => setCancelDelivery(d) : undefined}
+        onCreateGrn={!isAdmin ? (d) => handleCreateGrn(d) : undefined}
       />)}
 
       {/* Pagination */}

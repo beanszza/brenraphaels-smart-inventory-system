@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
+import { decodeCategoryDescription } from "./category-status";
 
 export async function getResources() {
   await requireModule("Resources & Suppliers");
@@ -133,15 +134,18 @@ export async function getResources() {
       itemName: p.Items?.ItemName ?? "",
       variant: p.Variant ?? "",
     })),
-    allCategories: finalCategories.map((c) => ({
-      categoryId: c.CategoryId,
-      categoryName: c.CategoryName,
-      description: c.Description ?? "",
-      isActive: (c as any).IsActive ?? true,
-      itemCount: c._count?.Items ?? 0,
-    })),
+    allCategories: finalCategories.map((c) => {
+      const { description, isActive } = decodeCategoryDescription(c.Description, (c as any).IsActive);
+      return {
+        categoryId: c.CategoryId,
+        categoryName: c.CategoryName,
+        description,
+        isActive,
+        itemCount: c._count?.Items ?? 0,
+      };
+    }),
     categories: finalCategories
-      .filter((c) => (c as any).IsActive !== false)
+      .filter((c) => decodeCategoryDescription(c.Description, (c as any).IsActive).isActive)
       .map((c) => ({ categoryId: c.CategoryId, categoryName: c.CategoryName })),
     units: finalUnits.map((u) => ({
       uomId: u.UomId,

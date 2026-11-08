@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "./ModalWrapper";
@@ -18,16 +18,22 @@ interface CategoryModalProps {
   }) => Promise<void> | void;
 }
 
-export default function CategoryModal({
+export default function CategoryModal(props: CategoryModalProps) {
+  return props.open ? (
+    <CategoryModalForm key={props.editingCategory?.categoryId ?? "new"} {...props} />
+  ) : null;
+}
+
+function CategoryModalForm({
   open,
   editingCategory,
   existingCategories = [],
   onClose,
   onSave,
 }: CategoryModalProps) {
-  const [categoryName, setCategoryName] = useState("");
-  const [description, setDescription] = useState("");
-  const [isActive, setIsActive] = useState(true);
+  const [categoryName, setCategoryName] = useState(editingCategory?.categoryName ?? "");
+  const [description, setDescription] = useState(editingCategory?.description ?? "");
+  const [isActive, setIsActive] = useState(editingCategory ? editingCategory.isActive !== false : true);
   const [nameError, setNameError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -58,22 +64,6 @@ export default function CategoryModal({
     setNameError("");
     return true;
   };
-
-  useEffect(() => {
-    if (open) {
-      if (editingCategory) {
-        setCategoryName(editingCategory.categoryName || "");
-        setDescription(editingCategory.description || "");
-        setIsActive(editingCategory.isActive !== false);
-      } else {
-        setCategoryName("");
-        setDescription("");
-        setIsActive(true);
-      }
-      setNameError("");
-      setIsSaving(false);
-    }
-  }, [editingCategory, open]);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.slice(0, 50);

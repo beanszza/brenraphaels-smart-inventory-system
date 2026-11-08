@@ -6,9 +6,9 @@ import {
   Cell,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
-import { productionQuality } from "./mock-data";
+import type { QualitySlice } from "@/lib/dashboard/types";
+import { EmptyChart } from "./EmptyChart";
 
 function CustomTooltip({
   active,
@@ -30,8 +30,8 @@ function CustomTooltip({
             {item.name}
           </span>
         </div>
-        <p className="text-sm font-bold text-foreground mt-0.5">
-          {item.value} Batches
+        <p className="text-xs font-bold text-foreground mt-1">
+          {item.value} batches
         </p>
       </div>
     );
@@ -39,105 +39,110 @@ function CustomTooltip({
   return null;
 }
 
-export default function ProductionQualityChart() {
+export default function ProductionQualityChart({
+  data: productionQuality,
+}: {
+  data: QualitySlice[];
+}) {
   const total = productionQuality.reduce((s, d) => s + d.value, 0);
+  if (!total) return <EmptyChart title="Production Quality" subtitle="Batch quality inspection outcomes" />;
   const passed = productionQuality.find((d) => d.name === "Passed")?.value ?? 0;
   const passRate = Math.round((passed / total) * 100);
 
-  // Badge styles matching Orders & Procurement palette
   const badgeStyle: Record<string, { bg: string; text: string }> = {
-    Passed:    { bg: "bg-badge-success",  text: "text-badge-success-foreground" },
-    Rejected:  { bg: "bg-badge-destructive",   text: "text-badge-destructive-foreground" },
-    Cancelled: { bg: "bg-badge-orange",     text: "text-badge-orange-foreground" },
+    Passed:        { bg: "bg-badge-success",     text: "text-badge-success-foreground" },
+    Rejected:      { bg: "bg-badge-destructive", text: "text-badge-destructive-foreground" },
+    Cancelled:     { bg: "bg-badge-orange",      text: "text-badge-orange-foreground" },
+    "In progress": { bg: "bg-badge-warning",     text: "text-badge-warning-foreground" },
   };
 
   return (
-    <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <h3 className="text-xl font-bold text-foreground/90">
-            Production Quality
-          </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {total} total batches · current period
-          </p>
-        </div>
-        <span className="px-2.5 py-1 rounded-full bg-badge-success text-badge-success-foreground text-xs font-semibold">
-          In Cycle
-        </span>
+    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+      <div>
+        <h3 className="text-base font-bold text-foreground">
+          Production Quality
+        </h3>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {total.toLocaleString()} total batches inspected
+        </p>
       </div>
 
-      <ResponsiveContainer width="100%" height={230}>
-        <PieChart>
-          <Pie
-            data={productionQuality}
-            cx="50%"
-            cy="46%"
-            innerRadius={68}
-            outerRadius={98}
-            paddingAngle={3}
-            dataKey="value"
-            strokeWidth={2}
-            stroke="#fff"
-          >
-            {productionQuality.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomTooltip />} />
-          <Legend
-            iconType="circle"
-            iconSize={8}
-            formatter={(value) => (
-              <span className="text-xs text-foreground">{value}</span>
-            )}
-          />
-          {/* Center pass-rate label */}
-          <text
-            x="50%"
-            y="43%"
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={26}
-            fontWeight={700}
-            fill="#101828"
-          >
-            {passRate}%
-          </text>
-          <text
-            x="50%"
-            y="51%"
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={11}
-            fontWeight={500}
-            fill="#98a2b3"
-          >
-            Pass Rate
-          </text>
-        </PieChart>
-      </ResponsiveContainer>
+      <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4 mt-4">
+        <div className="h-[220px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={productionQuality}
+                cx="50%"
+                cy="50%"
+                innerRadius={55}
+                outerRadius={88}
+                paddingAngle={3}
+                dataKey="value"
+                strokeWidth={2}
+                stroke="var(--card)"
+              >
+                {productionQuality.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+              <text
+                x="50%"
+                y="47%"
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={24}
+                fontWeight={700}
+                fill="var(--foreground)"
+              >
+                {passRate}%
+              </text>
+              <text
+                x="50%"
+                y="57%"
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={11}
+                fontWeight={500}
+                fill="var(--muted-foreground)"
+              >
+                Pass Rate
+              </text>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
 
-      {/* Stat row — Passed / Rejected / Cancelled */}
-      <div className="grid grid-cols-3 gap-2 mt-3">
-        {productionQuality.map((d) => {
-          const style = badgeStyle[d.name] ?? { bg: "bg-muted", text: "text-foreground" };
-          return (
-            <div
-              key={d.name}
-              className={`rounded-xl p-3 text-center ${style.bg}`}
-            >
-              <p className={`text-xl font-bold ${style.text}`}>{d.value}</p>
-              <p className={`text-xs font-semibold mt-0.5 ${style.text} opacity-80`}>
-                {d.name}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {Math.round((d.value / total) * 100)}%
-              </p>
-            </div>
-          );
-        })}
+        <div className="space-y-2.5">
+          {productionQuality.map((d) => {
+            const style = badgeStyle[d.name] ?? { bg: "bg-muted", text: "text-foreground" };
+            const pct = Math.round((d.value / total) * 100);
+            return (
+              <div
+                key={d.name}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-3.5 py-2.5"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ background: d.color }}
+                  />
+                  <span className="text-xs font-semibold text-foreground truncate">
+                    {d.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold tabular-nums ${style.bg} ${style.text}`}>
+                    {d.value}
+                  </span>
+                  <span className="text-[11px] font-medium tabular-nums text-muted-foreground w-9 text-right">
+                    ({pct}%)
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
