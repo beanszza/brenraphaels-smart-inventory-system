@@ -78,12 +78,16 @@ export function getRecommendedUoms(
     const matched: UomOption[] = [];
     for (const k of keys) {
       const lowerKey = k.toLowerCase();
-      const found = availableUoms.find(
-        (u) =>
-          u.abbreviation.toLowerCase() === lowerKey ||
-          u.code.toLowerCase() === lowerKey ||
-          u.name.toLowerCase().includes(lowerKey)
-      );
+      const found =
+        availableUoms.find(
+          (u) =>
+            u.abbreviation.toLowerCase() === lowerKey ||
+            u.code.toLowerCase() === lowerKey ||
+            u.name.toLowerCase() === lowerKey
+        ) ??
+        (lowerKey.length > 2
+          ? availableUoms.find((u) => u.name.toLowerCase().includes(lowerKey))
+          : undefined);
       if (found && !matched.some((m) => m.uomId === found.uomId)) {
         matched.push(found);
       }
@@ -383,10 +387,10 @@ function SupplyModalForm({
             >
               {recommendedUoms.length > 0 ? (
                 <>
-                  <optgroup label={`Recommended for "${itemName.trim()}"`}>
-                    {recommendedUoms.map((uom, idx) => (
+                  <optgroup label="Recommended">
+                    {recommendedUoms.map((uom) => (
                       <option key={`rec-${uom.uomId}`} value={uom.uomId}>
-                        {uom.name} ({uom.abbreviation}){idx === 0 ? " — Recommended" : ""}
+                        {uom.name} ({uom.abbreviation})
                       </option>
                     ))}
                   </optgroup>
@@ -406,14 +410,6 @@ function SupplyModalForm({
                 ))
               )}
             </select>
-            {recommendedUoms.length > 0 && (
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Recommended for <span className="font-semibold text-foreground">{itemName.trim()}</span>:{" "}
-                <span className="font-medium text-foreground">
-                  {recommendedUoms.map((u) => `${u.name} (${u.abbreviation})`).join(", ")}
-                </span>
-              </p>
-            )}
           </div>
         </div>
 
