@@ -274,6 +274,11 @@ export interface FinishedProductItem {
   unitCost?: number;
   sku: string;
   variant: string;
+  contentSize?: string;
+  contentUom?: string;
+  packagingType?: string;
+  minStockLevel?: number;
+  maxStockLevel?: number;
   imageUrl?: string;
   productCode?: string;
   categoryName?: string;

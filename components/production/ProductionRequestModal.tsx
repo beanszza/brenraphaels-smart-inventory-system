@@ -32,6 +32,14 @@ interface ProductionRequestModalProps {
   onClose: () => void;
   onSuccess: (newPrData?: any) => void;
   initialRequest?: ProductionRequestEntity | null;
+  prefillData?: {
+    productId?: number;
+    productName?: string;
+    variant?: string;
+    quantity?: number;
+    priority?: "Low" | "Medium" | "High";
+    reason?: string;
+  } | null;
   onProceedToIssuance?: (prodReqId: number) => void;
   onViewPrSummary?: (prData: any) => void;
   onStartProduction?: (req: ProductionRequestEntity) => void;
@@ -112,6 +120,7 @@ export default function ProductionRequestModal({
   onClose,
   onSuccess,
   initialRequest,
+  prefillData,
   onProceedToIssuance,
   onViewPrSummary,
   onStartProduction,
@@ -209,14 +218,14 @@ export default function ProductionRequestModal({
           setCustomReason(rawReason);
         }
       } else {
-        // Reset form for new creation
-        setSelectedProductName("");
-        setSelectedVariant("");
-        setProductId("");
+        // Reset form for new creation (or prefill from Inventory "Produce Now")
+        setSelectedProductName(prefillData?.productName || "");
+        setSelectedVariant(prefillData?.variant || "");
+        setProductId(prefillData?.productId ? String(prefillData.productId) : "");
         setRecipeId("");
         setFilteredRecipes([]);
-        setQuantity(100);
-        setPriority("Medium");
+        setQuantity(prefillData?.quantity && prefillData.quantity > 0 ? prefillData.quantity : 100);
+        setPriority(prefillData?.priority || "Medium");
         const tomorrowDate = new Date(Date.now() + 86400000);
         const tomorrowStr = `${tomorrowDate.getFullYear()}-${String(tomorrowDate.getMonth() + 1).padStart(2, "0")}-${String(tomorrowDate.getDate()).padStart(2, "0")}`;
         setRequiredDate(tomorrowStr);
@@ -224,13 +233,13 @@ export default function ProductionRequestModal({
         setTimeHour("08");
         setTimeMinute("00");
         setTimePeriod("AM");
-        setSelectedReasonOption("Regular Stock Replenishment");
+        setSelectedReasonOption(prefillData?.reason || "Regular Stock Replenishment");
         setCustomReason("");
         setLotSuggestions(null);
       }
       setActionModal(null);
     }
-  }, [open, initialRequest]);
+  }, [open, initialRequest, prefillData]);
 
   // Load products and recipes (with instant memory cache)
   useEffect(() => {
@@ -244,12 +253,14 @@ export default function ProductionRequestModal({
 
       actionResponse(productionListFinishedProducts()).then((res: any) => {
         if (res.data?.success && Array.isArray(res.data.data)) {
-          const prods = res.data.data.map((p: any) => ({
-            productId: p.productId,
-            productName: p.itemName || p.productName || "Product",
-            sku: p.sku || "",
-            variant: p.variant || "",
-          }));
+          const prods = res.data.data
+            .filter((p: any) => p.isActive !== false)
+            .map((p: any) => ({
+              productId: p.productId,
+              productName: p.itemName || p.productName || "Product",
+              sku: p.sku || "",
+              variant: p.variant || "",
+            }));
           cachedProducts = prods;
           setProducts(prods);
         }
@@ -275,16 +286,10 @@ export default function ProductionRequestModal({
   // Handle Product Name selection
   const handleProductSelect = (name: string) => {
     setSelectedProductName(name);
-    const matching = products.filter((p) => p.productName === name);
-    const defaultVariant = matching[0]?.variant?.trim() || "Standard";
-    setSelectedVariant(defaultVariant);
-    const matchedProd = matching.find((p) => (p.variant?.trim() || "Standard") === defaultVariant) || matching[0];
-    if (matchedProd) {
-      setProductId(String(matchedProd.productId));
-    } else {
-      setProductId("");
-    }
+    setSelectedVariant("");
+    setProductId("");
     setRecipeId("");
+    setFilteredRecipes([]);
     setLotSuggestions(null);
   };
 
@@ -296,36 +301,40 @@ export default function ProductionRequestModal({
     );
     if (matchedProd) {
       setProductId(String(matchedProd.productId));
+    } else {
+      setProductId("");
     }
     setRecipeId("");
     setLotSuggestions(null);
   };
 
-  // Filter recipes when product changes
+  // Filter recipes strictly by the selected Variant's productId
   useEffect(() => {
     if (productId) {
       const pId = Number(productId);
-      const matched = recipes.filter((r) => {
-        if (r.productId === pId) return true;
-        const rProd = products.find((p) => p.productId === r.productId);
-        return rProd && selectedProductName && rProd.productName.toLowerCase() === selectedProductName.toLowerCase();
-      });
+      const matched = recipes.filter((r) => Number(r.productId) === pId);
       setFilteredRecipes(matched);
       if (matched.length === 1) {
         setRecipeId(String(matched[0].recipeId));
-        setQuantity(Number(matched[0].outputQuantity) || 0);
+        if (!prefillData?.quantity) {
+          setQuantity(Number(matched[0].outputQuantity) || 0);
+        }
       } else if (!matched.some((r) => String(r.recipeId) === recipeId)) {
         setRecipeId("");
-        setQuantity(0);
+        if (!prefillData?.quantity) {
+          setQuantity(0);
+        }
         setLotSuggestions(null);
       }
     } else {
       setFilteredRecipes([]);
       setRecipeId("");
-      setQuantity(0);
+      if (!prefillData?.quantity) {
+        setQuantity(0);
+      }
       setLotSuggestions(null);
     }
-  }, [productId, recipes, recipeId, selectedProductName, products]);
+  }, [productId, recipes, recipeId, prefillData]);
 
   // Fetch live lot suggestions whenever recipeId or quantity changes
   useEffect(() => {
@@ -722,10 +731,12 @@ export default function ProductionRequestModal({
                   <SelectTrigger className="w-full h-10 text-xs rounded-xl border-border bg-card">
                     <SelectValue
                       placeholder={
-                        !productId
+                        !selectedProductName
                           ? "Select product first"
+                          : !productId
+                          ? "Select variant first"
                           : filteredRecipes.length === 0
-                          ? "No recipe available"
+                          ? "No recipe for this variant"
                           : "Select recipe..."
                       }
                     />
@@ -739,7 +750,7 @@ export default function ProductionRequestModal({
                       ))
                     ) : (
                       <div className="p-3 text-xs text-muted-foreground text-center">
-                        No recipe configured for this product.
+                        No recipe configured for this variant.
                       </div>
                     )}
                   </SelectContent>

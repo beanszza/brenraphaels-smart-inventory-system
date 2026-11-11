@@ -22,7 +22,7 @@ export function validateInput(input: unknown): void {
     if (["userId", "userName", "requestedBy", "issuedBy", "scannedBy", "assignedCook", "packagedBy", "packedBy", "completedBy", "inspectorName", "approvedBy", "rejectedBy", "authorisedBy"].includes(key)) continue;
     if (value === undefined || value === null) continue;
     if (/Id$/.test(key)) positiveId(value);
-    else if (/quantity|price|cost/i.test(key)) {
+    else if (/quantity|price|cost|stocklevel/i.test(key)) {
       if (typeof value !== "number" || !Number.isFinite(value) || value < 0) refuse("Quantities, prices, and costs must be finite, non-negative numbers.");
     } else if (["variants", "items"].includes(key)) {
       if (!Array.isArray(value) || value.length === 0 || value.length > 500) refuse("Include between 1 and 500 variant lines.");
@@ -32,7 +32,7 @@ export function validateInput(input: unknown): void {
       if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) refuse("Enter a valid date.");
     } else if (key === "checklist") {
       if (!value || typeof value !== "object" || Array.isArray(value) || Object.values(value).some(v => typeof v !== "boolean")) refuse("Invalid quality checklist.");
-    } else if (["isApproved", "bypassScanCheck", "isActive", "submitForApproval"].includes(key)) {
+    } else if (["isApproved", "bypassScanCheck", "isActive", "submitForApproval", "allowExistingProduct"].includes(key)) {
       if (typeof value !== "boolean") refuse("Invalid production details.");
     } else if (typeof value !== "string" || value.length > 10000) refuse("Invalid production details.");
   }

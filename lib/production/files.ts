@@ -37,5 +37,9 @@ export async function confirmImage(staff: Staff, target: FileTarget, id: number,
 }
 export async function resolveImage(staff: Staff, target: FileTarget, id: number) {
   await exists(target, id);
-  return resolveFile(filesGateway, staff, await target.current(id));
+  const currentRef = await target.current(id);
+  if (currentRef && currentRef.startsWith("data:image/")) {
+    return { kind: "file" as const, url: currentRef, private: false as const };
+  }
+  return resolveFile(filesGateway, staff, currentRef);
 }

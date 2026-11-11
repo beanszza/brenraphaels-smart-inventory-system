@@ -266,7 +266,7 @@ export default function InventoryTable({
                           }}
                           className="h-7 px-3 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer shadow-xs"
                         >
-                          Order Now
+                          {isFinishedGoods ? "Produce Now" : "Order Now"}
                         </Button>
                       ) : (
                         <span className="text-muted-foreground font-mono">—</span>

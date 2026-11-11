@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import ModalWrapper from "./ModalWrapper";
 import { Recipe, FinishedProduct, SupplyItem, Ingredient } from "./types";
 import RecipeIngredientItem from "./RecipeIngredientItem";
+import { parseVariantComponents } from "@/lib/production/sku";
 
 interface RecipeModalProps {
   open: boolean;
@@ -254,7 +255,7 @@ function RecipeModalForm({
                 ) : (
                   availableVariants.map((v) => (
                     <option key={v.productId} value={v.productId}>
-                      {v.variant ? v.variant : "Standard"}
+                      {v.variant ? parseVariantComponents(v.variant).variantName : "Standard"}
                     </option>
                   ))
                 )}

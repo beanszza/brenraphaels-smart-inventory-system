@@ -13,8 +13,38 @@ export const productImage: FileTarget = {
   entityType: "finished-product",
   role: "product image",
   exists: async (id) => (await prisma.finishedProducts.count({ where: { ProductId: id } })) > 0,
-  current: async (id) => (await prisma.finishedProducts.findUnique({ where: { ProductId: id } }))?.ImageUrl ?? null,
-  save: async (id, fileId) => void (await prisma.finishedProducts.update({ where: { ProductId: id }, data: { ImageUrl: fileId } })),
+  current: async (id) => {
+    const fp = await prisma.finishedProducts.findUnique({
+      where: { ProductId: id },
+      include: { Items: true },
+    });
+    if (!fp) return null;
+    if (fp.ImageUrl) return fp.ImageUrl;
+    const prodName = fp.Items?.ItemName?.trim();
+    if (!prodName) return null;
+    const sibling = await prisma.finishedProducts.findFirst({
+      where: {
+        Items: { ItemName: { equals: prodName, mode: "insensitive" } },
+        ImageUrl: { not: null },
+      },
+      select: { ImageUrl: true },
+    });
+    return sibling?.ImageUrl ?? null;
+  },
+  save: async (id, fileId) => {
+    const fp = await prisma.finishedProducts.findUnique({
+      where: { ProductId: id },
+      include: { Items: true },
+    });
+    await prisma.finishedProducts.update({ where: { ProductId: id }, data: { ImageUrl: fileId } });
+    const prodName = fp?.Items?.ItemName?.trim();
+    if (prodName) {
+      await prisma.finishedProducts.updateMany({
+        where: { Items: { ItemName: { equals: prodName, mode: "insensitive" } } },
+        data: { ImageUrl: fileId },
+      });
+    }
+  },
 };
 
 export const purchaseOrderReceipt: FileTarget = {

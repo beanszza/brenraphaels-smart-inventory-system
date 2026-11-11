@@ -3,9 +3,12 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { decodeCategoryDescription } from "./category-status";
+import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
+import { parseVariantComponents } from "@/lib/production/sku";
 
 export async function getResources() {
   await requireModule("Resources & Suppliers");
+  await ensureUbeJamHavaneroStock();
   const [items, suppliers, recipes, products, categories, units] = await Promise.all([
     prisma.items.findMany({ include: { Category: true, Uom: true, Inventories: true, SupplierItems: true }, orderBy: { ItemId: "desc" } }),
     prisma.suppliers.findMany({ include: { SupplierItems: { include: { Items: true } } }, orderBy: { SupplierId: "desc" } }),
@@ -112,28 +115,34 @@ export async function getResources() {
         itemName: i.Items?.ItemName ?? "",
       })),
     })),
-    recipes: recipes.map((r) => ({
-      recipeId: r.RecipeId,
-      recipeCode: r.RecipeCode ?? `BOM-${String(r.RecipeId).padStart(4, "0")}`,
-      recipeName: r.RecipeName,
-      productId: r.ProductId,
-      finishedProduct: r.Product?.Items?.ItemName ?? "Finished Product",
-      outputQuantity: Number(r.OutputQuantity ?? 1),
-      notes: r.Notes ?? "",
-      isActive: r.IsActive ?? true,
-      displayName: `${r.RecipeName} — Batch of ${Number(r.OutputQuantity ?? 1)} pcs`,
-      yieldLabel: `Batch of ${Number(r.OutputQuantity ?? 1)} pcs`,
-      ingredients: (r.RecipeIngredients ?? []).map((i) => ({
-        itemId: i.ItemId,
-        uomId: i.UomId,
-        standardQuantity: Number(i.StandardQuantity ?? 0),
+    recipes: recipes.map((r) => {
+      const prodName = r.Product?.Items?.ItemName ?? "Finished Product";
+      const parsedVar = r.Product?.Variant ? parseVariantComponents(r.Product.Variant).variantName : "";
+      return {
+        recipeId: r.RecipeId,
+        recipeCode: r.RecipeCode ?? `BOM-${String(r.RecipeId).padStart(4, "0")}`,
+        recipeName: r.RecipeName,
+        productId: r.ProductId,
+        finishedProduct: parsedVar ? `${prodName} (${parsedVar})` : prodName,
+        outputQuantity: Number(r.OutputQuantity ?? 1),
+        notes: r.Notes ?? "",
+        isActive: r.IsActive ?? true,
+        displayName: `${r.RecipeName} — Batch of ${Number(r.OutputQuantity ?? 1)} pcs`,
+        yieldLabel: `Batch of ${Number(r.OutputQuantity ?? 1)} pcs`,
+        ingredients: (r.RecipeIngredients ?? []).map((i) => ({
+          itemId: i.ItemId,
+          uomId: i.UomId,
+          standardQuantity: Number(i.StandardQuantity ?? 0),
+        })),
+      };
+    }),
+    products: products
+      .filter((p) => (p.Items?.IsActive ?? true) !== false)
+      .map((p) => ({
+        productId: p.ProductId,
+        itemName: p.Items?.ItemName ?? "",
+        variant: p.Variant ? parseVariantComponents(p.Variant).variantName : "",
       })),
-    })),
-    products: products.map((p) => ({
-      productId: p.ProductId,
-      itemName: p.Items?.ItemName ?? "",
-      variant: p.Variant ?? "",
-    })),
     allCategories: finalCategories.map((c) => {
       const { description, isActive } = decodeCategoryDescription(c.Description, (c as any).IsActive);
       return {

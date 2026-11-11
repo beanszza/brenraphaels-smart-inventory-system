@@ -5,22 +5,21 @@ import { requireModule } from "@/lib/portal/staff";
 import { resourceResult, errorMessage } from "@/lib/resources/result";
 import { syncProductToPos, fetchLocationsFromPos } from "@/lib/pos/client";
 import { SyncProductDto, PosVariationDto } from "@/lib/pos/types";
+import { parseVariantComponents } from "@/lib/production/sku";
 
 function parseVariantParts(variantStr?: string | null): { packagingType: string; size: string } {
-  if (!variantStr) return { packagingType: "Tub", size: "Standard" };
-  const parts = variantStr.trim().split(/\s+/);
-  if (parts.length === 1) {
-    return { packagingType: "Tub", size: parts[0] };
-  }
-  const size = parts[0];
-  const packagingType = parts.slice(1).join(" ");
-  return { packagingType, size };
+  if (!variantStr) return { packagingType: "Jar", size: "Standard" };
+  const parsed = parseVariantComponents(variantStr);
+  return {
+    packagingType: parsed.packagingType,
+    size: `${parsed.contentSize} ${parsed.uom}`.trim(),
+  };
 }
 
 /**
  * Syncs a single finished product (including all its variations) to the POS system.
  */
-export async function syncProductCatalogToPos(productName: string) {
+export async function syncProductCatalogToPos(productName: string, options?: { isNewCreation?: boolean }) {
   await requireModule("Production & Quality");
 
   try {
@@ -59,22 +58,25 @@ export async function syncProductCatalogToPos(productName: string) {
       const { packagingType, size } = parseVariantParts(fp.Variant);
       const sku = fp.Sku?.trim() || `SKU-${fp.ProductId}`;
       const price = Number(fp.SellingPrice) || 0;
+      const isVarActive = fp.Items?.IsActive ?? true;
       return {
         sku,
         variationName: `${sku}|${packagingType}|${size}`,
         packagingType,
         size,
-        isActive: true,
-        price,
+        isActive: isVarActive,
+        ...(options?.isNewCreation || price > 0 ? { price } : {}),
       };
     });
+
+    const anyActive = items.some((fp) => (fp.Items?.IsActive ?? true) !== false);
 
     const payload: SyncProductDto = {
       scmsProductId,
       productName: first.Items?.ItemName || trimmed,
       productCategory: categoryName,
       productDescription: `${first.Items?.ItemName} produced by SCMS Commissary.`,
-      isActive: first.Items?.IsActive ?? true,
+      isActive: anyActive,
       variations,
     };
 
@@ -143,22 +145,25 @@ export async function syncAllFinishedProductsToPos() {
         const { packagingType, size } = parseVariantParts(fp.Variant);
         const sku = fp.Sku?.trim() || `SKU-${fp.ProductId}`;
         const price = Number(fp.SellingPrice) || 0;
+        const isVarActive = fp.Items?.IsActive ?? true;
         return {
           sku,
           variationName: `${sku}|${packagingType}|${size}`,
           packagingType,
           size,
-          isActive: true,
-          price,
+          isActive: isVarActive,
+          ...(price > 0 ? { price } : {}),
         };
       });
+
+      const anyActive = fps.some((fp) => (fp.Items?.IsActive ?? true) !== false);
 
       const payload: SyncProductDto = {
         scmsProductId,
         productName: prodName,
         productCategory: categoryName,
         productDescription: `${prodName} produced by SCMS Commissary.`,
-        isActive: first.Items?.IsActive ?? true,
+        isActive: anyActive,
         variations,
       };
 

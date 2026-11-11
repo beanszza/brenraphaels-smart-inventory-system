@@ -8,23 +8,27 @@ import {
   generateProductCode,
   buildBaseVariantSku,
   getUniqueVariantSku,
+  composeVariantName,
+  parseVariantComponents,
 } from "@/lib/production/sku";
+import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
 
 export async function listProductFormLookups() {
   await requireModule("Production & Quality");
   return read(async () => {
-    // Only standard finished goods UOMs: Jar, Container, Pouch
     const standardUomDefs = [
-      { name: "Jar", abbreviation: "jar", code: "jar" },
-      { name: "Container", abbreviation: "container", code: "container" },
-      { name: "Pouch", abbreviation: "pouch", code: "pouch" },
+      { name: "ML", fullName: "Millilitre", abbreviation: "ML", code: "mL", uomType: "Volume", factor: 0.001, isBase: false },
+      { name: "G", fullName: "Gram", abbreviation: "G", code: "g", uomType: "Weight", factor: 0.001, isBase: false },
+      { name: "KG", fullName: "Kilogram", abbreviation: "KG", code: "kg", uomType: "Weight", factor: 1, isBase: true },
+      { name: "L", fullName: "Litre", abbreviation: "L", code: "L", uomType: "Volume", factor: 1, isBase: true },
     ];
 
     const dbUoms = await prisma.unitOfMeasures.findMany({
       where: {
         OR: [
-          { Name: { in: ["Jar", "Container", "Pouch", "Tub"], mode: "insensitive" } },
-          { Abbreviation: { in: ["jar", "container", "pouch", "tub"], mode: "insensitive" } },
+          { Abbreviation: { in: ["ml", "mL", "ML", "g", "G", "kg", "KG", "l", "L"], mode: "insensitive" } },
+          { Code: { in: ["ml", "mL", "ML", "g", "G", "kg", "KG", "l", "L"], mode: "insensitive" } },
+          { Name: { in: ["Millilitre", "Milliliter", "Gram", "Kilogram", "Litre", "Liter"], mode: "insensitive" } },
         ],
       },
       select: { UomId: true, Name: true, Abbreviation: true },
@@ -34,20 +38,20 @@ export async function listProductFormLookups() {
     for (const def of standardUomDefs) {
       let match = dbUoms.find(
         (u) =>
-          u.Name.toLowerCase() === def.name.toLowerCase() ||
-          (def.name === "Container" && u.Name.toLowerCase() === "tub")
+          u.Abbreviation?.toLowerCase() === def.abbreviation.toLowerCase() ||
+          u.Name.toLowerCase() === def.fullName.toLowerCase()
       );
 
       if (!match) {
         try {
           match = await prisma.unitOfMeasures.create({
             data: {
-              Name: def.name,
+              Name: def.fullName,
               Abbreviation: def.abbreviation,
               Code: def.code,
-              ConversionFactor: 1,
-              IsBaseUnit: false,
-              UomType: "Count",
+              ConversionFactor: def.factor,
+              IsBaseUnit: def.isBase,
+              UomType: def.uomType,
             },
             select: { UomId: true, Name: true, Abbreviation: true },
           });
@@ -59,7 +63,7 @@ export async function listProductFormLookups() {
       standardChoices.push({
         uomId: match.UomId,
         name: def.name,
-        abbreviation: match.Abbreviation || def.abbreviation,
+        abbreviation: def.abbreviation,
       });
     }
 
@@ -73,6 +77,7 @@ export async function listProductFormLookups() {
       data: {
         defaultCategoryId: finishedCategory?.CategoryId || 1,
         uoms: standardChoices,
+        packagingTypes: ["Jar", "Container", "Pouch"],
       },
     });
   });
@@ -80,6 +85,7 @@ export async function listProductFormLookups() {
 
 export async function listFinishedProducts() {
   await requireModule("Production & Quality");
+  await ensureUbeJamHavaneroStock();
   return read(async () => {
     const products = await prisma.finishedProducts.findMany({
       include: {
@@ -92,25 +98,52 @@ export async function listFinishedProducts() {
       },
       orderBy: { ProductId: "desc" },
     });
-    const response = products.map((fp) => ({
-      productId: fp.ProductId,
-      itemId: fp.ItemId,
-      sellingPrice: Number(fp.SellingPrice),
-      sku: fp.Sku,
-      itemName: fp.Items?.ItemName || "",
-      variant: fp.Variant,
-      imageUrl: fp.ImageUrl || undefined,
-      productCode: fp.Items?.ItemCode || "",
-      categoryName: fp.Items?.Category?.CategoryName || "Finished Goods",
-      uomName: fp.Items?.Uom?.Abbreviation || "pcs",
-      isActive: fp.Items?.IsActive ?? true,
-    }));
+
+    // Share one photo per product across all variants of the same product name
+    const sharedPhotoByProduct = new Map<string, string>();
+    for (const fp of products) {
+      const key = (fp.Items?.ItemName || "").trim().toLowerCase();
+      if (key && fp.ImageUrl && !sharedPhotoByProduct.has(key)) {
+        sharedPhotoByProduct.set(key, fp.ImageUrl);
+      }
+    }
+
+    const response = products.map((fp) => {
+      const parsed = parseVariantComponents(fp.Variant, fp.Items?.Uom?.Abbreviation);
+      const nameKey = (fp.Items?.ItemName || "").trim().toLowerCase();
+      const effectiveImage = fp.ImageUrl || (nameKey ? sharedPhotoByProduct.get(nameKey) : undefined);
+
+      return {
+        productId: fp.ProductId,
+        itemId: fp.ItemId,
+        sellingPrice: Number(fp.SellingPrice ?? 0),
+        sku: fp.Sku,
+        itemName: fp.Items?.ItemName || "",
+        variant: parsed.variantName,
+        contentSize: parsed.contentSize,
+        contentUom: parsed.uom,
+        packagingType: parsed.packagingType,
+        minStockLevel: Number(fp.Items?.MinStockLevel ?? 10),
+        maxStockLevel: Number(fp.Items?.MaxStockLevel ?? 100),
+        imageUrl: effectiveImage || undefined,
+        productCode: fp.Items?.ItemCode || "",
+        categoryName: fp.Items?.Category?.CategoryName || "Finished Goods",
+        uomName: parsed.uom,
+        isActive: fp.Items?.IsActive ?? true,
+      };
+    });
     return resourceResult({ success: true, data: response });
   });
 }
 
 export interface CreateProductVariantInput {
-  variantName: string;
+  variantName?: string;
+  contentSize?: string | number;
+  contentUom?: string;
+  packagingType?: string;
+  uomId?: number;
+  minStockLevel?: number;
+  maxStockLevel?: number;
   unitCost?: number;
   sellingPrice?: number;
 }
@@ -122,6 +155,7 @@ export interface CreateFullProductInput {
   uomName?: string;
   description?: string;
   unitCost?: number;
+  allowExistingProduct?: boolean;
   variants: CreateProductVariantInput[];
 }
 
@@ -145,82 +179,163 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
       categoryId = category?.CategoryId || 1;
     }
 
-    // Automatically resolve UOM (Jar, Container, Pouch, or provided uomId)
-    let uomId = body.uomId ? positiveId(body.uomId) : null;
-    if (!uomId && body.uomName) {
-      const matchUom = await tx.unitOfMeasures.findFirst({
-        where: {
-          OR: [
-            { Name: { equals: body.uomName, mode: "insensitive" } },
-            { Abbreviation: { equals: body.uomName, mode: "insensitive" } },
-          ],
-        },
-      });
-      if (matchUom) uomId = matchUom.UomId;
-    }
-    if (!uomId) {
-      uomId = 1;
-    }
+    // Resolve default UOM fallback
+    let fallbackUomId = body.uomId ? positiveId(body.uomId) : 1;
 
-    // Check duplicate variant names in the submitted payload
+    // Normalize and validate variants
     const seenNames = new Set<string>();
+    const normalizedVariants: Array<{
+      variantName: string;
+      contentUom: string;
+      uomId?: number;
+      minStockLevel: number;
+      maxStockLevel: number;
+      sellingPrice: number;
+    }> = [];
+
     for (const v of body.variants) {
-      const vName = (v.variantName || "").trim().toLowerCase();
-      if (!vName) refuse("All variants must have a name (e.g. '250g Tub').");
-      if (seenNames.has(vName)) refuse(`Duplicate variant '${v.variantName}' in product definition.`);
-      seenNames.add(vName);
-      const effectivePrice = typeof v.unitCost === "number" && !isNaN(v.unitCost)
-        ? v.unitCost
-        : (typeof v.sellingPrice === "number" && !isNaN(v.sellingPrice) ? v.sellingPrice : 0);
+      const resolvedName =
+        v.contentSize !== undefined && String(v.contentSize).trim() !== ""
+          ? composeVariantName(
+              v.contentSize,
+              v.contentUom || body.uomName || "ML",
+              v.packagingType || "Jar"
+            )
+          : (v.variantName || "").trim();
+
+      const vNameKey = resolvedName.toLowerCase();
+      if (!vNameKey) refuse("All variants must have a valid Content Size, Unit of Measurement, and Packaging Type.");
+      if (seenNames.has(vNameKey)) refuse(`Duplicate variant '${resolvedName}' in product definition.`);
+      seenNames.add(vNameKey);
+
+      const effectivePrice =
+        typeof v.unitCost === "number" && !isNaN(v.unitCost)
+          ? v.unitCost
+          : typeof v.sellingPrice === "number" && !isNaN(v.sellingPrice)
+          ? v.sellingPrice
+          : 0;
       if (effectivePrice < 0) {
         refuse("Unit cost must be a valid non-negative number.");
       }
-      v.sellingPrice = effectivePrice;
+
+      const minStock =
+        typeof v.minStockLevel === "number" && !isNaN(v.minStockLevel) && v.minStockLevel >= 0
+          ? v.minStockLevel
+          : 10;
+      const maxStock =
+        typeof v.maxStockLevel === "number" && !isNaN(v.maxStockLevel) && v.maxStockLevel > 0
+          ? v.maxStockLevel
+          : Math.max(minStock * 2, 100);
+      if (maxStock < minStock) {
+        refuse("Maximum stock level cannot be less than minimum stock level.");
+      }
+
+      const parsed = parseVariantComponents(resolvedName, v.contentUom || body.uomName);
+      normalizedVariants.push({
+        variantName: resolvedName,
+        contentUom: parsed.uom,
+        uomId: v.uomId,
+        minStockLevel: minStock,
+        maxStockLevel: maxStock,
+        sellingPrice: effectivePrice,
+      });
     }
 
-    // Check if an Item record already exists with this name
-    const existingItem = await tx.items.findFirst({
-      where: { ItemName: { equals: trimmedName, mode: "insensitive" } },
+    // Prevent creating a duplicate product or variant that already exists in DB for this product
+    const existingDbVariants = await tx.finishedProducts.findMany({
+      where: {
+        Items: { ItemName: { equals: trimmedName, mode: "insensitive" } },
+      },
+      select: {
+        ProductId: true,
+        Variant: true,
+        ImageUrl: true,
+        Items: { select: { ItemName: true } },
+      },
     });
 
-    let item = existingItem;
-    if (!item) {
+    if (!body.allowExistingProduct) {
+      const hasSameProductName = existingDbVariants.some(
+        (ex: any) => (ex.Items?.ItemName || "").trim().toLowerCase() === trimmedName.toLowerCase()
+      );
+      if (hasSameProductName) {
+        refuse(`Product '${trimmedName}' already exists. Please edit the existing product instead.`);
+      }
+    }
+
+    for (const v of normalizedVariants) {
+      const targetCanonical = composeVariantName(
+        parseVariantComponents(v.variantName, v.contentUom).contentSize,
+        v.contentUom,
+        parseVariantComponents(v.variantName, v.contentUom).packagingType
+      ).toLowerCase();
+
+      const conflict = existingDbVariants.find((ex) => {
+        const exParsed = parseVariantComponents(ex.Variant);
+        const exCanonical = composeVariantName(
+          exParsed.contentSize,
+          exParsed.uom,
+          exParsed.packagingType
+        ).toLowerCase();
+        return exCanonical === targetCanonical || (ex.Variant || "").trim().toLowerCase() === v.variantName.toLowerCase();
+      });
+
+      if (conflict) {
+        refuse(`Variant '${v.variantName}' already exists for product '${trimmedName}'.`);
+      }
+    }
+
+    // Check if an existing variant of this product already has a shared photo
+    const existingSiblingWithPhoto = existingDbVariants.find((ex) => Boolean(ex.ImageUrl));
+
+    const createdVariants = [];
+    let primaryItem: any = null;
+
+    for (const v of normalizedVariants) {
+      // Resolve UOM ID for this specific variant
+      let variantUomId = v.uomId ? positiveId(v.uomId) : null;
+      if (!variantUomId && v.contentUom) {
+        const matchUom = await tx.unitOfMeasures.findFirst({
+          where: {
+            OR: [
+              { Abbreviation: { equals: v.contentUom, mode: "insensitive" } },
+              { Code: { equals: v.contentUom, mode: "insensitive" } },
+              { Name: { equals: v.contentUom, mode: "insensitive" } },
+            ],
+          },
+        });
+        if (matchUom) variantUomId = matchUom.UomId;
+      }
+      if (!variantUomId) {
+        variantUomId = fallbackUomId;
+      }
+
+      // Create a dedicated Items row per variant so each variant has independent stock, UOM, min/max stock, and active status
       const productCode = await generateProductCode(tx);
-      item = await tx.items.create({
+      const variantItem = await tx.items.create({
         data: {
           ItemCode: productCode,
           ItemName: trimmedName,
-          UomId: uomId,
-          StockUomId: uomId,
+          UomId: variantUomId,
+          StockUomId: variantUomId,
           CategoryId: categoryId,
-          MinStockLevel: 0,
-          MaxStockLevel: 1000,
+          MinStockLevel: v.minStockLevel,
+          MaxStockLevel: v.maxStockLevel,
           IsActive: true,
         },
       });
-    } else {
-      item = await tx.items.update({
-        where: { ItemId: item.ItemId },
-        data: {
-          UomId: uomId,
-          StockUomId: uomId,
-          CategoryId: categoryId,
-        },
-      });
-    }
+      if (!primaryItem) primaryItem = variantItem;
 
-    const createdVariants = [];
-    for (const v of body.variants) {
-      const cleanVarName = v.variantName.trim();
-      const baseSku = buildBaseVariantSku(trimmedName, cleanVarName);
+      const baseSku = buildBaseVariantSku(trimmedName, v.variantName);
       const uniqueSku = await getUniqueVariantSku(tx, baseSku);
 
       const created: any = await (tx as any).finishedProducts.create({
         data: {
-          ItemId: item.ItemId,
+          ItemId: variantItem.ItemId,
           SellingPrice: v.sellingPrice ?? 0,
           Sku: uniqueSku,
-          Variant: cleanVarName,
+          Variant: v.variantName,
+          ...(existingSiblingWithPhoto?.ImageUrl ? { ImageUrl: existingSiblingWithPhoto.ImageUrl } : {}),
         },
         include: {
           Items: {
@@ -232,16 +347,24 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
         },
       });
 
+      const parsed = parseVariantComponents(created.Variant, v.contentUom);
+
       createdVariants.push({
         productId: created.ProductId,
         itemId: created.ItemId,
-        sellingPrice: Number(created.SellingPrice),
+        sellingPrice: Number(created.SellingPrice ?? 0),
         sku: created.Sku,
         variant: created.Variant,
-        itemName: created.Items?.ItemName || "",
-        productCode: created.Items?.ItemCode || "",
-        categoryName: created.Items?.Category?.CategoryName || "",
-        uomName: created.Items?.Uom?.Abbreviation || "",
+        contentSize: parsed.contentSize,
+        contentUom: parsed.uom,
+        packagingType: parsed.packagingType,
+        minStockLevel: Number(created.Items?.MinStockLevel ?? v.minStockLevel),
+        maxStockLevel: Number(created.Items?.MaxStockLevel ?? v.maxStockLevel),
+        itemName: created.Items?.ItemName || trimmedName,
+        productCode: created.Items?.ItemCode || productCode,
+        categoryName: created.Items?.Category?.CategoryName || "Finished Goods",
+        uomName: parsed.uom,
+        isActive: created.Items?.IsActive ?? true,
       });
     }
 
@@ -250,9 +373,9 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
         success: true,
         data: {
           item: {
-            itemId: item.ItemId,
-            itemName: item.ItemName,
-            itemCode: item.ItemCode,
+            itemId: primaryItem.ItemId,
+            itemName: primaryItem.ItemName,
+            itemCode: primaryItem.ItemCode,
           },
           variants: createdVariants,
         },
@@ -260,8 +383,8 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
       audit: {
         module: "Production & Quality",
         change: "created",
-        target: { type: "finished-product", id: createdVariants[0]?.productId || item.ItemId, name: item.ItemName },
-        description: `${staff.name} created finished product ${item.ItemName} with ${createdVariants.length} variant(s)`,
+        target: { type: "finished-product", id: createdVariants[0]?.productId || primaryItem.ItemId, name: primaryItem.ItemName },
+        description: `${staff.name} created finished product ${primaryItem.ItemName} with ${createdVariants.length} variant(s)`,
       },
     };
   });
@@ -274,55 +397,54 @@ export async function createFinishedProduct(body: any = {}) {
     const trimmedName = body.productName?.trim() || "";
     if (!trimmedName) refuse("Enter a product name.");
 
-    const existingItem = await tx.items.findFirst({
-      where: { ItemName: { equals: trimmedName, mode: "insensitive" } },
-    });
-    let item = existingItem;
-    if (!item) {
-      let category = null;
-      if (body.categoryId) {
-        category = await tx.categories.findUnique({ where: { CategoryId: positiveId(body.categoryId) } });
-      }
-      if (!category) {
-        category = await tx.categories.findFirst({
-          where: { CategoryName: { contains: "finished good", mode: "insensitive" } },
-        });
-      }
-      if (!category) {
-        category = await tx.categories.create({
-          data: { CategoryName: "Finished Good", Description: "Finished Goods" },
-        });
-      }
-
-      let uom = null;
-      if (body.uomId) {
-        uom = await tx.unitOfMeasures.findUnique({ where: { UomId: positiveId(body.uomId) } });
-      }
-      if (!uom) {
-        uom = await tx.unitOfMeasures.findFirst({
-          where: { Abbreviation: "pcs" },
-        });
-      }
-      if (!uom) {
-        uom = await tx.unitOfMeasures.findFirst();
-      }
-
-      const productCode = await generateProductCode(tx);
-      item = await tx.items.create({
-        data: {
-          ItemCode: productCode,
-          ItemName: trimmedName,
-          UomId: uom?.UomId || 1,
-          StockUomId: uom?.UomId || 1,
-          CategoryId: category?.CategoryId || 1,
-          MinStockLevel: 0,
-          MaxStockLevel: 100,
-          IsActive: true,
-        },
+    let category = null;
+    if (body.categoryId) {
+      category = await tx.categories.findUnique({ where: { CategoryId: positiveId(body.categoryId) } });
+    }
+    if (!category) {
+      category = await tx.categories.findFirst({
+        where: { CategoryName: { contains: "finished good", mode: "insensitive" } },
+      });
+    }
+    if (!category) {
+      category = await tx.categories.create({
+        data: { CategoryName: "Finished Good", Description: "Finished Goods" },
       });
     }
 
-    const variantLabel = body.variant?.trim() || "";
+    const variantLabel =
+      body.contentSize !== undefined && String(body.contentSize).trim() !== ""
+        ? composeVariantName(body.contentSize, body.contentUom || "ML", body.packagingType || "Jar")
+        : body.variant?.trim() || "";
+    const parsed = parseVariantComponents(variantLabel, body.contentUom);
+
+    let uom = null;
+    if (body.uomId) {
+      uom = await tx.unitOfMeasures.findUnique({ where: { UomId: positiveId(body.uomId) } });
+    }
+    if (!uom) {
+      uom = await tx.unitOfMeasures.findFirst({
+        where: { Abbreviation: { equals: parsed.uom, mode: "insensitive" } },
+      });
+    }
+    if (!uom) {
+      uom = await tx.unitOfMeasures.findFirst();
+    }
+
+    const productCode = await generateProductCode(tx);
+    const item = await tx.items.create({
+      data: {
+        ItemCode: productCode,
+        ItemName: trimmedName,
+        UomId: uom?.UomId || 1,
+        StockUomId: uom?.UomId || 1,
+        CategoryId: category?.CategoryId || 1,
+        MinStockLevel: 0,
+        MaxStockLevel: 100,
+        IsActive: true,
+      },
+    });
+
     let finalSku = body.sku?.trim().toUpperCase();
     if (!finalSku) {
       const baseSku = buildBaseVariantSku(trimmedName, variantLabel);
@@ -335,7 +457,7 @@ export async function createFinishedProduct(body: any = {}) {
     const newProduct = await tx.finishedProducts.create({
       data: {
         ItemId: item.ItemId,
-        SellingPrice: body.sellingPrice,
+        SellingPrice: typeof body.sellingPrice === "number" ? body.sellingPrice : 0,
         Sku: finalSku,
         Variant: variantLabel,
       },
@@ -352,13 +474,17 @@ export async function createFinishedProduct(body: any = {}) {
     const response = {
       productId: newProduct.ProductId,
       itemId: newProduct.ItemId,
-      sellingPrice: Number(newProduct.SellingPrice),
+      sellingPrice: Number(newProduct.SellingPrice ?? 0),
       sku: newProduct.Sku,
-      itemName: newProduct.Items?.ItemName || "",
+      itemName: newProduct.Items?.ItemName || trimmedName,
       variant: newProduct.Variant,
-      productCode: newProduct.Items?.ItemCode || "",
+      contentSize: parsed.contentSize,
+      contentUom: parsed.uom,
+      packagingType: parsed.packagingType,
+      productCode: newProduct.Items?.ItemCode || productCode,
       categoryName: newProduct.Items?.Category?.CategoryName || "",
-      uomName: newProduct.Items?.Uom?.Abbreviation || "",
+      uomName: parsed.uom,
+      isActive: newProduct.Items?.IsActive ?? true,
     };
 
     return {
@@ -366,8 +492,8 @@ export async function createFinishedProduct(body: any = {}) {
       audit: {
         module: "Production & Quality",
         change: "created",
-        target: { type: "finished-product", id: newProduct.ProductId, name: newProduct.Items.ItemName },
-        description: `${staff.name} created finished product (${newProduct.Items.ItemName})`,
+        target: { type: "finished-product", id: newProduct.ProductId, name: newProduct.Items?.ItemName || trimmedName },
+        description: `${staff.name} created finished product (${newProduct.Items?.ItemName || trimmedName})`,
       },
     };
   });

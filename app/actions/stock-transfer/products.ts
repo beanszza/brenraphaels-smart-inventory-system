@@ -14,14 +14,16 @@ export async function listFinishedProducts() {
                 Items: true,
             },
         });
-        const response = products.map((fp) => ({
-            productId: fp.ProductId,
-            itemId: fp.ItemId,
-            sellingPrice: Number(fp.SellingPrice),
-            sku: fp.Sku,
-            itemName: fp.Items?.ItemName || "",
-            variant: fp.Variant,
-        }));
+        const response = products
+            .filter((fp) => (fp.Items?.IsActive ?? true) !== false)
+            .map((fp) => ({
+                productId: fp.ProductId,
+                itemId: fp.ItemId,
+                sellingPrice: Number(fp.SellingPrice),
+                sku: fp.Sku,
+                itemName: fp.Items?.ItemName || "",
+                variant: fp.Variant,
+            }));
         return resourceResult({ success: true, data: response });
     });
 }

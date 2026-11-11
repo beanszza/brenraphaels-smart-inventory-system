@@ -128,12 +128,10 @@ export async function uploadProductImageDirect(id: number, formData: FormData) {
 
         return { success: true, data: { fileId: address.fileId } };
     } catch (err: any) {
-        console.warn("Storage gateway upload failed for product, falling back to database link:", err?.message || err);
-        const fallbackId = crypto.randomUUID();
-        await prisma.finishedProducts.update({
-            where: { ProductId: id },
-            data: { ImageUrl: fallbackId },
-        });
-        return { success: true, data: { fileId: fallbackId } };
+        console.warn("Storage gateway upload failed for product, falling back to inline data URL:", err?.message || err);
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const dataUrl = `data:${contentType};base64,${buffer.toString("base64")}`;
+        await productImage.save(id, dataUrl);
+        return { success: true, data: { fileId: dataUrl } };
     }
 }

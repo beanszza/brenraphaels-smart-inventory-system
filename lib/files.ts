@@ -94,7 +94,11 @@ const placeholder = { kind: "placeholder", url: FILE_PLACEHOLDER, private: false
 export async function resolveFile(port: FilesPort, staff: Staff, ref: string | null | undefined): Promise<ResolvedFile> {
   const id = ref?.trim();
   if (!id || !isFileId(id)) return placeholder;
-  const file = await port.view(id, staff.username);
-  if (!file) return placeholder;
-  return { kind: "file", url: file.url, private: file.visibility === "private" };
+  try {
+    const file = await port.view(id, staff.username);
+    if (!file) return placeholder;
+    return { kind: "file", url: file.url, private: file.visibility === "private" };
+  } catch {
+    return placeholder;
+  }
 }

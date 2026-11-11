@@ -4,6 +4,8 @@ export type FinishedProductVariant = {
   sku: string;
   currentStock?: number;
   reservedStock?: number;
+  minStockLevel?: number;
+  maxStockLevel?: number;
 };
 
 export type InventoryItem = {

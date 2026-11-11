@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { CreatePRModal } from "@/components/orders-procurement/pr/CreatePRForm";
 import { PurchaseRequisition } from "@/components/orders-procurement/types";
+import ProductionRequestModal from "@/components/production/ProductionRequestModal";
 
 function matchesCategory(itemCat: string, filter: string): boolean {
   if (!filter || filter === "All") return true;
@@ -95,9 +96,20 @@ export default function ViewInventory({
     return counts;
   }, [allInventories]);
 
-  // PR Modal State (for "Order Now" action)
+  // PR Modal State (for "Order Now" action on Raw Materials / Supplies)
   const [isCreatePROpen, setIsCreatePROpen] = useState(false);
   const [selectedPRData, setSelectedPRData] = useState<PurchaseRequisition | undefined>(undefined);
+
+  // Production Request Modal State (for "Produce Now" action on Finished Goods)
+  const [isProduceModalOpen, setIsProduceModalOpen] = useState(false);
+  const [producePrefill, setProducePrefill] = useState<{
+    productId?: number;
+    productName?: string;
+    variant?: string;
+    quantity?: number;
+    priority?: "Low" | "Medium" | "High";
+    reason?: string;
+  } | null>(null);
 
   // Dynamic Category Tabs from active supply categories + Finished Goods
   const categoryTabs = useMemo(() => {
@@ -158,7 +170,8 @@ export default function ViewInventory({
           item.finishedProductVariants.forEach((v) => {
             const variantStock = v.currentStock !== undefined ? Number(v.currentStock) : (item.currentStock ?? 0);
             const variantReserved = v.reservedStock ?? 0;
-            const minStock = item.minStockLevel || 0;
+            const minStock = v.minStockLevel !== undefined ? Number(v.minStockLevel) : (item.minStockLevel || 0);
+            const maxStock = v.maxStockLevel !== undefined ? Number(v.maxStockLevel) : (item.maxStockLevel || 100);
             rows.push({
               ...item,
               inventoryId: `fp-${v.productId}`,
@@ -168,6 +181,8 @@ export default function ViewInventory({
               currentStock: variantStock,
               reservedStock: variantReserved,
               availableStock: Math.max(0, variantStock - variantReserved),
+              minStockLevel: minStock,
+              maxStockLevel: maxStock,
               isLowStock: variantStock <= minStock,
             });
           });
@@ -205,9 +220,27 @@ export default function ViewInventory({
     return filteredInventories.slice(start, start + pageSize);
   }, [filteredInventories, page, pageSize]);
 
-  // Order Now handler
+  // Order Now / Produce Now handler
   const handleOrderNow = (item: InventoryItem) => {
     const neededQty = Math.max(
+      1,
+      Math.round((item.maxStockLevel > 0 ? item.maxStockLevel : 100) - item.currentStock)
+    );
+
+    if (categoryFilter === "Finished Goods" || matchesCategory(item.categoryName, "Finished Goods")) {
+      setProducePrefill({
+        productId: item.productId,
+        productName: item.itemName,
+        variant: item.variantName || "Standard",
+        quantity: neededQty,
+        priority: "High",
+        reason: "Regular Stock Replenishment",
+      });
+      setIsProduceModalOpen(true);
+      return;
+    }
+
+    const prNeededQty = Math.max(
       0.001,
       Number(((item.maxStockLevel > 0 ? item.maxStockLevel : 10) - item.currentStock).toFixed(3))
     );
@@ -226,7 +259,7 @@ export default function ViewInventory({
           itemName: item.itemName,
           uomName: item.uomName || "Unit",
           actualInventory: item.currentStock,
-          requestedQuantity: neededQty,
+          requestedQuantity: prNeededQty,
         },
       ],
     };
@@ -383,6 +416,22 @@ export default function ViewInventory({
           initialData={selectedPRData}
         />
       )}
+
+      {/* Production Request Modal triggered by Produce Now on Finished Goods */}
+      <ProductionRequestModal
+        open={isProduceModalOpen}
+        prefillData={producePrefill}
+        onClose={() => {
+          setIsProduceModalOpen(false);
+          setProducePrefill(null);
+        }}
+        onSuccess={() => {
+          setIsProduceModalOpen(false);
+          setProducePrefill(null);
+          toast.success("Production request submitted successfully.");
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

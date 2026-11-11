@@ -126,6 +126,12 @@ export async function listInventory(query = "") {
           ItemId: true,
           Variant: true,
           Sku: true,
+          Items: {
+            select: {
+              MinStockLevel: true,
+              MaxStockLevel: true,
+            },
+          },
           ProductionBatches: {
             select: {
               InventoryLots: {
@@ -151,7 +157,15 @@ export async function listInventory(query = "") {
     // Map itemId -> list of variants with accurate variant stock
     const variantsMap: Record<
       number,
-      Array<{ productId: number; variant: string; sku: string; currentStock: number; reservedStock: number }>
+      Array<{
+        productId: number;
+        variant: string;
+        sku: string;
+        currentStock: number;
+        reservedStock: number;
+        minStockLevel: number;
+        maxStockLevel: number;
+      }>
     > = {};
     for (const fp of finishedProductRows) {
       if (!variantsMap[fp.ItemId]) variantsMap[fp.ItemId] = [];
@@ -173,6 +187,8 @@ export async function listInventory(query = "") {
         sku: fp.Sku || "",
         currentStock: variantStock,
         reservedStock: variantReserved,
+        minStockLevel: Number(fp.Items?.MinStockLevel ?? 10),
+        maxStockLevel: Number(fp.Items?.MaxStockLevel ?? 100),
       });
     }
 

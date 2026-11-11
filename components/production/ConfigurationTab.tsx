@@ -1,28 +1,12 @@
 "use client";
-import { ProductionSkeleton } from "./ProductionSkeleton";
-import { listFinishedProducts as productionListFinishedProducts } from "@/app/actions/production/products";
-import { createFinishedProduct as productionCreateFinishedProduct } from "@/app/actions/production/products";
-import { updateFinishedProduct as productionUpdateFinishedProduct } from "@/app/actions/production/product-detail";
-import { deleteFinishedProduct as productionDeleteFinishedProduct } from "@/app/actions/production/product-detail";
-import {
-  syncProductCatalogToPos,
-  syncAllFinishedProductsToPos,
-} from "@/app/actions/production/pos-sync";
-import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useRef } from "react";
 import {
   Search,
-  Image as ImageIcon,
   MoreHorizontal,
   Pencil,
-  Upload,
   RefreshCw,
   Plus,
-  Trash2,
-  Layers,
-  Check,
-  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,122 +21,72 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import Pagination from "@/components/Pagination";
+import ResourceStatusTabs from "@/components/resources-suppliers/ResourceStatusTabs";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { ProductionSkeleton } from "./ProductionSkeleton";
 import { FinishedProductItem } from "./types";
 import AddFinishedProductModal from "./AddFinishedProductModal";
-import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import { StatusBadge } from "@/components/shared/StatusBadge";
-import { uploadProductionImage } from "@/lib/production/image-client";
 import { ProductionImage } from "./ProductionImage";
+import { listFinishedProducts as productionListFinishedProducts } from "@/app/actions/production/products";
+import { syncAllFinishedProductsToPos } from "@/app/actions/production/pos-sync";
+import { actionResponse } from "@/lib/resources/action-response";
+import { parseVariantComponents, formatVariantUomLabel } from "@/lib/production/sku";
 import { toast } from "sonner";
 
+const PACKAGING_FILTERS = ["All", "Jar", "Container", "Pouch"] as const;
 
-const PACKAGING_TYPES = [
-  "Tub",
-  "Jar",
-  "Pack",
-  "Bottle",
-  "Pouch",
-  "Box",
-  "Can",
-  "Tin",
-];
+let lastPosAutoSyncAt = 0;
 
-const PRODUCT_CATEGORIES = [
-  "Jam & Preserves",
-  "Spreads & Fillings",
-  "Bakery Fillings",
-  "Confectionery",
-  "Dessert Base",
-  "Finished Goods",
-  "Other",
-];
-
-interface DraftVariant {
-  packagingType: string;
-  size: string;
-  sku: string;
-  price: number;
-}
-
-export default function ConfigurationTab({ initialRows }: { initialRows: FinishedProductItem[] }) {
+export default function ConfigurationTab({
+  initialRows,
+}: {
+  initialRows: FinishedProductItem[];
+}) {
   const [products, setProducts] = useState<FinishedProductItem[]>(initialRows);
   const [photoVersion, setPhotoVersion] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  // Filters & Pagination (Uniform with Resources & Suppliers)
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("All");
-  const [syncingPos, setSyncingPos] = useState(false);
+  const [productFilter, setProductFilter] = useState<string>("All");
+  const [packagingFilter, setPackagingFilter] = useState<string>("All");
+  const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Inactive">("All");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // ── Add Full Product Modal (with multiple variations) ──
+  // Add / Edit Finished Product Modal
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
-  const [productName, setProductName] = useState("");
-  const [productCategory, setProductCategory] = useState("Finished Goods");
-  const [productPhotoFile, setProductPhotoFile] = useState<File | null>(null);
-  const [productPhotoPreview, setProductPhotoPreview] = useState<string>("");
-  const [variationsList, setVariationsList] = useState<DraftVariant[]>([
-    { packagingType: "Tub", size: "250g", sku: "UBH-TUB-250G", price: 150 },
-  ]);
-
-  // Inline add variation in the full product modal
-  const [newVarType, setNewVarType] = useState("Jar");
-  const [newVarSize, setNewVarSize] = useState("");
-  const [newVarSku, setNewVarSku] = useState("");
-  const [newVarPrice, setNewVarPrice] = useState<number | "">(200);
-
-  // ── Quick Add Single Variant Modal (to an existing or selected product) ──
-  const [isAddVariantOpen, setIsAddVariantOpen] = useState(false);
-  const [targetProductName, setTargetProductName] = useState("");
-  const [quickVarType, setQuickVarType] = useState("Tub");
-  const [quickVarSize, setQuickVarSize] = useState("");
-  const [quickVarSku, setQuickVarSku] = useState("");
-  const [quickVarPrice, setQuickVarPrice] = useState<number | "">(150);
-
-  // ── Edit Finished Product Modal ──
   const [isEditProductOpen, setIsEditProductOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FinishedProductItem | null>(null);
-  const [editProductName, setEditProductName] = useState("");
-  const [editVariantStr, setEditVariantStr] = useState("");
-  const [editSku, setEditSku] = useState("");
-  const [editPrice, setEditPrice] = useState<number | "">(0);
-  const [editActive, setEditActive] = useState<boolean>(true);
 
-  const [submitting, setSubmitting] = useState(false);
+  const hasMountedSyncRef = useRef(false);
 
-  // File upload refs
-  const fullProductFileRef = useRef<HTMLInputElement>(null);
-  const rowFileInputRef = useRef<HTMLInputElement>(null);
-  const [activeUploadProductId, setActiveUploadProductId] = useState<number | null>(null);
+  // Automatic silent POS sync on mount / page refresh in Chrome
+  const triggerSilentPosSync = (force = false) => {
+    const now = Date.now();
+    if (!force && now - lastPosAutoSyncAt < 30_000) return;
+    lastPosAutoSyncAt = now;
+    actionResponse(syncAllFinishedProductsToPos()).catch(() => {});
+  };
 
-  // 3-dots dropdown state
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setOpenDropdownId(null);
-      }
+    if (!hasMountedSyncRef.current) {
+      hasMountedSyncRef.current = true;
+      triggerSilentPosSync();
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (syncPos = false) => {
     try {
       setLoading(true);
       const res = await actionResponse(productionListFinishedProducts());
       const list = res.data?.data || res.data || [];
       setProducts(list);
+      if (syncPos) {
+        triggerSilentPosSync(true);
+      }
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to load finished products");
     } finally {
@@ -160,509 +94,352 @@ export default function ConfigurationTab({ initialRows }: { initialRows: Finishe
     }
   };
 
-  const handleSyncAllToPos = async () => {
-    try {
-      setSyncingPos(true);
-      toast.loading("Synchronizing products with Point-of-Sale (POS)...", { id: "pos-sync" });
-      const res = await actionResponse(syncAllFinishedProductsToPos());
-      if (res.data?.success) {
-        toast.success(res.data.message || "All products synced to POS successfully!", { id: "pos-sync" });
-      } else {
-        toast.error(res.data?.message || "POS sync returned an error.", { id: "pos-sync" });
-      }
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to communicate with POS service.", { id: "pos-sync" });
-    } finally {
-      setSyncingPos(false);
-    }
-  };
-
-
-  // Distinct product names for the quick-add variant selector
-  const distinctProductNames = Array.from(
-    new Set(products.map((p) => p.itemName).filter(Boolean))
-  );
-
-  // Auto-generate canonical system SKU from product name, packaging type, and size
-  const generateSku = (prodName: string, type: string, size: string) => {
-    const cleanName = (prodName || "").trim().toLowerCase();
-
-    // Check known product abbreviations
-    let pCode = "";
-    if (cleanName.includes("smooth")) {
-      pCode = "UBH-SM";
-    } else if (cleanName.includes("tidbit")) {
-      pCode = "UBH-TB";
-    } else if (cleanName.includes("ube") && cleanName.includes("halaya")) {
-      pCode = "UBH";
-    } else {
-      const words = (prodName || "PRD").trim().split(/\s+/).filter(Boolean);
-      pCode = words
-        .map((w) => w[0])
-        .join("")
-        .slice(0, 4)
-        .toUpperCase();
-      if (!pCode) pCode = "PRD";
-    }
-
-    // Packaging Type Code
-    const cleanType = (type || "").trim().toLowerCase();
-    let tCode = "";
-    if (cleanType.includes("tub")) tCode = "TUB";
-    else if (cleanType.includes("jar")) tCode = "JAR";
-    else if (cleanType.includes("pouch")) tCode = "POU";
-    else if (cleanType.includes("bottle")) tCode = "BTL";
-    else if (cleanType.includes("can")) tCode = "CAN";
-    else if (cleanType.includes("box")) tCode = "BOX";
-    else tCode = (type || "PKG").trim().slice(0, 3).toUpperCase();
-
-    // Size Code
-    const cleanSize = (size || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
-    const sCode = cleanSize || "STD";
-
-    if (pCode.includes("-")) {
-      return `${pCode}-${sCode}`;
-    }
-    return `${pCode}-${tCode}-${sCode}`;
-  };
-
-  // ── Open Add Full Product Modal ──
   const handleOpenAddProduct = () => {
-    setProductName("");
-    setProductCategory("Finished Goods");
-    setProductPhotoFile(null);
-    setProductPhotoPreview("");
-    setVariationsList([
-      { packagingType: "Tub", size: "250g", sku: generateSku("Ube Halaya", "Tub", "250g"), price: 150 },
-    ]);
-    setNewVarType("Jar");
-    setNewVarSize("500g");
-    setNewVarSku(generateSku("Ube Halaya", "Jar", "500g"));
-    setNewVarPrice(280);
+    setEditingItem(null);
+    setIsEditProductOpen(false);
     setIsAddProductOpen(true);
   };
 
-  // Add draft variation to the list inside the full product modal
-  const handleAddDraftVariation = () => {
-    if (!newVarSize.trim()) {
-      toast.error("Please enter a size (e.g. 500g, 1kg)");
-      return;
-    }
-    const skuCode = generateSku(productName || "PRD", newVarType, newVarSize);
-    const priceVal = Number(newVarPrice) || 0;
-
-    setVariationsList((prev) => [
-      ...prev,
-      {
-        packagingType: newVarType,
-        size: newVarSize.trim(),
-        sku: skuCode.toUpperCase(),
-        price: priceVal,
-      },
-    ]);
-
-    setNewVarSize("");
-    setNewVarSku(generateSku(productName || "PRD", newVarType, ""));
-    setNewVarPrice(150);
-  };
-
-  const handleRemoveDraftVariation = (index: number) => {
-    setVariationsList((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // Submit full product creation with multiple variations
-  const handleSaveFullProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!productName.trim()) {
-      toast.error("Product name is required");
-      return;
-    }
-    if (variationsList.length === 0) {
-      toast.error("Please add at least one variation (e.g. 250g Tub)");
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      toast.loading("Creating product and variations...", { id: "save-prod" });
-
-      const createdProductIds: number[] = [];
-
-      // Create each variation via POST /api/FinishedProducts
-      for (const v of variationsList) {
-        const variantLabel = `${v.size} ${v.packagingType}`.trim();
-        const res = await actionResponse(productionCreateFinishedProduct({
-          productName: productName.trim(),
-          variant: variantLabel,
-          sellingPrice: v.price,
-          sku: v.sku.toUpperCase(),
-        }));
-        const id = res.data?.data?.productId;
-        if (id) createdProductIds.push(id);
-      }
-
-      // If a photo was selected, upload it to the created variants
-      let photoFailure: string | null = null;
-      if (productPhotoFile && createdProductIds.length > 0) {
-        for (const pid of createdProductIds) {
-          try {
-            await uploadProductionImage("product", pid, productPhotoFile);
-          } catch (err) {
-            // The product is saved; only its photo is missing, so say so without failing the create.
-            photoFailure = err instanceof Error ? err.message : "The photo could not be uploaded.";
-          }
-        }
-      }
-
-      toast.success(
-        `Product "${productName.trim()}" created with ${variationsList.length} variation(s)!`,
-        { id: "save-prod" }
-      );
-      if (photoFailure) toast.error(`The product photo was not saved: ${photoFailure}`);
-      setIsAddProductOpen(false);
-      setPhotoVersion((v) => v + 1);
-      fetchProducts();
-
-      // Automatically sync newly created product & variations with POS
-      const targetName = productName.trim();
-      actionResponse(syncProductCatalogToPos(targetName))
-        .then((posRes) => {
-          if (posRes.data?.success) {
-            toast.success(`Synced "${targetName}" to POS catalog!`);
-          }
-        })
-        .catch(() => {});
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to create product variations", {
-        id: "save-prod",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // ── Open Quick Add Single Variant Modal ──
-  const handleOpenAddVariant = (prefillProductName?: string) => {
-    const prodName = prefillProductName || distinctProductNames[0] || "";
-    setTargetProductName(prodName);
-    setQuickVarType("Jar");
-    setQuickVarSize("500g");
-    setQuickVarSku(generateSku(prodName, "Jar", "500g"));
-    setQuickVarPrice(250);
-    setIsAddVariantOpen(true);
-  };
-
-  const handleSaveQuickVariant = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!targetProductName.trim()) {
-      toast.error("Product name is required");
-      return;
-    }
-    if (!quickVarSize.trim()) {
-      toast.error("Variant size is required");
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const variantLabel = `${quickVarSize.trim()} ${quickVarType}`.trim();
-      const skuVal = generateSku(targetProductName, quickVarType, quickVarSize);
-
-      await actionResponse(productionCreateFinishedProduct({
-        productName: targetProductName.trim(),
-        variant: variantLabel,
-        sellingPrice: Number(quickVarPrice) || 0,
-        sku: skuVal.toUpperCase(),
-      }));
-
-      toast.success(`Variant "${variantLabel}" added to ${targetProductName}!`);
-      setIsAddVariantOpen(false);
-      fetchProducts();
-
-      // Automatically sync updated variations with POS
-      actionResponse(syncProductCatalogToPos(targetProductName.trim()))
-        .then((posRes) => {
-          if (posRes.data?.success) {
-            toast.success(`Updated "${targetProductName.trim()}" variations in POS!`);
-          }
-        })
-        .catch(() => {});
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to add variant");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // ── Open Edit Finished Product Modal ──
   const handleOpenEditProduct = (prod: FinishedProductItem) => {
     setEditingItem(prod);
+    setIsAddProductOpen(false);
     setIsEditProductOpen(true);
   };
 
-  // ── Delete Product ──
-  const handleDeleteProduct = async (productId: number, prodName: string) => {
-    if (!confirm(`Are you sure you want to delete "${prodName}"? This action cannot be undone.`)) return;
-
-    try {
-      await actionResponse(productionDeleteFinishedProduct(productId));
-      toast.success(`Product "${prodName}" deleted successfully`);
-      fetchProducts();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || err?.message || "Failed to delete product");
-    }
-  };
-
-  // ── Row Photo Upload Handler ──
-  const handleRowUploadClick = (productId: number) => {
-    setActiveUploadProductId(productId);
-    rowFileInputRef.current?.click();
-  };
-
-  const handleRowFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !activeUploadProductId) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Image file size exceeds 10MB limit");
-      return;
-    }
-
-    try {
-      toast.loading("Uploading photo...", { id: "upload-photo" });
-      await uploadProductionImage("product", activeUploadProductId, file);
-      toast.success("Product photo updated successfully", { id: "upload-photo" });
-      setPhotoVersion((v) => v + 1);
-      fetchProducts();
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to upload photo", {
-        id: "upload-photo",
-      });
-    } finally {
-      setActiveUploadProductId(null);
-      if (rowFileInputRef.current) rowFileInputRef.current.value = "";
-    }
-  };
-
-  // Filtered records
-  const filteredProducts = products.filter((p) => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return true;
-    return (
-      p.itemName?.toLowerCase().includes(q) ||
-      p.variant?.toLowerCase().includes(q) ||
-      p.sku?.toLowerCase().includes(q)
-    );
+  // Enrich rows with parsed variant fields if missing
+  const enrichedProducts = products.map((p) => {
+    const parsed = parseVariantComponents(p.variant, p.uomName);
+    return {
+      ...p,
+      contentSize: p.contentSize || parsed.contentSize,
+      contentUom: p.contentUom || parsed.uom,
+      packagingType: p.packagingType || parsed.packagingType,
+    };
   });
 
-  return (
-    <div className="space-y-6">
-      {/* Hidden file input for row photo uploads */}
-      <input
-        type="file"
-        ref={rowFileInputRef}
-        onChange={handleRowFileChange}
-        accept="image/jpeg,image/png,image/webp"
-        className="hidden"
-      />
+  // Distinct product names for the "All Products" filter dropdown
+  const distinctProductNames = Array.from(
+    new Set(
+      enrichedProducts
+        .map((p) => p.itemName?.trim())
+        .filter((name): name is string => Boolean(name))
+    )
+  );
 
-      {/* Top Header & Add Buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  // Compute status counts after search + dropdown filters or across all records (matches SupplyTab pattern)
+  const statusCounts = {
+    all: enrichedProducts.length,
+    active: enrichedProducts.filter((item) => item.isActive !== false).length,
+    inactive: enrichedProducts.filter((item) => item.isActive === false).length,
+  };
+
+  // Filter records
+  const filteredProducts = enrichedProducts.filter((p) => {
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      p.itemName?.toLowerCase().includes(q) ||
+      p.variant?.toLowerCase().includes(q) ||
+      p.sku?.toLowerCase().includes(q) ||
+      p.productCode?.toLowerCase().includes(q) ||
+      p.packagingType?.toLowerCase().includes(q);
+
+    const matchesProduct =
+      productFilter === "All" ||
+      p.itemName?.trim().toLowerCase() === productFilter.trim().toLowerCase();
+
+    const matchesPackaging =
+      packagingFilter === "All" ||
+      p.packagingType?.toLowerCase() === packagingFilter.toLowerCase();
+
+    const matchesStatus =
+      statusFilter === "All" ||
+      (statusFilter === "Active" && p.isActive !== false) ||
+      (statusFilter === "Inactive" && p.isActive === false);
+
+    return matchesSearch && matchesProduct && matchesPackaging && matchesStatus;
+  });
+
+  const pageSize = 10;
+  const totalCount = filteredProducts.length;
+  const totalPages = Math.ceil(totalCount / pageSize) || 1;
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedProducts = filteredProducts.slice(
+    (safeCurrentPage - 1) * pageSize,
+    safeCurrentPage * pageSize
+  );
+
+  return (
+    <div className="space-y-6 animate-page-in">
+      {/* Top Header & Action Buttons (Matches Resources & Suppliers) */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-foreground">
             Finished Products &amp; Variants
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Configure finished goods, packaging types, sizes, SKUs, and selling prices
+            Manage finished goods, content sizes, units of measurement, packaging types, and SKUs
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchProducts}
+            onClick={() => fetchProducts(true)}
             disabled={loading}
-            className="flex items-center gap-1.5 h-9 rounded-xl border-border hover:bg-muted font-semibold text-xs text-foreground cursor-pointer shadow-sm"
+            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
 
-          {/* Sync with POS button */}
           <Button
-            variant="outline"
-            size="sm"
-            disabled={syncingPos}
-            onClick={handleSyncAllToPos}
-            className="flex items-center justify-center gap-1.5 h-9 rounded-xl border-border hover:bg-muted font-semibold text-xs text-foreground cursor-pointer shadow-sm"
-            title="Sync all finished products and packaging variations with the Point-of-Sale (POS) system"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-primary ${syncingPos ? "animate-spin" : ""}`} />
-            {syncingPos ? "Syncing POS..." : "Sync with POS"}
-          </Button>
-
-          {/* "+ Add Product" button */}
-          <Button
+            type="button"
             onClick={handleOpenAddProduct}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            Add Product
+            Add New Product
           </Button>
         </div>
       </div>
 
-      {/* Full-width Search Bar (Follows Orders & Procurement PRTab style) */}
-      <div className="border border-border rounded-xl overflow-hidden bg-card shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-2.5 bg-muted/20">
-          <div className="flex items-center gap-2 flex-1">
+      {/* Search & Filter Bar (Uniform with SupplyTab) */}
+      <div className="mb-6 border border-border rounded-xl overflow-hidden bg-card">
+        <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between bg-muted/20">
+          <div className="flex items-center gap-3 flex-1">
             <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
               type="text"
-              placeholder="Search by product name, variant, size, or SKU..."
+              placeholder="Search by product name, variant, packaging, or SKU..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-sm flex-1 text-foreground placeholder:text-muted-foreground"
             />
           </div>
-          <span className="text-xs text-muted-foreground font-medium pl-1 hidden sm:inline">
-            Showing {filteredProducts.length} variant record(s)
-          </span>
+
+          <div className="flex flex-wrap items-center gap-3 sm:pl-4 sm:border-l border-border/50 shrink-0">
+            {/* Product Filter */}
+            <Select
+              value={productFilter}
+              onValueChange={(val) => {
+                setProductFilter(val);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="h-10 min-w-[180px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+                <SelectValue placeholder="All Products" />
+              </SelectTrigger>
+              <SelectContent className="min-w-[180px]">
+                <SelectItem value="All">All Products</SelectItem>
+                {distinctProductNames.map((prodName) => (
+                  <SelectItem key={prodName} value={prodName}>
+                    {prodName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Packaging Type Filter */}
+            <Select
+              value={packagingFilter}
+              onValueChange={(val) => {
+                setPackagingFilter(val);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="h-10 min-w-[165px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+                <SelectValue placeholder="All Packaging" />
+              </SelectTrigger>
+              <SelectContent className="min-w-[165px]">
+                {PACKAGING_FILTERS.map((pkg) => (
+                  <SelectItem key={pkg} value={pkg}>
+                    {pkg === "All" ? "All Packaging" : pkg}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
-      {/* Products & Variants Table */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs">
-        {loading ? (
+      {/* Status Tabs (All / Active / Inactive with badge counts) */}
+      <ResourceStatusTabs
+        value={statusFilter}
+        counts={statusCounts}
+        onChange={(status) => {
+          setStatusFilter(status);
+          setCurrentPage(1);
+        }}
+      />
+
+      {/* Products & Variants Table (Uniform with SupplyTable / CategoryTable) */}
+      {loading ? (
+        <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
           <ProductionSkeleton />
-        ) : filteredProducts.length === 0 ? (
-          <div className="p-12 text-center text-muted-foreground text-xs">
-            {searchQuery
-              ? `No products found matching "${searchQuery}".`
-              : "No finished products configured yet. Click 'Add Product' to create one."}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-muted/40 text-muted-foreground font-semibold uppercase tracking-wider text-[10px] border-b border-border">
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+          <table className="w-full min-w-[900px]">
+            <thead className="border-b border-border bg-muted/30">
+              <tr className="text-left text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">
+                <th className="px-4 py-3.5 w-14">No.</th>
+                <th className="px-4 py-3.5 w-16">Photo</th>
+                <th className="px-4 py-3.5">Product Name</th>
+                <th className="px-4 py-3.5">Variant</th>
+                <th className="px-4 py-3.5">Content Size</th>
+                <th className="px-4 py-3.5">UOM</th>
+                <th className="px-4 py-3.5">Packaging</th>
+                <th className="px-4 py-3.5">Min Stock</th>
+                <th className="px-4 py-3.5">Max Stock</th>
+                <th className="px-4 py-3.5">Variant SKU</th>
+                <th className="px-4 py-3.5">Status</th>
+                <th className="px-4 py-3.5 text-center w-20">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {paginatedProducts.length === 0 ? (
                 <tr>
-                  <th className="py-3 px-4 w-12">Photo</th>
-                  <th className="py-3 px-4">Product Name</th>
-                  <th className="py-3 px-4">Variant / Size</th>
-                  <th className="py-3 px-4">SKU</th>
-                  <th className="py-3 px-4">Selling Price</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right w-20">Actions</th>
+                  <td
+                    colSpan={12}
+                    className="px-5 py-12 text-center text-sm font-normal text-muted-foreground"
+                  >
+                    {searchQuery || productFilter !== "All" || packagingFilter !== "All" || statusFilter !== "All"
+                      ? "No finished product variants found matching your filters."
+                      : "No finished products configured yet. Click 'Add New Product' to create one."}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredProducts.map((product) => {
-                  const isOpen = openDropdownId === product.productId;
+              ) : (
+                paginatedProducts.map((product, index) => (
+                  <tr
+                    key={product.productId}
+                    className="hover:bg-muted/30 transition-colors"
+                  >
+                    {/* No. */}
+                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                      {index + 1 + (safeCurrentPage - 1) * pageSize}
+                    </td>
 
-                  return (
-                    <tr
-                      key={product.productId}
-                      className="hover:bg-muted/30 transition-colors"
-                    >
-                      {/* Thumbnail */}
-                      <td className="py-2.5 px-4">
-                        <div className="w-9 h-9 rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center shrink-0">
-                          <ProductionImage
-                            kind="product" id={product.productId}
-                            alt={product.itemName}
-                            className="w-full h-full object-cover"
-                            version={photoVersion}
-                          />
-                        </div>
-                      </td>
+                    {/* Photo */}
+                    <td className="px-4 py-3">
+                      <div className="w-9 h-9 rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center shrink-0">
+                        <ProductionImage
+                          kind="product"
+                          id={product.productId}
+                          alt={product.itemName}
+                          className="w-full h-full object-cover"
+                          version={photoVersion}
+                        />
+                      </div>
+                    </td>
 
-                      {/* Product Name */}
-                      <td className="py-2.5 px-4 font-semibold text-foreground">
-                        {product.itemName}
-                      </td>
+                    {/* Product Name */}
+                    <td className="px-4 py-3 text-sm font-semibold text-foreground whitespace-nowrap">
+                      {product.itemName}
+                    </td>
 
-                      {/* Variant / Size */}
-                      <td className="py-2.5 px-4">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-muted text-foreground border border-border/60">
-                          {product.variant || "Standard"}
-                        </span>
-                      </td>
+                    {/* Variant */}
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className="rounded-md bg-muted text-foreground border border-border px-2.5 py-0.5 text-xs font-semibold">
+                        {product.variant || "Standard"}
+                      </span>
+                    </td>
 
-                      {/* SKU */}
-                      <td className="py-2.5 px-4 font-mono font-bold text-foreground">
-                        {product.sku || "—"}
-                      </td>
+                    {/* Content Size */}
+                    <td className="px-4 py-3 text-sm text-foreground font-medium whitespace-nowrap">
+                      {product.contentSize || "—"}
+                    </td>
 
-                      {/* Price */}
-                      <td className="py-2.5 px-4 font-mono font-semibold text-foreground">
-                        ₱{Number(product.sellingPrice || 0).toFixed(2)}
-                      </td>
+                    {/* UOM */}
+                    <td className="px-4 py-3 text-sm text-muted-foreground font-medium whitespace-nowrap">
+                      {formatVariantUomLabel(product.contentUom || product.uomName)}
+                    </td>
 
-                      {/* Status */}
-                      <td className="py-2.5 px-4">
-                        <StatusBadge status={product.isActive === false ? "Inactive" : "Active"} />
-                      </td>
+                    {/* Packaging */}
+                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                      {product.packagingType || "Jar"}
+                    </td>
 
-                      {/* Actions: 3-dots Dropdown Menu */}
-                      <td className="py-2.5 px-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              className="p-1.5 rounded-lg border border-transparent text-foreground hover:bg-muted/80 transition-all data-[state=open]:bg-muted data-[state=open]:border-border data-[state=open]:shadow-sm cursor-pointer"
-                              aria-label="Actions menu"
-                            >
-                              <MoreHorizontal className="w-4 h-4 text-foreground" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40 z-[200]">
-                            {/* Edit Product */}
-                            <DropdownMenuItem
-                              onClick={() => handleOpenEditProduct(product)}
-                              className="flex items-center gap-2.5 px-3 py-2 cursor-pointer"
-                            >
-                              <Pencil className="w-3.5 h-3.5 text-foreground shrink-0" />
-                              <span className="truncate text-foreground font-medium">
-                                Edit Product
-                              </span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {/* Delete Product */}
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteProduct(product.productId, product.itemName)}
-                              className="flex items-center gap-2.5 px-3 py-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                              <span className="truncate font-medium">
-                                Delete Product
-                              </span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                    {/* Min Stock */}
+                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                      {product.minStockLevel ?? 10}
+                    </td>
 
-      {/* ─────────────────────────────────────────────────────────────
-          UNIFIED FINISHED PRODUCT MODAL (IDENTICAL UI FOR ADD & EDIT)
-          ───────────────────────────────────────────────────────────── */}
+                    {/* Max Stock */}
+                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                      {product.maxStockLevel ?? 100}
+                    </td>
+
+                    {/* Variant SKU */}
+                    <td className="px-4 py-3 text-xs font-mono font-bold text-foreground whitespace-nowrap">
+                      {product.sku || "—"}
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <StatusBadge
+                        status={product.isActive === false ? "Inactive" : "Active"}
+                      />
+                    </td>
+
+                    {/* Actions: Edit Product only (Delete removed per user requirement) */}
+                    <td className="px-4 py-3 text-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none cursor-pointer"
+                            aria-label="Record actions"
+                          >
+                            <MoreHorizontal size={18} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40 z-[200]">
+                          <DropdownMenuItem
+                            onClick={() => handleOpenEditProduct(product)}
+                            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer"
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-foreground shrink-0" />
+                            <span className="truncate text-foreground font-medium">
+                              Edit Product
+                            </span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Pagination (Shared Resources & Suppliers Pagination component) */}
+      <Pagination
+        currentPage={safeCurrentPage}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        itemsPerPage={pageSize}
+        onPageChange={setCurrentPage}
+      />
+
+      {/* Unified Add / Edit Finished Product Modal */}
       <AddFinishedProductModal
         open={isAddProductOpen || isEditProductOpen}
         editingItem={isEditProductOpen ? editingItem : null}
+        allProducts={products}
         onClose={() => {
           setIsAddProductOpen(false);
           setIsEditProductOpen(false);
           setEditingItem(null);
         }}
         onSuccess={() => {
-          fetchProducts();
+          fetchProducts(false);
           setPhotoVersion((v) => v + 1);
         }}
       />

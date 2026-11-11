@@ -3,6 +3,13 @@
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId, validateInput } from "@/lib/production/mutate";
+import {
+  composeVariantName,
+  parseVariantComponents,
+  generateProductCode,
+  buildBaseVariantSku,
+  getUniqueVariantSku,
+} from "@/lib/production/sku";
 
 export async function updateFinishedProduct(idInput: string | number, body: any = {}) {
   const staff = await requireModule("Production & Quality");
@@ -24,21 +31,117 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
       return refuse("Finished product not found.");
     }
 
-    const effectivePrice = body.sellingPrice !== undefined 
-      ? body.sellingPrice 
-      : (body.unitCost !== undefined ? body.unitCost : product.SellingPrice);
+    const effectivePrice =
+      body.sellingPrice !== undefined
+        ? body.sellingPrice
+        : body.unitCost !== undefined
+        ? body.unitCost
+        : product.SellingPrice;
+
+    const resolvedVariant =
+      body.contentSize !== undefined && String(body.contentSize).trim() !== ""
+        ? composeVariantName(
+            body.contentSize,
+            body.contentUom || product.Items?.Uom?.Abbreviation || "ML",
+            body.packagingType || "Jar"
+          )
+        : body.variant !== undefined
+        ? body.variant
+        : product.Variant;
+
+    const parsed = parseVariantComponents(resolvedVariant, body.contentUom || product.Items?.Uom?.Abbreviation);
+    const previousParsed = parseVariantComponents(product.Variant, product.Items?.Uom?.Abbreviation);
+
+    const effectiveProductName =
+      body.productName !== undefined && String(body.productName).trim() !== ""
+        ? String(body.productName).trim()
+        : product.Items?.ItemName || "Finished Product";
 
     const updateData: any = {
-      Variant: body.variant !== undefined ? body.variant : product.Variant,
+      Variant: resolvedVariant,
       SellingPrice: effectivePrice,
     };
 
-    // Keep SKU strictly immutable to preserve POS and Stock Transfer mapping
-    if (body.sku && !product.Sku) {
+    // Update SKU if variant definition (size/UOM/packaging) or product name changed, or if SKU was missing
+    const variantChanged =
+      parsed.variantName.toLowerCase() !== previousParsed.variantName.toLowerCase() ||
+      effectiveProductName.toLowerCase() !== (product.Items?.ItemName || "").trim().toLowerCase();
+
+    if (variantChanged) {
+      const baseSku = buildBaseVariantSku(effectiveProductName, resolvedVariant);
+      updateData.Sku = await getUniqueVariantSku(tx, baseSku, id);
+    } else if (body.sku && !product.Sku) {
       updateData.Sku = body.sku;
     }
 
-    const hasItemUpdate = body.productName !== undefined || body.isActive !== undefined;
+    // Resolve UOM if contentUom was changed
+    let targetUomId = body.uomId ? positiveId(body.uomId) : undefined;
+    if (!targetUomId && body.contentUom) {
+      const matchUom = await tx.unitOfMeasures.findFirst({
+        where: {
+          OR: [
+            { Abbreviation: { equals: parsed.uom, mode: "insensitive" } },
+            { Code: { equals: parsed.uom, mode: "insensitive" } },
+          ],
+        },
+      });
+      if (matchUom) {
+        targetUomId = matchUom.UomId;
+      }
+    }
+
+    const nextMinStock =
+      typeof body.minStockLevel === "number" && !isNaN(body.minStockLevel)
+        ? body.minStockLevel
+        : undefined;
+    const nextMaxStock =
+      typeof body.maxStockLevel === "number" && !isNaN(body.maxStockLevel)
+        ? body.maxStockLevel
+        : undefined;
+
+    if (nextMinStock !== undefined && nextMinStock < 0) {
+      return refuse("Min stock level cannot be negative.");
+    }
+    if (nextMaxStock !== undefined && nextMaxStock <= 0) {
+      return refuse("Max stock level must be greater than 0.");
+    }
+    const effectiveMin = nextMinStock ?? Number(product.Items?.MinStockLevel ?? 0);
+    const effectiveMax = nextMaxStock ?? Number(product.Items?.MaxStockLevel ?? 1000);
+    if (nextMinStock !== undefined || nextMaxStock !== undefined) {
+      if (effectiveMax < effectiveMin) {
+        return refuse("Max stock level cannot be less than min stock level.");
+      }
+    }
+
+    // Ensure variant has its own dedicated Items row before mutating Item-level fields (IsActive, UomId, Min/MaxStock, etc.)
+    const siblingsOnSameItem = await tx.finishedProducts.count({
+      where: { ItemId: product.ItemId, ProductId: { not: id } },
+    });
+
+    if (siblingsOnSameItem > 0) {
+      const newCode = await generateProductCode(tx);
+      const dedicatedItem = await tx.items.create({
+        data: {
+          ItemCode: newCode,
+          ItemName: body.productName !== undefined ? body.productName.trim() : product.Items?.ItemName || "Finished Product",
+          UomId: targetUomId ?? product.Items?.UomId ?? 1,
+          StockUomId: targetUomId ?? product.Items?.StockUomId ?? product.Items?.UomId ?? 1,
+          CategoryId: product.Items?.CategoryId ?? 1,
+          MinStockLevel: nextMinStock ?? product.Items?.MinStockLevel ?? 10,
+          MaxStockLevel: nextMaxStock ?? product.Items?.MaxStockLevel ?? 100,
+          IsActive: body.isActive !== undefined ? Boolean(body.isActive) : product.Items?.IsActive ?? true,
+        },
+      });
+      updateData.ItemId = dedicatedItem.ItemId;
+    }
+
+    const hasItemUpdate =
+      siblingsOnSameItem === 0 &&
+      (body.productName !== undefined ||
+        body.isActive !== undefined ||
+        targetUomId !== undefined ||
+        nextMinStock !== undefined ||
+        nextMaxStock !== undefined);
 
     const updatedProduct = await tx.finishedProducts.update({
       where: { ProductId: id },
@@ -48,8 +151,11 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
           ? {
               Items: {
                 update: {
-                  ...(body.productName !== undefined ? { ItemName: body.productName } : {}),
+                  ...(body.productName !== undefined ? { ItemName: body.productName.trim() } : {}),
                   ...(body.isActive !== undefined ? { IsActive: Boolean(body.isActive) } : {}),
+                  ...(targetUomId !== undefined ? { UomId: targetUomId, StockUomId: targetUomId } : {}),
+                  ...(nextMinStock !== undefined ? { MinStockLevel: nextMinStock } : {}),
+                  ...(nextMaxStock !== undefined ? { MaxStockLevel: nextMaxStock } : {}),
                 },
               },
             }
@@ -68,13 +174,18 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
     const response = {
       productId: updatedProduct.ProductId,
       itemId: updatedProduct.ItemId,
-      sellingPrice: Number(updatedProduct.SellingPrice),
+      sellingPrice: Number(updatedProduct.SellingPrice ?? 0),
       sku: updatedProduct.Sku,
       itemName: updatedProduct.Items?.ItemName || "",
       variant: updatedProduct.Variant,
+      contentSize: parsed.contentSize,
+      contentUom: parsed.uom,
+      packagingType: parsed.packagingType,
+      minStockLevel: Number(updatedProduct.Items?.MinStockLevel ?? effectiveMin),
+      maxStockLevel: Number(updatedProduct.Items?.MaxStockLevel ?? effectiveMax),
       productCode: updatedProduct.Items?.ItemCode || "",
       categoryName: updatedProduct.Items?.Category?.CategoryName || "",
-      uomName: updatedProduct.Items?.Uom?.Abbreviation || "",
+      uomName: parsed.uom,
       isActive: updatedProduct.Items?.IsActive ?? true,
     };
 
