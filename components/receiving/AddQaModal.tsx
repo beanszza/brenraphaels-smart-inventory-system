@@ -6,6 +6,7 @@ import { receiving } from "@/lib/receiving/client";
 import React, { useEffect, useState } from "react";
 import { Package, Plus } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import { GRN, QAInspection } from "./types";
 
 interface AddQaModalProps {
@@ -160,14 +161,13 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
 
         {/* Footer */}
         <div className="flex justify-end items-center gap-3 pt-4 border-t border-border">
-          <button
-            type="button"
-            onClick={onClose}
+          <ModalNativeCloseButton
+            fallbackOnClose={onClose}
             disabled={searching}
             className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Cancel
-          </button>
+          </ModalNativeCloseButton>
           <button
             type="button"
             onClick={handleStartInspection}

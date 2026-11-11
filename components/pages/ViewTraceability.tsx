@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import {
-  GitBranch, Search, ChevronRight, PackageCheck, Factory, Truck, AlertCircle,
+  GitBranch, ChevronRight, PackageCheck, Factory, Truck, AlertCircle,
   Box, Layers, ArrowRight, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,6 +20,7 @@ import { inventory } from "@/lib/inventory/client";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 
 interface TraceNode {
   type: "lot" | "grn" | "batch" | "fgLot" | "shipment" | "supplier";
@@ -205,16 +206,14 @@ export default function ViewTraceability() {
       <Card className="border-border">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                className="pl-9 h-9 text-sm font-mono"
-                placeholder="Enter lot code or batch number (e.g. LOT-2026-0042, BAT-2026-0001)..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleTrace()}
-              />
-            </div>
+            <SearchInput
+              containerClassName="flex-1 h-9"
+              placeholder="Enter lot code or batch number (e.g. LOT-2026-0042, BAT-2026-0001)..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleTrace()}
+              className="text-sm"
+            />
             <div className="flex items-center gap-2">
               <div className="flex items-center bg-muted rounded-md p-0.5">
                 <button
@@ -350,7 +349,7 @@ export default function ViewTraceability() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowRecall(false)}>Cancel</Button>
+            <ModalCloseButton variant="outline" size="sm" fallbackOnClose={() => setShowRecall(false)}>Cancel</ModalCloseButton>
             <Button size="sm" onClick={handleApplyRecallHold}>
               {applyHold ? "Apply Hold & Confirm" : "Confirm Simulation"}
             </Button>

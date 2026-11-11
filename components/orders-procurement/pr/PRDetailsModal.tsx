@@ -5,6 +5,7 @@ import { AlertCircle, Download } from "lucide-react";
 import { PurchaseRequisition } from "../types";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { procurement } from "@/lib/orders/client";
 import { normalizePrPriority } from "@/lib/orders/requisition-lifecycle";
@@ -299,14 +300,14 @@ export function PRDetailsModal({
 
           <div className="flex items-center gap-3 flex-wrap justify-end">
             {/* Close Button */}
-            <Button
+            <ModalCloseButton
               type="button"
               variant="outline"
-              onClick={onClose}
+              fallbackOnClose={onClose}
               className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
             >
               Close
-            </Button>
+            </ModalCloseButton>
 
             {/* Full Lifecycle Report Download (Closed PRs) */}
             {isClosed && (

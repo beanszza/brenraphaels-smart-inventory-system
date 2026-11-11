@@ -4,6 +4,7 @@ import { receiving } from "@/lib/receiving/client";
 
 import React, { useState } from "react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Discrepancy } from "./types";
 import { HR_EMPLOYEES } from "@/lib/employees";
@@ -359,14 +360,13 @@ export default function DiscrepancyDetailsModal({
 
         {/* FOOTER ACTIONS - All buttons in lower right corner */}
         <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-border mt-4">
-          <button
-            type="button"
-            onClick={onClose}
+          <ModalNativeCloseButton
+            fallbackOnClose={onClose}
             disabled={submitting}
             className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Close
-          </button>
+          </ModalNativeCloseButton>
 
           {!isResolved && activeForm === "none" && (
             <>

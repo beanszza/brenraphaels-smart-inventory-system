@@ -85,7 +85,6 @@ export function PRActionModal({
   return createPortal(
     <div
       className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-      onClick={() => { if (!loading) onClose(); }}
     >
       <div
         role="dialog" aria-modal="true" aria-label={getTitle()}

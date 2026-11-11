@@ -4,6 +4,7 @@ import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState } from "react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -208,14 +209,14 @@ export default function BatchCompletionModal({
 
         {/* Actions */}
         <div className="flex items-center justify-between pt-4 border-t border-border">
-          <Button
+          <ModalCloseButton
             type="button"
             variant="outline"
-            onClick={onClose}
+            fallbackOnClose={onClose}
             className="text-xs font-semibold rounded-xl border-border hover:bg-muted"
           >
             Cancel
-          </Button>
+          </ModalCloseButton>
 
           <Button
             type="submit"

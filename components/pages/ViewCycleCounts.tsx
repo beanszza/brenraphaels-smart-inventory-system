@@ -20,6 +20,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -317,7 +318,7 @@ export default function ViewCycleCounts() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowCreateModal(false)}>Cancel</Button>
+            <ModalCloseButton variant="outline" size="sm" fallbackOnClose={() => setShowCreateModal(false)}>Cancel</ModalCloseButton>
             <Button size="sm" onClick={handleCreateCount} disabled={saving || !newCount.locationId}>
               {saving ? "Creating..." : "Create Count"}
             </Button>
@@ -378,7 +379,7 @@ export default function ViewCycleCounts() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowDetailModal(false)}>Close</Button>
+            <ModalCloseButton variant="outline" size="sm" fallbackOnClose={() => setShowDetailModal(false)}>Close</ModalCloseButton>
             {selectedCount?.status !== "Reconciled" && (
               <Button size="sm" onClick={() => setShowReconcileDialog(true)}>
                 <CheckCircle className="w-3.5 h-3.5 mr-1.5" /> Reconcile
@@ -389,7 +390,7 @@ export default function ViewCycleCounts() {
       </Dialog>
 
       {/* Reconcile Confirm */}
-      <Dialog open={showReconcileDialog} onOpenChange={setShowReconcileDialog}>
+      <Dialog open={showReconcileDialog} onOpenChange={setShowReconcileDialog} confirmOnClose={false}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">Reconcile Count</DialogTitle>

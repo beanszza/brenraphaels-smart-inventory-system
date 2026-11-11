@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Upload, Trash2, X } from "lucide-react";
 import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
+import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 
 type Transfer = {
   id: string;
@@ -38,6 +39,8 @@ export default function DispatchModal({ transfer, onClose, onConfirm }: Dispatch
   const [trackingNumber, setTrackingNumber] = useState("");
   const [trackingNumberError, setTrackingNumberError] = useState("");
   const [receiptError, setReceiptError] = useState("");
+
+  const { requestClose, confirmModal } = useConfirmedClose(onClose);
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -131,7 +134,8 @@ export default function DispatchModal({ transfer, onClose, onConfirm }: Dispatch
   if (!mounted) return null;
 
   return createPortal(
-    <div className="font-sans fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+    <div className="font-sans fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50">
+      {confirmModal}
       <div className="w-[90vw] max-w-[90vw] sm:max-w-[80vw] md:max-w-[700px] lg:max-w-[900px] max-h-[90vh] overflow-y-auto p-md sm:p-lg rounded-lg sm:rounded-xl border border-border bg-card flex flex-col shadow-2xl text-foreground" onClick={e => e.stopPropagation()}>
 
         <div className="flex items-center justify-between border-b border-border pb-3 mb-4 flex-shrink-0">
@@ -139,7 +143,7 @@ export default function DispatchModal({ transfer, onClose, onConfirm }: Dispatch
             <h2 className="text-xl font-bold text-foreground">Dispatch Transfer</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Assign vehicle and driver details to initiate stock transit</p>
           </div>
-          <button onClick={onClose} className="text-foreground/60 hover:text-foreground transition-colors">
+          <button type="button" onClick={requestClose} className="text-foreground/60 hover:text-foreground transition-colors">
             <X size={22} />
           </button>
         </div>
@@ -245,7 +249,7 @@ export default function DispatchModal({ transfer, onClose, onConfirm }: Dispatch
           </div>
 
           <div className="flex justify-end gap-3 pt-6 border-t border-border">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-semibold text-foreground border border-border bg-card hover:bg-primary hover:text-primary-foreground rounded-lg transition-colors">Cancel</button>
+            <button type="button" onClick={requestClose} className="px-4 py-2 text-xs font-semibold text-foreground border border-border bg-card hover:bg-primary hover:text-primary-foreground rounded-lg transition-colors">Cancel</button>
             <button type="submit" className="px-5 py-2 text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-lg transition-colors">Start Transit</button>
           </div>
         </form>

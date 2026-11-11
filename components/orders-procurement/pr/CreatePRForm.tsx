@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { PurchaseRequisition, PRItem } from "../types";
 import { useStaff } from "@/context/StaffContext";
@@ -849,14 +850,14 @@ export function CreatePRModal({
 
             {/* Modal Footer: Matching Resources & Suppliers Modals */}
             <div className="flex flex-wrap justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
-              <Button
+              <ModalCloseButton
                 type="button"
                 variant="outline"
-                onClick={onClose}
+                fallbackOnClose={onClose}
                 className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
                 Cancel
-              </Button>
+              </ModalCloseButton>
               <Button
                 type="button"
                 variant="outline"

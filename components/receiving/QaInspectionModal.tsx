@@ -6,6 +6,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, ChevronRight, ClipboardCheck } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import { QAInspection } from "./types";
 
 interface QaInspectionModalProps {
@@ -420,23 +421,21 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
 
           <div className="flex items-center gap-3">
             {isReadOnly ? (
-              <button
-                type="button"
-                onClick={onClose}
+              <ModalNativeCloseButton
+                fallbackOnClose={onClose}
                 className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
               >
                 Close
-              </button>
+              </ModalNativeCloseButton>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={onClose}
+                <ModalNativeCloseButton
+                  fallbackOnClose={onClose}
                   disabled={submitting}
                   className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Cancel
-                </button>
+                </ModalNativeCloseButton>
                 <button
                   type="button"
                   onClick={handleSubmit}

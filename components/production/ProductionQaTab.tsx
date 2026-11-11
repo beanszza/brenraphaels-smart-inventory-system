@@ -476,8 +476,7 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
       {/* Confirmation Modal */}
       {mounted && confirmModal && selectedBatch && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-          onClick={() => setConfirmModal(false)}
+          className="font-sans fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
         >
           <div
             style={{ width: "100%", maxWidth: "440px" }}

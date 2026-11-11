@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import ModalWrapper from "./ModalWrapper";
+import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import { SupplyItem } from "./types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Package, Truck, ShoppingCart, TrendingDown, TrendingUp, Minus } from "lucide-react";
@@ -266,13 +267,12 @@ function SupplyDetailsModalContent({
 
         {/* Footer Actions */}
         <div className="flex justify-end gap-3 pt-3 border-t border-border">
-          <button
-            type="button"
-            onClick={onClose}
+          <ModalNativeCloseButton
+            fallbackOnClose={onClose}
             className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
           >
             Close
-          </button>
+          </ModalNativeCloseButton>
           {onEdit && (
             <button
               type="button"

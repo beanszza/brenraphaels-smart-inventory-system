@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import ModalWrapper from "./ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { Recipe, FinishedProduct, SupplyItem, Ingredient } from "./types";
 import RecipeIngredientItem from "./RecipeIngredientItem";
 import { parseVariantComponents } from "@/lib/production/sku";
@@ -405,15 +406,15 @@ function RecipeModalForm({
 
           {/* Modal Actions */}
           <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
-            <Button
+            <ModalCloseButton
               type="button"
               variant="outline"
               disabled={saving}
-              onClick={onClose}
+              fallbackOnClose={onClose}
               className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors"
             >
               Cancel
-            </Button>
+            </ModalCloseButton>
             <Button
               type="submit"
               disabled={isFormInvalid || saving}

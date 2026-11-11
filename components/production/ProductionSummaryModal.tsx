@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { X, CheckCircle2, FileText, Printer, Package, ShieldCheck, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductionSummaryReport } from "./types";
+import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 
 interface ProductionSummaryModalProps {
   open: boolean;
@@ -18,6 +19,7 @@ export default function ProductionSummaryModal({
   report,
 }: ProductionSummaryModalProps) {
   const [mounted, setMounted] = useState<boolean>(false);
+  const { requestClose, confirmModal } = useConfirmedClose(onClose);
 
   useEffect(() => {
     setMounted(true);
@@ -28,8 +30,8 @@ export default function ProductionSummaryModal({
   return createPortal(
     <div
       className="font-sans fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6"
-      onClick={onClose}
     >
+      {confirmModal}
       <div
         className="bg-card border border-border rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
@@ -59,7 +61,8 @@ export default function ProductionSummaryModal({
               <Printer size={13} className="mr-1.5" /> Print
             </Button>
             <button
-              onClick={onClose}
+              type="button"
+              onClick={requestClose}
               className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
             >
               <X size={18} />
@@ -265,8 +268,9 @@ export default function ProductionSummaryModal({
         {/* Footer */}
         <div className="flex justify-end p-4 border-t border-border bg-muted/20">
           <Button
+            type="button"
             variant="outline"
-            onClick={onClose}
+            onClick={requestClose}
             className="text-xs font-semibold border-border hover:bg-muted"
           >
             Close Report

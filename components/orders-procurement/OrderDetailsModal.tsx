@@ -4,6 +4,7 @@ import React from "react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { Order } from "./types";
 
 interface OrderDetailsModalProps {
@@ -67,13 +68,13 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
         )}
 
         <div className="flex justify-end pt-3 border-t border-border">
-          <Button
+          <ModalCloseButton
             variant="outline"
-            onClick={onClose}
+            fallbackOnClose={onClose}
             className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             Close
-          </Button>
+          </ModalCloseButton>
         </div>
       </div>
     </ModalWrapper>

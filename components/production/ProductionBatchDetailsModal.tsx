@@ -11,6 +11,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { ProductionRequest } from "./types";
 
 interface ProductionBatchDetailsModalProps {
@@ -175,13 +176,13 @@ export default function ProductionBatchDetailsModal({
 
         {/* Footer */}
         <div className="flex justify-end pt-3 border-t border-border">
-          <Button
+          <ModalCloseButton
             size="sm"
-            onClick={onClose}
+            fallbackOnClose={onClose}
             className="h-8 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
           >
             Close
-          </Button>
+          </ModalCloseButton>
         </div>
       </DialogContent>
     </Dialog>

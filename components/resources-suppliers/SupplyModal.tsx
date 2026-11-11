@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ModalWrapper from "./ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { SupplyItem, UomOption } from "./types";
 
 interface Supplier {
@@ -606,14 +607,14 @@ function SupplyModalForm({
         )}
 
         <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
-          <Button
+          <ModalCloseButton
             type="button"
             variant="outline"
-            onClick={onClose}
+            fallbackOnClose={onClose}
             className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             Cancel
-          </Button>
+          </ModalCloseButton>
           <Button
             type="submit"
             disabled={hasErrors}

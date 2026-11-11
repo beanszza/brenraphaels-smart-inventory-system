@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -392,7 +393,7 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
           )}
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowPrModal(false)}>Cancel</Button>
+            <ModalCloseButton variant="outline" size="sm" fallbackOnClose={() => setShowPrModal(false)}>Cancel</ModalCloseButton>
             <Button size="sm" onClick={handleCreatePR} disabled={prSaving}>
               {prSaving ? "Creating..." : "Create PR"}
             </Button>

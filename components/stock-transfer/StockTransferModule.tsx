@@ -240,15 +240,17 @@ export default function StockTransferModule({ requests, metrics, locations, acti
       ) : (
         <div className="space-y-5">
           {/* Search Filter Bar */}
-          <SearchInput
-            placeholder="Search by Request No., Transfer No., Destination Branch, Product, or Courier..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="text-xs"
-          />
+          <div className="rounded-xl border border-border bg-card p-3">
+            <SearchInput
+              placeholder="Search by Request No., Transfer No., Destination Branch, Product, or Courier..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="text-xs"
+            />
+          </div>
 
           {/* Sub-status Tabs Row (Admin Requests tab + Status Tabs) */}
           <div className="border-b border-border overflow-x-auto pb-2">

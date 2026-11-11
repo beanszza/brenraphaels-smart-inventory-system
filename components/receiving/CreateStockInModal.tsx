@@ -6,6 +6,7 @@ import React, { useState, useEffect } from "react";
 import { AlertTriangle, Download } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import NestedDialog from "./NestedDialog";
 import { GRN, StockIn } from "./types";
 
@@ -461,14 +462,13 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
 
         {/* Footer Actions */}
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
-          <button
-            type="button"
-            onClick={onClose}
+          <ModalNativeCloseButton
+            fallbackOnClose={onClose}
             disabled={submitting}
             className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Cancel
-          </button>
+          </ModalNativeCloseButton>
           <button
             type="button"
             disabled={lines.length === 0 || submitting}

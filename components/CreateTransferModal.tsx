@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { inventory } from "@/lib/inventory/client";
 import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
+import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 
 type LocationItem = {
   id: string;
@@ -208,14 +209,16 @@ export default function CreateTransferModal({
     (loc) => !sourceLocationId || loc.id !== sourceLocationId.toString()
   );
 
+  const { requestClose, confirmModal } = useConfirmedClose(onClose);
+
   if (!mounted) return null;
 
   if (mode === "view" && initialData) {
     return createPortal(
       <div
         className="font-sans fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50"
-        onClick={onClose}
       >
+        {confirmModal}
         <div
           className="w-[90vw] max-w-[90vw] sm:max-w-[80vw] md:max-w-[700px] lg:max-w-[900px] max-h-[90vh] overflow-y-auto p-md sm:p-lg rounded-lg sm:rounded-xl border border-border bg-card flex flex-col shadow-2xl"
           onClick={(e) => e.stopPropagation()}
@@ -225,7 +228,8 @@ export default function CreateTransferModal({
               Transfer Details - {initialData.id}
             </h2>
             <button
-              onClick={onClose}
+              type="button"
+              onClick={requestClose}
               className="text-foreground/60 hover:text-foreground transition-colors"
             >
               <X size={22} />
@@ -302,8 +306,8 @@ export default function CreateTransferModal({
   return createPortal(
     <div
       className="font-sans fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50"
-      onClick={onClose}
     >
+      {confirmModal}
       <div
         className="w-[90vw] max-w-[90vw] sm:max-w-[80vw] md:max-w-[700px] lg:max-w-[900px] max-h-[90vh] overflow-y-auto p-md sm:p-lg rounded-lg sm:rounded-xl border border-border bg-card flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
@@ -324,7 +328,8 @@ export default function CreateTransferModal({
             </p>
           </div>
           <button
-            onClick={onClose}
+            type="button"
+            onClick={requestClose}
             className="text-foreground/60 hover:text-foreground transition-colors"
           >
             <X size={22} />
@@ -498,7 +503,7 @@ export default function CreateTransferModal({
             {isReadOnly ? (
               <button
                 type="button"
-                onClick={onClose}
+                onClick={requestClose}
                 className="px-4 py-2 text-xs font-semibold text-foreground border border-border bg-card hover:bg-primary hover:text-primary-foreground rounded-lg transition-colors"
               >
                 Close
@@ -507,7 +512,7 @@ export default function CreateTransferModal({
               <>
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={requestClose}
                   className="px-4 py-2 text-xs font-semibold text-foreground border border-border bg-card hover:bg-primary hover:text-primary-foreground rounded-lg transition-colors"
                 >
                   Cancel

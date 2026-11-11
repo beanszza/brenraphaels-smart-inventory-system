@@ -11,12 +11,16 @@ import { LossReport } from "./types";
 import { toast } from "sonner";
 
 import { lossReportsFromBatches } from "@/lib/production/loss-reports";
+import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 
 export default function LossTab({ initialRows }: { initialRows: Parameters<typeof lossReportsFromBatches>[0] }) {
   const [lossReports, setLossReports] = useState<LossReport[]>(() => lossReportsFromBatches(initialRows));
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedReport, setSelectedReport] = useState<LossReport | null>(null);
+  const { requestClose: requestCloseReport, confirmModal: reportCloseConfirm } = useConfirmedClose(() =>
+    setSelectedReport(null)
+  );
 
   const fetchLossReports = async () => {
     try {
@@ -245,7 +249,8 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
 
       {/* Loss Report Breakdown Modal */}
       {selectedReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+        <div className="font-sans fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          {reportCloseConfirm}
           <div className="bg-card border border-border rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-border bg-muted/20">
@@ -263,7 +268,8 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
                 </div>
               </div>
               <button
-                onClick={() => setSelectedReport(null)}
+                type="button"
+                onClick={requestCloseReport}
                 className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
               >
                 <X size={18} />
@@ -373,8 +379,9 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
             {/* Footer */}
             <div className="flex justify-end p-4 border-t border-border bg-muted/20">
               <Button
+                type="button"
                 variant="outline"
-                onClick={() => setSelectedReport(null)}
+                onClick={requestCloseReport}
                 className="text-xs font-semibold border-border hover:bg-muted cursor-pointer"
               >
                 Close Report

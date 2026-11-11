@@ -1228,7 +1228,6 @@ export default function ProductionBatchDetailView({
       {mounted && confirmStageModal && typeof document !== "undefined" && createPortal(
         <div
           className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-          onClick={() => { if (!stageLoading) setConfirmStageModal(false); }}
         >
           <div
             className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border p-6 text-foreground outline-none animate-in fade-in zoom-in-95 duration-150"
@@ -1278,7 +1277,6 @@ export default function ProductionBatchDetailView({
       {mounted && confirmPackagingModal && typeof document !== "undefined" && createPortal(
         <div
           className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-          onClick={() => { if (!pkgLoading) setConfirmPackagingModal(false); }}
         >
           <div
             className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border p-6 text-foreground outline-none animate-in fade-in zoom-in-95 duration-150"
@@ -1328,7 +1326,6 @@ export default function ProductionBatchDetailView({
       {mounted && showRejectModal && typeof document !== "undefined" && createPortal(
         <div
           className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-          onClick={() => { if (!rejectLoading) setShowRejectModal(false); }}
         >
           <div
             className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border p-6 text-foreground outline-none animate-in fade-in zoom-in-95 duration-150"

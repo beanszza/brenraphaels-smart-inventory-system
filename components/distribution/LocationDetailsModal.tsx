@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import React from "react";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { LocationItem } from "./types";
 
 interface LocationDetailsModalProps {
@@ -41,9 +42,9 @@ export default function LocationDetailsModal({
         </div>
 
         <div className="flex justify-end pt-3 border-t border-border">
-          <Button variant="outline" onClick={onClose} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
+          <ModalCloseButton variant="outline" fallbackOnClose={onClose} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
             Close
-          </Button>
+          </ModalCloseButton>
         </div>
       </div>
     </ModalWrapper>

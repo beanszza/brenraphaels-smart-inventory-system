@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "./ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { CategoryItem } from "./types";
 
 interface CategoryModalProps {
@@ -229,14 +230,14 @@ function CategoryModalForm({
 
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
-          <Button
+          <ModalCloseButton
             type="button"
             variant="outline"
-            onClick={onClose}
+            fallbackOnClose={onClose}
             className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors"
           >
             Cancel
-          </Button>
+          </ModalCloseButton>
           <Button
             type="button"
             disabled={hasErrors || isSaving}

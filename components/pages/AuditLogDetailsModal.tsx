@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import {
   Clock,
   User,
@@ -196,13 +197,13 @@ export default function AuditLogDetailsModal({
 
         {/* Footer */}
         <div className="p-4 px-6 border-t border-border bg-muted/20 flex justify-end">
-          <Button
+          <ModalCloseButton
             variant="outline"
-            onClick={onClose}
+            fallbackOnClose={onClose}
             className="rounded-xl border-border bg-card px-5 py-2 text-xs font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             Close
-          </Button>
+          </ModalCloseButton>
         </div>
       </DialogContent>
     </Dialog>

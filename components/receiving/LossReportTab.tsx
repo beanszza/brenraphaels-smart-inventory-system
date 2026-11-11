@@ -18,6 +18,7 @@ import { SearchInput } from "@/components/shared/SearchInput";
 import { EmptyState } from "@/components/shared/EmptyState";
 import Pagination from "@/components/Pagination";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import { LossReport } from "./types";
 
 export default function LossReportTab({ initialLossReports }: { initialLossReports: LossReport[] }) {
@@ -424,14 +425,13 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
 
             {/* Modal Footer - Lower right corner */}
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-4">
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
+              <ModalNativeCloseButton
+                fallbackOnClose={() => setModalOpen(false)}
                 disabled={actionLoadingId !== null}
                 className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
                 Close
-              </button>
+              </ModalNativeCloseButton>
               {!selectedReport.isAcknowledged && (
                 <button
                   type="button"

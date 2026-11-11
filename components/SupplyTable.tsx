@@ -1,6 +1,7 @@
 "use client";
 
-import { Pencil, Plus, Search } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
+import { SearchInput } from "@/components/shared/SearchInput";
 
 type SupplyItem = {
   id: number;
@@ -131,27 +132,10 @@ export default function SupplyTable() {
             Tools
           </button>
 
-          <div className="relative ml-auto w-[300px]">
-            <Search
-              size={18}
-              className="absolute left-3 top-3 text-muted-foreground"
-            />
-
-            <input
-              type="text"
-              placeholder="Search supplies..."
-              className="
-                w-full
-                pl-10 pr-4 py-3
-                rounded-xl
-                border border-border
-                bg-card
-                text-sm
-                text-foreground
-                outline-none
-              "
-            />
-          </div>
+          <SearchInput
+            containerClassName="ml-auto w-[300px] flex-none"
+            placeholder="Search supplies..."
+          />
         </div>
 
         {/* TABLE */}

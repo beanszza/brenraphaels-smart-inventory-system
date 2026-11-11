@@ -7,6 +7,7 @@ import { actionResponse } from "@/lib/resources/action-response";
 import React, { useEffect, useState } from "react";
 import { Truck, Package } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ArrivedDelivery } from "./types";
 
@@ -184,14 +185,13 @@ export default function DeliveryDetailsModal({
 
         {/* Footer Actions */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-2">
-          <button
-            type="button"
-            onClick={onClose}
+          <ModalNativeCloseButton
+            fallbackOnClose={onClose}
             disabled={loading}
             className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Close
-          </button>
+          </ModalNativeCloseButton>
           <button
             type="button"
             disabled={loading}

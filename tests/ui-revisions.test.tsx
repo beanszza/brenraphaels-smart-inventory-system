@@ -9,6 +9,7 @@ import {
 import { SearchInput } from "@/components/shared/SearchInput";
 import { CreatePRModal } from "@/components/orders-procurement/pr/CreatePRForm";
 import { CreateDeliveryModal } from "@/components/orders-procurement/delivery/CreateDeliveryModal";
+import { CreatePOModal } from "@/components/orders-procurement/po/CreatePOModal";
 import { POApprovalModal } from "@/components/orders-procurement/po/POApprovalModal";
 import type { PurchaseOrderPO } from "@/components/orders-procurement/types";
 
@@ -53,14 +54,15 @@ describe("date-limits helper", () => {
 });
 
 describe("SearchInput visibility", () => {
-  it("renders a crisp bordered background input without bg-muted/20", () => {
+  it("renders a crisp bordered search bar without bg-muted/20", () => {
     const html = renderToStaticMarkup(
       <SearchInput placeholder="Search supplies..." value="" onChange={() => {}} />
     );
 
-    expect(html).toContain("border-input");
-    expect(html).toContain("bg-background");
+    expect(html).toContain("border-border");
+    expect(html).toContain("bg-secondary/50");
     expect(html).not.toContain("bg-muted/20");
+    expect(html).not.toContain("shadow-sm");
     expect(html).toContain('placeholder="Search supplies..."');
   });
 });
@@ -127,6 +129,16 @@ describe("Modal layout, typography, and date bounds", () => {
     expect(approvalHtml).not.toContain("font-mono");
     expect(approvalHtml).toContain(`min="${getTodayDateString()}"`);
     expect(approvalHtml).toContain(`max="${getMaxFutureDateString()}"`);
+  });
+
+  it("renders updated CreatePOModal search bar and removes Back to Requisitions copy", () => {
+    const html = renderToStaticMarkup(
+      <CreatePOModal open onClose={() => {}} onSuccess={() => {}} />
+    );
+    expect(html).toContain('placeholder="Search requisitions..."');
+    expect(html).toContain("bg-secondary/50");
+    expect(html).not.toContain("Back to Requisitions");
+    expect(html).not.toContain(">ACTION<");
   });
 });
 

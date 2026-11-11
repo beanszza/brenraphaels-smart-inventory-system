@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   ChevronRight,
   ChevronLeft,
-  Search,
+  ChevronDown,
   Users,
   Mail,
   CheckCircle2,
@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/shared/SearchInput";
+import { ModalCloseButton, useModalRequestClose } from "@/components/shared/ModalCloseContext";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { PurchaseRequisition, PurchaseOrderPO } from "../types";
 import { useStaff } from "@/context/StaffContext";
@@ -63,6 +65,8 @@ export function CreatePOModal({
   const [prSearch, setPrSearch] = useState("");
   const [selectedPR, setSelectedPR] = useState<PurchaseRequisition | null>(null);
   const [loadingPRs, setLoadingPRs] = useState(false);
+  const [expandedPrIds, setExpandedPrIds] = useState<Record<number, boolean>>({});
+  const [prOrderedMap, setPrOrderedMap] = useState<Record<number, Record<number, number>>>({});
 
   // Step 2: Suppliers
   const [eligibleSuppliers, setEligibleSuppliers] = useState<
@@ -147,6 +151,8 @@ export function CreatePOModal({
         setStep(1);
         setPrSearch("");
         setSelectedPR(null);
+        setExpandedPrIds({});
+        setPrOrderedMap({});
         setSelectedSupplierId(null);
         setSelectedSupplierDetails(null);
         setItemRows([]);
@@ -176,6 +182,7 @@ export function CreatePOModal({
       const res = await procurement.listRequisitions("Approved");
       if (res.data?.success) {
         const prs: PurchaseRequisition[] = res.data.data || [];
+        const nextOrderedMap: Record<number, Record<number, number>> = {};
         // Ensure only PRs with remaining un-ordered balance > 0 are shown
         const checks = await Promise.all(
           prs.map(async (pr) => {
@@ -189,6 +196,7 @@ export function CreatePOModal({
                   orderedMap[o.itemId] = Number(o.orderedQty) || 0;
                 });
               }
+              nextOrderedMap[pr.prId] = orderedMap;
               const hasRemaining = items.some(
                 (item) => Number(item.requestedQuantity) - (orderedMap[item.itemId] || 0) > 0
               );
@@ -198,6 +206,7 @@ export function CreatePOModal({
             }
           })
         );
+        setPrOrderedMap(nextOrderedMap);
         setApprovedPRs(checks.filter((pr): pr is PurchaseRequisition => pr !== null));
       }
     } catch {
@@ -650,15 +659,15 @@ export function CreatePOModal({
               </div>
 
               <div className="flex items-center gap-2.5">
-                <Button
+                <ModalCloseButton
                   type="button"
                   variant="outline"
                   disabled={submitting}
-                  onClick={handleCancelOrCloseWhileWaiting}
+                  fallbackOnClose={handleCancelOrCloseWhileWaiting}
                   className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
                 >
                   Cancel
-                </Button>
+                </ModalCloseButton>
                 <Button
                   type="button"
                   disabled={submitting}
@@ -703,7 +712,7 @@ export function CreatePOModal({
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
                   placeholder="Enter recipient email (e.g. supplier@company.com)"
-                  className="h-8 text-xs bg-muted/20 border-border font-medium rounded-lg w-full"
+                  className="h-8 text-xs bg-background border-border font-medium rounded-lg w-full"
                 />
                 {recipientEmail ? (
                   <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 mt-1">
@@ -828,25 +837,22 @@ export function CreatePOModal({
             {/* Step 1: Select Approved Purchase Requisition */}
             {step === 1 && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">
                       Select an Approved Purchase Requisition
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      Choose an approved requisition with remaining un-ordered items to create a Purchase Order.
+                      Expand a requisition row to preview its items and remaining quantities to order.
                     </p>
                   </div>
-                  <div className="relative w-64">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Search requisitions..."
-                      value={prSearch}
-                      onChange={(e) => setPrSearch(e.target.value)}
-                      className="pl-9 h-9 text-xs rounded-xl"
-                    />
-                  </div>
+                  <SearchInput
+                    containerClassName="w-full sm:w-72 flex-none h-9"
+                    placeholder="Search requisitions..."
+                    value={prSearch}
+                    onChange={(e) => setPrSearch(e.target.value)}
+                    className="text-xs"
+                  />
                 </div>
 
                 <div className="border border-border rounded-xl overflow-hidden max-h-96 overflow-y-auto bg-card">
@@ -858,38 +864,161 @@ export function CreatePOModal({
                     </div>
                   ) : (
                     <table className="w-full text-xs">
-                      <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[11px] sticky top-0">
+                      <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[11px] sticky top-0 z-10">
                         <tr>
                           <th className="px-4 py-2.5 text-left font-bold">REQUISITION NO.</th>
                           <th className="px-4 py-2.5 text-left font-bold">REQUESTED BY</th>
                           <th className="px-4 py-2.5 text-left font-bold">DEPARTMENT</th>
                           <th className="px-4 py-2.5 text-left font-bold">PURPOSE</th>
-                          <th className="px-4 py-2.5 text-right font-bold">ITEMS</th>
-                          <th className="px-4 py-2.5 text-center font-bold">ACTION</th>
+                          <th className="px-3 py-2.5 text-center font-bold w-20">ITEMS</th>
+                          <th className="px-4 py-2.5 text-right w-24">
+                            <span className="sr-only">Select</span>
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
-                        {filteredPRs.map((pr) => (
-                          <tr key={pr.prId} className="hover:bg-muted/20 transition-colors">
-                            <td className="px-4 py-3 font-bold text-foreground">{pr.prNumber}</td>
-                            <td className="px-4 py-3 text-muted-foreground">{pr.requestedBy}</td>
-                            <td className="px-4 py-3 text-muted-foreground">{pr.department}</td>
-                            <td className="px-4 py-3 text-muted-foreground">{pr.purpose || pr.requestType}</td>
-                            <td className="px-4 py-3 text-right font-medium">
-                              {pr.items?.length || 0}
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => handleSelectPR(pr)}
-                                className="h-7 px-3 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                        {filteredPRs.map((pr) => {
+                          const isExpanded = !!expandedPrIds[pr.prId];
+                          const orderedMap = prOrderedMap[pr.prId] || {};
+                          const prItems = pr.items || [];
+                          return (
+                            <React.Fragment key={pr.prId}>
+                              <tr
+                                onClick={() =>
+                                  setExpandedPrIds((prev) => ({ ...prev, [pr.prId]: !isExpanded }))
+                                }
+                                className="hover:bg-muted/20 transition-colors cursor-pointer"
                               >
-                                Select
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
+                                <td className="px-4 py-3 font-bold text-foreground whitespace-nowrap">
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      aria-label={isExpanded ? `Collapse ${pr.prNumber}` : `Expand ${pr.prNumber}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setExpandedPrIds((prev) => ({ ...prev, [pr.prId]: !isExpanded }));
+                                      }}
+                                      className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                                    >
+                                      {isExpanded ? (
+                                        <ChevronDown className="w-4 h-4 text-primary" />
+                                      ) : (
+                                        <ChevronRight className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                    <span>{pr.prNumber}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{pr.requestedBy}</td>
+                                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{pr.department}</td>
+                                <td className="px-4 py-3 text-muted-foreground max-w-[200px]">
+                                  <span className="line-clamp-1">{pr.purpose || pr.requestType}</span>
+                                </td>
+                                <td className="px-3 py-3 text-center font-semibold text-foreground w-20">
+                                  {prItems.length}
+                                </td>
+                                <td className="px-4 py-3 text-right w-24">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSelectPR(pr);
+                                    }}
+                                    className="h-7 px-3 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                                  >
+                                    Select
+                                  </Button>
+                                </td>
+                              </tr>
+                              {isExpanded && (
+                                <tr className="bg-muted/10">
+                                  <td colSpan={6} className="p-0 border-b border-border">
+                                    <div className="px-6 py-3.5 bg-muted/15 space-y-2.5">
+                                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                                        <span>
+                                          <strong className="text-foreground">Items Summary</strong> ({prItems.length}{" "}
+                                          {prItems.length === 1 ? "item" : "items"})
+                                        </span>
+                                        <div className="flex flex-wrap items-center gap-3">
+                                          {pr.priority && (
+                                            <span>
+                                              Priority: <strong className="text-foreground">{pr.priority}</strong>
+                                            </span>
+                                          )}
+                                          {pr.requiredDate && (
+                                            <span>
+                                              Required:{" "}
+                                              <strong className="text-foreground">
+                                                {new Date(pr.requiredDate).toLocaleDateString("en-PH", {
+                                                  year: "numeric",
+                                                  month: "short",
+                                                  day: "numeric",
+                                                })}
+                                              </strong>
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {prItems.length === 0 ? (
+                                        <p className="text-xs text-muted-foreground py-2">
+                                          No item details available.
+                                        </p>
+                                      ) : (
+                                        <div className="overflow-x-auto rounded-lg border border-border bg-card">
+                                          <table className="w-full text-xs">
+                                            <thead>
+                                              <tr className="border-b border-border bg-muted/30 text-[10px] uppercase text-muted-foreground font-bold">
+                                                <th className="px-3 py-2 text-left">Item / Supply</th>
+                                                <th className="px-3 py-2 text-left">Unit</th>
+                                                <th className="px-3 py-2 text-right">Requested</th>
+                                                <th className="px-3 py-2 text-right">Already Ordered</th>
+                                                <th className="px-3 py-2 text-right">Left to Order</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-border/60">
+                                              {prItems.map((item, idx) => {
+                                                const requested = Number(item.requestedQuantity) || 0;
+                                                const ordered = orderedMap[item.itemId] || 0;
+                                                const leftToOrder = Math.max(0, requested - ordered);
+                                                return (
+                                                  <tr key={`${pr.prId}-item-${item.itemId}-${idx}`} className="hover:bg-muted/20">
+                                                    <td className="px-3 py-2 font-medium text-foreground">
+                                                      {item.itemName || `Item #${item.itemId}`}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-muted-foreground">
+                                                      {item.uomName || "Unit"}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right text-muted-foreground">
+                                                      {requested.toLocaleString()}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right text-muted-foreground">
+                                                      {ordered.toLocaleString()}
+                                                    </td>
+                                                    <td
+                                                      className={`px-3 py-2 text-right font-semibold ${
+                                                        leftToOrder > 0
+                                                          ? "text-emerald-600 dark:text-emerald-400"
+                                                          : "text-muted-foreground"
+                                                      }`}
+                                                    >
+                                                      {leftToOrder.toLocaleString()}
+                                                    </td>
+                                                  </tr>
+                                                );
+                                              })}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}
@@ -900,7 +1029,18 @@ export function CreatePOModal({
             {/* Step 2: Select Supplier */}
             {step === 2 && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="space-y-2.5">
+                  <div className="flex justify-start">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setStep(1)}
+                      className="flex items-center gap-1 text-xs rounded-xl cursor-pointer"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" /> Back
+                    </Button>
+                  </div>
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">
                       Select Supplier for {selectedPR?.prNumber}
@@ -909,15 +1049,6 @@ export function CreatePOModal({
                       Choose the vendor or supplier to send this Purchase Order to.
                     </p>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setStep(1)}
-                    className="flex items-center gap-1 text-xs rounded-xl cursor-pointer"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" /> Back to Requisitions
-                  </Button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 max-h-96 overflow-y-auto p-1">
@@ -976,7 +1107,20 @@ export function CreatePOModal({
             {/* Step 3: Order Quantities */}
             {step === 3 && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="space-y-2.5">
+                  {!isEdit && (
+                    <div className="flex justify-start">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setStep(2)}
+                        className="flex items-center gap-1 text-xs rounded-xl cursor-pointer"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" /> Back
+                      </Button>
+                    </div>
+                  )}
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">
                       Specify Order Quantities
@@ -985,17 +1129,6 @@ export function CreatePOModal({
                       Supplier: <strong className="text-foreground">{selectedSupplier?.supplierName}</strong> &bull; Purchase Requisition: <strong className="text-foreground">{selectedPR?.prNumber || initialPo?.prNumber}</strong>
                     </p>
                   </div>
-                  {!isEdit && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setStep(2)}
-                      className="flex items-center gap-1 text-xs rounded-xl cursor-pointer"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5" /> Change Supplier
-                    </Button>
-                  )}
                 </div>
 
                 {errors.items && (
@@ -1075,14 +1208,14 @@ export function CreatePOModal({
 
                 {/* Step 3 Footer Action Buttons */}
                 <div className="flex justify-end gap-3 pt-5 border-t border-border mt-6">
-                  <Button
+                  <ModalCloseButton
                     type="button"
                     variant="outline"
-                    onClick={onClose}
+                    fallbackOnClose={onClose}
                     className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
                   >
                     Cancel
-                  </Button>
+                  </ModalCloseButton>
                   <Button
                     type="button"
                     disabled={submitting || !isStep3Valid}

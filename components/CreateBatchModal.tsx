@@ -9,6 +9,7 @@ import { actionResponse } from "@/lib/resources/action-response";
 import React, { useEffect, useState, useMemo } from "react";
 import { X, Loader2, Check, AlertTriangle, Package } from "lucide-react";
 import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
+import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 
 interface Props {
   open: boolean;
@@ -278,13 +279,15 @@ export default function CreateBatchModal({ open, onClose, onCreated }: Props) {
     setScheduleDateError(getFutureDateError(val, "Schedule date", { allowToday: true }));
   };
 
+  const { requestClose, confirmModal } = useConfirmedClose(onClose);
+
   if (!open) return null;
 
   return (
     <div
       className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
     >
+      {confirmModal}
       <div
         className="w-[90vw] max-w-[90vw] sm:max-w-[80vw] md:max-w-[700px] lg:max-w-[900px] max-h-[90vh] overflow-y-auto p-md sm:p-lg rounded-lg sm:rounded-xl bg-card border border-border shadow-xl"
         onClick={(e) => e.stopPropagation()}
@@ -295,7 +298,7 @@ export default function CreateBatchModal({ open, onClose, onCreated }: Props) {
             Create Production Batch
             {isLoadingData && <Loader2 size={16} className="animate-spin text-muted-foreground" />}
           </h2>
-          <button onClick={onClose} className="text-muted-foreground hover:opacity-80 transition-opacity">
+          <button type="button" onClick={requestClose} className="text-muted-foreground hover:opacity-80 transition-opacity">
             <X size={20} />
           </button>
         </div>
@@ -552,7 +555,8 @@ export default function CreateBatchModal({ open, onClose, onCreated }: Props) {
         {/* Footer */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
           <button
-            onClick={onClose}
+            type="button"
+            onClick={requestClose}
             className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-sm font-semibold text-foreground bg-muted hover:opacity-80 transition-opacity"
           >
             Cancel

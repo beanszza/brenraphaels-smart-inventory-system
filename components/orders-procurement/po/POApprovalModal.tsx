@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { PurchaseOrderPO } from "../types";
 import { approvePurchaseOrder } from "@/app/actions/orders/orders";
 import { actionResponse } from "@/lib/resources/action-response";
@@ -374,15 +375,15 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
 
         {/* Action Buttons */}
         <div className="flex justify-end gap-3 pt-4 border-t border-border">
-          <Button
+          <ModalCloseButton
             type="button"
             variant="outline"
-            onClick={onClose}
+            fallbackOnClose={onClose}
             disabled={submitting}
             className="rounded-xl px-5 font-semibold border-border bg-card hover:bg-muted text-foreground cursor-pointer"
           >
             Cancel
-          </Button>
+          </ModalCloseButton>
           <Button
             type="button"
             onClick={handleConfirmApproval}

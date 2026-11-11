@@ -103,7 +103,7 @@ export default function CategoryTab({
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 rounded-xl border border-border bg-card p-3">
         <SearchInput
           placeholder="Search category name or description..."
           value={searchQuery}

@@ -118,7 +118,7 @@ export default function SupplierTab({
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 rounded-xl border border-border bg-card p-3">
         <SearchInput
           placeholder="Search by Supplier No, company, contact, or email..."
           value={searchQuery}

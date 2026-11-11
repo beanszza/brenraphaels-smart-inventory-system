@@ -11,6 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { uploadProductionImage } from "@/lib/production/image-client";
+import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 
 interface Props {
   open: boolean;
@@ -123,12 +124,15 @@ export default function UploadImagesModal({
     }
   };
 
+  const { requestClose, confirmModal } = useConfirmedClose(onClose);
+
   const canSubmit = (selectedStage !== "" || selectedFiles.length > 0) && !updatingStage && !uploading;
 
   if (!open) return null;
 
   return (
-    <div className="font-sans fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+    <div className="font-sans fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50">
+      {confirmModal}
       <div className="w-[90vw] max-w-[90vw] sm:max-w-[80vw] md:max-w-[700px] lg:max-w-[900px] max-h-[90vh] overflow-y-auto p-md sm:p-lg rounded-lg sm:rounded-xl bg-card border border-border shadow-xl" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
@@ -136,7 +140,8 @@ export default function UploadImagesModal({
             Batch {batchId} – Update & Upload
           </h2>
           <button
-            onClick={onClose}
+            type="button"
+            onClick={requestClose}
             className="text-muted-foreground hover:opacity-80 transition-opacity"
           >
             <X size={20} />
@@ -216,7 +221,7 @@ export default function UploadImagesModal({
         {/* Footer – single Submit button */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
           <div className="flex items-center gap-3 w-full sm:w-auto">
-             <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-semibold text-foreground border border-border rounded-lg hover:opacity-80 transition-opacity">Cancel</button>
+             <button type="button" onClick={requestClose} className="px-4 py-2 text-xs font-semibold text-foreground border border-border rounded-lg hover:opacity-80 transition-opacity">Cancel</button>
           </div>
            <button
             onClick={handleSubmit}

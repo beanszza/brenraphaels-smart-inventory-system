@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { X, Camera, CheckCircle2, AlertCircle, RefreshCw, Barcode, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 import jsQR from "jsqr";
 
 interface QrScannerModalProps {
@@ -295,13 +296,15 @@ export default function QrScannerModal({
     startCamera();
   };
 
+  const { requestClose, confirmModal } = useConfirmedClose(onClose);
+
   if (!open || !mounted || typeof document === "undefined") return null;
 
   return createPortal(
     <div
       className="font-sans fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6"
-      onClick={onClose}
     >
+      {confirmModal}
       {/* Hidden canvas for jsQR analysis */}
       <canvas ref={canvasRef} className="hidden" />
 
@@ -327,7 +330,8 @@ export default function QrScannerModal({
               </span>
             )}
             <button
-              onClick={onClose}
+              type="button"
+              onClick={requestClose}
               className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               <X size={18} />
@@ -354,8 +358,9 @@ export default function QrScannerModal({
                 {/* Buttons directly under the camera view as requested: Close and Rescan */}
                 <div className="flex items-center gap-2.5 pt-2">
                   <Button
+                    type="button"
                     variant="outline"
-                    onClick={onClose}
+                    onClick={requestClose}
                     className="border-border bg-card text-foreground hover:bg-muted font-semibold text-xs px-4 py-2 rounded-xl transition-colors cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5 mr-1.5" /> Close
@@ -508,9 +513,10 @@ export default function QrScannerModal({
               </Button>
             )}
             <Button
+              type="button"
               variant="outline"
               size="sm"
-              onClick={onClose}
+              onClick={requestClose}
               className="text-xs font-semibold border-border hover:bg-muted cursor-pointer"
             >
               Close

@@ -16,6 +16,7 @@ import { FinishedProductOption, LocationOption } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 
 interface CreateSTRModalProps {
   open: boolean;
@@ -256,13 +257,15 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
     }
   };
 
+  const { requestClose, confirmModal } = useConfirmedClose(onClose);
+
   if (!open || !mounted) return null;
 
   return createPortal(
     <div
       className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
-      onClick={onClose}
     >
+      {confirmModal}
       <div
         style={{ width: "100%", maxWidth: "1050px" }}
         className="w-full max-h-[92vh] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
@@ -285,7 +288,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             className="rounded-xl p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -545,7 +548,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
           <div className="flex items-center justify-end gap-3 border-t border-border pt-5">
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               disabled={loading}
               className="rounded-xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >

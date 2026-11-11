@@ -10,6 +10,7 @@ import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useMemo } from "react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1142,14 +1143,14 @@ export default function ProductionRequestModal({
 
         {/* Modal Action Buttons (Monochromatic - No Draft) */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border">
-          <Button
+          <ModalCloseButton
             type="button"
             variant="outline"
-            onClick={onClose}
+            fallbackOnClose={onClose}
             className="text-xs font-semibold rounded-xl border-border hover:bg-muted"
           >
             {isViewMode ? "Close" : "Cancel"}
-          </Button>
+          </ModalCloseButton>
 
           <div className="flex items-center gap-2">
             {!isViewMode ? (

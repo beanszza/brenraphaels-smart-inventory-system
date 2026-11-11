@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { X, ShoppingCart } from "lucide-react";
+import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 
 interface SupplierOrdersModalProps {
   selectedSupplierModal: any;
@@ -15,12 +16,14 @@ export default function SupplierOrdersModal({
   onClose,
 }: SupplierOrdersModalProps) {
   const [mounted, setMounted] = useState(false);
+  const { requestClose, confirmModal } = useConfirmedClose(onClose);
   useEffect(() => setMounted(true), []);
 
   if (!selectedSupplierModal || !mounted) return null;
 
   return createPortal(
-    <div className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
+      {confirmModal}
       <div className="w-[90vw] max-w-[90vw] sm:max-w-[80vw] md:max-w-[700px] lg:max-w-[900px] max-h-[90vh] overflow-hidden p-md sm:p-lg rounded-lg sm:rounded-xl border border-border bg-card flex flex-col shadow-2xl text-foreground" onClick={e => e.stopPropagation()}>
         <div className="border-b border-border pb-3 mb-4 flex justify-between items-center shrink-0">
           <div>
@@ -33,7 +36,8 @@ export default function SupplierOrdersModal({
             </p>
           </div>
           <button
-            onClick={onClose}
+            type="button"
+            onClick={requestClose}
             className="text-foreground/60 hover:text-foreground transition-colors"
           >
             <X size={22} />
@@ -122,8 +126,9 @@ export default function SupplierOrdersModal({
 
         <div className="px-6 py-3 border-t border-border bg-background/50 flex justify-end">
           <Button
+            type="button"
             variant="outline"
-            onClick={onClose}
+            onClick={requestClose}
             className="px-4 py-2 rounded-xl border border-border bg-card text-foreground font-semibold text-sm hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             Close

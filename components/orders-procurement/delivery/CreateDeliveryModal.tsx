@@ -7,9 +7,11 @@ import { listDeliveries } from "@/app/actions/orders/deliveries";
 import { procurement } from "@/lib/orders/client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { AlertCircle, Upload, Trash2, Search, Calendar, FileText } from "lucide-react";
+import { AlertCircle, Upload, Trash2, Calendar, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/shared/SearchInput";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -632,16 +634,13 @@ export function CreateDeliveryModal({
                       Specify quantity being ordered for this shipment
                     </span>
                   </div>
-                  <div className="relative w-56">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Search items..."
-                      value={itemSearch}
-                      onChange={(e) => setItemSearch(e.target.value)}
-                      className="h-8 text-xs pl-8 rounded-lg border-border bg-card focus-visible:ring-1"
-                    />
-                  </div>
+                  <SearchInput
+                    containerClassName="w-60 flex-none h-9"
+                    placeholder="Search items..."
+                    value={itemSearch}
+                    onChange={(e) => setItemSearch(e.target.value)}
+                    className="text-xs"
+                  />
                 </div>
 
                 {items.length > 0 && (
@@ -848,15 +847,15 @@ export function CreateDeliveryModal({
 
           {/* Footer Buttons */}
           <div className="flex items-center justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
-            <Button
+            <ModalCloseButton
               type="button"
               variant="outline"
               disabled={submitting}
-              onClick={onClose}
+              fallbackOnClose={onClose}
               className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50"
             >
               Close
-            </Button>
+            </ModalCloseButton>
             <Button
               type="submit"
               disabled={submitting || !selectedPoId || hasErrors || !hasAnyOrderQty || !scheduledAttachmentBase64.trim() || !plannedDispatchDate}
@@ -878,7 +877,7 @@ export function CreateDeliveryModal({
       )}
 
       {/* Review Modal for Submission using Radix Dialog */}
-      <Dialog open={confirmModal} onOpenChange={(open) => { if (!open) setConfirmModal(false); }}>
+      <Dialog open={confirmModal} onOpenChange={(open) => { if (!open) setConfirmModal(false); }} confirmOnClose={false}>
         <DialogContent className="sm:max-w-2xl bg-card border-border p-6 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-foreground">Review Delivery Schedule</DialogTitle>

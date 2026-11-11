@@ -67,6 +67,9 @@ export function ProductionActionModal({
         <DialogPrimitive.Overlay className="font-sans fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
           className="fixed left-1/2 top-1/2 z-[301] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 bg-card rounded-2xl shadow-2xl border border-border p-6 text-foreground outline-none animate-in fade-in zoom-in-95 duration-150"
         >
           <div className="flex flex-col items-center justify-center text-center">

@@ -11,6 +11,7 @@ import {
 import { PurchaseOrderPO } from "../types";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { downloadPurchaseOrderPdf } from "./downloadPurchaseOrderPdf";
 
@@ -285,14 +286,14 @@ export function PODetailsModal({
             </Button>
 
             {/* Close Button */}
-            <Button
+            <ModalCloseButton
               type="button"
               variant="outline"
-              onClick={onClose}
+              fallbackOnClose={onClose}
               className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               Close
-            </Button>
+            </ModalCloseButton>
 
             {/* IMS Manager: Approve Order (Far Right!) */}
             {!isAdmin && isPending && onApproveWithForm && (

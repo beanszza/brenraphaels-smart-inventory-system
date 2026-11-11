@@ -2,6 +2,7 @@
 
 import React from "react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ExternalLink, CheckCircle2 } from "lucide-react";
@@ -105,13 +106,13 @@ export default function PrSummaryModal({ open, onClose, prData }: PrSummaryModal
             <span>View All Requisitions</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </Link>
-          <Button
+          <ModalCloseButton
             type="button"
-            onClick={onClose}
+            fallbackOnClose={onClose}
             className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors"
           >
             Done
-          </Button>
+          </ModalCloseButton>
         </div>
       </div>
     </ModalWrapper>

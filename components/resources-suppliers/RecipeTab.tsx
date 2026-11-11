@@ -111,7 +111,7 @@ export default function RecipeTab({
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 rounded-xl border border-border bg-card p-3">
         <SearchInput
           placeholder="Search by Recipe No, recipe, or product name..."
           value={searchQuery}

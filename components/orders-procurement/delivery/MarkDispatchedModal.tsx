@@ -8,6 +8,7 @@ import { AlertCircle, Upload, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { Delivery } from "../types";
 
 interface MarkDispatchedModalProps {
@@ -281,15 +282,15 @@ export function MarkDispatchedModal({
 
         {/* Footer Buttons */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
-          <Button
+          <ModalCloseButton
             type="button"
             variant="outline"
             disabled={submitting}
-            onClick={onClose}
+            fallbackOnClose={onClose}
             className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50"
           >
             Close
-          </Button>
+          </ModalCloseButton>
           <Button
             type="submit"
             disabled={submitting || !dispatchAttachmentBase64}

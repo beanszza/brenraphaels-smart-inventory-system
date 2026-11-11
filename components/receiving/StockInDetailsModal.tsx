@@ -4,6 +4,7 @@ import React from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Download, CheckCircle2 } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockIn, StockInLine } from "./types";
 
@@ -270,13 +271,12 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
 
         {/* Footer Actions */}
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
-          <button
-            type="button"
-            onClick={onClose}
+          <ModalNativeCloseButton
+            fallbackOnClose={onClose}
             className="rounded-xl bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors cursor-pointer shadow-sm"
           >
             Close
-          </button>
+          </ModalNativeCloseButton>
         </div>
       </div>
     </ModalWrapper>

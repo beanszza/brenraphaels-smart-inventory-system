@@ -5,6 +5,7 @@ import { receiving } from "@/lib/receiving/client";
 import React, { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import NestedDialog from "./NestedDialog";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { GRN } from "./types";
@@ -306,14 +307,13 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
             Export Goods Receipt Note
           </button>
 
-          <button
-            type="button"
-            onClick={onClose}
+          <ModalNativeCloseButton
+            fallbackOnClose={onClose}
             disabled={loading}
             className="rounded-xl bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
           >
             Close
-          </button>
+          </ModalNativeCloseButton>
 
           {isDraft && (
             <button

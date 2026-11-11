@@ -18,6 +18,9 @@ export default function NestedDialog({ open, title, onClose, children, maxWidth 
         <Dialog.Overlay className="font-sans fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" />
         <Dialog.Content
           aria-describedby={undefined}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
           style={{ width: "100%", maxWidth }}
           className="fixed left-1/2 top-1/2 z-[301] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground outline-none animate-in fade-in duration-150"
         >

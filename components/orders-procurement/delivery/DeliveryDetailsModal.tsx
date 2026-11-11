@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { AlertCircle, Check, FileText, Download, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { Delivery } from "../types";
 import CreateGrnModal from "@/components/receiving/CreateGrnModal";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -374,14 +375,14 @@ export function DeliveryDetailsModal({
               </Button>
             )}
 
-            <Button
+            <ModalCloseButton
               type="button"
               variant="outline"
-              onClick={onClose}
+              fallbackOnClose={onClose}
               className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               Close
-            </Button>
+            </ModalCloseButton>
 
             {!isAdmin && (isScheduled || isInTransit) && onArrive && (
               <Button

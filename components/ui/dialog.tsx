@@ -5,8 +5,66 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import ConfirmModal from "@/components/ConfirmModal"
+import { ModalCloseProvider } from "@/components/shared/ModalCloseContext"
 
-const Dialog = DialogPrimitive.Root
+type DialogProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root> & {
+  confirmOnClose?: boolean
+  confirmMessage?: string
+}
+
+const Dialog = ({
+  open,
+  onOpenChange,
+  confirmOnClose = true,
+  confirmMessage = "Are you sure you want to close? Any unsaved changes will be discarded.",
+  children,
+  ...props
+}: DialogProps) => {
+  const [showCloseConfirm, setShowCloseConfirm] = React.useState(false)
+
+  React.useEffect(() => {
+    if (!open) {
+      setShowCloseConfirm(false)
+    }
+  }, [open])
+
+  const requestClose = React.useCallback(() => {
+    if (confirmOnClose) {
+      setShowCloseConfirm(true)
+    } else {
+      onOpenChange?.(false)
+    }
+  }, [confirmOnClose, onOpenChange])
+
+  return (
+    <>
+      <DialogPrimitive.Root
+        open={open}
+        onOpenChange={(next) => {
+          if (next) {
+            onOpenChange?.(true)
+          } else {
+            requestClose()
+          }
+        }}
+        {...props}
+      >
+        <ModalCloseProvider value={requestClose}>{children}</ModalCloseProvider>
+      </DialogPrimitive.Root>
+      {open && showCloseConfirm && (
+        <ConfirmModal
+          message={confirmMessage}
+          onConfirm={() => {
+            setShowCloseConfirm(false)
+            onOpenChange?.(false)
+          }}
+          onCancel={() => setShowCloseConfirm(false)}
+        />
+      )}
+    </>
+  )
+}
 
 const DialogTrigger = DialogPrimitive.Trigger
 
@@ -37,6 +95,10 @@ const DialogContent = React.forwardRef<
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
+      onPointerDownOutside={(e) => e.preventDefault()}
+      onInteractOutside={(e) => e.preventDefault()}
+      onEscapeKeyDown={(e) => e.preventDefault()}
+      onFocusOutside={(e) => e.preventDefault()}
       className={cn(
         "font-sans fixed left-[50%] top-[50%] z-[99999] grid w-[90vw] max-w-[90vw] sm:max-w-[80vw] md:max-w-[700px] lg:max-w-[900px] max-h-[90vh] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-md border bg-background p-md sm:p-lg shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg sm:rounded-xl",
         className

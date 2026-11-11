@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "./ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { Supplier } from "./types";
 import { loadSupplierDetails } from "@/lib/resources-suppliers/actions";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -210,13 +211,13 @@ function SupplierDetailsModalContent({
         </div>
 
         <div className="flex justify-end pt-4 border-t border-border">
-          <Button
+          <ModalCloseButton
             variant="outline"
-            onClick={onClose}
+            fallbackOnClose={onClose}
             className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             Close
-          </Button>
+          </ModalCloseButton>
         </div>
       </div>
     </ModalWrapper>

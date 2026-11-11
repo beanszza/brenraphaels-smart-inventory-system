@@ -19,6 +19,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import Pagination from "@/components/Pagination";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import { RtvRecord } from "./types";
 
 export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[] }) {
@@ -466,13 +467,12 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
 
             {/* Modal Footer - Lower right corner */}
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-4">
-              <button
-                type="button"
-                onClick={() => setSelectedRtv(null)}
+              <ModalNativeCloseButton
+                fallbackOnClose={() => setSelectedRtv(null)}
                 className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors shadow-sm"
               >
                 Close
-              </button>
+              </ModalNativeCloseButton>
               {(selectedRtv.status === "PendingApproval" || selectedRtv.status === "Pending Approval") && (
                 <>
                   <button

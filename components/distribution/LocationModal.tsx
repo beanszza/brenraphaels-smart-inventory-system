@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { LocationItem } from "./types";
 import AddressSelector from "@/components/shared/AddressSelector";
 
@@ -118,9 +119,9 @@ export default function LocationModal({
         )}
 
         <div className="flex justify-end gap-3 pt-3 border-t border-border">
-          <Button type="button" variant="outline" onClick={onClose} disabled={saving} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
+          <ModalCloseButton type="button" variant="outline" fallbackOnClose={onClose} disabled={saving} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
             Cancel
-          </Button>
+          </ModalCloseButton>
           <Button type="button" onClick={handleSave} disabled={saving} className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors">
             {editingLocation ? "Save Changes" : "Create Location"}
           </Button>

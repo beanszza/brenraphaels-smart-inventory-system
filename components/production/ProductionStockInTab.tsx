@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Plus, MoreHorizontal, Eye, ArrowDownToLine, X } from "lucide-react";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { useIsAdmin } from "@/context/StaffContext";
+import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 
 interface ProductionStockInTabProps {
   initialRows: any[];
@@ -151,6 +152,10 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
     }
     return pendingBatches;
   }, [pendingBatches, selectedBatchInModal]);
+
+  const { requestClose: requestCloseStockInModal, confirmModal: stockInCloseConfirm } = useConfirmedClose(() =>
+    setIsStockInModalOpen(false)
+  );
 
   // Open modal from Header button: start empty (not pre-filled)
   const handleOpenCreateModal = () => {
@@ -418,9 +423,9 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
       {/* ── Modal: Create Stock-In Report (Exact layout matching User Images 1 & 2) ── */}
       {mounted && isStockInModalOpen && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
-          onClick={() => setIsStockInModalOpen(false)}
+          className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
         >
+          {stockInCloseConfirm}
           <div
             style={{ width: "100%", maxWidth: "780px" }}
             className="w-full max-h-[90vh] p-6 rounded-2xl border border-border bg-card flex flex-col shadow-2xl shrink-0 overflow-y-auto"
@@ -431,7 +436,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
               <h2 className="text-xl font-bold text-foreground">Create Stock-In Report</h2>
               <button
                 type="button"
-                onClick={() => setIsStockInModalOpen(false)}
+                onClick={requestCloseStockInModal}
                 className="text-foreground/60 hover:text-foreground hover:bg-muted p-1 rounded-lg transition-colors cursor-pointer"
                 title="Close"
               >
@@ -537,7 +542,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsStockInModalOpen(false)}
+                  onClick={requestCloseStockInModal}
                   className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
                 >
                   Cancel

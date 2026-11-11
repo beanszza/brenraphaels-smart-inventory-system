@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { X, Calendar, MapPin, Truck, Package, User } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransfer } from "./types";
+import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 
 interface STFDetailsModalProps {
   transfer: StockTransfer | null;
@@ -37,6 +38,8 @@ export function STFDetailsModal({
     }
   }, [open]);
 
+  const { requestClose, confirmModal } = useConfirmedClose(onClose);
+
   if (!open || !mounted || !transfer) return null;
 
   const isScheduled = transfer.status === "Scheduled";
@@ -44,8 +47,8 @@ export function STFDetailsModal({
   return createPortal(
     <div
       className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
-      onClick={onClose}
     >
+      {confirmModal}
       <div
         style={{ width: "100%", maxWidth: "720px" }}
         className="w-full max-h-[90vh] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
@@ -67,7 +70,7 @@ export function STFDetailsModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <X className="w-5 h-5" />
@@ -206,7 +209,7 @@ export function STFDetailsModal({
         <div className="flex items-center justify-between border-t border-border px-6 py-4 bg-muted/10">
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             className="rounded-xl bg-card border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
           >
             Close

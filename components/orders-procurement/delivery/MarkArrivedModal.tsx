@@ -7,6 +7,7 @@ import { AlertCircle, Upload, Trash2, Calendar, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { Delivery } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useStaff } from "@/context/StaffContext";
@@ -312,15 +313,15 @@ export function MarkArrivedModal({
 
         {/* Footer Buttons */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-4">
-          <Button
+          <ModalCloseButton
             type="button"
             variant="outline"
             disabled={submitting}
-            onClick={onClose}
+            fallbackOnClose={onClose}
             className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
           >
             Close
-          </Button>
+          </ModalCloseButton>
           <Button
             type="submit"
             disabled={submitting || !isFormValid}

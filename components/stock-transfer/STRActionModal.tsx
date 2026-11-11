@@ -78,7 +78,6 @@ export function STRActionModal({
   return createPortal(
     <div
       className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-      onClick={() => { if (!loading) onClose(); }}
     >
       <div
         style={{ width: "100%", maxWidth: "440px" }}
