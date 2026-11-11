@@ -91,11 +91,11 @@ export function DispatchTransferModal({
     >
       <div
         style={{ width: "100%", maxWidth: "640px" }}
-        className="w-full max-h-[92vh] overflow-y-auto bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
+        className="w-full max-h-[92vh] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-5">
+        <div className="flex items-center justify-between border-b border-border px-6 py-5 shrink-0">
           <div className="flex items-center gap-2.5">
             <Truck className="w-5 h-5 text-foreground" />
             <div>
@@ -117,7 +117,7 @@ export function DispatchTransferModal({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-5">
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {error && (
             <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3.5 text-xs text-destructive flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />

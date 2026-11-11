@@ -87,7 +87,7 @@ export default function AuditLogDetailsModal({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-xl p-0 overflow-hidden bg-card border border-border rounded-2xl shadow-xl">
+      <DialogContent className="max-w-xl p-0 !overflow-hidden bg-card border border-border rounded-2xl shadow-xl">
         {/* Header */}
         <div className="p-6 pb-4 border-b border-border bg-muted/30">
           <DialogHeader className="text-left space-y-1">

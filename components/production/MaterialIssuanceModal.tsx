@@ -478,7 +478,7 @@ export default function MaterialIssuanceModal({
       {/* Hidden canvas for jsQR analysis */}
       <canvas ref={canvasRef} className="hidden" />
 
-      <div className="space-y-5 overflow-y-auto max-h-[calc(85vh-110px)] pr-1">
+      <div className="space-y-5">
         {loading && <ProductionSkeleton />}
         {/* Header Summary Card */}
         {issuance && (

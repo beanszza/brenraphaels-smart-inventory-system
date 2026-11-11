@@ -80,7 +80,7 @@ function SupplyDetailsModalContent({
       onClose={onClose}
       size="max-w-2xl"
     >
-      <div className="space-y-6 max-h-[75vh] overflow-y-auto pr-1">
+      <div className="space-y-6">
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         {/* Header Summary Banner */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-muted/40 border border-border">

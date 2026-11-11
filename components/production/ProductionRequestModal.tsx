@@ -566,7 +566,7 @@ export default function ProductionRequestModal({
       onClose={onClose}
       size="max-w-6xl"
     >
-      <div className="space-y-6 overflow-y-auto max-h-[calc(85vh-120px)] pr-1">
+      <div className="space-y-6">
         {/* Header Summary for View Mode */}
         {isViewMode && initialRequest && (
           <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-muted/20 border border-border">
