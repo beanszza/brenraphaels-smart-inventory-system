@@ -93,7 +93,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
   const [selectedPO, setSelectedPO] = useState<PurchaseOrderPO | null>(null);
   const [approvingPO, setApprovingPO] = useState<PurchaseOrderPO | null>(null);
   const [printingPO, setPrintingPO] = useState<PurchaseOrderPO | null>(null);
-  const [actionModal, setActionModal] = useState<{ po: PurchaseOrderPO; type: POActionType } | null>(null);
+  const [actionModal, setActionModal] = useState<{ po: PurchaseOrderPO; type: POActionType; returnToDetails?: boolean } | null>(null);
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [editingPO, setEditingPO] = useState<PurchaseOrderPO | null>(null);
   const [deliveryPO, setDeliveryPO] = useState<PurchaseOrderPO | null>(null);
@@ -310,7 +310,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
         }}
         onCancel={(po) => {
           setSelectedPO(null);
-          setActionModal({ po, type: "cancel" });
+          setActionModal({ po, type: "cancel", returnToDetails: true });
         }}
         onCreateDelivery={(po) => {
           setSelectedPO(null);
@@ -345,7 +345,12 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
         <POActionModal
           actionType={actionModal.type}
           poNumber={actionModal.po.poNumber}
-          onClose={() => setActionModal(null)}
+          onClose={() => {
+            if (actionModal.returnToDetails) {
+              setSelectedPO(actionModal.po);
+            }
+            setActionModal(null);
+          }}
           onConfirm={async (notes) => {
             const { po, type } = actionModal;
             if (type === "cancel") {

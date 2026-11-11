@@ -10,6 +10,7 @@ import { SearchInput } from "@/components/shared/SearchInput";
 import { CreatePRModal } from "@/components/orders-procurement/pr/CreatePRForm";
 import { CreateDeliveryModal } from "@/components/orders-procurement/delivery/CreateDeliveryModal";
 import { CreatePOModal } from "@/components/orders-procurement/po/CreatePOModal";
+import { PODetailsModal } from "@/components/orders-procurement/po/PODetailsModal";
 import { POApprovalModal } from "@/components/orders-procurement/po/POApprovalModal";
 import type { PurchaseOrderPO } from "@/components/orders-procurement/types";
 
@@ -56,7 +57,7 @@ describe("date-limits helper", () => {
 describe("SearchInput visibility", () => {
   it("renders a crisp bordered search bar without bg-muted/20", () => {
     const html = renderToStaticMarkup(
-      <SearchInput placeholder="Search supplies..." value="" onChange={() => {}} />
+      <SearchInput placeholder="Search supplies..." value="" onChange={() => { }} />
     );
 
     expect(html).toContain("border-border");
@@ -86,7 +87,7 @@ describe("Modal layout, typography, and date bounds", () => {
           priority: "Medium",
           items: [],
         }}
-        onClose={() => {}}
+        onClose={() => { }}
       />
     );
 
@@ -97,7 +98,7 @@ describe("Modal layout, typography, and date bounds", () => {
 
   it("removes font-mono and applies dynamic date caps in CreateDeliveryModal and POApprovalModal", () => {
     const deliveryHtml = renderToStaticMarkup(
-      <CreateDeliveryModal open onClose={() => {}} onSuccess={() => {}} />
+      <CreateDeliveryModal open onClose={() => { }} onSuccess={() => { }} />
     );
     expect(deliveryHtml).not.toContain("font-mono");
 
@@ -124,7 +125,7 @@ describe("Modal layout, typography, and date bounds", () => {
     } as unknown as PurchaseOrderPO;
 
     const approvalHtml = renderToStaticMarkup(
-      <POApprovalModal po={po} onClose={() => {}} onSuccess={() => {}} />
+      <POApprovalModal po={po} onClose={() => { }} onSuccess={() => { }} />
     );
     expect(approvalHtml).not.toContain("font-mono");
     expect(approvalHtml).toContain(`min="${getTodayDateString()}"`);
@@ -133,12 +134,77 @@ describe("Modal layout, typography, and date bounds", () => {
 
   it("renders updated CreatePOModal search bar and removes Back to Requisitions copy", () => {
     const html = renderToStaticMarkup(
-      <CreatePOModal open onClose={() => {}} onSuccess={() => {}} />
+      <CreatePOModal open onClose={() => { }} onSuccess={() => { }} />
     );
     expect(html).toContain('placeholder="Search requisitions..."');
     expect(html).toContain("bg-secondary/50");
     expect(html).not.toContain("Back to Requisitions");
     expect(html).not.toContain(">ACTION<");
+  });
+
+  it("hides pending prices, download button, and double PO header on Pending Approval PODetailsModal", () => {
+    const pendingPo = {
+      poId: 16,
+      poNumber: "PO-2026-0016",
+      prId: 17,
+      prNumber: "PR-2026-0017",
+      supplierId: 1,
+      supplierName: "Jo Ann Inc.",
+      requestedBy: "Vince Neil Madeja",
+      orderDate: "2026-11-12",
+      expectedArrivalDate: "2026-11-19",
+      status: "Pending Approval",
+      totalAmount: 0,
+      items: [
+        {
+          poItemId: 1,
+          itemId: 10,
+          itemName: "Nestea",
+          purchaseUomName: "bottle",
+          poItemQuantity: 67,
+          unitPrice: 0,
+          totalPrice: 0,
+        },
+      ],
+    } as unknown as PurchaseOrderPO;
+
+    const pendingHtml = renderToStaticMarkup(
+      <PODetailsModal
+        po={pendingPo}
+        onClose={() => {}}
+        onCancel={() => {}}
+        onApproveWithForm={() => {}}
+      />
+    );
+    expect(pendingHtml).not.toContain("UNIT PRICE");
+    expect(pendingHtml).not.toContain("TOTAL AMOUNT DUE");
+    expect(pendingHtml).not.toContain("Download Purchase Order");
+    expect(pendingHtml).toContain("Cancel Purchase Order");
+    expect(pendingHtml).toContain("Approve Order");
+    expect(pendingHtml.indexOf("Cancel Purchase Order")).toBeLessThan(pendingHtml.indexOf("Approve Order"));
+
+    const approvedPo = {
+      ...pendingPo,
+      status: "Approved",
+      totalAmount: 1340,
+      items: [
+        {
+          poItemId: 1,
+          itemId: 10,
+          itemName: "Nestea",
+          purchaseUomName: "bottle",
+          poItemQuantity: 67,
+          unitPrice: 20,
+          totalPrice: 1340,
+        },
+      ],
+    } as unknown as PurchaseOrderPO;
+
+    const approvedHtml = renderToStaticMarkup(
+      <PODetailsModal po={approvedPo} onClose={() => {}} />
+    );
+    expect(approvedHtml).toContain("UNIT PRICE");
+    expect(approvedHtml).toContain("TOTAL AMOUNT DUE");
   });
 });
 

@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Calendar,
   AlertCircle,
   Truck,
-  Download,
   CheckCircle2,
 } from "lucide-react";
 import { PurchaseOrderPO } from "../types";
@@ -13,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { downloadPurchaseOrderPdf } from "./downloadPurchaseOrderPdf";
 
 interface PODetailsModalProps {
   po: PurchaseOrderPO | null;
@@ -36,8 +34,6 @@ export function PODetailsModal({
   onCancel,
   onCreateDelivery,
 }: PODetailsModalProps) {
-  const [downloading, setDownloading] = useState(false);
-
   if (!po) return null;
 
   const isPending = po.status === "Pending Approval";
@@ -60,15 +56,6 @@ export function PODetailsModal({
       minimumFractionDigits: 2,
     }).format(n);
 
-  const handleDownloadPdf = async () => {
-    try {
-      setDownloading(true);
-      await downloadPurchaseOrderPdf(po);
-    } finally {
-      setDownloading(false);
-    }
-  };
-
   return (
     <ModalWrapper
       open={!!po}
@@ -77,13 +64,10 @@ export function PODetailsModal({
       size="max-w-4xl"
     >
       <div className="space-y-6">
-        {/* Top Header: Status and Quick Metadata */}
-        <div className="flex items-center justify-between pb-3 border-b border-border flex-wrap gap-2">
+        {/* Top Header: Status and Order Date */}
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-3">
             <StatusBadge status={po.status} />
-            <span className="text-xs text-muted-foreground">
-              {po.poNumber}
-            </span>
           </div>
           <div className="text-xs text-muted-foreground">
             Order Date: <span className="font-medium text-foreground">{fmt(po.orderDate)}</span>
@@ -206,8 +190,12 @@ export function PODetailsModal({
                   <th className="px-4 py-2.5 text-left font-bold">PARTICULARS</th>
                   <th className="px-4 py-2.5 text-left font-bold">Unit of Measure</th>
                   <th className="px-4 py-2.5 text-right font-bold">ORDER QUANTITY</th>
-                  <th className="px-4 py-2.5 text-right font-bold">UNIT PRICE</th>
-                  <th className="px-4 py-2.5 text-right font-bold">TOTAL AMOUNT</th>
+                  {!isPending && (
+                    <>
+                      <th className="px-4 py-2.5 text-right font-bold">UNIT PRICE</th>
+                      <th className="px-4 py-2.5 text-right font-bold">TOTAL AMOUNT</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -225,18 +213,22 @@ export function PODetailsModal({
                         <td className="px-4 py-3 text-right font-bold text-foreground">
                           {Number(item.poItemQuantity).toLocaleString()}
                         </td>
-                        <td className="px-4 py-3 text-right text-muted-foreground">
-                          {unitPrice > 0 ? fmtCurrency(unitPrice) : "Pending Confirmation"}
-                        </td>
-                        <td className="px-4 py-3 text-right font-bold text-foreground">
-                          {item.totalPrice > 0 ? fmtCurrency(Number(item.totalPrice)) : "—"}
-                        </td>
+                        {!isPending && (
+                          <>
+                            <td className="px-4 py-3 text-right text-muted-foreground">
+                              {unitPrice > 0 ? fmtCurrency(unitPrice) : "Pending Confirmation"}
+                            </td>
+                            <td className="px-4 py-3 text-right font-bold text-foreground">
+                              {item.totalPrice > 0 ? fmtCurrency(Number(item.totalPrice)) : "—"}
+                            </td>
+                          </>
+                        )}
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-xs text-muted-foreground">
+                    <td colSpan={isPending ? 3 : 5} className="px-4 py-8 text-center text-xs text-muted-foreground">
                       No items in this purchase order.
                     </td>
                   </tr>
@@ -245,78 +237,63 @@ export function PODetailsModal({
             </table>
           </div>
 
-          {/* Total Amount Summary */}
-          <div className="flex items-center justify-end">
-            <div className="rounded-xl border border-border bg-muted/30 px-5 py-3 text-right min-w-[220px]">
-              <p className="text-xs text-muted-foreground mb-1">TOTAL AMOUNT DUE</p>
-              <p className="text-lg font-bold text-foreground">
-                {po.totalAmount > 0 ? fmtCurrency(po.totalAmount) : (isApproved ? "₱0.00" : "Pending Confirmation")}
-              </p>
+          {/* Total Amount Summary (hidden while Pending Approval before supplier confirmation) */}
+          {!isPending && (
+            <div className="flex items-center justify-end">
+              <div className="rounded-xl border border-border bg-muted/30 px-5 py-3 text-right min-w-[220px]">
+                <p className="text-xs text-muted-foreground mb-1">TOTAL AMOUNT DUE</p>
+                <p className="text-lg font-bold text-foreground">
+                  {po.totalAmount > 0 ? fmtCurrency(po.totalAmount) : (isApproved ? "₱0.00" : "Pending Confirmation")}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Modal Footer Actions: Styled matching Resources & Suppliers, with Approve Order on the Far Right */}
-        <div className="flex items-center justify-between pt-5 pb-3 border-t border-border mt-6 mb-2 flex-wrap gap-3">
-          {/* Left Side: Cancel Purchase Order */}
-          <div>
-            {!isAdmin && isCancellable && onCancel && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onCancel(po)}
-                className="rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 px-5 py-2.5 text-sm font-semibold transition-colors cursor-pointer"
-              >
-                Cancel Purchase Order
-              </Button>
-            )}
-          </div>
-
-          {/* Right Side: Download, Close, and Approve Order on the Far Right */}
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Direct Instant PDF Download (No preview modal) */}
+        {/* Modal Footer Actions: Styled matching Resources & Suppliers */}
+        <div className="flex items-center justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2 flex-wrap">
+          {!isAdmin && isCancellable && onCancel && (
             <Button
               type="button"
               variant="outline"
-              disabled={downloading}
-              onClick={handleDownloadPdf}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              onClick={() => onCancel(po)}
+              className="rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 px-5 py-2.5 h-auto text-sm font-semibold transition-colors cursor-pointer"
             >
-              {downloading ? "Downloading..." : "Download Purchase Order"}
+              Cancel Purchase Order
             </Button>
+          )}
 
-            {/* Close Button */}
-            <ModalCloseButton
+          {/* Close Button */}
+          <ModalCloseButton
+            type="button"
+            variant="outline"
+            fallbackOnClose={onClose}
+            className="rounded-xl border border-border bg-card px-5 py-2.5 h-auto text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+          >
+            Close
+          </ModalCloseButton>
+
+          {/* IMS Manager: Approve Order (Far Right!) */}
+          {!isAdmin && isPending && onApproveWithForm && (
+            <Button
               type="button"
-              variant="outline"
-              fallbackOnClose={onClose}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              onClick={() => onApproveWithForm(po)}
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
             >
-              Close
-            </ModalCloseButton>
+              Approve Order
+            </Button>
+          )}
 
-            {/* IMS Manager: Approve Order (Far Right!) */}
-            {!isAdmin && isPending && onApproveWithForm && (
-              <Button
-                type="button"
-                onClick={() => onApproveWithForm(po)}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
-              >
-                Approve Order
-              </Button>
-            )}
-
-            {/* IMS Manager: Schedule Delivery for Approved Orders (Far Right) */}
-            {!isAdmin && (po.status === "Approved" || po.status === "Ordered" || po.status === "Partially Delivered") && onCreateDelivery && (
-              <Button
-                type="button"
-                onClick={() => onCreateDelivery(po)}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
-              >
-                Schedule Delivery
-              </Button>
-            )}
-          </div>
+          {/* IMS Manager: Schedule Delivery for Approved Orders (Far Right) */}
+          {!isAdmin && (po.status === "Approved" || po.status === "Ordered" || po.status === "Partially Delivered") && onCreateDelivery && (
+            <Button
+              type="button"
+              onClick={() => onCreateDelivery(po)}
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+            >
+              Schedule Delivery
+            </Button>
+          )}
         </div>
       </div>
     </ModalWrapper>

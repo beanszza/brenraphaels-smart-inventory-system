@@ -151,7 +151,7 @@ export function POActionModal({ actionType, poNumber, onClose, onConfirm }: POAc
 
   return createPortal(
     <div
-      className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="pointer-events-auto font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
     >
       <div
         role="dialog" aria-modal="true" aria-label={getTitle()}
