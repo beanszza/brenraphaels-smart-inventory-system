@@ -1,6 +1,7 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it, vi } from "vitest";
+import CategoryModal from "@/components/resources-suppliers/CategoryModal";
 import SupplierModal from "@/components/resources-suppliers/SupplierModal";
 import SupplyModal from "@/components/resources-suppliers/SupplyModal";
 
@@ -51,4 +52,34 @@ it("hides inactive categories from the SupplyModal Category dropdown", () => {
   );
   expect(html).toContain("Raw Materials");
   expect(html).not.toContain("Ingredients");
+});
+
+it("renders revised textfield character limits in Category, Supplier, and Supply modals", () => {
+  const categoryHtml = renderToStaticMarkup(
+    <CategoryModal open editingCategory={null} onClose={() => {}} onSave={() => {}} />
+  );
+  expect(categoryHtml).toContain("0/50");
+  expect(categoryHtml).toContain("0/100");
+
+  const supplierHtml = renderToStaticMarkup(
+    <SupplierModal open editingSupplier={null} onClose={() => {}} onSave={async () => {}} />
+  );
+  expect(supplierHtml).toContain("0/100");
+  expect(supplierHtml).toContain("0/50");
+  expect(supplierHtml).not.toContain('maxLength="25"');
+  expect(supplierHtml).not.toContain('id="supplier-name" maxLength="50"');
+
+  const supplyHtml = renderToStaticMarkup(
+    <SupplyModal
+      open
+      editingItem={null}
+      suppliers={[{ supplierId: 7, companyName: "Sample Supplier" }]}
+      categories={[{ categoryId: 1, categoryName: "Raw Materials", isActive: true }]}
+      uoms={[{ uomId: 1, code: "KG", name: "Kilogram", abbreviation: "kg", uomType: "Weight", conversionFactor: 1 }]}
+      onClose={() => {}}
+      onSave={async () => {}}
+    />
+  );
+  expect(supplyHtml).toContain("0/50");
+  expect(supplyHtml).not.toContain('maxLength="50"');
 });

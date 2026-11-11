@@ -58,6 +58,9 @@ function parseAddress(raw: string) {
   return { street: raw, brgy: "", city: "", prov: "" };
 }
 
+const SUPPLIER_NAME_MAX = 100;
+const CONTACT_PART_MAX = 50;
+
 function SupplierModalForm({
   open,
   editingSupplier,
@@ -86,9 +89,13 @@ function SupplierModalForm({
   const [supplierActive, setSupplierActive] = useState(editingSupplier?.isActive ?? true);
 
   const [companyNameError, setCompanyNameError] = useState("");
+  const [companyNameWarning, setCompanyNameWarning] = useState("");
   const [firstNameError, setFirstNameError] = useState("");
+  const [firstNameWarning, setFirstNameWarning] = useState("");
   const [middleNameError, setMiddleNameError] = useState("");
+  const [middleNameWarning, setMiddleNameWarning] = useState("");
   const [lastNameError, setLastNameError] = useState("");
+  const [lastNameWarning, setLastNameWarning] = useState("");
   const [emailError, setEmailError] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [addressError, setAddressError] = useState("");
@@ -98,7 +105,7 @@ function SupplierModalForm({
     const trimmed = val.trim();
     if (!trimmed) { setCompanyNameError("Supplier Name is required."); return false; }
     if (trimmed.length < 2) { setCompanyNameError("Supplier Name must be at least 2 characters."); return false; }
-    if (trimmed.length > 50) { setCompanyNameError("Supplier Name cannot exceed 50 characters."); return false; }
+    if (trimmed.length > SUPPLIER_NAME_MAX) { setCompanyNameError(`Supplier Name cannot exceed ${SUPPLIER_NAME_MAX} characters.`); return false; }
     setCompanyNameError(""); return true;
   };
 
@@ -108,7 +115,7 @@ function SupplierModalForm({
     if (/\d/.test(val)) { setFirstNameError("First Name cannot contain numbers."); return false; }
     if (!/^[a-zA-Z\s\.\-']+$/.test(val)) { setFirstNameError("First Name can only contain letters and spaces."); return false; }
     if (trimmed.length < 2) { setFirstNameError("First Name must be at least 2 characters."); return false; }
-    if (trimmed.length > 25) { setFirstNameError("First Name cannot exceed 25 characters."); return false; }
+    if (trimmed.length > CONTACT_PART_MAX) { setFirstNameError(`First Name cannot exceed ${CONTACT_PART_MAX} characters.`); return false; }
     setFirstNameError(""); return true;
   };
 
@@ -117,7 +124,7 @@ function SupplierModalForm({
     if (trimmed) {
       if (/\d/.test(val)) { setMiddleNameError("Middle Name cannot contain numbers."); return false; }
       if (!/^[a-zA-Z\s\.\-']+$/.test(val)) { setMiddleNameError("Middle Name can only contain letters and spaces."); return false; }
-      if (trimmed.length > 25) { setMiddleNameError("Middle Name cannot exceed 25 characters."); return false; }
+      if (trimmed.length > CONTACT_PART_MAX) { setMiddleNameError(`Middle Name cannot exceed ${CONTACT_PART_MAX} characters.`); return false; }
     }
     setMiddleNameError(""); return true;
   };
@@ -128,7 +135,7 @@ function SupplierModalForm({
     if (/\d/.test(val)) { setLastNameError("Last Name cannot contain numbers."); return false; }
     if (!/^[a-zA-Z\s\.\-']+$/.test(val)) { setLastNameError("Last Name can only contain letters and spaces."); return false; }
     if (trimmed.length < 2) { setLastNameError("Last Name must be at least 2 characters."); return false; }
-    if (trimmed.length > 25) { setLastNameError("Last Name cannot exceed 25 characters."); return false; }
+    if (trimmed.length > CONTACT_PART_MAX) { setLastNameError(`Last Name cannot exceed ${CONTACT_PART_MAX} characters.`); return false; }
     setLastNameError(""); return true;
   };
 
@@ -168,24 +175,52 @@ function SupplierModalForm({
   };
 
   const handleCompanyNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.slice(0, 50);
-    setCompanyName(val); validateCompanyName(val);
+    const raw = e.target.value;
+    const exceeded = raw.length > SUPPLIER_NAME_MAX;
+    const val = raw.slice(0, SUPPLIER_NAME_MAX);
+    setCompanyName(val);
+    if (exceeded) {
+      setCompanyNameWarning(`Supplier Name is limited to ${SUPPLIER_NAME_MAX} characters.`);
+    } else if (val.length === SUPPLIER_NAME_MAX) {
+      setCompanyNameWarning(`Maximum limit of ${SUPPLIER_NAME_MAX} characters reached.`);
+    } else {
+      setCompanyNameWarning("");
+    }
+    validateCompanyName(val);
   };
 
-  const handleFirstNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/[0-9]/g, "").slice(0, 25);
-    setFirstName(val); validateFirstName(val);
+  const applyContactPartChange = (
+    raw: string,
+    label: string,
+    setter: (v: string) => void,
+    setWarning: (w: string) => void,
+    validator: (v: string) => boolean
+  ) => {
+    const hasDigits = /\d/.test(raw);
+    const noDigits = raw.replace(/[0-9]/g, "");
+    const exceeded = noDigits.length > CONTACT_PART_MAX;
+    const val = noDigits.slice(0, CONTACT_PART_MAX);
+    setter(val);
+    if (hasDigits) {
+      setWarning(`${label} cannot contain numbers.`);
+    } else if (exceeded) {
+      setWarning(`${label} is limited to ${CONTACT_PART_MAX} characters.`);
+    } else if (val.length === CONTACT_PART_MAX) {
+      setWarning(`Maximum limit of ${CONTACT_PART_MAX} characters reached.`);
+    } else {
+      setWarning("");
+    }
+    validator(val);
   };
 
-  const handleMiddleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/[0-9]/g, "").slice(0, 25);
-    setMiddleName(val); validateMiddleName(val);
-  };
+  const handleFirstNameChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    applyContactPartChange(e.target.value, "First Name", setFirstName, setFirstNameWarning, validateFirstName);
 
-  const handleLastNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/[0-9]/g, "").slice(0, 25);
-    setLastName(val); validateLastName(val);
-  };
+  const handleMiddleNameChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    applyContactPartChange(e.target.value, "Middle Name", setMiddleName, setMiddleNameWarning, validateMiddleName);
+
+  const handleLastNameChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    applyContactPartChange(e.target.value, "Last Name", setLastName, setLastNameWarning, validateLastName);
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.slice(0, 50);
@@ -272,12 +307,16 @@ function SupplierModalForm({
         <fieldset disabled={saving} className="space-y-4">
           {/* Supplier Name */}
           <div>
-            <label htmlFor="supplier-name" className="mb-1.5 block text-xs font-semibold text-foreground">
-              Supplier Name <span className="text-destructive">*</span>
-            </label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label htmlFor="supplier-name" className="block text-xs font-semibold text-foreground">
+                Supplier Name <span className="text-destructive">*</span>
+              </label>
+              <span className={`text-[11px] ${companyName.length >= SUPPLIER_NAME_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+                {companyName.length}/{SUPPLIER_NAME_MAX}
+              </span>
+            </div>
             <Input
               type="text"
-              maxLength={50}
               id="supplier-name"
               value={companyName}
               onChange={handleCompanyNameChange}
@@ -286,7 +325,11 @@ function SupplierModalForm({
               placeholder="e.g. Acme Supplies Ltd."
               className={fieldClass(companyNameError)}
             />
-            {companyNameError && <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{companyNameError}</p>}
+            {companyNameError ? (
+              <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{companyNameError}</p>
+            ) : companyNameWarning ? (
+              <p className="mt-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">{companyNameWarning}</p>
+            ) : null}
           </div>
 
           {/* Contact Person (First, Middle, Last) */}
@@ -297,12 +340,16 @@ function SupplierModalForm({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* First Name */}
               <div>
-                <label className="mb-1 block text-[11px] font-medium text-foreground">
-                  First Name <span className="text-destructive">*</span>
-                </label>
+                <div className="mb-1 flex items-center justify-between">
+                  <label className="block text-[11px] font-medium text-foreground">
+                    First Name <span className="text-destructive">*</span>
+                  </label>
+                  <span className={`text-[10px] ${firstName.length >= CONTACT_PART_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+                    {firstName.length}/{CONTACT_PART_MAX}
+                  </span>
+                </div>
                 <Input
                   type="text"
-                  maxLength={25}
                   value={firstName}
                   onChange={handleFirstNameChange}
                   aria-invalid={!!firstNameError}
@@ -310,22 +357,27 @@ function SupplierModalForm({
                   placeholder="e.g. Juan"
                   className={fieldClass(firstNameError)}
                 />
-                {firstNameError && (
+                {firstNameError ? (
                   <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">
                     {firstNameError}
                   </p>
-                )}
+                ) : firstNameWarning ? (
+                  <p className="mt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">
+                    {firstNameWarning}
+                  </p>
+                ) : null}
               </div>
 
               {/* Middle Name (Optional) */}
               <div>
                 <label className="mb-1 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
                   <span>Middle Name</span>
-                  <span className="text-[10px] text-muted-foreground/70 font-normal">Optional</span>
+                  <span className={`text-[10px] font-normal ${middleName.length >= CONTACT_PART_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground/70"}`}>
+                    {middleName ? `${middleName.length}/${CONTACT_PART_MAX}` : "Optional"}
+                  </span>
                 </label>
                 <Input
                   type="text"
-                  maxLength={25}
                   value={middleName}
                   onChange={handleMiddleNameChange}
                   aria-invalid={!!middleNameError}
@@ -333,21 +385,29 @@ function SupplierModalForm({
                   placeholder="e.g. Santos"
                   className={fieldClass(middleNameError)}
                 />
-                {middleNameError && (
+                {middleNameError ? (
                   <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">
                     {middleNameError}
                   </p>
-                )}
+                ) : middleNameWarning ? (
+                  <p className="mt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">
+                    {middleNameWarning}
+                  </p>
+                ) : null}
               </div>
 
               {/* Last Name */}
               <div>
-                <label className="mb-1 block text-[11px] font-medium text-foreground">
-                  Last Name <span className="text-destructive">*</span>
-                </label>
+                <div className="mb-1 flex items-center justify-between">
+                  <label className="block text-[11px] font-medium text-foreground">
+                    Last Name <span className="text-destructive">*</span>
+                  </label>
+                  <span className={`text-[10px] ${lastName.length >= CONTACT_PART_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+                    {lastName.length}/{CONTACT_PART_MAX}
+                  </span>
+                </div>
                 <Input
                   type="text"
-                  maxLength={25}
                   value={lastName}
                   onChange={handleLastNameChange}
                   aria-invalid={!!lastNameError}
@@ -355,11 +415,15 @@ function SupplierModalForm({
                   placeholder="e.g. Dela Cruz"
                   className={fieldClass(lastNameError)}
                 />
-                {lastNameError && (
+                {lastNameError ? (
                   <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">
                     {lastNameError}
                   </p>
-                )}
+                ) : lastNameWarning ? (
+                  <p className="mt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">
+                    {lastNameWarning}
+                  </p>
+                ) : null}
               </div>
             </div>
             {/* Hidden input to maintain contract compatibility with test suite */}

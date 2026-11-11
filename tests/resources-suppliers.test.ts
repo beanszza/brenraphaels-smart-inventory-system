@@ -294,3 +294,54 @@ it("restricts Admin to configuring BOM only and IMS Manager to configuring Categ
     message: expect.stringContaining("do not have access to Bill of Materials"),
   });
 });
+
+it("enforces category, supplier, and supply character and numeric validation rules", async () => {
+  // Category: no numbers, max 50 name, max 100 description (create & edit)
+  expect(await saveCategory({ categoryName: "Packaging 1", description: "Valid", isActive: true })).toMatchObject({
+    success: false,
+    message: expect.stringContaining("numbers"),
+  });
+  expect(await saveCategory({ categoryName: "Packaging 2", description: "Valid", isActive: true }, 1)).toMatchObject({
+    success: false,
+    message: expect.stringContaining("numbers"),
+  });
+  expect(await saveCategory({ categoryName: "A".repeat(51), description: "Valid", isActive: true })).toMatchObject({
+    success: false,
+    message: expect.stringContaining("50"),
+  });
+  expect(await saveCategory({ categoryName: "Packaging", description: "D".repeat(101), isActive: true })).toMatchObject({
+    success: false,
+    message: expect.stringContaining("100"),
+  });
+
+  db.categories.findFirst.mockResolvedValue(null);
+  db.categories.create.mockResolvedValue({ CategoryId: 10, CategoryName: "A".repeat(50), Description: "D".repeat(100) });
+  expect(await saveCategory({ categoryName: "A".repeat(50), description: "D".repeat(100), isActive: true })).toEqual({
+    success: true,
+    message: "Category saved successfully.",
+  });
+
+  // Supplier: max 100 companyName, 50 chars per contact name part (combined up to 160)
+  expect(await saveSupplier({ ...supplier, companyName: "S".repeat(101) })).toMatchObject({
+    success: false,
+    message: expect.stringContaining("100"),
+  });
+  db.$transaction.mockImplementationOnce(async callback => callback({
+    documentSequences: { upsert: async () => ({ LastNumber: 1 }) },
+    suppliers: {
+      findFirst: async () => null,
+      create: async () => ({ SupplierId: 99 }),
+    },
+  }));
+  const longContact = `${"L".repeat(50)}, ${"F".repeat(50)} ${"M".repeat(50)}`;
+  expect(await saveSupplier({ ...supplier, companyName: "S".repeat(100), contactPerson: longContact })).toEqual({
+    success: true,
+    message: "Supplier saved successfully.",
+  });
+
+  // Supply: max 50 itemName
+  expect(await saveSupply({ ...supply, itemName: "A".repeat(51) })).toMatchObject({
+    success: false,
+    message: expect.stringContaining("50"),
+  });
+});

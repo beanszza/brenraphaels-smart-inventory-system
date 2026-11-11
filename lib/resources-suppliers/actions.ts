@@ -91,8 +91,8 @@ export async function saveSupplier(input: SupplierInput, id?: number): Promise<R
   try {
     check(!isAdminStaff(staff), "Administrators have view-only access to Suppliers.");
     check(id === undefined || validId(id), "Invalid supplier.");
-    check(text(input.companyName, 50), "Supplier name is required (max 50 characters).");
-    check(text(input.contactPerson, 50) && !/\d/.test(input.contactPerson), "Enter a contact name without numbers (max 50 characters).");
+    check(text(input.companyName, 100), "Supplier name is required (max 100 characters).");
+    check(text(input.contactPerson, 160) && !/\d/.test(input.contactPerson), "Enter a contact name without numbers (max 160 characters).");
     check(text(input.email, 50) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email), "Enter a valid email address.");
     check(text(input.phone, 50) && /^[+\d\s-]{7,20}$/.test(input.phone), "Enter a valid phone number.");
     check(text(input.address, 100), "Address is required (max 100 characters).");
@@ -183,9 +183,12 @@ export async function saveCategory(input: CategoryInput, id?: number): Promise<R
   try {
     check(!isAdminStaff(staff), "Administrators have view-only access to Categories.");
     check(id === undefined || validId(id), "Invalid category.");
-    check(text(input.categoryName, 100), "Category name is required (max 100 characters).");
+    check(text(input.categoryName, 50), "Category name is required (max 50 characters).");
     const categoryName = input.categoryName.trim();
+    check(!/\d/.test(categoryName), "Category name cannot contain numbers.");
     check(!categoryName.toLowerCase().includes("finished good"), "Cannot use 'Finished Goods' category name.");
+    const description = (input.description ?? "").trim();
+    check(description.length <= 100, "Category description cannot exceed 100 characters.");
 
     const existing = await prisma.categories.findFirst({
       where: {
@@ -199,7 +202,7 @@ export async function saveCategory(input: CategoryInput, id?: number): Promise<R
     const isActive = input.isActive !== false;
     const data = {
       CategoryName: categoryName,
-      Description: encodeCategoryDescription(input.description, isActive),
+      Description: encodeCategoryDescription(description, isActive),
     };
 
     let targetId: number = id ?? 0;

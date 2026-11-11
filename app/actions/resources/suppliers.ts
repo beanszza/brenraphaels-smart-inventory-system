@@ -85,11 +85,11 @@ export async function createSupplier(body: SupplierInput) {
   try {
     const saved = await prisma.$transaction(async (tx) => {
 
-      if (!body.companyName?.trim() || body.companyName.trim().length > 50) {
-        return { result: resourceResult({ success: false, message: "Supplier Name is required and cannot exceed 50 characters." }), audit: undefined };
+      if (!body.companyName?.trim() || body.companyName.trim().length > 100) {
+        return { result: resourceResult({ success: false, message: "Supplier Name is required and cannot exceed 100 characters." }), audit: undefined };
       }
-      if (!body.contactPerson?.trim() || body.contactPerson.trim().length > 50) {
-        return { result: resourceResult({ success: false, message: "Contact Person is required and cannot exceed 50 characters." }), audit: undefined };
+      if (!body.contactPerson?.trim() || body.contactPerson.trim().length > 160) {
+        return { result: resourceResult({ success: false, message: "Contact Person is required and cannot exceed 160 characters." }), audit: undefined };
       }
       if (/\d/.test(body.contactPerson)) {
         return { result: resourceResult({ success: false, message: "Contact Person cannot contain numbers." }), audit: undefined };
@@ -246,8 +246,8 @@ export async function updateSupplier(idInput: string | number, body: Partial<Sup
       }
 
       if (body.companyName !== undefined) {
-        if (!body.companyName.trim() || body.companyName.trim().length > 50) {
-          return { result: resourceResult({ success: false, message: "Supplier Name cannot exceed 50 characters." }), audit: undefined };
+        if (!body.companyName.trim() || body.companyName.trim().length > 100) {
+          return { result: resourceResult({ success: false, message: "Supplier Name cannot exceed 100 characters." }), audit: undefined };
         }
 
         const supplierExists = await tx.suppliers.findFirst({
@@ -259,8 +259,8 @@ export async function updateSupplier(idInput: string | number, body: Partial<Sup
       }
 
       if (body.contactPerson !== undefined) {
-        if (!body.contactPerson.trim() || body.contactPerson.trim().length > 50) {
-          return { result: resourceResult({ success: false, message: "Contact Person cannot exceed 50 characters." }), audit: undefined };
+        if (!body.contactPerson.trim() || body.contactPerson.trim().length > 160) {
+          return { result: resourceResult({ success: false, message: "Contact Person cannot exceed 160 characters." }), audit: undefined };
         }
         if (/\d/.test(body.contactPerson)) {
           return { result: resourceResult({ success: false, message: "Contact Person cannot contain numbers." }), audit: undefined };

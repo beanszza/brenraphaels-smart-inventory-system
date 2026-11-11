@@ -221,7 +221,9 @@ function SupplyModalForm({
   const [openCombobox, setOpenCombobox] = useState(false);
   const [supplierError, setSupplierError] = useState("");
 
+  const SUPPLY_NAME_MAX = 50;
   const [itemNameError, setItemNameError] = useState("");
+  const [itemNameWarning, setItemNameWarning] = useState("");
   const [minStockError, setMinStockError] = useState("");
   const [maxStockError, setMaxStockError] = useState("");
 
@@ -230,7 +232,7 @@ function SupplyModalForm({
     if (!trimmed) { setItemNameError("Supply Name is required."); return false; }
     if (!/^[a-zA-Z\s]+$/.test(val)) { setItemNameError("Supply Name can only contain letters."); return false; }
     if (trimmed.length < 2) { setItemNameError("Supply Name must be at least 2 characters."); return false; }
-    if (trimmed.length > 50) { setItemNameError("Supply Name cannot exceed 50 characters."); return false; }
+    if (trimmed.length > SUPPLY_NAME_MAX) { setItemNameError(`Supply Name cannot exceed ${SUPPLY_NAME_MAX} characters.`); return false; }
     const isDuplicate = existingSupplies.some(
       (item) => item.itemName.trim().toLowerCase() === trimmed.toLowerCase() && item.itemId !== editingItem?.itemId
     );
@@ -271,8 +273,21 @@ function SupplyModalForm({
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/[^a-zA-Z\s]/g, "").slice(0, 50);
+    const raw = e.target.value;
+    const hasInvalidChars = /[^a-zA-Z\s]/.test(raw);
+    const lettersOnly = raw.replace(/[^a-zA-Z\s]/g, "");
+    const exceeded = lettersOnly.length > SUPPLY_NAME_MAX;
+    const val = lettersOnly.slice(0, SUPPLY_NAME_MAX);
     setItemName(val);
+    if (exceeded) {
+      setItemNameWarning(`Supply Name is limited to ${SUPPLY_NAME_MAX} characters.`);
+    } else if (hasInvalidChars) {
+      setItemNameWarning("Supply Name can only contain letters and spaces.");
+    } else if (val.length === SUPPLY_NAME_MAX) {
+      setItemNameWarning(`Maximum limit of ${SUPPLY_NAME_MAX} characters reached.`);
+    } else {
+      setItemNameWarning("");
+    }
     validateItemName(val);
     if (!uomManuallySelected) {
       const recs = getRecommendedUoms(val, availableUoms, selectedCategoryName);
@@ -339,12 +354,16 @@ function SupplyModalForm({
       <fieldset disabled={saving} className="space-y-4">
         {/* Supply Name */}
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">
-            Supply Name <span className="text-destructive">*</span>
-          </label>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label className="block text-xs font-semibold text-foreground">
+              Supply Name <span className="text-destructive">*</span>
+            </label>
+            <span className={`text-[11px] ${itemName.length >= SUPPLY_NAME_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+              {itemName.length}/{SUPPLY_NAME_MAX}
+            </span>
+          </div>
           <Input
             type="text"
-            maxLength={50}
             value={itemName}
             onChange={handleNameChange}
             aria-invalid={!!itemNameError}
@@ -354,9 +373,11 @@ function SupplyModalForm({
               itemNameError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
             } bg-card text-foreground px-4 py-2.5 text-sm transition-colors`}
           />
-          {itemNameError && (
+          {itemNameError ? (
             <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{itemNameError}</p>
-          )}
+          ) : itemNameWarning ? (
+            <p className="mt-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">{itemNameWarning}</p>
+          ) : null}
         </div>
 
         {/* Category & UOM */}

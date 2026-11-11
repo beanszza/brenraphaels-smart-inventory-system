@@ -24,6 +24,9 @@ export default function CategoryModal(props: CategoryModalProps) {
   ) : null;
 }
 
+const CATEGORY_NAME_MAX = 50;
+const CATEGORY_DESC_MAX = 100;
+
 function CategoryModalForm({
   open,
   editingCategory,
@@ -35,6 +38,9 @@ function CategoryModalForm({
   const [description, setDescription] = useState(editingCategory?.description ?? "");
   const [isActive, setIsActive] = useState(editingCategory ? editingCategory.isActive !== false : true);
   const [nameError, setNameError] = useState("");
+  const [nameWarning, setNameWarning] = useState("");
+  const [descError, setDescError] = useState("");
+  const [descWarning, setDescWarning] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
@@ -44,12 +50,16 @@ function CategoryModalForm({
       setNameError("Category Name is required.");
       return false;
     }
+    if (/\d/.test(val)) {
+      setNameError("Category Name cannot contain numbers.");
+      return false;
+    }
     if (trimmed.length < 2) {
       setNameError("Category Name must be at least 2 characters.");
       return false;
     }
-    if (trimmed.length > 50) {
-      setNameError("Category Name cannot exceed 50 characters.");
+    if (trimmed.length > CATEGORY_NAME_MAX) {
+      setNameError(`Category Name cannot exceed ${CATEGORY_NAME_MAX} characters.`);
       return false;
     }
     const isDuplicate = existingCategories.some(
@@ -65,14 +75,55 @@ function CategoryModalForm({
     return true;
   };
 
+  const validateDescription = (val: string) => {
+    if (val.trim().length > CATEGORY_DESC_MAX) {
+      setDescError(`Description cannot exceed ${CATEGORY_DESC_MAX} characters.`);
+      return false;
+    }
+    setDescError("");
+    return true;
+  };
+
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.slice(0, 50);
+    const raw = e.target.value;
+    const hasDigits = /\d/.test(raw);
+    const noDigits = raw.replace(/[0-9]/g, "");
+    const exceeded = noDigits.length > CATEGORY_NAME_MAX;
+    const val = noDigits.slice(0, CATEGORY_NAME_MAX);
+
     setCategoryName(val);
+    if (hasDigits) {
+      setNameWarning("Category Name must not contain numbers.");
+    } else if (exceeded) {
+      setNameWarning(`Category Name is limited to ${CATEGORY_NAME_MAX} characters.`);
+    } else if (val.length === CATEGORY_NAME_MAX) {
+      setNameWarning(`Maximum limit of ${CATEGORY_NAME_MAX} characters reached.`);
+    } else {
+      setNameWarning("");
+    }
     validateName(val);
   };
 
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const raw = e.target.value;
+    const exceeded = raw.length > CATEGORY_DESC_MAX;
+    const val = raw.slice(0, CATEGORY_DESC_MAX);
+
+    setDescription(val);
+    if (exceeded) {
+      setDescWarning(`Description is limited to ${CATEGORY_DESC_MAX} characters.`);
+    } else if (val.length === CATEGORY_DESC_MAX) {
+      setDescWarning(`Maximum limit of ${CATEGORY_DESC_MAX} characters reached.`);
+    } else {
+      setDescWarning("");
+    }
+    validateDescription(val);
+  };
+
   const handleSave = async () => {
-    if (!validateName(categoryName)) return;
+    const isNameValid = validateName(categoryName);
+    const isDescValid = validateDescription(description);
+    if (!isNameValid || !isDescValid) return;
     try {
       setIsSaving(true);
       setSaveError("");
@@ -88,7 +139,7 @@ function CategoryModalForm({
     }
   };
 
-  const hasErrors = !!nameError || !categoryName.trim();
+  const hasErrors = !!nameError || !!descError || !categoryName.trim();
 
   return (
     <ModalWrapper
@@ -105,12 +156,16 @@ function CategoryModalForm({
         )}
         {/* Category Name */}
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">
-            Category Name <span className="text-destructive">*</span>
-          </label>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label className="block text-xs font-semibold text-foreground">
+              Category Name <span className="text-destructive">*</span>
+            </label>
+            <span className={`text-[11px] ${categoryName.length >= CATEGORY_NAME_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+              {categoryName.length}/{CATEGORY_NAME_MAX}
+            </span>
+          </div>
           <Input
             type="text"
-            maxLength={50}
             value={categoryName}
             onChange={handleNameChange}
             aria-invalid={!!nameError}
@@ -120,23 +175,38 @@ function CategoryModalForm({
               nameError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
             } bg-card text-foreground px-4 py-2.5 text-sm transition-colors`}
           />
-          {nameError && (
+          {nameError ? (
             <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{nameError}</p>
-          )}
+          ) : nameWarning ? (
+            <p className="mt-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">{nameWarning}</p>
+          ) : null}
         </div>
 
         {/* Description */}
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">
-            Description
-          </label>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label className="block text-xs font-semibold text-foreground">
+              Description
+            </label>
+            <span className={`text-[11px] ${description.length >= CATEGORY_DESC_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+              {description.length}/{CATEGORY_DESC_MAX}
+            </span>
+          </div>
           <textarea
             rows={3}
             value={description}
-            onChange={(e) => setDescription(e.target.value.slice(0, 200))}
+            onChange={handleDescriptionChange}
+            aria-invalid={!!descError}
             placeholder="Optional description of this category..."
-            className="w-full rounded-xl border border-border bg-card text-foreground p-3 text-sm focus:ring-1 focus:ring-ring outline-none"
+            className={`w-full rounded-xl border ${
+              descError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
+            } bg-card text-foreground p-3 text-sm focus:ring-1 focus:ring-ring outline-none`}
           />
+          {descError ? (
+            <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{descError}</p>
+          ) : descWarning ? (
+            <p className="mt-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">{descWarning}</p>
+          ) : null}
         </div>
 
         {/* Status (Edit only) */}
