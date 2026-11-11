@@ -7,13 +7,11 @@ import {
   ChevronDown,
   Users,
   Mail,
-  CheckCircle2,
-  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/shared/SearchInput";
-import { ModalCloseButton, useModalRequestClose } from "@/components/shared/ModalCloseContext";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { PurchaseRequisition, PurchaseOrderPO } from "../types";
 import { useStaff } from "@/context/StaffContext";
@@ -82,7 +80,6 @@ export function CreatePOModal({
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isReviewing, setIsReviewing] = useState(false);
-  const [recipientEmail, setRecipientEmail] = useState<string>("");
   // Post-submit success state (Draft opened in Gmail)
   const [createdOrder, setCreatedOrder] = useState<PurchaseOrderPO | null>(null);
   const [gmailComposeUrl, setGmailComposeUrl] = useState<string>("");
@@ -103,14 +100,10 @@ export function CreatePOModal({
         setStep(3);
         setNextPoNumber(initialPo.poNumber);
         setSelectedSupplierId(initialPo.supplierId);
-        setRecipientEmail(initialPo.supplierEmail || "");
         if (initialPo.supplierId) {
           actionResponse(getSupplierForOrder(initialPo.supplierId)).then((res) => {
             if (res.data?.success && res.data.data) {
               setSelectedSupplierDetails(res.data.data);
-              if (res.data.data.email) {
-                setRecipientEmail(res.data.data.email);
-              }
             }
           });
         }
@@ -156,7 +149,6 @@ export function CreatePOModal({
         setSelectedSupplierId(null);
         setSelectedSupplierDetails(null);
         setItemRows([]);
-        setRecipientEmail("");
         setErrors({});
         setIsReviewing(false);
         fetchApprovedPRs();
@@ -312,17 +304,10 @@ export function CreatePOModal({
 
   const handleSelectSupplier = async (supplierId: number) => {
     setSelectedSupplierId(supplierId);
-    const sup = eligibleSuppliers.find((s) => s.supplierId === supplierId);
-    if (sup?.email) {
-      setRecipientEmail(sup.email);
-    }
     try {
       const res = await actionResponse(getSupplierForOrder(supplierId));
       if (res.data?.success && res.data.data) {
         setSelectedSupplierDetails(res.data.data);
-        if (res.data.data.email) {
-          setRecipientEmail(res.data.data.email);
-        }
       }
     } catch {
       // Fallback already assigned
@@ -418,7 +403,7 @@ export function CreatePOModal({
           : selectedSupplier?.supplierName || "Valued Supplier Partner";
         const supplierCompany = selectedSupplier?.supplierName || "your company";
 
-        const supplierEmail = recipientEmail.trim() || selectedSupplier?.email || "";
+        const supplierEmail = selectedSupplier?.email?.trim() || "";
         const emailSubject = `Purchase Order ${poNum} - Bren Raphael's Ube Jam & Halaya`;
         const emailBody =
           `Dear ${contactName},\n\n` +
@@ -558,33 +543,33 @@ export function CreatePOModal({
         )}
 
         {createdOrder ? (
-          /* Waiting for Gmail Send Step (matches Review Purchase Order layout) */
+          /* Waiting for Gmail Send Step (standardized Resources & Suppliers typography) */
           <div className="w-full space-y-5">
-            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-300 flex items-center gap-2.5">
-              <Mail className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-sm text-amber-900 dark:text-amber-300 flex items-start gap-2.5">
+              <Mail className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <span>
-                Gmail draft opened in a new tab — <strong>not sent yet</strong>. Your PDF (<strong>{createdOrder.poNumber}.pdf</strong>) has been downloaded. This PO will only move to <strong>Pending Approval</strong> after you click <strong>I Have Already Sent the Email</strong>. Closing or cancelling rolls it back so you can try again.
+                Gmail draft opened in a new tab — <strong>not sent yet</strong>. Your PDF (<strong>{createdOrder.poNumber}.pdf</strong>) has been downloaded. This PO will only move to <strong>Pending Approval</strong> after you click <strong>Done</strong>. Closing rolls it back so you can try again.
               </span>
             </div>
 
             {/* Summary Card (2x2) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-card border border-border text-xs shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-card border border-border">
               <div>
-                <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Purchase Order Number</span>
-                <span className="font-bold text-foreground text-sm">{createdOrder.poNumber}</span>
+                <span className="text-muted-foreground block text-xs font-medium mb-1">Purchase Order Number</span>
+                <span className="font-semibold text-foreground text-sm">{createdOrder.poNumber}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Supplier / Vendor</span>
-                <span className="font-bold text-foreground text-sm">{selectedSupplier?.supplierName || initialPo?.supplierName || "—"}</span>
+                <span className="text-muted-foreground block text-xs font-medium mb-1">Supplier / Vendor</span>
+                <span className="font-semibold text-foreground text-sm">{selectedSupplier?.supplierName || initialPo?.supplierName || "—"}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Recipient Email</span>
+                <span className="text-muted-foreground block text-xs font-medium mb-1">Recipient Email</span>
                 <span className="font-semibold text-foreground text-sm break-all">
-                  {recipientEmail || selectedSupplier?.email || "No email registered"}
+                  {selectedSupplier?.email || "No email registered"}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Supplier Contact</span>
+                <span className="text-muted-foreground block text-xs font-medium mb-1">Supplier Contact</span>
                 <span className="font-semibold text-foreground text-sm">
                   {selectedSupplier?.contactPerson || selectedSupplier?.supplierName || "—"}
                 </span>
@@ -593,12 +578,12 @@ export function CreatePOModal({
 
             {/* Items Table (same as Review screen) */}
             <div className="border border-border rounded-xl overflow-hidden bg-card">
-              <table className="w-full text-xs">
-                <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[11px]">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-xs">
                   <tr>
-                    <th className="px-4 py-2.5 text-left font-bold">PARTICULARS</th>
-                    <th className="px-4 py-2.5 text-left font-bold">Unit of Measure</th>
-                    <th className="px-4 py-2.5 text-right font-bold">ORDER QUANTITY</th>
+                    <th className="px-4 py-2.5 text-left font-semibold">Particulars</th>
+                    <th className="px-4 py-2.5 text-left font-semibold">Unit of Measure</th>
+                    <th className="px-4 py-2.5 text-right font-semibold">Order Quantity</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -608,7 +593,7 @@ export function CreatePOModal({
                       <tr key={idx} className="hover:bg-muted/10">
                         <td className="px-4 py-2.5 font-medium text-foreground">{row.itemName}</td>
                         <td className="px-4 py-2.5 text-muted-foreground">{row.uomName}</td>
-                        <td className="px-4 py-2.5 text-right font-bold text-foreground">
+                        <td className="px-4 py-2.5 text-right font-semibold text-foreground">
                           {row.orderQty}
                         </td>
                       </tr>
@@ -618,9 +603,9 @@ export function CreatePOModal({
             </div>
 
             {/* 3 Short Steps */}
-            <div className="p-4 rounded-xl bg-muted/30 border border-border text-xs space-y-2">
-              <span className="font-semibold text-foreground uppercase tracking-wider block">
-                Next Steps in Gmail:
+            <div className="p-4 rounded-xl bg-muted/30 border border-border text-sm space-y-2">
+              <span className="font-semibold text-foreground block">
+                Next Steps in Gmail
               </span>
               <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
                 <li>
@@ -630,138 +615,70 @@ export function CreatePOModal({
                   Review the formal email message and supplier questionnaire.
                 </li>
                 <li>
-                  Click <strong className="text-foreground">Send</strong> in Gmail, then click <strong className="text-foreground">I Have Already Sent the Email</strong> below.
+                  Click <strong className="text-foreground">Send</strong> in Gmail, then click <strong className="text-foreground">Done</strong> below.
                 </li>
               </ol>
             </div>
 
             {/* Footer Action Buttons */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-5 border-t border-border mt-4">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <a
-                  href={gmailComposeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Mail className="w-3.5 h-3.5 text-primary" />
-                  Re-open Gmail
-                </a>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => downloadPurchaseOrderPdf(createdOrder)}
-                  className="rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5 text-foreground" />
-                  Download PDF Again
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <ModalCloseButton
-                  type="button"
-                  variant="outline"
-                  disabled={submitting}
-                  fallbackOnClose={handleCancelOrCloseWhileWaiting}
-                  className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
-                >
-                  Cancel
-                </ModalCloseButton>
-                <Button
-                  type="button"
-                  disabled={submitting}
-                  onClick={handleMarkAsSentInGmail}
-                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
-                >
-                  {submitting ? "Confirming..." : "I Have Already Sent the Email"}
-                </Button>
-              </div>
+            <div className="flex flex-wrap items-center justify-end gap-3 pt-5 border-t border-border mt-4">
+              <ModalCloseButton
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                fallbackOnClose={handleCancelOrCloseWhileWaiting}
+                className="rounded-xl border border-border bg-card px-5 py-2.5 h-auto text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              >
+                Close
+              </ModalCloseButton>
+              <a
+                href={gmailComposeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              >
+                <Mail className="w-4 h-4 text-primary" />
+                Edit Gmail
+              </a>
+              <Button
+                type="button"
+                disabled={submitting}
+                onClick={handleMarkAsSentInGmail}
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {submitting ? "Confirming..." : "Done"}
+              </Button>
             </div>
           </div>
         ) : isReviewing ? (
           /* In-Modal Review Step */
           <div className="space-y-5">
-            <div className="p-3.5 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground flex items-center gap-2">
-              <Mail className="w-4 h-4 text-primary shrink-0" />
-              <span>
+            <div className="flex items-start gap-2.5 text-sm text-muted-foreground">
+              <Mail className="w-4 h-4 text-primary shrink-0 mt-1" />
+              <p className="leading-relaxed">
                 Please review the particulars below. Confirming will open Gmail in a new tab with the formal email &amp; questionnaire prepared, and download your official PO PDF for you to attach.
-              </span>
+              </p>
             </div>
 
-            {/* Supplier & Requisition Information Card */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-card border border-border text-xs shadow-sm">
+            {/* Supplier & PO Information Card */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-card border border-border">
               <div>
-                <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Purchase Requisition Reference</span>
-                <span className="font-bold text-foreground text-sm">{selectedPR?.prNumber || initialPo?.prNumber || "—"}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Supplier / Vendor</span>
-                <span className="font-bold text-foreground text-sm">{selectedSupplier?.supplierName || initialPo?.supplierName || "—"}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Purchase Order Number</span>
+                <span className="text-muted-foreground block text-xs font-medium mb-1">Purchase Order Number</span>
                 <span className="font-semibold text-foreground text-sm">{nextPoNumber || "Auto-assigned"}</span>
               </div>
               <div>
-                <label className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
-                  Recipient Email (Supplier Registered Email):
-                </label>
-                <Input
-                  type="email"
-                  value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                  placeholder="Enter recipient email (e.g. supplier@company.com)"
-                  className="h-8 text-xs bg-background border-border font-medium rounded-lg w-full"
-                />
-                {recipientEmail ? (
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 mt-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Verified Supplier Email (Registered in System)
-                  </span>
-                ) : (
-                  <span className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 block">
-                    * No email was registered for this supplier. You can type one here so the order is emailed.
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Gmail Draft Preview Banner */}
-            <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 text-xs space-y-2">
-              <span className="font-semibold text-primary block">
-                Gmail Draft &amp; PDF Attachment:
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-muted-foreground">
-                <p>
-                  <strong className="text-foreground">To:</strong>{" "}
-                  <span className="text-foreground font-semibold">
-                    {recipientEmail || "(None — please enter recipient above)"}
-                  </span>
-                </p>
-                <p>
-                  <strong className="text-foreground">Subject:</strong>{" "}
-                  Purchase Order {nextPoNumber || "Auto-assigned"} - Bren Raphael&apos;s Ube Jam &amp; Halaya
-                </p>
-                <p>
-                  <strong className="text-foreground">PDF Document:</strong>{" "}
-                  {nextPoNumber || "PO"}.pdf (Downloaded automatically to attach in Gmail)
-                </p>
-                <p>
-                  <strong className="text-foreground">Status:</strong>{" "}
-                  <span className="text-primary font-semibold">
-                    Moves to Pending Approval once you confirm sending in Gmail
-                  </span>
-                </p>
+                <span className="text-muted-foreground block text-xs font-medium mb-1">Supplier / Vendor</span>
+                <span className="font-semibold text-foreground text-sm">{selectedSupplier?.supplierName || initialPo?.supplierName || "—"}</span>
               </div>
             </div>
 
             <div className="border border-border rounded-xl overflow-hidden bg-card">
-              <table className="w-full text-xs">
-                <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[11px]">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-xs">
                   <tr>
-                    <th className="px-4 py-2.5 text-left font-bold">PARTICULARS</th>
-                    <th className="px-4 py-2.5 text-left font-bold">Unit of Measure</th>
-                    <th className="px-4 py-2.5 text-right font-bold">ORDER QUANTITY</th>
+                    <th className="px-4 py-2.5 text-left font-semibold">Particulars</th>
+                    <th className="px-4 py-2.5 text-left font-semibold">Unit of Measure</th>
+                    <th className="px-4 py-2.5 text-right font-semibold">Order Quantity</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -771,7 +688,7 @@ export function CreatePOModal({
                       <tr key={idx} className="hover:bg-muted/10">
                         <td className="px-4 py-2.5 font-medium text-foreground">{row.itemName}</td>
                         <td className="px-4 py-2.5 text-muted-foreground">{row.uomName}</td>
-                        <td className="px-4 py-2.5 text-right font-bold text-foreground">
+                        <td className="px-4 py-2.5 text-right font-semibold text-foreground">
                           {row.orderQty}
                         </td>
                       </tr>
@@ -787,7 +704,7 @@ export function CreatePOModal({
                 variant="outline"
                 onClick={() => setIsReviewing(false)}
                 disabled={submitting}
-                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                className="rounded-xl border border-border bg-card px-5 py-2.5 h-auto text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
                 Back to Edit
               </Button>
@@ -795,7 +712,7 @@ export function CreatePOModal({
                 type="button"
                 disabled={submitting}
                 onClick={handleConfirmSendToSupplier}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
               >
                 {submitting ? "Preparing Gmail Draft..." : "Confirm & Send to Supplier"}
               </Button>
@@ -1221,13 +1138,10 @@ export function CreatePOModal({
                     disabled={submitting || !isStep3Valid}
                     onClick={() => {
                       if (validate()) {
-                        if (!recipientEmail && selectedSupplier?.email) {
-                          setRecipientEmail(selectedSupplier.email);
-                        }
                         setIsReviewing(true);
                       }
                     }}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
                   >
                     Review Purchase Order
                   </Button>
