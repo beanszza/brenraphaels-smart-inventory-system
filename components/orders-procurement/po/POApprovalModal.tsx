@@ -65,6 +65,12 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
       };
       return copy;
     });
+    setErrors((prev) => {
+      if (!prev[`qty_${index}`]) return prev;
+      const copy = { ...prev };
+      delete copy[`qty_${index}`];
+      return copy;
+    });
   };
 
   // Handle total price modification
@@ -79,11 +85,21 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
       };
       return copy;
     });
+    setErrors((prev) => {
+      if (!prev[`price_${index}`]) return prev;
+      const copy = { ...prev };
+      delete copy[`price_${index}`];
+      return copy;
+    });
   };
 
   // Auto-calculated grand total from item total prices
   const calculatedGrandTotal = useMemo(() => {
     return items.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
+  }, [items]);
+
+  const hasMissingPriceOrQty = useMemo(() => {
+    return items.some((item) => !(Number(item.confirmedQuantity) > 0) || !(Number(item.totalPrice) > 0));
   }, [items]);
 
   // Check if any item quantity was reduced (partial fulfillment)
@@ -374,24 +390,33 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-border">
-          <ModalCloseButton
-            type="button"
-            variant="outline"
-            fallbackOnClose={onClose}
-            disabled={submitting}
-            className="rounded-xl px-5 font-semibold border-border bg-card hover:bg-muted text-foreground cursor-pointer"
-          >
-            Cancel
-          </ModalCloseButton>
-          <Button
-            type="button"
-            onClick={handleConfirmApproval}
-            disabled={submitting}
-            className="rounded-xl px-6 font-semibold shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-50"
-          >
-            {submitting ? "Approving..." : "Confirm & Approve Order"}
-          </Button>
+        <div className="flex items-center justify-between gap-3 pt-4 border-t border-border flex-wrap">
+          {hasMissingPriceOrQty ? (
+            <span className="text-xs text-destructive font-medium">
+              Enter a confirmed quantity and total price greater than ₱0.00 for every item to confirm.
+            </span>
+          ) : (
+            <span />
+          )}
+          <div className="flex justify-end gap-3 ml-auto">
+            <ModalCloseButton
+              type="button"
+              variant="outline"
+              fallbackOnClose={onClose}
+              disabled={submitting}
+              className="rounded-xl px-5 font-semibold border-border bg-card hover:bg-muted text-foreground cursor-pointer"
+            >
+              Close
+            </ModalCloseButton>
+            <Button
+              type="button"
+              onClick={handleConfirmApproval}
+              disabled={submitting || hasMissingPriceOrQty}
+              className="rounded-xl px-6 font-semibold shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? "Approving..." : "Confirm & Approve Order"}
+            </Button>
+          </div>
         </div>
       </div>
     </ModalWrapper>

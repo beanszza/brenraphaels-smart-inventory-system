@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   normalizePrPriority,
   sortRequisitionsByPriority,
+  syncPurchaseOrderDeliveryStatus,
   syncRequisitionLifecycle,
 } from "@/lib/orders/requisition-lifecycle";
 
@@ -170,6 +171,108 @@ describe("PR -> PO -> Stock-In lifecycle state transitions", () => {
     state.orders[0].Discrepancies![0].ResolutionType = "LossReport";
     await syncRequisitionLifecycle(tx, 1);
     expect(state.prStatus).toBe("Closed");
+  });
+
+  it("moves PO to Delivered only when all quantities are confirmed in GRN and all discrepancies/rejections are resolved", async () => {
+    const poState = {
+      Status: "Ordered",
+      PurchaseOrderItems: [
+        { PoItemId: 1, ItemId: 10, PoItemQuantity: 100, ReceivedQuantity: 0 },
+      ],
+      Deliveries: [
+        {
+          DeliveryId: 1,
+          Status: "Arrived",
+          GoodsReceipts: [{ GrnId: 1, Status: "QaCompleted" }],
+        },
+      ],
+      GoodsReceipts: [
+        {
+          GrnId: 1,
+          Status: "QaCompleted",
+          GoodsReceiptItems: [{ GrnItemId: 1, PoItemId: 1, ItemId: 10, DeliveredQuantity: 80 }],
+        },
+      ],
+      Discrepancies: [
+        {
+          DiscrepancyId: 1,
+          ItemId: 10,
+          DiscrepancyQuantity: 20,
+          Status: "Open",
+          ResolutionType: null as string | null,
+          RtvId: null as number | null,
+        },
+      ],
+      LossReports: [] as Array<{ LossReportId: number; IsAcknowledged: boolean }>,
+    };
+
+    const poTx = {
+      purchaseOrders: {
+        findUnique: async () => poState,
+        update: vi.fn(async ({ data }: { data: { Status: string } }) => {
+          poState.Status = data.Status;
+          return poState;
+        }),
+      },
+      purchaseOrderItems: {
+        update: vi.fn(async ({ data }: { data: { ReceivedQuantity: number } }) => {
+          poState.PurchaseOrderItems[0].ReceivedQuantity = data.ReceivedQuantity;
+          return poState.PurchaseOrderItems[0];
+        }),
+      },
+      returnToVendors: { findMany: async () => [] },
+    } as any;
+
+    // 1. 80 accepted, 20 Open shortage -> Partially Delivered (NOT Delivered)
+    await syncPurchaseOrderDeliveryStatus(poTx, 1);
+    expect(poState.PurchaseOrderItems[0].ReceivedQuantity).toBe(80);
+    expect(poState.Status).toBe("Partially Delivered");
+
+    // 2. Discrepancy resolved as NewDelivery -> still Partially Delivered until second delivery arrives
+    poState.Discrepancies[0].Status = "Resolved";
+    poState.Discrepancies[0].ResolutionType = "NewDelivery";
+    await syncPurchaseOrderDeliveryStatus(poTx, 1);
+    expect(poState.Status).toBe("Partially Delivered");
+
+    // 3. Second delivery scheduled & arrived awaiting GRN -> stays Partially Delivered
+    poState.Deliveries.push({
+      DeliveryId: 2,
+      Status: "Scheduled",
+      GoodsReceipts: [],
+    });
+    await syncPurchaseOrderDeliveryStatus(poTx, 1);
+    expect(poState.Status).toBe("Partially Delivered");
+
+    // 4. Second delivery arrives and GRN confirms the remaining 20 -> transitions to Delivered
+    poState.Deliveries[1].Status = "Arrived";
+    poState.Deliveries[1].GoodsReceipts.push({ GrnId: 2, Status: "QaCompleted" });
+    poState.GoodsReceipts.push({
+      GrnId: 2,
+      Status: "QaCompleted",
+      GoodsReceiptItems: [{ GrnItemId: 2, PoItemId: 1, ItemId: 10, DeliveredQuantity: 20 }],
+    });
+    await syncPurchaseOrderDeliveryStatus(poTx, 1);
+    expect(poState.PurchaseOrderItems[0].ReceivedQuantity).toBe(100);
+    expect(poState.Status).toBe("Delivered");
+
+    // 5. OverSupply Open discrepancy blocks Delivered even when received >= ordered
+    poState.GoodsReceipts[1].GoodsReceiptItems[0].DeliveredQuantity = 30;
+    poState.Discrepancies.push({
+      DiscrepancyId: 2,
+      ItemId: 10,
+      DiscrepancyQuantity: 10,
+      Status: "Open",
+      ResolutionType: null,
+      RtvId: null,
+    });
+    await syncPurchaseOrderDeliveryStatus(poTx, 1);
+    expect(poState.Status).toBe("Partially Delivered");
+
+    // 6. Resolving OverSupply discrepancy transitions to Delivered
+    poState.Discrepancies[1].Status = "Resolved";
+    poState.Discrepancies[1].ResolutionType = "KeepWithCredit";
+    await syncPurchaseOrderDeliveryStatus(poTx, 1);
+    expect(poState.Status).toBe("Delivered");
   });
 });
 

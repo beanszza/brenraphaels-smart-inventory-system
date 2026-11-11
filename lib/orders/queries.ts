@@ -20,7 +20,9 @@ export async function queryOrders(query = ""): Promise<ResourceResult> {
       { Suppliers: { CompanyName: { contains: search, mode: "insensitive" } } },
     ];
   }
-  if (params.get("eligibleForDelivery") === "true") where.Status = { in: ["Approved", "PartiallyDelivered"] };
+  if (params.get("eligibleForDelivery") === "true") {
+    where.Status = { in: ["Approved", "Ordered", "Partially Delivered", "PartiallyDelivered"] };
+  }
 
   const totalCount = await prisma.purchaseOrders.count({ where });
   const orders = await prisma.purchaseOrders.findMany({

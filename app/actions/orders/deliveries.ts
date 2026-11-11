@@ -8,6 +8,7 @@ import { DELIVERY_INCLUDE, deliveryDto } from "@/lib/orders/dto";
 import type { DeliveryInput, DeliveryUpdateInput } from "@/lib/orders/inputs";
 import { fail, mutate, read } from "@/lib/orders/mutate";
 import { queryDeliveries, queryDelivery } from "@/lib/orders/queries";
+import { isDeliveryInFlight, syncRequisitionLifecycleByPoId } from "@/lib/orders/requisition-lifecycle";
 
 const MODULE = "Orders & Procurement";
 const IN_FLIGHT = ["Scheduled", "InTransit", "Arrived"];
@@ -38,27 +39,55 @@ export async function outstandingItems(poIdInput: string | number) {
     });
     if (!po) return resourceResult({ success: false, message: `Purchase order ${poId} not found.` });
 
-    const sums = await prisma.deliveryItems.groupBy({
-      by: ["PoItemId"],
-      where: { PoItemId: { in: po.PurchaseOrderItems.map((i) => i.PoItemId) }, Deliveries: { Status: { in: IN_FLIGHT } } },
-      _sum: { DeclaredQuantity: true },
-    });
-    const inFlight = new Map(sums.map((s) => [s.PoItemId, Number(s._sum.DeclaredQuantity || 0)]));
+    const [activeDeliveries, discrepancies] = await Promise.all([
+      prisma.deliveries.findMany({
+        where: { PoId: poId, Status: { in: IN_FLIGHT } },
+        include: {
+          GoodsReceipts: { select: { Status: true } },
+          DeliveryItems: true,
+        },
+      }),
+      prisma.discrepancies.findMany({
+        where: { PoId: poId },
+        select: { ItemId: true, DiscrepancyQuantity: true, Status: true, ResolutionType: true },
+      }),
+    ]);
+
+    const inFlight = new Map<number, number>();
+    for (const del of activeDeliveries) {
+      if (!isDeliveryInFlight(del)) continue;
+      for (const di of del.DeliveryItems ?? []) {
+        inFlight.set(di.PoItemId, (inFlight.get(di.PoItemId) ?? 0) + Number(di.DeclaredQuantity || 0));
+      }
+    }
+
+    const closedDiscByItem = new Map<number, number>();
+    for (const d of discrepancies) {
+      if ((d.Status === "Resolved" || d.Status === "Closed") && d.ResolutionType !== "NewDelivery") {
+        closedDiscByItem.set(d.ItemId, (closedDiscByItem.get(d.ItemId) ?? 0) + Number(d.DiscrepancyQuantity || 0));
+      }
+    }
 
     return resourceResult({
       success: true,
       data: po.PurchaseOrderItems.map((item) => {
         const flying = inFlight.get(item.PoItemId) || 0;
-        const remaining = Number(item.PoItemQuantity) - Number(item.ReceivedQuantity) - flying;
+        const closedDisc = closedDiscByItem.get(item.ItemId) ?? 0;
+        const ordered = Number(item.PoItemQuantity);
+        const received = Number(item.ReceivedQuantity);
+        const rawRemaining = ordered - received - flying - closedDisc;
+        const usedDisc = Math.max(0, Math.min(closedDisc, ordered - received - flying));
+        closedDiscByItem.set(item.ItemId, Math.max(0, closedDisc - usedDisc));
+        const remaining = rawRemaining > 0 ? rawRemaining : 0;
         return {
           poItemId: item.PoItemId,
           itemId: item.ItemId,
           itemCode: item.Items?.ItemCode || `SPL-${String(item.ItemId).padStart(4, "0")}`,
           itemName: item.Items?.ItemName || "",
-          orderedQuantity: Number(item.PoItemQuantity),
-          receivedQuantity: Number(item.ReceivedQuantity),
+          orderedQuantity: ordered,
+          receivedQuantity: received,
           inFlightQuantity: flying,
-          remainingQuantity: remaining > 0 ? remaining : 0,
+          remainingQuantity: remaining,
           purchaseUomId: item.PurchaseUomId,
           purchaseUomName: item.UnitOfMeasures?.Abbreviation || "Unit",
         };
@@ -77,8 +106,34 @@ export async function createDelivery(body: DeliveryInput) {
       include: { Suppliers: true, PurchaseOrderItems: { include: { Items: true, UnitOfMeasures: true } } },
     });
     if (!po) return fail(`Purchase order ${body.poId} was not found.`);
-    if (["Cancelled", "Rejected", "Draft", "PendingApproval"].includes(po.Status)) {
+    if (["Cancelled", "Rejected", "Draft", "Pending Approval", "PendingApproval", "Delivered"].includes(po.Status)) {
       return fail(`Cannot create a delivery for a purchase order in '${po.Status}' status.`);
+    }
+
+    const activeDeliveries = await tx.deliveries.findMany({
+      where: { PoId: po.PoId, Status: { in: IN_FLIGHT } },
+      include: {
+        GoodsReceipts: { select: { Status: true } },
+        DeliveryItems: true,
+      },
+    });
+    const inFlightByPoItem = new Map<number, number>();
+    for (const del of activeDeliveries) {
+      if (!isDeliveryInFlight(del)) continue;
+      for (const di of del.DeliveryItems ?? []) {
+        inFlightByPoItem.set(di.PoItemId, (inFlightByPoItem.get(di.PoItemId) ?? 0) + Number(di.DeclaredQuantity || 0));
+      }
+    }
+
+    const discrepancies = await tx.discrepancies.findMany({
+      where: { PoId: po.PoId },
+      select: { ItemId: true, DiscrepancyQuantity: true, Status: true, ResolutionType: true },
+    });
+    const closedDiscByItem = new Map<number, number>();
+    for (const d of discrepancies) {
+      if ((d.Status === "Resolved" || d.Status === "Closed") && d.ResolutionType !== "NewDelivery") {
+        closedDiscByItem.set(d.ItemId, (closedDiscByItem.get(d.ItemId) ?? 0) + Number(d.DiscrepancyQuantity || 0));
+      }
     }
 
     const lines = [];
@@ -88,11 +143,12 @@ export async function createDelivery(body: DeliveryInput) {
       const name = poItem.Items?.ItemName || poItem.ItemId;
       if (req.declaredQuantity <= 0) return fail(`Shipment quantity for item '${name}' must be greater than zero.`);
 
-      const flying = await tx.deliveryItems.aggregate({
-        where: { PoItemId: poItem.PoItemId, Deliveries: { Status: { in: IN_FLIGHT } } },
-        _sum: { DeclaredQuantity: true },
-      });
-      const remaining = Number(poItem.PoItemQuantity) - Number(poItem.ReceivedQuantity) - Number(flying._sum.DeclaredQuantity || 0);
+      const flying = inFlightByPoItem.get(poItem.PoItemId) ?? 0;
+      const closedDisc = closedDiscByItem.get(poItem.ItemId) ?? 0;
+      const remaining = Math.max(
+        0,
+        Number(poItem.PoItemQuantity) - Number(poItem.ReceivedQuantity) - flying - closedDisc
+      );
       if (req.declaredQuantity > remaining) {
         return fail(`Declared quantity (${req.declaredQuantity}) exceeds remaining outstanding quantity (${remaining}) for item '${name}'.`);
       }
@@ -115,7 +171,7 @@ export async function createDelivery(body: DeliveryInput) {
         // The main warehouse, until receiving locations are chosen per delivery.
         ReceivingLocationId: 1,
         Status: "Scheduled",
-        ScheduledDate: body.scheduledDate ? new Date(body.scheduledDate) : new Date(),
+        ScheduledDate: new Date(),
         ExpectedArrivalDate: body.expectedArrivalDate ? new Date(body.expectedArrivalDate) : po.ExpectedArrivalDate,
         TrackingNumber: body.trackingNumber?.trim(),
         Carrier: body.carrier?.trim(),
@@ -173,6 +229,7 @@ export async function cancelDelivery(idInput: string | number, body: DeliveryUpd
           : delivery.Notes,
       },
     });
+    await syncRequisitionLifecycleByPoId(tx, delivery.PoId);
     return {
       result: resourceResult({ success: true, message: "Delivery cancelled successfully.", data: updated }),
       audit: { module: MODULE, change: "updated", target: target(updated), ...change(staff, updated, "cancelled") },

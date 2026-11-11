@@ -416,6 +416,20 @@ export default function DiscrepancyDetailsModal({
                   <button
                     type="button"
                     disabled={submitting}
+                    onClick={() =>
+                      handleResolveDirect(
+                        "NewDelivery",
+                        "Supplier notified to deliver replacement units on next shipment."
+                      )
+                    }
+                    className="rounded-xl border border-border bg-card text-foreground px-4 py-2.5 text-xs font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Wait for Replacement Delivery
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={submitting}
                     onClick={() => setActiveForm("loss")}
                     className="rounded-xl border border-border bg-card text-foreground px-4 py-2.5 text-xs font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >

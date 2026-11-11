@@ -232,6 +232,12 @@ export async function setOrderStatus(idInput: string | number, body: StatusInput
     if (body.status && !STATUSES.includes(body.status)) {
       return fail(`Invalid status '${body.status}'. Allowed: ${STATUSES.join(", ")}.`);
     }
+    if (
+      body.status === "Cancelled" &&
+      ["Approved", "Ordered", "Partially Delivered", "PartiallyDelivered", "Delivered"].includes(order.Status)
+    ) {
+      return fail(`Cannot cancel a purchase order once it has been ${order.Status}.`);
+    }
 
     const data: Prisma.PurchaseOrdersUpdateInput = {};
     if (body.status) data.Status = body.status;
@@ -289,6 +295,9 @@ export async function approvePurchaseOrder(idInput: string | number, body: Appro
         conf.totalPrice !== undefined && conf.totalPrice !== null
           ? Number(conf.totalPrice)
           : Number(conf.poItemQuantity) * Number(conf.unitPrice || 0);
+      if (!(lineTotal > 0)) {
+        return fail("Total price must be greater than zero for every confirmed item.");
+      }
       calculatedTotal += lineTotal;
 
       const existingItem = order.PurchaseOrderItems.find((i) => i.ItemId === conf.itemId);

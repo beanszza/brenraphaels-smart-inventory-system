@@ -26,7 +26,200 @@ export function sortRequisitionsByPriority<T extends { priority?: string | null;
 }
 
 const INACTIVE_PO_STATUSES = ["Cancelled", "Rejected", "Draft"];
+const TERMINAL_OR_PRE_APPROVAL_PO_STATUSES = [
+  "Draft",
+  "Pending Approval",
+  "PendingApproval",
+  "Returned",
+  "Cancelled",
+  "Rejected",
+];
+export const CONFIRMED_GRN_STATUSES = [
+  "QaCompleted",
+  "PartiallyPutAway",
+  "FullyPutAway",
+  "Received",
+];
 const EPSILON = 1e-6;
+
+/** True when a delivery shipment is still active / awaiting GRN confirmation. */
+export function isDeliveryInFlight(delivery: {
+  Status: string;
+  GoodsReceipts?: Array<{ Status: string }>;
+}): boolean {
+  if (delivery.Status === "Scheduled" || delivery.Status === "InTransit") return true;
+  if (delivery.Status === "Arrived") {
+    const grns = delivery.GoodsReceipts ?? [];
+    // Once a delivery has a GRN that completed QA or was rejected, its unreceived balance is closed out via GRN/discrepancies
+    return !grns.some(
+      (g) => CONFIRMED_GRN_STATUSES.includes(g.Status) || g.Status === "Rejected"
+    );
+  }
+  return false;
+}
+
+/**
+ * Re-evaluates a Purchase Order's received item quantities and delivery status:
+ * - "Delivered": every PO line is accounted for by confirmed GRN accepted quantities + closed non-redelivery
+ *   discrepancies, no deliveries/GRNs are still pending, and all discrepancies/losses/RTVs are resolved.
+ * - "Partially Delivered": some quantity has been confirmed received via GRN, with remaining balance or unresolved discrepancy/delivery.
+ * - "Ordered": delivery(s) or GRNs exist with 0 confirmed received quantity so far.
+ * - "Approved": all deliveries/GRNs were cancelled and 0 quantity was received.
+ */
+export async function syncPurchaseOrderDeliveryStatus(
+  tx: Prisma.TransactionClient,
+  poId: number | null | undefined
+): Promise<void> {
+  if (!poId || poId <= 0 || !tx.purchaseOrders?.findUnique || !tx.purchaseOrders?.update) return;
+
+  const po = await tx.purchaseOrders.findUnique({
+    where: { PoId: poId },
+    include: {
+      PurchaseOrderItems: true,
+      Deliveries: {
+        include: {
+          GoodsReceipts: { select: { GrnId: true, Status: true } },
+        },
+      },
+      GoodsReceipts: {
+        include: { GoodsReceiptItems: true },
+      },
+      Discrepancies: true,
+      LossReports: true,
+    },
+  });
+
+  if (!po || !Array.isArray(po.PurchaseOrderItems)) return;
+  if (TERMINAL_OR_PRE_APPROVAL_PO_STATUSES.includes(po.Status)) return;
+
+  const nonCancelledGrns = (Array.isArray(po.GoodsReceipts) ? po.GoodsReceipts : []).filter(
+    (g) => g.Status !== "Cancelled"
+  );
+  const confirmedGrns = nonCancelledGrns.filter((g) => CONFIRMED_GRN_STATUSES.includes(g.Status));
+  const finishedGrns = nonCancelledGrns.filter(
+    (g) => CONFIRMED_GRN_STATUSES.includes(g.Status) || g.Status === "Rejected"
+  );
+
+  // Aggregate QA-confirmed accepted quantities from GRN line items
+  const receivedByPoItem = new Map<number, number>();
+  const receivedByItem = new Map<number, number>();
+  for (const grn of confirmedGrns) {
+    for (const gItem of Array.isArray(grn.GoodsReceiptItems) ? grn.GoodsReceiptItems : []) {
+      const qty = Number(gItem.DeliveredQuantity || 0);
+      if (gItem.PoItemId) {
+        receivedByPoItem.set(gItem.PoItemId, (receivedByPoItem.get(gItem.PoItemId) ?? 0) + qty);
+      } else {
+        receivedByItem.set(gItem.ItemId, (receivedByItem.get(gItem.ItemId) ?? 0) + qty);
+      }
+    }
+  }
+
+  // Sync PurchaseOrderItems.ReceivedQuantity and track per-PO-item accepted qty
+  const effectiveReceivedByPoItem = new Map<number, number>();
+  let totalReceived = 0;
+  for (const poItem of po.PurchaseOrderItems) {
+    const ordered = Number(poItem.PoItemQuantity || 0);
+    const direct = receivedByPoItem.get(poItem.PoItemId) ?? 0;
+    const itemPool = receivedByItem.get(poItem.ItemId) ?? 0;
+    const neededFromPool = Math.max(0, ordered - direct);
+    const takenFromPool = Math.min(itemPool, neededFromPool);
+    if (takenFromPool > 0) {
+      receivedByItem.set(poItem.ItemId, itemPool - takenFromPool);
+    }
+    const lineReceived = direct + takenFromPool;
+    effectiveReceivedByPoItem.set(poItem.PoItemId, lineReceived);
+    totalReceived += lineReceived;
+
+    if (
+      tx.purchaseOrderItems?.update &&
+      Math.abs(lineReceived - Number(poItem.ReceivedQuantity || 0)) > EPSILON
+    ) {
+      await tx.purchaseOrderItems.update({
+        where: { PoItemId: poItem.PoItemId },
+        data: { ReceivedQuantity: lineReceived },
+      });
+    }
+  }
+
+  const activeDeliveries = (Array.isArray(po.Deliveries) ? po.Deliveries : []).filter(
+    (d) => d.Status !== "Cancelled"
+  );
+  const hasPendingDeliveryOrGrn =
+    activeDeliveries.some((d) => isDeliveryInFlight(d)) ||
+    nonCancelledGrns.some((g) => g.Status === "Draft" || g.Status === "QaPending");
+
+  const discrepancies = Array.isArray(po.Discrepancies) ? po.Discrepancies : [];
+  const hasUnresolvedDiscrepancy = discrepancies.some(
+    (d) => d.Status !== "Resolved" && d.Status !== "Closed"
+  );
+  const hasUnacknowledgedLoss = (Array.isArray(po.LossReports) ? po.LossReports : []).some(
+    (l) => !l.IsAcknowledged
+  );
+
+  let hasPendingRtv = false;
+  const rtvIds = discrepancies
+    .map((d) => d.RtvId)
+    .filter((id): id is number => typeof id === "number" && id > 0);
+  if (rtvIds.length > 0 && tx.returnToVendors?.findMany) {
+    const rtvs = await tx.returnToVendors.findMany({
+      where: { RtvId: { in: rtvIds } },
+      select: { Status: true },
+    });
+    hasPendingRtv = rtvs.some((r) => ["Draft", "PendingApproval"].includes(r.Status));
+  }
+
+  // Resolved non-redelivery discrepancy quantities per item (CloseRemaining, LossReport, ReturnToSupplier, etc.)
+  const closedDiscByItem = new Map<number, number>();
+  for (const d of discrepancies) {
+    if (
+      (d.Status === "Resolved" || d.Status === "Closed") &&
+      d.ResolutionType !== "NewDelivery"
+    ) {
+      closedDiscByItem.set(
+        d.ItemId,
+        (closedDiscByItem.get(d.ItemId) ?? 0) + Number(d.DiscrepancyQuantity || 0)
+      );
+    }
+  }
+
+  let allQuantitiesAccounted = po.PurchaseOrderItems.length > 0;
+  for (const poItem of po.PurchaseOrderItems) {
+    const ordered = Number(poItem.PoItemQuantity || 0);
+    const received = effectiveReceivedByPoItem.get(poItem.PoItemId) ?? 0;
+    const availDisc = closedDiscByItem.get(poItem.ItemId) ?? 0;
+    if (received + availDisc < ordered - EPSILON) {
+      allQuantitiesAccounted = false;
+      break;
+    }
+    const usedDisc = Math.max(0, Math.min(availDisc, ordered - received));
+    closedDiscByItem.set(poItem.ItemId, Math.max(0, availDisc - usedDisc));
+  }
+
+  let nextPoStatus = po.Status;
+  if (
+    finishedGrns.length > 0 &&
+    !hasPendingDeliveryOrGrn &&
+    !hasUnresolvedDiscrepancy &&
+    !hasUnacknowledgedLoss &&
+    !hasPendingRtv &&
+    allQuantitiesAccounted
+  ) {
+    nextPoStatus = "Delivered";
+  } else if (totalReceived > EPSILON) {
+    nextPoStatus = "Partially Delivered";
+  } else if (activeDeliveries.length > 0 || nonCancelledGrns.length > 0) {
+    nextPoStatus = "Ordered";
+  } else if (po.Status === "Ordered" || po.Status === "Partially Delivered" || po.Status === "PartiallyDelivered") {
+    nextPoStatus = "Approved";
+  }
+
+  if (nextPoStatus !== po.Status) {
+    await tx.purchaseOrders.update({
+      where: { PoId: poId },
+      data: { Status: nextPoStatus },
+    });
+  }
+}
 
 /**
  * Re-evaluates a Purchase Requisition's lifecycle status after PO or receiving/stock-in mutations:
@@ -253,6 +446,7 @@ async function checkOrdersLifecycleCompleted(
 
 export async function syncRequisitionLifecycleByPoId(tx: Prisma.TransactionClient, poId: number | null | undefined): Promise<void> {
   if (!poId || poId <= 0 || !tx.purchaseOrders?.findUnique) return;
+  await syncPurchaseOrderDeliveryStatus(tx, poId);
   const po = await tx.purchaseOrders.findUnique({
     where: { PoId: poId },
     select: { PrId: true, PurchaseRequisitionPrId: true },

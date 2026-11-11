@@ -131,6 +131,7 @@ export type PurchaseOrderPO = {
   paymentType?: string;
   adminNotes?: string;
   totalAmount: number;
+  hasRemainingToSchedule?: boolean;
   items: POItem[];
 };
 

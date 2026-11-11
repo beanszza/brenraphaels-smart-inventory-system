@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, read, refuse, positiveId, validateInput } from "@/lib/receiving/mutate";
+import { syncRequisitionLifecycleByPoId } from "@/lib/orders/requisition-lifecycle";
 import type { InspectionInput } from "@/lib/receiving/inputs";
 
 const MODULE = "Goods Receiving";
@@ -267,6 +268,7 @@ export async function completeInspection(idInput: string | number, body: Inspect
             });
           }
         }
+        await syncRequisitionLifecycleByPoId(tx, grn.PoId);
       }
 
       return inspection;

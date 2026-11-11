@@ -39,6 +39,11 @@ export function PODetailsModal({
   const isPending = po.status === "Pending Approval";
   const isApproved = po.status === "Approved";
   const isCancellable = po.status === "Pending Approval";
+  const canScheduleDelivery =
+    !isAdmin &&
+    !!onCreateDelivery &&
+    ["Approved", "Ordered", "Partially Delivered"].includes(po.status) &&
+    (po.hasRemainingToSchedule ?? po.status === "Approved");
 
   const fmt = (d?: string) =>
     d
@@ -284,11 +289,11 @@ export function PODetailsModal({
             </Button>
           )}
 
-          {/* IMS Manager: Schedule Delivery for Approved Orders (Far Right) */}
-          {!isAdmin && (po.status === "Approved" || po.status === "Ordered" || po.status === "Partially Delivered") && onCreateDelivery && (
+          {/* IMS Manager: Schedule Delivery only while PO still has unscheduled balance (Far Right) */}
+          {canScheduleDelivery && (
             <Button
               type="button"
-              onClick={() => onCreateDelivery(po)}
+              onClick={() => onCreateDelivery?.(po)}
               className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
             >
               Schedule Delivery

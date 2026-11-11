@@ -65,7 +65,7 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onD
             orders.map((po) => {
               const isDraft = po.status === "Draft";
               const isReturned = po.status === "Returned";
-              const isCancellable = po.status === "Draft" || po.status === "Pending Approval" || po.status === "Approved" || po.status === "Returned";
+              const isCancellable = po.status === "Draft" || po.status === "Pending Approval" || po.status === "Returned";
 
               const actions: ActionItem[] = [
                 {

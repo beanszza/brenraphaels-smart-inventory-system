@@ -7,7 +7,7 @@ import { listDeliveries } from "@/app/actions/orders/deliveries";
 import { procurement } from "@/lib/orders/client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { AlertCircle, Upload, Trash2, Calendar, FileText } from "lucide-react";
+import { AlertCircle, Upload, Trash2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -15,7 +15,6 @@ import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ConfirmModal from "@/components/ConfirmModal";
-import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 import { PurchaseOrderPO } from "../types";
 
 interface CreateDeliveryModalProps {
@@ -60,9 +59,6 @@ export function CreateDeliveryModal({
 
   // Form Fields
   const [paymentType, setPaymentType] = useState("Payable");
-  const [plannedDispatchDate, setPlannedDispatchDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
 
   const [scheduledAttachmentBase64, setScheduledAttachmentBase64] = useState("");
   const [attachmentFileName, setAttachmentFileName] = useState("");
@@ -135,25 +131,31 @@ export function CreateDeliveryModal({
         if (poRes.status === "fulfilled" && poRes.value.data?.success) {
           const raw: any[] = poRes.value.data.data?.items || poRes.value.data.data || [];
           const candidate = raw.filter(
-            (p) => p.status === "Ordered" || p.status === "Approved"
+            (p) =>
+              p.status === "Ordered" ||
+              p.status === "Approved" ||
+              p.status === "Partially Delivered" ||
+              p.status === "PartiallyDelivered"
           );
 
           const eligible: PurchaseOrderPO[] = [];
           await Promise.all(
             candidate.map(async (po) => {
               try {
-                let poItems: any[] = [];
                 const outRes = await procurement.outstandingItems(po.poId);
                 if (outRes.data?.success && Array.isArray(outRes.data.data) && outRes.data.data.length > 0) {
-                  poItems = outRes.data.data;
-                } else if (po.items && po.items.length > 0) {
-                  poItems = po.items;
+                  const hasRemaining = outRes.data.data.some(
+                    (item: any) => Number(item.remainingQuantity ?? 0) > 0
+                  );
+                  if (hasRemaining) {
+                    eligible.push(po);
+                  }
+                  return;
                 }
-
+                const poItems: any[] = po.items || [];
                 const hasRemaining = poItems.some((item: any) => {
                   const ordered = Number(item.poOrderedQuantity ?? item.poItemQuantity ?? item.orderedQuantity) || 0;
                   const received = Number(item.poTotalReceivedQuantity ?? item.receivedQuantity) || 0;
-                  const apiScheduled = Number(item.alreadyScheduledQuantity) || 0;
                   const delivScheduled = getActiveScheduledForPoItem(
                     deliveryList,
                     po.poId,
@@ -161,11 +163,8 @@ export function CreateDeliveryModal({
                     item.poItemId,
                     item.itemId
                   );
-                  const inFlight = Math.max(apiScheduled, delivScheduled);
-                  const remaining = ordered - received - inFlight;
-                  return remaining > 0;
+                  return (ordered - received - delivScheduled) > 0;
                 });
-
                 if (hasRemaining) {
                   eligible.push(po);
                 }
@@ -247,16 +246,11 @@ export function CreateDeliveryModal({
           const rows: ItemRow[] = res.data.data.map((i: any) => {
             const ordered = Number(i.poOrderedQuantity ?? i.orderedQuantity ?? i.poItemQuantity) || 0;
             const received = Number(i.poTotalReceivedQuantity ?? i.receivedQuantity) || 0;
-            const apiScheduled = Number(i.alreadyScheduledQuantity ?? i.inFlightQuantity) || 0;
-            const delivScheduled = getActiveScheduledForPoItem(
-              existingDeliveries,
-              selectedPoId,
-              currentPO?.poNumber,
-              i.poItemId,
-              i.itemId
-            );
-            const inFlight = Math.max(apiScheduled, delivScheduled);
-            const available = Math.max(0, ordered - received - inFlight);
+            const inFlight = Number(i.inFlightQuantity ?? i.alreadyScheduledQuantity ?? 0);
+            const available =
+              i.remainingQuantity !== undefined && i.remainingQuantity !== null
+                ? Math.max(0, Number(i.remainingQuantity))
+                : Math.max(0, ordered - received - inFlight);
             const fallbackCode =
               i.itemCode ||
               currentPO?.items?.find((p: any) => p.itemId === i.itemId)?.itemCode ||
@@ -424,14 +418,6 @@ export function CreateDeliveryModal({
       return;
     }
 
-    if (plannedDispatchDate) {
-      const dispatchDateErr = getFutureDateError(plannedDispatchDate, "Planned Dispatch Date", { allowToday: true });
-      if (dispatchDateErr) {
-        setError(dispatchDateErr);
-        return;
-      }
-    }
-
     const itemsToSchedule = items
       .filter((i) => i.availableToSchedule > 0 && i.orderQuantity > 0)
       .map((i) => ({
@@ -449,7 +435,6 @@ export function CreateDeliveryModal({
       const payload = {
         poId: selectedPoId,
         paymentType,
-        scheduledDate: plannedDispatchDate ? new Date(plannedDispatchDate).toISOString() : new Date().toISOString(),
         expectedArrivalDate: null,
         scheduledAttachmentBase64: scheduledAttachmentBase64 || null,
         attachmentUrl: scheduledAttachmentBase64 || null,
@@ -733,8 +718,8 @@ export function CreateDeliveryModal({
                 )}
               </div>
 
-              {/* Payment Type & Planned Dispatch Date */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
+              {/* Payment Type */}
+              <div className="grid grid-cols-1 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-foreground">
                     Payment Type <span className="text-destructive">*</span>
@@ -747,23 +732,6 @@ export function CreateDeliveryModal({
                     <option value="Payable">Payable</option>
                     <option value="Paid">Paid</option>
                   </select>
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                    Planned Dispatch Date <span className="text-destructive">*</span>
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type="date"
-                      min={getTodayDateString()}
-                      max={getMaxFutureDateString()}
-                      value={plannedDispatchDate}
-                      onChange={(e) => setPlannedDispatchDate(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-border bg-card px-3.5 py-2 pr-10 text-xs text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                    />
-                    <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  </div>
                 </div>
               </div>
 
@@ -858,7 +826,7 @@ export function CreateDeliveryModal({
             </ModalCloseButton>
             <Button
               type="submit"
-              disabled={submitting || !selectedPoId || hasErrors || !hasAnyOrderQty || !scheduledAttachmentBase64.trim() || !plannedDispatchDate}
+              disabled={submitting || !selectedPoId || hasErrors || !hasAnyOrderQty || !scheduledAttachmentBase64.trim()}
               className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {submitting ? "Scheduling..." : "Schedule Order"}
@@ -901,8 +869,8 @@ export function CreateDeliveryModal({
                 <span className="font-semibold">{currentPO?.supplierName || "—"}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs mb-1">Dispatch Date</span>
-                <span className="font-semibold">{plannedDispatchDate || "—"}</span>
+                <span className="text-muted-foreground block text-xs mb-1">Payment Type</span>
+                <span className="font-semibold">{paymentType || "—"}</span>
               </div>
             </div>
 

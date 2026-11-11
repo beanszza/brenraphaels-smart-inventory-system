@@ -60,6 +60,7 @@ function mapPO(o: any): PurchaseOrderPO {
     paymentType: o.paymentType,
     adminNotes: o.adminNotes ?? undefined,
     totalAmount: o.totalAmount || 0,
+    hasRemainingToSchedule: o.hasRemainingToSchedule,
     items: (o.items || []).map((i: any) => ({
       poItemId: i.poItemId,
       itemId: i.itemId,

@@ -12,7 +12,10 @@ import { CreateDeliveryModal } from "@/components/orders-procurement/delivery/Cr
 import { CreatePOModal } from "@/components/orders-procurement/po/CreatePOModal";
 import { PODetailsModal } from "@/components/orders-procurement/po/PODetailsModal";
 import { POApprovalModal } from "@/components/orders-procurement/po/POApprovalModal";
+import { POTable } from "@/components/orders-procurement/po/POTable";
+import DiscrepancyDetailsModal from "@/components/receiving/DiscrepancyDetailsModal";
 import type { PurchaseOrderPO } from "@/components/orders-procurement/types";
+import type { Discrepancy } from "@/components/receiving/types";
 
 vi.mock("@/lib/orders/client", () => ({ procurement: {} }));
 vi.mock("@/app/actions/orders/screens", () => ({ requisitionSupplies: vi.fn() }));
@@ -205,6 +208,117 @@ describe("Modal layout, typography, and date bounds", () => {
     );
     expect(approvedHtml).toContain("UNIT PRICE");
     expect(approvedHtml).toContain("TOTAL AMOUNT DUE");
+  });
+
+  it("enforces Close button and required positive prices in POApprovalModal, removes Planned Dispatch Date, and hides Cancel/Schedule Delivery appropriately", () => {
+    const zeroPricePo = {
+      poId: 16,
+      poNumber: "PO-2026-0016",
+      prId: 17,
+      prNumber: "PR-2026-0017",
+      supplierId: 1,
+      supplierName: "Jo Ann Inc.",
+      orderDate: "2026-11-12",
+      status: "Pending Approval",
+      totalAmount: 0,
+      items: [
+        {
+          poItemId: 1,
+          itemId: 10,
+          itemName: "Nestea",
+          purchaseUomName: "bottle",
+          poItemQuantity: 67,
+          unitPrice: 0,
+          totalPrice: 0,
+        },
+      ],
+    } as unknown as PurchaseOrderPO;
+
+    const approvalHtml = renderToStaticMarkup(
+      <POApprovalModal po={zeroPricePo} onClose={() => {}} onSuccess={() => {}} />
+    );
+    expect(approvalHtml).toContain(">Close<");
+    expect(approvalHtml).not.toContain(">Cancel<");
+    expect(approvalHtml).toContain("disabled=\"\"");
+    expect(approvalHtml).toContain("Enter a confirmed quantity and total price greater than ₱0.00");
+
+    const deliveryHtml = renderToStaticMarkup(
+      <CreateDeliveryModal open initialPo={zeroPricePo} onClose={() => {}} onSuccess={() => {}} />
+    );
+    expect(deliveryHtml).not.toContain("Planned Dispatch Date");
+
+    const approvedPo = {
+      ...zeroPricePo,
+      status: "Approved",
+      hasRemainingToSchedule: true,
+    } as unknown as PurchaseOrderPO;
+    const approvedDetailsHtml = renderToStaticMarkup(
+      <PODetailsModal
+        po={approvedPo}
+        onClose={() => {}}
+        onCancel={() => {}}
+        onCreateDelivery={() => {}}
+      />
+    );
+    expect(approvedDetailsHtml).not.toContain("Cancel Purchase Order");
+    expect(approvedDetailsHtml).toContain("Schedule Delivery");
+
+    const orderedPo = {
+      ...zeroPricePo,
+      status: "Ordered",
+      hasRemainingToSchedule: false,
+    } as unknown as PurchaseOrderPO;
+    const orderedDetailsHtml = renderToStaticMarkup(
+      <PODetailsModal
+        po={orderedPo}
+        onClose={() => {}}
+        onCancel={() => {}}
+        onCreateDelivery={() => {}}
+      />
+    );
+    expect(orderedDetailsHtml).not.toContain("Schedule Delivery");
+
+    const partiallyDeliveredPo = {
+      ...zeroPricePo,
+      status: "Partially Delivered",
+      hasRemainingToSchedule: true,
+    } as unknown as PurchaseOrderPO;
+    const partialDetailsHtml = renderToStaticMarkup(
+      <PODetailsModal
+        po={partiallyDeliveredPo}
+        onClose={() => {}}
+        onCancel={() => {}}
+        onCreateDelivery={() => {}}
+      />
+    );
+    expect(partialDetailsHtml).toContain("Schedule Delivery");
+
+    const tableHtml = renderToStaticMarkup(
+      <POTable orders={[approvedPo]} onView={() => {}} onCancel={() => {}} />
+    );
+    expect(tableHtml).not.toContain("Cancel Purchase Order");
+
+    const rejectedDisc = {
+      discrepancyId: 1,
+      discrepancyNumber: "DSC-2026-0001",
+      discrepancyType: "Rejected",
+      grnNumber: "GRN-2026-0001",
+      poNumber: "PO-2026-0016",
+      itemName: "Nestea",
+      orderedQuantity: 67,
+      currentReceivedQty: 50,
+      discrepancyQuantity: 17,
+      status: "Open",
+    } as unknown as Discrepancy;
+    const discHtml = renderToStaticMarkup(
+      <DiscrepancyDetailsModal
+        discrepancy={rejectedDisc}
+        open
+        onClose={() => {}}
+        onResolved={() => {}}
+      />
+    );
+    expect(discHtml).toContain("Wait for Replacement Delivery");
   });
 });
 

@@ -5,6 +5,7 @@ import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, read, refuse, positiveId, validateInput } from "@/lib/receiving/mutate";
 import { notifyRequester } from "@/lib/receiving/notify";
+import { syncRequisitionLifecycleByPoId } from "@/lib/orders/requisition-lifecycle";
 import type { ReceiptInput } from "@/lib/receiving/inputs";
 
 const MODULE = "Goods Receiving";
@@ -637,6 +638,7 @@ export async function cancelReceipt(idInput: string | number) {
         data: { Status: "Arrived" } // Revert delivery status back to arrived so it can be re-received
       });
     }
+    await syncRequisitionLifecycleByPoId(tx, grn.PoId);
 
     return { result: resourceResult({ success: true, message: "GRN cancelled successfully.", data: updatedGrn }), audit: { module: MODULE, change: "updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} cancelled goods receipt ${updatedGrn.GrnNumber}` } };
 
@@ -755,6 +757,7 @@ export async function rejectReceipt(idInput: string | number, body: ReceiptInput
         });
       }
     }
+    await syncRequisitionLifecycleByPoId(tx, grn.PoId);
 
     return { result: resourceResult({ success: true, message: "GRN rejected and discrepancy records logged.", data: updatedGrn }), audit: { module: MODULE, change: "rejected", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} rejected goods receipt ${updatedGrn.GrnNumber}` }, after: () => notifyRequester(grn.CreatedBy, "rejected", updatedGrn.GrnNumber) };
 

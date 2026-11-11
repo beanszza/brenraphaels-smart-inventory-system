@@ -1,7 +1,7 @@
 // The Module's DTOs are kept as the route handlers returned them so the screens are unchanged.
 // Numbers replace Prisma Decimals here; dates survive because results are JSON round-tripped.
 import type { Prisma } from "@prisma/client";
-import { normalizePrPriority } from "./requisition-lifecycle";
+import { isDeliveryInFlight, normalizePrPriority } from "./requisition-lifecycle";
 
 const STAFF_NAME_MAP: Record<string, string> = {
   "2026-VM-007": "Vince Neil Madeja",
@@ -36,6 +36,16 @@ export const PO_INCLUDE = {
   PurchaseRequisition: true,
   PurchaseOrderItems: {
     include: { Items: { include: { UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: true } }, UnitOfMeasures: true },
+  },
+  Deliveries: {
+    select: {
+      Status: true,
+      GoodsReceipts: { select: { Status: true } },
+      DeliveryItems: { select: { PoItemId: true, DeclaredQuantity: true } },
+    },
+  },
+  Discrepancies: {
+    select: { ItemId: true, DiscrepancyQuantity: true, Status: true, ResolutionType: true },
   },
 } satisfies Prisma.PurchaseOrdersInclude;
 
@@ -129,6 +139,38 @@ type PO = Prisma.PurchaseOrdersGetPayload<{ include: typeof PO_INCLUDE }>;
 
 export function poDto(po: PO) {
   const approval = parseApprovalMetadata(po.AdminNotes);
+  const inFlightByPoItem = new Map<number, number>();
+  const poDeliveries = Array.isArray((po as { Deliveries?: unknown }).Deliveries)
+    ? ((po as { Deliveries?: Array<{ Status: string; GoodsReceipts?: Array<{ Status: string }>; DeliveryItems?: Array<{ PoItemId: number; DeclaredQuantity: unknown }> }> }).Deliveries ?? [])
+    : [];
+  for (const del of poDeliveries) {
+    if (!isDeliveryInFlight(del)) continue;
+    for (const di of Array.isArray(del.DeliveryItems) ? del.DeliveryItems : []) {
+      inFlightByPoItem.set(di.PoItemId, (inFlightByPoItem.get(di.PoItemId) ?? 0) + Number(di.DeclaredQuantity || 0));
+    }
+  }
+  const closedDiscByItem = new Map<number, number>();
+  const poDiscrepancies = Array.isArray((po as { Discrepancies?: unknown }).Discrepancies)
+    ? ((po as { Discrepancies?: Array<{ ItemId: number; DiscrepancyQuantity: unknown; Status: string; ResolutionType: string | null }> }).Discrepancies ?? [])
+    : [];
+  for (const d of poDiscrepancies) {
+    if ((d.Status === "Resolved" || d.Status === "Closed") && d.ResolutionType !== "NewDelivery") {
+      closedDiscByItem.set(d.ItemId, (closedDiscByItem.get(d.ItemId) ?? 0) + Number(d.DiscrepancyQuantity || 0));
+    }
+  }
+  let hasRemainingToSchedule = false;
+  for (const i of po.PurchaseOrderItems ?? []) {
+    const ordered = Number(i.PoItemQuantity || 0);
+    const received = Number(i.ReceivedQuantity || 0);
+    const flying = inFlightByPoItem.get(i.PoItemId) ?? 0;
+    const closedDisc = closedDiscByItem.get(i.ItemId) ?? 0;
+    const remaining = ordered - received - flying - closedDisc;
+    const usedDisc = Math.max(0, Math.min(closedDisc, ordered - received - flying));
+    closedDiscByItem.set(i.ItemId, Math.max(0, closedDisc - usedDisc));
+    if (remaining > 1e-6) {
+      hasRemainingToSchedule = true;
+    }
+  }
   return {
     poId: po.PoId,
     prId: po.PrId,
@@ -153,6 +195,7 @@ export function poDto(po: PO) {
     qaInspectedDate: po.QaInspectedDate,
     qaStatus: po.QaStatus,
     inspectedBy: po.InspectedBy,
+    hasRemainingToSchedule,
     items: po.PurchaseOrderItems.map((i) => {
       const qty = Number(i.PoItemQuantity);
       const total = Number(i.TotalPrice);
