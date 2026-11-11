@@ -20,6 +20,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { PurchaseRequisition, PRItem } from "../types";
 import { useStaff } from "@/context/StaffContext";
 import ConfirmModal from "@/components/ConfirmModal";
+import { normalizePrPriority } from "@/lib/orders/requisition-lifecycle";
+
+const PURPOSE_OTHER_MAX = 50;
 
 export const PR_PURPOSE_CHOICES = [
   "Stock Replenishment",
@@ -100,9 +103,21 @@ export function CreatePRModal({
       : ""
   );
 
+  const resolveInitialPurpose = (raw?: string | null) => {
+    const val = (raw ?? "").trim();
+    if (!val) return { choice: PR_PURPOSE_CHOICES[0] as string, custom: "" };
+    if ((PR_PURPOSE_CHOICES as readonly string[]).includes(val) && val !== "Other") {
+      return { choice: val, custom: "" };
+    }
+    return { choice: "Other", custom: val === "Other" ? "" : val.slice(0, PURPOSE_OTHER_MAX) };
+  };
+
+  const initialPurpose = resolveInitialPurpose(initialData?.purpose || initialData?.requestType);
   const [department, setDepartment] = useState(initialData?.department || "");
-  const [purpose, setPurpose] = useState(initialData?.purpose || initialData?.requestType || PR_PURPOSE_CHOICES[0]);
-  const [priority, setPriority] = useState(initialData?.priority || "Low");
+  const [purposeChoice, setPurposeChoice] = useState<string>(initialPurpose.choice);
+  const [customPurpose, setCustomPurpose] = useState<string>(initialPurpose.custom);
+  const [customPurposeWarning, setCustomPurposeWarning] = useState("");
+  const [priority, setPriority] = useState(initialData?.priority ? normalizePrPriority(initialData.priority) : "Low");
   const [requiredDate, setRequiredDate] = useState(
     initialData?.requiredDate
       ? new Date(initialData.requiredDate).toISOString().split("T")[0]
@@ -148,8 +163,11 @@ export function CreatePRModal({
             : defaultAccountName || ""
         );
         setDepartment(initialData.department || "");
-        setPurpose(initialData.purpose || initialData.requestType || PR_PURPOSE_CHOICES[0]);
-        setPriority(initialData.priority || "Low");
+        const nextPurpose = resolveInitialPurpose(initialData.purpose || initialData.requestType);
+        setPurposeChoice(nextPurpose.choice);
+        setCustomPurpose(nextPurpose.custom);
+        setCustomPurposeWarning("");
+        setPriority(initialData.priority ? normalizePrPriority(initialData.priority) : "Low");
         setRequiredDate(
           initialData.requiredDate
             ? new Date(initialData.requiredDate).toISOString().split("T")[0]
@@ -175,7 +193,9 @@ export function CreatePRModal({
         );
         setRequestedBy(defaultAccountName || "Inventory Manager");
         setDepartment(detectedDepartment);
-        setPurpose(PR_PURPOSE_CHOICES[0]);
+        setPurposeChoice(PR_PURPOSE_CHOICES[0]);
+        setCustomPurpose("");
+        setCustomPurposeWarning("");
         setPriority("Low");
         setRequiredDate("");
         setStatusText("Draft");
@@ -290,13 +310,19 @@ export function CreatePRModal({
     });
   };
 
+  const resolvedPurpose = purposeChoice === "Other" ? customPurpose.trim() : purposeChoice.trim();
+
   // Validation
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
     if (!requestedBy.trim()) newErrors.requestedBy = "Requester name is required.";
     if (!department.trim()) newErrors.department = "Department is required.";
-    if (!purpose.trim()) newErrors.purpose = "Purpose is required.";
+    if (!resolvedPurpose) {
+      newErrors.purpose = purposeChoice === "Other" ? "Please specify a purpose (max 50 characters)." : "Purpose is required.";
+    } else if (purposeChoice === "Other" && resolvedPurpose.length > PURPOSE_OTHER_MAX) {
+      newErrors.purpose = `Purpose cannot exceed ${PURPOSE_OTHER_MAX} characters.`;
+    }
     if (!priority.trim()) newErrors.priority = "Priority is required.";
     if (!requiredDate) {
       newErrors.requiredDate = "Required date is required.";
@@ -333,12 +359,13 @@ export function CreatePRModal({
   };
 
   const isFormValid = useMemo(() => {
-    if (!requestedBy.trim() || !department.trim() || !purpose.trim() || !priority.trim() || !requiredDate) {
+    if (!requestedBy.trim() || !department.trim() || !resolvedPurpose || !priority.trim() || !requiredDate) {
       return false;
     }
+    if (purposeChoice === "Other" && resolvedPurpose.length > PURPOSE_OTHER_MAX) return false;
     if (items.length === 0) return false;
     return items.every((it) => it.itemId > 0 && it.requestedQuantity > 0);
-  }, [requestedBy, department, purpose, priority, requiredDate, items]);
+  }, [requestedBy, department, resolvedPurpose, purposeChoice, priority, requiredDate, items]);
 
   // Execution
   const executeSave = async (submitForApproval: boolean) => {
@@ -352,10 +379,10 @@ export function CreatePRModal({
       const payload = {
         department: department.trim(),
         requestedBy: requestedBy.trim(),
-        requestType: purpose.trim(),
-        priority: priority.trim(),
+        requestType: resolvedPurpose,
+        priority: normalizePrPriority(priority),
         requiredDate: new Date(requiredDate).toISOString(),
-        purpose: purpose.trim(),
+        purpose: resolvedPurpose,
         notes: notes.trim() || null,
         submitForApproval,
         items: items.map((it) => ({
@@ -419,7 +446,7 @@ export function CreatePRModal({
               </div>
               <div>
                 <span className="text-muted-foreground block text-[11px] mb-1">Purpose</span>
-                <span className="font-semibold text-foreground">{purpose}</span>
+                <span className="font-semibold text-foreground">{resolvedPurpose}</span>
               </div>
               <div>
                 <span className="text-muted-foreground block text-[11px] mb-1">Priority</span>
@@ -583,14 +610,26 @@ export function CreatePRModal({
                 </div>
               </div>
 
-              {/* Purpose (Dropdown Selection) */}
+              {/* Purpose (Dropdown Selection + Other Textbox) */}
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                <label className={`mb-1.5 block text-xs font-semibold ${errors.purpose ? "text-destructive" : "text-foreground"}`}>
                   Purpose <span className="text-destructive">*</span>
                 </label>
                 <select
-                  value={purpose}
-                  onChange={(e) => setPurpose(e.target.value)}
+                  value={purposeChoice}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setPurposeChoice(next);
+                    if (next !== "Other") {
+                      setCustomPurpose("");
+                      setCustomPurposeWarning("");
+                    }
+                    setErrors((prev) => {
+                      const c = { ...prev };
+                      delete c.purpose;
+                      return c;
+                    });
+                  }}
                   className="w-full h-10 rounded-xl border border-border bg-card px-3.5 py-2 text-xs text-foreground transition-colors cursor-pointer focus:ring-1 focus:ring-ring"
                 >
                   {PR_PURPOSE_CHOICES.map((choice) => (
@@ -599,6 +638,48 @@ export function CreatePRModal({
                     </option>
                   ))}
                 </select>
+                {purposeChoice === "Other" && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground">Specify reason</span>
+                      <span className={`text-[11px] ${customPurpose.length >= PURPOSE_OTHER_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+                        {customPurpose.length}/{PURPOSE_OTHER_MAX}
+                      </span>
+                    </div>
+                    <Input
+                      type="text"
+                      value={customPurpose}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const exceeded = raw.length > PURPOSE_OTHER_MAX;
+                        const val = raw.slice(0, PURPOSE_OTHER_MAX);
+                        setCustomPurpose(val);
+                        if (exceeded) {
+                          setCustomPurposeWarning(`Purpose is limited to ${PURPOSE_OTHER_MAX} characters.`);
+                        } else if (val.length === PURPOSE_OTHER_MAX) {
+                          setCustomPurposeWarning(`Maximum limit of ${PURPOSE_OTHER_MAX} characters reached.`);
+                        } else {
+                          setCustomPurposeWarning("");
+                        }
+                        setErrors((prev) => {
+                          const c = { ...prev };
+                          delete c.purpose;
+                          return c;
+                        });
+                      }}
+                      placeholder="Enter custom purpose (max 50 chars)..."
+                      aria-invalid={!!errors.purpose}
+                      className={`w-full h-10 rounded-xl border ${
+                        errors.purpose ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
+                      } bg-card px-3.5 py-2 text-xs text-foreground transition-colors`}
+                    />
+                    {errors.purpose ? (
+                      <p className="text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.purpose}</p>
+                    ) : customPurposeWarning ? (
+                      <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">{customPurposeWarning}</p>
+                    ) : null}
+                  </div>
+                )}
               </div>
 
               {/* Priority */}
@@ -608,13 +689,12 @@ export function CreatePRModal({
                 </label>
                 <select
                   value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
+                  onChange={(e) => setPriority(normalizePrPriority(e.target.value))}
                   className="w-full h-10 rounded-xl border border-border bg-card px-3.5 py-2 text-xs text-foreground transition-colors cursor-pointer focus:ring-1 focus:ring-ring"
                 >
                   <option value="Low">Low</option>
-                  <option value="Normal">Normal</option>
+                  <option value="Medium">Medium</option>
                   <option value="High">High</option>
-                  <option value="Urgent">Urgent</option>
                 </select>
               </div>
             </div>

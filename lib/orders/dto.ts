@@ -1,6 +1,7 @@
 // The Module's DTOs are kept as the route handlers returned them so the screens are unchanged.
 // Numbers replace Prisma Decimals here; dates survive because results are JSON round-tripped.
 import type { Prisma } from "@prisma/client";
+import { normalizePrPriority } from "./requisition-lifecycle";
 
 const STAFF_NAME_MAP: Record<string, string> = {
   "2026-VM-007": "Vince Neil Madeja",
@@ -61,10 +62,11 @@ export function prDto(pr: PR, labelled = false) {
     requestDate: pr.RequestDate,
     requiredDate: pr.RequiredDate,
     status: labelled
-      ? pr.Status === "PendingApproval" ? "Pending Approval" : pr.Status === "ConvertedToPO" ? "Converted to PO" : pr.Status
+      ? pr.Status === "PendingApproval" ? "Pending Approval" : pr.Status === "ConvertedToPO" ? "Approved" : pr.Status
       : pr.Status,
+    isFullyConvertedToPo: pr.Status === "ConvertedToPO" || pr.Status === "Closed",
     requestType: pr.RequestType,
-    priority: pr.Priority,
+    priority: normalizePrPriority(pr.Priority),
     purpose: pr.Purpose,
     notes: pr.Notes,
     adminNotes: pr.AdminNotes,

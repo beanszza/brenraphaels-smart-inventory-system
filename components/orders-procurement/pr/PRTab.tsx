@@ -30,6 +30,7 @@ import { CreatePRModal } from "./CreatePRForm";
 import Pagination from "@/components/Pagination";
 import { useStaff } from "@/context/StaffContext";
 import { isAdminStaff } from "@/lib/auth-roles";
+import { sortRequisitionsByPriority } from "@/lib/orders/requisition-lifecycle";
 
 const STATUS_TABS: (PRStatus | "All")[] = [
   "All",
@@ -38,7 +39,6 @@ const STATUS_TABS: (PRStatus | "All")[] = [
   "Returned",
   "Approved",
   "Rejected",
-  "Converted to PO",
   "Cancelled",
   "Closed",
 ];
@@ -111,9 +111,9 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
     return map;
   }, [requisitions]);
 
-  // Filtered List
+  // Filtered & Priority-Sorted List (High -> Medium -> Low)
   const filteredList = useMemo(() => {
-    return requisitions.filter((pr) => {
+    const filtered = requisitions.filter((pr) => {
       // Tab filter
       if (activeTab === "Requests") {
         if (pr.status !== "Pending Approval") return false;
@@ -137,6 +137,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
 
       return true;
     });
+    return sortRequisitionsByPriority(filtered);
   }, [requisitions, activeTab, search, deptFilter]);
 
   // Paginated List

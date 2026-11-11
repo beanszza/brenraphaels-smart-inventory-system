@@ -5,13 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import type { AuditAction } from "@/lib/audit";
 import { resourceResult } from "@/lib/resources/result";
-import { PR_INCLUDE, prDto } from "@/lib/orders/dto";
+import { PR_INCLUDE, prDto, resolveStaffName } from "@/lib/orders/dto";
 import type { RequisitionInput, StatusInput } from "@/lib/orders/inputs";
 import { fail, mutate, read } from "@/lib/orders/mutate";
 import { changeFor, notifyApprovalRequested, statusNotice } from "@/lib/orders/notify";
+import { normalizePrPriority, sortRequisitionsByPriority } from "@/lib/orders/requisition-lifecycle";
 
 const MODULE = "Orders & Procurement";
-const STATUSES = ["Draft", "PendingApproval", "Approved", "Rejected", "Returned", "ConvertedToPO", "Cancelled"];
+const STATUSES = ["Draft", "PendingApproval", "Approved", "Rejected", "Returned", "ConvertedToPO", "Cancelled", "Closed"];
 
 const target = (pr: { PrId: number; PrNumber: string }) => ({ type: "purchase-requisition", id: pr.PrId, name: pr.PrNumber });
 
@@ -69,10 +70,10 @@ export async function listRequisitions(status = "All") {
         })
       );
 
-      return resourceResult({ success: true, data: availablePrs.map((pr) => prDto(pr, true)) });
+      return resourceResult({ success: true, data: sortRequisitionsByPriority(availablePrs.map((pr) => prDto(pr, true))) });
     }
 
-    return resourceResult({ success: true, data: prs.map((pr) => prDto(pr, true)) });
+    return resourceResult({ success: true, data: sortRequisitionsByPriority(prs.map((pr) => prDto(pr, true))) });
   });
 }
 
@@ -110,8 +111,8 @@ export async function createRequisition(body: RequisitionInput) {
         RequiredDate: body.requiredDate ? new Date(body.requiredDate) : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
         Status: status,
         RequestType: body.requestType?.trim() || "Stock Replenishment",
-        Priority: body.priority?.trim() || "Normal",
-        Purpose: body.purpose || "",
+        Priority: normalizePrPriority(body.priority),
+        Purpose: body.purpose?.trim() || "",
         Notes: body.notes || "",
         EstimatedTotalAmount: estimate(body.items),
         UpdatedAt: now,
@@ -150,8 +151,8 @@ export async function updateRequisition(idInput: string | number, body: Requisit
         Department: body.department?.trim() || pr.Department,
         RequiredDate: body.requiredDate ? new Date(body.requiredDate) : pr.RequiredDate,
         RequestType: body.requestType?.trim() || pr.RequestType,
-        Priority: body.priority?.trim() || pr.Priority,
-        Purpose: body.purpose !== undefined ? body.purpose : pr.Purpose,
+        Priority: body.priority ? normalizePrPriority(body.priority) : normalizePrPriority(pr.Priority),
+        Purpose: body.purpose !== undefined ? (body.purpose?.trim() ?? "") : pr.Purpose,
         Notes: body.notes !== undefined ? body.notes : pr.Notes,
         EstimatedTotalAmount: estimate(body.items),
         UpdatedAt: new Date(),
@@ -290,5 +291,238 @@ export async function convertRequisitionToOrders(idInput: string | number) {
         description: `${staff.name} converted purchase requisition ${pr.PrNumber} to ${generated.map((g) => g.poNumber).join(", ")}`,
       } satisfies AuditAction,
     };
+  });
+}
+
+/** Full end-to-end lifecycle report for a Purchase Requisition: Ordering -> Delivery -> Receiving -> Inventory. */
+export async function getRequisitionLifecycleReport(idInput: string | number) {
+  await requireModule(MODULE);
+  return read(async () => {
+    const id = parseInt(String(idInput), 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      return resourceResult({ success: false, message: "Invalid Purchase Requisition ID." });
+    }
+
+    const pr = await prisma.purchaseRequisitions.findUnique({
+      where: { PrId: id },
+      include: PR_INCLUDE,
+    });
+    if (!pr) {
+      return resourceResult({ success: false, message: `Purchase requisition ${id} not found.` });
+    }
+
+    const orders = await prisma.purchaseOrders.findMany({
+      where: { OR: [{ PrId: id }, { PurchaseRequisitionPrId: id }] },
+      orderBy: { OrderDate: "asc" },
+      include: {
+        Suppliers: true,
+        PurchaseOrderItems: { include: { Items: true, UnitOfMeasures: true } },
+      },
+    });
+    const poIds = orders.map((o) => o.PoId);
+
+    const [deliveries, grns, discrepancies, rawLosses] = poIds.length
+      ? await Promise.all([
+          prisma.deliveries.findMany({
+            where: { PoId: { in: poIds } },
+            orderBy: { CreatedAt: "asc" },
+            include: {
+              Suppliers: true,
+              Locations: true,
+              PurchaseOrders: true,
+              DeliveryItems: { include: { Items: true, UnitOfMeasures: true } },
+            },
+          }),
+          prisma.goodsReceipts.findMany({
+            where: { PoId: { in: poIds } },
+            orderBy: { CreatedAt: "asc" },
+            include: {
+              Deliveries: true,
+              Locations: true,
+              PurchaseOrders: true,
+              GoodsReceiptItems: { include: { Items: true, UnitOfMeasures: true } },
+            },
+          }),
+          prisma.discrepancies.findMany({
+            where: { PoId: { in: poIds } },
+            orderBy: { CreatedAt: "asc" },
+            include: { Items: true },
+          }),
+          prisma.lossReports.findMany({
+            where: { PoId: { in: poIds } },
+            orderBy: { CreatedAt: "asc" },
+            include: { Items: true, UnitOfMeasures: true },
+          }),
+        ])
+      : [[], [], [], []];
+
+    const grnIds = grns.map((g) => g.GrnId);
+    const rtvIds = discrepancies.map((d) => d.RtvId).filter((rid): rid is number => typeof rid === "number" && rid > 0);
+
+    const [inspections, stockIns, rtvs] = await Promise.all([
+      grnIds.length
+        ? prisma.qualityInspections.findMany({
+            where: { ReferenceType: "GRN", ReferenceId: { in: grnIds } },
+            orderBy: { InspectionDate: "asc" },
+            include: { QualityInspectionItems: { include: { Items: true } } },
+          })
+        : Promise.resolve([]),
+      grnIds.length
+        ? prisma.stockIns.findMany({
+            where: { GrnId: { in: grnIds } },
+            orderBy: { CreatedAt: "asc" },
+            include: {
+              GoodsReceipts: { include: { Locations: true } },
+              StockInLines: {
+                include: {
+                  Items: true,
+                  UnitOfMeasures: true,
+                  InventoryLots: { include: { Locations: true } },
+                },
+              },
+            },
+          })
+        : Promise.resolve([]),
+      rtvIds.length
+        ? prisma.returnToVendors.findMany({
+            where: { RtvId: { in: rtvIds } },
+            orderBy: { CreatedAt: "asc" },
+            include: { Suppliers: true, Items: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const report = {
+      requisition: prDto(pr, true),
+      purchaseOrders: orders.map((o) => ({
+        poId: o.PoId,
+        poNumber: o.PoNumber,
+        supplierName: o.Suppliers?.CompanyName ?? "",
+        status: o.Status,
+        paymentType: o.PaymentType,
+        orderDate: o.OrderDate.toISOString(),
+        expectedArrivalDate: o.ExpectedArrivalDate.toISOString(),
+        totalAmount: Number(o.TotalAmount),
+        requestedBy: resolveStaffName(o.RequestedBy),
+        items: o.PurchaseOrderItems.map((i) => ({
+          itemId: i.ItemId,
+          itemName: i.Items?.ItemName ?? "",
+          quantity: Number(i.PoItemQuantity),
+          uom: i.UnitOfMeasures?.Abbreviation || "Unit",
+          totalPrice: Number(i.TotalPrice),
+        })),
+      })),
+      deliveries: deliveries.map((d) => ({
+        deliveryId: d.DeliveryId,
+        deliveryNumber: d.DeliveryNumber,
+        poNumber: d.PurchaseOrders?.PoNumber ?? "",
+        supplierName: d.Suppliers?.CompanyName ?? "",
+        locationName: d.Locations?.LocationName ?? "",
+        status: d.Status,
+        scheduledDate: d.ScheduledDate.toISOString(),
+        dispatchedDate: d.DispatchedDate?.toISOString() ?? null,
+        actualArrivalDate: d.ActualArrivalDate?.toISOString() ?? null,
+        carrier: d.Carrier ?? "",
+        trackingNumber: d.TrackingNumber ?? "",
+        driverName: d.DriverName ?? "",
+        receivedBy: resolveStaffName(d.ReceivedBy),
+        items: d.DeliveryItems.map((di) => ({
+          itemName: di.Items?.ItemName ?? "",
+          declaredQuantity: Number(di.DeclaredQuantity),
+          uom: di.UnitOfMeasures?.Abbreviation || "Unit",
+        })),
+      })),
+      goodsReceipts: grns.map((g) => ({
+        grnId: g.GrnId,
+        grnNumber: g.GrnNumber,
+        poNumber: g.PurchaseOrders?.PoNumber ?? "",
+        deliveryNumber: g.Deliveries?.DeliveryNumber ?? "",
+        locationName: g.Locations?.LocationName ?? "",
+        status: g.Status,
+        receivedDate: g.ReceivedDate.toISOString(),
+        receivedBy: resolveStaffName(g.ReceivedBy),
+        items: g.GoodsReceiptItems.map((gi) => ({
+          itemName: gi.Items?.ItemName ?? "",
+          orderedQuantity: Number(gi.OrderedQuantity),
+          declaredQuantity: gi.DeclaredQuantity == null ? null : Number(gi.DeclaredQuantity),
+          deliveredQuantity: Number(gi.DeliveredQuantity),
+          varianceQuantity: Number(gi.VarianceQuantity),
+          varianceType: gi.VarianceType,
+          uom: gi.UnitOfMeasures?.Abbreviation || "Unit",
+        })),
+      })),
+      qualityInspections: inspections.map((q) => ({
+        inspectionNumber: q.InspectionNumber,
+        grnNumber: q.ReferenceNumber,
+        inspectorName: resolveStaffName(q.InspectorName),
+        status: q.Status,
+        inspectionDate: q.InspectionDate.toISOString(),
+        completedAt: q.CompletedAt?.toISOString() ?? null,
+        totalReceived: Number(q.TotalReceivedQuantity),
+        totalAccepted: Number(q.TotalAcceptedQuantity),
+        totalRejected: Number(q.TotalRejectedQuantity),
+        overallNotes: q.OverallNotes ?? "",
+        items: q.QualityInspectionItems.map((qi) => ({
+          itemName: qi.Items?.ItemName ?? "",
+          deliveredQuantity: Number(qi.DeliveredQuantity),
+          acceptedQuantity: Number(qi.AcceptedQuantity),
+          rejectedQuantity: Number(qi.RejectedQuantity),
+          concessionQuantity: Number(qi.ConcessionQuantity),
+          defectReason: qi.DefectReason ?? "",
+        })),
+      })),
+      discrepancies: discrepancies.map((d) => ({
+        discrepancyNumber: d.DiscrepancyNumber,
+        discrepancyType: d.DiscrepancyType,
+        grnNumber: d.GrnNumber,
+        poNumber: d.PoNumber,
+        itemName: d.Items?.ItemName ?? "",
+        discrepancyQuantity: Number(d.DiscrepancyQuantity),
+        status: d.Status,
+        resolutionType: d.ResolutionType ?? "",
+        resolutionNotes: d.ResolutionNotes ?? "",
+        resolvedBy: resolveStaffName(d.ResolvedBy),
+        resolvedAt: d.ResolvedAt?.toISOString() ?? null,
+      })),
+      lossReports: rawLosses.map((l) => ({
+        lossReportNumber: l.LossReportNumber,
+        itemName: l.Items?.ItemName ?? "",
+        lostQuantity: Number(l.LostQuantity),
+        uom: l.UnitOfMeasures?.Abbreviation || "Unit",
+        reason: l.Reason,
+        isAcknowledged: l.IsAcknowledged,
+        acknowledgedBy: resolveStaffName(l.AcknowledgedBy),
+        createdAt: l.CreatedAt.toISOString(),
+      })),
+      returns: rtvs.map((r) => ({
+        rtvNumber: r.RtvNumber,
+        supplierName: r.Suppliers?.CompanyName ?? "",
+        itemName: r.Items?.ItemName ?? "",
+        returnedQuantity: Number(r.ReturnedQuantity),
+        reason: r.Reason,
+        status: r.Status,
+        dispatchedDate: r.DispatchedDate?.toISOString() ?? null,
+      })),
+      stockIns: stockIns.map((s) => ({
+        stockInNumber: s.StockInNumber,
+        grnNumber: s.GoodsReceipts?.GrnNumber ?? "",
+        status: s.Status,
+        createdBy: resolveStaffName(s.CreatedBy),
+        committedBy: resolveStaffName(s.CommittedBy),
+        committedAt: s.CommittedAt?.toISOString() ?? null,
+        lines: s.StockInLines.map((sl) => ({
+          itemName: sl.Items?.ItemName ?? "",
+          quantityToStock: Number(sl.QuantityToStock),
+          uom: sl.UnitOfMeasures?.Abbreviation || "Unit",
+          lotCode: sl.LotCode,
+          locationName: sl.InventoryLots?.Locations?.LocationName ?? s.GoodsReceipts?.Locations?.LocationName ?? "",
+          unitCost: sl.InventoryLots ? Number(sl.InventoryLots.UnitCost) : 0,
+          expiryDate: (sl.ExpiryDate ?? sl.InventoryLots?.ExpiryDate)?.toISOString() ?? null,
+          committedToInventory: sl.CommittedToInventory,
+        })),
+      })),
+    };
+
+    return resourceResult({ success: true, data: report });
   });
 }

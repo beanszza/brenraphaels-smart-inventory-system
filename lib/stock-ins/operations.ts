@@ -5,6 +5,7 @@ import { resourceResult } from "@/lib/resources/result";
 import { mutate as receivingMutate, read, refuse, positiveId, validateInput } from "@/lib/receiving/mutate";
 import { stockInNotifications } from "@/lib/stock-ins/notify";
 import { mutate as inventoryMutate } from "@/lib/inventory/mutate";
+import { syncRequisitionLifecycleByPoId } from "@/lib/orders/requisition-lifecycle";
 import type { NotesInput, StockInInput } from "@/lib/receiving/inputs";
 
 export function stockInActions(module: "Inventory" | "Goods Receiving", staff: Staff) {
@@ -137,6 +138,8 @@ export function stockInActions(module: "Inventory" | "Goods Receiving", staff: S
       where: { GrnId: grn.GrnId },
       data: { Status: nextGrnStatus },
     });
+
+    await syncRequisitionLifecycleByPoId(tx, grn.PoId);
   }
 
   async function createStockIn(body: StockInInput) {

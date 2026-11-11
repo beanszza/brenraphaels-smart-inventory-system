@@ -9,6 +9,7 @@ import { actionResponse } from "@/lib/resources/action-response";
 
 export const procurement = {
   listRequisitions: (status?: string) => actionResponse(requisitions.listRequisitions(status)),
+  getRequisitionLifecycleReport: (prId: string | number) => actionResponse(requisitions.getRequisitionLifecycleReport(prId)),
   createRequisition: (...args: Parameters<typeof requisitions.createRequisition>) => actionResponse(requisitions.createRequisition(...args)),
   updateRequisition: (...args: Parameters<typeof requisitions.updateRequisition>) => actionResponse(requisitions.updateRequisition(...args)),
   setRequisitionStatus: (...args: Parameters<typeof requisitions.setRequisitionStatus>) => actionResponse(requisitions.setRequisitionStatus(...args)),

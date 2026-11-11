@@ -178,8 +178,8 @@ export function PRTable({
                   });
                 }
 
-                // Create PO (Approved)
-                if (isApproved && onCreatePo) {
+                // Create PO (Approved and still has un-ordered items)
+                if (isApproved && !pr.isFullyConvertedToPo && onCreatePo) {
                   actions.push({
                     label: "Create Purchase Order",
                     icon: <ShoppingBag className="w-4 h-4 text-foreground" />,

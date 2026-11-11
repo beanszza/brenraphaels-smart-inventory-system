@@ -1,11 +1,14 @@
 "use client";
 
-import React from "react";
-import { AlertCircle } from "lucide-react";
+import React, { useState } from "react";
+import { AlertCircle, Download } from "lucide-react";
 import { PurchaseRequisition } from "../types";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { procurement } from "@/lib/orders/client";
+import { normalizePrPriority } from "@/lib/orders/requisition-lifecycle";
+import { downloadRequisitionReportPdf } from "./downloadRequisitionReportPdf";
 
 interface PRDetailsModalProps {
   isAdmin?: boolean;
@@ -26,10 +29,32 @@ export function PRDetailsModal({
   onReturn,
   onCreatePo,
 }: PRDetailsModalProps) {
+  const [downloadingReport, setDownloadingReport] = useState(false);
+  const [reportError, setReportError] = useState("");
+
   if (!pr) return null;
 
   const isPending = pr.status === "Pending Approval" || (pr.status as any) === "Pending";
   const isApproved = pr.status === "Approved";
+  const isClosed = pr.status === "Closed";
+  const displayPriority = normalizePrPriority(pr.priority);
+
+  const handleDownloadReport = async () => {
+    try {
+      setDownloadingReport(true);
+      setReportError("");
+      const res = await procurement.getRequisitionLifecycleReport(pr.prId);
+      if (res.data?.success && res.data.data) {
+        await downloadRequisitionReportPdf(res.data.data);
+      } else {
+        setReportError(res.data?.message || "Unable to generate report.");
+      }
+    } catch (err: any) {
+      setReportError(err?.response?.data?.message || err?.message || "Unable to download lifecycle report.");
+    } finally {
+      setDownloadingReport(false);
+    }
+  };
   const duplicateItemIds = new Set(
     (pr.items || [])
       .filter((item, index, items) => items.findIndex((candidate) => candidate.itemId === item.itemId) !== index)
@@ -69,7 +94,7 @@ export function PRDetailsModal({
             <StatusBadge status={pr.status} />
           </div>
           <div className="text-xs text-muted-foreground">
-            {pr.department} · {pr.priority} Priority
+            {pr.department} · {displayPriority} Priority
           </div>
         </div>
 
@@ -174,7 +199,7 @@ export function PRDetailsModal({
               Priority
             </label>
             <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-              {pr.priority || "Normal"}
+              {displayPriority}
             </div>
           </div>
         </div>
@@ -259,6 +284,13 @@ export function PRDetailsModal({
           </div>
         )}
 
+        {/* Report download error */}
+        {reportError && (
+          <p role="alert" className="text-xs font-medium text-destructive">
+            {reportError}
+          </p>
+        )}
+
         {/* Modal Footer with Operations */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
           <div className="text-xs text-muted-foreground">
@@ -275,6 +307,19 @@ export function PRDetailsModal({
             >
               Close
             </Button>
+
+            {/* Full Lifecycle Report Download (Closed PRs) */}
+            {isClosed && (
+              <Button
+                type="button"
+                onClick={handleDownloadReport}
+                disabled={downloadingReport}
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm inline-flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                {downloadingReport ? "Generating PDF..." : "Download Full Report (PDF)"}
+              </Button>
+            )}
 
             {/* Admin Operations for Pending PRs */}
             {isAdmin && isPending && (
@@ -313,8 +358,8 @@ export function PRDetailsModal({
               </>
             )}
 
-            {/* Create PO for Approved PRs */}
-            {!isAdmin && isApproved && onCreatePo && (
+            {/* Create PO for Approved PRs with remaining items */}
+            {!isAdmin && isApproved && !pr.isFullyConvertedToPo && onCreatePo && (
               <Button
                 type="button"
                 onClick={() => onCreatePo(pr)}

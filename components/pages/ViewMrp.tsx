@@ -133,7 +133,7 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
       const supply = supplies.find((s: { itemId: number }) => s.itemId === selectedItem.itemId);
       if (!supply) throw new Error("This supply is no longer available. Run planning again.");
       await procurement.createRequisition({
-        department: "Inventory", requestType: "Stock Replenishment", priority: "Normal",
+        department: "Inventory", requestType: "Stock Replenishment", priority: "Medium",
         notes: `Generated from MRP (${horizon}d horizon)`,
         items: [{ itemId: selectedItem.itemId, requestedQuantity: selectedItem.netRequirement,
           purchaseUomId: supply.purchaseUomId }],

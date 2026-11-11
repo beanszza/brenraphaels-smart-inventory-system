@@ -5,6 +5,8 @@ import { allPages, resultData } from "@/lib/orders/screen-data";
 import { loadProcurementScreen, requisitionSupplies, procurementRecipes } from "@/app/actions/orders/screens";
 import { supplierItemsByItem, supplierItemsBySupplier } from "@/app/actions/orders/catalog";
 import { PRTab } from "@/components/orders-procurement/pr/PRTab";
+import { PRDetailsModal } from "@/components/orders-procurement/pr/PRDetailsModal";
+import { CreatePRModal } from "@/components/orders-procurement/pr/CreatePRForm";
 import { POTab } from "@/components/orders-procurement/po/POTab";
 import { DeliveryTab } from "@/components/orders-procurement/delivery/DeliveryTab";
 import type { PurchaseRequisition, PurchaseOrderPO, Delivery } from "@/components/orders-procurement/types";
@@ -21,6 +23,9 @@ vi.mock("@/app/actions/orders/deliveries", () => ({ listDeliveries: fake.deliver
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
 vi.mock("@/context/StaffContext", () => ({ useStaff: () => ({ name: "Staff", username: "staff" }) }));
 vi.mock("@/lib/orders/client", () => ({ procurement: {} }));
+vi.mock("@/components/resources-suppliers/ModalWrapper", () => ({
+  default: ({ open, children }: { open: boolean; children: React.ReactNode }) => (open ? <div>{children}</div> : null),
+}));
 
 beforeEach(() => { vi.clearAllMocks(); fake.guard.mockResolvedValue({ username: "staff" }); });
 
@@ -79,4 +84,56 @@ it("shows backend approval and delivery statuses in the matching tabs", () => {
   expect(html).toContain("PO-PENDING");
   expect(html).toContain("Pending Approval");
   expect(html).not.toContain(">PendingApproval<");
+});
+
+it("removes Converted to PO tab, sorts High priority PRs on top, and exposes full report download on Closed PRs", () => {
+  const lowPr = {
+    prId: 10, prNumber: "PR-LOW", requestDate: "2026-10-24", requiredDate: "2026-11-01",
+    requestedBy: "staff", department: "Inventory", status: "Approved", priority: "Low",
+    purpose: "Stock Replenishment", requestType: "Stock Replenishment", items: [],
+  } as unknown as PurchaseRequisition;
+  const highPr = {
+    prId: 2, prNumber: "PR-HIGH", requestDate: "2026-10-20", requiredDate: "2026-11-01",
+    requestedBy: "staff", department: "Inventory", status: "Approved", priority: "High",
+    purpose: "Stock Replenishment", requestType: "Stock Replenishment", items: [],
+  } as unknown as PurchaseRequisition;
+
+  const tabHtml = renderToStaticMarkup(<PRTab initialRequisitions={[lowPr, highPr]} />);
+  expect(tabHtml).not.toContain("Converted to PO");
+  expect(tabHtml.indexOf("PR-HIGH")).toBeLessThan(tabHtml.indexOf("PR-LOW"));
+
+  const closedPr = { ...highPr, status: "Closed", isFullyConvertedToPo: true } as unknown as PurchaseRequisition;
+  const closedModalHtml = renderToStaticMarkup(
+    <PRDetailsModal pr={closedPr} onClose={() => {}} onCreatePo={() => {}} />
+  );
+  expect(closedModalHtml).toContain("Download Full Report (PDF)");
+  expect(closedModalHtml).not.toContain("Create Purchase Order");
+
+  const convertedPr = { ...highPr, status: "Approved", isFullyConvertedToPo: true } as unknown as PurchaseRequisition;
+  const convertedModalHtml = renderToStaticMarkup(
+    <PRDetailsModal pr={convertedPr} onClose={() => {}} onCreatePo={() => {}} />
+  );
+  expect(convertedModalHtml).not.toContain("Create Purchase Order");
+});
+
+it("renders Low/Medium/High priority options and custom Other purpose input (50-char limit) in CreatePRModal", () => {
+  const html = renderToStaticMarkup(
+    <CreatePRModal
+      open
+      initialSupplies={[]}
+      initialData={{
+        prId: 1, prNumber: "PR-1", department: "Inventory", requestedBy: "Staff",
+        requestDate: "2026-11-01", requiredDate: "2026-11-10", status: "Draft",
+        requestType: "Custom rush request", purpose: "Custom rush request", priority: "Normal", items: [],
+      }}
+      onClose={() => {}}
+    />
+  );
+  expect(html).toContain('<option value="Low">Low</option>');
+  expect(html).toMatch(/<option value="Medium"[^>]*>Medium<\/option>/);
+  expect(html).toContain('<option value="High">High</option>');
+  expect(html).not.toContain('<option value="Normal">');
+  expect(html).not.toContain('<option value="Urgent">');
+  expect(html).toContain("Custom rush request");
+  expect(html).toContain("19/50");
 });

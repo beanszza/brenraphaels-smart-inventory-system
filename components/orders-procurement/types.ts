@@ -67,6 +67,7 @@ export type PurchaseRequisition = {
   requestDate: string;
   requiredDate: string;
   status: PRStatus;
+  isFullyConvertedToPo?: boolean;
   requestType: string;
   priority: string;
   purpose: string;

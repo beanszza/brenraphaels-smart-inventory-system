@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, read, refuse, positiveId } from "@/lib/receiving/mutate";
+import { syncRequisitionLifecycleByGrnId, syncRequisitionLifecycleByPoId } from "@/lib/orders/requisition-lifecycle";
 
 const MODULE = "Goods Receiving";
 
@@ -106,6 +107,8 @@ export async function acknowledgeLoss(idInput: string | number) {
         AcknowledgedAt: new Date(),
       }
     });
+    if (lossReport.PoId) await syncRequisitionLifecycleByPoId(tx, lossReport.PoId);
+    else if (lossReport.GrnId) await syncRequisitionLifecycleByGrnId(tx, lossReport.GrnId);
 
     const data = { ...updated, StockLedgerEntryId: updated.StockLedgerEntryId == null ? null : String(updated.StockLedgerEntryId) };
     return { result: resourceResult({ success: true, data, message: "Loss Report acknowledged successfully." }), audit: { module: MODULE, change: "updated", target: { type: "loss-report", id: updated.LossReportId, name: updated.LossReportNumber }, description: `${staff.name} acknowledged loss report ${updated.LossReportNumber}` } };

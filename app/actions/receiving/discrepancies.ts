@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, read, refuse, positiveId, validateInput } from "@/lib/receiving/mutate";
+import { syncRequisitionLifecycleByPoId } from "@/lib/orders/requisition-lifecycle";
 import type { ResolutionInput } from "@/lib/receiving/inputs";
 
 const MODULE = "Goods Receiving";
@@ -89,6 +90,7 @@ export async function resolveDiscrepancy(idInput: string | number, body: Resolut
         ResolvedAt: new Date(),
       }
     });
+    await syncRequisitionLifecycleByPoId(tx, discrepancy.PoId);
 
     return { result: resourceResult({ success: true, data: updated, message: "Discrepancy resolved successfully." }), audit: { module: MODULE, change: "updated", target: { type: "discrepancy", id: updated.DiscrepancyId, name: updated.DiscrepancyNumber }, description: `${staff.name} resolved discrepancy ${updated.DiscrepancyNumber}` } };
 
@@ -124,6 +126,7 @@ export async function resolveAsLoss(idInput: string | number, body: ResolutionIn
         ResolvedAt: new Date(),
       }
     });
+    await syncRequisitionLifecycleByPoId(tx, discrepancy.PoId);
 
     return { result: resourceResult({ success: true, data: updated, message: "Discrepancy resolved via Loss Report." }), audit: { module: MODULE, change: "updated", target: { type: "discrepancy", id: updated.DiscrepancyId, name: updated.DiscrepancyNumber }, description: `${staff.name} resolved discrepancy via loss report ${updated.DiscrepancyNumber}` } };
 
@@ -159,6 +162,7 @@ export async function resolveAsReturn(idInput: string | number, body: Resolution
         ResolvedAt: new Date(),
       }
     });
+    await syncRequisitionLifecycleByPoId(tx, discrepancy.PoId);
 
     return { result: resourceResult({ success: true, data: updated, message: "Discrepancy resolved via Return to Supplier." }), audit: { module: MODULE, change: "updated", target: { type: "discrepancy", id: updated.DiscrepancyId, name: updated.DiscrepancyNumber }, description: `${staff.name} resolved discrepancy via supplier return ${updated.DiscrepancyNumber}` } };
 

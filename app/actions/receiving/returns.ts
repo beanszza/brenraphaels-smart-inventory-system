@@ -5,6 +5,7 @@ import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, read, refuse, positiveId, validateInput } from "@/lib/receiving/mutate";
 import { notifyApprovalRequested, notifyRequester } from "@/lib/receiving/notify";
+import { syncRequisitionLifecycleByPoId } from "@/lib/orders/requisition-lifecycle";
 import type { ReturnInput } from "@/lib/receiving/inputs";
 
 const MODULE = "Goods Receiving";
@@ -110,6 +111,8 @@ export async function approveReturn(idInput: string | number) {
         ApprovedAt: new Date(),
       }
     });
+    const linkedDiscs = await tx.discrepancies.findMany({ where: { RtvId: id }, select: { PoId: true } });
+    for (const d of linkedDiscs) await syncRequisitionLifecycleByPoId(tx, d.PoId);
 
     return { result: resourceResult({ success: true, data: updated, message: "RTV approved successfully." }), audit: { module: MODULE, change: "approved", target: { type: "supplier-return", id: updated.RtvId, name: updated.RtvNumber }, description: `${staff.name} approved supplier return ${updated.RtvNumber}` }, after: () => notifyRequester(rtv.CreatedBy, "approved", updated.RtvNumber) };
 
@@ -143,6 +146,8 @@ export async function rejectReturn(idInput: string | number, body: ReturnInput =
         RejectionReason: body.reason,
       }
     });
+    const linkedDiscs = await tx.discrepancies.findMany({ where: { RtvId: id }, select: { PoId: true } });
+    for (const d of linkedDiscs) await syncRequisitionLifecycleByPoId(tx, d.PoId);
 
     return { result: resourceResult({ success: true, data: updated, message: "RTV rejected successfully." }), audit: { module: MODULE, change: "rejected", target: { type: "supplier-return", id: updated.RtvId, name: updated.RtvNumber }, description: `${staff.name} rejected supplier return ${updated.RtvNumber}` }, after: () => notifyRequester(rtv.CreatedBy, "rejected", updated.RtvNumber) };
 
@@ -175,6 +180,8 @@ export async function dispatchReturn(idInput: string | number, body: ReturnInput
         CreditNoteNumber: body.creditNoteNumber || undefined,
       }
     });
+    const linkedDiscs = await tx.discrepancies.findMany({ where: { RtvId: id }, select: { PoId: true } });
+    for (const d of linkedDiscs) await syncRequisitionLifecycleByPoId(tx, d.PoId);
 
     return { result: resourceResult({ success: true, data: updated, message: "RTV dispatched successfully." }), audit: { module: MODULE, change: "updated", target: { type: "supplier-return", id: updated.RtvId, name: updated.RtvNumber }, description: `${staff.name} dispatched supplier return ${updated.RtvNumber}` } };
 

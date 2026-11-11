@@ -10,6 +10,7 @@ import type { OrderInput, StatusInput, ApproveOrderInput } from "@/lib/orders/in
 import { fail, mutate, read } from "@/lib/orders/mutate";
 import { changeFor, statusNotice } from "@/lib/orders/notify";
 import { queryOrder, queryOrders } from "@/lib/orders/queries";
+import { syncRequisitionLifecycle } from "@/lib/orders/requisition-lifecycle";
 
 const MODULE = "Orders & Procurement";
 const STATUSES = ["Draft", "Pending Approval", "PendingApproval", "Approved", "Rejected", "Returned", "Partially Delivered", "PartiallyDelivered", "Delivered", "Cancelled", "Ordered"];
@@ -94,6 +95,40 @@ export async function createOrder(body: OrderInput) {
     if (!supplier) return fail(`Supplier with ID ${body.supplierId} not found.`);
     if (!body.items || body.items.length === 0) return fail("Purchase order must contain at least one item.");
 
+    if (body.prId) {
+      const pr = await tx.purchaseRequisitions.findUnique({
+        where: { PrId: body.prId },
+        include: { PurchaseRequisitionItems: true },
+      });
+      if (!pr) return fail(`Purchase requisition ${body.prId} not found.`);
+      if (pr.Status !== "Approved") {
+        return fail(`Purchase requisition ${pr.PrNumber} cannot have new Purchase Orders created (current status: ${pr.Status}).`);
+      }
+
+      const existingOrders = await tx.purchaseOrders.findMany({
+        where: {
+          OR: [{ PrId: body.prId }, { PurchaseRequisitionPrId: body.prId }],
+          Status: { notIn: ["Cancelled", "Rejected", "Draft"] },
+        },
+        include: { PurchaseOrderItems: true },
+      });
+      const orderedByItem = new Map<number, number>();
+      for (const ord of existingOrders) {
+        for (const oi of ord.PurchaseOrderItems) {
+          orderedByItem.set(oi.ItemId, (orderedByItem.get(oi.ItemId) ?? 0) + Number(oi.PoItemQuantity));
+        }
+      }
+
+      for (const line of body.items) {
+        const prItem = pr.PurchaseRequisitionItems.find((i) => i.ItemId === line.itemId);
+        if (!prItem) return fail(`Item ${line.itemId} is not part of Purchase Requisition ${pr.PrNumber}.`);
+        const remaining = Number(prItem.RequestedQuantity) - (orderedByItem.get(line.itemId) ?? 0);
+        if (line.poItemQuantity > remaining + 1e-6) {
+          return fail(`Order quantity (${line.poItemQuantity}) exceeds remaining PR quantity (${Math.max(0, remaining)}) for item ${line.itemId}.`);
+        }
+      }
+    }
+
     let expected = body.expectedArrivalDate ? new Date(body.expectedArrivalDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     if (expected <= new Date()) expected = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -125,6 +160,9 @@ export async function createOrder(body: OrderInput) {
     await tx.purchaseOrderItems.createMany({
       data: priced.lines.map((l) => ({ ...l, PoId: created.PoId, PurchaseOrderPoId: created.PoId })),
     });
+    if (body.prId) {
+      await syncRequisitionLifecycle(tx, body.prId);
+    }
     const order = await tx.purchaseOrders.findUniqueOrThrow({ where: { PoId: created.PoId }, include: PO_INCLUDE });
 
     return {
@@ -167,6 +205,10 @@ export async function updateOrder(idInput: string | number, body: OrderInput) {
     await tx.purchaseOrderItems.createMany({
       data: priced.lines.map((l) => ({ ...l, PoId: id, PurchaseOrderPoId: id })),
     });
+    const linkedPrId = order.PrId ?? order.PurchaseRequisitionPrId;
+    if (linkedPrId) {
+      await syncRequisitionLifecycle(tx, linkedPrId);
+    }
     const updated = await tx.purchaseOrders.findUniqueOrThrow({ where: { PoId: id }, include: PO_INCLUDE });
 
     return {
@@ -203,6 +245,10 @@ export async function setOrderStatus(idInput: string | number, body: StatusInput
     if (body.comments) data.AdminNotes = body.comments;
 
     const updated = await tx.purchaseOrders.update({ where: { PoId: id }, data, include: PO_INCLUDE });
+    const linkedPrId = order.PrId ?? order.PurchaseRequisitionPrId;
+    if (linkedPrId) {
+      await syncRequisitionLifecycle(tx, linkedPrId);
+    }
 
     const change = changeFor(body.status);
     const what = body.status ?? `quality status ${body.qaStatus}`;
