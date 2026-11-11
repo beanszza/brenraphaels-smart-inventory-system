@@ -344,71 +344,67 @@ export function DeliveryDetailsModal({
         )}
 
         {/* Footer Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 pb-1 border-t border-border mt-4">
-          <div>
-            {!isAdmin && isCancellable && onCancel && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  onClose();
-                  onCancel(delivery);
-                }}
-                className="rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 px-5 py-2.5 text-sm font-semibold transition-colors cursor-pointer"
-              >
-                Cancel Delivery
-              </Button>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            {(isArrived || Boolean(delivery.grnNumber)) && (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={downloadingReport}
-                onClick={handleDownloadReport}
-                className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                <Download className="w-4 h-4 text-primary" />
-                {downloadingReport ? "Downloading..." : "Download Delivery Report"}
-              </Button>
-            )}
-
-            <ModalCloseButton
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-4 pb-1 border-t border-border mt-4">
+          {(isArrived || Boolean(delivery.grnNumber)) && (
+            <Button
               type="button"
               variant="outline"
-              fallbackOnClose={onClose}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              disabled={downloadingReport}
+              onClick={handleDownloadReport}
+              className="rounded-xl border border-border bg-card px-4 py-2.5 h-auto text-sm font-semibold text-foreground hover:bg-muted transition-colors inline-flex items-center gap-1.5 cursor-pointer"
             >
-              Close
-            </ModalCloseButton>
+              <Download className="w-4 h-4 text-primary" />
+              {downloadingReport ? "Downloading..." : "Download Delivery Report"}
+            </Button>
+          )}
 
-            {!isAdmin && (isScheduled || isInTransit) && onArrive && (
-              <Button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onArrive(delivery);
-                }}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
-              >
-                Confirm Arrival
-              </Button>
-            )}
+          {!isAdmin && isCancellable && onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                onClose();
+                onCancel(delivery);
+              }}
+              className="rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 px-5 py-2.5 h-auto text-sm font-semibold transition-colors cursor-pointer"
+            >
+              Cancel Delivery
+            </Button>
+          )}
 
-            {!isAdmin && isArrived && !delivery.grnNumber && (
-              <Button
-                type="button"
-                onClick={() => {
-                  setShowCreateGrnModal(true);
-                }}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
-              >
-                Create Goods Receipt Note
-              </Button>
-            )}
-          </div>
+          <ModalCloseButton
+            type="button"
+            variant="outline"
+            fallbackOnClose={onClose}
+            className="rounded-xl border border-border bg-card px-5 py-2.5 h-auto text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+          >
+            Close
+          </ModalCloseButton>
+
+          {!isAdmin && (isScheduled || isInTransit) && onArrive && (
+            <Button
+              type="button"
+              onClick={() => {
+                onClose();
+                onArrive(delivery);
+              }}
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+            >
+              Confirm Arrival
+            </Button>
+          )}
+
+          {!isAdmin && isArrived && !delivery.grnNumber && (
+            <Button
+              type="button"
+              onClick={() => {
+                setShowCreateGrnModal(true);
+              }}
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+            >
+              Create Goods Receipt Note
+            </Button>
+          )}
         </div>
       </div>
 

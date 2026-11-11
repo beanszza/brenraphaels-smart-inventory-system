@@ -58,7 +58,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [dispatchDelivery, setDispatchDelivery] = useState<Delivery | null>(null);
   const [arriveDelivery, setArriveDelivery] = useState<Delivery | null>(null);
-  const [cancelDelivery, setCancelDelivery] = useState<Delivery | null>(null);
+  const [cancelDelivery, setCancelDelivery] = useState<{ delivery: Delivery; returnToDetails?: boolean } | null>(null);
 
   const fetchDeliveries = () => startRefresh(() => router.refresh());
 
@@ -232,7 +232,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
         onView={(d) => setSelectedDelivery(d)}
         onDispatch={!isAdmin ? (d) => setDispatchDelivery(d) : undefined}
         onArrive={!isAdmin ? (d) => setArriveDelivery(d) : undefined}
-        onCancel={!isAdmin ? (d) => setCancelDelivery(d) : undefined}
+        onCancel={!isAdmin ? (d) => setCancelDelivery({ delivery: d }) : undefined}
         onCreateGrn={!isAdmin ? (d) => handleCreateGrn(d) : undefined}
       />)}
 
@@ -277,7 +277,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
           }}
           onCancel={(d) => {
             setSelectedDelivery(null);
-            setCancelDelivery(d);
+            setCancelDelivery({ delivery: d, returnToDetails: true });
           }}
           onGrnCreated={fetchDeliveries}
         />
@@ -299,8 +299,13 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
       {/* CANCEL DELIVERY MODAL */}
       {cancelDelivery && (
         <CancelDeliveryModal
-          delivery={cancelDelivery}
-          onClose={() => setCancelDelivery(null)}
+          delivery={cancelDelivery.delivery}
+          onClose={() => {
+            if (cancelDelivery.returnToDetails) {
+              setSelectedDelivery(cancelDelivery.delivery);
+            }
+            setCancelDelivery(null);
+          }}
           onSuccess={() => {
             setCancelDelivery(null);
             setNotice("Saved successfully.");

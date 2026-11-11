@@ -13,8 +13,9 @@ import { CreatePOModal } from "@/components/orders-procurement/po/CreatePOModal"
 import { PODetailsModal } from "@/components/orders-procurement/po/PODetailsModal";
 import { POApprovalModal } from "@/components/orders-procurement/po/POApprovalModal";
 import { POTable } from "@/components/orders-procurement/po/POTable";
+import { DeliveryDetailsModal } from "@/components/orders-procurement/delivery/DeliveryDetailsModal";
 import DiscrepancyDetailsModal from "@/components/receiving/DiscrepancyDetailsModal";
-import type { PurchaseOrderPO } from "@/components/orders-procurement/types";
+import type { Delivery, PurchaseOrderPO } from "@/components/orders-procurement/types";
 import type { Discrepancy } from "@/components/receiving/types";
 
 vi.mock("@/lib/orders/client", () => ({ procurement: {} }));
@@ -319,6 +320,28 @@ describe("Modal layout, typography, and date bounds", () => {
       />
     );
     expect(discHtml).toContain("Wait for Replacement Delivery");
+
+    const scheduledDelivery = {
+      deliveryId: 6,
+      deliveryNumber: "DLV-2026-0006",
+      poId: 16,
+      poNumber: "PO-2026-0016",
+      supplierName: "Jo Ann Inc.",
+      status: "Scheduled",
+      scheduledDate: "2026-11-12",
+      items: [],
+    } as unknown as Delivery;
+    const deliveryDetailsHtml = renderToStaticMarkup(
+      <DeliveryDetailsModal
+        delivery={scheduledDelivery}
+        onClose={() => {}}
+        onArrive={() => {}}
+        onCancel={() => {}}
+      />
+    );
+    expect(deliveryDetailsHtml).toContain("Cancel Delivery");
+    expect(deliveryDetailsHtml.indexOf("Cancel Delivery")).toBeLessThan(deliveryDetailsHtml.indexOf(">Close<"));
+    expect(deliveryDetailsHtml.indexOf(">Close<")).toBeLessThan(deliveryDetailsHtml.indexOf("Confirm Arrival"));
   });
 });
 

@@ -2,12 +2,10 @@
 
 import { procurement } from "@/lib/orders/client";
 
-import React, { useState } from "react";
-import { AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { AlertCircle, AlertTriangle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { Delivery } from "../types";
 
 interface CancelDeliveryModalProps {
@@ -21,39 +19,45 @@ export function CancelDeliveryModal({
   onClose,
   onSuccess,
 }: CancelDeliveryModalProps) {
-  if (!delivery) return null;
-
   const [reason, setReason] = useState("");
+  const [reasonError, setReasonError] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!delivery || !mounted) return null;
+
+  const handleConfirm = async () => {
+    setSubmitError(null);
 
     if (delivery.status === "Arrived") {
-      setError("An arrived delivery cannot be cancelled as it has already reached the facility.");
+      setSubmitError("An arrived delivery cannot be cancelled as it has already reached the facility.");
       return;
     }
 
     if (!reason.trim()) {
-      setError("Please provide a cancellation reason before confirming.");
+      setReasonError(true);
       return;
     }
 
     try {
       setSubmitting(true);
-      const res = await procurement.cancelDelivery(delivery.deliveryId, { reason: reason.trim() }
-      );
+      const res = await procurement.cancelDelivery(delivery.deliveryId, {
+        reason: reason.trim(),
+      });
 
       if (res.data?.success) {
         onSuccess();
       } else {
-        setError(res.data?.message || "Failed to cancel delivery.");
+        setSubmitError(res.data?.message || "Failed to cancel delivery.");
       }
     } catch (err: any) {
       console.error("Cancel error:", err);
-      setError(
+      setSubmitError(
         err?.response?.data?.message ||
           "An unexpected error occurred while cancelling the delivery."
       );
@@ -62,65 +66,90 @@ export function CancelDeliveryModal({
     }
   };
 
-  return (
-    <ModalWrapper
-      open={!!delivery}
-      title={`Cancel Delivery Order — ${delivery.deliveryNumber}`}
-      onClose={onClose}
-      size="max-w-lg"
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="p-3.5 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <div className="flex-1 font-medium">{error}</div>
-          </div>
+  return createPortal(
+    <div className="pointer-events-auto font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Cancel Delivery Order"
+        style={{ width: "100%", maxWidth: "440px" }}
+        className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {submitError && (
+          <p role="alert" className="mb-3 text-sm text-destructive">
+            {submitError}
+          </p>
         )}
 
-        <div className="p-3.5 rounded-xl bg-muted/20 border border-border text-xs text-foreground space-y-1">
-          <p className="font-semibold text-foreground">
-            Are you sure you want to cancel delivery order {delivery.deliveryNumber}?
-          </p>
-          <p className="text-muted-foreground text-[11px]">
-            Cancelling will release the declared items back to the Purchase Order available balance, allowing them to be scheduled in a subsequent order.
-          </p>
-        </div>
+        <div className="flex flex-col items-center justify-center text-center">
+          {/* Circular Alert Icon */}
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-foreground">
-            Cancellation Reason <span className="text-destructive">*</span>
-          </label>
-          <Textarea
-            rows={3}
-            placeholder="Please enter the reason for cancellation (e.g., supplier vehicle breakdown, date rescheduled)..."
-            value={reason}
-            onChange={(e) => {
-              setReason(e.target.value);
-              if (error) setError(null);
-            }}
-            className="w-full rounded-xl border border-border bg-card p-3 text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
-          />
-        </div>
+          {/* Title */}
+          <h2 className="text-xl font-bold text-foreground mb-1">
+            Cancel Delivery Order
+          </h2>
 
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
-          <ModalCloseButton
-            type="button"
-            variant="outline"
-            disabled={submitting}
-            fallbackOnClose={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-          >
-            Close
-          </ModalCloseButton>
-          <Button
-            type="submit"
-            disabled={submitting || !reason.trim()}
-            className="rounded-xl bg-destructive text-destructive-foreground px-5 py-2.5 text-sm font-semibold hover:bg-destructive/90 transition-colors shadow-sm disabled:opacity-50"
-          >
-            {submitting ? "Cancelling..." : "Confirm Cancellation"}
-          </Button>
+          {/* Delivery Number Subtitle */}
+          <p className="text-xs font-semibold text-muted-foreground mb-3">
+            Delivery No: {delivery.deliveryNumber}
+          </p>
+
+          {/* Message / Description */}
+          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+            Are you sure you want to cancel delivery order {delivery.deliveryNumber}? Cancelling will release the declared items back to the Purchase Order available balance.
+          </p>
+
+          {/* Reason Input */}
+          <div className="w-full text-left space-y-1.5 mb-5">
+            <label className="text-xs font-semibold text-foreground flex items-center gap-1">
+              Cancellation Reason <span className="text-destructive">*</span>
+            </label>
+            <Textarea
+              rows={3}
+              placeholder="Please state the reason for cancellation (required)..."
+              value={reason}
+              onChange={(e) => {
+                setReason(e.target.value);
+                if (e.target.value.trim()) setReasonError(false);
+                if (submitError) setSubmitError(null);
+              }}
+              className={`text-xs resize-none bg-background rounded-xl p-3 ${
+                reasonError ? "border-destructive focus-visible:ring-destructive" : "border-border"
+              }`}
+            />
+            {reasonError && (
+              <p className="text-[11px] text-destructive flex items-center gap-1 mt-1 font-medium">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" /> Reason is required for this action.
+              </p>
+            )}
+          </div>
+
+          {/* Uniform Action Buttons */}
+          <div className="flex justify-center gap-3 w-full">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={submitting}
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={submitting || !reason.trim()}
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+            >
+              {submitting ? "Processing..." : "Confirm"}
+            </button>
+          </div>
         </div>
-      </form>
-    </ModalWrapper>
+      </div>
+    </div>,
+    document.body
   );
 }
