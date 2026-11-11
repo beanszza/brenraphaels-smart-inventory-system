@@ -106,7 +106,7 @@ function RecipeModalForm({
 
     const parsedBatchSize = Number(batchSize);
     if (!batchSize.trim() || isNaN(parsedBatchSize) || parsedBatchSize <= 0) {
-      setBatchSizeError("Please enter a valid batch size (greater than 0).");
+      setBatchSizeError("Please enter a valid target output quantity (greater than 0).");
       isValid = false;
     }
 
@@ -216,7 +216,7 @@ function RecipeModalForm({
             )}
           </div>
 
-          {/* Row 2: Product, Variant, Batch Size */}
+          {/* Row 2: Product, Variant, Target Output Quantity */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
             {/* Product Selector */}
             <div className="sm:col-span-5">
@@ -241,7 +241,7 @@ function RecipeModalForm({
             </div>
 
             {/* Variant Selector */}
-            <div className="sm:col-span-4">
+            <div className="sm:col-span-3">
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
                 Variant <span className="text-destructive">*</span>
               </label>
@@ -262,10 +262,10 @@ function RecipeModalForm({
               </select>
             </div>
 
-            {/* Batch Size (pcs) */}
-            <div className="sm:col-span-3">
+            {/* Target Output Quantity (pcs) */}
+            <div className="sm:col-span-4">
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Batch Size (pcs) <span className="text-destructive">*</span>
+                Target Output Quantity (pcs) <span className="text-destructive">*</span>
               </label>
               <Input
                 type="number"

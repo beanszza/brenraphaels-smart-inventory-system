@@ -129,7 +129,7 @@ export async function saveRecipe(input: RecipeInput, id?: number): Promise<Resul
     check(id === undefined || validId(id), "Invalid recipe.");
     check(text(input.recipeName, 100), "Recipe name is required (max 100 characters).");
     check(validId(input.productId), "Select a finished product.");
-    check(Number.isFinite(input.outputQuantity) && input.outputQuantity > 0, "Batch size must be greater than zero.");
+    check(Number.isFinite(input.outputQuantity) && input.outputQuantity > 0, "Target output quantity must be greater than zero.");
     check(typeof input.isActive === "boolean" && typeof input.notes === "string", "Invalid recipe details.");
     check(Array.isArray(input.ingredients) && input.ingredients.length > 0, "Add at least one ingredient.");
     check(new Set(input.ingredients.map(i => i.itemId)).size === input.ingredients.length, "Each ingredient may appear only once.");

@@ -106,7 +106,7 @@ export default function RecipeTab({
             onClick={onAddNew}
             className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
           >
-            <Plus className="w-4 h-4" /> Create BOM
+            <Plus className="w-4 h-4" /> Create Bill of Materials
           </Button>
         </div>
       </div>

@@ -2,6 +2,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it, vi } from "vitest";
 import CategoryModal from "@/components/resources-suppliers/CategoryModal";
+import RecipeModal from "@/components/resources-suppliers/RecipeModal";
 import SupplierModal from "@/components/resources-suppliers/SupplierModal";
 import SupplyModal from "@/components/resources-suppliers/SupplyModal";
 
@@ -82,4 +83,17 @@ it("renders revised textfield character limits in Category, Supplier, and Supply
   );
   expect(supplyHtml).toContain("0/50");
   expect(supplyHtml).not.toContain('maxLength="50"');
+
+  const recipeHtml = renderToStaticMarkup(
+    <RecipeModal
+      open
+      editingRecipe={null}
+      finishedProducts={[{ productId: 1, itemName: "Ube Halaya", variant: "Standard" }]}
+      baseSupplies={[]}
+      onClose={() => {}}
+      onSave={async () => {}}
+    />
+  );
+  expect(recipeHtml).toContain("Target Output Quantity (pcs)");
+  expect(recipeHtml).not.toContain("Batch Size");
 });
