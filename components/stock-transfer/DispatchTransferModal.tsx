@@ -86,7 +86,7 @@ export function DispatchTransferModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[250] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
+      className="font-sans fixed inset-0 z-[250] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
@@ -128,7 +128,7 @@ export function DispatchTransferModal({
           {/* Transfer Summary Box (Source location removed per user instruction!) */}
           <div className="rounded-2xl border border-border bg-muted/20 p-4.5 space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="font-mono font-bold text-sm text-foreground">
+              <span className="font-bold text-sm text-foreground">
                 {transfer.transferNumber}
               </span>
               <span className="text-muted-foreground text-[11px]">
@@ -199,7 +199,7 @@ export function DispatchTransferModal({
                   placeholder="Plate number"
                   value={vehiclePlate}
                   onChange={(e) => setVehiclePlate(e.target.value)}
-                  className="h-10 rounded-xl border border-border bg-card text-xs text-foreground font-mono"
+                  className="h-10 rounded-xl border border-border bg-card text-xs text-foreground"
                 />
               </div>
             </div>

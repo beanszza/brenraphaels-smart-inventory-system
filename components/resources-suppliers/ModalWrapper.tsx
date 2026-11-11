@@ -24,7 +24,7 @@ export default function ModalWrapper({ open, title, onClose, children, size }: M
         <Dialog.Content
           aria-describedby={undefined}
           style={{ maxWidth: widths[size ?? ""] ?? 900, width: "100%" }}
-          className="fixed left-1/2 top-1/2 z-[201] flex max-h-[90dvh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl outline-none"
+          className="font-sans fixed left-1/2 top-1/2 z-[201] flex max-h-[90dvh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl outline-none"
         >
           <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border-subtle px-6 py-5">
             <Dialog.Title className="text-lg font-semibold text-foreground">{title}</Dialog.Title>

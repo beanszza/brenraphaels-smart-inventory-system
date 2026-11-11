@@ -38,7 +38,7 @@ export function STFActionModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
@@ -55,7 +55,7 @@ export function STFActionModal({
             Cancel Stock Transfer
           </h2>
 
-          <p className="text-xs font-mono font-semibold text-muted-foreground mb-3">
+          <p className="text-xs font-semibold text-muted-foreground mb-3">
             Transfer No: {transferNumber}
           </p>
 

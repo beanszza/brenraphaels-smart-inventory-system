@@ -117,7 +117,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <span className="text-[10px] font-bold uppercase text-muted-foreground block">Delivery No.</span>
-              <span className="font-mono font-semibold text-foreground">{grn.deliveryNumber || "—"}</span>
+              <span className="font-semibold text-foreground">{grn.deliveryNumber || "—"}</span>
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase text-muted-foreground block">Supplier</span>
@@ -157,13 +157,13 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
             {grn.supplierDrNumber && grn.supplierDrNumber !== "N/A" && (
               <div>
                 <span className="text-[10px] font-bold uppercase text-muted-foreground block">Supplier DR #</span>
-                <span className="font-mono text-foreground">{grn.supplierDrNumber}</span>
+                <span className="text-foreground">{grn.supplierDrNumber}</span>
               </div>
             )}
             {grn.supplierInvoiceNumber && grn.supplierInvoiceNumber !== "N/A" && (
               <div>
                 <span className="text-[10px] font-bold uppercase text-muted-foreground block">Supplier Invoice #</span>
-                <span className="font-mono text-foreground">{grn.supplierInvoiceNumber}</span>
+                <span className="text-foreground">{grn.supplierInvoiceNumber}</span>
               </div>
             )}
           </div>
@@ -251,13 +251,13 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
                       <td className="px-3 py-3 text-center text-muted-foreground">
                         {item.purchaseUomName}
                       </td>
-                      <td className="px-3 py-3 text-right font-mono text-muted-foreground">
+                      <td className="px-3 py-3 text-right text-muted-foreground">
                         {item.orderedQuantity.toLocaleString()}
                       </td>
-                      <td className="px-3 py-3 text-right font-mono font-semibold text-foreground">
+                      <td className="px-3 py-3 text-right font-semibold text-foreground">
                         {item.deliveredQuantity.toLocaleString()}
                       </td>
-                      <td className="px-3 py-3 text-center font-mono">
+                      <td className="px-3 py-3 text-center">
                         {isShort ? (
                           <span className="text-[11px] font-semibold text-destructive bg-destructive/10 border border-destructive/20 px-2 py-0.5 rounded">
                             Short ({displayVarianceQty})
@@ -270,7 +270,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
                           <span className="text-[11px] font-semibold text-muted-foreground">Match</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-foreground font-mono text-xs whitespace-nowrap">
+                      <td className="px-4 py-3 text-foreground text-xs whitespace-nowrap">
                         {item.supplierLotCode || "—"}
                       </td>
                       <td className="px-3 py-3 text-center text-muted-foreground whitespace-nowrap">
@@ -342,7 +342,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
           <h2 className="text-xl font-bold text-foreground mb-1">
             Cancel Goods Receipt Note
           </h2>
-          <p className="text-xs font-mono font-semibold text-muted-foreground mb-3">
+          <p className="text-xs font-semibold text-muted-foreground mb-3">
             GRN No: {grn.grnNumber}
           </p>
           <p className="text-sm text-muted-foreground mb-6 leading-relaxed">

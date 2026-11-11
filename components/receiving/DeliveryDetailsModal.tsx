@@ -85,16 +85,16 @@ export default function DeliveryDetailsModal({
             <div className="bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
               <div>
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Delivery No.</div>
-                <div className="text-sm font-mono font-semibold mt-0.5">{detail.deliveryNumber}</div>
+                <div className="text-sm font-semibold mt-0.5">{detail.deliveryNumber}</div>
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Purchase Order</div>
-                <div className="text-sm font-mono font-semibold mt-0.5">{detail.poNumber}</div>
+                <div className="text-sm font-semibold mt-0.5">{detail.poNumber}</div>
               </div>
               {detail.prNumber && (
                 <div>
                   <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Purchase Requisition Ref.</div>
-                  <div className="text-sm font-mono font-semibold mt-0.5">{detail.prNumber}</div>
+                  <div className="text-sm font-semibold mt-0.5">{detail.prNumber}</div>
                 </div>
               )}
               <div>
@@ -119,7 +119,7 @@ export default function DeliveryDetailsModal({
                 {detail.trackingNumber && (
                   <div>
                     <div className="text-muted-foreground">Tracking No.</div>
-                    <div className="font-mono font-medium mt-0.5">{detail.trackingNumber}</div>
+                    <div className="font-medium mt-0.5">{detail.trackingNumber}</div>
                   </div>
                 )}
                 {detail.estimatedArrival && (
@@ -166,7 +166,7 @@ export default function DeliveryDetailsModal({
                       detail.items.map((item) => (
                         <tr key={item.deliveryItemId} className="hover:bg-muted/30">
                           <td className="p-3 font-medium text-foreground">{item.itemName}</td>
-                          <td className="p-3 text-right font-mono font-semibold text-foreground">
+                          <td className="p-3 text-right font-semibold text-foreground">
                             {item.declaredQuantity.toLocaleString()}
                           </td>
                           <td className="p-3 text-muted-foreground">

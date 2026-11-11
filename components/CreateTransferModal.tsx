@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { inventory } from "@/lib/inventory/client";
+import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 
 type LocationItem = {
   id: string;
@@ -160,9 +161,15 @@ export default function CreateTransferModal({
     if (!date) {
       setDateError("Transfer date is required.");
       hasError = true;
+    } else {
+      const dateErr = getFutureDateError(date, "Transfer date", { allowToday: true });
+      if (dateErr) {
+        setDateError(dateErr);
+        hasError = true;
+      }
     }
 
-    if (hasError || dateError === "Past date is not allowed.") return;
+    if (hasError) return;
 
     setSubmitError("");
 
@@ -206,7 +213,7 @@ export default function CreateTransferModal({
   if (mode === "view" && initialData) {
     return createPortal(
       <div
-        className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50"
+        className="font-sans fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50"
         onClick={onClose}
       >
         <div
@@ -294,7 +301,7 @@ export default function CreateTransferModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50"
+      className="font-sans fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50"
       onClick={onClose}
     >
       <div
@@ -461,7 +468,8 @@ export default function CreateTransferModal({
               </label>
               <input
                 type="date"
-                min={new Date().toISOString().split("T")[0]}
+                min={getTodayDateString()}
+                max={getMaxFutureDateString()}
                 className={`w-full px-3 py-2 text-sm rounded-lg border ${
                   dateError
                     ? "!border-destructive focus:!border-destructive focus:ring-1 focus:!ring-destructive"
@@ -472,12 +480,7 @@ export default function CreateTransferModal({
                 onChange={(e) => {
                   const val = e.target.value;
                   setDate(val);
-                  const today = new Date().toISOString().split("T")[0];
-                  if (val && val < today) {
-                    setDateError("Past date is not allowed.");
-                  } else {
-                    setDateError("");
-                  }
+                  setDateError(val ? getFutureDateError(val, "Transfer date", { allowToday: true }) : "");
                 }}
               />
               {dateError && <p className="mt-1 text-xs text-destructive">{dateError}</p>}

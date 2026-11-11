@@ -2,8 +2,10 @@
 
 import React from "react";
 import { Input } from "@/components/ui/input";
+import { getMaxFutureDateString } from "@/lib/date-limits";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { Button } from "@/components/ui/button";
-import { Search, Calendar, RotateCcw, Upload } from "lucide-react";
+import { Calendar, RotateCcw, Upload } from "lucide-react";
 
 interface AuditLogsFilterBarProps {
   filterMode: "all" | "specific" | "range";
@@ -81,16 +83,12 @@ export default function AuditLogsFilterBar({
 
         {/* Search Input Box & Export CSV Button */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[200px]">
-            <Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} />
-            <Input
-              type="text"
-              placeholder="Search by ID, activity, items, users..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl bg-background text-foreground outline-none focus:ring-1 focus:ring-ring"
-            />
-          </div>
+          <SearchInput
+            containerClassName="min-w-[240px]"
+            placeholder="Search by ID, activity, items, users..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
           <Button
             onClick={onExportCSV}
             className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 h-[38px] text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm whitespace-nowrap"
@@ -108,6 +106,7 @@ export default function AuditLogsFilterBar({
           </label>
           <Input
             type="date"
+            max={getMaxFutureDateString()}
             value={specificDate}
             onChange={(e) => setSpecificDate(e.target.value)}
             className="px-3 py-1.5 text-sm border border-border rounded-xl bg-background text-foreground outline-none focus:ring-1 focus:ring-ring"
@@ -134,6 +133,7 @@ export default function AuditLogsFilterBar({
             </label>
             <Input
               type="date"
+              max={getMaxFutureDateString()}
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               className="px-3 py-1.5 text-sm border border-border rounded-xl bg-background text-foreground outline-none focus:ring-1 focus:ring-ring"
@@ -143,6 +143,7 @@ export default function AuditLogsFilterBar({
             <label className="text-xs font-semibold text-muted-foreground">End:</label>
             <Input
               type="date"
+              max={getMaxFutureDateString()}
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               className="px-3 py-1.5 text-sm border border-border rounded-xl bg-background text-foreground outline-none focus:ring-1 focus:ring-ring"

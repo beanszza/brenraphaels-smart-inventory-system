@@ -1,5 +1,6 @@
 "use client";
 import { toast } from "sonner";
+import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 import { actionResponse } from "@/lib/resources/action-response";
 import { scheduleTransfer } from "@/app/actions/stock-transfer/transfers";
 
@@ -124,8 +125,9 @@ export function ScheduleTransferModal({
       setFormError(`Transfer quantity cannot exceed remaining unscheduled quantity (${remainingForSelected}).`);
       return;
     }
-    if (!scheduledDate) {
-      setFormError("Please select a scheduled transfer date.");
+    const schedError = getFutureDateError(scheduledDate, "Scheduled transfer date");
+    if (schedError) {
+      setFormError(schedError);
       return;
     }
 
@@ -159,7 +161,7 @@ export function ScheduleTransferModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
+      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
@@ -201,7 +203,7 @@ export function ScheduleTransferModal({
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 Originating Request
               </span>
-              <div className="text-base font-mono font-bold text-foreground mt-0.5">
+              <div className="text-base font-bold text-foreground mt-0.5">
                 {request.requestNumber}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
@@ -213,7 +215,7 @@ export function ScheduleTransferModal({
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 Transfer Record
               </span>
-              <div className="text-sm font-mono font-semibold text-foreground mt-0.5">
+              <div className="text-sm font-semibold text-foreground mt-0.5">
                 STF-YYYY-XXXX (Auto-assigned)
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
@@ -306,6 +308,8 @@ export function ScheduleTransferModal({
                 </label>
                 <Input
                   type="date"
+                  min={getTodayDateString()}
+                  max={getMaxFutureDateString()}
                   value={scheduledDate}
                   onChange={(e) => setScheduledDate(e.target.value)}
                   required
@@ -354,7 +358,7 @@ export function ScheduleTransferModal({
                   value={vehiclePlate}
                   onChange={(e) => setVehiclePlate(e.target.value)}
                   placeholder="e.g. ABC 1234"
-                  className="h-10 rounded-xl bg-card border-border text-foreground font-mono"
+                  className="h-10 rounded-xl bg-card border-border text-foreground"
                 />
               </div>
             </div>

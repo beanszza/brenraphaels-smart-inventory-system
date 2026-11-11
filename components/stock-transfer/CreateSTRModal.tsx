@@ -1,5 +1,6 @@
-﻿"use client";
+"use client";
 import { toast } from "sonner";
+import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createRequest } from "@/app/actions/stock-transfer/requests";
 import { suggestLots } from "@/app/actions/stock-transfer/lot-suggestions";
@@ -208,8 +209,9 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
       return;
     }
 
-    if (!requiredDate) {
-      setFormError("Please select a required fulfillment date.");
+    const dateError = getFutureDateError(requiredDate, "Required date");
+    if (dateError) {
+      setFormError(dateError);
       return;
     }
 
@@ -258,7 +260,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
+      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
@@ -273,7 +275,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
               <h2 className="text-xl font-bold text-foreground">
                 Create Stock Transfer Request
               </h2>
-              <span className="font-mono text-xs px-2.5 py-1 rounded-lg bg-muted border border-border text-foreground font-bold tracking-wide">
+              <span className="text-xs px-2.5 py-1 rounded-lg bg-muted border border-border text-foreground font-bold tracking-wide">
                 {requestNumber}
               </span>
             </div>
@@ -310,7 +312,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
               <label className="text-xs font-semibold text-foreground">
                 Request Number
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 font-mono text-xs font-bold text-foreground select-all">
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-bold text-foreground select-all">
                 {requestNumber}
               </div>
             </div>
@@ -341,6 +343,8 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
               </label>
               <Input
                 type="date"
+                min={getTodayDateString()}
+                max={getMaxFutureDateString()}
                 value={requiredDate}
                 onChange={(e) => setRequiredDate(e.target.value)}
                 className="bg-card text-foreground border-border text-xs rounded-xl h-10"
@@ -435,7 +439,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                             </Select>
                           </td>
 
-                          <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                          <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                             {row.sku || "â€”"}
                           </td>
 
@@ -477,7 +481,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                                     })()}
                                   </span>
                                   {row.lotCode && row.lotCode !== "No Lot" && (
-                                    <div className="font-mono text-[10px] text-muted-foreground">
+                                    <div className="text-[10px] text-muted-foreground">
                                       Lot: {row.lotCode}
                                     </div>
                                   )}

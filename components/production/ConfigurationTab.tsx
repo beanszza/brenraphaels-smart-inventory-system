@@ -2,14 +2,13 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Search,
   MoreHorizontal,
   Pencil,
   RefreshCw,
   Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/shared/SearchInput";
 import {
   Select,
   SelectContent,
@@ -206,23 +205,19 @@ export default function ConfigurationTab({
       </div>
 
       {/* Search & Filter Bar (Uniform with SupplyTab) */}
-      <div className="mb-6 border border-border rounded-xl overflow-hidden bg-card">
-        <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between bg-muted/20">
-          <div className="flex items-center gap-3 flex-1">
-            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-            <Input
-              type="text"
-              placeholder="Search by product name, variant, packaging, or SKU..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-sm flex-1 text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
+      <div className="mb-6 rounded-xl border border-border bg-card p-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <SearchInput
+            containerClassName="flex-1"
+            placeholder="Search by product name, variant, packaging, or SKU..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
 
-          <div className="flex flex-wrap items-center gap-3 sm:pl-4 sm:border-l border-border/50 shrink-0">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             {/* Product Filter */}
             <Select
               value={productFilter}

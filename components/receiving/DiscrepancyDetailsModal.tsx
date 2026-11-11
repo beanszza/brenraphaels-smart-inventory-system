@@ -172,15 +172,15 @@ export default function DiscrepancyDetailsModal({
           </div>
           <div>
             <div className="text-muted-foreground">Purchase Order Quantity</div>
-            <div className="font-mono font-medium mt-0.5">{discrepancy.orderedQuantity.toLocaleString()}</div>
+            <div className="font-medium mt-0.5">{discrepancy.orderedQuantity.toLocaleString()}</div>
           </div>
           <div>
             <div className="text-muted-foreground">Actual Received Qty</div>
-            <div className="font-mono font-medium mt-0.5">{discrepancy.currentReceivedQty.toLocaleString()}</div>
+            <div className="font-medium mt-0.5">{discrepancy.currentReceivedQty.toLocaleString()}</div>
           </div>
           <div>
             <div className="text-muted-foreground">Discrepancy Quantity</div>
-            <div className="font-mono font-bold text-sm mt-0.5 text-foreground">
+            <div className="font-bold text-sm mt-0.5 text-foreground">
               {discrepancy.discrepancyType === "OverSupply" ? "+" : "-"}
               {discrepancy.discrepancyQuantity.toLocaleString()}
             </div>
@@ -213,7 +213,7 @@ export default function DiscrepancyDetailsModal({
               </div>
             )}
             {discrepancy.rtvNumber && (
-              <div className="pt-2 text-foreground font-mono">
+              <div className="pt-2 text-foreground">
                 Return to Vendor: <strong>{discrepancy.rtvNumber}</strong>
               </div>
             )}

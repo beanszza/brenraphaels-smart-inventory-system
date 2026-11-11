@@ -6,13 +6,13 @@ import { commitBatchInventory as productionCommitBatchInventory } from "@/app/ac
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { listItems } from "@/app/actions/production/lookups";
 import { actionResponse } from "@/lib/resources/action-response";
 import { toast } from "sonner";
-import { Search, Plus, MoreHorizontal, Eye, ArrowDownToLine, X } from "lucide-react";
+import { Plus, MoreHorizontal, Eye, ArrowDownToLine, X } from "lucide-react";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { useIsAdmin } from "@/context/StaffContext";
 
 interface ProductionStockInTabProps {
@@ -235,18 +235,15 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
       </div>
 
       {/* ── Search & Filter Bar (Matching Resources & Suppliers Card) ── */}
-      <div className="border border-border rounded-md overflow-hidden bg-card">
-        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-muted/20">
-          <div className="flex items-center gap-2.5 flex-1">
-            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-            <Input
-              type="text"
-              placeholder="Search by name, lot, or batch (e.g. UJ-261008-02)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-xs flex-1 text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
+      <div className="rounded-xl border border-border bg-card p-3">
+        <div className="flex items-center justify-between gap-3">
+          <SearchInput
+            containerClassName="flex-1"
+            placeholder="Search by name, lot, or batch (e.g. UJ-261008-02)..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="text-xs"
+          />
           <div className="flex items-center gap-2 shrink-0">
             <Select value={productFilter} onValueChange={setProductFilter}>
               <SelectTrigger className="h-9 min-w-[200px] w-auto rounded-xl border border-border bg-card px-3.5 text-xs font-medium text-foreground shadow-xs">
@@ -494,15 +491,15 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                           <td className="px-3 py-3 text-center text-muted-foreground">
                             {selectedBatchInModal.yieldUom || "jars"}
                           </td>
-                          <td className="px-3 py-3 text-right font-mono font-bold text-foreground">
+                          <td className="px-3 py-3 text-right font-bold text-foreground">
                             {Number(
                               selectedBatchInModal.finalQuantity || selectedBatchInModal.actualQuantity
                             ).toLocaleString()}
                           </td>
-                          <td className="px-3 py-3 text-right font-mono text-muted-foreground">
+                          <td className="px-3 py-3 text-right text-muted-foreground">
                             {currentStockForSelected.toLocaleString()}
                           </td>
-                          <td className="px-4 py-3 font-mono font-semibold text-foreground whitespace-nowrap">
+                          <td className="px-4 py-3 font-semibold text-foreground whitespace-nowrap">
                             {selectedBatchInModal.fgLotCode || selectedBatchInModal.batchNumber}
                           </td>
                           <td className="px-4 py-3 text-center text-muted-foreground whitespace-nowrap">

@@ -75,13 +75,13 @@ export function DeliveryDetailsModal({
           <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-border">
             <div className="flex items-center gap-2.5">
               <StatusBadge status={delivery.status} />
-              <span className="font-mono text-sm font-bold text-foreground">
+              <span className="text-sm font-bold text-foreground">
                 {delivery.deliveryNumber}
               </span>
             </div>
             <div className="text-xs text-muted-foreground">
               Purchase Order Reference:{" "}
-              <span className="font-mono font-bold text-foreground">
+              <span className="font-bold text-foreground">
                 {delivery.poNumber || "—"}
               </span>
             </div>
@@ -144,7 +144,7 @@ export function DeliveryDetailsModal({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-xs">
             <div>
               <span className="text-muted-foreground block text-[11px] mb-0.5">Purchase Order</span>
-              <span className="font-mono font-bold text-foreground">{delivery.poNumber || "—"}</span>
+              <span className="font-bold text-foreground">{delivery.poNumber || "—"}</span>
             </div>
             <div>
               <span className="text-muted-foreground block text-[11px] mb-0.5">Supplier</span>
@@ -178,7 +178,7 @@ export function DeliveryDetailsModal({
             </div>
             <div>
               <span className="text-muted-foreground block text-[11px] mb-0.5">Goods Receipt Note</span>
-              <span className="font-mono font-semibold text-foreground">
+              <span className="font-semibold text-foreground">
                 {delivery.grnNumber || (isArrived ? "Ready for GRN" : "—")}
               </span>
             </div>
@@ -191,7 +191,7 @@ export function DeliveryDetailsModal({
             <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
               Shipment Items ({delivery.items?.length || 0})
             </h4>
-            <span className="text-xs font-mono font-semibold text-muted-foreground">
+            <span className="text-xs font-semibold text-muted-foreground">
               Total Shipment Qty:{" "}
               {delivery.items?.reduce((sum, it) => sum + (Number(it.declaredQuantity) || 0), 0) || 0}
             </span>
@@ -214,14 +214,14 @@ export function DeliveryDetailsModal({
                     <td className="px-3.5 py-2.5 font-semibold text-foreground">
                       {item.itemName}
                     </td>
-                    <td className="px-3.5 py-2.5 font-mono text-[11px] font-semibold text-muted-foreground">
+                    <td className="px-3.5 py-2.5 text-[11px] font-semibold text-muted-foreground">
                       {item.itemCode || `SPL-${String(item.itemId || idx + 1).padStart(4, "0")}`}
                     </td>
                     <td className="px-3.5 py-2.5 text-muted-foreground">{item.purchaseUomName}</td>
-                    <td className="px-3.5 py-2.5 text-right font-mono text-muted-foreground">
+                    <td className="px-3.5 py-2.5 text-right text-muted-foreground">
                       {item.poOrderedQuantity || item.declaredQuantity}
                     </td>
-                    <td className="px-3.5 py-2.5 text-right font-mono font-bold text-foreground">
+                    <td className="px-3.5 py-2.5 text-right font-bold text-foreground">
                       {item.declaredQuantity}
                     </td>
                   </tr>
@@ -313,7 +313,7 @@ export function DeliveryDetailsModal({
         {previewImage && (
           <div
             onClick={() => setPreviewImage(null)}
-            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+            className="font-sans fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
           >
             <div
               onClick={(e) => e.stopPropagation()}

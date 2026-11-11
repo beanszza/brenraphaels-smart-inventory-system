@@ -305,7 +305,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                             {item.categoryName || "Raw Materials"}
                           </span>
                           {item.lotCode && (
-                            <span className="text-[10px] font-mono text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded">
+                            <span className="text-[10px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded">
                               Lot: {item.lotCode}
                             </span>
                           )}
@@ -319,9 +319,9 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                   </button>
                   {expanded && <div className="p-4 space-y-4">
                     <div className="grid grid-cols-3 gap-3 text-xs">
-                      <div><div className="text-muted-foreground">Delivered</div><div className="font-mono font-semibold">{item.deliveredQuantity.toLocaleString()}</div></div>
-                      <div><div className="text-muted-foreground">Passed quantity</div>{isReadOnly ? <div className="font-mono font-semibold text-emerald-600">{item.acceptedQuantity}</div> : <input type="number" min="0" max={item.deliveredQuantity} step="any" value={item.acceptedQuantity} onChange={(e) => setItemAccepted(idx, Number(e.target.value))} className="w-full bg-card border border-border rounded-lg px-2 py-1 font-mono" />}</div>
-                      <div><div className="text-muted-foreground">Rejected quantity</div>{isReadOnly ? <div className="font-mono font-semibold text-destructive">{item.rejectedQuantity}</div> : <input type="number" min="0" max={item.deliveredQuantity} step="any" value={item.rejectedQuantity} onChange={(e) => setItemRejected(idx, Number(e.target.value))} className="w-full bg-card border border-border rounded-lg px-2 py-1 font-mono" />}</div>
+                      <div><div className="text-muted-foreground">Delivered</div><div className="font-semibold">{item.deliveredQuantity.toLocaleString()}</div></div>
+                      <div><div className="text-muted-foreground">Passed quantity</div>{isReadOnly ? <div className="font-semibold text-emerald-600">{item.acceptedQuantity}</div> : <input type="number" min="0" max={item.deliveredQuantity} step="any" value={item.acceptedQuantity} onChange={(e) => setItemAccepted(idx, Number(e.target.value))} className="w-full bg-card border border-border rounded-lg px-2 py-1" />}</div>
+                      <div><div className="text-muted-foreground">Rejected quantity</div>{isReadOnly ? <div className="font-semibold text-destructive">{item.rejectedQuantity}</div> : <input type="number" min="0" max={item.deliveredQuantity} step="any" value={item.rejectedQuantity} onChange={(e) => setItemRejected(idx, Number(e.target.value))} className="w-full bg-card border border-border rounded-lg px-2 py-1" />}</div>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {checks.map((check) => <label key={check.id} className="flex items-start gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={item.checks[check.id]} onChange={(e) => updateItem(idx, "checks", { ...item.checks, [check.id]: e.target.checked })} disabled={isReadOnly} className="mt-0.5" /><span>{check.label}</span></label>)}
@@ -455,7 +455,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
       {/* Review Modal Portal */}
       {confirmModal &&
         createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="font-sans fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <div className="bg-background rounded-2xl shadow-xl w-full max-w-[500px] border border-border overflow-hidden">
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-4">
@@ -481,7 +481,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                   </div>
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Total Items:</span>
-                    <span className="font-mono text-foreground font-semibold">
+                    <span className="text-foreground font-semibold">
                       {items.length} item(s)
                     </span>
                   </div>

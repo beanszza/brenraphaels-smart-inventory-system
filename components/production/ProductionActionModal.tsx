@@ -64,7 +64,7 @@ export function ProductionActionModal({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(val) => { if (!val && !loading) onClose(); }}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" />
+        <DialogPrimitive.Overlay className="font-sans fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
           className="fixed left-1/2 top-1/2 z-[301] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 bg-card rounded-2xl shadow-2xl border border-border p-6 text-foreground outline-none animate-in fade-in zoom-in-95 duration-150"

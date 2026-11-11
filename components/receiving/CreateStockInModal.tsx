@@ -410,16 +410,16 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
                       <td className="px-3 py-3 text-center text-muted-foreground">
                         {line.purchaseUomName}
                       </td>
-                      <td className="px-3 py-3 text-right font-mono font-semibold text-foreground">
+                      <td className="px-3 py-3 text-right font-semibold text-foreground">
                         {line.quantityToStock}
                       </td>
-                      <td className="px-3 py-3 text-right font-mono text-muted-foreground">
+                      <td className="px-3 py-3 text-right text-muted-foreground">
                         {line.currentStock}
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-foreground whitespace-nowrap">
+                      <td className="px-4 py-3 text-xs text-foreground whitespace-nowrap">
                         {line.lotCode}
                       </td>
-                      <td className="px-4 py-3 text-center font-mono text-xs text-muted-foreground whitespace-nowrap">
+                      <td className="px-4 py-3 text-center text-xs text-muted-foreground whitespace-nowrap">
                         {line.expiryDate
                           ? new Date(line.expiryDate).toLocaleDateString("en-US", {
                               year: "numeric",
@@ -496,7 +496,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
             Commit Stock-In to Inventory
           </h2>
 
-          <p className="text-xs font-mono font-semibold text-muted-foreground mb-3">
+          <p className="text-xs font-semibold text-muted-foreground mb-3">
             GRN Reference: {grns.find((g) => g.grnId === Number(selectedGrnId))?.grnNumber || "N/A"}
           </p>
 

@@ -43,7 +43,7 @@ export function STFDetailsModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
+      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
@@ -60,7 +60,7 @@ export function STFDetailsModal({
               </h2>
               <StatusBadge status={transfer.status} />
             </div>
-            <p className="text-xs font-mono font-semibold text-muted-foreground mt-0.5">
+            <p className="text-xs font-semibold text-muted-foreground mt-0.5">
               {transfer.transferNumber}{" "}
               {transfer.requestNumber && `(Ref: ${transfer.requestNumber})`}
             </p>
@@ -150,7 +150,7 @@ export function STFDetailsModal({
                 <span className="text-muted-foreground text-[10px] uppercase font-semibold">
                   SKU
                 </span>
-                <p className="font-mono text-muted-foreground mt-0.5">{transfer.sku || "—"}</p>
+                <p className="text-muted-foreground mt-0.5">{transfer.sku || "—"}</p>
               </div>
               <div>
                 <span className="text-muted-foreground text-[10px] uppercase font-semibold">
@@ -180,7 +180,7 @@ export function STFDetailsModal({
                 <span className="text-muted-foreground text-[10px] uppercase font-semibold">
                   Vehicle Plate
                 </span>
-                <p className="font-mono text-foreground mt-0.5">{transfer.vehiclePlate || "—"}</p>
+                <p className="text-foreground mt-0.5">{transfer.vehiclePlate || "—"}</p>
               </div>
               <div>
                 <span className="text-muted-foreground text-[10px] uppercase font-semibold">

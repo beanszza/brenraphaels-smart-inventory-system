@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { CheckCircle2, PackageCheck, AlertCircle, Sparkles } from "lucide-react";
 import { ProductionBatchEntity } from "./types";
+import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 
 interface BatchCompletionModalProps {
   open: boolean;
@@ -47,6 +48,11 @@ export default function BatchCompletionModal({
     e.preventDefault();
     if (actualQuantity <= 0) {
       toast.error("Actual output quantity must be greater than 0.");
+      return;
+    }
+    const expiryErr = getFutureDateError(expiryDate, "Finished goods expiry date");
+    if (expiryErr) {
+      toast.error(expiryErr);
       return;
     }
 
@@ -91,7 +97,7 @@ export default function BatchCompletionModal({
             <h4 className="font-semibold text-foreground text-sm">Packaging & Finished Goods Stock-In</h4>
             <p className="text-muted-foreground mt-0.5">
               Finalizing will record the output volume, automatically create Finished Goods Lot{" "}
-              <span className="font-mono font-bold text-foreground">{fgLotCode}</span>, and credit the Main Finished Goods inventory.
+              <span className="font-bold text-foreground">{fgLotCode}</span>, and credit the Main Finished Goods inventory.
             </p>
           </div>
         </div>
@@ -107,7 +113,7 @@ export default function BatchCompletionModal({
               value={actualQuantity}
               onChange={(e) => setActualQuantity(Number(e.target.value))}
               required
-              className="h-10 text-xs font-mono font-bold rounded-xl border-border bg-card"
+              className="h-10 text-xs font-bold rounded-xl border-border bg-card"
             />
             <span className="text-[11px] text-muted-foreground">
               Estimated: {batch.estimatedQuantity} {batch.yieldUom}
@@ -118,10 +124,12 @@ export default function BatchCompletionModal({
             <label className="text-xs font-semibold text-foreground">Finished Goods Expiry Date</label>
             <Input
               type="date"
+              min={getTodayDateString()}
+              max={getMaxFutureDateString()}
               value={expiryDate}
               onChange={(e) => setExpiryDate(e.target.value)}
               required
-              className="h-10 text-xs font-mono rounded-xl border-border bg-card"
+              className="h-10 text-xs rounded-xl border-border bg-card"
             />
           </div>
 
@@ -145,7 +153,7 @@ export default function BatchCompletionModal({
               value={scrapQuantity || ""}
               onChange={(e) => setScrapQuantity(Number(e.target.value))}
               placeholder="0"
-              className="h-10 text-xs font-mono rounded-xl border-border bg-card"
+              className="h-10 text-xs rounded-xl border-border bg-card"
             />
           </div>
         </div>
@@ -179,7 +187,7 @@ export default function BatchCompletionModal({
           <div>
             <span className="text-[11px] text-muted-foreground block">Yield Efficiency</span>
             <span
-              className={`text-sm font-bold font-mono ${
+              className={`text-sm font-bold ${
                 yieldPercentage >= 95 ? "text-emerald-500" : yieldPercentage < 80 ? "text-amber-500" : "text-foreground"
               }`}
             >
@@ -188,7 +196,7 @@ export default function BatchCompletionModal({
           </div>
           <div>
             <span className="text-[11px] text-muted-foreground block">FG Lot Code</span>
-            <span className="text-xs font-bold font-mono text-foreground truncate block">
+            <span className="text-xs font-bold text-foreground truncate block">
               {fgLotCode}
             </span>
           </div>

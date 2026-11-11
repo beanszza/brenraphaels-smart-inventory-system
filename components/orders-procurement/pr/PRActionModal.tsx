@@ -84,7 +84,7 @@ export function PRActionModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={() => { if (!loading) onClose(); }}
     >
       <div
@@ -106,7 +106,7 @@ export function PRActionModal({
           </h2>
 
           {/* PR Number / ID Subtitle */}
-          <p className="text-xs font-mono font-semibold text-muted-foreground mb-3">
+          <p className="text-xs font-semibold text-muted-foreground mb-3">
             Purchase Requisition No: {prNumber}
           </p>
 

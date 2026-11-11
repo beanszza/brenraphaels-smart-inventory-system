@@ -21,6 +21,7 @@ import { PurchaseRequisition, PRItem } from "../types";
 import { useStaff } from "@/context/StaffContext";
 import ConfirmModal from "@/components/ConfirmModal";
 import { normalizePrPriority } from "@/lib/orders/requisition-lifecycle";
+import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 
 const PURPOSE_OTHER_MAX = 50;
 
@@ -324,16 +325,8 @@ export function CreatePRModal({
       newErrors.purpose = `Purpose cannot exceed ${PURPOSE_OTHER_MAX} characters.`;
     }
     if (!priority.trim()) newErrors.priority = "Priority is required.";
-    if (!requiredDate) {
-      newErrors.requiredDate = "Required date is required.";
-    } else {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const sel = new Date(requiredDate);
-      if (sel <= today) {
-        newErrors.requiredDate = "Required date must be a future date.";
-      }
-    }
+    const dateError = getFutureDateError(requiredDate, "Required date", { allowToday: false });
+    if (dateError) newErrors.requiredDate = dateError;
 
     if (items.length === 0) {
       newErrors.items = "At least one item must be requested.";
@@ -358,10 +351,14 @@ export function CreatePRModal({
     return Object.keys(newErrors).length === 0;
   };
 
+  const todayDate = getTodayDateString();
+  const maxFutureDate = getMaxFutureDateString();
+
   const isFormValid = useMemo(() => {
     if (!requestedBy.trim() || !department.trim() || !resolvedPurpose || !priority.trim() || !requiredDate) {
       return false;
     }
+    if (getFutureDateError(requiredDate, "Required date", { allowToday: false })) return false;
     if (purposeChoice === "Other" && resolvedPurpose.length > PURPOSE_OTHER_MAX) return false;
     if (items.length === 0) return false;
     return items.every((it) => it.itemId > 0 && it.requestedQuantity > 0);
@@ -485,7 +482,7 @@ export function CreatePRModal({
                         <td className="px-4 py-2.5 text-muted-foreground">
                           {item.uomName || sup?.uomName || "Unit"}
                         </td>
-                        <td className="px-4 py-2.5 text-right font-mono font-bold text-foreground">
+                        <td className="px-4 py-2.5 text-right font-bold text-foreground">
                           {item.requestedQuantity}
                         </td>
                       </tr>
@@ -546,7 +543,7 @@ export function CreatePRModal({
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Purchase Requisition Number
                 </label>
-                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 font-mono text-xs text-muted-foreground select-all">
+                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-all">
                   {prNumber || "PR-XXXX-XXXX"}
                 </div>
               </div>
@@ -569,13 +566,17 @@ export function CreatePRModal({
                 <div className="relative">
                   <Input
                     type="date"
-                    min={new Date().toISOString().split("T")[0]}
+                    min={todayDate}
+                    max={maxFutureDate}
                     value={requiredDate}
                     onChange={(e) => {
-                      setRequiredDate(e.target.value);
+                      const nextVal = e.target.value;
+                      setRequiredDate(nextVal);
+                      const errMsg = nextVal ? getFutureDateError(nextVal, "Required date", { allowToday: false }) : "";
                       setErrors((prev) => {
                         const c = { ...prev };
-                        delete c.requiredDate;
+                        if (errMsg) c.requiredDate = errMsg;
+                        else delete c.requiredDate;
                         return c;
                       });
                     }}
@@ -610,79 +611,7 @@ export function CreatePRModal({
                 </div>
               </div>
 
-              {/* Purpose (Dropdown Selection + Other Textbox) */}
-              <div>
-                <label className={`mb-1.5 block text-xs font-semibold ${errors.purpose ? "text-destructive" : "text-foreground"}`}>
-                  Purpose <span className="text-destructive">*</span>
-                </label>
-                <select
-                  value={purposeChoice}
-                  onChange={(e) => {
-                    const next = e.target.value;
-                    setPurposeChoice(next);
-                    if (next !== "Other") {
-                      setCustomPurpose("");
-                      setCustomPurposeWarning("");
-                    }
-                    setErrors((prev) => {
-                      const c = { ...prev };
-                      delete c.purpose;
-                      return c;
-                    });
-                  }}
-                  className="w-full h-10 rounded-xl border border-border bg-card px-3.5 py-2 text-xs text-foreground transition-colors cursor-pointer focus:ring-1 focus:ring-ring"
-                >
-                  {PR_PURPOSE_CHOICES.map((choice) => (
-                    <option key={choice} value={choice}>
-                      {choice}
-                    </option>
-                  ))}
-                </select>
-                {purposeChoice === "Other" && (
-                  <div className="mt-2 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground">Specify reason</span>
-                      <span className={`text-[11px] ${customPurpose.length >= PURPOSE_OTHER_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
-                        {customPurpose.length}/{PURPOSE_OTHER_MAX}
-                      </span>
-                    </div>
-                    <Input
-                      type="text"
-                      value={customPurpose}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        const exceeded = raw.length > PURPOSE_OTHER_MAX;
-                        const val = raw.slice(0, PURPOSE_OTHER_MAX);
-                        setCustomPurpose(val);
-                        if (exceeded) {
-                          setCustomPurposeWarning(`Purpose is limited to ${PURPOSE_OTHER_MAX} characters.`);
-                        } else if (val.length === PURPOSE_OTHER_MAX) {
-                          setCustomPurposeWarning(`Maximum limit of ${PURPOSE_OTHER_MAX} characters reached.`);
-                        } else {
-                          setCustomPurposeWarning("");
-                        }
-                        setErrors((prev) => {
-                          const c = { ...prev };
-                          delete c.purpose;
-                          return c;
-                        });
-                      }}
-                      placeholder="Enter custom purpose (max 50 chars)..."
-                      aria-invalid={!!errors.purpose}
-                      className={`w-full h-10 rounded-xl border ${
-                        errors.purpose ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                      } bg-card px-3.5 py-2 text-xs text-foreground transition-colors`}
-                    />
-                    {errors.purpose ? (
-                      <p className="text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.purpose}</p>
-                    ) : customPurposeWarning ? (
-                      <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">{customPurposeWarning}</p>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-
-              {/* Priority */}
+              {/* Priority (Fixed in Row 2 so Purpose "Other" never pushes it down) */}
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Priority <span className="text-destructive">*</span>
@@ -696,6 +625,84 @@ export function CreatePRModal({
                   <option value="Medium">Medium</option>
                   <option value="High">High</option>
                 </select>
+              </div>
+
+              {/* Purpose (Dropdown Selection + Other Textbox in dedicated bottom row) */}
+              <div className="sm:col-span-2 lg:col-span-3">
+                <div className={`grid grid-cols-1 gap-3.5 ${purposeChoice === "Other" ? "sm:grid-cols-2" : ""}`}>
+                  <div>
+                    <label className={`mb-1.5 block text-xs font-semibold ${errors.purpose ? "text-destructive" : "text-foreground"}`}>
+                      Purpose <span className="text-destructive">*</span>
+                    </label>
+                    <select
+                      value={purposeChoice}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        setPurposeChoice(next);
+                        if (next !== "Other") {
+                          setCustomPurpose("");
+                          setCustomPurposeWarning("");
+                        }
+                        setErrors((prev) => {
+                          const c = { ...prev };
+                          delete c.purpose;
+                          return c;
+                        });
+                      }}
+                      className="w-full h-10 rounded-xl border border-border bg-card px-3.5 py-2 text-xs text-foreground transition-colors cursor-pointer focus:ring-1 focus:ring-ring"
+                    >
+                      {PR_PURPOSE_CHOICES.map((choice) => (
+                        <option key={choice} value={choice}>
+                          {choice}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {purposeChoice === "Other" && (
+                    <div>
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <label className={`block text-xs font-semibold ${errors.purpose ? "text-destructive" : "text-foreground"}`}>
+                          Specify Reason <span className="text-destructive">*</span>
+                        </label>
+                        <span className={`text-[11px] ${customPurpose.length >= PURPOSE_OTHER_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+                          {customPurpose.length}/{PURPOSE_OTHER_MAX}
+                        </span>
+                      </div>
+                      <Input
+                        type="text"
+                        value={customPurpose}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          const exceeded = raw.length > PURPOSE_OTHER_MAX;
+                          const val = raw.slice(0, PURPOSE_OTHER_MAX);
+                          setCustomPurpose(val);
+                          if (exceeded) {
+                            setCustomPurposeWarning(`Purpose is limited to ${PURPOSE_OTHER_MAX} characters.`);
+                          } else if (val.length === PURPOSE_OTHER_MAX) {
+                            setCustomPurposeWarning(`Maximum limit of ${PURPOSE_OTHER_MAX} characters reached.`);
+                          } else {
+                            setCustomPurposeWarning("");
+                          }
+                          setErrors((prev) => {
+                            const c = { ...prev };
+                            delete c.purpose;
+                            return c;
+                          });
+                        }}
+                        placeholder="Enter custom purpose (max 50 chars)..."
+                        aria-invalid={!!errors.purpose}
+                        className={`w-full h-10 rounded-xl border ${
+                          errors.purpose ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
+                        } bg-card px-3.5 py-2 text-xs text-foreground transition-colors`}
+                      />
+                      {errors.purpose ? (
+                        <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.purpose}</p>
+                      ) : customPurposeWarning ? (
+                        <p className="mt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">{customPurposeWarning}</p>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -764,7 +771,7 @@ export function CreatePRModal({
                             </td>
 
                             {/* Supply No. */}
-                            <td className="px-3 py-2 font-mono text-muted-foreground whitespace-nowrap">
+                            <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                               {supplyNo}
                             </td>
 
@@ -774,7 +781,7 @@ export function CreatePRModal({
                             </td>
 
                             {/* Actual Inventory */}
-                            <td className="px-3 py-2 text-right font-mono text-muted-foreground whitespace-nowrap">
+                            <td className="px-3 py-2 text-right text-muted-foreground whitespace-nowrap">
                               {Number(actualInv).toLocaleString()}
                             </td>
 
@@ -786,7 +793,7 @@ export function CreatePRModal({
                                 step="any"
                                 value={item.requestedQuantity || ""}
                                 onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                                className="h-8 w-28 text-right font-mono text-xs font-bold border-border bg-card ml-auto"
+                                className="h-8 w-28 text-right text-xs font-bold border-border bg-card ml-auto"
                               />
                             </td>
 

@@ -562,7 +562,7 @@ export function CreatePOModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-card border border-border text-xs shadow-sm">
               <div>
                 <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Purchase Order Number</span>
-                <span className="font-mono font-bold text-foreground text-sm">{createdOrder.poNumber}</span>
+                <span className="font-bold text-foreground text-sm">{createdOrder.poNumber}</span>
               </div>
               <div>
                 <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Supplier / Vendor</span>
@@ -599,7 +599,7 @@ export function CreatePOModal({
                       <tr key={idx} className="hover:bg-muted/10">
                         <td className="px-4 py-2.5 font-medium text-foreground">{row.itemName}</td>
                         <td className="px-4 py-2.5 text-muted-foreground">{row.uomName}</td>
-                        <td className="px-4 py-2.5 text-right font-mono font-bold text-foreground">
+                        <td className="px-4 py-2.5 text-right font-bold text-foreground">
                           {row.orderQty}
                         </td>
                       </tr>
@@ -684,7 +684,7 @@ export function CreatePOModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-card border border-border text-xs shadow-sm">
               <div>
                 <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Purchase Requisition Reference</span>
-                <span className="font-mono font-bold text-foreground text-sm">{selectedPR?.prNumber || initialPo?.prNumber || "—"}</span>
+                <span className="font-bold text-foreground text-sm">{selectedPR?.prNumber || initialPo?.prNumber || "—"}</span>
               </div>
               <div>
                 <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Supplier / Vendor</span>
@@ -692,7 +692,7 @@ export function CreatePOModal({
               </div>
               <div>
                 <span className="text-muted-foreground block text-[11px] font-medium uppercase tracking-wider mb-1">Purchase Order Number</span>
-                <span className="font-mono font-semibold text-foreground text-sm">{nextPoNumber || "Auto-assigned"}</span>
+                <span className="font-semibold text-foreground text-sm">{nextPoNumber || "Auto-assigned"}</span>
               </div>
               <div>
                 <label className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
@@ -725,7 +725,7 @@ export function CreatePOModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-muted-foreground">
                 <p>
                   <strong className="text-foreground">To:</strong>{" "}
-                  <span className="font-mono text-foreground font-semibold">
+                  <span className="text-foreground font-semibold">
                     {recipientEmail || "(None — please enter recipient above)"}
                   </span>
                 </p>
@@ -762,7 +762,7 @@ export function CreatePOModal({
                       <tr key={idx} className="hover:bg-muted/10">
                         <td className="px-4 py-2.5 font-medium text-foreground">{row.itemName}</td>
                         <td className="px-4 py-2.5 text-muted-foreground">{row.uomName}</td>
-                        <td className="px-4 py-2.5 text-right font-mono font-bold text-foreground">
+                        <td className="px-4 py-2.5 text-right font-bold text-foreground">
                           {row.orderQty}
                         </td>
                       </tr>
@@ -871,11 +871,11 @@ export function CreatePOModal({
                       <tbody className="divide-y divide-border">
                         {filteredPRs.map((pr) => (
                           <tr key={pr.prId} className="hover:bg-muted/20 transition-colors">
-                            <td className="px-4 py-3 font-mono font-bold text-foreground">{pr.prNumber}</td>
+                            <td className="px-4 py-3 font-bold text-foreground">{pr.prNumber}</td>
                             <td className="px-4 py-3 text-muted-foreground">{pr.requestedBy}</td>
                             <td className="px-4 py-3 text-muted-foreground">{pr.department}</td>
                             <td className="px-4 py-3 text-muted-foreground">{pr.purpose || pr.requestType}</td>
-                            <td className="px-4 py-3 text-right font-mono font-medium">
+                            <td className="px-4 py-3 text-right font-medium">
                               {pr.items?.length || 0}
                             </td>
                             <td className="px-4 py-3 text-center">
@@ -951,7 +951,7 @@ export function CreatePOModal({
                         )}
                         {sup.email && (
                           <p className="text-[11px] text-muted-foreground">
-                            Email: <span className="font-mono text-foreground">{sup.email}</span>
+                            Email: <span className="text-foreground">{sup.email}</span>
                           </p>
                         )}
                         {sup.address && (
@@ -1037,13 +1037,13 @@ export function CreatePOModal({
                                 {row.itemName}
                               </td>
                               <td className="px-4 py-3 text-muted-foreground">{row.uomName}</td>
-                              <td className="px-4 py-3 text-center font-mono text-muted-foreground">
+                              <td className="px-4 py-3 text-center text-muted-foreground">
                                 {row.requestedQty}
                               </td>
-                              <td className="px-4 py-3 text-center font-mono text-muted-foreground">
+                              <td className="px-4 py-3 text-center text-muted-foreground">
                                 {row.alreadyOrdered}
                               </td>
-                              <td className="px-4 py-3 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                              <td className="px-4 py-3 text-center font-bold text-emerald-600 dark:text-emerald-400">
                                 {row.remaining}
                               </td>
                               <td className="px-4 py-2.5 text-right">
@@ -1055,7 +1055,7 @@ export function CreatePOModal({
                                   value={row.orderQty}
                                   disabled={isFullyOrdered}
                                   onChange={(e) => updateRow(idx, e.target.value)}
-                                  className={`h-8 w-28 ml-auto text-right font-mono font-bold text-xs bg-card ${
+                                  className={`h-8 w-28 ml-auto text-right font-bold text-xs bg-card ${
                                     errors[`qty_${idx}`] ? "border-destructive" : "border-border"
                                   }`}
                                 />

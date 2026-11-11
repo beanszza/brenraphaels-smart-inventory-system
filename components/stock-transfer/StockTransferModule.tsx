@@ -10,10 +10,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import React, { useState, useTransition, useMemo } from "react";
-import { Plus, RefreshCw, Search } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { SearchInput } from "@/components/shared/SearchInput";
 import {
   StockTransferRequest,
   StockTransfer,
@@ -240,23 +240,15 @@ export default function StockTransferModule({ requests, metrics, locations, acti
       ) : (
         <div className="space-y-5">
           {/* Search Filter Bar */}
-          <div className="border border-border rounded-xl overflow-hidden bg-card shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-muted/20">
-              <div className="flex items-center gap-3 flex-1">
-                <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-                <Input
-                  type="text"
-                  placeholder="Search by Request No., Transfer No., Destination Branch, Product, or Courier..."
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                  className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-xs flex-1 text-foreground placeholder:text-muted-foreground"
-                />
-              </div>
-            </div>
-          </div>
+          <SearchInput
+            placeholder="Search by Request No., Transfer No., Destination Branch, Product, or Courier..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="text-xs"
+          />
 
           {/* Sub-status Tabs Row (Admin Requests tab + Status Tabs) */}
           <div className="border-b border-border overflow-x-auto pb-2">

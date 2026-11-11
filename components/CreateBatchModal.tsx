@@ -8,6 +8,7 @@ import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useEffect, useState, useMemo } from "react";
 import { X, Loader2, Check, AlertTriangle, Package } from "lucide-react";
+import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 
 interface Props {
   open: boolean;
@@ -77,13 +78,6 @@ const NOTES_OPTIONS = [
   "Trial / Validation Run",
   "No Additional Notes",
 ] as const;
-
-const toLocalDateInput = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
 
 export default function CreateBatchModal({ open, onClose, onCreated }: Props) {
   const [finishedProduct, setFinishedProduct] = useState("");
@@ -281,31 +275,14 @@ export default function CreateBatchModal({ open, onClose, onCreated }: Props) {
       setScheduleDateError("");
       return;
     }
-    // Basic format check
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(val)) {
-      setScheduleDateError("Invalid date format.");
-      return;
-    }
-    const dateObj = new Date(val + "T00:00:00");
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (isNaN(dateObj.getTime())) {
-      setScheduleDateError("Invalid date.");
-    } else if (dateObj < today) {
-      setScheduleDateError("Past date is not allowed.");
-    } else if (dateObj.getFullYear() > 2100) {
-      setScheduleDateError("Year cannot exceed 2100.");
-    } else {
-      setScheduleDateError("");
-    }
+    setScheduleDateError(getFutureDateError(val, "Schedule date", { allowToday: true }));
   };
 
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4"
+      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4"
       onClick={onClose}
     >
       <div
@@ -429,9 +406,9 @@ export default function CreateBatchModal({ open, onClose, onCreated }: Props) {
               </label>
               <input
                 type="date"
-                min={toLocalDateInput(new Date())}
+                min={getTodayDateString()}
                 value={scheduleDate}
-                max="2100-12-31"
+                max={getMaxFutureDateString()}
                 onChange={(e) => {
                   const val = e.target.value;
                   setScheduleDate(val);

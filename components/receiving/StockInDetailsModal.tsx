@@ -166,7 +166,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
         <div className="rounded-xl border border-border bg-muted/20 p-4 text-xs">
           <div className="flex items-center justify-between border-b border-border/60 pb-3 mb-3">
             <div className="flex items-center gap-3">
-              <span className="font-mono text-base font-bold text-foreground">
+              <span className="text-base font-bold text-foreground">
                 {stockIn.stockInNumber}
               </span>
               <StatusBadge status={stockIn.status} />
@@ -186,7 +186,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <span className="text-[10px] font-bold uppercase text-muted-foreground block">Goods Receipt Note Reference</span>
-              <span className="font-mono font-semibold text-foreground text-sm">{stockIn.grnNumber}</span>
+              <span className="font-semibold text-foreground text-sm">{stockIn.grnNumber}</span>
             </div>
             {stockIn.supplierName && stockIn.supplierName !== "—" && (
               <div>
@@ -232,22 +232,22 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
                     <td className="px-4 py-3 font-medium text-foreground">
                       <div>{line.itemName}</div>
                       {line.itemCode && (
-                        <div className="text-[10px] font-mono text-muted-foreground">{line.itemCode}</div>
+                        <div className="text-[10px] text-muted-foreground">{line.itemCode}</div>
                       )}
                     </td>
                     <td className="px-3 py-3 text-center text-muted-foreground">
                       {line.purchaseUomName}
                     </td>
-                    <td className="px-3 py-3 text-right font-mono font-semibold text-foreground">
+                    <td className="px-3 py-3 text-right font-semibold text-foreground">
                       {line.quantityToStock}
                     </td>
-                    <td className="px-3 py-3 text-right font-mono text-muted-foreground">
+                    <td className="px-3 py-3 text-right text-muted-foreground">
                       {line.currentStockBeforeCommit}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 text-xs text-foreground whitespace-nowrap">
                       {line.lotCode}
                     </td>
-                    <td className="px-4 py-3 text-center font-mono text-xs text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 text-center text-xs text-muted-foreground whitespace-nowrap">
                       {line.expiryDate ? new Date(line.expiryDate).toLocaleDateString() : "—"}
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">

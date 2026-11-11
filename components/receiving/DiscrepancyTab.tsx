@@ -5,7 +5,6 @@ import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 
 import React, { useState, useMemo, useTransition } from "react";
-import { Search } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -13,8 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/shared/SearchInput";
 import DiscrepancyTable from "./DiscrepancyTable";
 import DiscrepancyDetailsModal from "./DiscrepancyDetailsModal";
 import Pagination from "@/components/Pagination";
@@ -163,19 +162,17 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
       </div>
 
       {/* Search & Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center border border-border rounded-md bg-card px-2 py-2">
-        <div className="flex flex-1 items-center gap-2 px-2 bg-muted/20 h-full rounded-md">
-          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-          <Input
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-xl border border-border bg-card p-3">
+        <div className="flex flex-1 items-center gap-2">
+          <SearchInput
             aria-label="Search records"
-            type="text"
+            containerClassName="flex-1"
             placeholder="Search by discrepancy, Goods Receipt Note, Purchase Order, item, or supplier..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-xs flex-1 text-foreground placeholder:text-muted-foreground"
           />
           {search && (
             <button
@@ -184,7 +181,7 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
                 setSearch("");
                 setPage(1);
               }}
-              className="text-xs text-muted-foreground hover:text-foreground font-medium pr-2"
+              className="text-xs text-muted-foreground hover:text-foreground font-medium px-2"
             >
               Clear
             </button>

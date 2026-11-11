@@ -6,10 +6,11 @@ import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect } from "react";
 import {
-  ClipboardList, Plus, Search, CheckCircle, AlertCircle, RefreshCw,
+  ClipboardList, Plus, CheckCircle, AlertCircle, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -225,10 +226,12 @@ export default function ViewCycleCounts() {
 
       {/* Table */}
       <div className="flex items-center justify-between gap-3">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input className="pl-8 h-8 text-sm w-56" placeholder="Search by Count ID or Location..." value={search} onChange={(e) => setSearch(e.target.value)} />
-        </div>
+        <SearchInput
+          containerClassName="w-64 h-9"
+          placeholder="Search by Count ID or Location..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       <Card className="border-border">

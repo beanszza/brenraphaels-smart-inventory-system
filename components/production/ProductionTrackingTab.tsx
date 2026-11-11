@@ -4,9 +4,9 @@ import { listBatches as productionListBatches } from "@/app/actions/production/b
 import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { ProductionBatchEntity } from "./types";
 import ProductionBatchDetailView from "./ProductionBatchDetailView";
 
@@ -119,14 +119,13 @@ export default function ProductionTrackingTab({
             </div>
 
             {/* Search Input */}
-            <div>
-              <Input
-                placeholder="Search active batches..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 text-xs border-border bg-background"
-              />
-            </div>
+            <SearchInput
+              containerClassName="h-9"
+              placeholder="Search active batches..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="text-xs"
+            />
 
             {/* Batches List */}
             <div className="space-y-2 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">

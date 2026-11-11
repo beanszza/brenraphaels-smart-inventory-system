@@ -8,7 +8,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Plus,
-  Search,
   RefreshCw,
   Inbox,
   FileText
@@ -20,8 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { PurchaseRequisition, PRStatus } from "../types";
 import { PRTable } from "./PRTable";
 import { PRDetailsModal } from "./PRDetailsModal";
@@ -203,23 +202,19 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
       </div>
 
       {/* Filters Bar */}
-      <div className="mb-6 border border-border rounded-xl overflow-hidden bg-card">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-muted/20">
-          <div className="flex items-center gap-3 flex-1">
-            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-            <Input
-              type="text"
-              placeholder="Search by Purchase Requisition No., Requester, or Department..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-sm flex-1 text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
+      <div className="mb-6 rounded-xl border border-border bg-card p-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <SearchInput
+            containerClassName="flex-1"
+            placeholder="Search by Purchase Requisition No., Requester, or Department..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
 
-          <div className="flex items-center gap-3 pl-4 border-l border-border/50">
+          <div className="flex items-center gap-3">
             <div className="flex items-center">
               <Select
                 value={deptFilter === "" ? "all" : deptFilter}

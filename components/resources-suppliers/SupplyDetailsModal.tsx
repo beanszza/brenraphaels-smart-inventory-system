@@ -93,7 +93,7 @@ function SupplyDetailsModalContent({
                 <h3 className="text-base font-bold text-foreground">{item.itemName}</h3>
                 <StatusBadge status={item.isActive !== false ? "Active" : "Inactive"} />
               </div>
-              <p className="text-xs font-mono font-medium text-muted-foreground mt-0.5">
+              <p className="text-xs font-medium text-muted-foreground mt-0.5">
                 {item.itemCode || `ITEM-${item.itemId}`}
               </p>
             </div>
@@ -147,7 +147,7 @@ function SupplyDetailsModalContent({
           <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5 text-xs">
               <span className="text-muted-foreground font-medium">Supply No</span>
-              <span className="font-mono font-semibold text-foreground">{item.itemCode || "-"}</span>
+              <span className="font-semibold text-foreground">{item.itemCode || "-"}</span>
             </div>
             <div className="flex items-center justify-between px-4 py-2.5 text-xs">
               <span className="text-muted-foreground font-medium">Category</span>
@@ -194,7 +194,7 @@ function SupplyDetailsModalContent({
                     <div className="space-y-0.5">
                       <p className="font-semibold text-foreground">{s.supplierName}</p>
                       {s.supplierCode && (
-                        <p className="font-mono text-[10px] text-muted-foreground">{s.supplierCode}</p>
+                        <p className="text-[10px] text-muted-foreground">{s.supplierCode}</p>
                       )}
                     </div>
                     <div className="text-right space-y-0.5">
@@ -243,7 +243,7 @@ function SupplyDetailsModalContent({
                   <tbody className="divide-y divide-border/60">
                     {recentOrders.map((order, i) => (
                       <tr key={`${order.poId}-${i}`} className="hover:bg-muted/20">
-                        <td className="px-3 py-2.5 font-mono font-semibold text-foreground">{order.poNumber}</td>
+                        <td className="px-3 py-2.5 font-semibold text-foreground">{order.poNumber}</td>
                         <td className="px-3 py-2.5 text-muted-foreground">
                           {new Date(order.orderDate).toLocaleDateString("en-PH", {
                             year: "numeric", month: "short", day: "numeric",

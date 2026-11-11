@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Upload, Sparkles, Clock, DollarSign, Package } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 import { Order, SupplyItem, Supplier, PaymentType } from "./types";
 
 interface ItemSupplierOption {
@@ -152,7 +153,8 @@ export default function CreateOrderModal({
     if (!itemId) { setItemError("Item is required."); isValid = false; }
     if (!supplierId) { setSupplierError("Supplier is required."); isValid = false; }
     if (!quantity || Number(quantity) <= 0) { setQuantityError("Valid quantity is required."); isValid = false; }
-    if (!eta) { setEtaError("Expected arrival date is required."); isValid = false; }
+    const etaValidation = getFutureDateError(eta, "Expected arrival date");
+    if (etaValidation) { setEtaError(etaValidation); isValid = false; }
     if (!editingOrder && !receiptFile) { setReceiptError("Receipt or PO proof is required."); isValid = false; }
 
     if (!isValid) return;
@@ -295,7 +297,8 @@ export default function CreateOrderModal({
             </label>
             <Input
               type="date"
-              min={new Date().toISOString().split("T")[0]}
+              min={getTodayDateString()}
+              max={getMaxFutureDateString()}
               value={eta}
               onChange={(e) => { setEta(e.target.value); setEtaError(""); }}
               className="rounded-xl border border-border bg-card text-foreground text-sm"

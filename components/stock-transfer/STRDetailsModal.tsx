@@ -51,7 +51,7 @@ export function STRDetailsModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
+      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
@@ -69,7 +69,7 @@ export function STRDetailsModal({
                 </h2>
                 <StatusBadge status={hasScheduledTransfer && request.status === "Approved" ? "Scheduled" : request.status} />
               </div>
-              <p className="text-xs font-mono font-semibold text-muted-foreground mt-0.5">
+              <p className="text-xs font-semibold text-muted-foreground mt-0.5">
                 {request.requestNumber}
               </p>
             </div>
@@ -195,7 +195,7 @@ export function STRDetailsModal({
                               </p>
                             )}
                           </td>
-                          <td className="px-5 py-4 font-mono text-muted-foreground whitespace-nowrap">
+                          <td className="px-5 py-4 text-muted-foreground whitespace-nowrap">
                             {item.sku || "—"}
                           </td>
                           <td className="px-5 py-4 text-foreground font-medium whitespace-nowrap">
@@ -216,7 +216,7 @@ export function STRDetailsModal({
                                     : "No Expiry"}
                                 </span>
                                 {firstLot.lotCode && (
-                                  <div className="font-mono text-[10px] text-muted-foreground">
+                                  <div className="text-[10px] text-muted-foreground">
                                     Lot: {firstLot.lotCode}
                                   </div>
                                 )}
@@ -257,7 +257,7 @@ export function STRDetailsModal({
                   <div key={st.transferId} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-foreground text-sm">{st.transferNumber}</span>
+                        <span className="font-bold text-foreground text-sm">{st.transferNumber}</span>
                         <StatusBadge status={st.status} />
                       </div>
                       <div className="text-muted-foreground text-[11px] mt-0.5">

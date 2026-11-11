@@ -26,6 +26,7 @@ import {
 import { ProductionRequestEntity, LotSuggestionsResponse } from "./types";
 import { ProductionActionModal, ProductionActionType } from "./ProductionActionModal";
 import { useIsAdmin } from "@/context/StaffContext";
+import { getFutureDateError, getMaxFutureDateString } from "@/lib/date-limits";
 
 interface ProductionRequestModalProps {
   open: boolean;
@@ -404,13 +405,9 @@ export default function ProductionRequestModal({
       return;
     }
 
-    if (!requiredDate) {
-      toast.error("Please specify the required date.");
-      return;
-    }
-
-    if (requiredDate < today) {
-      toast.error("Required date cannot be in the past.");
+    const dateErr = getFutureDateError(requiredDate, "Required date");
+    if (dateErr) {
+      toast.error(dateErr);
       return;
     }
 
@@ -765,7 +762,7 @@ export default function ProductionRequestModal({
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-foreground">Target Output Quantity</label>
               {isViewMode ? (
-                <div className="p-2.5 rounded-xl border border-border bg-card text-xs font-mono font-bold text-foreground">
+                <div className="p-2.5 rounded-xl border border-border bg-card text-xs font-bold text-foreground">
                   {initialRequest?.quantity} {initialRequest?.yieldUom}
                 </div>
               ) : (
@@ -775,7 +772,7 @@ export default function ProductionRequestModal({
                   readOnly
                   disabled
                   tabIndex={-1}
-                  className="h-10 text-xs rounded-xl border-border bg-muted/50 cursor-not-allowed font-mono font-bold text-foreground opacity-90 select-none"
+                  className="h-10 text-xs rounded-xl border-border bg-muted/50 cursor-not-allowed font-bold text-foreground opacity-90 select-none"
                   placeholder={recipeId ? String(quantity) : "Select recipe first"}
                 />
               )}
@@ -812,13 +809,14 @@ export default function ProductionRequestModal({
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-foreground">Required Date</label>
               {isViewMode ? (
-                <div className="p-2.5 rounded-xl border border-border bg-card text-xs font-mono text-foreground">
+                <div className="p-2.5 rounded-xl border border-border bg-card text-xs text-foreground">
                   {initialRequest?.requiredDate ? new Date(initialRequest.requiredDate).toLocaleDateString() : "—"}
                 </div>
               ) : (
                 <Input
                   type="date"
                   min={today}
+                  max={getMaxFutureDateString()}
                   value={requiredDate}
                   onChange={(e) => handleDateChange(e.target.value)}
                   className="h-10 text-xs rounded-xl border-border bg-card"
@@ -843,12 +841,12 @@ export default function ProductionRequestModal({
                     value={timeHour}
                     onValueChange={(val) => updateTime(val, timeMinute, timePeriod)}
                   >
-                    <SelectTrigger className="h-10 flex-1 text-xs font-mono font-medium rounded-xl border-border bg-card px-2 text-center shadow-xs">
+                    <SelectTrigger className="h-10 flex-1 text-xs font-medium rounded-xl border-border bg-card px-2 text-center shadow-xs">
                       <SelectValue placeholder="HH" />
                     </SelectTrigger>
                     <SelectContent className="max-h-56 bg-popover border-border">
                       {HOURS_12.map((h) => (
-                        <SelectItem key={h} value={h} className="text-xs font-mono">
+                        <SelectItem key={h} value={h} className="text-xs">
                           {h}
                         </SelectItem>
                       ))}
@@ -862,14 +860,14 @@ export default function ProductionRequestModal({
                     value={timeMinute}
                     onValueChange={(val) => updateTime(timeHour, val, timePeriod)}
                   >
-                    <SelectTrigger className="h-10 flex-1 text-xs font-mono font-medium rounded-xl border-border bg-card px-2 text-center shadow-xs">
+                    <SelectTrigger className="h-10 flex-1 text-xs font-medium rounded-xl border-border bg-card px-2 text-center shadow-xs">
                       <SelectValue placeholder="MM" />
                     </SelectTrigger>
                     <SelectContent className="max-h-56 bg-popover border-border">
                       {Array.from(new Set([...MINUTES_OPTIONS, timeMinute]))
                         .sort((a, b) => Number(a) - Number(b))
                         .map((m) => (
-                          <SelectItem key={m} value={m} className="text-xs font-mono">
+                          <SelectItem key={m} value={m} className="text-xs">
                             {m}
                           </SelectItem>
                         ))}
@@ -969,7 +967,7 @@ export default function ProductionRequestModal({
 
             {isViewMode && initialRequest?.linkedPrId && (
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold text-foreground">
+                <span className="text-xs font-bold text-foreground">
                   PR: {initialRequest.linkedPrNumber}
                 </span>
                 <Button
@@ -1034,7 +1032,7 @@ export default function ProductionRequestModal({
                     return (
                       <tr key={item.ingredientId} className="hover:bg-muted/10 transition-colors">
                         {/* Supply No. */}
-                        <td className="py-3 px-4 font-mono text-[11px] font-semibold text-foreground whitespace-nowrap">
+                        <td className="py-3 px-4 text-[11px] font-semibold text-foreground whitespace-nowrap">
                           {item.itemCode || "—"}
                         </td>
 
@@ -1044,17 +1042,17 @@ export default function ProductionRequestModal({
                         </td>
 
                         {/* Unit of Measure */}
-                        <td className="py-3 px-4 font-mono text-muted-foreground whitespace-nowrap">
+                        <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">
                           {item.uomAbbr || "units"}
                         </td>
 
                         {/* Required Quantity */}
-                        <td className="py-3 px-4 text-right font-mono font-semibold text-foreground whitespace-nowrap">
+                        <td className="py-3 px-4 text-right font-semibold text-foreground whitespace-nowrap">
                           {item.requiredQuantity.toFixed(2)}
                         </td>
 
                         {/* Available in Stock */}
-                        <td className="py-3 px-4 text-right font-mono font-semibold text-foreground whitespace-nowrap">
+                        <td className="py-3 px-4 text-right font-semibold text-foreground whitespace-nowrap">
                           {item.totalAvailable.toFixed(2)}
                         </td>
 
@@ -1066,7 +1064,7 @@ export default function ProductionRequestModal({
                                 {releasedLots.map((l: any) => (
                                   <div
                                     key={l.lotId}
-                                    className="font-mono text-[11px] font-medium text-muted-foreground bg-muted/40 px-2 py-0.5 rounded border border-border inline-flex items-center gap-1.5 line-through opacity-80"
+                                    className="text-[11px] font-medium text-muted-foreground bg-muted/40 px-2 py-0.5 rounded border border-border inline-flex items-center gap-1.5 line-through opacity-80"
                                   >
                                     <span>{l.lotCode}</span>
                                     <span className="font-normal whitespace-nowrap">
@@ -1083,7 +1081,7 @@ export default function ProductionRequestModal({
                               {activeLots.map((l) => (
                                 <div
                                   key={l.lotId}
-                                  className="font-mono text-[11px] font-medium text-foreground bg-muted/60 px-2 py-0.5 rounded border border-border inline-flex items-center gap-1.5"
+                                  className="text-[11px] font-medium text-foreground bg-muted/60 px-2 py-0.5 rounded border border-border inline-flex items-center gap-1.5"
                                 >
                                   <span>{l.lotCode}</span>
                                   <span className="text-muted-foreground font-normal whitespace-nowrap">
@@ -1102,7 +1100,7 @@ export default function ProductionRequestModal({
                           {(isRejected && releasedLots.length > 0 ? releasedLots : activeLots).length > 0 ? (
                             <div className="space-y-1.5">
                               {(isRejected && releasedLots.length > 0 ? releasedLots : activeLots).map((l: any) => (
-                                <div key={l.lotId} className="font-mono text-[11px] text-muted-foreground py-0.5">
+                                <div key={l.lotId} className="text-[11px] text-muted-foreground py-0.5">
                                   {l.expiryDate ? new Date(l.expiryDate).toLocaleDateString() : "—"}
                                 </div>
                               ))}

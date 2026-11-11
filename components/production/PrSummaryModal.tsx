@@ -46,7 +46,7 @@ export default function PrSummaryModal({ open, onClose, prData }: PrSummaryModal
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 rounded-xl border border-border bg-card">
           <div>
             <span className="text-xs text-muted-foreground block font-medium">Requisition No.</span>
-            <span className="text-sm font-bold text-foreground font-mono">{prData.prNumber}</span>
+            <span className="text-sm font-bold text-foreground">{prData.prNumber}</span>
           </div>
           <div>
             <span className="text-xs text-muted-foreground block font-medium">Department</span>
@@ -54,7 +54,7 @@ export default function PrSummaryModal({ open, onClose, prData }: PrSummaryModal
           </div>
           <div>
             <span className="text-xs text-muted-foreground block font-medium">Estimated Total</span>
-            <span className="text-sm font-bold text-foreground font-mono">
+            <span className="text-sm font-bold text-foreground">
               PHP {prData.estimatedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
@@ -80,13 +80,13 @@ export default function PrSummaryModal({ open, onClose, prData }: PrSummaryModal
                   return (
                     <tr key={idx} className="hover:bg-muted/10">
                       <td className="py-3 px-4 font-medium text-foreground">{item.itemName}</td>
-                      <td className="py-3 px-4 text-right font-mono font-semibold text-foreground">
+                      <td className="py-3 px-4 text-right font-semibold text-foreground">
                         {item.requestedQuantity}
                       </td>
-                      <td className="py-3 px-4 text-right font-mono text-muted-foreground">
+                      <td className="py-3 px-4 text-right text-muted-foreground">
                         PHP {item.estimatedUnitPrice.toFixed(2)}
                       </td>
-                      <td className="py-3 px-4 text-right font-mono font-bold text-foreground">
+                      <td className="py-3 px-4 text-right font-bold text-foreground">
                         PHP {subtotal.toFixed(2)}
                       </td>
                     </tr>

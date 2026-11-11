@@ -13,6 +13,7 @@ import NestedDialog from "./NestedDialog";
 import { ArrivedDelivery, GRN, QAInspection } from "./types";
 import { HR_EMPLOYEES } from "@/lib/employees";
 import { downloadGrnReportPdf } from "./downloadGrnReportPdf";
+import { getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 
 interface Props {
   open: boolean;
@@ -943,7 +944,7 @@ export default function CreateGrnModal({
                           {item.uom} {item.batches.length > 1 ? `· ${item.batches.length} Batches` : ""}
                         </div>
                       </td>
-                      <td className="px-3 py-3 text-right font-mono font-semibold">{item.declared}</td>
+                      <td className="px-3 py-3 text-right font-semibold">{item.declared}</td>
                       <td className="px-3 py-3 text-right">
                         <div className="flex flex-col items-end">
                           <input
@@ -960,7 +961,7 @@ export default function CreateGrnModal({
                               fieldErrors[`qty_${itemIndex}_0`]
                                 ? "!border-destructive text-destructive focus:!ring-destructive"
                                 : "border-border"
-                            } bg-background px-2.5 py-1.5 text-right font-mono text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-foreground`}
+                            } bg-background px-2.5 py-1.5 text-right text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-foreground`}
                           />
                           {fieldErrors[`qty_${itemIndex}_0`] && (
                             <span className="text-[10px] text-destructive font-medium mt-0.5 whitespace-nowrap">
@@ -973,14 +974,15 @@ export default function CreateGrnModal({
                         <div className="flex flex-col items-center">
                           <input
                             type="date"
-                            min={new Date().toISOString().split("T")[0]}
+                            min={getTodayDateString()}
+                            max={getMaxFutureDateString()}
                             value={item.batches[0].expiryDate}
                             onChange={(e) => updateBatchExpiry(itemIndex, 0, e.target.value)}
                             className={`rounded-xl border ${
                               fieldErrors[`expiry_${itemIndex}_0`]
                                 ? "!border-destructive text-destructive focus:!ring-destructive"
                                 : "border-border"
-                            } bg-background px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-foreground`}
+                            } bg-background px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-foreground`}
                           />
                           {fieldErrors[`expiry_${itemIndex}_0`] && (
                             <span className="text-[10px] text-destructive font-medium mt-0.5 whitespace-nowrap">
@@ -1043,7 +1045,7 @@ export default function CreateGrnModal({
                                   fieldErrors[`qty_${itemIndex}_${batchIndex}`]
                                     ? "!border-destructive text-destructive focus:!ring-destructive"
                                     : "border-border"
-                                } bg-background px-2.5 py-1.5 text-right font-mono text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-foreground`}
+                                } bg-background px-2.5 py-1.5 text-right text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-foreground`}
                               />
                               {fieldErrors[`qty_${itemIndex}_${batchIndex}`] && (
                                 <span className="text-[10px] text-destructive font-medium mt-0.5 whitespace-nowrap">
@@ -1056,14 +1058,15 @@ export default function CreateGrnModal({
                             <div className="flex flex-col items-center">
                               <input
                                 type="date"
-                                min={new Date().toISOString().split("T")[0]}
+                                min={getTodayDateString()}
+                                max={getMaxFutureDateString()}
                                 value={batch.expiryDate}
                                 onChange={(e) => updateBatchExpiry(itemIndex, batchIndex, e.target.value)}
                                 className={`rounded-xl border ${
                                   fieldErrors[`expiry_${itemIndex}_${batchIndex}`]
                                     ? "!border-destructive text-destructive focus:!ring-destructive"
                                     : "border-border"
-                                } bg-background px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-foreground`}
+                                } bg-background px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-foreground`}
                               />
                               {fieldErrors[`expiry_${itemIndex}_${batchIndex}`] && (
                                 <span className="text-[10px] text-destructive font-medium mt-0.5 whitespace-nowrap">
@@ -1128,7 +1131,7 @@ export default function CreateGrnModal({
             </div>
 
             <div className="text-xs font-medium text-muted-foreground">
-              Goods Receipt Note: <span className="font-mono font-bold text-foreground">{activeGrn?.grnNumber || previewGrnNo}</span>
+              Goods Receipt Note: <span className="font-bold text-foreground">{activeGrn?.grnNumber || previewGrnNo}</span>
             </div>
           </div>
 
@@ -1351,12 +1354,12 @@ export default function CreateGrnModal({
                               {qaItem.categoryName || "Raw Material"}
                             </span>
                             {(qaItem.totalBatches || 1) > 1 && (
-                              <span className="rounded-md bg-card border border-border text-foreground px-2 py-0.5 text-[10px] font-mono font-medium">
+                              <span className="rounded-md bg-card border border-border text-foreground px-2 py-0.5 text-[10px] font-medium">
                                 Batch #{qaItem.batchNumber || 1} of {qaItem.totalBatches}
                               </span>
                             )}
                             {qaItem.expiryDate && (
-                              <span className="rounded-md bg-card border border-border text-foreground px-2 py-0.5 text-[10px] font-mono font-medium">
+                              <span className="rounded-md bg-card border border-border text-foreground px-2 py-0.5 text-[10px] font-medium">
                                 Exp: {qaItem.expiryDate}
                               </span>
                             )}
@@ -1364,15 +1367,15 @@ export default function CreateGrnModal({
 
                           <div className="flex items-center gap-4">
                             <div className="text-xs text-muted-foreground">
-                              Received: <strong className="text-foreground font-mono">{qaItem.deliveredQuantity}</strong>
+                              Received: <strong className="text-foreground">{qaItem.deliveredQuantity}</strong>
                             </div>
                             {typeof qaItem.acceptedQuantity === "number" && (
-                              <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
+                              <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
                                 Good: {qaItem.acceptedQuantity}
                               </div>
                             )}
                             {rejNum > 0 && (
-                              <div className="text-xs text-rose-600 dark:text-rose-400 font-bold font-mono">
+                              <div className="text-xs text-rose-600 dark:text-rose-400 font-bold">
                                 Bad: {qaItem.rejectedQuantity}
                               </div>
                             )}
@@ -1400,7 +1403,7 @@ export default function CreateGrnModal({
                                   max={qaItem.deliveredQuantity}
                                   value={qaItem.acceptedQuantity}
                                   onChange={(e) => handleSetAccepted(idx, e.target.value)}
-                                  className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs font-mono font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                                  className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
                                 />
 
                                 {accNum > 0 && (
@@ -1441,7 +1444,7 @@ export default function CreateGrnModal({
                                   max={qaItem.deliveredQuantity}
                                   value={qaItem.rejectedQuantity}
                                   onChange={(e) => handleSetRejected(idx, e.target.value)}
-                                  className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs font-mono font-bold text-destructive focus:outline-none focus:ring-1 focus:ring-foreground"
+                                  className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs font-bold text-destructive focus:outline-none focus:ring-1 focus:ring-foreground"
                                 />
 
                                 {rejNum > 0 && (
@@ -1587,7 +1590,7 @@ export default function CreateGrnModal({
             Reject Entire Shipment
           </h2>
 
-          <p className="text-xs font-mono font-semibold text-muted-foreground mb-3">
+          <p className="text-xs font-semibold text-muted-foreground mb-3">
             Delivery No: {selected?.deliveryNumber || "—"}
           </p>
 
@@ -1669,7 +1672,7 @@ export default function CreateGrnModal({
               <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
                 Goods Receipt Note #
               </span>
-              <span className="font-mono font-bold text-foreground text-sm">
+              <span className="font-bold text-foreground text-sm">
                 {activeGrn?.grnNumber || previewGrnNo || "—"}
               </span>
             </div>
@@ -1677,7 +1680,7 @@ export default function CreateGrnModal({
               <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
                 Delivery Reference
               </span>
-              <span className="font-mono font-bold text-foreground text-sm">
+              <span className="font-bold text-foreground text-sm">
                 {selected?.deliveryNumber || activeGrn?.deliveryNumber || "—"}
               </span>
             </div>
@@ -1701,7 +1704,7 @@ export default function CreateGrnModal({
               <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
                 Total Accepted (Good)
               </span>
-              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+              <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
                 {qaItems.reduce((s, i) => s + Number(i.acceptedQuantity || 0), 0)} units
               </span>
             </div>
@@ -1709,7 +1712,7 @@ export default function CreateGrnModal({
               <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
                 Total Rejected (Bad)
               </span>
-              <span className="font-mono font-bold text-destructive text-sm">
+              <span className="font-bold text-destructive text-sm">
                 {qaItems.reduce((s, i) => s + Number(i.rejectedQuantity || 0), 0)} units
               </span>
             </div>
@@ -1732,16 +1735,16 @@ export default function CreateGrnModal({
                     <td className="px-3 py-2.5 font-medium text-foreground">
                       <div>{item.itemName}</div>
                       {item.expiryDate && (
-                        <div className="text-[10px] text-muted-foreground font-mono">Exp: {item.expiryDate}</div>
+                        <div className="text-[10px] text-muted-foreground">Exp: {item.expiryDate}</div>
                       )}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono font-semibold text-foreground">
+                    <td className="px-3 py-2.5 text-right font-semibold text-foreground">
                       {item.deliveredQuantity}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                    <td className="px-3 py-2.5 text-right font-semibold text-emerald-600 dark:text-emerald-400">
                       {item.acceptedQuantity}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono font-semibold text-destructive">
+                    <td className="px-3 py-2.5 text-right font-semibold text-destructive">
                       {item.rejectedQuantity}
                     </td>
                     <td className="px-3 py-2.5 text-muted-foreground text-[11px]">

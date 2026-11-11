@@ -3,7 +3,7 @@
 import { receiving } from "@/lib/receiving/client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Search, RefreshCw, Plus } from "lucide-react";
+import { RefreshCw, Plus } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -11,8 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/shared/SearchInput";
 import QaTable from "./QaTable";
 import QaInspectionModal from "./QaInspectionModal";
 import AddQaModal from "./AddQaModal";
@@ -175,18 +175,16 @@ export default function QaTab() {
       </div>
 
       {/* Search & Filters */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center border border-border rounded-md bg-card px-2 py-2">
-        <div className="flex flex-1 items-center gap-2 px-2 bg-muted/20 h-full rounded-md">
-          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-          <Input
-            type="text"
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center rounded-xl border border-border bg-card p-3">
+        <div className="flex flex-1 items-center gap-2">
+          <SearchInput
+            containerClassName="flex-1"
             placeholder="Search by inspection, Goods Receipt Note, Purchase Order, Purchase Requisition, or supplier..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-xs flex-1 text-foreground placeholder:text-muted-foreground"
           />
           {search && (
             <button
@@ -195,7 +193,7 @@ export default function QaTab() {
                 setSearch("");
                 setPage(1);
               }}
-              className="text-xs text-muted-foreground hover:text-foreground font-medium pr-2"
+              className="text-xs text-muted-foreground hover:text-foreground font-medium px-2"
             >
               Clear
             </button>

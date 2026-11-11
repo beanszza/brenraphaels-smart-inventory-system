@@ -70,7 +70,7 @@ export default function ProductionBatchDetailsModal({
               <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
                 Target Output
               </span>
-              <span className="font-mono font-bold text-foreground mt-1 block">
+              <span className="font-bold text-foreground mt-1 block">
                 {batch.targetYield} {batch.yieldUnit || "PCS"}
               </span>
             </div>
@@ -118,7 +118,7 @@ export default function ProductionBatchDetailsModal({
                 <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
                   Actual Good Output
                 </span>
-                <span className="font-mono font-bold text-foreground mt-0.5 block">
+                <span className="font-bold text-foreground mt-0.5 block">
                   {batch.actualQuantity} PCS
                 </span>
               </div>
@@ -129,7 +129,7 @@ export default function ProductionBatchDetailsModal({
                 <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
                   Scrap / Waste
                 </span>
-                <span className="font-mono font-bold text-foreground mt-0.5 block">
+                <span className="font-bold text-foreground mt-0.5 block">
                   {batch.scrapQuantity} PCS
                 </span>
               </div>

@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import { FileText, Search } from "lucide-react";
+import { FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
 import { InventoryItem } from "@/components/inventory/types";
@@ -12,8 +12,8 @@ import { LotItem } from "@/components/lots/types";
 import InventorySummaryCards from "@/components/inventory/InventorySummaryCards";
 import InventoryTable from "@/components/inventory/InventoryTable";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -319,22 +319,18 @@ export default function ViewInventory({
       </div>
 
       {/* Search, Product Filter (Finished Goods only), and Category Filter Bar */}
-      <div className="border border-border rounded-md overflow-hidden bg-card">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-sm px-md py-sm bg-muted/20">
-          <div className="flex items-center gap-sm flex-1">
-            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-            <Input
-              type="text"
-              aria-label="Search inventory"
-              placeholder="Search by name or Supply No (e.g. SPL-0001)..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setPage(1);
-              }}
-              className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-body-sm flex-1 text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
+      <div className="rounded-xl border border-border bg-card p-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-sm">
+          <SearchInput
+            containerClassName="flex-1"
+            aria-label="Search inventory"
+            placeholder="Search by name or Supply No (e.g. SPL-0001)..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+          />
           <div className="flex flex-wrap items-center gap-sm shrink-0">
             {/* Product Filter Dropdown: Show strictly only when on Finished Goods */}
             {categoryFilter === "Finished Goods" && availableFinishedProducts.length > 0 && (

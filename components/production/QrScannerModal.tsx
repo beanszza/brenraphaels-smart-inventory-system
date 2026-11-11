@@ -299,7 +299,7 @@ export default function QrScannerModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6"
+      className="font-sans fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6"
       onClick={onClose}
     >
       {/* Hidden canvas for jsQR analysis */}
@@ -322,7 +322,7 @@ export default function QrScannerModal({
           </div>
           <div className="flex items-center gap-2">
             {!isTimedOut && scanStatus !== "success" && (
-              <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-full border border-border bg-card text-foreground">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-border bg-card text-foreground">
                 0:{String(timeLeft).padStart(2, "0")}
               </span>
             )}
@@ -419,7 +419,7 @@ export default function QrScannerModal({
                   <div className="w-4 h-4 border-t-2 border-r-2 border-foreground" />
                 </div>
                 <div className="text-center">
-                  <span className="text-[10px] uppercase tracking-wider font-mono bg-black/75 text-white px-2 py-0.5 rounded border border-white/20">
+                  <span className="text-[10px] uppercase tracking-wider bg-black/75 text-white px-2 py-0.5 rounded border border-white/20">
                     Target: {targetLot}
                   </span>
                 </div>
@@ -437,7 +437,7 @@ export default function QrScannerModal({
                   <CheckCircle2 className="w-7 h-7" />
                 </div>
                 <p className="text-sm font-bold text-foreground">Lot Verified Successfully!</p>
-                <p className="text-xs text-muted-foreground font-mono">{targetLot}</p>
+                <p className="text-xs text-muted-foreground">{targetLot}</p>
               </div>
             )}
           </div>
@@ -454,7 +454,7 @@ export default function QrScannerModal({
           <div className="space-y-2 pt-2 border-t border-border">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>Required Lot:</span>
-              <span className="font-mono font-bold text-foreground">{targetLot}</span>
+              <span className="font-bold text-foreground">{targetLot}</span>
             </div>
 
             <div className="flex gap-2">
@@ -465,7 +465,7 @@ export default function QrScannerModal({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") verifyLot(manualCode);
                 }}
-                className="h-9 text-xs font-mono"
+                className="h-9 text-xs"
               />
               <Button
                 onClick={() => verifyLot(manualCode)}

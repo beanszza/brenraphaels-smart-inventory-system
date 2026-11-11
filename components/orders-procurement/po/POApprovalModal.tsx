@@ -9,6 +9,7 @@ import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { PurchaseOrderPO } from "../types";
 import { approvePurchaseOrder } from "@/app/actions/orders/orders";
 import { actionResponse } from "@/lib/resources/action-response";
+import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 
 interface POApprovalModalProps {
   po: PurchaseOrderPO | null;
@@ -98,6 +99,12 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
     if (!supplierApprovedDate) {
       newErrors.supplierApprovedDate = "Approval date is required.";
     }
+    if (expectedArrivalDate) {
+      const arrivalErr = getFutureDateError(expectedArrivalDate, "Expected Arrival Date", { allowToday: true });
+      if (arrivalErr) {
+        newErrors.expectedArrivalDate = arrivalErr;
+      }
+    }
 
     items.forEach((item, idx) => {
       if (item.confirmedQuantity <= 0) {
@@ -180,7 +187,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
           </div>
           <div>
             <span className="text-muted-foreground block text-[11px] mb-1">Purchase Requisition Reference</span>
-            <span className="font-mono font-semibold text-foreground text-xs">{po.prNumber || "—"}</span>
+            <span className="font-semibold text-foreground text-xs">{po.prNumber || "—"}</span>
           </div>
           <div>
             <span className="text-muted-foreground block text-[11px] mb-1">Original Order Date</span>
@@ -222,7 +229,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
                           Unit of Measure: {item.purchaseUomName}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 text-center font-mono text-muted-foreground">
+                      <td className="px-3 py-2.5 text-center text-muted-foreground">
                         {item.sentQuantity}
                       </td>
                       <td className="px-3 py-2.5 text-center">
@@ -232,7 +239,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
                           step="any"
                           value={item.confirmedQuantity || ""}
                           onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                          className={`h-8 w-24 mx-auto text-center font-mono font-bold text-xs bg-card ${
+                          className={`h-8 w-24 mx-auto text-center font-bold text-xs bg-card ${
                             errors[`qty_${idx}`] ? "border-destructive" : "border-border"
                           } ${isReduced ? "text-amber-600 dark:text-amber-400" : ""}`}
                         />
@@ -248,7 +255,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
                           placeholder="0.00"
                           value={item.totalPrice || ""}
                           onChange={(e) => handleTotalPriceChange(idx, e.target.value)}
-                          className={`h-8 w-32 ml-auto text-right font-mono font-bold text-xs bg-card ${
+                          className={`h-8 w-32 ml-auto text-right font-bold text-xs bg-card ${
                             errors[`price_${idx}`] ? "border-destructive" : "border-border"
                           }`}
                         />
@@ -279,7 +286,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
           <span className="text-xs font-black uppercase tracking-wider text-foreground">
             TOTAL AMOUNT DUE
           </span>
-          <span className="text-xl font-mono font-black text-foreground">
+          <span className="text-xl font-black text-foreground">
             ₱{calculatedGrandTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
@@ -313,6 +320,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
             <div className="relative">
               <Input
                 type="date"
+                max={getTodayDateString()}
                 value={supplierApprovedDate}
                 onChange={(e) => setSupplierApprovedDate(e.target.value)}
                 className={`h-10 text-xs bg-card pr-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer ${
@@ -334,12 +342,19 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
             <div className="relative">
               <Input
                 type="date"
+                min={getTodayDateString()}
+                max={getMaxFutureDateString()}
                 value={expectedArrivalDate}
                 onChange={(e) => setExpectedArrivalDate(e.target.value)}
-                className="h-10 text-xs bg-card border-border pr-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                className={`h-10 text-xs bg-card pr-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer ${
+                  errors.expectedArrivalDate ? "border-destructive" : "border-border"
+                }`}
               />
               <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
+            {errors.expectedArrivalDate && (
+              <p className="text-[10px] text-destructive mt-1">{errors.expectedArrivalDate}</p>
+            )}
           </div>
         </div>
 

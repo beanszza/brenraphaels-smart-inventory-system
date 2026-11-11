@@ -27,7 +27,7 @@ export default function ProductionSummaryModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6"
+      className="font-sans fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6"
       onClick={onClose}
     >
       <div
@@ -44,7 +44,7 @@ export default function ProductionSummaryModal({
               <h3 className="text-base font-bold text-foreground">
                 Batch Production Summary Report
               </h3>
-              <p className="text-xs text-muted-foreground font-mono">
+              <p className="text-xs text-muted-foreground">
                 {report.batchNumber} &mdash; {report.productName} ({report.variant})
               </p>
             </div>
@@ -109,7 +109,7 @@ export default function ProductionSummaryModal({
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Final System Generated Finished Good Lot
                 </p>
-                <p className="text-base font-bold font-mono text-foreground">
+                <p className="text-base font-bold text-foreground">
                   {report.packaging.fgLotNumber}
                 </p>
               </div>
@@ -118,7 +118,7 @@ export default function ProductionSummaryModal({
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 Assigned Expiry Date
               </p>
-              <p className="text-sm font-semibold font-mono text-foreground">
+              <p className="text-sm font-semibold text-foreground">
                 {report.packaging.expiryDate}
               </p>
             </div>
@@ -152,11 +152,11 @@ export default function ProductionSummaryModal({
                       <tr key={idx} className="hover:bg-muted/10">
                         <td className="py-2 px-3 font-semibold text-foreground">{m.itemName}</td>
                         <td className="py-2 px-3 text-muted-foreground">{m.supplierName || "Default Supplier"}</td>
-                        <td className="py-2 px-3 font-mono font-bold text-foreground">{m.lotNumber}</td>
+                        <td className="py-2 px-3 font-bold text-foreground">{m.lotNumber}</td>
                         <td className="py-2 px-3">
                           {m.quantity} {m.uom}
                         </td>
-                        <td className="py-2 px-3 text-right font-mono text-muted-foreground">
+                        <td className="py-2 px-3 text-right text-muted-foreground">
                           {m.expiryDate || "—"}
                         </td>
                       </tr>
@@ -195,7 +195,7 @@ export default function ProductionSummaryModal({
                   )}
                   <div className="text-[11px] text-muted-foreground">
                     <p>In-Charge: <span className="font-medium text-foreground">{log.inCharge}</span></p>
-                    <p className="text-[10px] text-muted-foreground/70 font-mono mt-0.5">
+                    <p className="text-[10px] text-muted-foreground/70 mt-0.5">
                       {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>

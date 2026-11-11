@@ -83,7 +83,7 @@ function SupplierDetailsModalContent({
         {/* Header */}
         {supplier.supplierCode && (
           <div className="flex items-center justify-end pb-3 border-b border-border">
-            <span className="text-xs font-mono text-muted-foreground bg-muted/40 border border-border px-3 py-1 rounded-full">
+            <span className="text-xs text-muted-foreground bg-muted/40 border border-border px-3 py-1 rounded-full">
               Supplier No: {supplier.supplierCode}
             </span>
           </div>
@@ -140,7 +140,7 @@ function SupplierDetailsModalContent({
                   {catalog.map((ci) => (
                     <tr key={ci.itemId} className="hover:bg-muted/20">
                       <td className="px-2.5 py-2.5 font-semibold text-foreground">{ci.itemName}</td>
-                      <td className="px-2.5 py-2.5 font-mono text-muted-foreground">{ci.supplierSku || "-"}</td>
+                      <td className="px-2.5 py-2.5 text-muted-foreground">{ci.supplierSku || "-"}</td>
                       <td className="px-2.5 py-2.5 text-muted-foreground">
                         {ci.packSize > 1 ? `${ci.packSize} units/pack` : "Standard"}
                       </td>
@@ -190,7 +190,7 @@ function SupplierDetailsModalContent({
                 <tbody className="divide-y divide-border/60">
                   {recentOrders.map((order) => (
                     <tr key={order.poId} className="hover:bg-muted/20">
-                      <td className="px-2.5 py-2.5 font-mono font-semibold text-foreground">{order.poNumber}</td>
+                      <td className="px-2.5 py-2.5 font-semibold text-foreground">{order.poNumber}</td>
                       <td className="px-2.5 py-2.5 text-muted-foreground">{formatDate(order.orderDate)}</td>
                       <td className="px-2.5 py-2.5">
                         <StatusBadge status={order.status} />

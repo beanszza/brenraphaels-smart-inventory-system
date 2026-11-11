@@ -5,7 +5,7 @@ import { ReceivingSkeleton } from "./ReceivingSkeleton";
 import { receiving } from "@/lib/receiving/client";
 
 import React, { useState, useEffect, useMemo, useTransition } from "react";
-import { Search, MoreHorizontal, Eye, Check, XCircle, Truck, AlertCircle } from "lucide-react";
+import { MoreHorizontal, Eye, Check, XCircle, Truck, AlertCircle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -13,8 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import Pagination from "@/components/Pagination";
@@ -193,19 +193,17 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
       </div>
 
       {/* Search & Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center border border-border rounded-md bg-card px-2 py-2">
-        <div className="flex flex-1 items-center gap-2 px-2 bg-muted/20 h-full rounded-md">
-          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-          <Input
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-xl border border-border bg-card p-3">
+        <div className="flex flex-1 items-center gap-2">
+          <SearchInput
             aria-label="Search records"
-            type="text"
+            containerClassName="flex-1"
             placeholder="Search supplier returns by Return to Vendor No., Supplier, or Item..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-xs flex-1 text-foreground placeholder:text-muted-foreground"
           />
           {search && (
             <button
@@ -214,7 +212,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                 setSearch("");
                 setPage(1);
               }}
-              className="text-xs text-muted-foreground hover:text-foreground font-medium pr-2"
+              className="text-xs text-muted-foreground hover:text-foreground font-medium px-2"
             >
               Clear
             </button>
@@ -413,19 +411,19 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
             <div className="bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Return to Vendor No.</div>
-                <div className="font-mono font-semibold text-xs mt-0.5">{selectedRtv.rtvNumber}</div>
+                <div className="font-semibold text-xs mt-0.5">{selectedRtv.rtvNumber}</div>
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Source Discrepancy</div>
-                <div className="font-mono font-semibold text-xs mt-0.5">{selectedRtv.discrepancyNumber || "Direct"}</div>
+                <div className="font-semibold text-xs mt-0.5">{selectedRtv.discrepancyNumber || "Direct"}</div>
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Source Goods Receipt Note</div>
-                <div className="font-mono font-semibold text-xs mt-0.5">{selectedRtv.grnNumber || "—"}</div>
+                <div className="font-semibold text-xs mt-0.5">{selectedRtv.grnNumber || "—"}</div>
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Purchase Order</div>
-                <div className="font-mono font-semibold text-xs mt-0.5">{selectedRtv.poNumber || "—"}</div>
+                <div className="font-semibold text-xs mt-0.5">{selectedRtv.poNumber || "—"}</div>
               </div>
             </div>
 
@@ -438,7 +436,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                 </div>
                 <div className="text-right">
                   <div className="text-muted-foreground text-[11px]">Quantity to Return</div>
-                  <div className="font-mono font-bold text-sm text-foreground">
+                  <div className="font-bold text-sm text-foreground">
                     {(selectedRtv.returnedQuantity ?? selectedRtv.quantityReturned ?? 0).toLocaleString()} {selectedRtv.uomName || "Units"}
                   </div>
                 </div>
@@ -459,7 +457,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
               {selectedRtv.creditNoteNumber && (
                 <div className="border-t border-border pt-3">
                   <div className="text-muted-foreground font-semibold mb-1">Supplier Credit Note:</div>
-                  <div className="bg-muted/40 p-2.5 rounded-lg text-foreground font-mono text-xs">
+                  <div className="bg-muted/40 p-2.5 rounded-lg text-foreground text-xs">
                     {selectedRtv.creditNoteNumber}
                   </div>
                 </div>

@@ -138,7 +138,7 @@ export function PRDetailsModal({
             <label className="mb-1.5 block text-xs font-semibold text-foreground">
               Purchase Requisition Number
             </label>
-            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 font-mono text-xs text-muted-foreground select-all">
+            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-all">
               {pr.prNumber}
             </div>
           </div>
@@ -244,16 +244,16 @@ export function PRDetailsModal({
                       <td className="px-4 py-3 font-medium text-foreground">
                         {item.itemName}
                       </td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground">
+                      <td className="px-4 py-3 text-muted-foreground">
                         {item.itemCode || `SPL-${item.itemId}`}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {item.uomName || "Unit"}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-muted-foreground">
+                      <td className="px-4 py-3 text-right text-muted-foreground">
                         {Number(item.actualInventory || 0).toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono font-bold text-foreground">
+                      <td className="px-4 py-3 text-right font-bold text-foreground">
                         {Number(item.requestedQuantity || 0).toLocaleString()}
                       </td>
                     </tr>

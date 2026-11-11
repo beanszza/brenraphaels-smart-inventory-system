@@ -141,11 +141,11 @@ export function MarkDispatchedModal({
         <div className="rounded-xl border border-border bg-muted/20 p-3.5 text-xs grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div>
             <span className="text-muted-foreground block text-[11px]">Delivery No:</span>
-            <span className="font-mono font-bold text-foreground">{delivery.deliveryNumber}</span>
+            <span className="font-bold text-foreground">{delivery.deliveryNumber}</span>
           </div>
           <div>
             <span className="text-muted-foreground block text-[11px]">Purchase Order Reference:</span>
-            <span className="font-mono font-medium text-foreground">{delivery.poNumber}</span>
+            <span className="font-medium text-foreground">{delivery.poNumber}</span>
           </div>
           <div className="col-span-2 sm:col-span-1">
             <span className="text-muted-foreground block text-[11px]">Supplier:</span>
@@ -223,7 +223,7 @@ export function MarkDispatchedModal({
               placeholder="e.g. ABC-1234"
               value={vehiclePlateNumber}
               onChange={(e) => setVehiclePlateNumber(e.target.value)}
-              className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground font-mono"
+              className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground"
             />
           </div>
         </div>
@@ -302,7 +302,7 @@ export function MarkDispatchedModal({
 
       {/* Review Modal for Submission */}
       {confirmModal && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+        <div className="font-sans fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
           <div
             style={{ width: "100%", maxWidth: "500px" }}
             className="w-full rounded-2xl border border-border bg-card shadow-2xl p-6 flex flex-col shrink-0"

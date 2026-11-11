@@ -10,6 +10,7 @@ import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Delivery } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useStaff } from "@/context/StaffContext";
+import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 import { downloadDeliveryReportPdf } from "./downloadDeliveryReportPdf";
 
 interface MarkArrivedModalProps {
@@ -60,6 +61,11 @@ export function MarkArrivedModal({
 
     if (!actualArrivalDate) {
       setError("Please specify the actual arrival date.");
+      return;
+    }
+    const arrivalDateErr = getFutureDateError(actualArrivalDate, "Arrival Date", { allowToday: true });
+    if (arrivalDateErr) {
+      setError(arrivalDateErr);
       return;
     }
 
@@ -148,11 +154,11 @@ export function MarkArrivedModal({
         <div className="rounded-xl border border-border bg-muted/20 p-4 text-xs grid grid-cols-2 sm:grid-cols-4 gap-3 items-center">
           <div>
             <span className="text-muted-foreground block text-[11px] mb-0.5">Delivery No</span>
-            <span className="font-mono font-bold text-foreground">{delivery.deliveryNumber}</span>
+            <span className="font-bold text-foreground">{delivery.deliveryNumber}</span>
           </div>
           <div>
             <span className="text-muted-foreground block text-[11px] mb-0.5">Purchase Order Ref</span>
-            <span className="font-mono font-medium text-foreground">{delivery.poNumber}</span>
+            <span className="font-medium text-foreground">{delivery.poNumber}</span>
           </div>
           <div>
             <span className="text-muted-foreground block text-[11px] mb-0.5">Supplier</span>
@@ -184,11 +190,11 @@ export function MarkArrivedModal({
                   {delivery.items.map((item, idx) => (
                     <tr key={idx} className="hover:bg-muted/10">
                       <td className="px-3.5 py-2 font-medium text-foreground">{item.itemName}</td>
-                      <td className="px-3.5 py-2 font-mono text-[11px] font-semibold text-muted-foreground">
+                      <td className="px-3.5 py-2 text-[11px] font-semibold text-muted-foreground">
                         {item.itemCode || `SPL-${String(item.itemId || idx + 1).padStart(4, "0")}`}
                       </td>
                       <td className="px-3.5 py-2 text-muted-foreground">{item.purchaseUomName}</td>
-                      <td className="px-3.5 py-2 text-right font-mono font-bold text-foreground">
+                      <td className="px-3.5 py-2 text-right font-bold text-foreground">
                         {item.declaredQuantity}
                       </td>
                     </tr>
@@ -208,7 +214,8 @@ export function MarkArrivedModal({
             <div className="relative">
               <Input
                 type="date"
-                min={new Date().toISOString().split("T")[0]}
+                min={getTodayDateString()}
+                max={getMaxFutureDateString()}
                 value={actualArrivalDate}
                 onChange={(e) => setActualArrivalDate(e.target.value)}
                 className="w-full h-10 rounded-xl border border-border bg-card px-3.5 py-2 pr-10 text-xs text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
@@ -255,7 +262,7 @@ export function MarkArrivedModal({
                       <span className="truncate">{attachmentFileName || "Uploaded document"}</span>
                     </div>
                   )}
-                  <p className="mt-2 text-[11px] font-mono text-muted-foreground truncate max-w-xs text-center">
+                  <p className="mt-2 text-[11px] text-muted-foreground truncate max-w-xs text-center">
                     {attachmentFileName || "Arrival proof photo"}
                   </p>
                 </div>

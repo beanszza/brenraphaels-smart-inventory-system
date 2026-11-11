@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ConfirmModal from "@/components/ConfirmModal";
+import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 import { PurchaseOrderPO } from "../types";
 
 interface CreateDeliveryModalProps {
@@ -421,6 +422,14 @@ export function CreateDeliveryModal({
       return;
     }
 
+    if (plannedDispatchDate) {
+      const dispatchDateErr = getFutureDateError(plannedDispatchDate, "Planned Dispatch Date", { allowToday: true });
+      if (dispatchDateErr) {
+        setError(dispatchDateErr);
+        return;
+      }
+    }
+
     const itemsToSchedule = items
       .filter((i) => i.availableToSchedule > 0 && i.orderQuantity > 0)
       .map((i) => ({
@@ -485,7 +494,7 @@ export function CreateDeliveryModal({
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
                 Delivery Number
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 font-mono text-xs text-muted-foreground select-all">
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-all">
                 {deliveryNumber}
               </div>
             </div>
@@ -496,7 +505,7 @@ export function CreateDeliveryModal({
                 Purchase Order <span className="text-destructive">*</span>
               </label>
               {initialPo ? (
-                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 font-mono text-xs text-foreground">
+                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground">
                   {initialPo.poNumber}
                 </div>
               ) : (
@@ -509,7 +518,7 @@ export function CreateDeliveryModal({
                     disabled={loadingPOs}
                     className={`w-full h-10 rounded-xl border ${
                       fieldErrors.poId ? "!border-destructive focus:!ring-destructive" : "border-border"
-                    } bg-card px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring`}
+                    } bg-card px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring`}
                   >
                     <option value="">Select Purchase Order...</option>
                     {orderedPOs.map((p) => (
@@ -592,16 +601,16 @@ export function CreateDeliveryModal({
                       <tbody className="divide-y divide-border">
                         {items.map((item, idx) => (
                           <tr key={`ref-${item.poItemId || idx}`} className="hover:bg-muted/20">
-                            <td className="px-3 py-2.5 text-center text-muted-foreground font-mono">{idx + 1}</td>
+                            <td className="px-3 py-2.5 text-center text-muted-foreground">{idx + 1}</td>
                             <td className="px-3 py-2.5 font-medium text-foreground">{item.itemName}</td>
-                            <td className="px-3 py-2.5 font-mono text-[11px] font-semibold text-muted-foreground">
+                            <td className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground">
                               {item.itemCode || `SPL-${String(item.itemId || idx + 1).padStart(4, "0")}`}
                             </td>
                             <td className="px-3 py-2.5 text-muted-foreground">{item.purchaseUomName}</td>
-                            <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{item.poOrderedQuantity}</td>
-                            <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{item.poTotalReceivedQuantity}</td>
-                            <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{item.alreadyScheduledQuantity}</td>
-                            <td className="px-3 py-2.5 text-right font-mono font-semibold text-foreground">
+                            <td className="px-3 py-2.5 text-right text-muted-foreground">{item.poOrderedQuantity}</td>
+                            <td className="px-3 py-2.5 text-right text-muted-foreground">{item.poTotalReceivedQuantity}</td>
+                            <td className="px-3 py-2.5 text-right text-muted-foreground">{item.alreadyScheduledQuantity}</td>
+                            <td className="px-3 py-2.5 text-right font-semibold text-foreground">
                               {item.availableToSchedule}
                             </td>
                           </tr>
@@ -669,16 +678,16 @@ export function CreateDeliveryModal({
                               <td className="px-3.5 py-2.5 font-medium text-foreground">
                                 {item.itemName}
                               </td>
-                              <td className="px-3.5 py-2.5 font-mono text-[11px] font-semibold text-muted-foreground">
+                              <td className="px-3.5 py-2.5 text-[11px] font-semibold text-muted-foreground">
                                 {item.itemCode || `SPL-${String(item.itemId || 0).padStart(4, "0")}`}
                               </td>
                               <td className="px-3.5 py-2.5 text-muted-foreground">
                                 {item.purchaseUomName}
                               </td>
-                              <td className="px-3.5 py-2.5 text-right font-mono text-muted-foreground">
+                              <td className="px-3.5 py-2.5 text-right text-muted-foreground">
                                 {item.poOrderedQuantity}
                               </td>
-                              <td className="px-3.5 py-2.5 text-right font-mono font-medium text-foreground">
+                              <td className="px-3.5 py-2.5 text-right font-medium text-foreground">
                                 {item.availableToSchedule}
                               </td>
                               <td className="px-3.5 py-2.5 text-right">
@@ -698,7 +707,7 @@ export function CreateDeliveryModal({
                                         onChange={(e) =>
                                           handleQuantityChange(item.poItemId, e.target.value)
                                         }
-                                        className={`w-28 text-right font-mono text-xs rounded-lg h-8 px-2 bg-card ${
+                                        className={`w-28 text-right text-xs rounded-lg h-8 px-2 bg-card ${
                                           err
                                             ? "!border-destructive focus-visible:!ring-destructive"
                                             : "border-border"
@@ -748,7 +757,8 @@ export function CreateDeliveryModal({
                   <div className="relative">
                     <Input
                       type="date"
-                      min={new Date().toISOString().split("T")[0]}
+                      min={getTodayDateString()}
+                      max={getMaxFutureDateString()}
                       value={plannedDispatchDate}
                       onChange={(e) => setPlannedDispatchDate(e.target.value)}
                       className="w-full h-10 rounded-xl border border-border bg-card px-3.5 py-2 pr-10 text-xs text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
@@ -786,7 +796,7 @@ export function CreateDeliveryModal({
                             <span className="truncate">{attachmentFileName || "Uploaded document"}</span>
                           </div>
                         )}
-                        <p className="mt-2 text-[11px] font-mono text-muted-foreground truncate max-w-xs text-center">
+                        <p className="mt-2 text-[11px] text-muted-foreground truncate max-w-xs text-center">
                           {attachmentFileName}
                         </p>
                       </div>
@@ -881,7 +891,7 @@ export function CreateDeliveryModal({
             <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
               <div>
                 <span className="text-muted-foreground block text-xs mb-1">Delivery No</span>
-                <span className="font-semibold font-mono">{deliveryNumber}</span>
+                <span className="font-semibold">{deliveryNumber}</span>
               </div>
               <div>
                 <span className="text-muted-foreground block text-xs mb-1">Purchase Order</span>
@@ -911,9 +921,9 @@ export function CreateDeliveryModal({
                   {items.filter(item => item.orderQuantity > 0).map((item, idx) => (
                     <tr key={idx} className="hover:bg-muted/10">
                       <td className="px-3 py-2.5 font-medium">{item.itemName}</td>
-                      <td className="px-3 py-2.5 font-mono text-muted-foreground">{item.itemCode}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground">{item.itemCode}</td>
                       <td className="px-3 py-2.5 text-muted-foreground">{item.purchaseUomName || "Unit"}</td>
-                      <td className="px-3 py-2.5 text-right font-mono font-semibold">{item.orderQuantity}</td>
+                      <td className="px-3 py-2.5 text-right font-semibold">{item.orderQuantity}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -4,11 +4,11 @@ import { listIssuances as productionListIssuances } from "@/app/actions/producti
 import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { Search, Eye, QrCode, CheckCircle2, ArrowRight, MoreHorizontal } from "lucide-react";
+import { Eye, QrCode, CheckCircle2, ArrowRight, MoreHorizontal } from "lucide-react";
+import { SearchInput } from "@/components/shared/SearchInput";
 import Pagination from "@/components/Pagination";
 import { toast } from "sonner";
 import { MaterialIssuanceDTO } from "./types";
@@ -83,21 +83,17 @@ export default function MaterialIssuanceTab({ initialRows, initialIssuanceId }: 
       </div>
 
       {/* Search and Status Filter Bar */}
-      <div className="border border-border rounded-md overflow-hidden bg-card">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-md py-sm bg-muted/20">
-          <div className="flex min-w-0 items-center gap-sm flex-1">
-            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-            <Input
-              type="text"
-              placeholder="Search by issuance #, request #, or product..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-body-sm flex-1 text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
+      <div className="rounded-xl border border-border bg-card p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <SearchInput
+            containerClassName="min-w-0 flex-1"
+            placeholder="Search by issuance #, request #, or product..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
 
           <div className="flex items-center gap-sm shrink-0">
             <Select

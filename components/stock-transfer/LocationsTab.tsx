@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import type { TransferLocation } from "@/lib/stock-transfer/screen-data";
 import { TransferSkeleton } from "./TransferSkeleton";
-import { Search, MapPin, Warehouse, Store, Building, CheckCircle, RefreshCw } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { MapPin, Warehouse, Store, Building, CheckCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/shared/SearchInput";
 
 export function LocationsTab({ locations, loading, onRefresh }: {
   locations: TransferLocation[]; loading: boolean; onRefresh: () => void;
@@ -32,18 +32,13 @@ export function LocationsTab({ locations, loading, onRefresh }: {
     <div className="space-y-5">
       {/* Search & Filter Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="border border-border rounded-xl overflow-hidden bg-card flex-1">
-          <div className="flex items-center gap-3 px-4 py-2.5 bg-muted/20">
-            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-            <Input
-              type="text"
-              placeholder="Search by location name, branch, or address..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-xs flex-1 text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
-        </div>
+        <SearchInput
+          containerClassName="flex-1"
+          placeholder="Search by location name, branch, or address..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="text-xs"
+        />
 
         <Button
           variant="outline"

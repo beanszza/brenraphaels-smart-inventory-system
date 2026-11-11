@@ -260,7 +260,7 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl border border-border bg-muted/10 text-xs">
                 <div>
                   <p className="text-[10px] uppercase font-semibold text-muted-foreground">FINISHED GOODS LOT</p>
-                  <p className="font-mono font-bold text-foreground mt-0.5">
+                  <p className="font-bold text-foreground mt-0.5">
                     {selectedBatch.fgLotCode || "CCS-261008-01"}
                   </p>
                 </div>
@@ -288,19 +288,19 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                 </div>
                 <div>
                   <p className="text-[10px] uppercase font-semibold text-muted-foreground">REQUEST QTY</p>
-                  <p className="font-mono font-bold text-foreground mt-0.5">
+                  <p className="font-bold text-foreground mt-0.5">
                     {selectedBatch.requestQty.toLocaleString()}
                   </p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase font-semibold text-muted-foreground">PACKED QTY</p>
-                  <p className="font-mono font-bold text-foreground mt-0.5">
+                  <p className="font-bold text-foreground mt-0.5">
                     {selectedBatch.packedQty.toLocaleString()}
                   </p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase font-semibold text-muted-foreground">YIELD</p>
-                  <p className="font-mono font-bold text-foreground mt-0.5">
+                  <p className="font-bold text-foreground mt-0.5">
                     {selectedBatch.yieldPercentage.toFixed(1)}%
                   </p>
                 </div>
@@ -325,7 +325,7 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                           setAcceptedQty(val);
                           setRejectedQty(Math.max(0, selectedBatch.packedQty - val));
                         }}
-                        className="h-9 text-xs border-border bg-background font-mono font-bold"
+                        className="h-9 text-xs border-border bg-background font-bold"
                       />
 
                       {acceptedQty > 0 && (
@@ -369,7 +369,7 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                           setRejectedQty(val);
                           setAcceptedQty(Math.max(0, selectedBatch.packedQty - val));
                         }}
-                        className="h-9 text-xs border-border bg-background font-mono font-bold text-destructive"
+                        className="h-9 text-xs border-border bg-background font-bold text-destructive"
                       />
 
                       {rejectedQty > 0 && (

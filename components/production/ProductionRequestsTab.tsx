@@ -8,11 +8,11 @@ import { useIsAdmin, useIsImsManager, useIsHeadCook } from "@/context/StaffConte
 import { ProductionActionModal } from "./ProductionActionModal";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { Search, Plus, MoreHorizontal, FileText, Play } from "lucide-react";
+import { Plus, MoreHorizontal, FileText, Play } from "lucide-react";
+import { SearchInput } from "@/components/shared/SearchInput";
 import Pagination from "@/components/Pagination";
 import { toast } from "sonner";
 import { ProductionRequestEntity } from "./types";
@@ -240,23 +240,19 @@ export default function ProductionRequestsTab({
       </div>
 
       {/* Filters Bar (Search & Priority Filter - Top orientation matching PR) */}
-      <div className="mb-6 border border-border rounded-xl overflow-hidden bg-card">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-muted/20">
-          <div className="flex items-center gap-3 flex-1">
-            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-            <Input
-              type="text"
-              placeholder="Search by Request No., Product, Variant, or Recipe..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-sm flex-1 text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
+      <div className="mb-6 rounded-xl border border-border bg-card p-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <SearchInput
+            containerClassName="flex-1"
+            placeholder="Search by Request No., Product, Variant, or Recipe..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
 
-          <div className="flex items-center gap-3 pl-4 border-l border-border/50">
+          <div className="flex items-center gap-3">
             <div className="flex items-center">
               <Select
                 value={priorityFilter}

@@ -74,7 +74,7 @@ export default function LocationManagement({ locations, onView, onEdit }: { loca
                     {activeDropdownId === l.id && dropdownPosition && createPortal(
                       <>
                         <div
-                          className="fixed inset-0 z-[199] cursor-default"
+                          className="font-sans fixed inset-0 z-[199] cursor-default"
                           onClick={(e) => {
                             e.stopPropagation();
                             setActiveDropdownId(null);

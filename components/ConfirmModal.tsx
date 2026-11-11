@@ -20,7 +20,7 @@ export default function ConfirmModal({ message, onConfirm, onCancel }: ConfirmMo
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs" onClick={onCancel}>
       <div
         style={{ width: "100%", maxWidth: "420px" }}
-        className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
+        className="font-sans w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex flex-col items-center justify-center text-center">

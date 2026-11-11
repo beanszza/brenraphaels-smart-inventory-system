@@ -4,9 +4,9 @@ import { listBatches as productionListBatches } from "@/app/actions/production/b
 import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState } from "react";
-import { AlertOctagon, FileText, X, Eye, RefreshCw, Search } from "lucide-react";
+import { AlertOctagon, FileText, X, Eye, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { LossReport } from "./types";
 import { toast } from "sonner";
 
@@ -162,18 +162,14 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
       </div>
 
       {/* Search Input */}
-      <div className="border border-border rounded-xl overflow-hidden bg-card shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-2.5 bg-muted/20">
-          <div className="flex items-center gap-2 flex-1">
-            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-            <Input
-              type="text"
-              placeholder="Search by loss report ID, batch number, or product name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-sm flex-1 text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
+      <div className="rounded-xl border border-border bg-card p-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <SearchInput
+            containerClassName="flex-1"
+            placeholder="Search by loss report ID, batch number, or product name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
           <span className="text-xs text-muted-foreground font-medium pl-1 hidden sm:inline">
             Showing {filteredReports.length} records
           </span>
@@ -304,7 +300,7 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
                   <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
                     Estimated Loss
                   </span>
-                  <span className="font-mono font-bold text-destructive text-sm">
+                  <span className="font-bold text-destructive text-sm">
                     ₱{selectedReport.totalEstimatedLoss.toLocaleString()}
                   </span>
                 </div>
@@ -346,14 +342,14 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
                           <td className="py-2 px-3 font-semibold text-foreground">
                             {item.itemName}
                           </td>
-                          <td className="py-2 px-3 font-mono text-muted-foreground">
+                          <td className="py-2 px-3 text-muted-foreground">
                             {item.lotNumber}
                           </td>
                           <td className="py-2 px-3">
                             {item.quantity} {item.uom}
                           </td>
-                          <td className="py-2 px-3 font-mono">₱{item.unitCost.toFixed(2)}</td>
-                          <td className="py-2 px-3 font-mono font-bold text-foreground text-right">
+                          <td className="py-2 px-3">₱{item.unitCost.toFixed(2)}</td>
+                          <td className="py-2 px-3 font-bold text-foreground text-right">
                             ₱{item.totalCost.toFixed(2)}
                           </td>
                         </tr>
@@ -364,7 +360,7 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
                         <td colSpan={4} className="py-2.5 px-3 text-right uppercase text-[10px]">
                           Total Loss Value:
                         </td>
-                        <td className="py-2.5 px-3 text-right font-mono text-sm text-destructive">
+                        <td className="py-2.5 px-3 text-right text-sm text-destructive">
                           ₱{selectedReport.totalEstimatedLoss.toLocaleString()}
                         </td>
                       </tr>

@@ -675,7 +675,7 @@ export default function AddFinishedProductModal({
                         value={previewSku}
                         readOnly
                         disabled
-                        className="w-full rounded-xl border border-border bg-muted/40 text-muted-foreground px-3 py-2 text-sm font-mono cursor-not-allowed"
+                        className="w-full rounded-xl border border-border bg-muted/40 text-muted-foreground px-3 py-2 text-sm cursor-not-allowed"
                       />
                     </div>
                   </div>

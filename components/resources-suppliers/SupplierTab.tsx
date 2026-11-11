@@ -2,9 +2,9 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, FileText, RefreshCw } from "lucide-react";
+import { Plus, FileText, RefreshCw } from "lucide-react";
+import { SearchInput } from "@/components/shared/SearchInput";
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
 import { Supplier } from "./types";
@@ -118,22 +118,15 @@ export default function SupplierTab({
         </div>
       </div>
 
-      <div className="mb-6 border border-border rounded-xl overflow-hidden bg-card">
-        <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between bg-muted/20">
-          <div className="flex items-center gap-3 flex-1">
-            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-            <Input
-              type="text"
-              placeholder="Search by Supplier No, company, contact, or email..."
-              value={searchQuery}
-              onChange={(e) => {
-                onSearchChange(e.target.value);
-                onPageChange(1);
-              }}
-              className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-sm flex-1 text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
-        </div>
+      <div className="mb-6">
+        <SearchInput
+          placeholder="Search by Supplier No, company, contact, or email..."
+          value={searchQuery}
+          onChange={(e) => {
+            onSearchChange(e.target.value);
+            onPageChange(1);
+          }}
+        />
       </div>
 
       <ResourceStatusTabs

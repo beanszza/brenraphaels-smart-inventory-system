@@ -129,16 +129,16 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
               <div className="mt-3 bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                 <div>
                   <div className="text-muted-foreground font-semibold">Goods Receipt Note No.</div>
-                  <div className="font-mono font-bold mt-0.5">{selected.grnNumber}</div>
+                  <div className="font-bold mt-0.5">{selected.grnNumber}</div>
                 </div>
                 <div>
                   <div className="text-muted-foreground font-semibold">Purchase Order</div>
-                  <div className="font-mono mt-0.5">{selected.poNumber}</div>
+                  <div className="mt-0.5">{selected.poNumber}</div>
                 </div>
                 {selected.deliveryNumber && selected.deliveryNumber !== "—" && (
                   <div>
                     <div className="text-muted-foreground font-semibold">Delivery No.</div>
-                    <div className="font-mono mt-0.5">{selected.deliveryNumber}</div>
+                    <div className="mt-0.5">{selected.deliveryNumber}</div>
                   </div>
                 )}
                 <div>

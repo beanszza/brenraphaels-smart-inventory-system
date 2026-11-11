@@ -15,7 +15,7 @@ export default function NestedDialog({ open, title, onClose, children, maxWidth 
   return (
     <Dialog.Root open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" />
+        <Dialog.Overlay className="font-sans fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" />
         <Dialog.Content
           aria-describedby={undefined}
           style={{ width: "100%", maxWidth }}

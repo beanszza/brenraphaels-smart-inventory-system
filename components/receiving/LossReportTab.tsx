@@ -5,7 +5,7 @@ import { ReceivingSkeleton } from "./ReceivingSkeleton";
 import { receiving } from "@/lib/receiving/client";
 
 import React, { useState, useEffect, useMemo, useTransition } from "react";
-import { Trash2, Search, MoreHorizontal, Eye, Check } from "lucide-react";
+import { Trash2, MoreHorizontal, Eye, Check } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -13,8 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { EmptyState } from "@/components/shared/EmptyState";
 import Pagination from "@/components/Pagination";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
@@ -140,19 +140,17 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
       </div>
 
       {/* Search & Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center border border-border rounded-md bg-card px-2 py-2">
-        <div className="flex flex-1 items-center gap-2 px-2 bg-muted/20 h-full rounded-md">
-          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-          <Input
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-xl border border-border bg-card p-3">
+        <div className="flex flex-1 items-center gap-2">
+          <SearchInput
             aria-label="Search records"
-            type="text"
+            containerClassName="flex-1"
             placeholder="Search loss reports by Report#, Item, or Supplier..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-xs flex-1 text-foreground placeholder:text-muted-foreground"
           />
           {search && (
             <button
@@ -161,7 +159,7 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
                 setSearch("");
                 setPage(1);
               }}
-              className="text-xs text-muted-foreground hover:text-foreground font-medium pr-2"
+              className="text-xs text-muted-foreground hover:text-foreground font-medium px-2"
             >
               Clear
             </button>
@@ -352,19 +350,19 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
             <div className="bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Report No.</div>
-                <div className="font-mono font-semibold text-xs mt-0.5">{selectedReport.lossReportNumber}</div>
+                <div className="font-semibold text-xs mt-0.5">{selectedReport.lossReportNumber}</div>
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Source Discrepancy</div>
-                <div className="font-mono font-semibold text-xs mt-0.5">{selectedReport.discrepancyNumber || "Direct"}</div>
+                <div className="font-semibold text-xs mt-0.5">{selectedReport.discrepancyNumber || "Direct"}</div>
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Source Goods Receipt Note</div>
-                <div className="font-mono font-semibold text-xs mt-0.5">{selectedReport.grnNumber || "—"}</div>
+                <div className="font-semibold text-xs mt-0.5">{selectedReport.grnNumber || "—"}</div>
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Purchase Order</div>
-                <div className="font-mono font-semibold text-xs mt-0.5">{selectedReport.poNumber || "—"}</div>
+                <div className="font-semibold text-xs mt-0.5">{selectedReport.poNumber || "—"}</div>
               </div>
             </div>
 
@@ -377,7 +375,7 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
                 </div>
                 <div className="text-right">
                   <div className="text-muted-foreground text-[11px]">Quantity Written Off</div>
-                  <div className="font-mono font-bold text-sm text-foreground">
+                  <div className="font-bold text-sm text-foreground">
                     {selectedReport.lostQuantity.toLocaleString()} {selectedReport.uomName || "Units"}
                   </div>
                 </div>

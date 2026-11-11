@@ -21,6 +21,7 @@ import { useIsAdmin, useStaff } from "@/context/StaffContext";
 import { ProductionBatchEntity } from "./types";
 
 import { BatchProofField } from "./BatchProofField";
+import { getMaxFutureDateString } from "@/lib/date-limits";
 
 export const COOKING_STAGES = [
   "Steaming",
@@ -553,12 +554,12 @@ export default function ProductionBatchDetailView({
             Back to Active Batches
           </Button>
           <div className="h-4 w-px bg-border" />
-          <span className="font-mono text-xs font-bold text-foreground">
+          <span className="text-xs font-bold text-foreground">
             {batch.batchNumber}
           </span>
           <StatusBadge status={batch.status} />
           {batch.fgLotCode && (
-            <span className="text-[11px] font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+            <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
               Lot: {batch.fgLotCode}
             </span>
           )}
@@ -720,14 +721,14 @@ export default function ProductionBatchDetailView({
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-bold text-muted-foreground">
+                            <span className="text-xs font-bold text-muted-foreground">
                               {idx + 1}.
                             </span>
                             <span className="text-xs font-bold text-foreground">{stName}</span>
                           </div>
                           <div>
                             {isDone ? (
-                              <span className="text-[11px] font-mono text-muted-foreground">
+                              <span className="text-[11px] text-muted-foreground">
                                 ✓ Done ({formatTo12Hour(stageLogs[stName].endTime)})
                               </span>
                             ) : isCurrent ? (
@@ -750,9 +751,10 @@ export default function ProductionBatchDetailView({
                                 <Input
                                   type="date"
                                   min={getTodayDateString()}
+                                  max={getMaxFutureDateString()}
                                   value={stageDate}
                                   onChange={(e) => setStageDate(e.target.value)}
-                                  className="h-10 text-xs border-border bg-card rounded-xl font-mono px-3 text-foreground"
+                                  className="h-10 text-xs border-border bg-card rounded-xl px-3 text-foreground"
                                 />
                               </div>
 
@@ -781,7 +783,7 @@ export default function ProductionBatchDetailView({
                                   <select
                                     value={stageHour}
                                     onChange={(e) => setStageHour(e.target.value)}
-                                    className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-mono font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                                    className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                                   >
                                     {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0")).map((h) => (
                                       <option key={h} value={h}>{h}</option>
@@ -794,7 +796,7 @@ export default function ProductionBatchDetailView({
                                   <select
                                     value={stageMinute}
                                     onChange={(e) => setStageMinute(e.target.value)}
-                                    className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-mono font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                                    className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                                   >
                                     {Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0")).map((m) => (
                                       <option key={m} value={m}>{m}</option>
@@ -854,7 +856,7 @@ export default function ProductionBatchDetailView({
                                 ) : (
                                   <span className="text-muted-foreground flex items-center gap-1.5">
                                     <span>Recorded End:</span>
-                                    <strong className="text-foreground font-mono">{stageDate} at {stageHour}:{stageMinute} {stagePeriod}</strong>
+                                    <strong className="text-foreground">{stageDate} at {stageHour}:{stageMinute} {stagePeriod}</strong>
                                   </span>
                                 )}
                               </div>
@@ -943,9 +945,10 @@ export default function ProductionBatchDetailView({
                   <Input
                     type="date"
                     min={getTodayDateString()}
+                    max={getMaxFutureDateString()}
                     value={pkgDate}
                     onChange={(e) => setPkgDate(e.target.value)}
-                    className="h-10 text-xs border-border bg-card rounded-xl font-mono px-3 text-foreground"
+                    className="h-10 text-xs border-border bg-card rounded-xl px-3 text-foreground"
                   />
                 </div>
 
@@ -973,7 +976,7 @@ export default function ProductionBatchDetailView({
                     <select
                       value={pkgHour}
                       onChange={(e) => setPkgHour(e.target.value)}
-                      className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-mono font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                      className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                     >
                       {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0")).map((h) => (
                         <option key={h} value={h}>{h}</option>
@@ -985,7 +988,7 @@ export default function ProductionBatchDetailView({
                     <select
                       value={pkgMinute}
                       onChange={(e) => setPkgMinute(e.target.value)}
-                      className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-mono font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                      className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                     >
                       {Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0")).map((m) => (
                         <option key={m} value={m}>{m}</option>
@@ -1027,9 +1030,10 @@ export default function ProductionBatchDetailView({
                   <Input
                     type="date"
                     min={pkgDate || getTodayDateString()}
+                    max={getMaxFutureDateString()}
                     value={pkgExpiryDate}
                     onChange={(e) => setPkgExpiryDate(e.target.value)}
-                    className="h-10 text-xs border-border bg-card rounded-xl font-mono px-3 text-foreground"
+                    className="h-10 text-xs border-border bg-card rounded-xl px-3 text-foreground"
                   />
                 </div>
 
@@ -1056,10 +1060,10 @@ export default function ProductionBatchDetailView({
                     min="1"
                     value={pkgQuantity || ""}
                     onChange={(e) => setPkgQuantity(Number(e.target.value))}
-                    className="h-10 text-xs border-border bg-card rounded-xl font-mono font-bold px-3 text-foreground max-w-sm"
+                    className="h-10 text-xs border-border bg-card rounded-xl font-bold px-3 text-foreground max-w-sm"
                   />
                   {reqQty > 0 && pkgQuantity > 0 && (
-                    <p className="text-[11px] text-muted-foreground font-mono">
+                    <p className="text-[11px] text-muted-foreground">
                       Yield: {((pkgQuantity / reqQty) * 100).toFixed(1)}% of requested ({reqQty} {batch.yieldUom || "jars"})
                     </p>
                   )}
@@ -1098,7 +1102,7 @@ export default function ProductionBatchDetailView({
                   ) : (
                     <span className="text-muted-foreground flex items-center gap-1.5">
                       <span>Recorded Packaging:</span>
-                      <strong className="text-foreground font-mono">{pkgDate} at {pkgHour}:{pkgMinute} {pkgPeriod}</strong>
+                      <strong className="text-foreground">{pkgDate} at {pkgHour}:{pkgMinute} {pkgPeriod}</strong>
                     </span>
                   )}
                 </div>
@@ -1154,13 +1158,13 @@ export default function ProductionBatchDetailView({
               <div className="p-4 rounded-xl border border-border bg-muted/20 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
                   <p className="text-[11px] text-muted-foreground">Finished Lot</p>
-                  <p className="text-xs font-bold font-mono text-foreground mt-0.5">
+                  <p className="text-xs font-bold text-foreground mt-0.5">
                     {batch.fgLotCode || "Pending"}
                   </p>
                 </div>
                 <div>
                   <p className="text-[11px] text-muted-foreground">Packed Quantity</p>
-                  <p className="text-xs font-bold font-mono text-foreground mt-0.5">
+                  <p className="text-xs font-bold text-foreground mt-0.5">
                     {(batch.finalQuantity ?? batch.actualQuantity ?? 0).toLocaleString()} {batch.yieldUom || "jars"}
                   </p>
                 </div>
@@ -1172,7 +1176,7 @@ export default function ProductionBatchDetailView({
                 </div>
                 <div>
                   <p className="text-[11px] text-muted-foreground">Expiry Date</p>
-                  <p className="text-xs font-bold font-mono text-foreground mt-0.5">
+                  <p className="text-xs font-bold text-foreground mt-0.5">
                     {batch.expiryDate ? batch.expiryDate.slice(0, 10) : "—"}
                   </p>
                 </div>
@@ -1188,7 +1192,7 @@ export default function ProductionBatchDetailView({
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 Reserved Materials
               </h3>
-              <span className="text-[11px] font-mono text-muted-foreground">
+              <span className="text-[11px] text-muted-foreground">
                 BOM Verification
               </span>
             </div>
@@ -1205,12 +1209,12 @@ export default function ProductionBatchDetailView({
                   <div className="space-y-0.5">
                     <p className="font-semibold text-foreground">{m.itemName}</p>
                     {m.lotCode && (
-                      <p className="font-mono text-[10px] text-muted-foreground">
+                      <p className="text-[10px] text-muted-foreground">
                         Lot: {m.lotCode}
                       </p>
                     )}
                   </div>
-                  <span className="font-mono font-semibold text-foreground text-xs">
+                  <span className="font-semibold text-foreground text-xs">
                     {Number(m.reservedQuantity ?? m.quantityUsed ?? m.requiredQuantity)} {m.uomAbbr || "kg"}
                   </span>
                 </div>
@@ -1223,7 +1227,7 @@ export default function ProductionBatchDetailView({
       {/* ── Confirmation Modal: Complete Stage ── */}
       {mounted && confirmStageModal && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+          className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
           onClick={() => { if (!stageLoading) setConfirmStageModal(false); }}
         >
           <div
@@ -1273,7 +1277,7 @@ export default function ProductionBatchDetailView({
       {/* ── Confirmation Modal: Finish Packaging ── */}
       {mounted && confirmPackagingModal && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+          className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
           onClick={() => { if (!pkgLoading) setConfirmPackagingModal(false); }}
         >
           <div
@@ -1323,7 +1327,7 @@ export default function ProductionBatchDetailView({
       {/* ── Reject Batch Modal ── */}
       {mounted && showRejectModal && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+          className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
           onClick={() => { if (!rejectLoading) setShowRejectModal(false); }}
         >
           <div

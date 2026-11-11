@@ -92,10 +92,10 @@ export default function AuditLogDetailsModal({
         <div className="p-6 pb-4 border-b border-border bg-muted/30">
           <DialogHeader className="text-left space-y-1">
             <div className="flex items-center justify-between gap-3">
-              <Badge variant="outline" className="font-mono text-xs px-2.5 py-0.5 border-border bg-card text-foreground font-semibold">
+              <Badge variant="outline" className="text-xs px-2.5 py-0.5 border-border bg-card text-foreground font-semibold">
                 {log.id || "AUD-LOG"}
               </Badge>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Clock size={13} className="text-muted-foreground" />
                 <span>{log.timestamp}</span>
               </div>
@@ -188,7 +188,7 @@ export default function AuditLogDetailsModal({
                 )}
               </Button>
             </div>
-            <p className="font-mono text-xs text-muted-foreground bg-card p-3 rounded-lg border border-border break-words leading-relaxed select-all">
+            <p className="text-xs text-muted-foreground bg-card p-3 rounded-lg border border-border break-words leading-relaxed select-all">
               {rawEntity}
             </p>
           </div>

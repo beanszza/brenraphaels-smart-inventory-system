@@ -20,7 +20,7 @@ export default function SupplierOrdersModal({
   if (!selectedSupplierModal || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div className="w-[90vw] max-w-[90vw] sm:max-w-[80vw] md:max-w-[700px] lg:max-w-[900px] max-h-[90vh] overflow-hidden p-md sm:p-lg rounded-lg sm:rounded-xl border border-border bg-card flex flex-col shadow-2xl text-foreground" onClick={e => e.stopPropagation()}>
         <div className="border-b border-border pb-3 mb-4 flex justify-between items-center shrink-0">
           <div>
@@ -83,7 +83,7 @@ export default function SupplierOrdersModal({
                 ) : (
                   selectedSupplierModal.orders.map((po: any, idx: number) => (
                     <tr key={idx} className="hover:bg-muted/50 transition-colors">
-                      <td className="whitespace-nowrap px-4 py-3.5 text-center font-mono text-xs font-bold text-muted-foreground">
+                      <td className="whitespace-nowrap px-4 py-3.5 text-center text-xs font-bold text-muted-foreground">
                         {idx + 1}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3.5 text-muted-foreground font-medium">{po.orderDate}</td>

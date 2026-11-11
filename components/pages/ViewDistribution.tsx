@@ -14,9 +14,9 @@ import { TransferSkeleton } from "@/components/stock-transfer/TransferSkeleton";
 
 import React, { useState, useTransition } from "react";
 import Link from "next/link";
-import { Plus, Search, FileText } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Pagination from "@/components/Pagination";
 import { TransferItem, LocationItem } from "@/components/distribution/types";
@@ -131,18 +131,14 @@ export default function DistributionPage({ transfers: initialTransfers, location
 
       {activeTab === "Stock Transfer" && (
         <>
-          <div className="mb-6 border border-border rounded-md overflow-hidden bg-card">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-sm px-md py-sm bg-muted/20">
-              <div className="flex items-center gap-sm flex-1">
-                <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-                <Input
-                  type="text"
-                  placeholder="Search by Transfer ID (e.g. TR-...), Item, or Location..."
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                  className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-8 p-0 text-body-sm flex-1 text-foreground placeholder:text-muted-foreground"
-                />
-              </div>
+          <div className="mb-6 rounded-xl border border-border bg-card p-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-sm">
+              <SearchInput
+                containerClassName="flex-1"
+                placeholder="Search by Transfer ID (e.g. TR-...), Item, or Location..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              />
               <div className="flex items-center gap-sm shrink-0">
                 <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setPage(1); }}>
                   <SelectTrigger className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">

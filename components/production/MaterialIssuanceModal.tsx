@@ -583,7 +583,7 @@ export default function MaterialIssuanceModal({
                       <div className="w-3 h-3 border-t-2 border-r-2 border-foreground" />
                     </div>
                     <div className="text-center">
-                      <span className="text-[9px] uppercase tracking-wider font-mono bg-black/75 text-white px-2.5 py-0.5 rounded border border-white/20">
+                      <span className="text-[9px] uppercase tracking-wider bg-black/75 text-white px-2.5 py-0.5 rounded border border-white/20">
                         ALIGN QR CODE
                       </span>
                     </div>
@@ -601,7 +601,7 @@ export default function MaterialIssuanceModal({
                       <CheckCircle2 className="w-6 h-6" />
                     </div>
                     <p className="text-xs font-bold text-foreground">Success: Material Verified!</p>
-                    <p className="text-[11px] text-muted-foreground font-mono">
+                    <p className="text-[11px] text-muted-foreground">
                       {lastScanned?.itemName} • {lastScanned?.lotCode}
                     </p>
                   </div>
@@ -642,7 +642,7 @@ export default function MaterialIssuanceModal({
                       <span className="w-2 h-2 rounded-full bg-foreground animate-pulse" />
                       QR Scanner
                     </span>
-                    <span className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-muted border border-border text-foreground font-semibold">
+                    <span className="text-[11px] px-2 py-0.5 rounded-md bg-muted border border-border text-foreground font-semibold">
                       {totalLots - verifiedCount} remaining
                     </span>
                   </div>
@@ -653,7 +653,7 @@ export default function MaterialIssuanceModal({
                         <span className="font-bold text-foreground">{lastScanned.itemName}</span>
                         <StatusBadge status="Success">Success</StatusBadge>
                       </div>
-                      <div className="text-[11px] text-muted-foreground font-mono flex items-center justify-between">
+                      <div className="text-[11px] text-muted-foreground flex items-center justify-between">
                         <span>Lot: {lastScanned.lotCode}</span>
                         <span>{lastScanned.reservedQuantity} kg</span>
                       </div>
@@ -767,7 +767,7 @@ export default function MaterialIssuanceModal({
         <div className="p-4 rounded-xl border border-border bg-card space-y-2">
           <div className="flex items-center justify-between text-xs">
             <span className="font-semibold text-foreground">Verification Progress</span>
-            <span className="font-mono font-bold text-foreground">
+            <span className="font-bold text-foreground">
               {verifiedCount} of {totalLots} lots verified ({totalLots > 0 ? Math.round((verifiedCount / totalLots) * 100) : 0}%)
             </span>
           </div>
@@ -816,24 +816,24 @@ export default function MaterialIssuanceModal({
                         </td>
 
                         {/* Supply No. */}
-                        <td className="py-3 px-4 font-mono text-[11px] text-muted-foreground whitespace-nowrap">
+                        <td className="py-3 px-4 text-[11px] text-muted-foreground whitespace-nowrap">
                           {res.itemCode || "—"}
                         </td>
 
                         {/* Suggested Lot Code */}
-                        <td className="py-3 px-4 font-mono font-medium text-foreground whitespace-nowrap">
+                        <td className="py-3 px-4 font-medium text-foreground whitespace-nowrap">
                           <span className="bg-muted/60 px-2 py-0.5 rounded border border-border">
                             {res.lotCode}
                           </span>
                         </td>
 
                         {/* Reserved Quantity */}
-                        <td className="py-3 px-4 text-right font-mono font-bold text-foreground whitespace-nowrap">
+                        <td className="py-3 px-4 text-right font-bold text-foreground whitespace-nowrap">
                           {res.reservedQuantity}
                         </td>
 
                         {/* Expiry Date */}
-                        <td className="py-3 px-4 text-muted-foreground font-mono text-[11px] whitespace-nowrap">
+                        <td className="py-3 px-4 text-muted-foreground text-[11px] whitespace-nowrap">
                           {res.expiryDate ? new Date(res.expiryDate).toLocaleDateString() : "—"}
                         </td>
 
