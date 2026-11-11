@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useStaff } from "@/context/StaffContext";
+import { getMyNotificationLiveUrl } from "@/app/actions/notifications";
+import { startLiveNotifications } from "@/lib/notifications/live";
 import { requestNotifications, type NotificationAction, type NotificationSnapshot } from "@/lib/notifications/client";
 
 export function NotificationSkeletons() {
@@ -26,9 +28,10 @@ function StaffNotifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
+  const stale = useRef(false);
   const mounted = useRef(false);
   const request = useCallback(async (action: NotificationAction = { type: "list" }) => {
-    if (busy.current) return;
+    if (busy.current) { if (action.type === "list") stale.current = true; return; }
     busy.current = true;
     setLoading(true);
     setError(null);
@@ -40,20 +43,19 @@ function StaffNotifications() {
     } finally {
       busy.current = false;
       if (mounted.current) setLoading(false);
+      // A socket event that arrived mid-request still needs the newer feed.
+      if (stale.current && mounted.current) { stale.current = false; void request(); }
     }
   }, []);
 
   useEffect(() => {
     mounted.current = true;
-    const initialRefresh = window.setTimeout(() => { void request(); }, 0);
-    const onFocus = () => { void request(); };
-    window.addEventListener("focus", onFocus);
-    const interval = window.setInterval(onFocus, 60000);
+    // The socket refetches on every connect and event; there is no focus or interval refetch.
+    void request();
+    const stop = startLiveNotifications({ getUrl: getMyNotificationLiveUrl, onSync: () => { void request(); } });
     return () => {
       mounted.current = false;
-      window.clearTimeout(initialRefresh);
-      window.removeEventListener("focus", onFocus);
-      window.clearInterval(interval);
+      stop();
     };
   }, [request]);
 

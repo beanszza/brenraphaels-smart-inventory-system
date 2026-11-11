@@ -89,3 +89,20 @@ export const notificationGateway: NotificationGatewayPort = {
     await call("/read-all", { method: "POST", body: Object.fromEntries(inbox(userId)) });
   },
 };
+
+/** A short-lived, single-use Live ticket for one Staff member, as the browser's WebSocket address. */
+export async function notificationLiveUrl(userId: string): Promise<string> {
+  const { base, key } = gateway();
+  const response = await fetch(`${base}/live-tickets`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }),
+    cache: "no-store",
+    redirect: "error",
+    signal: AbortSignal.timeout(READ_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`The gateway refused a Live ticket: ${response.status}`);
+  const { ticket } = (await response.json()) as { ticket?: unknown };
+  if (typeof ticket !== "string" || !ticket) throw new Error("The gateway returned no Live ticket");
+  return `${base.replace(/^http/, "ws")}/notifications/live?ticket=${encodeURIComponent(ticket)}`;
+}
