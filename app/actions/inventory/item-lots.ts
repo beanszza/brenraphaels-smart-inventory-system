@@ -43,7 +43,12 @@ export async function listItemLots(itemIdInput: number, productIdInput?: number)
     });
 
     const now = new Date();
-    const data = lots.map((lot) => {
+    const filteredLots = lots.filter(
+      (lot) =>
+        !lot.LotCode?.startsWith("LOT-UJH-2026-") &&
+        !lot.LotCode?.startsWith("LOT-UBH-2026-")
+    );
+    const data = filteredLots.map((lot) => {
       const expiryDate = lot.ExpiryDate ? lot.ExpiryDate.toISOString().split("T")[0] : null;
       const daysToExpiry = expiryDate
         ? Math.ceil((new Date(expiryDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))

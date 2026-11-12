@@ -12,7 +12,12 @@ async function cleanupTestStock() {
   if (typeof (prisma as any)?.inventoryLots?.findMany !== "function" || typeof (prisma as any)?.stockLedgers?.deleteMany !== "function") return;
   try {
     const testLots = await prisma.inventoryLots.findMany({
-      where: { LotCode: "LOT-UBH-2026-0001" },
+      where: {
+        OR: [
+          { LotCode: "LOT-UBH-2026-0001" },
+          { LotCode: { startsWith: "LOT-UJH-2026-" } },
+        ],
+      },
       select: { LotId: true },
     });
     const lotIds = testLots.map((l) => l.LotId);
@@ -22,7 +27,11 @@ async function cleanupTestStock() {
       await prisma.inventoryLots.deleteMany({ where: { LotId: { in: lotIds } } });
     }
     await prisma.productionBatches.deleteMany({
-      where: { BatchNumber: "BTH-UBH-2026-0001" },
+      where: {
+        BatchNumber: {
+          in: ["BTH-UBH-2026-0001", "BTH-UJH-250G-001", "BTH-UJH-500G-001"],
+        },
+      },
     });
     await prisma.inventories.deleteMany({
       where: {
@@ -137,6 +146,7 @@ export async function listInventory(query = "") {
               InventoryLots: {
                 select: {
                   LotId: true,
+                  LotCode: true,
                   QuantityRemaining: true,
                   ReservedQuantity: true,
                   Status: true,
@@ -174,7 +184,10 @@ export async function listInventory(query = "") {
       const seenLots = new Set<number>();
       fp.ProductionBatches?.forEach((batch) => {
         const lot = batch.InventoryLots;
-        if (lot && (lot.Status === "Available" || lot.Status === "Active") && !seenLots.has(lot.LotId)) {
+        const isSeededTestLot =
+          typeof lot?.LotCode === "string" &&
+          (lot.LotCode.startsWith("LOT-UJH-2026-") || lot.LotCode.startsWith("LOT-UBH-2026-"));
+        if (lot && !isSeededTestLot && (lot.Status === "Available" || lot.Status === "Active") && !seenLots.has(lot.LotId)) {
           seenLots.add(lot.LotId);
           variantStock += Number(lot.QuantityRemaining || 0);
           variantReserved += Number(lot.ReservedQuantity || 0);
