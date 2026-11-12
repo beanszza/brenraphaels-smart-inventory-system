@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeCanvas } from "qrcode.react";
 import { Download } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockIn, StockInLine } from "./types";
+import { downloadStockInLabelPdf } from "./downloadStockInLabelPdf";
 
 interface Props {
   stockIn: StockIn | null;
@@ -18,94 +19,28 @@ interface Props {
 export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
   if (!stockIn) return null;
 
-  // Helper to extract SVG markup for a line
-  const getLineSvgHtml = (lineId: number) => {
-    const el = document.getElementById(`stockin-qr-svg-${lineId}`);
-    return el ? el.outerHTML : "";
+  // Download individual label PDF
+  const handleDownloadLabel = async (line: StockInLine) => {
+    await downloadStockInLabelPdf({
+      canvasId: `stockin-qr-canvas-${line.stockInLineId}`,
+      headerTitle: "COMMISSARY INVENTORY LABEL",
+      headerSubtitle: "Receiving Lot Traceability Tag",
+      headerCode: stockIn.stockInNumber,
+      grnNumber: stockIn.grnNumber,
+      itemName: line.itemName,
+      quantityToStock: line.quantityToStock,
+      purchaseUomName: line.purchaseUomName,
+      supplierName: stockIn.supplierName || "—",
+      lotCode: line.lotCode,
+      expiryDate: line.expiryDate,
+      fallbackFileId: line.stockInLineId,
+    });
   };
 
-  // Build single label HTML
-  const buildSingleLabelHtml = (line: StockInLine) => {
-    const svgHtml = getLineSvgHtml(line.stockInLineId);
-    return `
-      <div style="width:360px;margin:0 auto 20px auto;border:2px solid #000;border-radius:10px;padding:16px;font-family:sans-serif;color:#111;page-break-after:always;background:#fff;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:12px;">
-          <div>
-            <div style="font-size:13px;font-weight:900;letter-spacing:0.5px;text-transform:uppercase;">COMMISSARY INVENTORY LABEL</div>
-            <div style="font-size:10px;color:#555;">Receiving Lot Traceability Tag</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-size:11px;font-weight:bold;font-family:monospace;">${stockIn.stockInNumber}</div>
-            <div style="font-size:9px;color:#777;">GRN: ${stockIn.grnNumber}</div>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:12px;align-items:center;">
-          <div style="flex-shrink:0;width:95px;height:95px;border:1px solid #ddd;padding:4px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#fff;">
-            ${svgHtml || '<div style="font-size:9px;color:#999;text-align:center;">QR Code</div>'}
-          </div>
-          <div style="flex:1;font-size:11px;line-height:1.4;">
-            <div style="font-size:13px;font-weight:bold;margin-bottom:2px;">${line.itemName}</div>
-            ${line.itemCode ? `<div style="font-size:10px;color:#666;font-family:monospace;margin-bottom:4px;">SKU: ${line.itemCode}</div>` : ""}
-            <div style="margin-top:4px;">
-              <span style="color:#666;">Quantity:</span> <strong>${line.quantityToStock} ${line.purchaseUomName}</strong>
-            </div>
-            <div>
-              <span style="color:#666;">Supplier:</span> <span>${stockIn.supplierName || "—"}</span>
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-top:12px;padding-top:8px;border-top:1px dashed #ccc;display:flex;justify-content:space-between;font-size:10px;">
-          <div>
-            <div style="color:#666;font-size:9px;text-transform:uppercase;">Lot Number</div>
-            <div style="font-family:monospace;font-weight:bold;font-size:11px;">${line.lotCode}</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="color:#666;font-size:9px;text-transform:uppercase;">Expiry Date</div>
-            <div style="font-family:monospace;font-weight:bold;font-size:11px;">
-              ${line.expiryDate ? new Date(line.expiryDate).toLocaleDateString() : "N/A"}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  };
-
-  // Download individual label HTML
-  const handleDownloadLabel = (line: StockInLine) => {
-    const content = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <title>Lot Label - ${line.lotCode}</title>
-  <style>
-    body { margin: 20px; background: #fafafa; }
-    @media print {
-      body { margin: 0; background: #fff; }
-    }
-  </style>
-</head>
-<body>
-  ${buildSingleLabelHtml(line)}
-</body>
-</html>`;
-
-    const blob = new Blob([content], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Label-${line.lotCode || line.stockInLineId}.html`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
-  // Download each item's QR label as an individual file
+  // Download each item's QR label as an individual PDF file
   const handleDownloadAllLabels = async () => {
     for (let idx = 0; idx < stockIn.lines.length; idx++) {
-      handleDownloadLabel(stockIn.lines[idx]);
+      await handleDownloadLabel(stockIn.lines[idx]);
       if (idx < stockIn.lines.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, 300));
       }
@@ -135,10 +70,10 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
             });
             return (
               <div key={line.stockInLineId}>
-                <QRCodeSVG
-                  id={`stockin-qr-svg-${line.stockInLineId}`}
+                <QRCodeCanvas
+                  id={`stockin-qr-canvas-${line.stockInLineId}`}
                   value={qrPayload}
-                  size={100}
+                  size={240}
                   level="M"
                 />
               </div>

@@ -3,6 +3,7 @@
 import { OrdersSkeleton } from "@/components/orders-procurement/OrdersSkeleton";
 
 import React, { useState, useEffect, useTransition } from "react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import ReportFilterBar from "@/components/pages/ReportFilterBar";
@@ -64,6 +65,7 @@ export default function ViewReports({ initialTab, initialData, initialDates }: {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <Button variant="outline" onClick={() => router.push(getBackPath())} className="mb-2 h-9 px-3 text-xs font-semibold rounded-lg border-border bg-card hover:bg-muted text-foreground transition-colors shadow-sm">
+              <ArrowLeft className="w-3.5 h-3.5" />
               Back to System
             </Button>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground capitalize">

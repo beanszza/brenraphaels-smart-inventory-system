@@ -4,11 +4,12 @@ import { receiving } from "@/lib/receiving/client";
 
 import React, { useState, useEffect } from "react";
 import { AlertTriangle, Download } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeCanvas } from "qrcode.react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import NestedDialog from "./NestedDialog";
 import { GRN, StockIn } from "./types";
+import { downloadStockInLabelPdf } from "./downloadStockInLabelPdf";
 
 interface Props {
   open: boolean;
@@ -127,88 +128,26 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
     }
   };
 
-  const buildSingleLabelHtml = (line: StockInLineDraft, index: number) => {
-    const svgElem = document.getElementById(`create-stockin-qr-svg-${index}`);
-    const svgHtml = svgElem ? svgElem.outerHTML : "";
-    const grnNo = selectedGrn?.grnNumber || "GRN";
-    const supplier = selectedGrn?.supplierName || "—";
-
-    return `
-      <div style="width:340px;border:2px solid #222;border-radius:8px;padding:14px;font-family:system-ui,sans-serif;background:#fff;margin-bottom:16px;page-break-inside:avoid;box-sizing:border-box;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1.5px solid #222;padding-bottom:8px;margin-bottom:10px;">
-          <div>
-            <div style="font-weight:900;font-size:13px;letter-spacing:0.5px;">BREN RAPHAEL'S</div>
-            <div style="font-size:9px;color:#555;font-weight:600;">INVENTORY IDENTIFICATION LABEL</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-size:11px;font-weight:bold;font-family:monospace;">${line.lotCode}</div>
-            <div style="font-size:9px;color:#777;">GRN: ${grnNo}</div>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:12px;align-items:center;">
-          <div style="flex-shrink:0;width:95px;height:95px;border:1px solid #ddd;padding:4px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#fff;">
-            ${svgHtml || '<div style="font-size:9px;color:#999;text-align:center;">QR Code</div>'}
-          </div>
-          <div style="flex:1;font-size:11px;line-height:1.4;">
-            <div style="font-size:13px;font-weight:bold;margin-bottom:2px;">${line.itemName}</div>
-            <div style="margin-top:4px;">
-              <span style="color:#666;">Quantity to Stock:</span> <strong>${line.quantityToStock} ${line.purchaseUomName}</strong>
-            </div>
-            <div>
-              <span style="color:#666;">Supplier:</span> <span>${supplier}</span>
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-top:12px;padding-top:8px;border-top:1px dashed #ccc;display:flex;justify-content:space-between;font-size:10px;">
-          <div>
-            <div style="color:#666;font-size:9px;text-transform:uppercase;">Lot Number</div>
-            <div style="font-family:monospace;font-weight:bold;font-size:11px;">${line.lotCode}</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="color:#666;font-size:9px;text-transform:uppercase;">Expiry Date</div>
-            <div style="font-family:monospace;font-weight:bold;font-size:11px;">
-              ${line.expiryDate ? new Date(line.expiryDate).toLocaleDateString() : "N/A"}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  };
-
-  const handleDownloadLabel = (line: StockInLineDraft, index: number) => {
-    const content = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <title>Lot Label - ${line.lotCode}</title>
-  <style>
-    body { margin: 20px; background: #fafafa; font-family: system-ui, sans-serif; }
-    @media print {
-      body { margin: 0; background: #fff; }
-    }
-  </style>
-</head>
-<body>
-  ${buildSingleLabelHtml(line, index)}
-</body>
-</html>`;
-
-    const blob = new Blob([content], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Label-${line.lotCode || `item-${line.itemId}`}.html`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const handleDownloadLabel = async (line: StockInLineDraft, index: number) => {
+    await downloadStockInLabelPdf({
+      canvasId: `create-stockin-qr-canvas-${index}`,
+      headerTitle: "BREN RAPHAEL'S",
+      headerSubtitle: "INVENTORY IDENTIFICATION LABEL",
+      headerCode: line.lotCode,
+      grnNumber: selectedGrn?.grnNumber || "GRN",
+      itemName: line.itemName,
+      quantityToStock: line.quantityToStock,
+      purchaseUomName: line.purchaseUomName,
+      supplierName: selectedGrn?.supplierName || "—",
+      lotCode: line.lotCode,
+      expiryDate: line.expiryDate,
+      fallbackFileId: `item-${line.itemId}`,
+    });
   };
 
   const handleDownloadAllLabels = async () => {
     for (let idx = 0; idx < lines.length; idx++) {
-      handleDownloadLabel(lines[idx], idx);
+      await handleDownloadLabel(lines[idx], idx);
       if (idx < lines.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, 300));
       }
@@ -299,10 +238,10 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
             });
             return (
               <div key={`qr-${line.itemId}-${idx}`}>
-                <QRCodeSVG
-                  id={`create-stockin-qr-svg-${idx}`}
+                <QRCodeCanvas
+                  id={`create-stockin-qr-canvas-${idx}`}
                   value={qrPayload}
-                  size={100}
+                  size={240}
                   level="M"
                 />
               </div>

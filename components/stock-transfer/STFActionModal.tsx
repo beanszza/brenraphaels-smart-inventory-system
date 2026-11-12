@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, AlertCircle } from "lucide-react";
+import { AlertTriangle, AlertCircle, ArrowLeft } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 interface STFActionModalProps {
@@ -80,8 +80,9 @@ export function STFActionModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 rounded-xl bg-card border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
             >
+              <ArrowLeft className="w-4 h-4" />
               Back
             </button>
             <button

@@ -7,7 +7,7 @@ import { listDeliveries } from "@/app/actions/orders/deliveries";
 import { procurement } from "@/lib/orders/client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { AlertCircle, Upload, Trash2, FileText } from "lucide-react";
+import { AlertCircle, ArrowLeft, Upload, Trash2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -906,6 +906,7 @@ export function CreateDeliveryModal({
               disabled={submitting}
               className="rounded-xl px-6 cursor-pointer"
             >
+              <ArrowLeft className="w-4 h-4" />
               Back to Edit
             </Button>
             <Button

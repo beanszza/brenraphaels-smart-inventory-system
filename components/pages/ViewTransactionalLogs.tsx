@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuditLogsFilterBar from "@/components/pages/AuditLogsFilterBar";
@@ -108,6 +109,7 @@ export default function ViewTransactionalLogs({ initialLogs, unavailable = false
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <Button variant="outline" onClick={() => router.back()} className="mb-3 px-4 py-2 text-sm font-semibold rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-colors shadow-sm">
+              <ArrowLeft className="w-4 h-4" />
               Back
             </Button>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{title}</h1>

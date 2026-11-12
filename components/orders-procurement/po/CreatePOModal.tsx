@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import {
+  ArrowLeft,
   ChevronRight,
   ChevronLeft,
   ChevronDown,
@@ -706,6 +707,7 @@ export function CreatePOModal({
                 disabled={submitting}
                 className="rounded-xl border border-border bg-card px-5 py-2.5 h-auto text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
+                <ArrowLeft className="w-4 h-4" />
                 Back to Edit
               </Button>
               <Button

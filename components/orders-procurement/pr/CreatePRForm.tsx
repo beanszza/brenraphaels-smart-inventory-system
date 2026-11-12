@@ -11,7 +11,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Calendar } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -502,6 +502,7 @@ export function CreatePRModal({
                 disabled={submitting}
                 className="rounded-xl px-6 font-semibold cursor-pointer border-border bg-card hover:bg-muted text-foreground"
               >
+                <ArrowLeft className="w-4 h-4" />
                 Back to Edit
               </Button>
               <Button

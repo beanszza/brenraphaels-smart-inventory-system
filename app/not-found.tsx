@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileQuestion } from "lucide-react";
+import { ArrowLeft, FileQuestion } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
@@ -14,7 +14,10 @@ export default function NotFound() {
           The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
         <Button asChild variant="default" size="lg">
-          <Link href="/">Back to Home</Link>
+          <Link href="/">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </Link>
         </Button>
       </div>
     </div>

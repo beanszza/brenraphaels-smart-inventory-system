@@ -7,7 +7,7 @@ import { listItemChoices } from "@/app/actions/receiving/lookups";
 import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useEffect, useState, useRef } from "react";
-import { ChevronDown, ChevronUp, Plus, Trash2, ClipboardCheck, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2, ClipboardCheck, AlertTriangle, ArrowLeft, Download } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import NestedDialog from "./NestedDialog";
@@ -1128,9 +1128,11 @@ export default function CreateGrnModal({
               </div>
             </div>
 
-            <div className="text-xs font-medium text-muted-foreground">
-              Goods Receipt Note: <span className="font-bold text-foreground">{activeGrn?.grnNumber || previewGrnNo}</span>
-            </div>
+            {step === 1 && (
+              <div className="text-xs font-medium text-muted-foreground">
+                Goods Receipt Note: <span className="font-bold text-foreground">{activeGrn?.grnNumber || previewGrnNo}</span>
+              </div>
+            )}
           </div>
 
           {error && (
@@ -1542,8 +1544,9 @@ export default function CreateGrnModal({
                   type="button"
                   onClick={() => setStep(1)}
                   disabled={submitting}
-                  className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
+                  <ArrowLeft className="w-4 h-4" />
                   Back to Receiving Counts
                 </button>
 
@@ -1552,8 +1555,9 @@ export default function CreateGrnModal({
                     type="button"
                     disabled={!isQaDone || submitting}
                     onClick={handleExportGrnReport}
-                    className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
+                    <Download className="w-4 h-4" />
                     Export Goods Receipt Note
                   </button>
                   <button
@@ -1759,8 +1763,9 @@ export default function CreateGrnModal({
               type="button"
               onClick={() => setConfirmFinishGrnOpen(false)}
               disabled={submitting}
-              className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
+              <ArrowLeft className="w-4 h-4" />
               Back to Edit
             </button>
             <button

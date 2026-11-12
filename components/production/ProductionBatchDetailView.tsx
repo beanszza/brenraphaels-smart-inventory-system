@@ -518,6 +518,7 @@ export default function ProductionBatchDetailView({
       <div className="p-8 text-center bg-card rounded-xl border border-border">
         <p className="text-sm text-destructive font-medium">Batch not found or failed to load.</p>
         <Button variant="outline" size="sm" onClick={onBack} className="mt-4">
+          <ArrowLeft className="w-3.5 h-3.5" />
           Go Back
         </Button>
       </div>
