@@ -47,7 +47,7 @@ export function isDeliveryInFlight(delivery: {
   Status: string;
   GoodsReceipts?: Array<{ Status: string }>;
 }): boolean {
-  if (delivery.Status === "Scheduled" || delivery.Status === "InTransit") return true;
+  if (delivery.Status === "Scheduled") return true;
   if (delivery.Status === "Arrived") {
     const grns = delivery.GoodsReceipts ?? [];
     // Once a delivery has a GRN that completed QA or was rejected, its unreceived balance is closed out via GRN/discrepancies
@@ -347,7 +347,7 @@ async function checkOrdersLifecycleCompleted(
 
     const deliveries = (po.Deliveries ?? []).filter((d) => d.Status !== "Cancelled");
     if (deliveries.length === 0) return false;
-    if (deliveries.some((d) => ["Scheduled", "InTransit"].includes(d.Status))) return false;
+    if (deliveries.some((d) => d.Status === "Scheduled")) return false;
 
     const grns = (po.GoodsReceipts ?? []).filter((g) => g.Status !== "Cancelled");
     if (grns.length === 0) return false;

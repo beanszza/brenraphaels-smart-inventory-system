@@ -7,7 +7,7 @@ import { listDeliveries } from "@/app/actions/orders/deliveries";
 import { procurement } from "@/lib/orders/client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { AlertCircle, ArrowLeft, Upload, Trash2, FileText } from "lucide-react";
+import { AlertCircle, ArrowLeft, Calendar, Upload, Trash2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -15,6 +15,7 @@ import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ConfirmModal from "@/components/ConfirmModal";
+import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 import { PurchaseOrderPO } from "../types";
 
 interface CreateDeliveryModalProps {
@@ -59,6 +60,9 @@ export function CreateDeliveryModal({
 
   // Form Fields
   const [paymentType, setPaymentType] = useState("Payable");
+  const [plannedDispatchDate, setPlannedDispatchDate] = useState(
+    () => new Date().toISOString().slice(0, 10)
+  );
 
   const [scheduledAttachmentBase64, setScheduledAttachmentBase64] = useState("");
   const [attachmentFileName, setAttachmentFileName] = useState("");
@@ -79,7 +83,7 @@ export function CreateDeliveryModal({
     let sum = 0;
     deliveriesList.forEach((d) => {
       const matchPo = (d.poId && d.poId === poId) || (poNumber && d.poNumber === poNumber);
-      if (matchPo && ["Scheduled", "InTransit", "Arrived"].includes(d.status)) {
+      if (matchPo && ["Scheduled", "Arrived"].includes(d.status)) {
         (d.items || []).forEach((di: any) => {
           const matchItem =
             (poItemId && di.poItemId && di.poItemId === poItemId) ||
@@ -209,6 +213,7 @@ export function CreateDeliveryModal({
       setScheduledAttachmentBase64("");
       setAttachmentFileName("");
       setPaymentType("Payable");
+      setPlannedDispatchDate(new Date().toISOString().slice(0, 10));
       setError(null);
       setFieldErrors({});
     }
@@ -418,6 +423,17 @@ export function CreateDeliveryModal({
       return;
     }
 
+    if (!plannedDispatchDate) {
+      setError("Planned Dispatch Date is required.");
+      return;
+    }
+
+    const dispatchDateErr = getFutureDateError(plannedDispatchDate, "Planned Dispatch Date", { allowToday: true });
+    if (dispatchDateErr) {
+      setError(dispatchDateErr);
+      return;
+    }
+
     const itemsToSchedule = items
       .filter((i) => i.availableToSchedule > 0 && i.orderQuantity > 0)
       .map((i) => ({
@@ -435,6 +451,7 @@ export function CreateDeliveryModal({
       const payload = {
         poId: selectedPoId,
         paymentType,
+        scheduledDate: plannedDispatchDate ? new Date(`${plannedDispatchDate}T12:00:00Z`).toISOString() : new Date().toISOString(),
         expectedArrivalDate: null,
         scheduledAttachmentBase64: scheduledAttachmentBase64 || null,
         attachmentUrl: scheduledAttachmentBase64 || null,
@@ -718,8 +735,8 @@ export function CreateDeliveryModal({
                 )}
               </div>
 
-              {/* Payment Type */}
-              <div className="grid grid-cols-1 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
+              {/* Payment Type & Planned Dispatch Date */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-foreground">
                     Payment Type <span className="text-destructive">*</span>
@@ -732,6 +749,23 @@ export function CreateDeliveryModal({
                     <option value="Payable">Payable</option>
                     <option value="Paid">Paid</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                    Planned Dispatch Date <span className="text-destructive">*</span>
+                  </label>
+                  <div className="relative">
+                    <Input
+                      type="date"
+                      min={getTodayDateString()}
+                      max={getMaxFutureDateString()}
+                      value={plannedDispatchDate}
+                      onChange={(e) => setPlannedDispatchDate(e.target.value)}
+                      className="w-full h-10 rounded-xl border border-border bg-card px-3.5 py-2 pr-10 text-xs text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    />
+                    <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  </div>
                 </div>
               </div>
 
@@ -826,7 +860,7 @@ export function CreateDeliveryModal({
             </ModalCloseButton>
             <Button
               type="submit"
-              disabled={submitting || !selectedPoId || hasErrors || !hasAnyOrderQty || !scheduledAttachmentBase64.trim()}
+              disabled={submitting || !selectedPoId || hasErrors || !hasAnyOrderQty || !scheduledAttachmentBase64.trim() || !plannedDispatchDate}
               className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {submitting ? "Scheduling..." : "Schedule Order"}
@@ -871,6 +905,10 @@ export function CreateDeliveryModal({
               <div>
                 <span className="text-muted-foreground block text-xs mb-1">Payment Type</span>
                 <span className="font-semibold">{paymentType || "—"}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground block text-xs mb-1">Planned Dispatch Date</span>
+                <span className="font-semibold">{plannedDispatchDate || "—"}</span>
               </div>
             </div>
 

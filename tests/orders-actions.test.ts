@@ -204,8 +204,7 @@ const mutations = [
   ["discard draft order", "Draft", () => orders.discardDraftOrder(6), "record.deleted", "purchase-order", "6", "PO-2026-0001"],
   ["create delivery", "Approved", () => deliveries.createDelivery(deliveryInput), "record.created", "delivery", "7", "DLV-2026-0001"],
   ["cancel delivery", "Scheduled", () => deliveries.cancelDelivery(7, { reason: "Late" }), "record.updated", "delivery", "7", "DLV-2026-0001"],
-  ["dispatch delivery", "Scheduled", () => deliveries.dispatchDelivery(7, {}), "record.updated", "delivery", "7", "DLV-2026-0001"],
-  ["arrive delivery", "InTransit", () => deliveries.arriveDelivery(7, {}), "record.updated", "delivery", "7", "DLV-2026-0001"],
+  ["arrive delivery", "Scheduled", () => deliveries.arriveDelivery(7, {}), "record.updated", "delivery", "7", "DLV-2026-0001"],
   ["confirm receipt", "Draft", () => receipts.confirmReceiptUpload(6, "3f2b8c1e-5a4d-4c6e-9b7a-1d2e3f4a5b6c"), "record.updated", "purchase-order", "6", "PO-2026-0001"],
 ] as const;
 

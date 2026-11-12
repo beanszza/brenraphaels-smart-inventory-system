@@ -37,6 +37,7 @@ export type OrderInput = {
 
 export type DeliveryInput = {
   poId: number | null;
+  scheduledDate?: string | null;
   expectedArrivalDate?: string | null;
   trackingNumber?: string | null;
   carrier?: string | null;

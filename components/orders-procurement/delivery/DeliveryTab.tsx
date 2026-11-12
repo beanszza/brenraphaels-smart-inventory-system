@@ -18,7 +18,6 @@ import { Delivery, DeliveryStatus } from "../types";
 import { DeliveryTable } from "./DeliveryTable";
 import { CreateDeliveryModal } from "./CreateDeliveryModal";
 import { DeliveryDetailsModal } from "./DeliveryDetailsModal";
-import { MarkDispatchedModal } from "./MarkDispatchedModal";
 import { MarkArrivedModal } from "./MarkArrivedModal";
 import { CancelDeliveryModal } from "./CancelDeliveryModal";
 import Pagination from "@/components/Pagination";
@@ -29,7 +28,6 @@ import { useRouter } from "next/navigation";
 const STATUS_TABS: (DeliveryStatus | "All")[] = [
   "All",
   "Scheduled",
-  "In Transit",
   "Arrived",
   "Cancelled",
 ];
@@ -39,7 +37,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
   const staff = useStaff();
   const isAdmin = isAdminStaff(staff);
 
-  const deliveries = initialDeliveries.map(d => ({ ...d, status: (String(d.status) === "InTransit" ? "In Transit" : d.status) as DeliveryStatus }));
+  const deliveries = initialDeliveries;
   const [loading, startRefresh] = useTransition();
   const [notice, setNotice] = useState("");
   const [activeTab, setActiveTab] = useState<string>("All");
@@ -56,7 +54,6 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
   // Modals state
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [openCreateModal, setOpenCreateModal] = useState(false);
-  const [dispatchDelivery, setDispatchDelivery] = useState<Delivery | null>(null);
   const [arriveDelivery, setArriveDelivery] = useState<Delivery | null>(null);
   const [cancelDelivery, setCancelDelivery] = useState<{ delivery: Delivery; returnToDetails?: boolean } | null>(null);
 
@@ -230,7 +227,6 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
       {loading ? <OrdersSkeleton /> : (<DeliveryTable
         deliveries={paginatedList}
         onView={(d) => setSelectedDelivery(d)}
-        onDispatch={!isAdmin ? (d) => setDispatchDelivery(d) : undefined}
         onArrive={!isAdmin ? (d) => setArriveDelivery(d) : undefined}
         onCancel={!isAdmin ? (d) => setCancelDelivery({ delivery: d }) : undefined}
         onCreateGrn={!isAdmin ? (d) => handleCreateGrn(d) : undefined}

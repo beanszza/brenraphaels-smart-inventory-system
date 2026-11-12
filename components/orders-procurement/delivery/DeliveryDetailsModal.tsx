@@ -43,10 +43,9 @@ export function DeliveryDetailsModal({
       : "—";
 
   const isScheduled = delivery.status === "Scheduled";
-  const isInTransit = delivery.status === "In Transit";
   const isArrived = delivery.status === "Arrived";
   const isCancelled = delivery.status === "Cancelled";
-  const isCancellable = isScheduled || isInTransit;
+  const isCancellable = isScheduled;
 
   const steps = ["Scheduled", "Arrived", "Received (GRN)"];
   const currentStepIdx = isCancelled ? -1 : delivery.grnNumber ? 2 : isArrived ? 1 : 0;
@@ -71,15 +70,10 @@ export function DeliveryDetailsModal({
       size="max-w-4xl"
     >
       <div className="space-y-4">
-        {/* Compact Top Bar: Status, Delivery No, PO Reference, and Stepper */}
+        {/* Compact Top Bar: Status, PO Reference, and Stepper */}
         <div className="rounded-2xl border border-border bg-card p-4 space-y-3.5 shadow-2xs">
           <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-border">
-            <div className="flex items-center gap-2.5">
-              <StatusBadge status={delivery.status} />
-              <span className="text-sm font-bold text-foreground">
-                {delivery.deliveryNumber}
-              </span>
-            </div>
+            <StatusBadge status={delivery.status} />
             <div className="text-xs text-muted-foreground">
               Purchase Order Reference:{" "}
               <span className="font-bold text-foreground">
@@ -164,7 +158,7 @@ export function DeliveryDetailsModal({
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] mb-0.5">Scheduled Date</span>
+              <span className="text-muted-foreground block text-[11px] mb-0.5">Planned Dispatch Date</span>
               <span className="font-medium text-foreground">{fmtDate(delivery.scheduledDate)}</span>
             </div>
             <div>
@@ -381,7 +375,7 @@ export function DeliveryDetailsModal({
             Close
           </ModalCloseButton>
 
-          {!isAdmin && (isScheduled || isInTransit) && onArrive && (
+          {!isAdmin && isScheduled && onArrive && (
             <Button
               type="button"
               onClick={() => {

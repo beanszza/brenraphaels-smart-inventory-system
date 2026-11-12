@@ -86,21 +86,7 @@ export function MarkArrivedModal({
         attachmentUrl: arrivalAttachmentBase64,
       };
 
-      // Try direct arrive endpoint
-      const res = await procurement.arriveDelivery(delivery.deliveryId, payload).catch(async (err) => {
-        if (delivery.status === "Scheduled") {
-          try {
-            await procurement.dispatchDelivery(delivery.deliveryId, {
-              dispatchedDate: new Date().toISOString(),
-              carrier: delivery.carrier || "In-House Logistics",
-            });
-            return await procurement.arriveDelivery(delivery.deliveryId, payload);
-          } catch {
-            throw err;
-          }
-        }
-        throw err;
-      });
+      const res = await procurement.arriveDelivery(delivery.deliveryId, payload);
 
       if (res?.data?.success) {
         // Generate & download official Delivery Arrival Report PDF upon arrival confirmation

@@ -211,7 +211,7 @@ describe("Modal layout, typography, and date bounds", () => {
     expect(approvedHtml).toContain("TOTAL AMOUNT DUE");
   });
 
-  it("enforces Close button and required positive prices in POApprovalModal, removes Planned Dispatch Date, and hides Cancel/Schedule Delivery appropriately", () => {
+  it("enforces Close button and required positive prices in POApprovalModal, restores Planned Dispatch Date, and hides Cancel/Schedule Delivery appropriately", () => {
     const zeroPricePo = {
       poId: 16,
       poNumber: "PO-2026-0016",
@@ -246,7 +246,7 @@ describe("Modal layout, typography, and date bounds", () => {
     const deliveryHtml = renderToStaticMarkup(
       <CreateDeliveryModal open initialPo={zeroPricePo} onClose={() => {}} onSuccess={() => {}} />
     );
-    expect(deliveryHtml).not.toContain("Planned Dispatch Date");
+    expect(deliveryHtml).toContain("Planned Dispatch Date");
 
     const approvedPo = {
       ...zeroPricePo,

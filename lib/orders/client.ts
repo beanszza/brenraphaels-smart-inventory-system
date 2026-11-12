@@ -26,7 +26,6 @@ export const procurement = {
   outstandingItems: (poId: string | number) => actionResponse(deliveries.outstandingItems(poId)),
   createDelivery: (...args: Parameters<typeof deliveries.createDelivery>) => actionResponse(deliveries.createDelivery(...args)),
   cancelDelivery: (...args: Parameters<typeof deliveries.cancelDelivery>) => actionResponse(deliveries.cancelDelivery(...args)),
-  dispatchDelivery: (...args: Parameters<typeof deliveries.dispatchDelivery>) => actionResponse(deliveries.dispatchDelivery(...args)),
   arriveDelivery: (...args: Parameters<typeof deliveries.arriveDelivery>) => actionResponse(deliveries.arriveDelivery(...args)),
 
   planMrp: (...args: Parameters<typeof mrp.planMrp>) => actionResponse(mrp.planMrp(...args)),

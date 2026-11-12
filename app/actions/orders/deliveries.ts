@@ -11,7 +11,7 @@ import { queryDeliveries, queryDelivery } from "@/lib/orders/queries";
 import { isDeliveryInFlight, syncRequisitionLifecycleByPoId } from "@/lib/orders/requisition-lifecycle";
 
 const MODULE = "Orders & Procurement";
-const IN_FLIGHT = ["Scheduled", "InTransit", "Arrived"];
+const IN_FLIGHT = ["Scheduled", "Arrived"];
 
 const target = (d: { DeliveryId: number; DeliveryNumber: string }) => ({ type: "delivery", id: d.DeliveryId, name: d.DeliveryNumber });
 const change = (staff: { name: string }, d: { DeliveryNumber: string }, what: string): Pick<AuditAction, "description"> => ({
@@ -171,7 +171,7 @@ export async function createDelivery(body: DeliveryInput) {
         // The main warehouse, until receiving locations are chosen per delivery.
         ReceivingLocationId: 1,
         Status: "Scheduled",
-        ScheduledDate: new Date(),
+        ScheduledDate: body.scheduledDate ? new Date(body.scheduledDate) : new Date(),
         ExpectedArrivalDate: body.expectedArrivalDate ? new Date(body.expectedArrivalDate) : po.ExpectedArrivalDate,
         TrackingNumber: body.trackingNumber?.trim(),
         Carrier: body.carrier?.trim(),
@@ -237,44 +237,14 @@ export async function cancelDelivery(idInput: string | number, body: DeliveryUpd
   });
 }
 
-export async function dispatchDelivery(idInput: string | number, body: DeliveryUpdateInput = {}) {
-  const staff = await requireModule(MODULE);
-  return mutate(staff, async (tx) => {
-    const id = parseInt(String(idInput), 10);
-    const delivery = await tx.deliveries.findUnique({ where: { DeliveryId: id } });
-    if (!delivery) return fail(`Delivery ${id} not found.`);
-    if (delivery.Status !== "Scheduled") return fail(`Only Scheduled deliveries can be dispatched. Current status: ${delivery.Status}.`);
-
-    const updated = await tx.deliveries.update({
-      where: { DeliveryId: id },
-      data: {
-        Status: "InTransit",
-        DispatchedBy: staff.username,
-        DispatchedDate: body.dispatchedDate ? new Date(body.dispatchedDate) : new Date(),
-        ExpectedArrivalDate: body.expectedArrivalDate ? new Date(body.expectedArrivalDate) : delivery.ExpectedArrivalDate,
-        TrackingNumber: body.trackingNumber?.trim() || delivery.TrackingNumber,
-        Carrier: body.carrier?.trim() || delivery.Carrier,
-        DriverName: body.driverName?.trim() || delivery.DriverName,
-        VehiclePlateNumber: body.vehiclePlateNumber?.trim() || delivery.VehiclePlateNumber,
-        DeliveryNoteNumber: body.deliveryNoteNumber?.trim() || delivery.DeliveryNoteNumber,
-        Notes: body.notes?.trim() || delivery.Notes,
-      },
-    });
-    return {
-      result: resourceResult({ success: true, message: "Delivery marked as dispatched.", data: updated }),
-      audit: { module: MODULE, change: "updated", target: target(updated), ...change(staff, updated, "dispatched") },
-    };
-  });
-}
-
 export async function arriveDelivery(idInput: string | number, body: DeliveryUpdateInput = {}) {
   const staff = await requireModule(MODULE);
   return mutate(staff, async (tx) => {
     const id = parseInt(String(idInput), 10);
     const delivery = await tx.deliveries.findUnique({ where: { DeliveryId: id } });
     if (!delivery) return fail(`Delivery ${id} not found.`);
-    if (delivery.Status !== "InTransit" && delivery.Status !== "Scheduled") {
-      return fail(`Only Scheduled or In-Transit deliveries can be marked as arrived. Current status: ${delivery.Status}.`);
+    if (delivery.Status !== "Scheduled") {
+      return fail(`Only Scheduled deliveries can be marked as arrived. Current status: ${delivery.Status}.`);
     }
 
     const arrivalProof = body.arrivalAttachmentBase64?.trim() || body.attachmentUrl?.trim();

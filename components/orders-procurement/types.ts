@@ -137,7 +137,7 @@ export type PurchaseOrderPO = {
 
 // ─── Delivery Types ─────────────────────────────────────────────────────────
 
-export type DeliveryStatus = "Scheduled" | "In Transit" | "Arrived" | "Cancelled";
+export type DeliveryStatus = "Scheduled" | "Arrived" | "Cancelled";
 
 export type DeliveryItem = {
   deliveryItemId?: number;

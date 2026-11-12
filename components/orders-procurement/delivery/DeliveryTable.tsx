@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Eye, Truck, CheckCircle, Receipt, Ban, MoreHorizontal } from "lucide-react";
+import { Eye, CheckCircle, Receipt, Ban, MoreHorizontal } from "lucide-react";
 import { Delivery } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import {
@@ -20,7 +20,6 @@ interface ActionItem {
 interface DeliveryTableProps {
   deliveries: Delivery[];
   onView: (delivery: Delivery) => void;
-  onDispatch?: (delivery: Delivery) => void;
   onArrive?: (delivery: Delivery) => void;
   onCancel?: (delivery: Delivery) => void;
   onCreateGrn?: (delivery: Delivery) => void;
@@ -29,7 +28,6 @@ interface DeliveryTableProps {
 export function DeliveryTable({
   deliveries,
   onView,
-  onDispatch,
   onArrive,
   onCancel,
   onCreateGrn,
@@ -81,9 +79,8 @@ export function DeliveryTable({
           ) : (
             deliveries.map((delivery) => {
               const isScheduled = delivery.status === "Scheduled";
-              const isInTransit = delivery.status === "In Transit";
               const isArrived = delivery.status === "Arrived";
-              const isCancellable = isScheduled || isInTransit;
+              const isCancellable = isScheduled;
 
               const itemCount = delivery.items?.length || 0;
 
@@ -99,7 +96,7 @@ export function DeliveryTable({
               ];
 
               // Only inventory manager has actions; admin side just checks/views
-              if ((isScheduled || isInTransit) && onArrive) {
+              if (isScheduled && onArrive) {
                 actions.push({
                   label: "Mark Arrived",
                   icon: <CheckCircle className="w-4 h-4 text-foreground" />,
