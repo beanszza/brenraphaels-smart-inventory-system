@@ -46,6 +46,19 @@ The gateway needs two Callers because each holds one scoped audit key:
 | `ims-audit-read` | `read:admin` | `IMS_GATEWAY_AUDIT_READ_CALLER_KEY` |
 
 Both use `app: IMS` and `systemCode: IMS`. Preserve every other Caller when updating `CALLERS`.
+For live header notifications, allow the `ims` Caller to issue **inbox** live tickets via
+`POST /live-tickets` with `{ userId }`. The gateway must bind each ticket
+to that Portal user and the Caller's `app: IMS`, enforce short expiry and single use, and
+proxy WebSocket upgrades at `/notifications/live?ticket=...` to the Notifications service's
+`/live` with its server-only gateway secret. Enable this route through any upstream proxy.
+The browser's socket URL is derived from `IMS_GATEWAY_URL` (`https` becomes `wss`);
+no public secret or additional environment variable is needed. Verify two signed-in tabs:
+a new notification and a read in either tab should update both bells within seconds.
+The bell resyncs after each connection and when opened. Live events update the displayed
+list and unread count directly; a REST refresh recovers events missed while disconnected.
+Ticket failures are silent and retried with backoff; retries pause while the tab is hidden.
+The merged WebSocket-only behavior is preserved: no interval polling or focus refetch.
+
 The read credential can read all Sources, so keep it server-side and restrict the logs page to IMS
 events in ticket #11. Audit API keys themselves never belong in the IMS environment.
 
