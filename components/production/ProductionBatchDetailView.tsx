@@ -11,7 +11,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { CheckCircle2, Package, AlertTriangle, ArrowLeft, Clock } from "lucide-react";
+import { CheckCircle2, Package, AlertTriangle, ArrowLeft, Clock, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ import { ProductionBatchEntity } from "./types";
 import { BatchProofField } from "./BatchProofField";
 import { getMaxFutureDateString } from "@/lib/date-limits";
 import { resolveStaffName } from "@/lib/orders/dto";
+import { getLotItemAbbreviation } from "@/lib/inventory/lot-code";
 
 export const COOKING_STAGES = [
   "Steaming",
@@ -540,6 +541,24 @@ export default function ProductionBatchDetailView({
   const isQaPhase = status === "For QA";
   const isPostQaPhase = status === "For Stock-in" || status === "Stocked In" || status === "Completed";
 
+  const startDateTime = batch.startedAt ? new Date(batch.startedAt) : null;
+  const startDateFormatted = startDateTime
+    ? startDateTime.toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" })
+    : "—";
+  const startTimeFormatted = startDateTime
+    ? startDateTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })
+    : "—";
+
+  const previewFgLotCode = useMemo(() => {
+    if (batch.fgLotCode) return batch.fgLotCode;
+    const itemAbbrev = getLotItemAbbreviation(batch.productName);
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    return `FG-${itemAbbrev}-${yy}${mm}${dd}-01`;
+  }, [batch.fgLotCode, batch.productName]);
+
   return (
     <div className="space-y-5 min-w-0">
       {/* Top Navigation Bar */}
@@ -591,10 +610,18 @@ export default function ProductionBatchDetailView({
           )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 pt-1">
           <div>
             <span className="text-xs font-semibold text-muted-foreground block">Batch No.</span>
             <span className="text-sm font-semibold text-foreground">{batch.batchNumber}</span>
+          </div>
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground block">Product</span>
+            <span className="text-sm font-semibold text-foreground">{batch.productName}</span>
+          </div>
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground block">Variant</span>
+            <span className="text-sm font-semibold text-foreground">{batch.variant || "—"}</span>
           </div>
           <div>
             <span className="text-xs font-semibold text-muted-foreground block">Target Output</span>
@@ -720,8 +747,9 @@ export default function ProductionBatchDetailView({
                           </div>
                           <div>
                             {isDone ? (
-                              <span className="text-xs text-muted-foreground">
-                                ✓ Done ({formatTo12Hour(stageLogs[stName].endTime)})
+                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                <span>Done</span>
                               </span>
                             ) : isCurrent ? (
                               <StatusBadge status="In Progress">Current Stage</StatusBadge>
@@ -740,14 +768,17 @@ export default function ProductionBatchDetailView({
                                 <Label className="text-xs font-semibold text-foreground">
                                   Completion Date <span className="text-destructive">*</span>
                                 </Label>
-                                <Input
-                                  type="date"
-                                  min={getTodayDateString()}
-                                  max={getMaxFutureDateString()}
-                                  value={stageDate}
-                                  onChange={(e) => setStageDate(e.target.value)}
-                                  className="h-10 text-sm border-border bg-card rounded-xl px-3 text-foreground"
-                                />
+                                <div className="relative">
+                                  <Input
+                                    type="date"
+                                    min={getTodayDateString()}
+                                    max={getMaxFutureDateString()}
+                                    value={stageDate}
+                                    onChange={(e) => setStageDate(e.target.value)}
+                                    className="h-10 w-full rounded-xl border-border bg-card px-3 pr-9 py-2 text-sm text-foreground [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:top-1/2 [&::-webkit-calendar-picker-indicator]:-translate-y-1/2 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                                  />
+                                  <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                </div>
                               </div>
 
                               {/* 2. Dedicated Time Field (12-Hour) */}
@@ -903,161 +934,202 @@ export default function ProductionBatchDetailView({
                 </p>
               </div>
 
-              {/* Top Summary Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
-                  <p className="text-[11px] font-medium text-muted-foreground">Production Start Date</p>
-                  <p className="text-xs font-bold text-foreground">
-                    {batch.startedAt
-                      ? new Date(batch.startedAt).toLocaleString("en-US", { hour12: true })
-                      : new Date().toLocaleDateString()}
-                  </p>
-                </div>
+              {/* A. Production Information */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-foreground">A. Production Information</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">Production Start Date</p>
+                    <p className="text-sm font-semibold text-foreground">{startDateFormatted}</p>
+                  </div>
 
-                <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
-                  <p className="text-[11px] font-medium text-muted-foreground">Target Request Quantity</p>
-                  <p className="text-xs font-bold text-foreground">
-                    {reqQty.toLocaleString()} {batch.yieldUom || "jars"}
-                  </p>
+                  <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">Production Start Time</p>
+                    <p className="text-sm font-semibold text-foreground">{startTimeFormatted}</p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">Target Request Quantity</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {reqQty.toLocaleString()} {batch.yieldUom || "jars"}
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">Product</p>
+                    <p className="text-sm font-semibold text-foreground">{batch.productName}</p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">Product Variant</p>
+                    <p className="text-sm font-semibold text-foreground">{batch.variant || "—"}</p>
+                  </div>
                 </div>
               </div>
 
-              {/* Packaging Fields Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* 1. Packaging Date */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-foreground">
-                    Packaging Date <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    type="date"
-                    min={getTodayDateString()}
-                    max={getMaxFutureDateString()}
-                    value={pkgDate}
-                    onChange={(e) => setPkgDate(e.target.value)}
-                    className="h-10 text-xs border-border bg-card rounded-xl px-3 text-foreground"
-                  />
-                </div>
-
-                {/* 2. Packaging Time (12-Hour) */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
+              {/* B. Packaging Schedule */}
+              <div className="space-y-3 pt-2">
+                <h4 className="text-sm font-semibold text-foreground">B. Packaging Schedule</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Packaging Date */}
+                  <div className="space-y-1.5">
                     <Label className="text-xs font-semibold text-foreground">
-                      Packaging Time (12-Hour) <span className="text-destructive">*</span>
+                      Packaging Date <span className="text-destructive">*</span>
                     </Label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPkgDate(getTodayDateString());
-                        const cur = getCurrent12HourTime();
-                        setPkgHour(cur.hour);
-                        setPkgMinute(cur.minute);
-                        setPkgPeriod(cur.period);
-                      }}
-                      className="text-[11px] font-medium text-primary hover:underline cursor-pointer"
-                    >
-                      Set to Now
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2 h-10">
-                    <select
-                      value={pkgHour}
-                      onChange={(e) => setPkgHour(e.target.value)}
-                      className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
-                    >
-                      {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0")).map((h) => (
-                        <option key={h} value={h}>{h}</option>
-                      ))}
-                    </select>
-
-                    <span className="font-bold text-muted-foreground text-sm shrink-0">:</span>
-
-                    <select
-                      value={pkgMinute}
-                      onChange={(e) => setPkgMinute(e.target.value)}
-                      className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
-                    >
-                      {Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0")).map((m) => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
-
-                    <div className="flex rounded-xl border border-border p-1 bg-muted/40 h-10 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setPkgPeriod("AM")}
-                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                          pkgPeriod === "AM"
-                            ? "bg-primary text-primary-foreground shadow-xs"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        AM
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPkgPeriod("PM")}
-                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                          pkgPeriod === "PM"
-                            ? "bg-primary text-primary-foreground shadow-xs"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        PM
-                      </button>
+                    <div className="relative">
+                      <Input
+                        type="date"
+                        min={getTodayDateString()}
+                        max={getMaxFutureDateString()}
+                        value={pkgDate}
+                        onChange={(e) => setPkgDate(e.target.value)}
+                        className="h-10 w-full rounded-xl border-border bg-card px-3 pr-9 py-2 text-sm text-foreground [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:top-1/2 [&::-webkit-calendar-picker-indicator]:-translate-y-1/2 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                      />
+                      <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     </div>
                   </div>
-                </div>
 
-                {/* 3. Product Expiry Date */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-foreground">
-                    Product Expiry Date <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    type="date"
-                    min={pkgDate || getTodayDateString()}
-                    max={getMaxFutureDateString()}
-                    value={pkgExpiryDate}
-                    onChange={(e) => setPkgExpiryDate(e.target.value)}
-                    className="h-10 text-xs border-border bg-card rounded-xl px-3 text-foreground"
-                  />
-                </div>
+                  {/* Packaging Time (12-Hour) */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold text-foreground">
+                        Packaging Time (12-Hour) <span className="text-destructive">*</span>
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPkgDate(getTodayDateString());
+                          const cur = getCurrent12HourTime();
+                          setPkgHour(cur.hour);
+                          setPkgMinute(cur.minute);
+                          setPkgPeriod(cur.period);
+                        }}
+                        className="text-xs font-medium text-primary hover:underline cursor-pointer"
+                      >
+                        Set to Now
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 h-10">
+                      <select
+                        value={pkgHour}
+                        onChange={(e) => setPkgHour(e.target.value)}
+                        className="h-10 flex-1 px-3 text-sm border border-border rounded-xl bg-card text-foreground font-semibold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                      >
+                        {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0")).map((h) => (
+                          <option key={h} value={h}>{h}</option>
+                        ))}
+                      </select>
 
-                {/* 4. Assigned to Pack (Packer) - Read-only display of Account Name */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-foreground">
-                    Assigned to Pack (Packer) <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    readOnly
-                    disabled
-                    value={packerDisplayName}
-                    className="h-10 text-xs border-border bg-muted/40 text-foreground font-semibold rounded-xl px-3 cursor-not-allowed"
-                  />
-                </div>
+                      <span className="font-bold text-muted-foreground text-sm shrink-0">:</span>
 
-                {/* 5. Packed Quantity */}
-                <div className="sm:col-span-2 space-y-1.5">
+                      <select
+                        value={pkgMinute}
+                        onChange={(e) => setPkgMinute(e.target.value)}
+                        className="h-10 flex-1 px-3 text-sm border border-border rounded-xl bg-card text-foreground font-semibold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                      >
+                        {Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0")).map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+
+                      <div className="flex rounded-xl border border-border p-1 bg-muted/40 h-10 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setPkgPeriod("AM")}
+                          className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                            pkgPeriod === "AM"
+                              ? "bg-primary text-primary-foreground shadow-xs"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          AM
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPkgPeriod("PM")}
+                          className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                            pkgPeriod === "PM"
+                              ? "bg-primary text-primary-foreground shadow-xs"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          PM
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Product Expiry Date */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-foreground">
+                      Product Expiry Date <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        type="date"
+                        min={pkgDate || getTodayDateString()}
+                        max={getMaxFutureDateString()}
+                        value={pkgExpiryDate}
+                        onChange={(e) => setPkgExpiryDate(e.target.value)}
+                        className="h-10 w-full rounded-xl border-border bg-card px-3 pr-9 py-2 text-sm text-foreground [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:top-1/2 [&::-webkit-calendar-picker-indicator]:-translate-y-1/2 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                      />
+                      <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    </div>
+                  </div>
+
+                  {/* Assigned Packer */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-foreground">
+                      Assigned Packer <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      readOnly
+                      disabled
+                      value={packerDisplayName}
+                      className="h-10 text-sm border-border bg-muted/40 text-foreground font-semibold rounded-xl px-3 cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* C. Packaging Results */}
+              <div className="space-y-3 pt-2">
+                <h4 className="text-sm font-semibold text-foreground">C. Packaging Results</h4>
+                <div className="space-y-1.5 max-w-sm">
                   <Label className="text-xs font-semibold text-foreground">
-                    Packed Quantity ({batch.yieldUom || "jars"}) <span className="text-destructive">*</span>
+                    Actual Packed Quantity ({batch.yieldUom || "jars"}) <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     type="number"
                     min="1"
                     value={pkgQuantity || ""}
                     onChange={(e) => setPkgQuantity(Number(e.target.value))}
-                    className="h-10 text-xs border-border bg-card rounded-xl font-bold px-3 text-foreground max-w-sm"
+                    className="h-10 text-sm border-border bg-card rounded-xl font-semibold px-3 text-foreground"
                   />
                   {reqQty > 0 && pkgQuantity > 0 && (
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       Yield: {((pkgQuantity / reqQty) * 100).toFixed(1)}% of requested ({reqQty} {batch.yieldUom || "jars"})
                     </p>
                   )}
                 </div>
+              </div>
 
-                {/* 6. Proof of Packaging via FileUploadField (same as delivery) */}
-                <div className="sm:col-span-2">
+              {/* D. Batch Registration & Quality Control */}
+              <div className="space-y-4 pt-2">
+                <h4 className="text-sm font-semibold text-foreground">D. Batch Registration & Quality Control</h4>
+
+                {/* Finished Goods Lot No. */}
+                <div className="space-y-1.5 max-w-sm">
+                  <Label className="text-xs font-semibold text-foreground">
+                    Finished Goods Lot No.
+                  </Label>
+                  <div className="h-10 px-3 rounded-xl border border-border bg-muted/30 flex items-center font-semibold text-sm text-foreground">
+                    {previewFgLotCode}
+                  </div>
+                </div>
+
+                {/* Proof of Packaging via FileUploadField */}
+                <div>
                   <BatchProofField
                     batchId={batchId}
                     label="Proof of Packaging / Photo Verification *"
@@ -1065,59 +1137,42 @@ export default function ProductionBatchDetailView({
                   />
                 </div>
 
-                {/* 7. Packaging Remarks */}
-                <div className="sm:col-span-2 space-y-1.5">
-                  <Label className="text-xs font-semibold text-foreground">Packaging Remarks (Optional)</Label>
+                {/* Packaging Remarks / Notes */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-foreground">Remarks / Notes</Label>
                   <Textarea
-                    placeholder="Packaging notes, cap condition, label alignment, seals..."
+                    placeholder="Additional observations, packaging issues, or inspection findings..."
                     rows={2}
                     value={pkgNotes}
                     onChange={(e) => setPkgNotes(e.target.value)}
-                    className="text-xs border-border bg-card rounded-xl text-foreground placeholder:text-muted-foreground"
+                    className="text-sm border-border bg-card rounded-xl text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
               </div>
 
-              {/* Bottom Packaging Controls with Live Validation Status */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border/60">
-                <div className="text-xs text-muted-foreground">
-                  {validatePackagingDateTime() ? (
-                    <span className="text-destructive font-medium flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                      <span>{validatePackagingDateTime()}</span>
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground flex items-center gap-1.5">
-                      <span>Recorded Packaging:</span>
-                      <strong className="text-foreground">{pkgDate} at {pkgHour}:{pkgMinute} {pkgPeriod}</strong>
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-end">
-                  {!isAdmin ? (
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        const err = validatePackagingDateTime();
-                        if (err) {
-                          toast.error(err);
-                          return;
-                        }
-                        setConfirmPackagingModal(true);
-                      }}
-                      disabled={pkgLoading || Boolean(validatePackagingDateTime()) || !pkgProofUrl || pkgQuantity <= 0}
-                      className="h-10 px-5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Finish Packaging & Send to QA</span>
-                    </Button>
-                  ) : (
-                    <span className="text-xs text-muted-foreground italic">
-                      Admin View-Only Mode (Packaging operated by Head Cook)
-                    </span>
-                  )}
-                </div>
+              {/* Bottom Packaging Controls */}
+              <div className="flex items-center justify-end pt-3 border-t border-border/60">
+                {!isAdmin ? (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const err = validatePackagingDateTime();
+                      if (err) {
+                        toast.error(err);
+                        return;
+                      }
+                      setConfirmPackagingModal(true);
+                    }}
+                    disabled={pkgLoading || Boolean(validatePackagingDateTime()) || !pkgProofUrl || pkgQuantity <= 0}
+                    className="h-10 px-6 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Finish Packaging
+                  </Button>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">
+                    Admin View-Only Mode (Packaging operated by Head Cook)
+                  </span>
+                )}
               </div>
             </div>
           )}
@@ -1217,17 +1272,24 @@ export default function ProductionBatchDetailView({
           className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
         >
           <div
-            className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border p-6 text-foreground outline-none animate-in fade-in zoom-in-95 duration-150"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm Stage Completion"
+            style={{ width: "100%", maxWidth: "440px" }}
+            className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0 outline-none animate-in fade-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col items-center justify-center text-center">
               <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
-                <AlertTriangle className="w-6 h-6 text-foreground" />
+                <AlertTriangle className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-1">
+              <h2 className="text-xl font-bold text-foreground mb-1">
                 Confirm Stage Completion
-              </h3>
-              <p className="text-sm text-muted-foreground mb-6">
+              </h2>
+              <p className="text-xs font-semibold text-muted-foreground mb-3">
+                Batch No: {batch.batchNumber}
+              </p>
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                 Are you sure you want to mark{" "}
                 <strong className="text-foreground">
                   {activeCookingStage !== "Packaging" ? activeCookingStage : "Current Stage"}
@@ -1235,7 +1297,7 @@ export default function ProductionBatchDetailView({
                 as complete on <strong className="text-foreground">{stageDate}</strong> at{" "}
                 <strong className="text-foreground">{formattedStageEndTime}</strong>? This action cannot be reversed.
               </p>
-              <div className="flex justify-center gap-3 w-full pt-1">
+              <div className="flex justify-center gap-3 w-full">
                 <Button
                   type="button"
                   variant="outline"
@@ -1266,17 +1328,24 @@ export default function ProductionBatchDetailView({
           className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
         >
           <div
-            className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border p-6 text-foreground outline-none animate-in fade-in zoom-in-95 duration-150"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm Packaging Finish"
+            style={{ width: "100%", maxWidth: "440px" }}
+            className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0 outline-none animate-in fade-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col items-center justify-center text-center">
               <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
-                <AlertTriangle className="w-6 h-6 text-foreground" />
+                <AlertTriangle className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-1">
+              <h2 className="text-xl font-bold text-foreground mb-1">
                 Confirm Packaging Finish
-              </h3>
-              <p className="text-sm text-muted-foreground mb-6">
+              </h2>
+              <p className="text-xs font-semibold text-muted-foreground mb-3">
+                Batch No: {batch.batchNumber}
+              </p>
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                 Are you sure you want to finalize packaging of{" "}
                 <strong className="text-foreground">
                   {pkgQuantity.toLocaleString()} {batch?.yieldUom || "jars"}
@@ -1284,7 +1353,7 @@ export default function ProductionBatchDetailView({
                 ? This will register the Finished Goods lot and advance the batch to{" "}
                 <strong className="text-foreground">Quality Assurance</strong>.
               </p>
-              <div className="flex justify-center gap-3 w-full pt-1">
+              <div className="flex justify-center gap-3 w-full">
                 <Button
                   type="button"
                   variant="outline"
