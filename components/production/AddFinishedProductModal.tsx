@@ -149,14 +149,16 @@ export default function AddFinishedProductModal({
       setDescription(editingItem.description || "");
       setIsActive(editingItem.isActive !== false);
       setPhotoFile(null);
-      setPhotoPreview("");
+      setPhotoPreview(editingItem.imageUrl || "");
 
-      // Resolve actual image URL for preview
-      resolveProductionImage("product", editingItem.productId).then((resolvedUrl) => {
-        if (isMounted && resolvedUrl && resolvedUrl !== FILE_PLACEHOLDER) {
-          setPhotoPreview(resolvedUrl);
-        }
-      });
+      // Resolve actual image URL for preview if not already set
+      if (!editingItem.imageUrl) {
+        resolveProductionImage("product", editingItem.productId).then((resolvedUrl) => {
+          if (isMounted && resolvedUrl && resolvedUrl !== FILE_PLACEHOLDER) {
+            setPhotoPreview(resolvedUrl);
+          }
+        });
+      }
 
       setVariants(
         sourceVariants.map((item) => {

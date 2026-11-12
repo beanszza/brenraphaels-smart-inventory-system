@@ -279,7 +279,7 @@ export default function ConfigurationTab({
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-          <table className="w-full min-w-[900px]">
+          <table className="w-full min-w-[800px]">
             <thead className="border-b border-border bg-muted/30">
               <tr className="text-left text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">
                 <th className="px-4 py-3.5 w-14">No.</th>
@@ -289,8 +289,6 @@ export default function ConfigurationTab({
                 <th className="px-4 py-3.5">Content Size</th>
                 <th className="px-4 py-3.5">UOM</th>
                 <th className="px-4 py-3.5">Packaging</th>
-                <th className="px-4 py-3.5">Min Stock</th>
-                <th className="px-4 py-3.5">Max Stock</th>
                 <th className="px-4 py-3.5">Variant SKU</th>
                 <th className="px-4 py-3.5">Status</th>
                 <th className="px-4 py-3.5 text-center w-20">Actions</th>
@@ -300,7 +298,7 @@ export default function ConfigurationTab({
               {paginatedProducts.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={12}
+                    colSpan={10}
                     className="px-5 py-12 text-center text-sm font-normal text-muted-foreground"
                   >
                     {searchQuery || productFilter !== "All" || packagingFilter !== "All" || statusFilter !== "All"
@@ -322,13 +320,21 @@ export default function ConfigurationTab({
                     {/* Photo */}
                     <td className="px-4 py-3">
                       <div className="w-9 h-9 rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center shrink-0">
-                        <ProductionImage
-                          kind="product"
-                          id={product.productId}
-                          alt={product.itemName}
-                          className="w-full h-full object-cover"
-                          version={photoVersion}
-                        />
+                        {product.imageUrl ? (
+                          <img
+                            src={product.imageUrl}
+                            alt={product.itemName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <ProductionImage
+                            kind="product"
+                            id={product.productId}
+                            alt={product.itemName}
+                            className="w-full h-full object-cover"
+                            version={photoVersion}
+                          />
+                        )}
                       </div>
                     </td>
 
@@ -357,16 +363,6 @@ export default function ConfigurationTab({
                     {/* Packaging */}
                     <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
                       {product.packagingType || "Jar"}
-                    </td>
-
-                    {/* Min Stock */}
-                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
-                      {product.minStockLevel ?? 10}
-                    </td>
-
-                    {/* Max Stock */}
-                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
-                      {product.maxStockLevel ?? 100}
                     </td>
 
                     {/* Variant SKU */}

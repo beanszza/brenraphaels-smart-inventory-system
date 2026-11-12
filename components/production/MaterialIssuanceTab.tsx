@@ -118,81 +118,81 @@ export default function MaterialIssuanceTab({ initialRows, initialIssuanceId }: 
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-muted/40 border-b border-border">
+      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+        <table className="w-full min-w-[900px]">
+          <thead className="border-b border-border bg-muted/30">
+            <tr className="text-left text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">
+              <th className="px-4 py-3.5">Issuance Number</th>
+              <th className="px-4 py-3.5">Request Number</th>
+              <th className="px-4 py-3.5">Product</th>
+              <th className="px-4 py-3.5">Recipe</th>
+              <th className="px-4 py-3.5 text-right">Target Output</th>
+              <th className="px-4 py-3.5 text-center">Status</th>
+              <th className="px-4 py-3.5">Issued Date</th>
+              <th className="px-4 py-3.5 text-center w-20">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {loading ? (
               <tr>
-                <th className="py-3 px-4 font-semibold text-muted-foreground whitespace-nowrap">Issuance Number</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground whitespace-nowrap">Request Number</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground">Product</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground">Recipe</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground text-right whitespace-nowrap">Target Output</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground text-center">Status</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground whitespace-nowrap">Issued Date</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground text-right w-20">Actions</th>
+                <td colSpan={8} className="px-5 py-12 text-center text-sm font-normal text-muted-foreground">
+                  <ProductionSkeleton />
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-xs text-muted-foreground animate-pulse">
-                    <ProductionSkeleton />
-                  </td>
-                </tr>
-              ) : paginatedIssuances.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-xs text-muted-foreground">
-                    No material issuances found. Once a production request is approved, initialize issuance to scan supplies.
-                  </td>
-                </tr>
-              ) : (
-                paginatedIssuances.map((iss) => {
-                  const isDone = iss.status === "Issued";
-                  const isMenuOpen = openDropdownId === iss.issuanceId;
+            ) : paginatedIssuances.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-5 py-12 text-center text-sm font-normal text-muted-foreground">
+                  No material issuances found. Once a production request is approved, initialize issuance to scan supplies.
+                </td>
+              </tr>
+            ) : (
+              paginatedIssuances.map((iss) => {
+                const isDone = iss.status === "Issued";
+                const isMenuOpen = openDropdownId === iss.issuanceId;
 
-                  return (
-                    <tr
-                      key={iss.issuanceId}
-                      onClick={() => handleOpenScanner(iss.issuanceId)}
-                      className="hover:bg-muted/30 transition-colors cursor-pointer"
-                    >
-                      <td className="py-3.5 px-4 font-mono font-bold text-foreground whitespace-nowrap">
-                        {iss.issuanceNumber}
-                      </td>
+                return (
+                  <tr
+                    key={iss.issuanceId}
+                    onClick={() => handleOpenScanner(iss.issuanceId)}
+                    className="hover:bg-muted/30 transition-colors cursor-pointer"
+                  >
+                    <td className="px-4 py-3 text-sm font-mono font-bold text-foreground whitespace-nowrap">
+                      {iss.issuanceNumber}
+                    </td>
 
-                      <td className="py-3.5 px-4 font-mono text-muted-foreground font-semibold whitespace-nowrap">
-                        {iss.reqNumber}
-                      </td>
+                    <td className="px-4 py-3 text-sm font-mono text-muted-foreground font-semibold whitespace-nowrap">
+                      {iss.reqNumber}
+                    </td>
 
-                      <td className="py-3.5 px-4 font-semibold text-foreground">
-                        {iss.productName}
-                      </td>
+                    <td className="px-4 py-3 text-sm font-semibold text-foreground whitespace-nowrap">
+                      {iss.productName}
+                    </td>
 
-                      <td className="py-3.5 px-4 text-muted-foreground">
-                        {iss.recipeName}
-                      </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                      {iss.recipeName}
+                    </td>
 
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-foreground whitespace-nowrap">
-                        {iss.requestQuantity}
-                      </td>
+                    <td className="px-4 py-3 text-sm text-right font-mono font-bold text-foreground whitespace-nowrap">
+                      {iss.requestQuantity}
+                    </td>
 
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <StatusBadge status={iss.status} />
-                      </td>
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                      <StatusBadge status={iss.status} />
+                    </td>
 
-                      <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap">
-                        {iss.issuedAt ? new Date(iss.issuedAt).toLocaleDateString() : "—"}
-                      </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                      {iss.issuedAt ? new Date(iss.issuedAt).toLocaleDateString() : "—"}
+                    </td>
 
-                      {/* Actions (Three Dots Menu) */}
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <div className="relative inline-block text-left action-menu-container">
-                          <button
-                            type="button"
-                            onClick={() => setOpenDropdownId(isMenuOpen ? null : iss.issuanceId)}
-                            className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
-                            title="Actions"
-                          >
+                    {/* Actions (Three Dots Menu) */}
+                    <td className="px-4 py-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <div className="relative inline-block text-left action-menu-container">
+                        <button
+                          type="button"
+                          onClick={() => setOpenDropdownId(isMenuOpen ? null : iss.issuanceId)}
+                          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
+                          title="Actions"
+                        >
                             <MoreHorizontal className="w-4 h-4 text-foreground" />
                           </button>
 

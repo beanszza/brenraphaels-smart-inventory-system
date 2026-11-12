@@ -343,33 +343,33 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
             </p>
           </div>
         ) : (
-          <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-muted/40 border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              <tr>
-                <th className="py-3 px-4">Finished Goods Lot</th>
-                <th className="py-3 px-4">Product Name</th>
-                <th className="py-3 px-4">Batch Number</th>
-                <th className="py-3 px-4 text-right">Units to Stock</th>
-                <th className="py-3 px-4">Expiry Date</th>
-                <th className="py-3 px-4 text-right w-20">Actions</th>
+          <table className="w-full min-w-[800px]">
+            <thead className="border-b border-border bg-muted/30">
+              <tr className="text-left text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">
+                <th className="px-4 py-3.5">Finished Goods Lot</th>
+                <th className="px-4 py-3.5">Product Name</th>
+                <th className="px-4 py-3.5">Batch Number</th>
+                <th className="px-4 py-3.5 text-right">Units to Stock</th>
+                <th className="px-4 py-3.5">Expiry Date</th>
+                <th className="px-4 py-3.5 text-center w-20">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {displayedBatches.map((b) => (
-                <tr key={b.batchId} className="hover:bg-muted/20 transition-colors">
-                  <td className="py-3.5 px-4 font-mono font-bold text-foreground">
+                <tr key={b.batchId} className="hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 text-sm font-mono font-bold text-foreground">
                     {b.fgLotCode || "Pending Lot"}
                   </td>
-                  <td className="py-3.5 px-4 font-semibold text-foreground">
+                  <td className="px-4 py-3 text-sm font-semibold text-foreground">
                     {b.productName}
                   </td>
-                  <td className="py-3.5 px-4 font-mono text-muted-foreground">
+                  <td className="px-4 py-3 text-sm font-mono text-muted-foreground">
                     {b.batchNumber}
                   </td>
-                  <td className="py-3.5 px-4 text-right font-mono font-bold text-foreground">
+                  <td className="px-4 py-3 text-sm text-right font-mono font-bold text-foreground">
                     {Number(b.finalQuantity || b.actualQuantity).toLocaleString()} {b.yieldUom || "jars"}
                   </td>
-                  <td className="py-3.5 px-4 text-muted-foreground">
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
                     {b.expiryDate
                       ? new Date(b.expiryDate).toLocaleDateString("en-GB", {
                           day: "2-digit",
@@ -378,7 +378,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                         })
                       : "—"}
                   </td>
-                  <td className="py-3.5 px-4 text-right relative action-menu-container" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-4 py-3 text-center relative action-menu-container" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       onClick={() =>
@@ -395,7 +395,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                         <button
                           type="button"
                           onClick={() => handleOpenForBatch(b)}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+                          className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
                         >
                           <Eye size={14} className="shrink-0" />
                           <span>View Details</span>
@@ -404,7 +404,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                           <button
                             type="button"
                             onClick={() => handleOpenForBatch(b)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border/60"
+                            className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border/60"
                           >
                             <ArrowDownToLine size={14} className="shrink-0" />
                             <span>Commit Stock-In</span>
@@ -420,7 +420,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
         )}
       </div>
 
-      {/* ── Modal: Create Stock-In Report (Exact layout matching User Images 1 & 2) ── */}
+      {/* ── Modal: Create Stock-In Report ── */}
       {mounted && isStockInModalOpen && typeof document !== "undefined" && createPortal(
         <div
           className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
@@ -433,7 +433,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-border pb-3 mb-4 flex-shrink-0">
-              <h2 className="text-xl font-bold text-foreground">Create Stock-In Report</h2>
+              <h2 className="text-lg font-semibold text-foreground">Create Stock-In Report</h2>
               <button
                 type="button"
                 onClick={requestCloseStockInModal}
@@ -448,14 +448,14 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
             <div className="space-y-5">
               {/* Select Finished Goods Lot (Not pre-filled) */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <label className="block text-xs font-semibold text-foreground">
                   Select Finished Goods Lot
                 </label>
                 <div>
                   <select
                     value={modalSelectedBatchId}
                     onChange={(e) => setModalSelectedBatchId(e.target.value ? Number(e.target.value) : "")}
-                    className="w-80 rounded-xl border border-border bg-card px-3.5 py-2.5 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                    className="w-80 rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
                   >
                     <option value="">
                       Select Finished Goods Lot
