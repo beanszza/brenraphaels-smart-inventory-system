@@ -69,7 +69,13 @@ export default function ViewInventory({
   const router = useRouter();
   const allInventories = initialInventories;
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("Raw Materials");
+  const firstTabId =
+    initialCategories && initialCategories.length > 0
+      ? initialCategories[0].categoryName
+      : initialInventories.find(
+          (item) => item.categoryName && !item.categoryName.toLowerCase().includes("finished good")
+        )?.categoryName || "Finished Goods";
+  const [categoryFilter, setCategoryFilter] = useState(firstTabId);
   const [productFilter, setProductFilter] = useState("All");
   const [page, setPage] = useState(1);
 
