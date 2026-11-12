@@ -24,6 +24,7 @@ import {
   Clock,
   XCircle,
   Info,
+  X,
 } from "lucide-react";
 import { ProductionRequestEntity, LotSuggestionsResponse } from "./types";
 import { ProductionActionModal, ProductionActionType } from "./ProductionActionModal";
@@ -72,6 +73,8 @@ const REASON_OPTIONS = [
   "Special Order",
   "Other",
 ];
+
+const CUSTOM_REASON_MAX = 100;
 
 export const HOURS_12 = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
 export const MINUTES_OPTIONS = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
@@ -371,6 +374,11 @@ export default function ProductionRequestModal({
   }, [open, isViewMode, initialRequest, productId, recipeId, quantity]);
 
   // Validation handlers for Date and Time
+  const getCurrentTime24 = () => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  };
+
   const handleDateChange = (val: string) => {
     if (val && val < today) {
       toast.error("Required date cannot be in the past.");
@@ -379,12 +387,14 @@ export default function ProductionRequestModal({
     setRequiredDate(val);
     if (val === today) {
       const now = new Date();
-      const currentHours = String(now.getHours()).padStart(2, "0");
-      const currentMins = String(now.getMinutes()).padStart(2, "0");
-      const currentTimeStr = `${currentHours}:${currentMins}`;
+      const currentTimeStr = getCurrentTime24();
       if (requiredTime < currentTimeStr) {
-        setRequiredTime(currentTimeStr);
-        const parsed = parse24HTo12H(currentTimeStr);
+        const nextTotalMins = Math.min(23 * 60 + 59, now.getHours() * 60 + Math.ceil((now.getMinutes() + 1) / 5) * 5);
+        const nextH = String(Math.floor(nextTotalMins / 60)).padStart(2, "0");
+        const nextM = String(nextTotalMins % 60).padStart(2, "0");
+        const nextTimeStr = `${nextH}:${nextM}`;
+        setRequiredTime(nextTimeStr);
+        const parsed = parse24HTo12H(nextTimeStr);
         setTimeHour(parsed.hour);
         setTimeMinute(parsed.minute);
         setTimePeriod(parsed.period);
@@ -393,10 +403,30 @@ export default function ProductionRequestModal({
   };
 
   const updateTime = (newHour: string, newMinute: string, newPeriod: "AM" | "PM") => {
-    setTimeHour(newHour);
-    setTimeMinute(newMinute);
+    let candidateHour = newHour;
+    let candidateMinute = newMinute;
+    let time24 = convert12HTo24H(candidateHour, candidateMinute, newPeriod);
+
+    if (requiredDate === today) {
+      const currentTimeStr = getCurrentTime24();
+      if (time24 < currentTimeStr) {
+        // If switching from AM to PM or vice versa makes the current hour/minute valid if bumped to current time,
+        // only auto-bump when changing period to PM; otherwise reject past hour/minute selection.
+        if (newPeriod !== timePeriod && newPeriod === "PM") {
+          const parsedNow = parse24HTo12H(currentTimeStr);
+          candidateHour = parsedNow.hour;
+          candidateMinute = parsedNow.minute;
+          time24 = currentTimeStr;
+        } else {
+          toast.error(`Required time cannot be in the past for today (current time: ${formatTimeTo12Hour(currentTimeStr)}).`);
+          return;
+        }
+      }
+    }
+
+    setTimeHour(candidateHour);
+    setTimeMinute(candidateMinute);
     setTimePeriod(newPeriod);
-    const time24 = convert12HTo24H(newHour, newMinute, newPeriod);
     setRequiredTime(time24);
   };
 
@@ -850,11 +880,16 @@ export default function ProductionRequestModal({
                       <SelectValue placeholder="HH" />
                     </SelectTrigger>
                     <SelectContent className="max-h-56 bg-popover border-border">
-                      {HOURS_12.map((h) => (
-                        <SelectItem key={h} value={h} className="text-sm">
-                          {h}
-                        </SelectItem>
-                      ))}
+                      {HOURS_12.map((h) => {
+                        const isPastHour =
+                          requiredDate === today &&
+                          convert12HTo24H(h, "59", timePeriod) < getCurrentTime24();
+                        return (
+                          <SelectItem key={h} value={h} disabled={isPastHour} className="text-sm">
+                            {h}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
 
@@ -871,11 +906,16 @@ export default function ProductionRequestModal({
                     <SelectContent className="max-h-56 bg-popover border-border">
                       {Array.from(new Set([...MINUTES_OPTIONS, timeMinute]))
                         .sort((a, b) => Number(a) - Number(b))
-                        .map((m) => (
-                          <SelectItem key={m} value={m} className="text-sm">
-                            {m}
-                          </SelectItem>
-                        ))}
+                        .map((m) => {
+                          const isPastMinute =
+                            requiredDate === today &&
+                            convert12HTo24H(timeHour, m, timePeriod) < getCurrentTime24();
+                          return (
+                            <SelectItem key={m} value={m} disabled={isPastMinute} className="text-sm">
+                              {m}
+                            </SelectItem>
+                          );
+                        })}
                     </SelectContent>
                   </Select>
 
@@ -883,8 +923,9 @@ export default function ProductionRequestModal({
                   <div className="flex rounded-xl border border-border p-0.5 bg-muted/40 shrink-0 h-10 items-center">
                     <button
                       type="button"
+                      disabled={requiredDate === today && new Date().getHours() >= 12}
                       onClick={() => updateTime(timeHour, timeMinute, "AM")}
-                      className={`h-full px-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                      className={`h-full px-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                         timePeriod === "AM"
                           ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -910,7 +951,7 @@ export default function ProductionRequestModal({
           </div>
 
           {/* Row 3: Reason / Batch Purpose Dropdown */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 w-full sm:max-w-md">
             <label className="block text-xs font-semibold text-foreground">Reason / Batch Purpose</label>
             {isViewMode ? (
               <div className="flex h-10 items-center px-3 rounded-xl border border-border bg-card text-sm text-foreground truncate">
@@ -931,13 +972,22 @@ export default function ProductionRequestModal({
                   </SelectContent>
                 </Select>
                 {selectedReasonOption === "Other" && (
-                  <Input
-                    type="text"
-                    value={customReason}
-                    onChange={(e) => setCustomReason(e.target.value)}
-                    placeholder="Specify other reason..."
-                    className="h-10 px-3 text-sm rounded-xl border-border bg-card"
-                  />
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Specify Other Reason</span>
+                      <span className={`text-[11px] ${customReason.length >= CUSTOM_REASON_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+                        {customReason.length}/{CUSTOM_REASON_MAX}
+                      </span>
+                    </div>
+                    <Input
+                      type="text"
+                      value={customReason}
+                      maxLength={CUSTOM_REASON_MAX}
+                      onChange={(e) => setCustomReason(e.target.value.slice(0, CUSTOM_REASON_MAX))}
+                      placeholder="Specify other reason..."
+                      className="h-10 px-3 text-sm rounded-xl border-border bg-card"
+                    />
+                  </div>
                 )}
               </div>
             )}
@@ -1169,99 +1219,98 @@ export default function ProductionRequestModal({
         </div>
 
         {/* Modal Action Buttons (Monochromatic - No Draft) */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border">
+        <div className="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-border">
           <ModalCloseButton
             type="button"
             variant="outline"
             fallbackOnClose={onClose}
-            className="text-sm font-semibold rounded-xl border-border px-5 py-2.5 hover:bg-muted"
+            className="text-sm font-semibold rounded-xl border-border px-5 py-2.5 hover:bg-muted inline-flex items-center gap-1.5 cursor-pointer"
           >
-            {isViewMode ? "Close" : "Cancel"}
+            <X className="w-4 h-4" />
+            <span>Close</span>
           </ModalCloseButton>
 
-          <div className="flex items-center gap-2">
-            {!isViewMode ? (
-              <Button
-                type="button"
-                onClick={() => handleSubmit(true)}
-                disabled={submitting || !productId || !recipeId || !quantity || quantity <= 0 || !requiredDate}
-                className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting
-                  ? "Processing..."
-                  : lotSuggestions?.hasAnyShortfall
-                  ? "Create Purchase Requisition"
-                  : "Submit for Approval"}
-              </Button>
-            ) : (
-              <>
-                {/* Admin Approval Actions (PR/PO style confirmation modal) */}
-                {isAdmin && initialRequest?.status === "Pending Approval" && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setActionModal({ open: true, type: "reject" })}
-                      disabled={submitting}
-                      className="text-sm font-semibold text-foreground rounded-xl border-border px-5 py-2.5 hover:bg-muted cursor-pointer"
-                    >
-                      Reject Request
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setActionModal({ open: true, type: "approve" })}
-                      disabled={submitting}
-                      className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
-                    >
-                      Approve Request
-                    </Button>
-                  </>
-                )}
-
-                {/* Shortfall resolution shortcut in View Mode */}
-                {lotSuggestions?.hasAnyShortfall && (
+          {!isViewMode ? (
+            <Button
+              type="button"
+              onClick={() => handleSubmit(true)}
+              disabled={submitting || !productId || !recipeId || !quantity || quantity <= 0 || !requiredDate}
+              className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting
+                ? "Processing..."
+                : lotSuggestions?.hasAnyShortfall
+                ? "Create Purchase Requisition"
+                : "Submit for Approval"}
+            </Button>
+          ) : (
+            <>
+              {/* Admin Approval Actions (PR/PO style confirmation modal) */}
+              {isAdmin && initialRequest?.status === "Pending Approval" && (
+                <>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={handleCreatePrDirect}
+                    onClick={() => setActionModal({ open: true, type: "reject" })}
+                    disabled={submitting}
                     className="text-sm font-semibold text-foreground rounded-xl border-border px-5 py-2.5 hover:bg-muted cursor-pointer"
                   >
-                    Create Purchase Requisition
+                    Reject Request
                   </Button>
-                )}
-
-                {/* Approved status -> Proceed to Material Issuance */}
-                {initialRequest?.status === "Approved" && onProceedToIssuance && (
                   <Button
                     type="button"
-                    onClick={() => {
-                      onProceedToIssuance(initialRequest.prodReqId);
+                    onClick={() => setActionModal({ open: true, type: "approve" })}
+                    disabled={submitting}
+                    className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
+                  >
+                    Approve Request
+                  </Button>
+                </>
+              )}
+
+              {/* Shortfall resolution shortcut in View Mode */}
+              {lotSuggestions?.hasAnyShortfall && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCreatePrDirect}
+                  className="text-sm font-semibold text-foreground rounded-xl border-border px-5 py-2.5 hover:bg-muted cursor-pointer"
+                >
+                  Create Purchase Requisition
+                </Button>
+              )}
+
+              {/* Approved status -> Proceed to Material Issuance */}
+              {initialRequest?.status === "Approved" && onProceedToIssuance && (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    onProceedToIssuance(initialRequest.prodReqId);
+                    onClose();
+                  }}
+                  className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
+                >
+                  Proceed to Material Issuance
+                </Button>
+              )}
+
+              {/* Ready for Production or Materials Issued -> Start Production */}
+              {(initialRequest?.status === "Ready for Production" || initialRequest?.status === "Materials Issued") && onStartProduction && (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (initialRequest) {
+                      onStartProduction(initialRequest);
                       onClose();
-                    }}
-                    className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
-                  >
-                    Proceed to Material Issuance
-                  </Button>
-                )}
-
-                {/* Ready for Production or Materials Issued -> Start Production */}
-                {(initialRequest?.status === "Ready for Production" || initialRequest?.status === "Materials Issued") && onStartProduction && (
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      if (initialRequest) {
-                        onStartProduction(initialRequest);
-                        onClose();
-                      }
-                    }}
-                    className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
-                  >
-                    Start Production
-                  </Button>
-                )}
-              </>
-            )}
-          </div>
+                    }
+                  }}
+                  className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
+                >
+                  Start Production
+                </Button>
+              )}
+            </>
+          )}
         </div>
       </div>
 

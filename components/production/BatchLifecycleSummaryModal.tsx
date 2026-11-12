@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Warehouse,
   Loader2,
+  X,
 } from "lucide-react";
 import {
   getBatchLifecycleSummary,
@@ -87,69 +88,54 @@ export default function BatchLifecycleSummaryModal({
   return (
     <ModalWrapper
       open={open}
-      title={summary ? `Batch Summary — ${summary.batchNumber}` : "Batch Production Summary"}
+      title={summary ? summary.batchNumber : "Batch Production"}
       onClose={onClose}
       size="max-w-4xl"
     >
       {loading ? (
-        <div className="py-12 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+        <div className="py-12 flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span>Loading full production lifecycle...</span>
         </div>
       ) : !summary ? (
-        <div className="py-10 text-center text-xs text-muted-foreground">
+        <div className="py-10 text-center text-sm text-muted-foreground">
           No batch summary available.
         </div>
       ) : (
-        <div className="space-y-5 text-xs">
-          {/* Top Header Banner */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-border bg-muted/20">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono font-bold text-sm text-foreground">
-                  {summary.batchNumber}
-                </span>
-                <StatusBadge status={summary.status} />
-              </div>
-              <p className="text-muted-foreground mt-1">
-                {summary.productName} ({summary.variant}) &bull; Recipe: {summary.recipeName}
-              </p>
-            </div>
-            <Button
-              type="button"
-              onClick={handleDownloadPdf}
-              disabled={downloading}
-              className="h-9 rounded-xl bg-primary text-primary-foreground px-4 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>{downloading ? "Generating..." : "Download PDF"}</span>
-            </Button>
+        <div className="space-y-4 text-sm">
+          {/* Product & Status Summary Strip (no duplicate batch number header) */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3">
+            <p className="text-sm font-medium text-foreground">
+              {summary.productName} ({summary.variant}) &bull;{" "}
+              <span className="text-muted-foreground">Recipe: {summary.recipeName}</span>
+            </p>
+            <StatusBadge status={summary.status} />
           </div>
 
           {/* 1. Production Request */}
           <section className="rounded-xl border border-border p-4 space-y-3">
-            <div className="flex items-center gap-2 font-bold text-foreground">
+            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <FileText className="w-4 h-4 text-muted-foreground" />
               <span>1. Production Request ({summary.request.reqNumber})</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <span className="text-[10px] uppercase text-muted-foreground block">Requested By</span>
-                <span className="font-semibold text-foreground">{summary.request.requestedBy}</span>
+                <span className="text-xs font-semibold text-muted-foreground block">Requested By</span>
+                <span className="text-sm font-semibold text-foreground">{summary.request.requestedBy}</span>
               </div>
               <div>
-                <span className="text-[10px] uppercase text-muted-foreground block">Approved By</span>
-                <span className="font-semibold text-foreground">{summary.request.approvedBy || "—"}</span>
+                <span className="text-xs font-semibold text-muted-foreground block">Approved By</span>
+                <span className="text-sm font-semibold text-foreground">{summary.request.approvedBy || "—"}</span>
               </div>
               <div>
-                <span className="text-[10px] uppercase text-muted-foreground block">Target Output</span>
-                <span className="font-mono font-bold text-foreground">
+                <span className="text-xs font-semibold text-muted-foreground block">Target Output</span>
+                <span className="text-sm font-semibold text-foreground">
                   {summary.request.targetQuantity} {summary.yieldUom}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] uppercase text-muted-foreground block">Required Date</span>
-                <span className="font-semibold text-foreground">{fmtDate(summary.request.requiredDate)}</span>
+                <span className="text-xs font-semibold text-muted-foreground block">Required Date</span>
+                <span className="text-sm font-semibold text-foreground">{fmtDate(summary.request.requiredDate)}</span>
               </div>
             </div>
           </section>
@@ -157,17 +143,17 @@ export default function BatchLifecycleSummaryModal({
           {/* 2. Material Issuance */}
           <section className="rounded-xl border border-border p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2 font-bold text-foreground">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                 <ClipboardCheck className="w-4 h-4 text-muted-foreground" />
                 <span>2. Material Issuance ({summary.issuance.issuanceNumber})</span>
               </div>
-              <span className="text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 Issued by <strong className="text-foreground">{summary.issuance.issuedBy}</strong> &bull; {fmtDateTime(summary.issuance.issuedAt)}
               </span>
             </div>
             <div className="border border-border rounded-lg overflow-hidden">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-muted/40 border-b border-border">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead className="bg-muted/40 border-b border-border text-xs">
                   <tr>
                     <th className="py-2 px-3 font-semibold text-muted-foreground">Ingredient</th>
                     <th className="py-2 px-3 font-semibold text-muted-foreground">Lot Code</th>
@@ -178,7 +164,7 @@ export default function BatchLifecycleSummaryModal({
                 <tbody className="divide-y divide-border">
                   {summary.issuance.materials.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-3 px-3 text-center text-muted-foreground">
+                      <td colSpan={4} className="py-3 px-3 text-center text-sm text-muted-foreground">
                         No material consumption records.
                       </td>
                     </tr>
@@ -186,8 +172,8 @@ export default function BatchLifecycleSummaryModal({
                     summary.issuance.materials.map((m, i) => (
                       <tr key={i}>
                         <td className="py-2 px-3 font-medium text-foreground">{m.itemName}</td>
-                        <td className="py-2 px-3 font-mono text-foreground">{m.lotCode}</td>
-                        <td className="py-2 px-3 text-right font-mono font-semibold text-foreground">
+                        <td className="py-2 px-3 text-foreground">{m.lotCode}</td>
+                        <td className="py-2 px-3 text-right font-semibold text-foreground">
                           {m.quantityUsed} {m.uomAbbr}
                         </td>
                         <td className="py-2 px-3 text-center text-muted-foreground">
@@ -204,18 +190,18 @@ export default function BatchLifecycleSummaryModal({
           {/* 3. Production Tracking */}
           <section className="rounded-xl border border-border p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2 font-bold text-foreground">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Flame className="w-4 h-4 text-muted-foreground" />
                 <span>3. Production Tracking</span>
               </div>
-              <span className="text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 Cook: <strong className="text-foreground">{summary.production.assignedCook}</strong> &bull; Started: {fmtDateTime(summary.production.startedAt)}
               </span>
             </div>
             {summary.production.stages.length > 0 ? (
               <div className="border border-border rounded-lg overflow-hidden">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead className="bg-muted/40 border-b border-border">
+                <table className="w-full text-left border-collapse text-sm">
+                  <thead className="bg-muted/40 border-b border-border text-xs">
                     <tr>
                       <th className="py-2 px-3 font-semibold text-muted-foreground">Stage</th>
                       <th className="py-2 px-3 font-semibold text-muted-foreground">Completed At</th>
@@ -227,7 +213,7 @@ export default function BatchLifecycleSummaryModal({
                     {summary.production.stages.map((s, idx) => (
                       <tr key={idx}>
                         <td className="py-2 px-3 font-semibold text-foreground">{s.stage}</td>
-                        <td className="py-2 px-3 font-mono text-muted-foreground">{s.endTime}</td>
+                        <td className="py-2 px-3 text-muted-foreground">{s.endTime}</td>
                         <td className="py-2 px-3 text-foreground">{s.completedBy}</td>
                         <td className="py-2 px-3 text-muted-foreground">{s.notes || "—"}</td>
                       </tr>
@@ -236,7 +222,7 @@ export default function BatchLifecycleSummaryModal({
                 </table>
               </div>
             ) : (
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Current Stage: <strong className="text-foreground">{summary.currentStage}</strong>
               </p>
             )}
@@ -245,69 +231,69 @@ export default function BatchLifecycleSummaryModal({
           {/* 4. Packaging & 5. QA + Stock-In */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <section className="rounded-xl border border-border p-4 space-y-2.5">
-              <div className="flex items-center gap-2 font-bold text-foreground">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                 <PackageCheck className="w-4 h-4 text-muted-foreground" />
                 <span>4. Packaging</span>
               </div>
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <span className="text-[10px] uppercase text-muted-foreground block">FG Lot Code</span>
-                  <span className="font-mono font-bold text-foreground">{summary.packaging.fgLotCode}</span>
+                  <span className="text-xs font-semibold text-muted-foreground block">FG Lot Code</span>
+                  <span className="text-sm font-semibold text-foreground">{summary.packaging.fgLotCode}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase text-muted-foreground block">Packed Qty (Yield)</span>
-                  <span className="font-mono font-bold text-foreground">
+                  <span className="text-xs font-semibold text-muted-foreground block">Packed Qty (Yield)</span>
+                  <span className="text-sm font-semibold text-foreground">
                     {summary.packaging.finalQuantity} {summary.yieldUom} ({summary.packaging.yieldPercentage.toFixed(1)}%)
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase text-muted-foreground block">Packaged By</span>
-                  <span className="font-semibold text-foreground">{summary.packaging.packagedBy}</span>
+                  <span className="text-xs font-semibold text-muted-foreground block">Packaged By</span>
+                  <span className="text-sm font-semibold text-foreground">{summary.packaging.packagedBy}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase text-muted-foreground block">Expiry Date</span>
-                  <span className="font-semibold text-foreground">{fmtDate(summary.packaging.expiryDate)}</span>
+                  <span className="text-xs font-semibold text-muted-foreground block">Expiry Date</span>
+                  <span className="text-sm font-semibold text-foreground">{fmtDate(summary.packaging.expiryDate)}</span>
                 </div>
               </div>
             </section>
 
             <section className="rounded-xl border border-border p-4 space-y-2.5">
-              <div className="flex items-center gap-2 font-bold text-foreground">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                 <ShieldCheck className="w-4 h-4 text-muted-foreground" />
                 <span>5. QA &amp; Stock-In</span>
               </div>
               {summary.qa ? (
                 <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <span className="text-[10px] uppercase text-muted-foreground block">QA Inspection</span>
-                    <span className="font-mono font-bold text-foreground">
+                    <span className="text-xs font-semibold text-muted-foreground block">QA Inspection</span>
+                    <span className="text-sm font-semibold text-foreground">
                       {summary.qa.inspectionNumber} ({summary.qa.status})
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase text-muted-foreground block">Inspector</span>
-                    <span className="font-semibold text-foreground">{summary.qa.inspectorName}</span>
+                    <span className="text-xs font-semibold text-muted-foreground block">Inspector</span>
+                    <span className="text-sm font-semibold text-foreground">{summary.qa.inspectorName}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase text-muted-foreground block">Accepted / Rejected</span>
-                    <span className="font-mono font-semibold text-foreground">
+                    <span className="text-xs font-semibold text-muted-foreground block">Accepted / Rejected</span>
+                    <span className="text-sm font-semibold text-foreground">
                       {summary.qa.totalAcceptedQuantity} / {summary.qa.totalRejectedQuantity} {summary.yieldUom}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase text-muted-foreground block">Loss Report</span>
-                    <span className="font-mono font-semibold text-foreground">
+                    <span className="text-xs font-semibold text-muted-foreground block">Loss Report</span>
+                    <span className="text-sm font-semibold text-foreground">
                       {summary.qa.lossReportNumber || "None"}
                     </span>
                   </div>
                 </div>
               ) : (
-                <p className="text-muted-foreground">Pending QA Inspection</p>
+                <p className="text-sm text-muted-foreground">Pending QA Inspection</p>
               )}
 
               {summary.stockIn && (
-                <div className="pt-2 border-t border-border flex items-center gap-2 text-foreground">
-                  <Warehouse className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <div className="pt-2 border-t border-border flex items-center gap-2 text-sm text-foreground">
+                  <Warehouse className="w-4 h-4 text-muted-foreground shrink-0" />
                   <span>
                     Stocked in <strong>{summary.stockIn.quantity} {summary.yieldUom}</strong> to{" "}
                     <strong>{summary.stockIn.locationName}</strong> ({fmtDateTime(summary.stockIn.postedAt)})
@@ -317,14 +303,25 @@ export default function BatchLifecycleSummaryModal({
             </section>
           </div>
 
-          {/* Footer */}
-          <div className="flex justify-end pt-2 border-t border-border">
+          {/* Footer: Download PDF before Close */}
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-border">
+            <Button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={downloading}
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              <span>{downloading ? "Generating..." : "Download PDF"}</span>
+            </Button>
             <ModalCloseButton
               type="button"
+              variant="outline"
               fallbackOnClose={onClose}
-              className="bg-muted text-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-muted/80 transition-colors cursor-pointer"
+              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors inline-flex items-center gap-1.5 cursor-pointer"
             >
-              Close
+              <X className="w-4 h-4" />
+              <span>Close</span>
             </ModalCloseButton>
           </div>
         </div>

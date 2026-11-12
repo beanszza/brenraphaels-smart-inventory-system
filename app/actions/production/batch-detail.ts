@@ -5,6 +5,7 @@ import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, read, refuse, positiveId, validateInput } from "@/lib/production/mutate";
 import { formatBatchNumber } from "@/lib/production/production-batches";
+import { resolveStaffName } from "@/lib/orders/dto";
 const BATCH_INCLUDE = {
     FinishedProducts: {
         include: { Items: true },
@@ -265,7 +266,7 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
             return refuse("Batch not found.");
         }
 
-        const [inspection, stockLedger] = await Promise.all([
+        const [inspection, stockLedger, knownStaffRows] = await Promise.all([
             prisma.qualityInspections.findFirst({
                 where: { ReferenceType: "ProductionBatch", ReferenceId: id },
                 orderBy: { InspectionId: "desc" },
@@ -279,7 +280,23 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
                 include: { Locations: true },
                 orderBy: { LedgerId: "desc" },
             }),
+            typeof (prisma as any)?.knownStaff?.findMany === "function"
+                ? prisma.knownStaff.findMany({ select: { StaffId: true, Username: true, Name: true } }).catch(() => [])
+                : Promise.resolve([]),
         ]);
+
+        const staffMap = new Map<string, string>();
+        for (const s of knownStaffRows as Array<{ StaffId?: string; Username?: string; Name?: string }>) {
+            if (s.Name) {
+                if (s.Username) staffMap.set(s.Username.trim(), s.Name.trim());
+                if (s.StaffId) staffMap.set(s.StaffId.trim(), s.Name.trim());
+            }
+        }
+        const resolveActorName = (raw?: string | null, fallback = "—") => {
+            if (!raw || !raw.trim()) return fallback;
+            const trimmed = raw.trim();
+            return staffMap.get(trimmed) || resolveStaffName(trimmed) || trimmed;
+        };
 
         const lines = String(batch.Notes || "").split(/\r?\n/);
         const stages: BatchLifecycleSummaryData["production"]["stages"] = [];
@@ -290,7 +307,7 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
                 stages.push({
                     stage: stageMatch[1].trim(),
                     endTime: stageMatch[2].trim(),
-                    completedBy: stageMatch[3].trim(),
+                    completedBy: resolveActorName(stageMatch[3].trim()),
                     notes: (stageMatch[4] || "").trim(),
                 });
                 continue;
@@ -300,7 +317,7 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
                 activities.push({
                     timestamp: actMatch[1].trim(),
                     title: actMatch[2].trim(),
-                    actor: actMatch[3].trim(),
+                    actor: resolveActorName(actMatch[3].trim()),
                 });
             }
         }
@@ -341,9 +358,9 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
             request: {
                 prodReqId: prodReq?.ProdReqId ?? null,
                 reqNumber: prodReq?.ReqNumber ?? "—",
-                requestedBy: prodReq?.RequestedBy ?? "—",
+                requestedBy: resolveActorName(prodReq?.RequestedBy),
                 createdAt: prodReq?.CreatedAt?.toISOString() ?? null,
-                approvedBy: prodReq?.ApprovedBy ?? "—",
+                approvedBy: resolveActorName(prodReq?.ApprovedBy),
                 approvedAt: prodReq?.ApprovedAt?.toISOString() ?? null,
                 requiredDate: prodReq?.RequiredDate?.toISOString() ?? null,
                 requiredTime: prodReq?.RequiredTime ?? "",
@@ -354,7 +371,7 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
             },
             issuance: {
                 issuanceNumber: latestIssuance?.IssuanceNumber ?? "—",
-                issuedBy: latestIssuance?.IssuedBy ?? "—",
+                issuedBy: resolveActorName(latestIssuance?.IssuedBy),
                 issuedAt: latestIssuance?.IssuedAt?.toISOString() ?? null,
                 status: latestIssuance?.Status ?? "—",
                 materials: (batch.BatchConsumptions ?? []).map((c) => ({
@@ -368,14 +385,14 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
                 })),
             },
             production: {
-                assignedCook: batch.AssignedCook || "—",
+                assignedCook: resolveActorName(batch.AssignedCook),
                 startedAt: batch.StartedAt?.toISOString() ?? batch.ProductionDate?.toISOString() ?? null,
                 completedDate: batch.CompletedDate?.toISOString() ?? null,
                 stages,
                 activities,
             },
             packaging: {
-                packagedBy: batch.PackagedBy ?? "—",
+                packagedBy: resolveActorName(batch.PackagedBy),
                 packagedAt: batch.PackagedAt?.toISOString() ?? null,
                 finalQuantity: Number(batch.FinalQuantity ?? batch.ActualQuantity ?? 0),
                 yieldPercentage: Number(batch.YieldPercentage ?? 0),
@@ -386,7 +403,7 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
             qa: inspection
                 ? {
                     inspectionNumber: inspection.InspectionNumber,
-                    inspectorName: inspection.InspectorName || inspection.InspectorId || "—",
+                    inspectorName: resolveActorName(inspection.InspectorName || inspection.InspectorId),
                     inspectionDate: inspection.InspectionDate?.toISOString() ?? null,
                     status: inspection.Status,
                     totalReceivedQuantity: Number(inspection.TotalReceivedQuantity),
@@ -401,7 +418,7 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
             stockIn: stockLedger
                 ? {
                     postedAt: stockLedger.PostedAt?.toISOString() ?? null,
-                    postedBy: stockLedger.UserName || stockLedger.UserId || "—",
+                    postedBy: resolveActorName(stockLedger.UserName || stockLedger.UserId),
                     locationName: stockLedger.Locations?.LocationName ?? batch.InventoryLots?.Locations?.LocationName ?? "—",
                     quantity: Number(stockLedger.Quantity),
                     fgLotCode: batch.InventoryLots?.LotCode ?? "—",

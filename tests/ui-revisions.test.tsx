@@ -599,6 +599,12 @@ describe("Inventory status badges and Category HasExpiry UI", () => {
     expect(html).toContain("pr-9");
     expect(html).toContain("right-3 top-1/2");
     expect(html).toContain("lucide-calendar");
+    // Reason / Batch Purpose is constrained and Close button has X icon beside Submit for Approval
+    expect(html).toContain("sm:max-w-md");
+    expect(html).toContain("justify-end");
+    expect(html).toContain("lucide-x");
+    expect(html).toContain(">Close<");
+    expect(html).not.toContain(">Cancel<");
   });
 });
 
