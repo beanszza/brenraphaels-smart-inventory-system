@@ -84,12 +84,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
         {/* Header Summary */}
         <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-4">
           <div className="flex items-center justify-between border-b border-border/60 pb-3">
-            <div className="flex items-center gap-3">
-              <span className="text-base font-bold text-foreground">
-                {stockIn.stockInNumber}
-              </span>
-              <StatusBadge status={stockIn.status} />
-            </div>
+            <StatusBadge status={stockIn.status} />
             {stockIn.lines.length > 0 && (
               <button
                 type="button"
