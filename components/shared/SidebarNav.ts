@@ -77,7 +77,6 @@ const unlistedRoutes: Record<string, Module> = {
   "/traceability": "Inventory",
   "/valuation": "Inventory",
   "/mrp": "Orders & Procurement",
-  "/reports": "Orders & Procurement",
   "/distribution": "Stock Transfer",
   "/distribution-analytics": "Stock Transfer",
 };

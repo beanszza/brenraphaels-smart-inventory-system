@@ -3,9 +3,8 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import { SearchInput } from "@/components/shared/SearchInput";
-import Link from "next/link";
 import Pagination from "@/components/Pagination";
 import { Supplier } from "./types";
 import SupplierTable from "./SupplierTable";
@@ -34,7 +33,6 @@ export default function SupplierTab({
   onStatusFilterChange,
   currentPage,
   onPageChange,
-  isAuthorizedForReports,
   canConfigure = true,
   onAddNew,
   onEdit,
@@ -94,18 +92,6 @@ export default function SupplierTab({
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
           </Button>
-          {isAuthorizedForReports && (
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-              className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
-            >
-              <Link href="/reports?tab=supplier">
-                <FileText className="w-4 h-4" /> Reports
-              </Link>
-            </Button>
-          )}
           {canConfigure && (
             <Button
               type="button"

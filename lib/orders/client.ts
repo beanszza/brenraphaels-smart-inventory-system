@@ -4,7 +4,6 @@ import * as requisitions from "@/app/actions/orders/requisitions";
 import * as orders from "@/app/actions/orders/orders";
 import * as deliveries from "@/app/actions/orders/deliveries";
 import * as mrp from "@/app/actions/orders/mrp";
-import * as reports from "@/app/actions/orders/reports";
 import { actionResponse } from "@/lib/resources/action-response";
 
 export const procurement = {
@@ -29,5 +28,4 @@ export const procurement = {
   arriveDelivery: (...args: Parameters<typeof deliveries.arriveDelivery>) => actionResponse(deliveries.arriveDelivery(...args)),
 
   planMrp: (...args: Parameters<typeof mrp.planMrp>) => actionResponse(mrp.planMrp(...args)),
-  loadReport: (type: string, query?: string) => actionResponse(reports.loadReport(type, query)),
 };

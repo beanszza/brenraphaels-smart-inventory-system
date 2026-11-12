@@ -13,8 +13,7 @@ import { toast } from "sonner";
 import { TransferSkeleton } from "@/components/stock-transfer/TransferSkeleton";
 
 import React, { useState, useTransition } from "react";
-import Link from "next/link";
-import { Plus, FileText } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -82,22 +81,15 @@ export default function DistributionPage({ transfers: initialTransfers, location
         title="Stock Transfer"
         description="Manage internal stock transfers, warehouse movements, and facility locations."
         actions={
-          <>
-            <Button size="sm" variant="outline" asChild className="gap-1.5">
-              <Link href="/reports?tab=distribution">
-                <FileText className="w-4 h-4" /> Reports
-              </Link>
+          activeTab === "Stock Transfer" ? (
+            <Button size="sm" onClick={() => setShowCreateTransfer(true)} className="gap-1.5">
+              <Plus className="w-4 h-4" /> New Request
             </Button>
-            {activeTab === "Stock Transfer" ? (
-              <Button size="sm" onClick={() => setShowCreateTransfer(true)} className="gap-1.5">
-                <Plus className="w-4 h-4" /> New Request
-              </Button>
-            ) : (
-              <Button size="sm" onClick={() => { setEditingLocation(null); setShowLocationModal(true); }} className="gap-1.5">
-                <Plus className="w-4 h-4" /> Add Location
-              </Button>
-            )}
-          </>
+          ) : (
+            <Button size="sm" onClick={() => { setEditingLocation(null); setShowLocationModal(true); }} className="gap-1.5">
+              <Plus className="w-4 h-4" /> Add Location
+            </Button>
+          )
         }
       />
 

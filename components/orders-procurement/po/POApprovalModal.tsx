@@ -10,7 +10,7 @@ import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { PurchaseOrderPO } from "../types";
 import { approvePurchaseOrder } from "@/app/actions/orders/orders";
 import { actionResponse } from "@/lib/resources/action-response";
-import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
+import { getTodayDateString } from "@/lib/date-limits";
 
 interface POApprovalModalProps {
   po: PurchaseOrderPO | null;
@@ -42,11 +42,6 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
     po.supplierApprovedDate
       ? new Date(po.supplierApprovedDate).toISOString().split("T")[0]
       : new Date().toISOString().split("T")[0]
-  );
-  const [expectedArrivalDate, setExpectedArrivalDate] = useState(
-    po.expectedArrivalDate
-      ? new Date(po.expectedArrivalDate).toISOString().split("T")[0]
-      : ""
   );
   const [notes, setNotes] = useState(po.adminNotes || "");
 
@@ -116,12 +111,6 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
     if (!supplierApprovedDate) {
       newErrors.supplierApprovedDate = "Approval date is required.";
     }
-    if (expectedArrivalDate) {
-      const arrivalErr = getFutureDateError(expectedArrivalDate, "Expected Arrival Date", { allowToday: true });
-      if (arrivalErr) {
-        newErrors.expectedArrivalDate = arrivalErr;
-      }
-    }
 
     items.forEach((item, idx) => {
       if (item.confirmedQuantity <= 0) {
@@ -150,7 +139,6 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
         })),
         supplierApprovedBy: supplierApprovedBy.trim(),
         supplierApprovedDate,
-        expectedArrivalDate: expectedArrivalDate || undefined,
         notes: notes.trim() || undefined,
       };
 
@@ -309,7 +297,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
         </div>
 
         {/* Supplier Approval Meta Inputs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border text-xs">
           {/* Supplier Approver Name */}
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-foreground">
@@ -348,29 +336,6 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
             </div>
             {errors.supplierApprovedDate && (
               <p className="text-[10px] text-destructive mt-1">{errors.supplierApprovedDate}</p>
-            )}
-          </div>
-
-          {/* Expected Arrival Date */}
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Expected Arrival Date
-            </label>
-            <div className="relative">
-              <Input
-                type="date"
-                min={getTodayDateString()}
-                max={getMaxFutureDateString()}
-                value={expectedArrivalDate}
-                onChange={(e) => setExpectedArrivalDate(e.target.value)}
-                className={`h-10 text-xs bg-card pr-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer ${
-                  errors.expectedArrivalDate ? "border-destructive" : "border-border"
-                }`}
-              />
-              <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            </div>
-            {errors.expectedArrivalDate && (
-              <p className="text-[10px] text-destructive mt-1">{errors.expectedArrivalDate}</p>
             )}
           </div>
         </div>

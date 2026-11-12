@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import { FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
 import { InventoryItem } from "@/components/inventory/types";
@@ -274,13 +272,6 @@ export default function ViewInventory({
       <PageHeader
         title="Inventory Management"
         description="Monitor real-time warehouse stocks, ingredients, raw materials, and finished goods"
-        actions={
-          <Button size="sm" variant="outline" asChild className="gap-1.5 cursor-pointer">
-            <Link href="/reports?tab=inventory">
-              <FileText className="w-4 h-4" /> Reports
-            </Link>
-          </Button>
-        }
       />
 
       {/* 3 KPI Cards */}

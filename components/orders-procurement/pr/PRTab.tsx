@@ -4,13 +4,11 @@ import { OrdersSkeleton } from "@/components/orders-procurement/OrdersSkeleton";
 import { procurement } from "@/lib/orders/client";
 
 import React, { useState, useEffect, useMemo, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Plus,
   RefreshCw,
   Inbox,
-  FileText
 } from "lucide-react";
 import {
   Select,
@@ -176,17 +174,6 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
             className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
           >
             <RefreshCw className="w-4 h-4" /> Refresh
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
-          >
-            <Link href="/reports?tab=procurement">
-              <FileText className="w-4 h-4" /> Reports
-            </Link>
           </Button>
 
           {!isAdmin && (

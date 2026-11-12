@@ -364,7 +364,6 @@ describe("pages", () => {
     ["orders-procurement", "@/app/(root)/orders-procurement/page", []],
     ["create-pr", "@/app/(root)/orders-procurement/create-pr/page", []],
     ["edit-pr", "@/app/(root)/orders-procurement/edit-pr/[id]/page", [{ params: Promise.resolve({ id: "5" }) }]],
-    ["reports", "@/app/(root)/reports/page", [{ searchParams: Promise.resolve({}) }]],
   ])("the %s page is denied before loading data during a Portal outage", async (_, path, args) => {
     fake.decision = "503";
     const { default: Page } = await import(/* @vite-ignore */ path) as { default: (...args: unknown[]) => Promise<unknown> };

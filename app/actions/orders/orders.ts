@@ -324,7 +324,6 @@ export async function approvePurchaseOrder(idInput: string | number, body: Appro
         Status: "Approved",
         TotalAmount: calculatedTotal,
         AdminNotes: metadata,
-        ...(body.expectedArrivalDate ? { ExpectedArrivalDate: new Date(body.expectedArrivalDate) } : {}),
       },
       include: PO_INCLUDE,
     });

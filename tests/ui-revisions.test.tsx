@@ -132,8 +132,8 @@ describe("Modal layout, typography, and date bounds", () => {
       <POApprovalModal po={po} onClose={() => { }} onSuccess={() => { }} />
     );
     expect(approvalHtml).not.toContain("font-mono");
-    expect(approvalHtml).toContain(`min="${getTodayDateString()}"`);
-    expect(approvalHtml).toContain(`max="${getMaxFutureDateString()}"`);
+    expect(approvalHtml).toContain(`max="${getTodayDateString()}"`);
+    expect(approvalHtml).not.toContain("Expected Arrival Date");
   });
 
   it("renders updated CreatePOModal search bar and removes Back to Requisitions copy", () => {

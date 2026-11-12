@@ -81,5 +81,4 @@ export type ApproveOrderInput = {
   supplierApprovedBy: string;
   supplierApprovedDate?: string;
   notes?: string;
-  expectedArrivalDate?: string;
 };

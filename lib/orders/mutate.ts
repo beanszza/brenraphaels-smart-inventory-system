@@ -24,7 +24,6 @@ export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) 
     if (saved.audit && saved.after) await saved.after().catch((error) => console.error("Notification could not be sent", error));
     if (saved.result.success) {
       revalidatePath("/orders-procurement", "layout");
-      revalidatePath("/reports");
       revalidatePath("/mrp");
     }
     return saved.result;
