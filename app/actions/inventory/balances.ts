@@ -5,6 +5,7 @@ import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { read, pageNumber } from "@/lib/inventory/mutate";
 import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
+import { migrateLegacySkusAndLots } from "@/lib/inventory/migrate-codes";
 
 let testStockCleaned = false;
 async function cleanupTestStock() {
@@ -55,6 +56,7 @@ export async function listInventory(query = "") {
   await requireModule("Inventory");
   await cleanupTestStock();
   await ensureUbeJamHavaneroStock();
+  await migrateLegacySkusAndLots();
   return read(async () => {
     const searchParams = new URLSearchParams(query);
     const page = pageNumber(searchParams.get("page"), 1, 1000000);
