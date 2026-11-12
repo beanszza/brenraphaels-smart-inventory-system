@@ -150,23 +150,18 @@ export default function ProductionTrackingTab({
                           : "border-border bg-card hover:border-foreground/40 hover:bg-muted/10"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-1.5">
-                        <div className="min-w-0 flex-1">
-                          <span
-                            className="font-semibold text-sm text-foreground block truncate"
-                            title={b.batchNumber}
-                          >
-                            {b.batchNumber}
-                          </span>
-                          <span
-                            className="text-xs text-muted-foreground block mt-0.5 truncate"
-                            title={b.recipeName || b.productName}
-                          >
-                            {b.recipeName || b.productName}
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border border-border bg-background text-foreground shrink-0">
-                          {b.status}
+                      <div className="min-w-0">
+                        <span
+                          className="font-semibold text-sm text-foreground block truncate"
+                          title={b.batchNumber}
+                        >
+                          {b.batchNumber}
+                        </span>
+                        <span
+                          className="text-xs text-muted-foreground block mt-0.5 truncate"
+                          title={b.recipeName || b.productName}
+                        >
+                          {b.recipeName || b.productName}
                         </span>
                       </div>
 

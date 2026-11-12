@@ -580,21 +580,6 @@ export default function ProductionBatchDetailView({
             </span>
           )}
         </div>
-
-        {/* Action Buttons */}
-        {canReject && !isAdmin && (
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowRejectModal(true)}
-              className="text-sm font-semibold border-destructive/40 text-destructive hover:bg-destructive/10 rounded-xl px-3.5 h-9 cursor-pointer"
-            >
-              Reject Batch
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* 2-Step Sequential Kitchen Stepper */}
@@ -1065,22 +1050,24 @@ export default function ProductionBatchDetailView({
               {/* C. Packaging Results */}
               <div className="space-y-3 pt-2">
                 <h4 className="text-sm font-semibold text-foreground">C. Packaging Results</h4>
-                <div className="space-y-1.5 max-w-sm">
-                  <Label className="text-xs font-semibold text-foreground">
-                    Actual Packed Quantity ({batch.yieldUom || "jars"}) <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={pkgQuantity || ""}
-                    onChange={(e) => setPkgQuantity(Number(e.target.value))}
-                    className="h-10 text-sm border-border bg-card rounded-xl font-semibold px-3 text-foreground"
-                  />
-                  {reqQty > 0 && pkgQuantity > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Yield: {((pkgQuantity / reqQty) * 100).toFixed(1)}% of requested ({reqQty} {batch.yieldUom || "jars"})
-                    </p>
-                  )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-foreground">
+                      Actual Packed Quantity (pieces) <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={pkgQuantity || ""}
+                      onChange={(e) => setPkgQuantity(Number(e.target.value))}
+                      className="h-10 text-sm border-border bg-card rounded-xl font-semibold px-3 text-foreground"
+                    />
+                    {reqQty > 0 && pkgQuantity > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Yield: {((pkgQuantity / reqQty) * 100).toFixed(1)}% of requested ({reqQty} pieces)
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
