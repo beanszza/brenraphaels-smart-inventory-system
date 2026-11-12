@@ -1,12 +1,23 @@
 # IMS audit events (ticket #71)
 
-## Deployment prerequisite
+## Wire compatibility and deployment
 
-Deploy the companion catalog update to `fjdvm/brenraphaels-audit-logs` **before deploying this producer**. Unknown actions are rejected. The complete typed catalog is `lib/audit-actions.ts`; retain all four legacy `record.*` actions. No SIMS database migration or gateway scope change is needed.
+SIMS defaults to `IMS_AUDIT_LEGACY_ACTIONS=true` (also when unset), mapping workflow
+and access actions to the four `record.*` actions accepted by the deployed Audit Logs
+service. No upstream catalog deployment, database migration, or gateway scope change
+is required for this mode. Writes use one request within the existing three-second deadline.
 
-The referenced Audit Logs repository returned HTTP 404 from this environment. Its catalog deployment and companion issue could not be verified or created here. The following is the companion issue scope, ready for that repository's maintainer:
+Mapped events retain their specific action in `metadata.ims_action` for detail reads and
+in a `[purchase_order.approved] ` description prefix for Portal `q` searches. Idempotency
+keys keep the specific action, so approval and rejection remain distinct. The SIMS read
+path restores known action tags and removes the prefix before the logs page renders them.
+Generic legacy events and native events remain readable.
 
-> Add the workflow actions from `IMS_ACTIONS` to `actionCatalog.IMS`, retain `record.created`, `record.updated`, `record.deleted`, and `record.viewed`, document them in `docs/api.md`, and expose them from `GET /events/valid-values`. Align the IMS module list with the exact producer names below. Deploy this change before api-sims #71.
+After the service maintainer adds all `IMS_ACTIONS` from `lib/audit-actions.ts` to
+`actionCatalog.IMS`, set `IMS_AUDIT_LEGACY_ACTIONS=false` to send native actions.
+Retain all four legacy actions in the upstream catalog for historical events. Native mode
+requires the expanded catalog; rejected writes retain the existing best-effort error handling.
+Historical compatibility events continue to render correctly in either mode.
 
 | Module | Workflow actions |
 | --- | --- |
@@ -36,9 +47,9 @@ Successful audit writes happen after commit. Validation refusals at review endpo
 
 ## Verification after rollout
 
-1. Check `GET /events/valid-values` includes the IMS catalog and exact module names.
+1. In compatibility mode, verify the four `record.*` actions are accepted. Before enabling native mode, check `GET /events/valid-values` includes the full IMS catalog.
 2. Exercise approval and rejection, a sign-in, and a denied module request for a user holding another module.
-3. Read `GET /events?source=IMS&limit=20` with the audit admin key; verify specific actions, Portal ids, subjects where known, and idempotency keys.
+3. Read `GET /events?source=IMS&limit=20` with the audit admin key; verify action tags in descriptions (or native actions), Portal ids and subjects where known. Check event detail for `metadata.ims_action` and idempotency keys.
 4. Verify Portal My logs and `GET /events/stats?group_by=action&source=IMS`.
 
 Historical events are append-only. Their old username actors remain unchanged; the IMS logs page displays both legacy and new action labels.

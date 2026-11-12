@@ -1,4 +1,4 @@
-import type { ImsAuditAction } from "@/lib/audit-actions";
+import { formatCompatDescription, safeAuditMetadata, toLegacyAuditAction, type ImsAuditAction } from "@/lib/audit-actions";
 
 /** Wire shape of an Audit event as audit-logs accepts it through the gateway. */
 export type AuditEventInput = {
@@ -49,10 +49,17 @@ function gateway(keyName: "IMS_GATEWAY_CALLER_KEY" | "IMS_GATEWAY_AUDIT_READ_CAL
 export const gatewayPort: GatewayPort = {
   async writeAudit(event, signal) {
     const { base, key } = gateway("IMS_GATEWAY_CALLER_KEY");
+    // Default to the deployed catalog. Native mode is opt-in after its catalog update.
+    const legacyAction = toLegacyAuditAction(event.action);
+    const wireEvent = process.env.IMS_AUDIT_LEGACY_ACTIONS !== "false" && legacyAction !== event.action
+      ? { ...event, action: legacyAction,
+          description: formatCompatDescription(event.action, event.description),
+          metadata: safeAuditMetadata({ ...event.metadata, ims_action: event.action }) }
+      : event;
     const response = await fetch(`${base}/audit/events`, {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify(event),
+      body: JSON.stringify(wireEvent),
       signal,
     });
     if (!response.ok) throw new Error(`The gateway refused the audit event: ${response.status}`);
