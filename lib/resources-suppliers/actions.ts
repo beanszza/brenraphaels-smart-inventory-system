@@ -133,19 +133,32 @@ export async function saveRecipe(input: RecipeInput, id?: number): Promise<Resul
     check(typeof input.isActive === "boolean" && typeof input.notes === "string", "Invalid recipe details.");
     check(Array.isArray(input.ingredients) && input.ingredients.length > 0, "Add at least one ingredient.");
     check(new Set(input.ingredients.map(i => i.itemId)).size === input.ingredients.length, "Each ingredient may appear only once.");
+    for (const ing of input.ingredients) {
+      check(validId(ing.itemId) && validId(ing.uomId) && Number.isFinite(ing.standardQuantity) && ing.standardQuantity > 0, "Select ingredients and enter positive quantities.");
+    }
     const targetId = await prisma.$transaction(async tx => {
-      const product = await tx.finishedProducts.findUnique({ where: { ProductId: input.productId } });
+      const [product, items] = await Promise.all([
+        tx.finishedProducts.findUnique({ where: { ProductId: input.productId } }),
+        Promise.all(input.ingredients.map(ing =>
+          tx.items.findUnique({ where: { ItemId: ing.itemId }, include: { Category: true } })
+        )),
+      ]);
       check(product, "Finished product no longer exists.");
-      for (const ing of input.ingredients) {
-        check(validId(ing.itemId) && validId(ing.uomId) && Number.isFinite(ing.standardQuantity) && ing.standardQuantity > 0, "Select ingredients and enter positive quantities.");
-        const item = await tx.items.findUnique({ where: { ItemId: ing.itemId }, include: { Category: true } });
+      items.forEach((item) => {
         check(item && item.ItemId !== product.ItemId && !item.Category.CategoryName.toLowerCase().includes("finished good"), "Finished products cannot be recipe ingredients.");
-        const [from, to] = await Promise.all([
-          tx.unitOfMeasures.findUnique({ where: { UomId: ing.uomId } }),
-          tx.unitOfMeasures.findUnique({ where: { UomId: item.StockUomId ?? item.UomId } }),
-        ]);
+      });
+      const uomIds = Array.from(new Set([
+        ...input.ingredients.map(i => i.uomId),
+        ...items.map(item => item!.StockUomId ?? item!.UomId).filter((u): u is number => typeof u === "number"),
+      ]));
+      const uoms = await Promise.all(uomIds.map(uomId => tx.unitOfMeasures.findUnique({ where: { UomId: uomId } })));
+      const uomMap = new Map(uoms.map((u, idx) => [uomIds[idx], u] as const));
+      input.ingredients.forEach((ing, idx) => {
+        const item = items[idx]!;
+        const from = uomMap.get(ing.uomId);
+        const to = uomMap.get(item.StockUomId ?? item.UomId);
         check(from && to && from.UomType === to.UomType && Number(from.ConversionFactor) > 0 && Number(to.ConversionFactor) > 0, "Ingredient units must be compatible with their stock units.");
-      }
+      });
       const data = { RecipeName: input.recipeName.trim(), ProductId: input.productId, OutputQuantity: input.outputQuantity,
         Notes: input.notes, IsActive: input.isActive };
       const ingredients = input.ingredients.map(i => ({ ItemId: i.itemId, UomId: i.uomId, StandardQuantity: i.standardQuantity }));
@@ -156,13 +169,22 @@ export async function saveRecipe(input: RecipeInput, id?: number): Promise<Resul
         await tx.recipes.update({ where: { RecipeId: id }, data });
       } else {
         const year = new Date().getFullYear();
+        const prefix = `BOM-${year}-`;
+        const latestRecipe = typeof tx.recipes?.findFirst === "function"
+          ? await tx.recipes.findFirst({ where: { RecipeCode: { startsWith: prefix } }, orderBy: { RecipeCode: "desc" }, select: { RecipeCode: true } })
+          : null;
+        const maxExistingNum = latestRecipe?.RecipeCode ? Number(latestRecipe.RecipeCode.slice(prefix.length)) || 0 : 0;
         const seq = await tx.documentSequences.upsert({ where: { DocType_Year: { DocType: "Recipe", Year: year } },
-          update: { LastNumber: { increment: 1 } }, create: { DocType: "Recipe", Year: year, LastNumber: 1 } });
-        const created = await tx.recipes.create({ data: { ...data, RecipeCode: `BOM-${year}-${String(seq.LastNumber).padStart(4, "0")}`, RecipeIngredients: { create: ingredients } } });
+          update: { LastNumber: { increment: 1 } }, create: { DocType: "Recipe", Year: year, LastNumber: maxExistingNum + 1 } });
+        const nextNum = Math.max(seq.LastNumber, maxExistingNum + 1);
+        if (nextNum !== seq.LastNumber) {
+          await tx.documentSequences.update({ where: { DocType_Year: { DocType: "Recipe", Year: year } }, data: { LastNumber: nextNum } });
+        }
+        const created = await tx.recipes.create({ data: { ...data, RecipeCode: `${prefix}${String(nextNum).padStart(4, "0")}`, RecipeIngredients: { create: ingredients } } });
         return created.RecipeId;
       }
       return id;
-    });
+    }, { maxWait: 10000, timeout: 15000 });
     await recordAudit(staff, { module: "Resources & Suppliers", change: id ? "updated" : "created",
       target: { type: "recipe", id: targetId, name: input.recipeName.trim() },
       description: `${staff.name} ${id ? "updated" : "created"} recipe ${input.recipeName.trim()}` });

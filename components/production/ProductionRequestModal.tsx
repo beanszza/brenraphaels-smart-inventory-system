@@ -19,12 +19,10 @@ import { toast } from "sonner";
 import {
   AlertTriangle,
   Calendar,
-  Package,
   CheckCircle2,
   Clock,
   XCircle,
   Info,
-  X,
 } from "lucide-react";
 import { ProductionRequestEntity, LotSuggestionsResponse } from "./types";
 import { ProductionActionModal, ProductionActionType } from "./ProductionActionModal";
@@ -148,6 +146,7 @@ export default function ProductionRequestModal({
   const [timePeriod, setTimePeriod] = useState<"AM" | "PM">("AM");
   const [selectedReasonOption, setSelectedReasonOption] = useState<string>("Regular Stock Replenishment");
   const [customReason, setCustomReason] = useState<string>("");
+  const [timeError, setTimeError] = useState<string>("");
 
   // Action modal state (PR/PO confirmation style)
   const [actionModal, setActionModal] = useState<{ open: boolean; type: ProductionActionType } | null>(null);
@@ -244,6 +243,7 @@ export default function ProductionRequestModal({
         setLotSuggestions(null);
       }
       setActionModal(null);
+      setTimeError("");
     }
   }, [open, initialRequest, prefillData]);
 
@@ -399,35 +399,27 @@ export default function ProductionRequestModal({
         setTimeMinute(parsed.minute);
         setTimePeriod(parsed.period);
       }
+      setTimeError("");
+    } else {
+      setTimeError("");
     }
   };
 
   const updateTime = (newHour: string, newMinute: string, newPeriod: "AM" | "PM") => {
-    let candidateHour = newHour;
-    let candidateMinute = newMinute;
-    let time24 = convert12HTo24H(candidateHour, candidateMinute, newPeriod);
+    const time24 = convert12HTo24H(newHour, newMinute, newPeriod);
+    setTimeHour(newHour);
+    setTimeMinute(newMinute);
+    setTimePeriod(newPeriod);
+    setRequiredTime(time24);
 
     if (requiredDate === today) {
       const currentTimeStr = getCurrentTime24();
       if (time24 < currentTimeStr) {
-        // If switching from AM to PM or vice versa makes the current hour/minute valid if bumped to current time,
-        // only auto-bump when changing period to PM; otherwise reject past hour/minute selection.
-        if (newPeriod !== timePeriod && newPeriod === "PM") {
-          const parsedNow = parse24HTo12H(currentTimeStr);
-          candidateHour = parsedNow.hour;
-          candidateMinute = parsedNow.minute;
-          time24 = currentTimeStr;
-        } else {
-          toast.error(`Required time cannot be in the past for today (current time: ${formatTimeTo12Hour(currentTimeStr)}).`);
-          return;
-        }
+        setTimeError(`Required time cannot be in the past (current: ${formatTimeTo12Hour(currentTimeStr)}).`);
+        return;
       }
     }
-
-    setTimeHour(candidateHour);
-    setTimeMinute(candidateMinute);
-    setTimePeriod(newPeriod);
-    setRequiredTime(time24);
+    setTimeError("");
   };
 
   // Handle Save (Draft or Submit)
@@ -444,12 +436,11 @@ export default function ProductionRequestModal({
     }
 
     if (requiredDate === today) {
-      const now = new Date();
-      const currentHours = String(now.getHours()).padStart(2, "0");
-      const currentMins = String(now.getMinutes()).padStart(2, "0");
-      const currentTimeStr = `${currentHours}:${currentMins}`;
+      const currentTimeStr = getCurrentTime24();
       if (requiredTime < currentTimeStr) {
-        toast.error(`Required time cannot be in the past for today (current time: ${formatTimeTo12Hour(currentTimeStr)}).`);
+        const msg = `Required time cannot be in the past (current: ${formatTimeTo12Hour(currentTimeStr)}).`;
+        setTimeError(msg);
+        toast.error(msg);
         return;
       }
     }
@@ -595,84 +586,71 @@ export default function ProductionRequestModal({
       onClose={onClose}
       size="max-w-6xl"
     >
-      <div className="space-y-6">
-        {/* Header Summary for View Mode */}
-        {isViewMode && initialRequest && (
-          <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-muted/20 border border-border">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center font-bold text-foreground">
-                <Package className="w-5 h-5 text-foreground" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-foreground text-sm">{initialRequest.productName}</span>
-                  <span className="text-xs px-2 py-0.5 rounded-md bg-muted border border-border font-medium text-muted-foreground">
-                    {initialRequest.variant || "Standard"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                  <span>Request No: {initialRequest.reqNumber}</span>
-                  <span>•</span>
-                  <span>Recipe: {initialRequest.recipeName}</span>
-                  <span>•</span>
-                  <span>Target: {initialRequest.quantity} {initialRequest.yieldUom}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-border bg-card text-foreground">
-                Priority: {priority}
-              </span>
-              <StatusBadge status={initialRequest.status} />
-            </div>
-          </div>
-        )}
-
-        {/* Informative Status Notification Banners for View Mode */}
+      <div className="space-y-5">
+        {/* Informative Status Notification Banners for View Mode (single status header, no duplicate fields) */}
         {isViewMode && initialRequest?.status === "Rejected" && (
-          <div className="p-4 rounded-xl border border-border bg-muted/30 flex items-start gap-3">
-            <XCircle className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <h4 className="text-xs font-bold text-foreground">Production Request Rejected</h4>
-              <p className="text-xs text-muted-foreground">
-                This request was rejected by <strong className="text-foreground">{initialRequest.rejectedBy || "Admin"}</strong>
-                {initialRequest.rejectedAt ? ` on ${new Date(initialRequest.rejectedAt).toLocaleDateString()}` : ""}.
-                {initialRequest.rejectionReason && (
-                  <span> Reason: &quot;{initialRequest.rejectionReason}&quot;.</span>
-                )}
-              </p>
-              <p className="text-[11px] text-muted-foreground font-medium">
-                ✓ All reserved ingredient lots for this request have been released back to available inventory and are available for new production requests.
-              </p>
+          <div className="p-4 rounded-xl border border-border bg-muted/30 flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <XCircle className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <h4 className="text-sm font-semibold text-foreground">Production Request Rejected</h4>
+                <p className="text-sm text-muted-foreground">
+                  Rejected by <strong className="text-foreground">{initialRequest.rejectedBy || "Admin"}</strong>
+                  {initialRequest.rejectedAt ? ` on ${new Date(initialRequest.rejectedAt).toLocaleDateString()}` : ""}.
+                  {initialRequest.rejectionReason && (
+                    <span> Reason: &quot;{initialRequest.rejectionReason}&quot;.</span>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground font-medium">
+                  ✓ All reserved ingredient lots for this request have been released back to available inventory.
+                </p>
+              </div>
             </div>
+            <StatusBadge status={initialRequest.status} />
           </div>
         )}
 
         {isViewMode && initialRequest?.status === "Approved" && (
-          <div className="p-4 rounded-xl border border-border bg-muted/20 flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <h4 className="text-xs font-bold text-foreground">Production Request Approved &amp; Lots Finalized</h4>
-              <p className="text-xs text-muted-foreground">
-                Approved by <strong className="text-foreground">{initialRequest.approvedBy || "Admin"}</strong>
-                {initialRequest.approvedAt ? ` on ${new Date(initialRequest.approvedAt).toLocaleDateString()}` : ""}.
-                The reserved ingredient lots shown below are locked for this request and cannot be recommended to other requests. They will be consumed upon Material Issuance.
-              </p>
+          <div className="p-4 rounded-xl border border-border bg-muted/20 flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <h4 className="text-sm font-semibold text-foreground">Production Request Approved &amp; Lots Finalized</h4>
+                <p className="text-sm text-muted-foreground">
+                  Approved by <strong className="text-foreground">{initialRequest.approvedBy || "Admin"}</strong>
+                  {initialRequest.approvedAt ? ` on ${new Date(initialRequest.approvedAt).toLocaleDateString()}` : ""}.
+                  The reserved ingredient lots shown below are locked for this request and will be consumed upon Material Issuance.
+                </p>
+              </div>
             </div>
+            <StatusBadge status={initialRequest.status} />
           </div>
         )}
 
         {isViewMode && initialRequest?.status === "Pending Approval" && (
-          <div className="p-4 rounded-xl border border-border bg-muted/20 flex items-start gap-3">
-            <Clock className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <h4 className="text-xs font-bold text-foreground">Pending Approval — Lots Reserved</h4>
-              <p className="text-xs text-muted-foreground">
-                The ingredient lots shown below are actively reserved for this request and cannot be recommended or assigned to other production requests. If rejected by an admin, the reservations will be released back to available inventory.
-              </p>
+          <div className="p-4 rounded-xl border border-border bg-muted/20 flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <Clock className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <h4 className="text-sm font-semibold text-foreground">Pending Approval — Lots Reserved</h4>
+                <p className="text-sm text-muted-foreground">
+                  The ingredient lots shown below are actively reserved for this request and cannot be assigned to other production requests.
+                </p>
+              </div>
             </div>
+            <StatusBadge status={initialRequest.status} />
           </div>
         )}
+
+        {isViewMode &&
+          initialRequest &&
+          initialRequest.status !== "Rejected" &&
+          initialRequest.status !== "Approved" &&
+          initialRequest.status !== "Pending Approval" && (
+            <div className="flex items-center justify-end">
+              <StatusBadge status={initialRequest.status} />
+            </div>
+          )}
 
         {/* Form Inputs (Organized Top Section) */}
         <div className="space-y-4">
@@ -870,81 +848,88 @@ export default function ProductionRequestModal({
                   </span>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 h-10">
-                  {/* Hour */}
-                  <Select
-                    value={timeHour}
-                    onValueChange={(val) => updateTime(val, timeMinute, timePeriod)}
-                  >
-                    <SelectTrigger className="h-10 flex-1 text-sm font-medium rounded-xl border-border bg-card px-2.5 text-center shadow-xs">
-                      <SelectValue placeholder="HH" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-56 bg-popover border-border">
-                      {HOURS_12.map((h) => {
-                        const isPastHour =
-                          requiredDate === today &&
-                          convert12HTo24H(h, "59", timePeriod) < getCurrentTime24();
-                        return (
-                          <SelectItem key={h} value={h} disabled={isPastHour} className="text-sm">
-                            {h}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-
-                  <span className="text-muted-foreground font-semibold text-sm shrink-0">:</span>
-
-                  {/* Minute */}
-                  <Select
-                    value={timeMinute}
-                    onValueChange={(val) => updateTime(timeHour, val, timePeriod)}
-                  >
-                    <SelectTrigger className="h-10 flex-1 text-sm font-medium rounded-xl border-border bg-card px-2.5 text-center shadow-xs">
-                      <SelectValue placeholder="MM" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-56 bg-popover border-border">
-                      {Array.from(new Set([...MINUTES_OPTIONS, timeMinute]))
-                        .sort((a, b) => Number(a) - Number(b))
-                        .map((m) => {
-                          const isPastMinute =
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 h-10">
+                    {/* Hour */}
+                    <Select
+                      value={timeHour}
+                      onValueChange={(val) => updateTime(val, timeMinute, timePeriod)}
+                    >
+                      <SelectTrigger className={`h-10 flex-1 text-sm font-medium rounded-xl ${timeError ? "border-destructive" : "border-border"} bg-card px-2.5 text-center shadow-xs`}>
+                        <SelectValue placeholder="HH" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-56 bg-popover border-border">
+                        {HOURS_12.map((h) => {
+                          const isPastHour =
                             requiredDate === today &&
-                            convert12HTo24H(timeHour, m, timePeriod) < getCurrentTime24();
+                            convert12HTo24H(h, "59", timePeriod) < getCurrentTime24();
                           return (
-                            <SelectItem key={m} value={m} disabled={isPastMinute} className="text-sm">
-                              {m}
+                            <SelectItem key={h} value={h} disabled={isPastHour} className="text-sm">
+                              {h}
                             </SelectItem>
                           );
                         })}
-                    </SelectContent>
-                  </Select>
+                      </SelectContent>
+                    </Select>
 
-                  {/* AM / PM Segmented Control */}
-                  <div className="flex rounded-xl border border-border p-0.5 bg-muted/40 shrink-0 h-10 items-center">
-                    <button
-                      type="button"
-                      disabled={requiredDate === today && new Date().getHours() >= 12}
-                      onClick={() => updateTime(timeHour, timeMinute, "AM")}
-                      className={`h-full px-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                        timePeriod === "AM"
-                          ? "bg-primary text-primary-foreground shadow-xs"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
+                    <span className="text-muted-foreground font-semibold text-sm shrink-0">:</span>
+
+                    {/* Minute */}
+                    <Select
+                      value={timeMinute}
+                      onValueChange={(val) => updateTime(timeHour, val, timePeriod)}
                     >
-                      AM
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => updateTime(timeHour, timeMinute, "PM")}
-                      className={`h-full px-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-                        timePeriod === "PM"
-                          ? "bg-primary text-primary-foreground shadow-xs"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      PM
-                    </button>
+                      <SelectTrigger className={`h-10 flex-1 text-sm font-medium rounded-xl ${timeError ? "border-destructive" : "border-border"} bg-card px-2.5 text-center shadow-xs`}>
+                        <SelectValue placeholder="MM" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-56 bg-popover border-border">
+                        {Array.from(new Set([...MINUTES_OPTIONS, timeMinute]))
+                          .sort((a, b) => Number(a) - Number(b))
+                          .map((m) => {
+                            const isPastMinute =
+                              requiredDate === today &&
+                              convert12HTo24H(timeHour, m, timePeriod) < getCurrentTime24();
+                            return (
+                              <SelectItem key={m} value={m} disabled={isPastMinute} className="text-sm">
+                                {m}
+                              </SelectItem>
+                            );
+                          })}
+                      </SelectContent>
+                    </Select>
+
+                    {/* AM / PM Segmented Control */}
+                    <div className={`flex rounded-xl border ${timeError ? "border-destructive" : "border-border"} p-0.5 bg-muted/40 shrink-0 h-10 items-center`}>
+                      <button
+                        type="button"
+                        disabled={requiredDate === today && new Date().getHours() >= 12}
+                        onClick={() => updateTime(timeHour, timeMinute, "AM")}
+                        className={`h-full px-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                          timePeriod === "AM"
+                            ? "bg-primary text-primary-foreground shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        AM
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateTime(timeHour, timeMinute, "PM")}
+                        className={`h-full px-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                          timePeriod === "PM"
+                            ? "bg-primary text-primary-foreground shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        PM
+                      </button>
+                    </div>
                   </div>
+                  {timeError && (
+                    <p role="alert" className="text-xs font-medium text-destructive">
+                      {timeError}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -1052,8 +1037,8 @@ export default function ProductionRequestModal({
 
           <div className="border border-border rounded-xl overflow-hidden bg-card">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-muted/40 border-b border-border">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead className="bg-muted/40 border-b border-border text-xs">
                   <tr>
                     <th className="py-2.5 px-4 font-semibold text-muted-foreground">Supply No.</th>
                     <th className="py-2.5 px-4 font-semibold text-muted-foreground">Ingredient Name</th>
@@ -1224,17 +1209,16 @@ export default function ProductionRequestModal({
             type="button"
             variant="outline"
             fallbackOnClose={onClose}
-            className="text-sm font-semibold rounded-xl border-border px-5 py-2.5 hover:bg-muted inline-flex items-center gap-1.5 cursor-pointer"
+            className="text-sm font-semibold rounded-xl border-border px-5 py-2.5 hover:bg-muted cursor-pointer"
           >
-            <X className="w-4 h-4" />
-            <span>Close</span>
+            Close
           </ModalCloseButton>
 
           {!isViewMode ? (
             <Button
               type="button"
               onClick={() => handleSubmit(true)}
-              disabled={submitting || !productId || !recipeId || !quantity || quantity <= 0 || !requiredDate}
+              disabled={submitting || !productId || !recipeId || !quantity || quantity <= 0 || !requiredDate || Boolean(timeError)}
               className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting

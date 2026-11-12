@@ -14,7 +14,6 @@ import {
   ShieldCheck,
   Warehouse,
   Loader2,
-  X,
 } from "lucide-react";
 import {
   getBatchLifecycleSummary,
@@ -318,10 +317,9 @@ export default function BatchLifecycleSummaryModal({
               type="button"
               variant="outline"
               fallbackOnClose={onClose}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
-              <X className="w-4 h-4" />
-              <span>Close</span>
+              Close
             </ModalCloseButton>
           </div>
         </div>

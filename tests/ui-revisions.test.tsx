@@ -599,12 +599,40 @@ describe("Inventory status badges and Category HasExpiry UI", () => {
     expect(html).toContain("pr-9");
     expect(html).toContain("right-3 top-1/2");
     expect(html).toContain("lucide-calendar");
-    // Reason / Batch Purpose is constrained and Close button has X icon beside Submit for Approval
+    // Reason / Batch Purpose is constrained and Close button has no icon beside Submit for Approval
     expect(html).toContain("sm:max-w-md");
     expect(html).toContain("justify-end");
-    expect(html).toContain("lucide-x");
-    expect(html).toContain(">Close<");
+    expect(html).not.toContain("lucide-x");
+    expect(html).toContain(">Close</button>");
     expect(html).not.toContain(">Cancel<");
+
+    // View mode does not duplicate product/request summary card
+    const viewHtml = renderToStaticMarkup(
+      <ProductionRequestModal
+        open
+        onClose={() => { }}
+        onSuccess={() => { }}
+        initialRequest={{
+          prodReqId: 4,
+          reqNumber: "PRQ-2026-0004",
+          productId: 1,
+          productName: "Toffee Jam",
+          variant: "301 Milliliters Jar",
+          recipeId: 1,
+          recipeName: "Tof Jeam",
+          quantity: 67,
+          yieldUom: "pcs",
+          priority: "Medium",
+          requiredDate: "2026-11-13",
+          requiredTime: "08:00",
+          reason: "Regular Stock Replenishment",
+          status: "Pending Approval",
+        } as any}
+      />
+    );
+    expect(viewHtml).not.toContain("Request No: PRQ-2026-0004");
+    expect(viewHtml).toContain("Pending Approval");
+    expect(viewHtml).toContain(">Close</button>");
   });
 });
 
