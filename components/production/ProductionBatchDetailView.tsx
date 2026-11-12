@@ -549,15 +549,12 @@ export default function ProductionBatchDetailView({
     ? startDateTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })
     : "—";
 
-  const previewFgLotCode = useMemo(() => {
-    if (batch.fgLotCode) return batch.fgLotCode;
-    const itemAbbrev = getLotItemAbbreviation(batch.productName);
-    const now = new Date();
-    const yy = String(now.getFullYear()).slice(-2);
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const dd = String(now.getDate()).padStart(2, "0");
-    return `FG-${itemAbbrev}-${yy}${mm}${dd}-01`;
-  }, [batch.fgLotCode, batch.productName]);
+  const itemAbbrev = getLotItemAbbreviation(batch.productName);
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const previewFgLotCode = batch.fgLotCode || `FG-${itemAbbrev}-${yy}${mm}${dd}-01`;
 
   return (
     <div className="space-y-5 min-w-0">
