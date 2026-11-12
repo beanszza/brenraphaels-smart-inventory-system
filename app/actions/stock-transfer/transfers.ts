@@ -235,7 +235,7 @@ export async function scheduleTransfer(body: any = {}) {
       "stock-transfer",
       transfer.TransferId,
       transfer.TransferNumber || String(transfer.TransferId),
-      "created",
+      "record.created",
       resourceResult({
         success: true,
         message: "Stock transfer scheduled successfully.",

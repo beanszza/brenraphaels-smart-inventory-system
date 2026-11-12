@@ -1,3 +1,4 @@
+import { recordAudit, auditContext, auditVersion } from "@/lib/audit";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   CALLBACK_PATH,
@@ -59,10 +60,15 @@ export function login(request: NextRequest) {
 }
 
 /** Best effort: Known Staff only decides who to notify, so sign-in never waits on or fails for it. */
-async function rememberStaff(handle: string, portal: PortalPort, store: KnownStaffStore) {
+async function rememberStaff(handle: string, portal: PortalPort, store: KnownStaffStore, request: NextRequest, state: string) {
   try {
     const held = await modulesFor(handle, { portal });
-    if (held.decision === "allowed") await recordKnownStaff(held.staff, held.modules, store);
+    if (held.decision === "allowed") {
+      await recordAudit(held.staff, { module: null, action: "ims.signed_in",
+        target: { type: "system", id: "IMS", name: "IMS" },
+        description: `${held.staff.name} signed in to IMS`, version: auditVersion(state), context: auditContext(request.headers) });
+      await recordKnownStaff(held.staff, held.modules, store);
+    }
   } catch (error) {
     console.error("Known Staff could not be recorded", error);
   }
@@ -117,7 +123,7 @@ export async function callback(
     });
     if (!result.ok)
       return failed(result.reason === "rejected" ? "failed" : result.reason);
-    await rememberStaff(result.sessionHandle, portal, knownStaff);
+    await rememberStaff(result.sessionHandle, portal, knownStaff, request, state);
     const response = NextResponse.redirect(
       new URL(safeReturnTo(handoff.returnTo), appOrigin()),
     );

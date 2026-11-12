@@ -130,7 +130,7 @@ export async function createOrder(body: OrderInput) {
     return {
       result: resourceResult({ success: true, message: "Purchase order created successfully", data: poDto(order) }),
       audit: {
-        module: MODULE, change: "created", target: target(order),
+        module: MODULE, action: "purchase_order.created", target: target(order),
         description: `${staff.name} created purchase order ${order.PoNumber}`,
       } satisfies AuditAction,
       after: statusNotice(staff, order.PoNumber, order.RequestedBy, order.Status),
@@ -172,7 +172,7 @@ export async function updateOrder(idInput: string | number, body: OrderInput) {
     return {
       result: resourceResult({ success: true, message: "Purchase order updated successfully", data: poDto(updated) }),
       audit: {
-        module: MODULE, change: "updated", target: target(updated),
+        module: MODULE, action: "record.updated", target: target(updated), subjectUsername: updated.RequestedBy,
         description: `${staff.name} updated purchase order ${updated.PoNumber}`,
       } satisfies AuditAction,
       after: statusNotice(staff, updated.PoNumber, updated.RequestedBy, status),
@@ -190,6 +190,8 @@ export async function setOrderStatus(idInput: string | number, body: StatusInput
     if (body.status && !STATUSES.includes(body.status)) {
       return fail(`Invalid status '${body.status}'. Allowed: ${STATUSES.join(", ")}.`);
     }
+
+    if (["Approved", "Rejected"].includes(body.status ?? "") && order.Status === body.status) return fail("This request has already been processed.");
 
     const data: Prisma.PurchaseOrdersUpdateInput = {};
     if (body.status) data.Status = body.status;
@@ -209,12 +211,12 @@ export async function setOrderStatus(idInput: string | number, body: StatusInput
     return {
       result: resourceResult({ success: true, message: `Order status updated to ${body.status || body.qaStatus}.`, data: poDto(updated) }),
       audit: {
-        module: MODULE, change, target: target(updated),
+        module: MODULE, action: change === "approved" ? "purchase_order.approved" : change === "rejected" ? "purchase_order.rejected" : "record.updated", target: target(updated), subjectUsername: updated.RequestedBy,
         description: `${staff.name} ${change === "updated" ? `set purchase order ${updated.PoNumber} to ${what}` : `${change} purchase order ${updated.PoNumber}`}`,
       } satisfies AuditAction,
       after: statusNotice(staff, updated.PoNumber, updated.RequestedBy, body.status),
     };
-  });
+  }, { module: "Orders & Procurement", action: body?.status === "Approved" ? "purchase_order.approved" : body?.status === "Rejected" ? "purchase_order.rejected" : "record.updated", target: { type: "purchase-order", id: typeof idInput === "string" || typeof idInput === "number" ? idInput : "invalid", name: "purchase-order" }, description: `${staff.name} attempted to review purchase-order` });
 }
 
 export async function approvePurchaseOrder(idInput: string | number, body: ApproveOrderInput) {
@@ -282,13 +284,13 @@ export async function approvePurchaseOrder(idInput: string | number, body: Appro
       }),
       audit: {
         module: MODULE,
-        change: "approved",
-        target: target(updated),
+        action: "purchase_order.approved",
+        target: target(updated), subjectUsername: updated.RequestedBy,
         description: `${staff.name} approved purchase order ${updated.PoNumber} (Supplier Rep: ${body.supplierApprovedBy})`,
       } satisfies AuditAction,
       after: statusNotice(staff, updated.PoNumber, updated.RequestedBy, "Approved"),
     };
-  });
+  }, { module: MODULE, action: "purchase_order.approved", target: { type: "purchase-order", id: idInput, name: String(idInput) }, description: `${staff.name} attempted to approve a purchase order` });
 }
 
 /** Discards an unsent Draft purchase order and rolls back its sequence number if it was the latest issued. */
@@ -328,7 +330,7 @@ export async function discardDraftOrder(idInput: string | number) {
       }),
       audit: {
         module: MODULE,
-        change: "deleted",
+        action: "record.deleted",
         target: target(order),
         description: `${staff.name} discarded unsent draft purchase order ${order.PoNumber}`,
       } satisfies AuditAction,

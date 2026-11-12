@@ -1,13 +1,21 @@
+import type { ImsAuditAction } from "@/lib/audit-actions";
+
 /** Wire shape of an Audit event as audit-logs accepts it through the gateway. */
 export type AuditEventInput = {
   source: "IMS";
-  module: string;
-  action: "record.created" | "record.updated" | "record.deleted";
-  outcome: "success";
-  actor: { type: "staff"; id: string; display_name: string };
+  module: string | null;
+  action: ImsAuditAction;
+  outcome: "success" | "failure";
+  actor: { type: "user"; id: string; display_name: string };
   target: { type: string; id: string; display_name: string };
   description: string;
   occurred_at: string;
+  subject?: { type: "user"; id: string; display_name?: string };
+  idempotency_key: string;
+  request_id?: string;
+  ip_address?: string;
+  user_agent?: string;
+  metadata?: Record<string, unknown>;
 };
 
 export type AuditEventRecord = {

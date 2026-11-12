@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { recordAudit, type AuditAction } from "@/lib/audit";
+import { recordAudit, auditVersion, type AuditAction } from "@/lib/audit";
 import type { Staff } from "@/lib/portal/client";
 import { errorMessage, resourceResult, type ResourceResult } from "@/lib/resources/result";
 
@@ -12,15 +12,18 @@ export const fail = (message: string): Saved => ({ result: resourceResult({ succ
 /**
  * Runs one state-changing action: the work commits first, then its audit event and any
  * notifications follow. Both are best effort and never reach the caller, and neither is
- * sent for work that refused or failed to commit.
+ * sent as successful events for work that refused or failed to commit. Refused
+ * review attempts with an explicit audit context emit a failure event after the transaction.
  */
-export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) => Promise<Saved>): Promise<ResourceResult> {
+export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) => Promise<Saved>, attempt?: AuditAction): Promise<ResourceResult> {
   try {
     const saved = await prisma.$transaction(work, {
+      isolationLevel: "Serializable",
       maxWait: 15000,
       timeout: 30000,
     });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (!saved.result.success && attempt) await recordAudit(staff, { ...attempt, outcome: "failure", version: auditVersion({ attempt, reason: saved.result.message }) });
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: saved.audit.version ?? auditVersion(saved.result.data) });
     if (saved.audit && saved.after) await saved.after().catch((error) => console.error("Notification could not be sent", error));
     if (saved.result.success) {
       revalidatePath("/orders-procurement", "layout");

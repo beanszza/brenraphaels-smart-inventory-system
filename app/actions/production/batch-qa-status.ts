@@ -9,7 +9,7 @@ export async function updateQaStatus(idInput: string | number, body: any = {}) {
     return mutate(staff, async (tx) => {
         const id = positiveId(idInput);
         validateInput(body);
-        const batch = await tx.productionBatches.findUnique({ where: { BatchId: id } });
+        const batch = await tx.productionBatches.findUnique({ where: { BatchId: id }, include: { ProductionRequests: true } });
         if (!batch) {
             return refuse("Batch not found.");
         }
@@ -27,6 +27,6 @@ export async function updateQaStatus(idInput: string | number, body: any = {}) {
                 success: true,
                 message: `QA status updated: ${newStatus}.`,
                 data: { batchId: updated.BatchId, qualityStatus: updated.QualityStatus, status: updated.Status },
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id, name: batch.BatchNumber }, description: `${staff.name} set batch ${batch.BatchNumber} QA status to ${newStatus}` }, after: () => notifyBatchRequester(batch, isApproved ? "approved" : "rejected") };
+            }), audit: { module: "Production & Quality", action: isApproved ? "production_batch.qa_approved" : "production_batch.qa_rejected", subjectUsername: batch.ProductionRequests?.RequestedBy || batch.AssignedCook, target: { type: "production-batch", id, name: batch.BatchNumber }, description: `${staff.name} set batch ${batch.BatchNumber} QA status to ${newStatus}` }, after: () => notifyBatchRequester(batch, isApproved ? "approved" : "rejected") };
     });
 }

@@ -277,7 +277,7 @@ export async function completeInspection(idInput: string | number, body: Inspect
       result: resourceResult({ success: true, data: updatedInspection, message: `Quality Assurance completed for ${refGrnNumber}.` }),
       audit: {
         module: MODULE,
-        change: "updated",
+        action: "goods_receipt.inspected",
         target: { type: "quality-inspection", id: updatedInspection.InspectionId, name: updatedInspection.InspectionNumber },
         description: `${staff.name} completed quality inspection ${updatedInspection.InspectionNumber}`,
       },

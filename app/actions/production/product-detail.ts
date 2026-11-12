@@ -82,7 +82,7 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
       result: resourceResult({ success: true, data: response }),
       audit: {
         module: "Production & Quality",
-        change: "updated",
+        action: "record.updated",
         target: { type: "finished-product", id: id, name: String(id) },
         description: `${staff.name} updated finished product (${String(id)})`,
       },
@@ -113,7 +113,7 @@ export async function deleteFinishedProduct(idInput: string | number) {
       result: resourceResult({ success: true, data: true }),
       audit: {
         module: "Production & Quality",
-        change: "deleted",
+        action: "record.deleted",
         target: { type: "finished-product", id: id, name: String(id) },
         description: `${staff.name} deleted finished product (${String(id)})`,
       },

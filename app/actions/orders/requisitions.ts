@@ -123,7 +123,7 @@ export async function createRequisition(body: RequisitionInput) {
     return {
       result: resourceResult({ success: true, message: "Purchase requisition created successfully.", data: prDto(pr) }),
       audit: {
-        module: MODULE, change: "created", target: target(pr),
+        module: MODULE, action: body.submitForApproval ? "purchase_requisition.submitted" : "record.created", target: target(pr),
         description: `${staff.name} created purchase requisition ${pr.PrNumber}`,
       } satisfies AuditAction,
       after: statusNotice(staff, pr.PrNumber, pr.RequestedBy, pr.Status),
@@ -164,7 +164,7 @@ export async function updateRequisition(idInput: string | number, body: Requisit
     return {
       result: resourceResult({ success: true, message: "Purchase requisition updated successfully.", data: prDto(updated) }),
       audit: {
-        module: MODULE, change: "updated", target: target(updated),
+        module: MODULE, action: body.submitForApproval ? "purchase_requisition.submitted" : "record.updated", target: target(updated), subjectUsername: updated.RequestedBy,
         description: `${staff.name} updated purchase requisition ${updated.PrNumber}`,
       } satisfies AuditAction,
       after: body.submitForApproval ? () => notifyApprovalRequested(staff, updated.PrNumber) : undefined,
@@ -183,6 +183,8 @@ export async function setRequisitionStatus(idInput: string | number, body: Statu
       return fail(`Invalid status '${body.status}'. Allowed: ${STATUSES.join(", ")}.`);
     }
 
+    if (["Approved", "Rejected"].includes(body.status ?? "") && pr.Status === body.status) return fail("This request has already been processed.");
+
     const note = body.adminNotes?.trim() || body.comments?.trim();
     const updated = await tx.purchaseRequisitions.update({
       where: { PrId: id },
@@ -194,12 +196,12 @@ export async function setRequisitionStatus(idInput: string | number, body: Statu
     return {
       result: resourceResult({ success: true, message: `Requisition status updated to ${body.status}.`, data: prDto(updated) }),
       audit: {
-        module: MODULE, change, target: target(updated),
+        module: MODULE, action: change === "approved" ? "purchase_requisition.approved" : change === "rejected" ? "purchase_requisition.rejected" : body.status?.replace(/\s/g, "") === "PendingApproval" ? "purchase_requisition.submitted" : "record.updated", target: target(updated), subjectUsername: updated.RequestedBy,
         description: `${staff.name} ${change === "updated" ? `set purchase requisition ${updated.PrNumber} to ${body.status}` : `${change} purchase requisition ${updated.PrNumber}`}`,
       } satisfies AuditAction,
       after: statusNotice(staff, updated.PrNumber, updated.RequestedBy, body.status),
     };
-  });
+  }, { module: "Orders & Procurement", action: body?.status === "Approved" ? "purchase_requisition.approved" : body?.status === "Rejected" ? "purchase_requisition.rejected" : "record.updated", target: { type: "purchase-requisition", id: typeof idInput === "string" || typeof idInput === "number" ? idInput : "invalid", name: "purchase-requisition" }, description: `${staff.name} attempted to review purchase-requisition` });
 }
 
 /** One Purchase Order per supplier for an Approved requisition. */
@@ -286,7 +288,7 @@ export async function convertRequisitionToOrders(idInput: string | number) {
         data: { generatedPos: generated },
       }),
       audit: {
-        module: MODULE, change: "updated", target: target(pr),
+        module: MODULE, action: "record.updated", target: target(pr),
         description: `${staff.name} converted purchase requisition ${pr.PrNumber} to ${generated.map((g) => g.poNumber).join(", ")}`,
       } satisfies AuditAction,
     };

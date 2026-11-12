@@ -150,7 +150,7 @@ export async function createDelivery(body: DeliveryInput) {
           items: deliveryDto(delivery).items,
         },
       }),
-      audit: { module: MODULE, change: "created", target: target(delivery), ...change(staff, delivery, "scheduled") },
+      audit: { module: MODULE, action: "record.created", target: target(delivery), ...change(staff, delivery, "scheduled") },
     };
   });
 }
@@ -175,7 +175,7 @@ export async function cancelDelivery(idInput: string | number, body: DeliveryUpd
     });
     return {
       result: resourceResult({ success: true, message: "Delivery cancelled successfully.", data: updated }),
-      audit: { module: MODULE, change: "updated", target: target(updated), ...change(staff, updated, "cancelled") },
+      audit: { module: MODULE, action: "record.updated", target: target(updated), ...change(staff, updated, "cancelled") },
     };
   });
 }
@@ -205,7 +205,7 @@ export async function dispatchDelivery(idInput: string | number, body: DeliveryU
     });
     return {
       result: resourceResult({ success: true, message: "Delivery marked as dispatched.", data: updated }),
-      audit: { module: MODULE, change: "updated", target: target(updated), ...change(staff, updated, "dispatched") },
+      audit: { module: MODULE, action: "record.updated", target: target(updated), ...change(staff, updated, "dispatched") },
     };
   });
 }
@@ -234,7 +234,7 @@ export async function arriveDelivery(idInput: string | number, body: DeliveryUpd
     });
     return {
       result: resourceResult({ success: true, message: "Delivery marked as arrived.", data: updated }),
-      audit: { module: MODULE, change: "updated", target: target(updated), ...change(staff, updated, "marked as arrived") },
+      audit: { module: MODULE, action: "record.updated", target: target(updated), ...change(staff, updated, "marked as arrived") },
     };
   });
 }

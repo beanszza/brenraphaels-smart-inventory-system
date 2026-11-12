@@ -21,6 +21,11 @@ vi.mock("@/lib/known-staff", async (importOriginal) => ({
   prismaKnownStaff: { upsert: async () => {}, holding: async () => [] },
 }));
 
+const audit = vi.hoisted(() => ({ events: [] as import("@/lib/gateway/audit").AuditEventInput[] }));
+vi.mock("@/lib/gateway/audit", () => ({ WRITE_TIMEOUT_MS: 3000, gatewayPort: {
+  writeAudit: async (event: import("@/lib/gateway/audit").AuditEventInput) => { audit.events.push(event); },
+} }));
+
 const origin = "https://localhost:3003";
 const staff = {
   id: "staff-1",
@@ -30,6 +35,7 @@ const staff = {
 };
 let portal: FakePortal;
 beforeEach(() => {
+  audit.events = [];
   vi.stubEnv("IMS_APP_URL", origin);
   vi.stubEnv("PORTAL_URL", FAKE_PORTAL_URL);
   vi.stubEnv("PORTAL_SYSTEM_SECRET", FAKE_SECRET);
@@ -188,4 +194,18 @@ it("refuses foreign origins for callback, login and logout", async () => {
       }),
     ).status,
   ).toBe(403);
+});
+
+
+it("audits successful handoffs once with the Portal id and no handoff credentials", async () => {
+  const { request } = await start();
+  await callback(request);
+  expect(audit.events).toHaveLength(1);
+  expect(audit.events[0]).toMatchObject({ action: "ims.signed_in", module: null,
+    actor: { type: "user", id: staff.id }, target: { type: "system", id: "IMS" } });
+  expect(audit.events[0].idempotency_key).toBeTruthy();
+  const firstKey = audit.events[0].idempotency_key;
+  await callback(request);
+  expect(audit.events).toHaveLength(1);
+  expect(firstKey).not.toContain(request.nextUrl.searchParams.get("code")!);
 });

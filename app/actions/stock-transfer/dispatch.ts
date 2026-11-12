@@ -203,7 +203,7 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
       "stock-transfer",
       transfer.TransferId,
       transfer.TransferNumber || String(transfer.TransferId),
-      "updated",
+      "stock_transfer.dispatched",
       resourceResult({
         success: true,
         message: "Transfer dispatched successfully and commissary stock deducted.",

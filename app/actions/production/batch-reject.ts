@@ -108,6 +108,6 @@ export async function rejectBatch(idInput: string | number, body: any = {}) {
                     lossReportNumber: result.lossReport.LossReportNumber,
                     lossReportId: result.lossReport.LossReportId,
                 },
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} rejected production batch (${String(id)})` }, after: () => notifyBatchRequester(batch, "rejected") };
-    });
+            }), audit: { module: "Production & Quality", action: "production_batch.qa_rejected", subjectUsername: batch.ProductionRequests?.RequestedBy || batch.AssignedCook, target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} rejected production batch (${String(id)})` }, after: () => notifyBatchRequester(batch, "rejected") };
+    }, { module: "Production & Quality", action: "production_batch.qa_rejected", target: { type: "production-batch", id: typeof idInput === "string" || typeof idInput === "number" ? idInput : "invalid", name: "production-batch" }, description: `${staff.name} attempted to review production-batch` });
 }

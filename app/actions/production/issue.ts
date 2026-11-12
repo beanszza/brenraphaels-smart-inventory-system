@@ -137,6 +137,6 @@ export async function issueMaterials(idInput: string | number, body: any = {}) {
                 success: true,
                 message: `Materials issued successfully for ${issuance.ProductionRequests.ReqNumber}. The Head Cook can now start production.`,
                 data: mapMaterialIssuance(fullUpdated),
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "material-issuance", id: id, name: String(id) }, description: `${staff.name} issued production materials (${String(id)})` } };
+            }), audit: { module: "Production & Quality", action: "material.issued", target: { type: "material-issuance", id: id, name: String(id) }, description: `${staff.name} issued production materials (${String(id)})` } };
     });
 }

@@ -17,7 +17,7 @@ export async function recallLot(input: { lotCode: string; applyHold: boolean }) 
       Status: "OnHold", HoldReason: "Recall initiated via traceability module",
     } });
     return { result: resourceResult({ success: true, message: `Lot "${lotCode}" placed on hold. Recall executed.`, data: { lotCode, holdApplied: true } }),
-      audit: { module: "Inventory", change: "updated", target: { type: "inventory-lot", id: lot.LotId, name: lotCode },
+      audit: { module: "Inventory", action: "lot.recalled", target: { type: "inventory-lot", id: lot.LotId, name: lotCode },
         description: `${staff.name} recalled lot ${lotCode} and placed matching lots on hold` } };
   });
 }

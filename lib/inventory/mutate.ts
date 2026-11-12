@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { recordAudit, type AuditAction } from "@/lib/audit";
+import { recordAudit, auditVersion, type AuditAction } from "@/lib/audit";
 import type { Staff } from "@/lib/portal/client";
 import { resourceResult, type ResourceResult } from "@/lib/resources/result";
 
@@ -25,7 +25,7 @@ export async function read(work: () => Promise<ResourceResult>): Promise<Resourc
   try { return await work(); } catch (error) { return failed(error); }
 }
 
-export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) => Promise<Saved>): Promise<ResourceResult> {
+export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) => Promise<Saved>, attempt?: AuditAction): Promise<ResourceResult> {
   let saved: Saved;
   try {
     // Serialize state transitions so concurrent approvals/posts cannot both save.
@@ -34,8 +34,11 @@ export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) 
       maxWait: 15000,
       timeout: 30000,
     });
-  } catch (error) { return failed(error); }
-  if (saved.audit) await recordAudit(staff, saved.audit);
+  } catch (error) {
+    if (error instanceof Refusal && attempt) await recordAudit(staff, { ...attempt, outcome: "failure", version: auditVersion({ attempt, reason: error.message }) });
+    return failed(error);
+  }
+  if (saved.audit) await recordAudit(staff, { ...saved.audit, version: saved.audit.version ?? auditVersion(saved.result.data) });
   if (saved.after) await saved.after().catch(error => console.error("Notification could not be sent", error));
   revalidatePath("/cycle-counts");
   revalidatePath("/traceability");

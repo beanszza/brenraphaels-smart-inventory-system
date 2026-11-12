@@ -179,7 +179,7 @@ export async function createProductionRequest(body: any = {}) {
             }),
             audit: {
                 module: "Production & Quality",
-                change: "created",
+                action: "production_request.submitted",
                 target: { type: "production-request", id: createdRequest.ProdReqId, name: createdRequest.ReqNumber },
                 description: `${staff.name} created production request (${createdRequest.ReqNumber})`,
             },

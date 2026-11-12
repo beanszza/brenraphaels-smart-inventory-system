@@ -3,7 +3,7 @@
 import type { LocationInput } from "@/lib/resources/inputs";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
-import { recordAudit, type AuditAction } from "@/lib/audit";
+import { recordAudit, auditVersion, type AuditAction } from "@/lib/audit";
 import { resourceResult, errorMessage } from "@/lib/resources/result";
 
 export async function listLocations() {
@@ -51,7 +51,7 @@ export async function createLocation(body: LocationInput) {
       });
 
       const audit = {
-        module: "Stock Transfer", change: "created",
+        module: "Stock Transfer", action: "record.created",
         target: { type: "location", id: loc.LocationId, name: loc.LocationName },
         description: `${staff.name} created location ${loc.LocationName}`,
       } satisfies AuditAction;
@@ -66,7 +66,7 @@ export async function createLocation(body: LocationInput) {
         },
       }), audit };
     }, { isolationLevel: "Serializable" });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: auditVersion(saved.result.data) });
     return saved.result;
   } catch (error) {
     return resourceResult({ success: false, message: errorMessage(error) });
@@ -93,14 +93,14 @@ export async function updateLocation(idInput: string | number, body: Partial<Loc
       });
 
       const audit = {
-        module: "Stock Transfer", change: "updated",
+        module: "Stock Transfer", action: "record.updated",
         target: { type: "location", id: loc.LocationId, name: loc.LocationName },
         description: `${staff.name} updated location ${loc.LocationName}`,
       } satisfies AuditAction;
 
       return { result: resourceResult({ success: true, data: loc }), audit };
     }, { isolationLevel: "Serializable" });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: auditVersion(saved.result.data) });
     return saved.result;
   } catch (error) {
     return resourceResult({ success: false, message: errorMessage(error) });

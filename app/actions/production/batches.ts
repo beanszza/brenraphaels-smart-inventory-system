@@ -155,6 +155,6 @@ export async function createBatch(body: any = {}) {
                 success: true,
                 message: `Production Batch ${createdBatch.BatchNumber} created and started.`,
                 data: mapBatch(createdBatch),
-            }), audit: { module: "Production & Quality", change: "created", target: { type: "production-batch", id: createdBatch.BatchId, name: createdBatch.BatchNumber }, description: `${staff.name} created production batch (${createdBatch.BatchNumber})` } };
+            }), audit: { module: "Production & Quality", action: "record.created", target: { type: "production-batch", id: createdBatch.BatchId, name: createdBatch.BatchNumber }, description: `${staff.name} created production batch (${createdBatch.BatchNumber})` } };
     });
 }

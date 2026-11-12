@@ -344,7 +344,7 @@ export async function createRequest(body: any = {}) {
       "stock-transfer-request",
       createdRequest.RequestId,
       createdRequest.RequestNumber || String(createdRequest.RequestId),
-      "created",
+      "stock_transfer.requested",
       resourceResult({
         success: true,
         message: "Stock transfer request created successfully.",

@@ -18,7 +18,7 @@ export async function requestReturnApproval(idInput: string | number, body: Retu
     if (!rtv || rtv.Status !== "Draft") refuse("Only draft supplier returns can be submitted for approval.");
     const updated = await tx.returnToVendors.update({ where: { RtvId: id }, data: { Status: "PendingApproval", ApprovalRequestNotes: body.notes } });
     return { result: resourceResult({ success: true, data: updated, message: "Return submitted for approval." }),
-      audit: { module: MODULE, change: "updated", target: { type: "supplier-return", id: rtv.RtvId, name: rtv.RtvNumber },
+      audit: { module: MODULE, action: "return_to_vendor.submitted", target: { type: "supplier-return", id: rtv.RtvId, name: rtv.RtvNumber },
         description: `${staff.name} submitted supplier return ${rtv.RtvNumber} for approval` },
       after: () => notifyApprovalRequested(staff, rtv.RtvNumber) };
   });
@@ -111,9 +111,9 @@ export async function approveReturn(idInput: string | number) {
       }
     });
 
-    return { result: resourceResult({ success: true, data: updated, message: "RTV approved successfully." }), audit: { module: MODULE, change: "approved", target: { type: "supplier-return", id: updated.RtvId, name: updated.RtvNumber }, description: `${staff.name} approved supplier return ${updated.RtvNumber}` }, after: () => notifyRequester(rtv.CreatedBy, "approved", updated.RtvNumber) };
+    return { result: resourceResult({ success: true, data: updated, message: "RTV approved successfully." }), audit: { module: MODULE, action: "return_to_vendor.approved", subjectUsername: rtv.CreatedBy, target: { type: "supplier-return", id: updated.RtvId, name: updated.RtvNumber }, description: `${staff.name} approved supplier return ${updated.RtvNumber}` }, after: () => notifyRequester(rtv.CreatedBy, "approved", updated.RtvNumber) };
 
-  });
+  }, { module: "Goods Receiving", action: "return_to_vendor.approved", target: { type: "supplier-return", id: typeof idInput === "string" || typeof idInput === "number" ? idInput : "invalid", name: "supplier-return" }, description: `${staff.name} attempted to review supplier-return` });
 }
 
 export async function rejectReturn(idInput: string | number, body: ReturnInput = {}) {
@@ -144,9 +144,9 @@ export async function rejectReturn(idInput: string | number, body: ReturnInput =
       }
     });
 
-    return { result: resourceResult({ success: true, data: updated, message: "RTV rejected successfully." }), audit: { module: MODULE, change: "rejected", target: { type: "supplier-return", id: updated.RtvId, name: updated.RtvNumber }, description: `${staff.name} rejected supplier return ${updated.RtvNumber}` }, after: () => notifyRequester(rtv.CreatedBy, "rejected", updated.RtvNumber) };
+    return { result: resourceResult({ success: true, data: updated, message: "RTV rejected successfully." }), audit: { module: MODULE, action: "return_to_vendor.rejected", subjectUsername: rtv.CreatedBy, target: { type: "supplier-return", id: updated.RtvId, name: updated.RtvNumber }, description: `${staff.name} rejected supplier return ${updated.RtvNumber}` }, after: () => notifyRequester(rtv.CreatedBy, "rejected", updated.RtvNumber) };
 
-  });
+  }, { module: "Goods Receiving", action: "return_to_vendor.rejected", target: { type: "supplier-return", id: typeof idInput === "string" || typeof idInput === "number" ? idInput : "invalid", name: "supplier-return" }, description: `${staff.name} attempted to review supplier-return` });
 }
 
 export async function dispatchReturn(idInput: string | number, body: ReturnInput = {}) {
@@ -176,7 +176,7 @@ export async function dispatchReturn(idInput: string | number, body: ReturnInput
       }
     });
 
-    return { result: resourceResult({ success: true, data: updated, message: "RTV dispatched successfully." }), audit: { module: MODULE, change: "updated", target: { type: "supplier-return", id: updated.RtvId, name: updated.RtvNumber }, description: `${staff.name} dispatched supplier return ${updated.RtvNumber}` } };
+    return { result: resourceResult({ success: true, data: updated, message: "RTV dispatched successfully." }), audit: { module: MODULE, action: "record.updated", target: { type: "supplier-return", id: updated.RtvId, name: updated.RtvNumber }, description: `${staff.name} dispatched supplier return ${updated.RtvNumber}` } };
 
   });
 }

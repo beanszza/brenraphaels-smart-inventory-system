@@ -118,14 +118,18 @@ const mutations = [
   { name: "create location", run: () => locations.createLocation({ locationName: "Branch" }), target: "location", change: "created" },
   { name: "edit location", run: () => locations.updateLocation(1, { locationName: "Branch" }), target: "location" },
 ];
+const specificActions: Record<string, string> = {
+  "create request": "stock_transfer.requested", "approve request": "stock_transfer.approved",
+  "reject request": "stock_transfer.rejected", "dispatch": "stock_transfer.dispatched", "receive": "stock_transfer.received",
+};
 for (const test of mutations) {
   it(`${test.name} audits committed work through the gateway`, async () => {
     if (test.status) fake.requestStatus = test.status;
     if (test.transferStatus) fake.transferStatus = test.transferStatus;
     expect(await test.run()).toMatchObject({ success: true });
     expect(fake.committed.length).toBeGreaterThan(0);
-    expect(fake.written).toEqual([expect.objectContaining({ source: "IMS", module: "Stock Transfer", action: `record.${test.change || "updated"}`,
-      actor: { type: "staff", id: "actor-username", display_name: "Ada" }, target: expect.objectContaining({ type: test.target }) })]);
+    expect(fake.written).toEqual([expect.objectContaining({ source: "IMS", module: "Stock Transfer", action: specificActions[test.name] ?? `record.${test.change || "updated"}`,
+      actor: { type: "user", id: "actor-id", display_name: "Ada" }, target: expect.objectContaining({ type: test.target }) })]);
     expect(JSON.stringify(fake.committed)).not.toContain("forged");
   });
   it(`${test.name} emits no audit or notification on rollback`, async () => {
@@ -211,4 +215,21 @@ it("received transfers cannot be received again", async () => {
   fake.transferStatus = "Received";
   expect(await updateTransferStatus(1, { status: "Received" })).toMatchObject({ success: false });
   expect(fake.committed).toHaveLength(0); expect(fake.written).toHaveLength(0);
+});
+
+
+it("audits a refused approval after the transaction closes", async () => {
+  fake.requestStatus = "Approved";
+  expect(await reviewRequest(1, { action: "Approve" })).toMatchObject({ success: false });
+  expect(fake.committed).toHaveLength(0);
+  expect(fake.sent).toHaveLength(0);
+  expect(fake.written).toHaveLength(1);
+  expect(fake.written[0]).toMatchObject({ action: "stock_transfer.approved", outcome: "failure",
+    actor: { type: "user", id: "actor-id" }, target: { type: "stock-transfer-request", id: "1" } });
+});
+
+it("resolves a request subject to a Portal id", async () => {
+  fake.requestStatus = "Pending Approval";
+  await reviewRequest(1, { action: "Approve" });
+  expect(fake.written[0].subject).toMatchObject({ type: "user", id: "requester-id" });
 });

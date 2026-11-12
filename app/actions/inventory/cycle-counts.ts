@@ -25,7 +25,7 @@ export async function createCycleCount(input: { locationId: number; notes?: stri
         SystemQuantity: inv.CurrentStock, CountedQuantity: 0, UnitCost: 0 })) },
     }, include: { Locations: true, CycleCountItems: true } });
     return { result: resourceResult({ success: true, message: "Cycle count created.", data: mapCycleCount(count) }),
-      audit: { module: "Inventory", change: "created", target: { type: "cycle-count", id: count.CycleCountId, name: count.CountNumber },
+      audit: { module: "Inventory", action: "record.created", target: { type: "cycle-count", id: count.CycleCountId, name: count.CountNumber },
         description: `${staff.name} created cycle count ${count.CountNumber}` } };
   });
 }
@@ -48,7 +48,7 @@ export async function reconcileCycleCount(idInput: number) {
     } });
     return { result: resourceResult({ success: true, message: "Cycle count reconciled. Inventory adjusted.",
       data: { cycleCountId: updated.CycleCountId, status: updated.Status } }),
-      audit: { module: "Inventory", change: "updated", target: { type: "cycle-count", id, name: count.CountNumber },
+      audit: { module: "Inventory", action: "cycle_count.reconciled", target: { type: "cycle-count", id, name: count.CountNumber },
         description: `${staff.name} reconciled cycle count ${count.CountNumber} and adjusted inventory` } };
   });
 }

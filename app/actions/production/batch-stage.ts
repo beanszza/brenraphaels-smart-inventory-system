@@ -33,6 +33,7 @@ export async function advanceBatchStage(idInput: string | number, body: any = {}
         if (["Completed", "Rejected", "Cancelled", "Stocked In"].includes(batch.Status)) {
             return refuse("This batch has already been completed.");
         }
+        if (batch.CurrentStage === targetStage || batch.Stage === targetStage) return refuse("Batch is already in the requested stage.");
         const updateData: any = {
             Stage: targetStage,
             CurrentStage: targetStage,
@@ -49,6 +50,6 @@ export async function advanceBatchStage(idInput: string | number, body: any = {}
                 success: true,
                 message: `Batch stage advanced to ${targetStage}.`,
                 data: mapBatch(updated),
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} advanced production batch stage (${String(id)})` } };
+            }), audit: { module: "Production & Quality", action: "production_batch.stage_changed", version: `${batch.CurrentStage ?? batch.Stage}:${targetStage}`, target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} advanced production batch ${String(id)} to ${targetStage}` } };
     });
 }

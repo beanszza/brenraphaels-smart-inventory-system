@@ -208,6 +208,6 @@ export async function reviewProductionQa(body: any = {}) {
                     nextStatus: nextBatchStatus,
                     lossReportNumber: result.lossReportNumber,
                 },
-            }), audit: { module: "Production & Quality", change: "created", target: { type: "quality-inspection", id: result.inspection.InspectionId, name: pqaNumber }, description: `${staff.name} completed quality inspection ${pqaNumber} (${qaStatus})` }, after: () => notifyBatchRequester(batch, acceptedQuantity > 0 ? "approved" : "rejected") };
+            }), audit: { module: "Production & Quality", action: acceptedQuantity > 0 ? "production_batch.qa_approved" : "production_batch.qa_rejected", subjectUsername: batch.ProductionRequests?.RequestedBy || batch.AssignedCook, target: { type: "production-batch", id: batchId, name: batch.BatchNumber }, description: `${staff.name} completed quality inspection ${pqaNumber} (${qaStatus})` }, after: () => notifyBatchRequester(batch, acceptedQuantity > 0 ? "approved" : "rejected") };
     });
 }

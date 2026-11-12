@@ -108,7 +108,7 @@ export async function acknowledgeLoss(idInput: string | number) {
     });
 
     const data = { ...updated, StockLedgerEntryId: updated.StockLedgerEntryId == null ? null : String(updated.StockLedgerEntryId) };
-    return { result: resourceResult({ success: true, data, message: "Loss Report acknowledged successfully." }), audit: { module: MODULE, change: "updated", target: { type: "loss-report", id: updated.LossReportId, name: updated.LossReportNumber }, description: `${staff.name} acknowledged loss report ${updated.LossReportNumber}` } };
+    return { result: resourceResult({ success: true, data, message: "Loss Report acknowledged successfully." }), audit: { module: MODULE, action: "record.updated", target: { type: "loss-report", id: updated.LossReportId, name: updated.LossReportNumber }, description: `${staff.name} acknowledged loss report ${updated.LossReportNumber}` } };
 
   });
 }

@@ -5,7 +5,7 @@ import { syncRecipeIngredients } from "@/lib/resources/recipe-ingredients";
 import type { RecipeInput } from "@/lib/resources/inputs";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
-import { recordAudit, type AuditAction } from "@/lib/audit";
+import { recordAudit, auditVersion, type AuditAction } from "@/lib/audit";
 import { resourceResult, errorMessage } from "@/lib/resources/result";
 
 function recipeId(input: string | number) {
@@ -196,14 +196,14 @@ export async function createRecipe(module: Module, body: RecipeInput) {
       };
 
       const audit = {
-        module, change: "created",
+        module, action: "record.created",
         target: { type: "recipe", id: newRecipe.RecipeId, name: newRecipe.RecipeName },
         description: `${staff.name} created recipe ${newRecipe.RecipeName}`,
       } satisfies AuditAction;
 
       return { result: resourceResult({ success: true, message: "Recipe created successfully", data: response }), audit };
     }, { isolationLevel: "Serializable" });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: auditVersion(saved.result.data) });
     return saved.result;
   } catch (error) {
     console.error("Error creating recipe:", error);
@@ -367,14 +367,14 @@ export async function updateRecipe(module: Module, idInput: string | number, bod
       };
 
       const audit = {
-        module, change: "updated",
+        module, action: "record.updated",
         target: { type: "recipe", id: updatedRecipe.RecipeId, name: updatedRecipe.RecipeName },
         description: `${staff.name} updated recipe ${updatedRecipe.RecipeName}`,
       } satisfies AuditAction;
 
       return { result: resourceResult({ success: true, message: "Recipe updated successfully", data: response }), audit };
     }, { isolationLevel: "Serializable" });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: auditVersion(saved.result.data) });
     return saved.result;
   } catch (error) {
     console.error("Error updating recipe:", error);
@@ -399,14 +399,14 @@ export async function deleteRecipe(module: Module, idInput: string | number) {
       await tx.recipes.delete({ where: { RecipeId: id } });
 
       const audit = {
-        module, change: "deleted",
+        module, action: "record.deleted",
         target: { type: "recipe", id: recipe.RecipeId, name: recipe.RecipeName },
         description: `${staff.name} deleted recipe ${recipe.RecipeName}`,
       } satisfies AuditAction;
 
       return { result: resourceResult({ success: true, message: "Recipe deleted successfully" }), audit };
     }, { isolationLevel: "Serializable" });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: auditVersion(saved.result.data) });
     return saved.result;
   } catch (error) {
     console.error("Error deleting recipe:", error);

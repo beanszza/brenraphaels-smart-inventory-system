@@ -4,7 +4,7 @@ import type { SupplierInput } from "@/lib/resources/inputs";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
-import { recordAudit, type AuditAction } from "@/lib/audit";
+import { recordAudit, auditVersion, type AuditAction } from "@/lib/audit";
 import { resourceResult, errorMessage } from "@/lib/resources/result";
 
 export async function listSuppliers(query = "") {
@@ -176,14 +176,14 @@ export async function createSupplier(body: SupplierInput) {
       };
 
       const audit = {
-        module: "Resources & Suppliers", change: "created",
+        module: "Resources & Suppliers", action: "record.created",
         target: { type: "supplier", id: newSupplier.SupplierId, name: newSupplier.CompanyName },
         description: `${staff.name} created supplier ${newSupplier.CompanyName}`,
       } satisfies AuditAction;
 
       return { result: resourceResult({ success: true, message: "Supplier created successfully", data: response }), audit };
     });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: auditVersion(saved.result.data) });
     return saved.result;
   } catch (error) {
     console.error("Error creating supplier:", error);
@@ -353,14 +353,14 @@ export async function updateSupplier(idInput: string | number, body: Partial<Sup
       };
 
       const audit = {
-        module: "Resources & Suppliers", change: "updated",
+        module: "Resources & Suppliers", action: "record.updated",
         target: { type: "supplier", id: updatedSupplier!.SupplierId, name: updatedSupplier!.CompanyName },
         description: `${staff.name} updated supplier ${updatedSupplier!.CompanyName}`,
       } satisfies AuditAction;
 
       return { result: resourceResult({ success: true, message: "Supplier updated successfully", data: response }), audit };
     });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: auditVersion(saved.result.data) });
     return saved.result;
   } catch (error) {
     console.error("Error updating supplier:", error);
@@ -387,14 +387,14 @@ export async function deleteSupplier(idInput: string | number) {
       await tx.suppliers.delete({ where: { SupplierId: id } });
 
       const audit = {
-        module: "Resources & Suppliers", change: "deleted",
+        module: "Resources & Suppliers", action: "record.deleted",
         target: { type: "supplier", id: supplier.SupplierId, name: supplier.CompanyName },
         description: `${staff.name} deleted supplier ${supplier.CompanyName}`,
       } satisfies AuditAction;
 
       return { result: resourceResult({ success: true, message: "Supplier deleted successfully" }), audit };
     });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: auditVersion(saved.result.data) });
     return saved.result;
   } catch (error) {
     console.error("Error deleting supplier:", error);

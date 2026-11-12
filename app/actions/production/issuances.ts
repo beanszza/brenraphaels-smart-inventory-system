@@ -91,6 +91,6 @@ export async function createIssuance(body: any = {}) {
                 success: true,
                 message: "Material issuance session initialized.",
                 data: mapMaterialIssuance(newIssuance),
-            }), audit: { module: "Production & Quality", change: "created", target: { type: "material-issuance", id: newIssuance.IssuanceId, name: newIssuance.IssuanceNumber }, description: `${staff.name} created material issuance (${newIssuance.IssuanceNumber})` } };
+            }), audit: { module: "Production & Quality", action: "record.created", target: { type: "material-issuance", id: newIssuance.IssuanceId, name: newIssuance.IssuanceNumber }, description: `${staff.name} created material issuance (${newIssuance.IssuanceNumber})` } };
     });
 }

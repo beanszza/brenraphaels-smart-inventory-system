@@ -4,7 +4,7 @@ import type { ItemInput } from "@/lib/resources/inputs";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
-import { recordAudit, type AuditAction } from "@/lib/audit";
+import { recordAudit, auditVersion, type AuditAction } from "@/lib/audit";
 import { resourceResult, errorMessage } from "@/lib/resources/result";
 
 export async function listItems(query = "") {
@@ -170,14 +170,14 @@ export async function createItem(body: ItemInput) {
       };
 
       const audit = {
-        module: "Resources & Suppliers", change: "created",
+        module: "Resources & Suppliers", action: "record.created",
         target: { type: "item", id: newItem.ItemId, name: newItem.ItemName },
         description: `${staff.name} created item ${newItem.ItemName}`,
       } satisfies AuditAction;
 
       return { result: resourceResult({ success: true, message: "Item created successfully", data: response }), audit };
     });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: auditVersion(saved.result.data) });
     return saved.result;
   } catch (error) {
     console.error("Error creating item:", error);
@@ -297,14 +297,14 @@ export async function updateItem(idInput: string | number, body: Partial<ItemInp
       };
 
       const audit = {
-        module: "Resources & Suppliers", change: "updated",
+        module: "Resources & Suppliers", action: "record.updated",
         target: { type: "item", id: updatedItem.ItemId, name: updatedItem.ItemName },
         description: `${staff.name} updated item ${updatedItem.ItemName}`,
       } satisfies AuditAction;
 
       return { result: resourceResult({ success: true, message: "Item updated successfully", data: response }), audit };
     });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: auditVersion(saved.result.data) });
     return saved.result;
   } catch (error) {
     console.error("Error updating item:", error);
@@ -330,14 +330,14 @@ export async function deleteItem(idInput: string | number) {
       await tx.items.delete({ where: { ItemId: id } });
 
       const audit = {
-        module: "Resources & Suppliers", change: "deleted",
+        module: "Resources & Suppliers", action: "record.deleted",
         target: { type: "item", id: item.ItemId, name: item.ItemName },
         description: `${staff.name} deleted item ${item.ItemName}`,
       } satisfies AuditAction;
 
       return { result: resourceResult({ success: true, message: "Item deleted successfully" }), audit };
     });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: auditVersion(saved.result.data) });
     return saved.result;
   } catch (error) {
     console.error("Error deleting item:", error);

@@ -37,7 +37,7 @@ validateInput(body);
       },
     });
 
-    return saved(staff, "stock-transfer", updated.TransferId, updated.TransferNumber || String(updated.TransferId), "updated", resourceResult({
+    return saved(staff, "stock-transfer", updated.TransferId, updated.TransferNumber || String(updated.TransferId), "record.updated", resourceResult({
       success: true,
       message: "Stock transfer cancelled successfully.",
       data: {

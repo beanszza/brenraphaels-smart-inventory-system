@@ -141,6 +141,6 @@ export async function packageBatch(idInput: string | number, body: any = {}) {
                     yieldPercentage: result.updatedBatch.YieldPercentage,
                     finalQuantity: result.updatedBatch.FinalQuantity,
                 },
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id, name: batch.BatchNumber }, description: `${staff.name} packaged batch ${batch.BatchNumber} for QA` }, after: () => notifyApprovalRequested(staff, batch.BatchNumber) };
+            }), audit: { module: "Production & Quality", action: "record.updated", target: { type: "production-batch", id, name: batch.BatchNumber }, description: `${staff.name} packaged batch ${batch.BatchNumber} for QA` }, after: () => notifyApprovalRequested(staff, batch.BatchNumber) };
     });
 }

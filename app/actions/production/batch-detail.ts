@@ -127,7 +127,7 @@ export async function updateBatch(idInput: string | number, body: any = {}) {
             },
             include: BATCH_INCLUDE,
         });
-        return { result: resourceResult({ success: true, data: mapBatch(updated) }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} updated production batch (${String(id)})` } };
+        return { result: resourceResult({ success: true, data: mapBatch(updated) }), audit: { module: "Production & Quality", action: "record.updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} updated production batch (${String(id)})` } };
     });
 }
 export async function deleteBatch(idInput: string | number) {
@@ -142,6 +142,6 @@ export async function deleteBatch(idInput: string | number) {
             return refuse("Only Draft, Pending Approval, or Rejected batches can be deleted.");
         }
         await tx.productionBatches.delete({ where: { BatchId: id } });
-        return { result: resourceResult({ success: true, message: "Batch deleted." }), audit: { module: "Production & Quality", change: "deleted", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} deleted production batch (${String(id)})` } };
+        return { result: resourceResult({ success: true, message: "Batch deleted." }), audit: { module: "Production & Quality", action: "record.deleted", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} deleted production batch (${String(id)})` } };
     });
 }

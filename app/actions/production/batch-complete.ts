@@ -145,6 +145,6 @@ export async function completeBatch(idInput: string | number, body: any = {}) {
                         expiryDate: completedResult.fgLot.ExpiryDate ? completedResult.fgLot.ExpiryDate.toISOString() : null,
                     },
                 },
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} completed production batch (${String(id)})` } };
+            }), audit: { module: "Production & Quality", action: "record.updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} completed production batch (${String(id)})` } };
     });
 }

@@ -171,6 +171,6 @@ export async function createShortfallRequisition(idInput: string | number) {
                         estimatedUnitPrice: Number(item.EstimatedUnitPrice),
                     })),
                 },
-            }), audit: { module: "Production & Quality", change: "created", target: { type: "purchase-requisition", id: createdPr.PrId, name: createdPr.PrNumber }, description: `${staff.name} created shortfall requisition ${createdPr.PrNumber}` }, after: () => notifyApprovalRequested(staff, createdPr.PrNumber) };
+            }), audit: { module: "Production & Quality", action: "purchase_requisition.submitted", target: { type: "purchase-requisition", id: createdPr.PrId, name: createdPr.PrNumber }, description: `${staff.name} submitted shortfall requisition ${createdPr.PrNumber} for approval` }, after: () => notifyApprovalRequested(staff, createdPr.PrNumber) };
     });
 }

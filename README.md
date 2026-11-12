@@ -136,7 +136,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 Purchase requisitions, purchase orders, deliveries, MRP planning and reports use server actions
 under `app/actions/orders`; each checks the Orders & Procurement Module before reading inputs
 or data. Every state-changing action commits in a transaction, then sends an IMS audit event
-with the session Username. Submitting a requisition or order for approval notifies the other
+with the Portal user id. See [IMS audit events](docs/audit-events.md) for the
+Action catalog, idempotency keys, identity limits, and required service rollout. Submitting a requisition or order for approval notifies the other
 Known Staff who hold the Module; approving or rejecting one notifies its requester (found by
 Username in Known Staff). Audit and notification failures are logged and never fail the saved
 action. Receipts are uploaded straight to file storage through `requestReceiptUpload` and

@@ -22,6 +22,6 @@ export async function updateQaNotes(idInput: string | number, body: any = {}) {
                 success: true,
                 message: "QA notes updated.",
                 data: { batchId: updated.BatchId, notes: updated.Notes },
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} updated QA notes for batch (${String(id)})` } };
+            }), audit: { module: "Production & Quality", action: "record.updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} updated QA notes for batch (${String(id)})` } };
     });
 }

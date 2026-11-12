@@ -18,6 +18,6 @@ export async function cancelBatch(idInput: string | number) {
             where: { BatchId: id },
             data: { Status: "Cancelled" },
         });
-        return { result: resourceResult({ success: true, message: "Batch cancelled.", data: { batchId: updated.BatchId, status: updated.Status } }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} cancelled production batch (${String(id)})` } };
+        return { result: resourceResult({ success: true, message: "Batch cancelled.", data: { batchId: updated.BatchId, status: updated.Status } }), audit: { module: "Production & Quality", action: "record.updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} cancelled production batch (${String(id)})` } };
     });
 }

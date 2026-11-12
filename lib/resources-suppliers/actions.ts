@@ -1,6 +1,6 @@
 "use server";
 
-import { recordAudit } from "@/lib/audit";
+import { recordAudit, auditVersion } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
@@ -52,7 +52,7 @@ export async function saveSupply(input: SupplyInput, id?: number): Promise<Resul
       check(
         category &&
           !category.CategoryName.toLowerCase().includes("finished good") &&
-          decodeCategoryDescription((category as any).Description, (category as any).IsActive).isActive,
+          decodeCategoryDescription(category.Description, (category as { IsActive?: boolean }).IsActive).isActive,
         "Select an active supply category."
       );
       check(await tx.unitOfMeasures.findUnique({ where: { UomId: input.uomId } }), "Invalid unit of measure.");
@@ -79,7 +79,7 @@ export async function saveSupply(input: SupplyInput, id?: number): Promise<Resul
       }
       return itemId;
     });
-    await recordAudit(staff, { module: "Resources & Suppliers", change: id ? "updated" : "created",
+    await recordAudit(staff, { version: auditVersion(input), module: "Resources & Suppliers", action: id ? "record.updated" : "record.created",
       target: { type: "item", id: targetId, name: input.itemName.trim() },
       description: `${staff.name} ${id ? "updated" : "created"} supply item ${input.itemName.trim()} and its supplier links` });
     return saved("Supply item saved successfully.");
@@ -115,7 +115,7 @@ export async function saveSupplier(input: SupplierInput, id?: number): Promise<R
       }
       return id;
     });
-    await recordAudit(staff, { module: "Resources & Suppliers", change: id ? "updated" : "created",
+    await recordAudit(staff, { version: auditVersion(input), module: "Resources & Suppliers", action: id ? "record.updated" : "record.created",
       target: { type: "supplier", id: targetId, name: input.companyName.trim() },
       description: `${staff.name} ${id ? "updated" : "created"} supplier ${input.companyName.trim()}` });
     return saved("Supplier saved successfully.");
@@ -163,7 +163,7 @@ export async function saveRecipe(input: RecipeInput, id?: number): Promise<Resul
       }
       return id;
     });
-    await recordAudit(staff, { module: "Resources & Suppliers", change: id ? "updated" : "created",
+    await recordAudit(staff, { version: auditVersion(input), module: "Resources & Suppliers", action: id ? "record.updated" : "record.created",
       target: { type: "recipe", id: targetId, name: input.recipeName.trim() },
       description: `${staff.name} ${id ? "updated" : "created"} recipe ${input.recipeName.trim()}` });
     return saved("Recipe saved successfully.");
@@ -214,8 +214,9 @@ export async function saveCategory(input: CategoryInput, id?: number): Promise<R
     }
 
     await recordAudit(staff, {
+      version: auditVersion(data),
       module: "Resources & Suppliers",
-      change: id ? "updated" : "created",
+      action: id ? "record.updated" : "record.created",
       target: { type: "category", id: targetId, name: categoryName },
       description: `${staff.name} ${id ? "updated" : "created"} category ${categoryName} (${isActive ? "Active" : "Inactive"})`,
     });
@@ -242,8 +243,9 @@ export async function toggleCategoryStatus(id: number, isActive: boolean): Promi
       },
     });
     await recordAudit(staff, {
+      version: auditVersion({ isActive }),
       module: "Resources & Suppliers",
-      change: "updated",
+      action: "record.updated",
       target: { type: "category", id, name: cat.CategoryName },
       description: `${staff.name} set category ${cat.CategoryName} to ${isActive ? "Active" : "Inactive"}`,
     });

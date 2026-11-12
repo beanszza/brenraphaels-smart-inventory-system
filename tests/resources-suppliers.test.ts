@@ -84,7 +84,7 @@ it("saves supplier contact edits without replacing the existing catalog", async 
   expect(await saveSupplier(supplier, 1)).toEqual({ success: true, message: "Supplier saved successfully." });
   expect(record.CompanyName).toBe("Acme");
   expect(audit.events).toMatchObject([{ source: "IMS", module: "Resources & Suppliers", action: "record.updated",
-    actor: { id: "ada", display_name: "Ada Santos" }, target: { type: "supplier", id: "1", display_name: "Acme" } }]);
+    actor: { id: "staff-1", display_name: "Ada Santos" }, target: { type: "supplier", id: "1", display_name: "Acme" } }]);
   expect(record.catalog).toEqual([{ itemId: 12, price: 50 }]);
 });
 
@@ -122,7 +122,7 @@ it("saves a supply and updates supplier links while retaining existing catalog t
   expect(record.ItemName).toBe("Sugar");
   expect(links.map(link => link.SupplierId)).toEqual([1, 2]);
   expect(links[0].UnitPrice).toBe(50);
-  expect(audit.events).toMatchObject([{ target: { type: "item", id: "8" }, actor: { id: "ada" } }]);
+  expect(audit.events).toMatchObject([{ target: { type: "item", id: "8" }, actor: { id: "staff-1" } }]);
 });
 
 it("saves a recipe with the selected product and ingredient quantities", async () => {
@@ -136,7 +136,7 @@ it("saves a recipe with the selected product and ingredient quantities", async (
       update: async ({ data }: { data: unknown }) => { saved = data; } },
   }));
   expect(await saveRecipe(recipe, 3)).toMatchObject({ success: true });
-  expect(audit.events).toMatchObject([{ target: { type: "recipe", id: "3" }, actor: { id: "ada" } }]);
+  expect(audit.events).toMatchObject([{ target: { type: "recipe", id: "3" }, actor: { id: "staff-1" } }]);
   expect(saved).toMatchObject({ RecipeName: "Cake", ProductId: 1, OutputQuantity: 10 });
 });
 

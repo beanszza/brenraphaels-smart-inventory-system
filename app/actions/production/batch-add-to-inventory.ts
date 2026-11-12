@@ -168,6 +168,6 @@ export async function commitBatchInventory(idInput: string | number, body: any =
                     quantityAdded: result.acceptedQty,
                     locationName: fgLocation.LocationName,
                 },
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} committed production batch to inventory (${String(id)})` } };
+            }), audit: { module: "Production & Quality", action: "record.updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} committed production batch to inventory (${String(id)})` } };
     });
 }

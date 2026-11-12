@@ -106,22 +106,22 @@ const stockInput = { grnId: 1, submitForApproval: true, lines: [{ grnItemId: 1, 
 const mutations: { name: string; run: () => Promise<ResourceResult>; status?: Record<string, string>; change: string; type: string }[] = [
   { name: "create receipt", run: () => receipts.createReceipt(receipt), status: { deliveries: "Arrived" }, change: "record.created", type: "goods-receipt" },
   { name: "update receipt", run: () => receipts.updateReceipt(1, receipt), change: "record.updated", type: "goods-receipt" },
-  { name: "post receipt", run: () => receipts.postReceipt(1), change: "record.updated", type: "goods-receipt" },
+  { name: "post receipt", run: () => receipts.postReceipt(1), change: "delivery.received", type: "goods-receipt" },
   { name: "cancel receipt", run: () => receipts.cancelReceipt(1), change: "record.updated", type: "goods-receipt" },
-  { name: "reject receipt", run: () => receipts.rejectReceipt(1, { reason: "Damaged" }), change: "record.updated", type: "goods-receipt" },
+  { name: "reject receipt", run: () => receipts.rejectReceipt(1, { reason: "Damaged" }), change: "delivery.discrepancy_logged", type: "goods-receipt" },
   { name: "proceed to QA", run: () => receipts.proceedToQa(1), change: "record.updated", type: "goods-receipt" },
-  { name: "complete QA", run: () => quality.completeInspection(1, inspection), status: { qualityInspections: "Pending" }, change: "record.updated", type: "quality-inspection" },
-  { name: "create stock-in", run: () => stock.createStockIn(stockInput), status: { goodsReceipts: "Received" }, change: "record.created", type: "stock-in" },
+  { name: "complete QA", run: () => quality.completeInspection(1, inspection), status: { qualityInspections: "Pending" }, change: "goods_receipt.inspected", type: "quality-inspection" },
+  { name: "create stock-in", run: () => stock.createStockIn(stockInput), status: { goodsReceipts: "Received" }, change: "stock_in.put_away", type: "stock-in" },
   { name: "submit stock-in", run: () => stock.submitStockIn(1), change: "record.updated", type: "stock-in" },
-  { name: "approve stock-in", run: () => stock.approveStockIn(1), status: { stockIns: "PendingApproval" }, change: "record.updated", type: "stock-in" },
-  { name: "reject stock-in", run: () => stock.rejectStockIn(1, { reason: "Wrong quantities" }), status: { stockIns: "PendingApproval" }, change: "record.updated", type: "stock-in" },
-  { name: "commit stock-in", run: () => stock.commitStockIn(1), status: { stockIns: "Approved" }, change: "record.updated", type: "stock-in" },
+  { name: "approve stock-in", run: () => stock.approveStockIn(1), status: { stockIns: "PendingApproval" }, change: "stock_in.approved", type: "stock-in" },
+  { name: "reject stock-in", run: () => stock.rejectStockIn(1, { reason: "Wrong quantities" }), status: { stockIns: "PendingApproval" }, change: "stock_in.rejected", type: "stock-in" },
+  { name: "commit stock-in", run: () => stock.commitStockIn(1), status: { stockIns: "Approved" }, change: "stock_in.put_away", type: "stock-in" },
   { name: "resolve discrepancy", run: () => discrepancies.resolveDiscrepancy(1, { resolutionType: "Accepted", resolutionNotes: "Checked" }), change: "record.updated", type: "discrepancy" },
   { name: "resolve as loss", run: () => discrepancies.resolveAsLoss(1, { reason: "Damaged" }), change: "record.updated", type: "discrepancy" },
   { name: "resolve as return", run: () => discrepancies.resolveAsReturn(1, { reason: "Wrong goods" }), change: "record.updated", type: "discrepancy" },
-  { name: "request return approval", run: () => returns.requestReturnApproval(1), change: "record.updated", type: "supplier-return" },
-  { name: "approve return", run: () => returns.approveReturn(1), status: { returnToVendors: "PendingApproval" }, change: "record.updated", type: "supplier-return" },
-  { name: "reject return", run: () => returns.rejectReturn(1, { reason: "Wrong lot" }), status: { returnToVendors: "PendingApproval" }, change: "record.updated", type: "supplier-return" },
+  { name: "request return approval", run: () => returns.requestReturnApproval(1), change: "return_to_vendor.submitted", type: "supplier-return" },
+  { name: "approve return", run: () => returns.approveReturn(1), status: { returnToVendors: "PendingApproval" }, change: "return_to_vendor.approved", type: "supplier-return" },
+  { name: "reject return", run: () => returns.rejectReturn(1, { reason: "Wrong lot" }), status: { returnToVendors: "PendingApproval" }, change: "return_to_vendor.rejected", type: "supplier-return" },
   { name: "dispatch return", run: () => returns.dispatchReturn(1), status: { returnToVendors: "Approved" }, change: "record.updated", type: "supplier-return" },
   { name: "acknowledge loss", run: () => losses.acknowledgeLoss(1), change: "record.updated", type: "loss-report" },
 ];
@@ -145,8 +145,9 @@ for (const test of mutations) {
     fake.status = test.status || {};
     expect(await test.run()).toMatchObject({ success: true });
     expect(fake.written).toHaveLength(1);
+    expect(fake.written[0].idempotency_key).toContain(`${fake.written[0].action}:${fake.written[0].target.type}:${fake.written[0].target.id}:success:`);
     expect(fake.written[0]).toMatchObject({ source: "IMS", module: "Goods Receiving", action: test.change,
-      actor: { id: "actor-username", display_name: "Ada" }, target: { type: test.type, id: "1" }, outcome: "success" });
+      actor: { type: "user", id: "actor-id", display_name: "Ada" }, target: { type: test.type, id: "1" }, outcome: "success" });
     expect(fake.written[0].description).toContain("Ada");
     expect(fake.written[0].description).toContain(fake.written[0].target?.display_name);
     for (const write of fake.committed) {

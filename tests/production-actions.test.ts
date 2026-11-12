@@ -152,7 +152,7 @@ const mutations: Case[] = [
   { name: "create issuance", run: () => production.createIssuance({ prodReqId: 1 }), statuses: { productionRequests: "Approved" }, target: "material-issuance", change: "created" },
   { name: "scan lot", run: () => production.scanIssuance(1, { qrRaw: "LOT-1", ingredientId: 1 }), target: "material-issuance" },
   { name: "issue materials", run: () => production.issueMaterials(1), target: "material-issuance" },
-  { name: "review QA", run: () => production.reviewProductionQa({ batchId: 1, acceptedQuantity: 8, rejectedQuantity: 2, acceptedReason: "Good", rejectedReason: "Damaged" }), statuses: { productionBatches: "For QA" }, target: "quality-inspection", change: "created" },
+  { name: "review QA", run: () => production.reviewProductionQa({ batchId: 1, acceptedQuantity: 8, rejectedQuantity: 2, acceptedReason: "Good", rejectedReason: "Damaged" }), statuses: { productionBatches: "For QA" }, target: "production-batch", change: "created" },
   { name: "create product", run: () => production.createFinishedProduct({ productName: "Jam", sellingPrice: 100 }), target: "finished-product", change: "created" },
   { name: "edit product", run: () => production.updateFinishedProduct(1, { productName: "Jam", sellingPrice: 100 }), target: "finished-product" },
   { name: "delete product", run: () => production.deleteFinishedProduct(1), target: "finished-product", change: "deleted" },
@@ -160,6 +160,13 @@ const mutations: Case[] = [
   { name: "edit recipe", run: () => recipes.updateRecipe(1, { notes: "Changed" }), target: "recipe" },
   { name: "delete recipe", run: () => recipes.deleteRecipe(1), target: "recipe", change: "deleted" },
 ];
+const specificActions: Record<string, string> = {
+  "shortfall requisition": "purchase_requisition.submitted", "create request": "production_request.submitted", "submit_approval request": "production_request.submitted",
+  "approve request": "production_request.approved", "reject request": "production_request.rejected",
+  "approve batch": "production_batch.qa_approved", "reject batch": "production_batch.qa_rejected",
+  "QA status": "production_batch.qa_approved", "advance stage": "production_batch.stage_changed",
+  "complete stage": "production_batch.stage_changed", "issue materials": "material.issued", "review QA": "production_batch.qa_approved",
+};
 for (const c of mutations) {
   const run = async () => {
     fake.statuses = c.statuses || {}; fake.lotsEmpty = !!c.shortfall;
@@ -173,8 +180,9 @@ for (const c of mutations) {
     expect(await run()).toMatchObject({ success: true });
     expect(fake.committed.length).toBeGreaterThan(0);
     expect(fake.written).toHaveLength(1);
-    expect(fake.written[0]).toMatchObject({ source: "IMS", module: "Production & Quality", action: `record.${c.change || "updated"}`,
-      actor: { id: "actor-username", display_name: "Ada" }, target: { type: c.target, id: "1" } });
+    expect(fake.written[0].idempotency_key).toContain(`${fake.written[0].action}:${fake.written[0].target.type}:${fake.written[0].target.id}:success:`);
+    expect(fake.written[0]).toMatchObject({ source: "IMS", module: "Production & Quality", action: specificActions[c.name] ?? `record.${c.change || "updated"}`,
+      actor: { type: "user", id: "actor-id", display_name: "Ada" }, target: { type: c.target, id: "1" } });
   });
   it(`${c.name} emits no event or notification on rollback`, async () => {
     vi.spyOn(console, "error").mockImplementation(() => {}); fake.commitFails = true;

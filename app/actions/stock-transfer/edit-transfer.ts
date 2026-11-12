@@ -23,6 +23,6 @@ export async function editTransfer(idInput: number, body: {
     const limit = request.StockTransferRequestItems.filter(item => item.ProductId === transfer.ProductId).reduce((sum, item) => sum + Number(item.RequestedQuantity), 0);
     if (Number(other._sum.TransferQuantity || 0) + body.transferQuantity > limit) refuse("The quantity exceeds the unscheduled request quantity.");
     const updated = await tx.stockTransfers.update({ where: { TransferId: id }, data: { TransferQuantity: body.transferQuantity, ScheduledDate: new Date(body.transferDate) } });
-    return saved(staff, "stock-transfer", id, updated.TransferNumber, "updated", resourceResult({ success: true, data: { transferId: id } }));
+    return saved(staff, "stock-transfer", id, updated.TransferNumber, "record.updated", resourceResult({ success: true, data: { transferId: id } }));
   });
 }

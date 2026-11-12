@@ -120,13 +120,13 @@ const stockInput = { grnId: 1, submitForApproval: true, lines: [
 ] };
 const mutations: { name: string; run: () => Promise<ResourceResult>; status?: Record<string, string>; action: string; target: string }[] = [
   { name: "create cycle count", run: () => createCycleCount({ locationId: 1 }), action: "record.created", target: "cycle-count" },
-  { name: "reconcile cycle count", run: () => reconcileCycleCount(1), status: { cycleCounts: "Open" }, action: "record.updated", target: "cycle-count" },
-  { name: "recall lot", run: () => recallLot({ lotCode: "LOT-1", applyHold: true }), action: "record.updated", target: "inventory-lot" },
+  { name: "reconcile cycle count", run: () => reconcileCycleCount(1), status: { cycleCounts: "Open" }, action: "cycle_count.reconciled", target: "cycle-count" },
+  { name: "recall lot", run: () => recallLot({ lotCode: "LOT-1", applyHold: true }), action: "lot.recalled", target: "inventory-lot" },
   { name: "create stock-in", run: () => stock.createStockIn(stockInput), status: { goodsReceipts: "Received" }, action: "record.created", target: "stock-in" },
   { name: "submit stock-in", run: () => stock.submitStockIn(1), action: "record.updated", target: "stock-in" },
-  { name: "approve stock-in", run: () => stock.approveStockIn(1), status: { stockIns: "PendingApproval" }, action: "record.updated", target: "stock-in" },
-  { name: "reject stock-in", run: () => stock.rejectStockIn(1, { reason: "Incorrect quantity" }), status: { stockIns: "PendingApproval" }, action: "record.updated", target: "stock-in" },
-  { name: "commit stock-in", run: () => stock.commitStockIn(1), status: { stockIns: "Approved" }, action: "record.updated", target: "stock-in" },
+  { name: "approve stock-in", run: () => stock.approveStockIn(1), status: { stockIns: "PendingApproval" }, action: "stock_in.approved", target: "stock-in" },
+  { name: "reject stock-in", run: () => stock.rejectStockIn(1, { reason: "Incorrect quantity" }), status: { stockIns: "PendingApproval" }, action: "stock_in.rejected", target: "stock-in" },
+  { name: "commit stock-in", run: () => stock.commitStockIn(1), status: { stockIns: "Approved" }, action: "stock_in.put_away", target: "stock-in" },
 ];
 
 for (const test of mutations) {
@@ -134,8 +134,9 @@ for (const test of mutations) {
     fake.status = test.status || {};
     expect(await test.run()).toMatchObject({ success: true });
     expect(fake.written).toHaveLength(1);
+    expect(fake.written[0].idempotency_key).toContain(`${fake.written[0].action}:${fake.written[0].target.type}:${fake.written[0].target.id}:success:`);
     expect(fake.written[0]).toMatchObject({ source: "IMS", module: "Inventory", action: test.action,
-      actor: { id: "actor-username", display_name: "Ada" }, target: { type: test.target, id: "1" } });
+      actor: { type: "user", id: "actor-id", display_name: "Ada" }, target: { type: test.target, id: "1" } });
     expect(fake.written[0].description).toContain("Ada");
     expect(fake.written[0].description.length).toBeGreaterThan(15);
   });

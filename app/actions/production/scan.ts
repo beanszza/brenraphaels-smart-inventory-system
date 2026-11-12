@@ -120,6 +120,6 @@ export async function scanIssuance(idInput: string | number, body: any = {}) {
                     lotCode: matchingReservation.InventoryLots.LotCode,
                     itemName: matchingReservation.Items.ItemName,
                 },
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "material-issuance", id: id, name: String(id) }, description: `${staff.name} verified material lot for issuance (${String(id)})` } };
+            }), audit: { module: "Production & Quality", action: "record.updated", target: { type: "material-issuance", id: id, name: String(id) }, description: `${staff.name} verified material lot for issuance (${String(id)})` } };
     });
 }

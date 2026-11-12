@@ -21,7 +21,7 @@ export async function requestImage(staff: Staff, target: FileTarget, id: number,
   await exists(target, id);
   const address = await requestUpload(filesGateway, staff, { ...meta, kind: target.kind });
   await recordAudit(staff, {
-    module: "Production & Quality", change: "created", target: { type: "file", id: address.id, name: meta.filename },
+    module: "Production & Quality", action: "record.created", target: { type: "file", id: address.id, name: meta.filename },
     description: `${staff.name} requested a ${target.role} upload for ${target.entityType} ${id}`,
   });
   return { fileId: address.id, uploadUrl: address.uploadUrl, uploadUrlExpiresInSeconds: address.uploadUrlExpiresInSeconds };
@@ -30,7 +30,7 @@ export async function confirmImage(staff: Staff, target: FileTarget, id: number,
   await exists(target, id);
   const file = await confirmAndLink(filesGateway, staff, target, id, fileId);
   await recordAudit(staff, {
-    module: "Production & Quality", change: "updated", target: { type: target.entityType, id, name: `${target.entityType} ${id}` },
+    module: "Production & Quality", action: "record.updated", version: file.id, target: { type: target.entityType, id, name: `${target.entityType} ${id}` },
     description: `${staff.name} attached a ${target.role} to ${target.entityType} ${id}`,
   });
   return { fileId: file.id, status: file.status };

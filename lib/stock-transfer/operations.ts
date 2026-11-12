@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { recordAudit, type AuditAction } from "@/lib/audit";
+import { recordAudit, auditVersion, type AuditAction } from "@/lib/audit";
 import type { Staff } from "@/lib/portal/client";
 import { resourceResult, type ResourceResult } from "@/lib/resources/result";
 
@@ -49,17 +49,19 @@ export function saved(
   type: string,
   id: number,
   name: string,
-  change: AuditAction["change"],
+  action: AuditAction["action"],
   result: ResourceResult,
-  after?: () => Promise<void>
+  after?: () => Promise<void>,
+  subjectUsername?: string,
 ): Saved {
   return {
     result,
     audit: {
       module: "Stock Transfer",
-      change,
+      action,
+      subjectUsername,
       target: { type, id, name },
-      description: `${staff.name} ${change} ${type} (${name})`,
+      description: `${staff.name} ${action.split(".")[1].replaceAll("_", " ")} ${type} (${name})`,
     },
     after,
   };
@@ -68,7 +70,7 @@ export function saved(
 function failed(error: unknown): ResourceResult {
   const isRefusal =
     error instanceof Refusal ||
-    (typeof error === "object" && error !== null && (error as any).name === "Refusal");
+    (typeof error === "object" && error !== null && (error as { name?: unknown }).name === "Refusal");
   if (isRefusal) return resourceResult({ success: false, message: (error as Error).message });
   console.error("Stock Transfer action failed", error);
   const msg = error instanceof Error ? error.message : String(error);
@@ -88,7 +90,8 @@ export async function read(work: () => Promise<ResourceResult>): Promise<Resourc
 
 export async function mutate(
   staff: Staff,
-  work: (tx: Prisma.TransactionClient) => Promise<Saved>
+  work: (tx: Prisma.TransactionClient) => Promise<Saved>,
+  attempt?: AuditAction,
 ): Promise<ResourceResult> {
   let savedResult: Saved;
   try {
@@ -98,9 +101,10 @@ export async function mutate(
       timeout: 30000,
     });
   } catch (error) {
+    if (error instanceof Refusal && attempt) await recordAudit(staff, { ...attempt, outcome: "failure", version: auditVersion({ attempt, reason: error.message }) });
     return failed(error);
   }
-  if (savedResult.audit) await recordAudit(staff, savedResult.audit);
+  if (savedResult.audit) await recordAudit(staff, { ...savedResult.audit, version: savedResult.audit.version ?? auditVersion(savedResult.result.data) });
   if (savedResult.after) await savedResult.after().catch((error) => console.error("Notification could not be sent", error));
   revalidatePath("/stock-transfer");
   revalidatePath("/inventory");

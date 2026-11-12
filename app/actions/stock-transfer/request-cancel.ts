@@ -58,7 +58,7 @@ validateInput(body);
       });
     })();
 
-    return saved(staff, "stock-transfer-request", updated.RequestId, updated.RequestNumber || String(updated.RequestId), "updated", resourceResult({
+    return saved(staff, "stock-transfer-request", updated.RequestId, updated.RequestNumber || String(updated.RequestId), "record.updated", resourceResult({
       success: true,
       message: "Stock transfer request and associated scheduled transfers cancelled successfully.",
       data: {

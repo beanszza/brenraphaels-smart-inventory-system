@@ -32,7 +32,7 @@ validateInput(body);
       data: updateData,
     });
 
-    return saved(staff, "stock-transfer", updated.TransferId, updated.TransferNumber || String(updated.TransferId), "updated", resourceResult({ success: true, data: { transferId: updated.TransferId, status: updated.Status } }));
+    return saved(staff, "stock-transfer", updated.TransferId, updated.TransferNumber || String(updated.TransferId), ["Received", "Completed"].includes(newStatus) ? "stock_transfer.received" : "record.updated", resourceResult({ success: true, data: { transferId: updated.TransferId, status: updated.Status } }));
 
   });
 }

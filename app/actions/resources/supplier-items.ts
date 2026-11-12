@@ -4,7 +4,7 @@ import type { SupplierItemInput } from "@/lib/resources/inputs";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
-import { recordAudit, type AuditAction } from "@/lib/audit";
+import { recordAudit, auditVersion, type AuditAction } from "@/lib/audit";
 import { resourceResult, errorMessage } from "@/lib/resources/result";
 
 export async function listSupplierItems(query = "") {
@@ -97,14 +97,14 @@ export async function saveSupplierItem(body: SupplierItemInput) {
       });
 
       const audit = {
-        module: "Resources & Suppliers", change,
+        module: "Resources & Suppliers", action: change === "created" ? "record.created" : "record.updated",
         target: { type: "supplier-item", id: `${si.SupplierId}/${si.ItemId}`, name: `${si.Suppliers.CompanyName}: ${si.Items.ItemName}` },
         description: `${staff.name} ${change} supplier item ${si.Suppliers.CompanyName}: ${si.Items.ItemName}`,
       } satisfies AuditAction;
 
       return { result: resourceResult({ success: true, message: "Supplier item saved.", data: si }), audit };
     });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: auditVersion(saved.result.data) });
     return saved.result;
   } catch (error) {
     return resourceResult({ success: false, message: errorMessage(error) });
@@ -210,14 +210,14 @@ export async function removeSupplierItem(supplierIdInput: string | number, itemI
       });
 
       const audit = {
-        module: "Resources & Suppliers", change: "deleted",
+        module: "Resources & Suppliers", action: "record.deleted",
         target: { type: "supplier-item", id: `${supplierId}/${itemId}`, name: `Supplier ${supplierId}, item ${itemId}` },
         description: `${staff.name} removed supplier ${supplierId} from item ${itemId}`,
       } satisfies AuditAction;
 
       return { result: resourceResult({ success: true, message: "Supplier item removed." }), audit };
     });
-    if (saved.audit) await recordAudit(staff, saved.audit);
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: auditVersion(saved.result.data) });
     return saved.result;
   } catch (error) {
     return resourceResult({ success: false, message: errorMessage(error) });

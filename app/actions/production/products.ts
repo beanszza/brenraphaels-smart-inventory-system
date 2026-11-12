@@ -259,7 +259,7 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
       }),
       audit: {
         module: "Production & Quality",
-        change: "created",
+        action: "record.created",
         target: { type: "finished-product", id: createdVariants[0]?.productId || item.ItemId, name: item.ItemName },
         description: `${staff.name} created finished product ${item.ItemName} with ${createdVariants.length} variant(s)`,
       },
@@ -365,7 +365,7 @@ export async function createFinishedProduct(body: any = {}) {
       result: resourceResult({ success: true, data: response }),
       audit: {
         module: "Production & Quality",
-        change: "created",
+        action: "record.created",
         target: { type: "finished-product", id: newProduct.ProductId, name: newProduct.Items.ItemName },
         description: `${staff.name} created finished product (${newProduct.Items.ItemName})`,
       },

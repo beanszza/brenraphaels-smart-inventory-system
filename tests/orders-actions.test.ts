@@ -38,7 +38,7 @@ vi.mock("@/lib/gateway/audit", () => ({
   gatewayPort: {
     writeAudit: async (event: AuditEventInput) => {
       // The mutation must have persisted before the event can be sent.
-      expect(fake.committed.length).toBeGreaterThan(0);
+      if (event.outcome === "success") expect(fake.committed.length).toBeGreaterThan(0);
       expect(fake.transactionOpen).toBe(false);
       if (fake.auditFails) throw new Error("Gateway unavailable");
       fake.written.push(event);
@@ -181,7 +181,7 @@ for (const [path, load] of Object.entries(actionModules)) {
         expect(fake.dataAccess).not.toHaveBeenCalled();
         expect(fake.written).toEqual([]);
         expect(fake.sent).toEqual([]);
-        if (signed) expect(fake.requested).toEqual([owner]);
+        if (signed) expect(fake.requested).toEqual(decision === "403" ? [owner, "Resources & Suppliers", "Orders & Procurement", "Goods Receiving", "Inventory", "Production & Quality", "Stock Transfer"] : [owner]);
       });
     }
   });
@@ -198,7 +198,7 @@ const mutations = [
   ["update requisition", "Draft", () => requisitions.updateRequisition(5, prInput), "record.updated", "purchase-requisition", "5", "PR-2026-0001"],
   ["set requisition status", "Draft", () => requisitions.setRequisitionStatus(5, { status: "Cancelled" }), "record.updated", "purchase-requisition", "5", "PR-2026-0001"],
   ["convert requisition", "Approved", () => requisitions.convertRequisitionToOrders(5), "record.updated", "purchase-requisition", "5", "PR-2026-0001"],
-  ["create order", "Draft", () => orders.createOrder(poInput), "record.created", "purchase-order", "6", "PO-2026-0001"],
+  ["create order", "Draft", () => orders.createOrder(poInput), "purchase_order.created", "purchase-order", "6", "PO-2026-0001"],
   ["update order", "Draft", () => orders.updateOrder(6, poInput), "record.updated", "purchase-order", "6", "PO-2026-0001"],
   ["set order status", "Draft", () => orders.setOrderStatus(6, { status: "Cancelled" }), "record.updated", "purchase-order", "6", "PO-2026-0001"],
   ["discard draft order", "Draft", () => orders.discardDraftOrder(6), "record.deleted", "purchase-order", "6", "PO-2026-0001"],
@@ -215,7 +215,7 @@ it.each(mutations)("%s emits the persisted target and session actor through the 
   expect(fake.written).toHaveLength(1);
   expect(fake.written[0]).toMatchObject({
     source: "IMS", module: "Orders & Procurement", action, outcome: "success",
-    actor: { type: "staff", id: "2026-AB-001", display_name: "Ada Santos" },
+    actor: { type: "user", id: "staff-1", display_name: "Ada Santos" },
     target: { type, id, display_name },
   });
   expect(fake.written[0].description).toContain("Ada Santos");
@@ -271,7 +271,9 @@ describe("refusals", () => {
   it("refuses an unknown status", async () => {
     expect(await requisitions.setRequisitionStatus(5, { status: "Nonsense" })).toMatchObject({ success: false });
     expect(await orders.setOrderStatus(6, { status: "Nonsense" })).toMatchObject({ success: false });
-    expect(fake.written).toEqual([]);
+    expect(fake.written).toHaveLength(2);
+    expect(fake.written.every(event => event.outcome === "failure")).toBe(true);
+    expect(fake.committed).toHaveLength(0);
   });
 });
 
@@ -372,4 +374,15 @@ describe("pages", () => {
     await expect(Page(...args)).rejects.toThrow("Redirect: /unavailable");
     expect(fake.dataAccess).not.toHaveBeenCalled();
   });
+});
+
+
+it("records an already-processed approval as a failure without saving again", async () => {
+  fake.status = "Approved";
+  const result = await orders.setOrderStatus(6, { status: "Approved" });
+  expect(result).toMatchObject({ success: false, message: "This request has already been processed." });
+  expect(fake.committed).toHaveLength(0);
+  expect(fake.sent).toHaveLength(0);
+  expect(fake.written).toHaveLength(1);
+  expect(fake.written[0]).toMatchObject({ action: "purchase_order.approved", outcome: "failure", actor: { type: "user", id: "staff-1" } });
 });

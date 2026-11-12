@@ -29,6 +29,7 @@ describe("IMS audit logs page", () => {
     readImsAuditEvents.mockResolvedValue([
       {
         id: "e1",
+        action: "purchase_order.approved",
         description: "Ana approved PO-1",
         target: { display_name: "PO-1" },
         actor: { display_name: "Ana Cruz" },
@@ -38,7 +39,7 @@ describe("IMS audit logs page", () => {
     const props = viewProps(await Page({ searchParams: Promise.resolve({ type: "inventory" }) }) as never);
     expect(readImsAuditEvents).toHaveBeenCalledWith({ modules: ["Inventory"] });
     expect(props.initialLogs).toEqual([
-      { id: "e1", activity: "Ana approved PO-1", entityName: "PO-1", timestamp: "2026-01-02T03:04:05.000Z", user: "Ana Cruz" },
+      { id: "e1", activity: "Purchase Order Approved / Ana approved PO-1", entityName: "PO-1", timestamp: "2026-01-02T03:04:05.000Z", user: "Ana Cruz" },
     ]);
     expect(props.unavailable).toBe(false);
   });

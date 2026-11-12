@@ -311,7 +311,7 @@ export async function createReceipt(body: ReceiptInput) {
       }))
     };
 
-    return { result: resourceResult({ success: true, message: "Draft GRN created successfully.", data: response }), audit: { module: MODULE, change: "created", target: { type: "goods-receipt", id: newGrn.GrnId, name: newGrn.GrnNumber }, description: `${staff.name} created goods receipt ${newGrn.GrnNumber}` } };
+    return { result: resourceResult({ success: true, message: "Draft GRN created successfully.", data: response }), audit: { module: MODULE, action: "record.created", target: { type: "goods-receipt", id: newGrn.GrnId, name: newGrn.GrnNumber }, description: `${staff.name} created goods receipt ${newGrn.GrnNumber}` } };
 
   });
 }
@@ -508,7 +508,7 @@ export async function updateReceipt(idInput: string | number, body: ReceiptInput
       }))
     };
 
-    return { result: resourceResult({ success: true, message: "Draft GRN updated successfully.", data: response }), audit: { module: MODULE, change: "updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} updated goods receipt ${updatedGrn.GrnNumber}` } };
+    return { result: resourceResult({ success: true, message: "Draft GRN updated successfully.", data: response }), audit: { module: MODULE, action: "record.updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} updated goods receipt ${updatedGrn.GrnNumber}` } };
 
   });
 }
@@ -603,7 +603,7 @@ export async function postReceipt(idInput: string | number) {
       return result;
     })();
 
-    return { result: resourceResult({ success: true, message: "GRN posted for QA inspection.", data: updatedGrn }), audit: { module: MODULE, change: "updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} posted goods receipt for QA ${updatedGrn.GrnNumber}` } };
+    return { result: resourceResult({ success: true, message: "GRN posted for QA inspection.", data: updatedGrn }), audit: { module: MODULE, action: "delivery.received", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} posted goods receipt for QA ${updatedGrn.GrnNumber}` } };
 
   });
 }
@@ -638,7 +638,7 @@ export async function cancelReceipt(idInput: string | number) {
       });
     }
 
-    return { result: resourceResult({ success: true, message: "GRN cancelled successfully.", data: updatedGrn }), audit: { module: MODULE, change: "updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} cancelled goods receipt ${updatedGrn.GrnNumber}` } };
+    return { result: resourceResult({ success: true, message: "GRN cancelled successfully.", data: updatedGrn }), audit: { module: MODULE, action: "record.updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} cancelled goods receipt ${updatedGrn.GrnNumber}` } };
 
   });
 }
@@ -756,7 +756,7 @@ export async function rejectReceipt(idInput: string | number, body: ReceiptInput
       }
     }
 
-    return { result: resourceResult({ success: true, message: "GRN rejected and discrepancy records logged.", data: updatedGrn }), audit: { module: MODULE, change: "rejected", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} rejected goods receipt ${updatedGrn.GrnNumber}` }, after: () => notifyRequester(grn.CreatedBy, "rejected", updatedGrn.GrnNumber) };
+    return { result: resourceResult({ success: true, message: "GRN rejected and discrepancy records logged.", data: updatedGrn }), audit: { module: MODULE, action: "delivery.discrepancy_logged", subjectUsername: grn.CreatedBy, target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} rejected goods receipt ${updatedGrn.GrnNumber}` }, after: () => notifyRequester(grn.CreatedBy, "rejected", updatedGrn.GrnNumber) };
 
   });
 }
@@ -783,7 +783,7 @@ export async function proceedToQa(idInput: string | number) {
       data: { Status: "QaPending" }
     });
 
-    return { result: resourceResult({ success: true, message: "GRN moved to QA Pending.", data: updatedGrn }), audit: { module: MODULE, change: "updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} moved goods receipt to QA ${updatedGrn.GrnNumber}` } };
+    return { result: resourceResult({ success: true, message: "GRN moved to QA Pending.", data: updatedGrn }), audit: { module: MODULE, action: "record.updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} moved goods receipt to QA ${updatedGrn.GrnNumber}` } };
 
   });
 }

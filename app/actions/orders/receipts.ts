@@ -44,7 +44,7 @@ export async function confirmReceiptUpload(poId: number, fileId: string) {
     const file = await confirmAndLink(filesGateway, staff, purchaseOrderReceipt, poId, fileId);
     const order = await prisma.purchaseOrders.findUnique({ where: { PoId: poId } });
     await recordAudit(staff, {
-      module: MODULE, change: "updated",
+      module: MODULE, action: "record.updated", version: file.id,
       target: { type: "purchase-order", id: poId, name: order?.PoNumber ?? `Purchase order ${poId}` },
       description: `${staff.name} uploaded a receipt for purchase order ${order?.PoNumber ?? poId}`,
     });

@@ -1,3 +1,4 @@
+import { auditActionLabel } from "@/lib/audit-actions";
 import React, { Suspense } from "react";
 import { AuditLogsSkeleton } from "@/components/loading/audit-logs-skeleton";
 import ViewTransactionalLogs from "@/components/pages/ViewTransactionalLogs";
@@ -23,10 +24,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
     const events = await readImsAuditEvents({ modules: MODULES_BY_TYPE[(type ?? "supply").toLowerCase()] });
     logs = events.map((event) => ({
       id: event.id,
-      activity: event.description,
-      entityName: event.target.display_name,
+      activity: `${event.outcome === "failure" ? "Failed: " : ""}${auditActionLabel(event.action)} / ${event.description}`,
+      entityName: event.target?.display_name ?? "IMS",
       timestamp: event.occurred_at,
-      user: event.actor.display_name,
+      user: event.actor?.display_name ?? "Unknown user",
     }));
   } catch (error) {
     console.error("Audit events could not be read", error);

@@ -46,7 +46,7 @@ validateInput(body);
       },
     });
 
-    return saved(staff, "stock-transfer-request", updated.RequestId, updated.RequestNumber || String(updated.RequestId), action === "Approve" ? "approved" : "rejected", resourceResult({
+    return saved(staff, "stock-transfer-request", updated.RequestId, updated.RequestNumber || String(updated.RequestId), action === "Approve" ? "stock_transfer.approved" : "stock_transfer.rejected", resourceResult({
       success: true,
       message: `Stock transfer request successfully ${action === "Approve" ? "approved" : "rejected"}.`,
       data: {
@@ -54,7 +54,7 @@ validateInput(body);
         status: updated.Status,
         adminNotes: updated.AdminNotes,
       },
-    }), () => notifyRequester(existing.RequestedBy, action === "Approve" ? "approved" : "rejected", existing.RequestNumber));
+    }), () => notifyRequester(existing.RequestedBy, action === "Approve" ? "approved" : "rejected", existing.RequestNumber), existing.RequestedBy);
 
-  });
+  }, { module: "Stock Transfer", action: body?.action === "Approve" ? "stock_transfer.approved" : "stock_transfer.rejected", target: { type: "stock-transfer-request", id: typeof idInput === "string" || typeof idInput === "number" ? idInput : "invalid", name: "stock-transfer-request" }, description: `${staff.name} attempted to review stock-transfer-request` });
 }

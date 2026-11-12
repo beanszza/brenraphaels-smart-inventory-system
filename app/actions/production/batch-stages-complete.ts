@@ -40,6 +40,7 @@ export async function completeBatchStage(idInput: string | number, body: any = {
         const nextStage = stageIdx < COOKING_STAGES.length - 1
             ? COOKING_STAGES[stageIdx + 1]
             : "Packaging"; // After Cooling -> Packaging
+        if (batch.CurrentStage === nextStage || batch.Stage === nextStage) return refuse("This batch stage has already been completed.");
         const fullEnd = endDate ? `${endDate} ${endTime}` : endTime;
         const logEntry = `[STAGE:${stage}|END:${fullEnd}|BY:${completedBy}${notes ? `|NOTES:${notes}` : ""}]`;
         const updatedNotes = batch.Notes ? `${batch.Notes}\n${logEntry}` : logEntry;
@@ -60,6 +61,6 @@ export async function completeBatchStage(idInput: string | number, body: any = {
                     stage: updated.Stage,
                     notes: updated.Notes,
                 },
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} completed production batch stage (${String(id)})` } };
+            }), audit: { module: "Production & Quality", action: "production_batch.stage_changed", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} completed production batch stage (${String(id)})` } };
     });
 }
