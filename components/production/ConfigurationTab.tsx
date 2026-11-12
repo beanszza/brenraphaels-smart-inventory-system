@@ -286,7 +286,6 @@ export default function ConfigurationTab({
                 <th className="w-16 px-4 py-4 text-center">Photo</th>
                 <th className="px-4 py-4">Product Name</th>
                 <th className="px-4 py-4">Variant</th>
-                <th className="px-4 py-4">Content Size</th>
                 <th className="px-4 py-4">UOM</th>
                 <th className="px-4 py-4">Packaging</th>
                 <th className="px-4 py-4">Variant SKU</th>
@@ -298,7 +297,7 @@ export default function ConfigurationTab({
               {paginatedProducts.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={9}
                     className="px-4 py-12 text-center text-sm font-normal text-muted-foreground"
                   >
                     {searchQuery || productFilter !== "All" || packagingFilter !== "All" || statusFilter !== "All"
@@ -348,11 +347,6 @@ export default function ConfigurationTab({
                       <span className="rounded-md bg-muted text-foreground border border-border px-2.5 py-0.5 text-xs font-semibold">
                         {product.variant || "Standard"}
                       </span>
-                    </td>
-
-                    {/* Content Size */}
-                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
-                      {product.contentSize || "—"}
                     </td>
 
                     {/* UOM */}

@@ -6,6 +6,7 @@ import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -473,42 +474,59 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
         </div>
       </div>
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal (Matching PO / PR Confirmation Format) */}
       {mounted && confirmModal && selectedBatch && typeof document !== "undefined" && createPortal(
         <div
-          className="font-sans fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+          className="pointer-events-auto font-sans fixed inset-0 z-[100002] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
         >
           <div
+            role="alertdialog"
+            aria-modal="true"
             style={{ width: "100%", maxWidth: "440px" }}
-            className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0 space-y-4"
+            className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
             onClick={(e) => e.stopPropagation()}
           >
-            <div>
-              <h4 className="text-base font-bold text-foreground">Confirm Quality Assurance Review</h4>
-              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+            <div className="flex flex-col items-center justify-center text-center">
+              {/* Circular Alert Icon */}
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+
+              {/* Title */}
+              <h2 className="text-xl font-bold text-foreground mb-1">
+                Confirm Quality Assurance Review
+              </h2>
+
+              {/* Subtitle */}
+              <p className="text-xs font-semibold text-muted-foreground mb-3">
+                Finished Goods Lot: {(selectedBatch.fgLotCode || "").replace(/^FG-/i, "") || selectedBatch.batchNumber}
+              </p>
+
+              {/* Message */}
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                 You are approving <strong className="text-foreground">{acceptedQty} units</strong> to proceed to stock-in
                 {rejectedQty > 0 ? ` and logging ${rejectedQty} units to Loss & Disposal` : ""}. This action is permanent.
               </p>
-            </div>
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setConfirmModal(false)}
-                className="text-xs border-border hover:bg-muted font-medium cursor-pointer"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleSubmitQa}
-                disabled={submitting}
-                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
-              >
-                {submitting ? "Signing Off..." : "Sign Off & Complete"}
-              </Button>
+
+              {/* Buttons matching PO / PR Confirmation format */}
+              <div className="flex justify-center gap-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => setConfirmModal(false)}
+                  disabled={submitting}
+                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmitQa}
+                  disabled={submitting}
+                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+                >
+                  {submitting ? "Signing Off..." : "Sign Off & Complete"}
+                </button>
+              </div>
             </div>
           </div>
         </div>,

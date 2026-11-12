@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { listItems } from "@/app/actions/production/lookups";
 import { actionResponse } from "@/lib/resources/action-response";
 import { toast } from "sonner";
-import { Plus, MoreHorizontal, Eye, ArrowDownToLine, X } from "lucide-react";
+import { Plus, MoreHorizontal, Eye, ArrowDownToLine, X, AlertTriangle } from "lucide-react";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { useIsAdmin } from "@/context/StaffContext";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
@@ -42,6 +42,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
   const [modalSelectedBatchId, setModalSelectedBatchId] = useState<number | "">("");
   const [stockInNotes, setStockInNotes] = useState<string>("");
   const [committing, setCommitting] = useState<boolean>(false);
+  const [confirmCommitModal, setConfirmCommitModal] = useState<boolean>(false);
 
   useEffect(() => {
     setMounted(true);
@@ -427,7 +428,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
         >
           {stockInCloseConfirm}
           <div
-            style={{ width: "100%", maxWidth: "780px" }}
+            style={{ width: "100%", maxWidth: "980px" }}
             className="w-full max-h-[90vh] p-6 rounded-2xl border border-border bg-card flex flex-col shadow-2xl shrink-0 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
@@ -455,7 +456,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                   <select
                     value={modalSelectedBatchId}
                     onChange={(e) => setModalSelectedBatchId(e.target.value ? Number(e.target.value) : "")}
-                    className="w-80 rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                    className="w-full sm:w-96 rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
                   >
                     <option value="">
                       Select Finished Goods Lot
@@ -476,32 +477,32 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                     Items
                   </span>
 
-                  <div className="rounded-xl border border-border bg-card overflow-hidden">
+                  <div className="rounded-xl border border-border bg-card overflow-x-auto">
                     <table className="w-full text-left text-sm border-collapse">
                       <thead className="border-b border-border bg-muted/30">
                         <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                          <th className="px-4 py-4">Supply Name</th>
-                          <th className="px-4 py-4 text-center">Unit of Measure</th>
-                          <th className="px-4 py-4 text-right">Stock to Put In</th>
-                          <th className="px-4 py-4 text-right">Current Stock</th>
+                          <th className="px-4 py-4 whitespace-nowrap">Supply Name</th>
+                          <th className="px-4 py-4 text-center whitespace-nowrap">Unit of Measure</th>
+                          <th className="px-4 py-4 text-right whitespace-nowrap">Stock to Put In</th>
+                          <th className="px-4 py-4 text-right whitespace-nowrap">Current Stock</th>
                           <th className="px-4 py-4 whitespace-nowrap">Lot No.</th>
                           <th className="px-4 py-4 text-center whitespace-nowrap">Expiry Date</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
                         <tr className="hover:bg-muted/10 transition-colors">
-                          <td className="px-4 py-4 text-sm font-semibold text-foreground">
+                          <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
                             {selectedBatchInModal.productName}
                           </td>
-                          <td className="px-4 py-4 text-sm text-center text-muted-foreground">
+                          <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
                             {selectedBatchInModal.yieldUom || "jars"}
                           </td>
-                          <td className="px-4 py-4 text-sm text-right font-semibold text-foreground">
+                          <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
                             {Number(
                               selectedBatchInModal.finalQuantity || selectedBatchInModal.actualQuantity
                             ).toLocaleString()}
                           </td>
-                          <td className="px-4 py-4 text-sm text-right text-muted-foreground">
+                          <td className="px-4 py-4 text-sm text-right text-muted-foreground whitespace-nowrap">
                             {currentStockForSelected.toLocaleString()}
                           </td>
                           <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
@@ -551,7 +552,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                   <Button
                     type="button"
                     disabled={committing || selectedBatchInModal.status !== "For Stock-in"}
-                    onClick={handleCommitStockIn}
+                    onClick={() => setConfirmCommitModal(true)}
                     className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {committing
@@ -561,6 +562,67 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                       : "Already Stocked In"}
                   </Button>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Confirmation Modal for Commit to Inventory (Matching PO / PR Confirmation Format) ── */}
+      {mounted && confirmCommitModal && selectedBatchInModal && typeof document !== "undefined" && createPortal(
+        <div
+          className="pointer-events-auto font-sans fixed inset-0 z-[100002] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            style={{ width: "100%", maxWidth: "440px" }}
+            className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center justify-center text-center">
+              {/* Circular Alert Icon */}
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+
+              {/* Title */}
+              <h2 className="text-xl font-bold text-foreground mb-1">
+                Confirm Stock-In
+              </h2>
+
+              {/* Subtitle */}
+              <p className="text-xs font-semibold text-muted-foreground mb-3">
+                Lot: {(selectedBatchInModal.fgLotCode || "").replace(/^FG-/i, "") || selectedBatchInModal.batchNumber}
+              </p>
+
+              {/* Message */}
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                You are about to commit <strong className="text-foreground">{Number(selectedBatchInModal.finalQuantity || selectedBatchInModal.actualQuantity).toLocaleString()} {selectedBatchInModal.yieldUom || "jars"}</strong> of <strong className="text-foreground">{selectedBatchInModal.productName}</strong> to active inventory. This action is permanent.
+              </p>
+
+              {/* Buttons matching PO / PR Confirmation format */}
+              <div className="flex justify-center gap-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => setConfirmCommitModal(false)}
+                  disabled={committing}
+                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setConfirmCommitModal(false);
+                    await handleCommitStockIn();
+                  }}
+                  disabled={committing}
+                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+                >
+                  {committing ? "Committing..." : "Confirm & Commit"}
+                </button>
               </div>
             </div>
           </div>

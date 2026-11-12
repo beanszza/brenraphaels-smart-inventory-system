@@ -261,7 +261,7 @@ export default function ProductionRequestsTab({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <SearchInput
             containerClassName="flex-1"
-            placeholder="Search by Request No., Product, Variant, or Recipe..."
+            placeholder="Search by Request No., Product, or Variant..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -341,12 +341,11 @@ export default function ProductionRequestsTab({
                     ? "Request / Batch No."
                     : "Request Number"}
                 </th>
-                <th className="px-4 py-4">Product</th>
-                <th className="px-4 py-4">Variant</th>
-                <th className="px-4 py-4">Recipe</th>
+                <th className="px-4 py-4 whitespace-nowrap">Product</th>
+                <th className="px-4 py-4 whitespace-nowrap">Variant</th>
                 <th className="px-4 py-4 text-right whitespace-nowrap">Target Output</th>
-                <th className="px-4 py-4 text-center">Priority</th>
-                <th className="px-4 py-4 text-center">Status</th>
+                <th className="px-4 py-4 text-center whitespace-nowrap">Priority</th>
+                <th className="px-4 py-4 text-center whitespace-nowrap">Status</th>
                 <th className="px-4 py-4 whitespace-nowrap">Required Date</th>
                 <th className="w-16 px-4 py-4 text-center whitespace-nowrap">Actions</th>
               </tr>
@@ -354,13 +353,13 @@ export default function ProductionRequestsTab({
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground animate-pulse">
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground animate-pulse">
                     <ProductionSkeleton />
                   </td>
                 </tr>
               ) : paginatedRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
                     No production requests found in this view.
                   </td>
                 </tr>
@@ -399,18 +398,13 @@ export default function ProductionRequestsTab({
                       </td>
 
                       {/* Product (Product name only) */}
-                      <td className="px-4 py-4 text-sm text-foreground">
+                      <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
                         {req.productName}
                       </td>
 
                       {/* Variant (Dedicated column) */}
-                      <td className="px-4 py-4 text-sm text-muted-foreground">
+                      <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                         {req.variant || "Standard"}
-                      </td>
-
-                      {/* Recipe */}
-                      <td className="px-4 py-4 text-sm text-muted-foreground">
-                        {req.recipeName}
                       </td>
 
                       {/* Target Output */}
