@@ -334,7 +334,7 @@ export default function InventoryTable({
                                       Lot Code
                                     </th>
                                     <th className="px-3 py-2 text-left font-semibold">
-                                      Delivered Date
+                                      {isFinishedGoods ? "Production Date" : "Delivered Date"}
                                     </th>
                                     {hasAnyExpiry && (
                                       <th className="px-3 py-2 text-left font-semibold">
