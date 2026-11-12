@@ -109,10 +109,10 @@ export default function ProductionTrackingTab({
 
       {/* ── Slim Sidebar + Spacious Main Production Layout ── */}
       <div className="flex flex-col lg:flex-row gap-5 items-start">
-        {/* Left Column: Slimmer Active Batches Bar (w-full lg:w-72 shrink-0) */}
-        <div className="w-full lg:w-72 shrink-0">
-          <div className="border border-border rounded-2xl bg-card p-3.5 space-y-3 shadow-xs">
-            {/* Card Header matching user reference */}
+        {/* Left Column: Compact Active Batches Bar (w-full lg:w-64 shrink-0) */}
+        <div className="w-full lg:w-64 shrink-0">
+          <div className="border border-border rounded-2xl bg-card p-3 space-y-3 shadow-xs">
+            {/* Card Header */}
             <div className="flex items-center justify-between pb-1 border-b border-border/60">
               <h3 className="font-semibold text-xs uppercase tracking-wider text-foreground">Active Batches</h3>
               <span className="text-xs font-medium text-muted-foreground">
@@ -152,19 +152,20 @@ export default function ProductionTrackingTab({
                     >
                       <div className="flex items-start justify-between gap-1.5">
                         <div className="min-w-0 flex-1">
-                          <span className="font-semibold text-xs text-foreground block truncate">
+                          <span
+                            className="font-semibold text-sm text-foreground block truncate"
+                            title={b.batchNumber}
+                          >
                             {b.batchNumber}
                           </span>
-                          <span className="font-semibold text-sm text-foreground block mt-0.5 truncate">
-                            {b.productName}
+                          <span
+                            className="text-xs text-muted-foreground block mt-0.5 truncate"
+                            title={b.recipeName || b.productName}
+                          >
+                            {b.recipeName || b.productName}
                           </span>
-                          {b.variant && (
-                            <span className="text-xs text-muted-foreground block truncate">
-                              {b.variant}
-                            </span>
-                          )}
                         </div>
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded border border-border bg-background text-foreground shrink-0">
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border border-border bg-background text-foreground shrink-0">
                           {b.status}
                         </span>
                       </div>

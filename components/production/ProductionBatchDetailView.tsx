@@ -540,6 +540,7 @@ export default function ProductionBatchDetailView({
     !isRejected;
   const isQaPhase = status === "For QA";
   const isPostQaPhase = status === "For Stock-in" || status === "Stocked In" || status === "Completed";
+  const canReject = !isRejected && !isQaPhase && !isPostQaPhase;
 
   const startDateTime = batch.startedAt ? new Date(batch.startedAt) : null;
   const startDateFormatted = startDateTime
@@ -581,7 +582,7 @@ export default function ProductionBatchDetailView({
         </div>
 
         {/* Action Buttons */}
-        {isCookingPhase && !isAdmin && (
+        {canReject && !isAdmin && (
           <div className="flex items-center gap-2 shrink-0">
             <Button
               type="button"
@@ -596,22 +597,13 @@ export default function ProductionBatchDetailView({
         )}
       </div>
 
-      {/* Main Header Card */}
-      <div className="p-5 rounded-2xl border border-border bg-card space-y-4">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <h2 className="text-lg font-semibold text-foreground">{batch.productName}</h2>
-          {batch.variant && (
-            <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full">
-              {batch.variant}
-            </span>
-          )}
-        </div>
-
-        {/* 2-Step Sequential Kitchen Stepper */}
-        <div className="pt-1">
-          <p className="text-xs font-semibold text-muted-foreground tracking-wider uppercase mb-2.5">
+      {/* 2-Step Sequential Kitchen Stepper */}
+      <div className="p-3.5 px-4 rounded-xl border border-border bg-card">
+        <div className="flex flex-wrap items-center gap-4">
+          <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">
             Workflow
-          </p>
+          </span>
+          <div className="h-4 w-px bg-border hidden sm:block" />
           <div className="flex items-center gap-3">
             {WORKFLOW_STEPS.map((step, idx) => {
               const isPast = isAtPackagingPhase && idx === 0;
@@ -626,7 +618,7 @@ export default function ProductionBatchDetailView({
                     onClick={() => {
                       if (canClick) setSelectedWorkflowStep(idx as 0 | 1);
                     }}
-                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl transition-all text-left ${
+                    className={`flex items-center gap-2 px-2.5 py-1 rounded-xl transition-all text-left ${
                       canClick ? "cursor-pointer hover:bg-muted/40" : "cursor-not-allowed opacity-50"
                     }`}
                     title={!canClick ? "Complete all 6 kitchen production stages first" : undefined}
@@ -655,7 +647,7 @@ export default function ProductionBatchDetailView({
                     </span>
                   </button>
                   {idx < WORKFLOW_STEPS.length - 1 && (
-                    <div className="flex-1 max-w-[80px] h-0.5 bg-border rounded-full" />
+                    <div className="w-12 h-0.5 bg-border rounded-full" />
                   )}
                 </React.Fragment>
               );
@@ -665,9 +657,9 @@ export default function ProductionBatchDetailView({
       </div>
 
       {/* Main Execution View: 2 Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Interactive Stages / Actions (2 cols span) */}
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 gap-5 items-start">
+        {/* Left Column: Interactive Stages / Actions (Expanded) */}
+        <div className="xl:col-span-3 lg:col-span-2 space-y-6">
           {/* ── PHASE 1: COOKING WATERFALL STAGES ── */}
           {isCookingPhase && (
             <div className="p-5 rounded-2xl border border-border bg-card space-y-5">
@@ -1129,23 +1121,34 @@ export default function ProductionBatchDetailView({
               </div>
 
               {/* Bottom Packaging Controls */}
-              <div className="flex items-center justify-end pt-3 border-t border-border/60">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/60">
                 {!isAdmin ? (
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      const err = validatePackagingDateTime();
-                      if (err) {
-                        toast.error(err);
-                        return;
-                      }
-                      setConfirmPackagingModal(true);
-                    }}
-                    disabled={pkgLoading || Boolean(validatePackagingDateTime()) || !pkgProofUrl || pkgQuantity <= 0}
-                    className="h-10 px-6 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Finish Packaging
-                  </Button>
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowRejectModal(true)}
+                      disabled={pkgLoading}
+                      className="h-10 px-5 text-sm font-semibold border-destructive/40 text-destructive hover:bg-destructive/10 rounded-xl cursor-pointer"
+                    >
+                      Reject Batch
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const err = validatePackagingDateTime();
+                        if (err) {
+                          toast.error(err);
+                          return;
+                        }
+                        setConfirmPackagingModal(true);
+                      }}
+                      disabled={pkgLoading || Boolean(validatePackagingDateTime()) || !pkgProofUrl || pkgQuantity <= 0}
+                      className="h-10 px-6 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Finish Packaging
+                    </Button>
+                  </>
                 ) : (
                   <span className="text-xs text-muted-foreground italic">
                     Admin View-Only Mode (Packaging operated by Head Cook)
@@ -1206,7 +1209,7 @@ export default function ProductionBatchDetailView({
         </div>
 
         {/* Right Column: Reserved Materials & BOM Verification */}
-        <div className="space-y-6">
+        <div className="xl:col-span-1 lg:col-span-1 space-y-6">
           <div className="p-5 rounded-2xl border border-border bg-card space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
