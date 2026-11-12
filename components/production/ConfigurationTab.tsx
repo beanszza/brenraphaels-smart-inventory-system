@@ -281,17 +281,17 @@ export default function ConfigurationTab({
         <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
           <table className="w-full min-w-[800px]">
             <thead className="border-b border-border bg-muted/30">
-              <tr className="text-left text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">
-                <th className="px-4 py-3.5 w-14">No.</th>
-                <th className="px-4 py-3.5 w-16">Photo</th>
-                <th className="px-4 py-3.5">Product Name</th>
-                <th className="px-4 py-3.5">Variant</th>
-                <th className="px-4 py-3.5">Content Size</th>
-                <th className="px-4 py-3.5">UOM</th>
-                <th className="px-4 py-3.5">Packaging</th>
-                <th className="px-4 py-3.5">Variant SKU</th>
-                <th className="px-4 py-3.5">Status</th>
-                <th className="px-4 py-3.5 text-center w-20">Actions</th>
+              <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                <th className="w-12 px-4 py-4 text-center">No.</th>
+                <th className="w-16 px-4 py-4 text-center">Photo</th>
+                <th className="px-4 py-4">Product Name</th>
+                <th className="px-4 py-4">Variant</th>
+                <th className="px-4 py-4">Content Size</th>
+                <th className="px-4 py-4">UOM</th>
+                <th className="px-4 py-4">Packaging</th>
+                <th className="px-4 py-4">Variant SKU</th>
+                <th className="px-4 py-4 text-center">Status</th>
+                <th className="w-16 px-4 py-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -299,7 +299,7 @@ export default function ConfigurationTab({
                 <tr>
                   <td
                     colSpan={10}
-                    className="px-5 py-12 text-center text-sm font-normal text-muted-foreground"
+                    className="px-4 py-12 text-center text-sm font-normal text-muted-foreground"
                   >
                     {searchQuery || productFilter !== "All" || packagingFilter !== "All" || statusFilter !== "All"
                       ? "No finished product variants found matching your filters."
@@ -313,13 +313,13 @@ export default function ConfigurationTab({
                     className="hover:bg-muted/30 transition-colors"
                   >
                     {/* No. */}
-                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="w-12 px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
                       {index + 1 + (safeCurrentPage - 1) * pageSize}
                     </td>
 
                     {/* Photo */}
-                    <td className="px-4 py-3">
-                      <div className="w-9 h-9 rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center shrink-0">
+                    <td className="w-16 px-4 py-4 text-center">
+                      <div className="w-9 h-9 rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center shrink-0 mx-auto">
                         {product.imageUrl ? (
                           <img
                             src={product.imageUrl}
@@ -339,46 +339,46 @@ export default function ConfigurationTab({
                     </td>
 
                     {/* Product Name */}
-                    <td className="px-4 py-3 text-sm font-semibold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
                       {product.itemName}
                     </td>
 
                     {/* Variant */}
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       <span className="rounded-md bg-muted text-foreground border border-border px-2.5 py-0.5 text-xs font-semibold">
                         {product.variant || "Standard"}
                       </span>
                     </td>
 
                     {/* Content Size */}
-                    <td className="px-4 py-3 text-sm text-foreground font-medium whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {product.contentSize || "—"}
                     </td>
 
                     {/* UOM */}
-                    <td className="px-4 py-3 text-sm text-muted-foreground font-medium whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {formatVariantUomLabel(product.contentUom || product.uomName)}
                     </td>
 
                     {/* Packaging */}
-                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {product.packagingType || "Jar"}
                     </td>
 
                     {/* Variant SKU */}
-                    <td className="px-4 py-3 text-xs font-mono font-bold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-muted-foreground font-mono whitespace-nowrap">
                       {product.sku || "—"}
                     </td>
 
                     {/* Status */}
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="px-4 py-4 text-center whitespace-nowrap">
                       <StatusBadge
                         status={product.isActive === false ? "Inactive" : "Active"}
                       />
                     </td>
 
                     {/* Actions: Edit Product only (Delete removed per user requirement) */}
-                    <td className="px-4 py-3 text-center">
+                    <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button

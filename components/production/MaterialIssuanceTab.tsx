@@ -121,27 +121,27 @@ export default function MaterialIssuanceTab({ initialRows, initialIssuanceId }: 
       <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
         <table className="w-full min-w-[900px]">
           <thead className="border-b border-border bg-muted/30">
-            <tr className="text-left text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">
-              <th className="px-4 py-3.5">Issuance Number</th>
-              <th className="px-4 py-3.5">Request Number</th>
-              <th className="px-4 py-3.5">Product</th>
-              <th className="px-4 py-3.5">Recipe</th>
-              <th className="px-4 py-3.5 text-right">Target Output</th>
-              <th className="px-4 py-3.5 text-center">Status</th>
-              <th className="px-4 py-3.5">Issued Date</th>
-              <th className="px-4 py-3.5 text-center w-20">Actions</th>
+            <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+              <th className="px-4 py-4">Issuance Number</th>
+              <th className="px-4 py-4">Request Number</th>
+              <th className="px-4 py-4">Product</th>
+              <th className="px-4 py-4">Recipe</th>
+              <th className="px-4 py-4 text-right">Target Output</th>
+              <th className="px-4 py-4 text-center">Status</th>
+              <th className="px-4 py-4">Issued Date</th>
+              <th className="w-16 px-4 py-4 text-center whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-5 py-12 text-center text-sm font-normal text-muted-foreground">
+                <td colSpan={8} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
                   <ProductionSkeleton />
                 </td>
               </tr>
             ) : paginatedIssuances.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-5 py-12 text-center text-sm font-normal text-muted-foreground">
+                <td colSpan={8} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
                   No material issuances found. Once a production request is approved, initialize issuance to scan supplies.
                 </td>
               </tr>
@@ -156,45 +156,45 @@ export default function MaterialIssuanceTab({ initialRows, initialIssuanceId }: 
                     onClick={() => handleOpenScanner(iss.issuanceId)}
                     className="hover:bg-muted/30 transition-colors cursor-pointer"
                   >
-                    <td className="px-4 py-3 text-sm font-mono font-bold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
                       {iss.issuanceNumber}
                     </td>
 
-                    <td className="px-4 py-3 text-sm font-mono text-muted-foreground font-semibold whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {iss.reqNumber}
                     </td>
 
-                    <td className="px-4 py-3 text-sm font-semibold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
                       {iss.productName}
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {iss.recipeName}
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-right font-mono font-bold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
                       {iss.requestQuantity}
                     </td>
 
-                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                    <td className="px-4 py-4 text-center whitespace-nowrap">
                       <StatusBadge status={iss.status} />
                     </td>
 
-                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {iss.issuedAt ? new Date(iss.issuedAt).toLocaleDateString() : "—"}
                     </td>
 
                     {/* Actions (Three Dots Menu) */}
-                    <td className="px-4 py-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <div className="relative inline-block text-left action-menu-container">
                         <button
                           type="button"
                           onClick={() => setOpenDropdownId(isMenuOpen ? null : iss.issuanceId)}
-                          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors cursor-pointer focus:outline-none"
                           title="Actions"
                         >
-                            <MoreHorizontal className="w-4 h-4 text-foreground" />
-                          </button>
+                          <MoreHorizontal size={18} />
+                        </button>
 
                           {isMenuOpen && (
                             <div className="absolute right-0 mt-1 w-36 rounded-xl border border-border bg-card shadow-lg py-1 z-30 animate-in fade-in zoom-in-95">

@@ -46,8 +46,8 @@ export async function packageBatch(idInput: string | number, body: any = {}) {
         if (batch.Status === "Rejected") {
             return refuse("Cannot package a rejected batch.");
         }
-        // Auto-generate Finished Goods Lot Number: FG-[ITEM]-[YYMMDD]-[DAILY_SEQ]
-        // Example: Ube Jam Havanero -> FG-UJH-261112-01
+        // Auto-generate Finished Goods Lot Number: [ITEM]-[YYMMDD]-[DAILY_SEQ]
+        // Example: Ube Jam Havanero -> UJH-261112-01
         const productName = batch.FinishedProducts?.Items?.ItemName || "PROD";
         const itemAbbrev = getLotItemAbbreviation(productName);
         const now = new Date();
@@ -56,13 +56,13 @@ export async function packageBatch(idInput: string | number, body: any = {}) {
         const mm = String(now.getMonth() + 1).padStart(2, "0");
         const dd = String(now.getDate()).padStart(2, "0");
         const yymmdd = `${yy}${mm}${dd}`;
-        const seqDocType = `FG_LOT_${itemAbbrev}_${yymmdd}`;
+        const seqDocType = `LOT_${itemAbbrev}_${yymmdd}`;
         const seq = await tx.documentSequences.upsert({
             where: { DocType_Year: { DocType: seqDocType, Year: year } },
             update: { LastNumber: { increment: 1 } },
             create: { DocType: seqDocType, Year: year, LastNumber: 1 },
         });
-        const fgLotCode = `FG-${itemAbbrev}-${yymmdd}-${String(seq.LastNumber).padStart(2, "0")}`;
+        const fgLotCode = `${itemAbbrev}-${yymmdd}-${String(seq.LastNumber).padStart(2, "0")}`;
         const reqQty = Number(batch.ProductionRequests?.Quantity || batch.EstimatedQuantity);
         const yieldPercentage = reqQty > 0 ? (finalQuantity / reqQty) * 100 : 100;
         // Get location for Finished Goods lot creation (e.g. location 1 or system warehouse)

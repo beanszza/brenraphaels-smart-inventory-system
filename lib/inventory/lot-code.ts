@@ -48,6 +48,9 @@ export function formatLotCode(
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   const seq = String(sequenceNumber).padStart(2, "0");
+  if (cat === "FG") {
+    return `${item}-${yy}${mm}${dd}-${seq}`;
+  }
   return `${cat}-${item}-${yy}${mm}${dd}-${seq}`;
 }
 

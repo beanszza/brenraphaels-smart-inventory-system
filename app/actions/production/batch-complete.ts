@@ -4,6 +4,7 @@ import { BATCH_INCLUDE, mapBatch } from "@/lib/production/production-batches";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId, validateInput } from "@/lib/production/mutate";
+import { getLotItemAbbreviation } from "@/lib/inventory/lot-code";
 export async function completeBatch(idInput: string | number, body: any = {}) {
     const staff = await requireModule("Production & Quality");
     return mutate(staff, async (tx) => {
@@ -43,8 +44,13 @@ export async function completeBatch(idInput: string | number, body: any = {}) {
         const itemId = batch.FinishedProducts.ItemId;
         const uomId = batch.FinishedProducts.Items.UomId;
         const unitCost = Number(batch.UnitCost) || 0;
-        const fgLotCode = `FG-${batch.BatchNumber}`;
+        const productName = batch.FinishedProducts?.Items?.ItemName || "PROD";
+        const itemAbbrev = getLotItemAbbreviation(productName);
         const now = new Date();
+        const yy = String(now.getFullYear()).slice(-2);
+        const mm = String(now.getMonth() + 1).padStart(2, "0");
+        const dd = String(now.getDate()).padStart(2, "0");
+        const fgLotCode = `${itemAbbrev}-${yy}${mm}${dd}-01`;
         const completedResult = await (async () => {
             // 1. Create FG InventoryLot
             const fgLot = await tx.inventoryLots.create({

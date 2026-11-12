@@ -237,7 +237,7 @@ export default function BatchLifecycleSummaryModal({
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <span className="text-xs font-semibold text-muted-foreground block">FG Lot Code</span>
-                  <span className="text-sm font-semibold text-foreground">{summary.packaging.fgLotCode}</span>
+                  <span className="text-sm font-semibold text-foreground">{(summary.packaging.fgLotCode || "").replace(/^FG-/i, "") || "—"}</span>
                 </div>
                 <div>
                   <span className="text-xs font-semibold text-muted-foreground block">Packed Qty (Yield)</span>

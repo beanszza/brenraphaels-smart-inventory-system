@@ -194,44 +194,44 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
           <div className="overflow-x-auto">
             <table className="w-full min-w-[850px] text-left">
               <thead className="border-b border-border bg-muted/30">
-                <tr className="text-left text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">
-                  <th className="px-4 py-3.5">Loss ID</th>
-                  <th className="px-4 py-3.5">Batch Number</th>
-                  <th className="px-4 py-3.5">Product Name</th>
-                  <th className="px-4 py-3.5">Variant</th>
-                  <th className="px-4 py-3.5">Failure Stage</th>
-                  <th className="px-4 py-3.5">Date Logged</th>
-                  <th className="px-4 py-3.5 text-right">Estimated Loss</th>
-                  <th className="px-4 py-3.5 text-center w-28">Actions</th>
+                <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                  <th className="px-4 py-4">Loss ID</th>
+                  <th className="px-4 py-4">Batch Number</th>
+                  <th className="px-4 py-4">Product Name</th>
+                  <th className="px-4 py-4">Variant</th>
+                  <th className="px-4 py-4">Failure Stage</th>
+                  <th className="px-4 py-4">Date Logged</th>
+                  <th className="px-4 py-4 text-right">Estimated Loss</th>
+                  <th className="px-4 py-4 text-center w-28">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredReports.map((report) => (
                   <tr key={report.lossId} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 text-sm font-mono font-bold text-destructive whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
                       {report.lossId}
                     </td>
-                    <td className="px-4 py-3 text-sm font-mono font-semibold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {report.batchNumber}
                     </td>
-                    <td className="px-4 py-3 text-sm font-semibold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
                       {report.productName}
                     </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {report.variant}
                     </td>
-                    <td className="px-4 py-3 text-sm whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm whitespace-nowrap">
                       <span className="inline-flex items-center gap-1 font-semibold text-destructive">
                         <AlertOctagon size={13} /> {report.failureStage}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {new Date(report.date).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3 text-sm font-mono font-bold text-destructive text-right whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm font-semibold text-destructive text-right whitespace-nowrap">
                       ₱{report.totalEstimatedLoss.toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                    <td className="px-4 py-4 text-center whitespace-nowrap">
                       <Button
                         size="sm"
                         variant="outline"
@@ -336,28 +336,28 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
                 <div className="border border-border rounded-xl overflow-hidden bg-card">
                   <table className="w-full text-left">
                     <thead className="border-b border-border bg-muted/30">
-                      <tr className="text-left text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">
-                        <th className="px-4 py-2.5">Item Name</th>
-                        <th className="px-4 py-2.5">Lot Number</th>
-                        <th className="px-4 py-2.5">Quantity</th>
-                        <th className="px-4 py-2.5">Unit Cost</th>
-                        <th className="px-4 py-2.5 text-right">Total Cost</th>
+                      <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                        <th className="px-4 py-4">Item Name</th>
+                        <th className="px-4 py-4">Lot Number</th>
+                        <th className="px-4 py-4">Quantity</th>
+                        <th className="px-4 py-4">Unit Cost</th>
+                        <th className="px-4 py-4 text-right">Total Cost</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {selectedReport.items.map((item, idx) => (
                         <tr key={idx} className="hover:bg-muted/20">
-                          <td className="px-4 py-2.5 text-sm font-semibold text-foreground">
+                          <td className="px-4 py-4 text-sm font-semibold text-foreground">
                             {item.itemName}
                           </td>
-                          <td className="px-4 py-2.5 text-sm text-muted-foreground">
+                          <td className="px-4 py-4 text-sm text-muted-foreground">
                             {item.lotNumber}
                           </td>
-                          <td className="px-4 py-2.5 text-sm text-foreground">
+                          <td className="px-4 py-4 text-sm text-muted-foreground">
                             {item.quantity} {item.uom}
                           </td>
-                          <td className="px-4 py-2.5 text-sm text-foreground">₱{item.unitCost.toFixed(2)}</td>
-                          <td className="px-4 py-2.5 text-sm font-bold text-foreground text-right">
+                          <td className="px-4 py-4 text-sm text-muted-foreground">₱{item.unitCost.toFixed(2)}</td>
+                          <td className="px-4 py-4 text-sm font-semibold text-foreground text-right">
                             ₱{item.totalCost.toFixed(2)}
                           </td>
                         </tr>
@@ -365,10 +365,10 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
                     </tbody>
                     <tfoot className="bg-muted/30 font-bold border-t border-border">
                       <tr>
-                        <td colSpan={4} className="py-2.5 px-3 text-right uppercase text-[10px]">
+                        <td colSpan={4} className="py-4 px-4 text-right uppercase text-xs font-semibold text-muted-foreground">
                           Total Loss Value:
                         </td>
-                        <td className="py-2.5 px-3 text-right text-sm text-destructive">
+                        <td className="py-4 px-4 text-right text-sm font-bold text-destructive">
                           ₱{selectedReport.totalEstimatedLoss.toLocaleString()}
                         </td>
                       </tr>

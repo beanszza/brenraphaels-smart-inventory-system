@@ -151,7 +151,7 @@ export async function downloadProductionBatchPdf(data: BatchLifecycleSummaryData
     theme: "grid",
     styles: { fontSize: 8, cellPadding: 2.2, textColor: [30, 30, 30], lineColor: [215, 215, 215] },
     body: [
-      ["FG Lot Code", data.packaging.fgLotCode, "FG Lot Status", data.packaging.fgLotStatus],
+      ["FG Lot Code", (data.packaging.fgLotCode || "").replace(/^FG-/i, "") || "—", "FG Lot Status", data.packaging.fgLotStatus],
       ["Packed Quantity", `${data.packaging.finalQuantity} ${data.yieldUom}`, "Yield %", `${data.packaging.yieldPercentage.toFixed(1)}%`],
       ["Packaged By", data.packaging.packagedBy, "Packaged At", fmtDateTime(data.packaging.packagedAt)],
       ["Expiry Date", fmtDate(data.packaging.expiryDate), "", ""],

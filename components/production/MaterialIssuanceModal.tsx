@@ -790,15 +790,15 @@ export default function MaterialIssuanceModal({
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead className="border-b border-border bg-muted/30">
-                  <tr className="text-left text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">
-                    <th className="px-4 py-3">Ingredient Name</th>
-                    <th className="px-4 py-3">Supply No.</th>
-                    <th className="px-4 py-3">Suggested Lot</th>
-                    <th className="px-4 py-3 text-right">Reserved Qty</th>
+                  <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                    <th className="px-4 py-4">Ingredient Name</th>
+                    <th className="px-4 py-4">Supply No.</th>
+                    <th className="px-4 py-4">Suggested Lot</th>
+                    <th className="px-4 py-4 text-right">Reserved Qty</th>
                     {issuance?.reservations?.some((r) => Boolean(r.expiryDate)) && (
-                      <th className="px-4 py-3">Expiry Date</th>
+                      <th className="px-4 py-4">Expiry Date</th>
                     )}
-                    <th className="px-4 py-3 text-center">Status</th>
+                    <th className="px-4 py-4 text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -814,36 +814,36 @@ export default function MaterialIssuanceModal({
                         }`}
                       >
                         {/* Ingredient Name */}
-                        <td className="px-4 py-3 text-sm font-semibold text-foreground">
+                        <td className="px-4 py-4 text-sm font-semibold text-foreground">
                           {res.itemName}
                         </td>
 
                         {/* Supply No. */}
-                        <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                        <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                           {res.itemCode || "—"}
                         </td>
 
                         {/* Suggested Lot Code */}
-                        <td className="px-4 py-3 text-sm font-medium text-foreground whitespace-nowrap">
+                        <td className="px-4 py-4 text-sm font-medium text-foreground whitespace-nowrap">
                           <span className="bg-muted text-foreground border border-border px-2.5 py-0.5 rounded-md text-xs font-semibold">
                             {res.lotCode}
                           </span>
                         </td>
 
                         {/* Reserved Quantity */}
-                        <td className="px-4 py-3 text-sm text-right font-bold text-foreground whitespace-nowrap">
+                        <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
                           {res.reservedQuantity}
                         </td>
 
                         {/* Expiry Date */}
                         {issuance?.reservations?.some((r) => Boolean(r.expiryDate)) && (
-                          <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                          <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                             {res.expiryDate ? new Date(res.expiryDate).toLocaleDateString() : "No Expiry"}
                           </td>
                         )}
 
                         {/* Status Column */}
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                        <td className="px-4 py-4 text-center whitespace-nowrap">
                           {isVerified || isAlreadyIssued ? (
                             <StatusBadge status="Verified">Verified</StatusBadge>
                           ) : (

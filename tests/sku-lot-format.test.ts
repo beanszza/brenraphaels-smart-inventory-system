@@ -13,6 +13,6 @@ it("formats Lot Codes as [CATEGORY]-[ITEM]-[YYMMDD]-[BATCH#]", () => {
   expect(formatLotCode("Raw Materials", "Ube", date, 1)).toBe("RM-UBE-261112-01");
   expect(formatLotCode("Ingredients", "White Sugar", date, 2)).toBe("RM-SGR-261112-02");
   expect(formatLotCode("Packaging Materials", "Glass Jar", date, 3)).toBe("PM-JAR-261112-03");
-  expect(formatLotCode("Finished Goods", "Ube Halaya", date, 1)).toBe("FG-UBH-261112-01");
+  expect(formatLotCode("Finished Goods", "Ube Halaya", date, 1)).toBe("UBH-261112-01");
 });
 

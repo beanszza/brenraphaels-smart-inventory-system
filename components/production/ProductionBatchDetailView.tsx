@@ -496,7 +496,7 @@ export default function ProductionBatchDetailView({
       }));
 
       if (res.data?.success) {
-        toast.success(`Packaging completed! Lot ${res.data.data.fgLotCode} forwarded to QA.`);
+        toast.success(`Packaging completed! Lot ${(res.data.data.fgLotCode || "").replace(/^FG-/i, "")} forwarded to QA.`);
         setConfirmPackagingModal(false);
         if (onRefreshList) onRefreshList();
         onBack();
@@ -555,7 +555,7 @@ export default function ProductionBatchDetailView({
   const yy = String(now.getFullYear()).slice(-2);
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
-  const previewFgLotCode = batch.fgLotCode || `FG-${itemAbbrev}-${yy}${mm}${dd}-01`;
+  const previewFgLotCode = batch.fgLotCode ? batch.fgLotCode.replace(/^FG-/i, "") : `${itemAbbrev}-${yy}${mm}${dd}-01`;
 
   return (
     <div className="space-y-5 min-w-0">
@@ -576,7 +576,7 @@ export default function ProductionBatchDetailView({
           <StatusBadge status={batch.status} />
           {batch.fgLotCode && (
             <span className="text-xs text-muted-foreground bg-muted px-2.5 py-0.5 rounded-md font-medium">
-              Lot: {batch.fgLotCode}
+              Lot: {batch.fgLotCode.replace(/^FG-/i, "")}
             </span>
           )}
         </div>
@@ -1169,7 +1169,7 @@ export default function ProductionBatchDetailView({
                 <div>
                   <p className="text-[11px] text-muted-foreground">Finished Lot</p>
                   <p className="text-xs font-bold text-foreground mt-0.5">
-                    {batch.fgLotCode || "Pending"}
+                    {(batch.fgLotCode || "").replace(/^FG-/i, "") || "Pending"}
                   </p>
                 </div>
                 <div>

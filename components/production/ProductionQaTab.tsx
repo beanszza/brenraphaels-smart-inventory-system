@@ -227,7 +227,7 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                   >
                     <div className="flex items-start justify-between gap-1.5">
                       <span className="font-mono text-xs font-bold text-foreground truncate block">
-                        {b.fgLotCode || b.batchNumber}
+                        {(b.fgLotCode || "").replace(/^FG-/i, "") || b.batchNumber}
                       </span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded border border-border bg-card font-semibold text-foreground shrink-0">
                         {b.status}
@@ -261,7 +261,7 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                 <div>
                   <p className="text-[10px] uppercase font-semibold text-muted-foreground">FINISHED GOODS LOT</p>
                   <p className="font-bold text-foreground mt-0.5">
-                    {selectedBatch.fgLotCode || "CCS-261008-01"}
+                    {(selectedBatch.fgLotCode || "").replace(/^FG-/i, "") || "CCS-261008-01"}
                   </p>
                 </div>
                 <div>

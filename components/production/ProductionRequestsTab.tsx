@@ -331,36 +331,36 @@ export default function ProductionRequestsTab({
       {/* Requests Table */}
       <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-muted/40 border-b border-border">
-              <tr>
-                <th className="py-3 px-3 font-semibold text-muted-foreground whitespace-nowrap">
+          <table className="w-full text-left border-collapse">
+            <thead className="border-b border-border bg-muted/30">
+              <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                <th className="px-4 py-4 whitespace-nowrap">
                   {activeTab === "In Progress" || activeTab === "Completed"
                     ? "Batch Number"
                     : activeTab === "All"
                     ? "Request / Batch No."
                     : "Request Number"}
                 </th>
-                <th className="py-3 px-3 font-semibold text-muted-foreground">Product</th>
-                <th className="py-3 px-3 font-semibold text-muted-foreground">Variant</th>
-                <th className="py-3 px-3 font-semibold text-muted-foreground">Recipe</th>
-                <th className="py-3 px-3 font-semibold text-muted-foreground text-right whitespace-nowrap">Target Output</th>
-                <th className="py-3 px-3 font-semibold text-muted-foreground text-center">Priority</th>
-                <th className="py-3 px-3 font-semibold text-muted-foreground text-center">Status</th>
-                <th className="py-3 px-3 font-semibold text-muted-foreground whitespace-nowrap">Required Date</th>
-                <th className="py-3 px-3 font-semibold text-muted-foreground text-right w-16">Actions</th>
+                <th className="px-4 py-4">Product</th>
+                <th className="px-4 py-4">Variant</th>
+                <th className="px-4 py-4">Recipe</th>
+                <th className="px-4 py-4 text-right whitespace-nowrap">Target Output</th>
+                <th className="px-4 py-4 text-center">Priority</th>
+                <th className="px-4 py-4 text-center">Status</th>
+                <th className="px-4 py-4 whitespace-nowrap">Required Date</th>
+                <th className="w-16 px-4 py-4 text-center whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-xs text-muted-foreground animate-pulse">
+                  <td colSpan={9} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground animate-pulse">
                     <ProductionSkeleton />
                   </td>
                 </tr>
               ) : paginatedRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-xs text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
                     No production requests found in this view.
                   </td>
                 </tr>
@@ -392,34 +392,34 @@ export default function ProductionRequestsTab({
                       }`}
                     >
                       {/* Request / Batch Number */}
-                      <td className="py-3.5 px-3 font-semibold text-foreground whitespace-nowrap">
+                      <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
                         {(isInProd || isCompleted) && req.batches?.[0]?.batchNumber
                           ? req.batches[0].batchNumber
                           : req.reqNumber}
                       </td>
 
                       {/* Product (Product name only) */}
-                      <td className="py-3.5 px-3 font-semibold text-foreground">
+                      <td className="px-4 py-4 text-sm text-foreground">
                         {req.productName}
                       </td>
 
                       {/* Variant (Dedicated column) */}
-                      <td className="py-3.5 px-3 text-muted-foreground">
+                      <td className="px-4 py-4 text-sm text-muted-foreground">
                         {req.variant || "Standard"}
                       </td>
 
                       {/* Recipe */}
-                      <td className="py-3.5 px-3 text-muted-foreground">
+                      <td className="px-4 py-4 text-sm text-muted-foreground">
                         {req.recipeName}
                       </td>
 
                       {/* Target Output */}
-                      <td className="py-3.5 px-3 text-right font-semibold text-foreground whitespace-nowrap">
+                      <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
                         {req.quantity} {req.yieldUom}
                       </td>
 
                       {/* Priority (Monochromatic badge - No red) */}
-                      <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                      <td className="px-4 py-4 text-center whitespace-nowrap">
                         <span
                           className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
                             isHigh
@@ -434,26 +434,26 @@ export default function ProductionRequestsTab({
                       </td>
 
                       {/* Status Badge */}
-                      <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                      <td className="px-4 py-4 text-center whitespace-nowrap">
                         <StatusBadge status={displayStatus} />
                       </td>
 
                       {/* Required Schedule (Date only) */}
-                      <td className="py-3.5 px-3 whitespace-nowrap font-medium text-foreground">
+                      <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                         <div>{req.requiredDate ? new Date(req.requiredDate).toLocaleDateString() : "—"}</div>
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3.5 px-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end">
+                      <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-center">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button
                                 type="button"
-                                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors cursor-pointer focus:outline-none"
                                 title="Actions"
                               >
-                                <MoreHorizontal className="w-4 h-4 text-foreground" />
+                                <MoreHorizontal size={18} />
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-44 rounded-xl border-border bg-card shadow-lg">

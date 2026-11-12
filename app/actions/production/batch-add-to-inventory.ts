@@ -3,6 +3,7 @@
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId, validateInput } from "@/lib/production/mutate";
+import { getLotItemAbbreviation } from "@/lib/inventory/lot-code";
 export async function commitBatchInventory(idInput: string | number, body: any = {}) {
     const staff = await requireModule("Production & Quality");
     return mutate(staff, async (tx) => {
@@ -49,12 +50,13 @@ export async function commitBatchInventory(idInput: string | number, body: any =
         const now = new Date();
         const result = await (async () => {
             let activeLotId = batch.FgLotId;
-            let finalLotCode = batch.InventoryLots?.LotCode;
+            let finalLotCode = (batch.InventoryLots?.LotCode || "").replace(/^FG-/i, "");
             // 1. If FG lot was registered during packaging, update it to Available
             if (batch.FgLotId && batch.InventoryLots) {
                 await tx.inventoryLots.update({
                     where: { LotId: batch.FgLotId },
                     data: {
+                        LotCode: finalLotCode || batch.InventoryLots.LotCode,
                         Status: "Available",
                         QuantityRemaining: acceptedQty,
                         HoldReason: null,
@@ -65,12 +67,17 @@ export async function commitBatchInventory(idInput: string | number, body: any =
             else {
                 // Create new lot if not already created
                 const year = now.getFullYear();
+                const productName = batch.FinishedProducts?.Items?.ItemName || "PROD";
+                const itemAbbrev = getLotItemAbbreviation(productName);
+                const yy = String(year).slice(-2);
+                const mm = String(now.getMonth() + 1).padStart(2, "0");
+                const dd = String(now.getDate()).padStart(2, "0");
                 const lotSeq = await tx.documentSequences.upsert({
-                    where: { DocType_Year: { DocType: "FGLot", Year: year } },
+                    where: { DocType_Year: { DocType: `LOT_${itemAbbrev}_${yy}${mm}${dd}`, Year: year } },
                     update: { LastNumber: { increment: 1 } },
-                    create: { DocType: "FGLot", Year: year, LastNumber: 1 },
+                    create: { DocType: `LOT_${itemAbbrev}_${yy}${mm}${dd}`, Year: year, LastNumber: 1 },
                 });
-                finalLotCode = `FG-${batch.BatchNumber}-${String(lotSeq.LastNumber).padStart(3, "0")}`;
+                finalLotCode = `${itemAbbrev}-${yy}${mm}${dd}-${String(lotSeq.LastNumber).padStart(2, "0")}`;
                 const createdLot = await tx.inventoryLots.create({
                     data: {
                         LotCode: finalLotCode,

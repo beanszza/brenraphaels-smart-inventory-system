@@ -328,7 +328,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
       </div>
 
       {/* ── Table (Matching SupplyTable layout: No QA Status, No Variant Under Name) ── */}
-      <div className="overflow-x-auto rounded-md border border-border bg-card">
+      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
         {loading ? (
           <ProductionSkeleton />
         ) : displayedBatches.length === 0 ? (
@@ -345,31 +345,31 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
         ) : (
           <table className="w-full min-w-[800px]">
             <thead className="border-b border-border bg-muted/30">
-              <tr className="text-left text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">
-                <th className="px-4 py-3.5">Finished Goods Lot</th>
-                <th className="px-4 py-3.5">Product Name</th>
-                <th className="px-4 py-3.5">Batch Number</th>
-                <th className="px-4 py-3.5 text-right">Units to Stock</th>
-                <th className="px-4 py-3.5">Expiry Date</th>
-                <th className="px-4 py-3.5 text-center w-20">Actions</th>
+              <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                <th className="px-4 py-4">Finished Goods Lot</th>
+                <th className="px-4 py-4">Product Name</th>
+                <th className="px-4 py-4">Batch Number</th>
+                <th className="px-4 py-4 text-right">Units to Stock</th>
+                <th className="px-4 py-4">Expiry Date</th>
+                <th className="w-16 px-4 py-4 text-center whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {displayedBatches.map((b) => (
                 <tr key={b.batchId} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 text-sm font-mono font-bold text-foreground">
-                    {b.fgLotCode || "Pending Lot"}
+                  <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
+                    {(b.fgLotCode || "").replace(/^FG-/i, "") || "Pending Lot"}
                   </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-foreground">
+                  <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
                     {b.productName}
                   </td>
-                  <td className="px-4 py-3 text-sm font-mono text-muted-foreground">
+                  <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                     {b.batchNumber}
                   </td>
-                  <td className="px-4 py-3 text-sm text-right font-mono font-bold text-foreground">
+                  <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
                     {Number(b.finalQuantity || b.actualQuantity).toLocaleString()} {b.yieldUom || "jars"}
                   </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                  <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                     {b.expiryDate
                       ? new Date(b.expiryDate).toLocaleDateString("en-GB", {
                           day: "2-digit",
@@ -378,13 +378,13 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                         })
                       : "—"}
                   </td>
-                  <td className="px-4 py-3 text-center relative action-menu-container" onClick={(e) => e.stopPropagation()}>
+                  <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap action-menu-container" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       onClick={() =>
                         setActiveDropdownId(activeDropdownId === b.batchId ? null : b.batchId)
                       }
-                      className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors cursor-pointer focus:outline-none"
                       title="Actions"
                     >
                       <MoreHorizontal size={18} />
@@ -462,7 +462,7 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                     </option>
                     {availableLotsForDropdown.map((b) => (
                       <option key={b.batchId} value={b.batchId}>
-                        {b.fgLotCode || b.batchNumber} — {b.productName} ({b.finalQuantity || b.actualQuantity} {b.yieldUom || "jars"})
+                        {(b.fgLotCode || "").replace(/^FG-/i, "") || b.batchNumber} — {b.productName} ({b.finalQuantity || b.actualQuantity} {b.yieldUom || "jars"})
                       </option>
                     ))}
                   </select>
@@ -472,42 +472,42 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
               {/* Items Table when batch selected (Matching User Image 2: No variant under product name) */}
               {selectedBatchInModal && (
                 <div className="space-y-3 animate-in fade-in">
-                  <span className="font-bold text-xs uppercase tracking-wider text-muted-foreground block">
+                  <span className="font-semibold text-xs uppercase text-muted-foreground block">
                     Items
                   </span>
 
                   <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="border-b border-border bg-muted/30 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                          <th className="px-4 py-3">Supply Name</th>
-                          <th className="px-3 py-3 text-center">Unit of Measure</th>
-                          <th className="px-3 py-3 text-right">Stock to Put In</th>
-                          <th className="px-3 py-3 text-right">Current Stock</th>
-                          <th className="px-4 py-3 whitespace-nowrap">Lot No.</th>
-                          <th className="px-4 py-3 text-center whitespace-nowrap">Expiry Date</th>
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead className="border-b border-border bg-muted/30">
+                        <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                          <th className="px-4 py-4">Supply Name</th>
+                          <th className="px-4 py-4 text-center">Unit of Measure</th>
+                          <th className="px-4 py-4 text-right">Stock to Put In</th>
+                          <th className="px-4 py-4 text-right">Current Stock</th>
+                          <th className="px-4 py-4 whitespace-nowrap">Lot No.</th>
+                          <th className="px-4 py-4 text-center whitespace-nowrap">Expiry Date</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-border">
                         <tr className="hover:bg-muted/10 transition-colors">
-                          <td className="px-4 py-3 font-semibold text-foreground">
+                          <td className="px-4 py-4 text-sm font-semibold text-foreground">
                             {selectedBatchInModal.productName}
                           </td>
-                          <td className="px-3 py-3 text-center text-muted-foreground">
+                          <td className="px-4 py-4 text-sm text-center text-muted-foreground">
                             {selectedBatchInModal.yieldUom || "jars"}
                           </td>
-                          <td className="px-3 py-3 text-right font-bold text-foreground">
+                          <td className="px-4 py-4 text-sm text-right font-semibold text-foreground">
                             {Number(
                               selectedBatchInModal.finalQuantity || selectedBatchInModal.actualQuantity
                             ).toLocaleString()}
                           </td>
-                          <td className="px-3 py-3 text-right text-muted-foreground">
+                          <td className="px-4 py-4 text-sm text-right text-muted-foreground">
                             {currentStockForSelected.toLocaleString()}
                           </td>
-                          <td className="px-4 py-3 font-semibold text-foreground whitespace-nowrap">
-                            {selectedBatchInModal.fgLotCode || selectedBatchInModal.batchNumber}
+                          <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                            {(selectedBatchInModal.fgLotCode || "").replace(/^FG-/i, "") || selectedBatchInModal.batchNumber}
                           </td>
-                          <td className="px-4 py-3 text-center text-muted-foreground whitespace-nowrap">
+                          <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
                             {selectedBatchInModal.expiryDate
                               ? new Date(selectedBatchInModal.expiryDate).toLocaleDateString("en-GB", {
                                   day: "2-digit",

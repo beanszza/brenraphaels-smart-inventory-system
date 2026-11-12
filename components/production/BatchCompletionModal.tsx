@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { CheckCircle2, PackageCheck, AlertCircle, Sparkles } from "lucide-react";
 import { ProductionBatchEntity } from "./types";
 import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
+import { getLotItemAbbreviation } from "@/lib/inventory/lot-code";
 
 interface BatchCompletionModalProps {
   open: boolean;
@@ -43,7 +44,12 @@ export default function BatchCompletionModal({
   const yieldPercentage =
     batch.estimatedQuantity > 0 ? (actualQuantity / batch.estimatedQuantity) * 100 : 100;
 
-  const fgLotCode = `FG-${batch.batchNumber}`;
+  const itemAbbrev = getLotItemAbbreviation(batch.productName);
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const fgLotCode = batch.fgLotCode ? batch.fgLotCode.replace(/^FG-/i, "") : `${itemAbbrev}-${yy}${mm}${dd}-01`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
