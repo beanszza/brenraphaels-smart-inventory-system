@@ -607,41 +607,8 @@ export default function ProductionBatchDetailView({
           )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 pt-1">
-          <div>
-            <span className="text-xs font-semibold text-muted-foreground block">Batch No.</span>
-            <span className="text-sm font-semibold text-foreground">{batch.batchNumber}</span>
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-muted-foreground block">Product</span>
-            <span className="text-sm font-semibold text-foreground">{batch.productName}</span>
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-muted-foreground block">Variant</span>
-            <span className="text-sm font-semibold text-foreground">{batch.variant || "—"}</span>
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-muted-foreground block">Target Output</span>
-            <span className="text-sm font-semibold text-foreground">
-              {reqQty.toLocaleString()} {batch.yieldUom || "units"}
-            </span>
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-muted-foreground block">Requested By</span>
-            <span className="text-sm font-semibold text-foreground">
-              {resolveStaffName(batch.requestedBy) || batch.requestedBy || "—"}
-            </span>
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-muted-foreground block">Approved By</span>
-            <span className="text-sm font-semibold text-foreground">
-              {resolveStaffName(batch.approvedBy) || batch.approvedBy || "—"}
-            </span>
-          </div>
-        </div>
-
         {/* 2-Step Sequential Kitchen Stepper */}
-        <div className="pt-3 border-t border-border">
+        <div className="pt-1">
           <p className="text-xs font-semibold text-muted-foreground tracking-wider uppercase mb-2.5">
             Workflow
           </p>
@@ -934,32 +901,46 @@ export default function ProductionBatchDetailView({
               {/* A. Production Information */}
               <div className="space-y-3">
                 <h4 className="text-sm font-semibold text-foreground">A. Production Information</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">Production Start Date</p>
-                    <p className="text-sm font-semibold text-foreground">{startDateFormatted}</p>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">Production Start Time</p>
-                    <p className="text-sm font-semibold text-foreground">{startTimeFormatted}</p>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">Target Request Quantity</p>
-                    <p className="text-sm font-semibold text-foreground">
-                      {reqQty.toLocaleString()} {batch.yieldUom || "jars"}
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">Product</p>
-                    <p className="text-sm font-semibold text-foreground">{batch.productName}</p>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">Product Variant</p>
-                    <p className="text-sm font-semibold text-foreground">{batch.variant || "—"}</p>
+                <div className="p-4 rounded-xl border border-border bg-card">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div>
+                      <span className="text-xs font-semibold text-muted-foreground block">Batch No.</span>
+                      <span className="text-sm font-semibold text-foreground">{batch.batchNumber}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-muted-foreground block">Product</span>
+                      <span className="text-sm font-semibold text-foreground">{batch.productName}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-muted-foreground block">Product Variant</span>
+                      <span className="text-sm font-semibold text-foreground">{batch.variant || "—"}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-muted-foreground block">Target Request Quantity</span>
+                      <span className="text-sm font-semibold text-foreground">
+                        {reqQty.toLocaleString()} {batch.yieldUom || "jars"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-muted-foreground block">Production Start Date</span>
+                      <span className="text-sm font-semibold text-foreground">{startDateFormatted}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-muted-foreground block">Production Start Time</span>
+                      <span className="text-sm font-semibold text-foreground">{startTimeFormatted}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-muted-foreground block">Requested By</span>
+                      <span className="text-sm font-semibold text-foreground">
+                        {resolveStaffName(batch.requestedBy) || batch.requestedBy || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-muted-foreground block">Approved By</span>
+                      <span className="text-sm font-semibold text-foreground">
+                        {resolveStaffName(batch.approvedBy) || batch.approvedBy || "—"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
