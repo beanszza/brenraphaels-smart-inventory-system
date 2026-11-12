@@ -33,6 +33,7 @@ function fakeGateway() {
   const sent: { userIds: string[]; input: NotificationInput }[] = [];
   const inbox = new Map<string, NotificationRecord[]>();
   const gateway: NotificationGatewayPort = {
+    issueLiveTicket: async () => ({ url: "wss://gateway.example/notifications/live", ticket: "ticket" }),
     async send(userIds, input) {
       sent.push({ userIds, input });
       for (const userId of userIds) {

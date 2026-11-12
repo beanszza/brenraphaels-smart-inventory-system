@@ -6,7 +6,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/lib/notifications";
-import { notificationLiveUrl } from "@/lib/gateway/notifications";
+import { notificationGateway, notificationLiveUrl } from "@/lib/gateway/notifications";
 import { requireModule } from "@/lib/portal/staff";
 
 // The bell shows on every page, so any held Module opens it; access is re-checked on every call
@@ -31,4 +31,14 @@ export async function markAllMyNotificationsRead() {
 /** A fresh Live ticket address for the signed-in Staff member only; the caller cannot choose the user. */
 export async function getMyNotificationLiveUrl() {
   return notificationLiveUrl((await requireModule("Dashboard")).id);
+}
+
+/** The browser cannot choose the Staff identity or app scope. */
+export async function getMyNotificationLiveTicket() {
+  const staff = await requireModule("Dashboard");
+  try {
+    return await notificationGateway.issueLiveTicket(staff.id);
+  } catch {
+    return null;
+  }
 }
