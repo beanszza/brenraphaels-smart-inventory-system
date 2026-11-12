@@ -279,7 +279,7 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
           >
             <span>Pending Receiving</span>
             <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
+              className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
                 activeSubTab === "pending"
                   ? "bg-background text-foreground"
                   : "bg-muted text-muted-foreground"
@@ -303,7 +303,7 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
           >
             <span>Posted GRNs</span>
             <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
+              className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
                 activeSubTab === "posted"
                   ? "bg-background text-foreground"
                   : "bg-muted text-muted-foreground"

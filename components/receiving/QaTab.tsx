@@ -239,17 +239,17 @@ export default function QaTab() {
                   setActiveSubTab(t.id);
                   setPage(1);
                 }}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
                 <span>{t.label}</span>
                 {t.count > 0 && (
                   <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                      isActive ? "bg-background text-foreground" : "bg-foreground/20 text-foreground"
+                    className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                      isActive ? "bg-background text-foreground" : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {t.count}

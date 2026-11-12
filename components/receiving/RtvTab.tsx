@@ -4,8 +4,8 @@ import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 import { receiving } from "@/lib/receiving/client";
 
-import React, { useState, useEffect, useMemo, useTransition } from "react";
-import { MoreHorizontal, Eye, Check, XCircle, Truck, AlertCircle } from "lucide-react";
+import React, { useState, useMemo, useTransition } from "react";
+import { MoreHorizontal, Eye, Check, XCircle, Truck } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -16,7 +16,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { EmptyState } from "@/components/shared/EmptyState";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Pagination from "@/components/Pagination";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
@@ -31,8 +36,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  // Dropdown & details
-  const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
+  // Details
   const [selectedRtv, setSelectedRtv] = useState<RtvRecord | null>(null);
 
   // Modals for actions
@@ -43,18 +47,6 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
   const [creditNoteNumber, setCreditNoteNumber] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest("[data-actions-dropdown]")) {
-        setActiveDropdownId(null);
-      }
-    };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
 
   const fetchRtvs = () => startRefresh(() => router.refresh());
 
@@ -177,7 +169,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
     <div className="space-y-4">
       {/* Top action row */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
           Return to Vendor Records ({rtvs.length})
         </div>
         <div className="flex items-center gap-2">
@@ -186,7 +178,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
             variant="outline"
             onClick={fetchRtvs}
             disabled={loading}
-            className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
+            className="h-10 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer"
           >
             Refresh
           </Button>
@@ -250,23 +242,24 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
       {loading ? (
         <ReceivingSkeleton />
       ) : (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-x-auto">
-          <table className="w-full text-xs text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border bg-muted/30 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3">Return to Vendor No.</th>
-                <th className="px-4 py-3">Supplier</th>
-                <th className="px-4 py-3">Item</th>
-                <th className="px-3 py-3 text-right">Return Qty</th>
-                <th className="px-4 py-3">Reason</th>
-                <th className="px-3 py-3 text-center">Status</th>
-                <th className="px-4 py-3 text-center w-20">Actions</th>
+        <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+          <table className="w-full">
+            <thead className="border-b border-border bg-muted/30">
+              <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                <th className="px-4 py-4">Return to Vendor No.</th>
+                <th className="px-4 py-4">Date</th>
+                <th className="px-4 py-4">Supplier</th>
+                <th className="px-4 py-4">Item</th>
+                <th className="px-4 py-4 text-right">Return Qty</th>
+                <th className="px-4 py-4">Reason</th>
+                <th className="px-4 py-4 text-center">Status</th>
+                <th className="w-16 px-4 py-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {paginatedList.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-xs text-muted-foreground">
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
                     No supplier returns found
                   </td>
                 </tr>
@@ -276,95 +269,88 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                 const isPendingDispatch = rtv.status === "PendingDispatch" || rtv.status === "Pending Dispatch";
 
                 return (
-                  <tr key={rtv.rtvId} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-4 py-3 font-mono font-semibold text-foreground whitespace-nowrap">
+                  <tr key={rtv.rtvId} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
                       {rtv.rtvNumber}
-                      <div className="text-[10px] text-muted-foreground font-sans">
-                        {new Date(rtv.createdAt).toLocaleDateString()}
-                      </div>
                     </td>
-                    <td className="px-4 py-3 font-medium text-foreground max-w-[160px] truncate" title={rtv.supplierName}>
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                      {new Date(rtv.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-4 text-sm font-medium text-foreground max-w-[160px] truncate" title={rtv.supplierName}>
                       {rtv.supplierName || `Supplier #${rtv.supplierId}`}
                     </td>
-                    <td className="px-4 py-3 font-medium text-foreground max-w-[160px] truncate" title={rtv.itemName}>
+                    <td className="px-4 py-4 text-sm font-medium text-foreground max-w-[160px] truncate" title={rtv.itemName}>
                       {rtv.itemName || `Item #${rtv.itemId}`}
                     </td>
-                    <td className="px-3 py-3 text-right font-mono font-semibold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
                       {(rtv.returnedQuantity ?? rtv.quantityReturned ?? 0).toLocaleString()} {rtv.uomName || "Units"}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground max-w-[180px] truncate" title={rtv.returnReason || (rtv as any).reason}>
+                    <td className="px-4 py-4 text-sm text-muted-foreground max-w-[180px] truncate" title={rtv.returnReason || (rtv as any).reason}>
                       {rtv.returnReason || (rtv as any).reason || "Defective stock"}
                     </td>
-                    <td className="px-3 py-3 text-center whitespace-nowrap">
+                    <td className="px-4 py-4 text-center whitespace-nowrap">
                       <StatusBadge status={rtv.status} />
                     </td>
-                    <td className="px-4 py-3 text-center whitespace-nowrap relative" data-actions-dropdown>
-                      <button
-                        type="button"
-                        onClick={() => setActiveDropdownId(activeDropdownId === rtv.rtvId ? null : rtv.rtvId)}
-                        className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none"
-                        title="Actions"
-                      >
-                        <MoreHorizontal size={18} />
-                      </button>
-                      {activeDropdownId === rtv.rtvId && (
-                        <div className="absolute right-6 top-2 z-[100] w-40 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left animate-in fade-in-50">
+                    <td className="w-16 px-4 py-4 text-center whitespace-nowrap relative">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <button
                             type="button"
-                            onClick={() => {
-                              setSelectedRtv(rtv);
-                              setActiveDropdownId(null);
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                            aria-label="Record actions"
+                            className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none cursor-pointer"
+                            title="Actions"
+                          >
+                            <MoreHorizontal size={18} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-40 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left"
+                        >
+                          <DropdownMenuItem
+                            onSelect={() => setSelectedRtv(rtv)}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer"
                           >
                             <Eye size={14} className="shrink-0" /> View Details
-                          </button>
+                          </DropdownMenuItem>
                           {isPendingApproval && (
                             <>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleApprove(rtv);
-                                  setActiveDropdownId(null);
-                                }}
+                              <DropdownMenuItem
+                                onSelect={() => handleApprove(rtv)}
                                 disabled={actionLoading}
-                                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer disabled:opacity-50"
                               >
                                 <Check size={14} className="shrink-0" /> Approve
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() => {
                                   setRejectingRtv(rtv);
                                   setRejectionReason("");
                                   setRejectionError(null);
                                   setActionError(null);
-                                  setActiveDropdownId(null);
                                 }}
                                 disabled={actionLoading}
-                                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 focus:bg-destructive/10 cursor-pointer disabled:opacity-50"
                               >
                                 <XCircle size={14} className="shrink-0" /> Reject
-                              </button>
+                              </DropdownMenuItem>
                             </>
                           )}
                           {isPendingDispatch && (
-                            <button
-                              type="button"
-                              onClick={() => {
+                            <DropdownMenuItem
+                              onSelect={() => {
                                 setDispatchingRtv(rtv);
                                 setCreditNoteNumber("");
                                 setActionError(null);
-                                setActiveDropdownId(null);
                               }}
                               disabled={actionLoading}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                              className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer disabled:opacity-50"
                             >
                               <Truck size={14} className="shrink-0" /> Dispatch
-                            </button>
+                            </DropdownMenuItem>
                           )}
-                        </div>
-                      )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 );
@@ -394,11 +380,11 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
           onClose={() => setSelectedRtv(null)}
           size="max-w-2xl"
         >
-          <div className="space-y-5 text-foreground text-xs">
+          <div className="space-y-5 text-foreground text-sm">
             {/* Status Summary Banner */}
             <div className="bg-muted/20 border border-border rounded-xl p-4 flex items-center justify-between">
               <div>
-                <div className="font-semibold text-sm text-foreground">
+                <div className="font-semibold text-base text-foreground">
                   Return to Vendor
                 </div>
                 <p className="text-muted-foreground mt-0.5 text-xs">
@@ -409,22 +395,22 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
             </div>
 
             {/* Traceability Grid */}
-            <div className="bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Return to Vendor No.</div>
-                <div className="font-semibold text-xs mt-0.5">{selectedRtv.rtvNumber}</div>
+                <div className="text-xs font-medium text-muted-foreground">Return to Vendor No.</div>
+                <div className="text-sm font-semibold text-foreground mt-0.5">{selectedRtv.rtvNumber}</div>
               </div>
               <div>
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Source Discrepancy</div>
-                <div className="font-semibold text-xs mt-0.5">{selectedRtv.discrepancyNumber || "Direct"}</div>
+                <div className="text-xs font-medium text-muted-foreground">Source Discrepancy</div>
+                <div className="text-sm font-semibold text-foreground mt-0.5">{selectedRtv.discrepancyNumber || "Direct"}</div>
               </div>
               <div>
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Source Goods Receipt Note</div>
-                <div className="font-semibold text-xs mt-0.5">{selectedRtv.grnNumber || "—"}</div>
+                <div className="text-xs font-medium text-muted-foreground">Source Goods Receipt Note</div>
+                <div className="text-sm font-semibold text-foreground mt-0.5">{selectedRtv.grnNumber || "—"}</div>
               </div>
               <div>
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Purchase Order</div>
-                <div className="font-semibold text-xs mt-0.5">{selectedRtv.poNumber || "—"}</div>
+                <div className="text-xs font-medium text-muted-foreground">Purchase Order</div>
+                <div className="text-sm font-semibold text-foreground mt-0.5">{selectedRtv.poNumber || "—"}</div>
               </div>
             </div>
 
@@ -432,33 +418,33 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
             <div className="border border-border rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-muted-foreground text-[11px]">Item Description</div>
-                  <div className="font-semibold text-sm">{selectedRtv.itemName || `Item #${selectedRtv.itemId}`}</div>
+                  <div className="text-xs font-medium text-muted-foreground">Item Description</div>
+                  <div className="font-semibold text-sm text-foreground mt-0.5">{selectedRtv.itemName || `Item #${selectedRtv.itemId}`}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-muted-foreground text-[11px]">Quantity to Return</div>
-                  <div className="font-bold text-sm text-foreground">
+                  <div className="text-xs font-medium text-muted-foreground">Quantity to Return</div>
+                  <div className="font-semibold text-sm text-foreground mt-0.5">
                     {(selectedRtv.returnedQuantity ?? selectedRtv.quantityReturned ?? 0).toLocaleString()} {selectedRtv.uomName || "Units"}
                   </div>
                 </div>
               </div>
 
               <div className="border-t border-border pt-3">
-                <div className="text-muted-foreground font-semibold mb-1">Supplier:</div>
-                <div className="font-medium text-foreground">{selectedRtv.supplierName || `Supplier #${selectedRtv.supplierId}`}</div>
+                <div className="text-xs font-medium text-muted-foreground mb-1">Supplier</div>
+                <div className="text-sm font-semibold text-foreground">{selectedRtv.supplierName || `Supplier #${selectedRtv.supplierId}`}</div>
               </div>
 
               <div className="border-t border-border pt-3">
-                <div className="text-muted-foreground font-semibold mb-1">Reason for Return:</div>
-                <div className="bg-card p-3 rounded-lg border border-border text-foreground">
+                <div className="text-xs font-medium text-muted-foreground mb-1">Reason for Return</div>
+                <div className="bg-card p-3 rounded-xl border border-border text-sm text-foreground">
                   {selectedRtv.returnReason || (selectedRtv as any).reason || "Defective stock"}
                 </div>
               </div>
 
               {selectedRtv.creditNoteNumber && (
                 <div className="border-t border-border pt-3">
-                  <div className="text-muted-foreground font-semibold mb-1">Supplier Credit Note:</div>
-                  <div className="bg-muted/40 p-2.5 rounded-lg text-foreground text-xs">
+                  <div className="text-xs font-medium text-muted-foreground mb-1">Supplier Credit Note</div>
+                  <div className="bg-muted/40 p-2.5 rounded-xl text-sm text-foreground">
                     {selectedRtv.creditNoteNumber}
                   </div>
                 </div>
@@ -469,7 +455,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-4">
               <ModalNativeCloseButton
                 fallbackOnClose={() => setSelectedRtv(null)}
-                className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors shadow-sm"
+                className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted transition-colors shadow-sm cursor-pointer"
               >
                 Close
               </ModalNativeCloseButton>
@@ -485,7 +471,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                       setRejectionError(null);
                     }}
                     disabled={actionLoading}
-                    className="rounded-xl border border-border bg-card text-foreground px-4 py-2.5 text-xs font-semibold hover:bg-muted transition-colors disabled:opacity-50"
+                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     Reject
                   </button>
@@ -496,7 +482,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                       setSelectedRtv(null);
                     }}
                     disabled={actionLoading}
-                    className="rounded-xl bg-primary text-primary-foreground px-4 py-2.5 text-xs font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     Approve Return
                   </button>
@@ -512,7 +498,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                     setCreditNoteNumber("");
                   }}
                   disabled={actionLoading}
-                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50"
+                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                 >
                   Dispatch Shipment
                 </button>
@@ -535,22 +521,22 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
           }}
           size="max-w-md"
         >
-          <div className="space-y-4 text-foreground text-xs">
+          <div className="space-y-4 text-foreground text-sm">
             {actionError && (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-center justify-between">
+              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive flex items-center justify-between">
                 <span className="font-medium">{actionError}</span>
                 <button
                   type="button"
                   onClick={() => setActionError(null)}
-                  className="font-bold underline ml-2 shrink-0 cursor-pointer"
+                  className="font-semibold underline ml-2 shrink-0 cursor-pointer text-xs"
                 >
                   Dismiss
                 </button>
               </div>
             )}
 
-            <div className="bg-muted/20 border border-border rounded-xl p-3 space-y-1">
-              <div className="font-semibold text-foreground">{rejectingRtv.itemName}</div>
+            <div className="bg-muted/20 border border-border rounded-xl p-3 space-y-1 text-xs">
+              <div className="text-sm font-semibold text-foreground">{rejectingRtv.itemName}</div>
               <div className="text-muted-foreground">
                 Quantity: {(rejectingRtv.returnedQuantity ?? rejectingRtv.quantityReturned ?? 0).toLocaleString()} {rejectingRtv.uomName || "Units"}
               </div>
@@ -560,7 +546,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
             </div>
 
             <div>
-              <label className="font-semibold block mb-1">
+              <label className="text-xs font-semibold text-foreground block mb-1.5">
                 Rejection Reason <span className="text-destructive">*</span>
               </label>
               <textarea
@@ -573,7 +559,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                 }}
                 className={`w-full bg-card border ${
                   rejectionError ? "!border-destructive focus:!ring-destructive" : "border-border"
-                } rounded-xl p-2.5 text-xs text-foreground focus:ring-1 focus:outline-none`}
+                } rounded-xl p-2.5 text-sm text-foreground focus:ring-1 focus:outline-none`}
               />
               {rejectionError && (
                 <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">
@@ -591,7 +577,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                   setActionError(null);
                 }}
                 disabled={actionLoading}
-                className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -599,7 +585,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                 type="button"
                 onClick={handleConfirmReject}
                 disabled={actionLoading}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
               >
                 {actionLoading ? "Rejecting..." : "Confirm Rejection"}
               </button>
@@ -620,38 +606,38 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
           }}
           size="max-w-md"
         >
-          <div className="space-y-4 text-foreground text-xs">
+          <div className="space-y-4 text-foreground text-sm">
             {actionError && (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-center justify-between">
+              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive flex items-center justify-between">
                 <span className="font-medium">{actionError}</span>
                 <button
                   type="button"
                   onClick={() => setActionError(null)}
-                  className="font-bold underline ml-2 shrink-0 cursor-pointer"
+                  className="font-semibold underline ml-2 shrink-0 cursor-pointer text-xs"
                 >
                   Dismiss
                 </button>
               </div>
             )}
 
-            <div className="bg-muted/20 border border-border rounded-xl p-3 space-y-1">
-              <div className="font-semibold text-foreground">{dispatchingRtv.itemName}</div>
+            <div className="bg-muted/20 border border-border rounded-xl p-3 space-y-1 text-xs">
+              <div className="text-sm font-semibold text-foreground">{dispatchingRtv.itemName}</div>
               <div className="text-muted-foreground">
                 Returning {(dispatchingRtv.returnedQuantity ?? dispatchingRtv.quantityReturned ?? 0).toLocaleString()} {dispatchingRtv.uomName || "Units"} to {dispatchingRtv.supplierName}
               </div>
-              <p className="text-[11px] text-muted-foreground pt-1">
+              <p className="text-xs text-muted-foreground pt-1">
                 Dispatching will physically remove the stock from quarantine/holding and log the transfer in the inventory ledger.
               </p>
             </div>
 
             <div>
-              <label className="font-semibold block mb-1">Supplier Credit Note / Settlement Ref (Optional)</label>
+              <label className="text-xs font-semibold text-foreground block mb-1.5">Supplier Credit Note / Settlement Ref (Optional)</label>
               <input
                 type="text"
                 placeholder="e.g. CN-2026-9901"
                 value={creditNoteNumber}
                 onChange={(e) => setCreditNoteNumber(e.target.value)}
-                className="w-full bg-card border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-foreground focus:outline-none"
+                className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-foreground focus:outline-none"
               />
             </div>
 
@@ -660,7 +646,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                 type="button"
                 onClick={() => setDispatchingRtv(null)}
                 disabled={actionLoading}
-                className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -668,7 +654,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                 type="button"
                 onClick={handleConfirmDispatch}
                 disabled={actionLoading}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
               >
                 {actionLoading ? "Dispatching..." : "Confirm Dispatch"}
               </button>

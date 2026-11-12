@@ -200,37 +200,19 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
     const a = document.createElement("a");
     a.href = url;
     a.download = `Label-${line.lotCode || `item-${line.itemId}`}.html`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  const handleDownloadAllLabels = () => {
-    const allHtml = lines.map((line, idx) => buildSingleLabelHtml(line, idx)).join("\n");
-    const grnNo = selectedGrn?.grnNumber || "GRN";
-    const content = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <title>QR Labels Package - ${grnNo}</title>
-  <style>
-    body { margin: 20px; background: #fafafa; font-family: system-ui, sans-serif; }
-    @media print {
-      body { margin: 0; background: #fff; }
+  const handleDownloadAllLabels = async () => {
+    for (let idx = 0; idx < lines.length; idx++) {
+      handleDownloadLabel(lines[idx], idx);
+      if (idx < lines.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
     }
-  </style>
-</head>
-<body>
-  ${allHtml}
-</body>
-</html>`;
-
-    const blob = new Blob([content], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Labels-${grnNo}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const handleTryCommit = () => {
@@ -342,8 +324,8 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
         )}
 
         {/* GRN Selection */}
-        <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold text-foreground">
             Select Goods Receipt Note
           </label>
           <div>
@@ -353,7 +335,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
                 const id = Number(e.target.value);
                 if (id) handleSelectGrn(id);
               }}
-              className="w-64 rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+              className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
             >
               <option value="" disabled>
                 Select Goods Receipt Note
@@ -373,54 +355,54 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
         {selectedGrn && !loading && lines.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Items to Commit to Inventory ({lines.length})
               </span>
               <button
                 type="button"
                 onClick={handleDownloadAllLabels}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer shadow-xs"
               >
                 <Download className="w-3.5 h-3.5 text-primary" />
                 <span>Download All QR Labels</span>
               </button>
             </div>
 
-            <div className="rounded-xl border border-border bg-card overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-border bg-muted/30 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <th className="px-4 py-3">Supply Name</th>
-                    <th className="px-3 py-3 text-center">Unit of Measure</th>
-                    <th className="px-3 py-3 text-right">Stock to Put In</th>
-                    <th className="px-3 py-3 text-right">Current Stock</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Lot No.</th>
-                    <th className="px-4 py-3 text-center whitespace-nowrap">Expiry Date</th>
-                    <th className="px-4 py-3 text-center whitespace-nowrap">QR Label</th>
+            <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+              <table className="w-full">
+                <thead className="border-b border-border bg-muted/30">
+                  <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                    <th className="px-4 py-4">Supply Name</th>
+                    <th className="px-4 py-4 text-center">Unit of Measure</th>
+                    <th className="px-4 py-4 text-right">Stock to Put In</th>
+                    <th className="px-4 py-4 text-right">Current Stock</th>
+                    <th className="px-4 py-4">Lot No.</th>
+                    <th className="px-4 py-4 text-center">Expiry Date</th>
+                    <th className="px-4 py-4 text-center">QR Label</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {lines.map((line, lineIndex) => (
                     <tr
                       key={`${line.grnItemId || line.itemId}-${lineIndex}`}
-                      className="hover:bg-muted/20 transition-colors"
+                      className="hover:bg-muted/30 transition-colors"
                     >
-                      <td className="px-4 py-3 font-medium text-foreground">
+                      <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
                         {line.itemName}
                       </td>
-                      <td className="px-3 py-3 text-center text-muted-foreground">
+                      <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
                         {line.purchaseUomName}
                       </td>
-                      <td className="px-3 py-3 text-right font-semibold text-foreground">
+                      <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
                         {line.quantityToStock}
                       </td>
-                      <td className="px-3 py-3 text-right text-muted-foreground">
+                      <td className="px-4 py-4 text-sm text-right text-muted-foreground whitespace-nowrap">
                         {line.currentStock}
                       </td>
-                      <td className="px-4 py-3 text-xs text-foreground whitespace-nowrap">
+                      <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
                         {line.lotCode}
                       </td>
-                      <td className="px-4 py-3 text-center text-xs text-muted-foreground whitespace-nowrap">
+                      <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
                         {line.expiryDate
                           ? new Date(line.expiryDate).toLocaleDateString("en-US", {
                               year: "numeric",
@@ -429,14 +411,14 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
                             })
                           : "—"}
                       </td>
-                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                      <td className="px-4 py-4 text-center whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => handleDownloadLabel(line, lineIndex)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
                           title="Download printable QR label"
                         >
-                          <Download className="w-3 h-3 text-muted-foreground" />
+                          <Download className="w-3.5 h-3.5 text-muted-foreground" />
                           <span>Download</span>
                         </button>
                       </td>
@@ -448,13 +430,15 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
 
             {/* General Notes */}
             <div className="space-y-1.5 pt-2">
-              <span className="text-xs font-semibold text-foreground">Stock-In Notes / Storage Instructions</span>
+              <label className="block text-xs font-semibold text-foreground">
+                Stock-In Notes / Storage Instructions
+              </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
                 placeholder="Specify designated warehouse aisle, refrigeration, or special storage notes..."
-                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
               />
             </div>
           </div>
@@ -465,7 +449,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
           <ModalNativeCloseButton
             fallbackOnClose={onClose}
             disabled={submitting}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Cancel
           </ModalNativeCloseButton>
@@ -473,7 +457,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
             type="button"
             disabled={lines.length === 0 || submitting}
             onClick={handleTryCommit}
-            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+            className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/85 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
           >
             {submitting ? "Committing…" : "Commit to Inventory"}
           </button>

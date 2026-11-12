@@ -16,6 +16,12 @@ import {
 } from "@/components/ui/select";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import Pagination from "@/components/Pagination";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { StockIn } from "./types";
 
 const CreateStockInModal = dynamic(() => import("./CreateStockInModal"), { ssr: false });
@@ -29,9 +35,6 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
   const [supplierFilter, setSupplierFilter] = useState("All");
   const [page, setPage] = useState(1);
   const pageSize = 10;
-
-  // Action menu
-  const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
 
   // Modals
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -98,7 +101,7 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
             className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer bg-primary text-primary-foreground shadow-sm"
           >
             <span>Committed</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium bg-background text-foreground">
+            <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-background text-foreground">
               {committedStockIns.length}
             </span>
           </button>
@@ -111,17 +114,17 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
             variant="outline"
             onClick={fetchStockIns}
             disabled={loading}
-            className="h-10 px-4 text-xs font-semibold rounded-xl border border-border bg-card hover:bg-muted text-foreground flex items-center gap-2 cursor-pointer shadow-xs"
+            className="h-10 px-4 text-sm font-semibold rounded-xl border border-border bg-card hover:bg-muted text-foreground flex items-center gap-2 cursor-pointer shadow-xs"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-4 h-4" />
             Refresh
           </Button>
           <Button
             type="button"
             onClick={() => setCreateModalOpen(true)}
-            className="h-10 px-4 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/85 flex items-center gap-2 cursor-pointer shadow-xs"
+            className="h-10 px-5 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/85 flex items-center gap-2 cursor-pointer shadow-sm"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             Create Stock-In
           </Button>
         </div>
@@ -170,23 +173,23 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
       {loading ? (
         <ReceivingSkeleton />
       ) : (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-visible">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-border bg-muted/30 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3">Stock-In No.</th>
-                <th className="px-4 py-3">Goods Receipt Note No.</th>
-                <th className="px-4 py-3">Supplier</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-3 py-3 text-center">Items</th>
-                <th className="px-4 py-3 text-center">Status</th>
-                <th className="px-4 py-3 text-center w-20">Actions</th>
+        <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+          <table className="w-full">
+            <thead className="border-b border-border bg-muted/30">
+              <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                <th className="px-4 py-4">Stock-In No.</th>
+                <th className="px-4 py-4">Goods Receipt Note No.</th>
+                <th className="px-4 py-4">Supplier</th>
+                <th className="px-4 py-4">Date</th>
+                <th className="px-4 py-4 text-center">Items</th>
+                <th className="px-4 py-4 text-center">Status</th>
+                <th className="w-16 px-4 py-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {paginatedList.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-xs text-muted-foreground">
+                  <td colSpan={7} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
                     No committed stock-in records found
                   </td>
                 </tr>
@@ -198,53 +201,57 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
                       setSelectedStockIn(s);
                       setDetailsModalOpen(true);
                     }}
-                    className="hover:bg-muted/20 transition-colors cursor-pointer"
+                    className="hover:bg-muted/30 transition-colors cursor-pointer"
                   >
-                    <td className="px-4 py-3 font-mono font-semibold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
                       {s.stockInNumber}
                     </td>
-                    <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {s.grnNumber}
                     </td>
-                    <td className="px-4 py-3 font-medium text-foreground max-w-[200px] truncate" title={s.supplierName}>
+                    <td className="px-4 py-4 text-sm font-medium text-foreground max-w-[200px] truncate" title={s.supplierName}>
                       {s.supplierName}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {new Date(s.committedAt || s.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-3 py-3 text-center font-bold text-foreground">
+                    <td className="px-4 py-4 text-sm text-center font-semibold text-foreground whitespace-nowrap">
                       {s.lines.length}
                     </td>
-                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                    <td className="px-4 py-4 text-center whitespace-nowrap">
                       <StatusBadge status={s.status} />
                     </td>
-                    <td className="px-4 py-3 text-center relative">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveMenuId(activeMenuId === s.stockInId ? null : s.stockInId);
-                        }}
-                        className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none"
-                      >
-                        <MoreHorizontal size={18} />
-                      </button>
-                      {activeMenuId === s.stockInId && (
-                        <div className="absolute right-6 top-2 z-[100] w-36 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left">
+                    <td
+                      className="w-16 px-4 py-4 text-center relative whitespace-nowrap"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
+                            aria-label="Record actions"
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none cursor-pointer"
+                          >
+                            <MoreHorizontal size={18} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-40 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left"
+                        >
+                          <DropdownMenuItem
+                            onSelect={() => {
                               setSelectedStockIn(s);
                               setDetailsModalOpen(true);
-                              setActiveMenuId(null);
                             }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer"
                           >
                             <Eye size={14} className="shrink-0" /> View &amp; QR Tags
-                          </button>
-                        </div>
-                      )}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))

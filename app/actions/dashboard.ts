@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireShell } from "@/lib/portal/staff";
-import type { Module } from "@/lib/portal/config";
+import { MODULES, type Module } from "@/lib/portal/config";
 import { loadDashboardAnalytics } from "@/lib/dashboard/screen-data";
 import type { DashboardAnalytics } from "@/lib/dashboard/types";
 
@@ -74,8 +74,8 @@ export async function getDashboardData(): Promise<DashboardSection[]> {
   return Promise.all(sections);
 }
 
-/** Live analytics for the Dashboard charts; each section is limited to the Modules Staff hold. */
+/** Live analytics for the Dashboard charts; shows the full dashboard whenever the Dashboard module is enabled. */
 export async function getDashboardAnalytics(): Promise<DashboardAnalytics> {
-  const { modules } = await requireShell("/");
-  return loadDashboardAnalytics(modules);
+  await requireShell("/");
+  return loadDashboardAnalytics(MODULES);
 }

@@ -165,11 +165,11 @@ it("provides an accessible card skeleton without reading or revealing Module dat
   expect(fake.validate).not.toHaveBeenCalled();
 });
 
-it("hands the analytics only the Modules the Staff member holds", async () => {
+it("hands the analytics all Modules whenever Dashboard access is allowed", async () => {
   fake.held = ["Inventory", "Stock Transfer"];
   await DashboardPage();
   expect(analytics.load).toHaveBeenCalledTimes(1);
-  expect([...analytics.load.mock.calls[0][0]].sort()).toEqual(["Dashboard", "Inventory", "Stock Transfer"]);
+  expect([...analytics.load.mock.calls[0][0]].sort()).toEqual([...MODULES].sort());
 });
 
 it("renders the live analytics sections the loader returns and hides the rest", async () => {

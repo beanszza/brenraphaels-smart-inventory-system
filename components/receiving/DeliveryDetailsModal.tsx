@@ -85,56 +85,56 @@ export default function DeliveryDetailsModal({
             {/* Header Summary */}
             <div className="bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
               <div>
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Delivery No.</div>
-                <div className="text-sm font-semibold mt-0.5">{detail.deliveryNumber}</div>
+                <div className="text-xs font-medium text-muted-foreground">Delivery No.</div>
+                <div className="text-sm font-semibold text-foreground mt-0.5">{detail.deliveryNumber}</div>
               </div>
               <div>
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Purchase Order</div>
-                <div className="text-sm font-semibold mt-0.5">{detail.poNumber}</div>
+                <div className="text-xs font-medium text-muted-foreground">Purchase Order</div>
+                <div className="text-sm font-semibold text-foreground mt-0.5">{detail.poNumber}</div>
               </div>
               {detail.prNumber && (
                 <div>
-                  <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Purchase Requisition Ref.</div>
-                  <div className="text-sm font-semibold mt-0.5">{detail.prNumber}</div>
+                  <div className="text-xs font-medium text-muted-foreground">Purchase Requisition Ref.</div>
+                  <div className="text-sm font-semibold text-foreground mt-0.5">{detail.prNumber}</div>
                 </div>
               )}
               <div>
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Supplier</div>
-                <div className="text-sm font-semibold mt-0.5 truncate" title={detail.supplierName}>{detail.supplierName}</div>
+                <div className="text-xs font-medium text-muted-foreground">Supplier</div>
+                <div className="text-sm font-semibold text-foreground mt-0.5 truncate" title={detail.supplierName}>{detail.supplierName}</div>
               </div>
               <div>
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Status</div>
+                <div className="text-xs font-medium text-muted-foreground">Status</div>
                 <div className="mt-1"><StatusBadge status={detail.status} /></div>
               </div>
             </div>
 
             {/* Secondary details */}
             {(detail.carrier || detail.trackingNumber || detail.estimatedArrival || detail.actualArrival) && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {detail.carrier && (
                   <div>
-                    <div className="text-muted-foreground">Carrier / Truck</div>
-                    <div className="font-medium mt-0.5">{detail.carrier}</div>
+                    <div className="text-xs font-medium text-muted-foreground">Carrier / Truck</div>
+                    <div className="text-sm font-semibold text-foreground mt-0.5">{detail.carrier}</div>
                   </div>
                 )}
                 {detail.trackingNumber && (
                   <div>
-                    <div className="text-muted-foreground">Tracking No.</div>
-                    <div className="font-medium mt-0.5">{detail.trackingNumber}</div>
+                    <div className="text-xs font-medium text-muted-foreground">Tracking No.</div>
+                    <div className="text-sm font-semibold text-foreground mt-0.5">{detail.trackingNumber}</div>
                   </div>
                 )}
                 {detail.estimatedArrival && (
                   <div>
-                    <div className="text-muted-foreground">Estimated Arrival</div>
-                    <div className="font-medium mt-0.5">
+                    <div className="text-xs font-medium text-muted-foreground">Estimated Arrival</div>
+                    <div className="text-sm font-semibold text-foreground mt-0.5">
                       {new Date(detail.estimatedArrival).toLocaleDateString()}
                     </div>
                   </div>
                 )}
                 {detail.actualArrival && (
                   <div>
-                    <div className="text-muted-foreground">Actual Arrival</div>
-                    <div className="font-medium mt-0.5">
+                    <div className="text-xs font-medium text-muted-foreground">Actual Arrival</div>
+                    <div className="text-sm font-semibold text-foreground mt-0.5">
                       {new Date(detail.actualArrival).toLocaleDateString()}
                     </div>
                   </div>
@@ -144,33 +144,33 @@ export default function DeliveryDetailsModal({
 
             {/* Line Items */}
             <div className="border-t border-border pt-4 space-y-3">
-              <div className="text-xs font-semibold text-foreground uppercase tracking-wide">
+              <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 Delivery Line Items
               </div>
-              <div className="overflow-x-auto border border-border rounded-xl">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-muted/40 uppercase text-muted-foreground font-semibold tracking-wide border-b border-border">
-                    <tr>
-                      <th className="p-3">Item Name</th>
-                      <th className="p-3 text-right">Declared Qty</th>
-                      <th className="p-3">Unit of Measure</th>
+              <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+                <table className="w-full">
+                  <thead className="border-b border-border bg-muted/30">
+                    <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                      <th className="px-4 py-4">Item Name</th>
+                      <th className="px-4 py-4 text-right">Declared Qty</th>
+                      <th className="px-4 py-4">Unit of Measure</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {(detail.items || []).length === 0 ? (
                       <tr>
-                        <td colSpan={3} className="p-8 text-center text-muted-foreground">
+                        <td colSpan={3} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
                           No line items found for this delivery.
                         </td>
                       </tr>
                     ) : (
                       detail.items.map((item) => (
-                        <tr key={item.deliveryItemId} className="hover:bg-muted/30">
-                          <td className="p-3 font-medium text-foreground">{item.itemName}</td>
-                          <td className="p-3 text-right font-semibold text-foreground">
+                        <tr key={item.deliveryItemId} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">{item.itemName}</td>
+                          <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
                             {item.declaredQuantity.toLocaleString()}
                           </td>
-                          <td className="p-3 text-muted-foreground">
+                          <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                             {item.purchaseUomName || item.uomName || "Unit"}
                           </td>
                         </tr>
@@ -188,7 +188,7 @@ export default function DeliveryDetailsModal({
           <ModalNativeCloseButton
             fallbackOnClose={onClose}
             disabled={loading}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Close
           </ModalNativeCloseButton>
@@ -199,7 +199,7 @@ export default function DeliveryDetailsModal({
               onClose();
               onCreateGrn(delivery.deliveryId);
             }}
-            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Create Goods Receipt Note for this Delivery
           </button>

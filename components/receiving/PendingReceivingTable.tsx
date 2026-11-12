@@ -1,12 +1,16 @@
 "use client";
 import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
-import React, { useState } from "react";
-import { Truck, Eye, MoreHorizontal } from "lucide-react";
+import React from "react";
+import { Eye, MoreHorizontal } from "lucide-react";
 import { ArrivedDelivery } from "./types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PendingReceivingTableProps {
   deliveries: ArrivedDelivery[];
@@ -19,30 +23,27 @@ export default function PendingReceivingTable({
   loading,
   onViewDelivery,
 }: PendingReceivingTableProps) {
-  const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
   if (loading) {
-    return (
-      <ReceivingSkeleton />
-    );
+    return <ReceivingSkeleton />;
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
-      <table className="w-full text-xs">
-        <thead>
-          <tr className="border-b border-border bg-muted/40">
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">DELIVERY NO.</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">SUPPLIER</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">ARRIVAL DATE</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">CARRIER</th>
-            <th className="px-4 py-3 text-center font-bold text-muted-foreground tracking-wider whitespace-nowrap">STATUS</th>
-            <th className="px-4 py-3 text-center font-bold text-muted-foreground tracking-wider whitespace-nowrap w-24">ACTIONS</th>
+    <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+      <table className="w-full">
+        <thead className="border-b border-border bg-muted/30">
+          <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+            <th className="px-4 py-4">Delivery No.</th>
+            <th className="px-4 py-4">Supplier</th>
+            <th className="px-4 py-4">Arrival Date</th>
+            <th className="px-4 py-4">Carrier</th>
+            <th className="px-4 py-4 text-center">Status</th>
+            <th className="w-16 px-4 py-4 text-center">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
           {deliveries.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-4 py-12 text-center text-xs text-muted-foreground">
+              <td colSpan={6} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
                 No deliveries pending receiving
               </td>
             </tr>
@@ -61,53 +62,50 @@ export default function PendingReceivingTable({
                   onClick={() => onViewDelivery(del)}
                   className="hover:bg-muted/30 transition-colors cursor-pointer"
                 >
-                  <td className="px-4 py-3 font-mono font-semibold text-foreground whitespace-nowrap">
+                  <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
                     {del.deliveryNumber}
                   </td>
-                  <td className="px-4 py-3 font-medium text-foreground max-w-[200px] truncate" title={del.supplierName}>
+                  <td className="px-4 py-4 text-sm font-medium text-foreground max-w-[200px] truncate" title={del.supplierName}>
                     {del.supplierName}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                  <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                     {formattedArrival}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                  <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                     {del.carrier || "—"}
                   </td>
-                  <td className="px-4 py-3 text-center whitespace-nowrap">
+                  <td className="px-4 py-4 text-center whitespace-nowrap">
                     <StatusBadge status={del.status} />
                   </td>
                   <td
-                    className="px-4 py-3 text-center whitespace-nowrap relative"
+                    className="w-16 px-4 py-4 text-center relative whitespace-nowrap"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <button
-                      type="button"
-                      onClick={() => setActiveMenuId(activeMenuId === del.deliveryId ? null : del.deliveryId)}
-                      className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none cursor-pointer"
-                      title="Actions"
-                    >
-                      <MoreHorizontal size={18} />
-                    </button>
-                    {activeMenuId === del.deliveryId && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-[40]"
-                          onClick={() => setActiveMenuId(null)}
-                        />
-                        <div className="absolute right-4 top-10 z-[50] w-36 rounded-xl border border-border bg-card shadow-xl py-1 text-left animate-in fade-in-50 duration-100">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onViewDelivery(del);
-                              setActiveMenuId(null);
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5 text-muted-foreground" /> View Details
-                          </button>
-                        </div>
-                      </>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label="Record actions"
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none cursor-pointer"
+                          title="Actions"
+                        >
+                          <MoreHorizontal size={18} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-36 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left"
+                      >
+                        <DropdownMenuItem
+                          onSelect={() => onViewDelivery(del)}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer"
+                        >
+                          <Eye size={14} className="shrink-0" /> View Details
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               );

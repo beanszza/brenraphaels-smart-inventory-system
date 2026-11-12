@@ -137,7 +137,7 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
               >
                 <span>{t.label}</span>
                 <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
+                  className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
                     isActive ? "bg-background text-foreground" : "bg-muted text-muted-foreground"
                   }`}
                 >
@@ -154,7 +154,7 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
             variant="outline"
             onClick={fetchDiscrepancies}
             disabled={loading}
-            className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
+            className="h-10 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer"
           >
             Refresh
           </Button>

@@ -245,41 +245,41 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
         {/* HEADER SUMMARY */}
         <div className="bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
           <div>
-            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Inspection #</div>
-            <div className="text-sm font-semibold mt-0.5">{inspection.inspectionNumber}</div>
+            <div className="text-xs font-medium text-muted-foreground">Inspection #</div>
+            <div className="text-sm font-semibold text-foreground mt-0.5">{inspection.inspectionNumber}</div>
           </div>
           <div>
-            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Goods Receipt Note Reference</div>
-            <div className="text-sm font-semibold mt-0.5">{inspection.referenceNumber || inspection.grnNumber}</div>
+            <div className="text-xs font-medium text-muted-foreground">Goods Receipt Note Reference</div>
+            <div className="text-sm font-semibold text-foreground mt-0.5">{inspection.referenceNumber || inspection.grnNumber}</div>
           </div>
           {inspection.poNumber && inspection.poNumber !== "—" && (
             <div>
-              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Purchase Order</div>
-              <div className="text-sm font-semibold mt-0.5">{inspection.poNumber}</div>
+              <div className="text-xs font-medium text-muted-foreground">Purchase Order</div>
+              <div className="text-sm font-semibold text-foreground mt-0.5">{inspection.poNumber}</div>
             </div>
           )}
           {inspection.prNumber && inspection.prNumber !== "—" && (
             <div>
-              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Product Requisition</div>
-              <div className="text-sm font-semibold mt-0.5">{inspection.prNumber}</div>
+              <div className="text-xs font-medium text-muted-foreground">Product Requisition</div>
+              <div className="text-sm font-semibold text-foreground mt-0.5">{inspection.prNumber}</div>
             </div>
           )}
           {inspection.supplierName && inspection.supplierName !== "—" && (
             <div>
-              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Supplier</div>
-              <div className="text-sm font-semibold mt-0.5 truncate" title={inspection.supplierName}>{inspection.supplierName}</div>
+              <div className="text-xs font-medium text-muted-foreground">Supplier</div>
+              <div className="text-sm font-semibold text-foreground mt-0.5 truncate" title={inspection.supplierName}>{inspection.supplierName}</div>
             </div>
           )}
           <div>
-            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Status</div>
-            <div className="text-sm font-semibold mt-0.5">{inspection.status}</div>
+            <div className="text-xs font-medium text-muted-foreground">Status</div>
+            <div className="text-sm font-semibold text-foreground mt-0.5">{inspection.status}</div>
           </div>
         </div>
 
         {/* ITEMS INSPECTION ACCORDIONS */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-foreground uppercase tracking-wide">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Received Items
             </span>
             <span className="text-xs text-muted-foreground">
@@ -302,34 +302,34 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-semibold truncate text-foreground">{item.itemName}</span>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-muted text-foreground border border-border">
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-muted text-foreground border border-border">
                             {item.categoryName || "Raw Materials"}
                           </span>
                           {item.lotCode && (
-                            <span className="text-[10px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded">
+                            <span className="text-xs text-muted-foreground bg-muted/40 px-2 py-0.5 rounded">
                               Lot: {item.lotCode}
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                        <div className="text-xs text-muted-foreground mt-0.5">
                           Protocol: {getChecks(item) === toolAndSupplyChecks ? "Tools & Supplies Verification" : "Food / Raw Material Specification"}
                         </div>
                       </div>
                     </span>
-                    <span className={`text-[11px] font-semibold whitespace-nowrap ${itemComplete ? "text-emerald-600" : "text-muted-foreground"}`}>{itemComplete ? "Ready" : "Incomplete"}</span>
+                    <span className={`text-xs font-semibold whitespace-nowrap ${itemComplete ? "text-emerald-600" : "text-muted-foreground"}`}>{itemComplete ? "Ready" : "Incomplete"}</span>
                   </button>
                   {expanded && <div className="p-4 space-y-4">
                     <div className="grid grid-cols-3 gap-3 text-xs">
-                      <div><div className="text-muted-foreground">Delivered</div><div className="font-semibold">{item.deliveredQuantity.toLocaleString()}</div></div>
-                      <div><div className="text-muted-foreground">Passed quantity</div>{isReadOnly ? <div className="font-semibold text-emerald-600">{item.acceptedQuantity}</div> : <input type="number" min="0" max={item.deliveredQuantity} step="any" value={item.acceptedQuantity} onChange={(e) => setItemAccepted(idx, Number(e.target.value))} className="w-full bg-card border border-border rounded-lg px-2 py-1" />}</div>
-                      <div><div className="text-muted-foreground">Rejected quantity</div>{isReadOnly ? <div className="font-semibold text-destructive">{item.rejectedQuantity}</div> : <input type="number" min="0" max={item.deliveredQuantity} step="any" value={item.rejectedQuantity} onChange={(e) => setItemRejected(idx, Number(e.target.value))} className="w-full bg-card border border-border rounded-lg px-2 py-1" />}</div>
+                      <div><div className="text-xs font-medium text-muted-foreground">Delivered</div><div className="text-sm font-semibold text-foreground mt-0.5">{item.deliveredQuantity.toLocaleString()}</div></div>
+                      <div><div className="text-xs font-medium text-muted-foreground mb-1">Passed quantity</div>{isReadOnly ? <div className="text-sm font-semibold text-emerald-600">{item.acceptedQuantity}</div> : <input type="number" min="0" max={item.deliveredQuantity} step="any" value={item.acceptedQuantity} onChange={(e) => setItemAccepted(idx, Number(e.target.value))} className="w-full bg-card border border-border rounded-xl px-3 py-1.5 text-sm" />}</div>
+                      <div><div className="text-xs font-medium text-muted-foreground mb-1">Rejected quantity</div>{isReadOnly ? <div className="text-sm font-semibold text-destructive">{item.rejectedQuantity}</div> : <input type="number" min="0" max={item.deliveredQuantity} step="any" value={item.rejectedQuantity} onChange={(e) => setItemRejected(idx, Number(e.target.value))} className="w-full bg-card border border-border rounded-xl px-3 py-1.5 text-sm" />}</div>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {checks.map((check) => <label key={check.id} className="flex items-start gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={item.checks[check.id]} onChange={(e) => updateItem(idx, "checks", { ...item.checks, [check.id]: e.target.checked })} disabled={isReadOnly} className="mt-0.5" /><span>{check.label}</span></label>)}
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <div>{Number(item.rejectedQuantity) > 0 && (isReadOnly ? <div className="text-xs text-muted-foreground">Defect: {item.defectReason || "—"}</div> : <select value={item.defectReason} onChange={(e) => updateItem(idx, "defectReason", e.target.value)} className="w-full bg-card border border-border rounded-lg px-2 py-2 text-xs"><option value="">Select defect reason</option>{defectReasons.map((reason) => <option key={reason} value={reason}>{reason}</option>)}</select>)}</div>
-                      {isReadOnly ? <div className="text-xs text-muted-foreground">{item.notes || "No item notes."}</div> : <input type="text" placeholder="Optional item notes" value={item.notes} onChange={(e) => updateItem(idx, "notes", e.target.value)} className="w-full bg-card border border-border rounded-lg px-2 py-2 text-xs" />}
+                      <div>{Number(item.rejectedQuantity) > 0 && (isReadOnly ? <div className="text-xs text-muted-foreground">Defect: {item.defectReason || "—"}</div> : <select value={item.defectReason} onChange={(e) => updateItem(idx, "defectReason", e.target.value)} className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm"><option value="">Select defect reason</option>{defectReasons.map((reason) => <option key={reason} value={reason}>{reason}</option>)}</select>)}</div>
+                      {isReadOnly ? <div className="text-xs text-muted-foreground">{item.notes || "No item notes."}</div> : <input type="text" placeholder="Optional item notes" value={item.notes} onChange={(e) => updateItem(idx, "notes", e.target.value)} className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm" />}
                     </div>
                   </div>}
                 </div>
@@ -339,12 +339,12 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
         </div>
 
         {/* INSPECTION BASIS */}
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-foreground uppercase tracking-wide block">
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-foreground block">
             Inspection Basis {!isReadOnly && "(Optional)"}
           </label>
           {isReadOnly ? (
-            <div className="bg-muted/30 border border-border rounded-xl p-3 text-xs text-muted-foreground">
+            <div className="bg-muted/30 border border-border rounded-xl p-3 text-sm text-muted-foreground">
               {inspectionBasis || "Recorded in the inspection summary."}
             </div>
           ) : (
@@ -353,26 +353,26 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
               placeholder="e.g. Approved raw-material specification RM-014, COA no. 8831, receiving temperature 4 C"
               value={inspectionBasis}
               onChange={(e) => setInspectionBasis(e.target.value)}
-              className="w-full bg-card border border-border rounded-xl p-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+              className="w-full bg-card border border-border rounded-xl p-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
             />
           )}
         </div>
 
         {/* VERIFICATION CHOICE & OVERALL NOTES */}
         <div className="space-y-3">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-foreground uppercase tracking-wide block">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground block">
               Verification Choice <span className="text-destructive">*</span>
             </label>
             {isReadOnly ? (
-              <div className="bg-muted/30 border border-border rounded-xl p-3 text-xs font-medium text-foreground">
+              <div className="bg-muted/30 border border-border rounded-xl p-3 text-sm font-medium text-foreground">
                 {inspection?.overallNotes?.match(/VERIFICATION:\s*(.*?)(?:\n|$)/)?.[1] || "—"}
               </div>
             ) : (
               <select
                 value={verificationChoice}
                 onChange={(e) => setVerificationChoice(e.target.value)}
-                className="w-full bg-card border border-border rounded-xl p-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                className="w-full bg-card border border-border rounded-xl p-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
               >
                 <option value="">Select a Verification Reason...</option>
                 <optgroup label="Positive Outcomes (Accepted)">
@@ -389,12 +389,12 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
               </select>
             )}
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-foreground uppercase tracking-wide block">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground block">
               Additional Remarks (Optional)
             </label>
             {isReadOnly ? (
-              <div className="bg-muted/30 border border-border rounded-xl p-3 text-xs text-muted-foreground">
+              <div className="bg-muted/30 border border-border rounded-xl p-3 text-sm text-muted-foreground">
                 {overallNotes.replace(/VERIFICATION:\s*.*?(?:\n|$)/, "") || "No additional remarks."}
               </div>
             ) : (
@@ -403,7 +403,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                 placeholder="e.g. Visual and laboratory testing confirmed compliant specifications. 10 kg rejected due to moisture damage."
                 value={overallNotes}
                 onChange={(e) => setOverallNotes(e.target.value)}
-                className="w-full bg-card border border-border rounded-xl p-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                className="w-full bg-card border border-border rounded-xl p-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
               />
             )}
           </div>
@@ -423,7 +423,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
             {isReadOnly ? (
               <ModalNativeCloseButton
                 fallbackOnClose={onClose}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
               >
                 Close
               </ModalNativeCloseButton>
@@ -432,7 +432,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                 <ModalNativeCloseButton
                   fallbackOnClose={onClose}
                   disabled={submitting}
-                  className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   Cancel
                 </ModalNativeCloseButton>
@@ -440,7 +440,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                   type="button"
                   onClick={handleSubmit}
                   disabled={submitting || mismatch || missingDefectReasons}
-                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
                 >
                   {submitting ? "Submitting..." : "Complete Quality Assurance Inspection"}
                 </button>

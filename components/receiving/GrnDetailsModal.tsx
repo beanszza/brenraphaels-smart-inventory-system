@@ -103,75 +103,75 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
     <ModalWrapper open={open} title={`Goods Receipt Note — ${grn.grnNumber}`} onClose={onClose} size="max-w-4xl">
       <div className="space-y-5 text-foreground">
         {error && (
-          <div role="alert" className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl p-3">
+          <div role="alert" className="bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-xl p-3">
             {error}
           </div>
         )}
 
         {/* HEADER SUMMARY CARD */}
-        <div className="rounded-2xl border border-border bg-muted/20 p-4 text-xs space-y-3">
+        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-border/60 pb-3">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Receipt Overview</span>
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Receipt Overview</span>
             <StatusBadge status={grn.status} />
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
-              <span className="text-[10px] font-bold uppercase text-muted-foreground block">Delivery No.</span>
-              <span className="font-semibold text-foreground">{grn.deliveryNumber || "—"}</span>
+              <span className="text-xs font-medium text-muted-foreground block">Delivery No.</span>
+              <span className="text-sm font-semibold text-foreground mt-0.5 block">{grn.deliveryNumber || "—"}</span>
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase text-muted-foreground block">Supplier</span>
-              <span className="font-semibold text-foreground truncate block" title={grn.supplierName}>
+              <span className="text-xs font-medium text-muted-foreground block">Supplier</span>
+              <span className="text-sm font-semibold text-foreground mt-0.5 truncate block" title={grn.supplierName}>
                 {grn.supplierName}
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase text-muted-foreground block">Received Date</span>
-              <span className="font-medium text-foreground">
+              <span className="text-xs font-medium text-muted-foreground block">Received Date</span>
+              <span className="text-sm font-semibold text-foreground mt-0.5 block">
                 {new Date(grn.receivedDate).toLocaleDateString()}
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase text-muted-foreground block">Receiving Bay</span>
-              <span className="font-medium text-foreground">{grn.receivingBay || "Main Bay"}</span>
+              <span className="text-xs font-medium text-muted-foreground block">Receiving Bay</span>
+              <span className="text-sm font-semibold text-foreground mt-0.5 block">{grn.receivingBay || "Main Bay"}</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2.5 border-t border-border/60">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-3 border-t border-border/60">
             <div>
-              <span className="text-[10px] font-bold uppercase text-muted-foreground block">Received By</span>
-              <span className="font-medium text-foreground">{grn.receivedBy || "Warehouse Staff"}</span>
+              <span className="text-xs font-medium text-muted-foreground block">Received By</span>
+              <span className="text-sm font-semibold text-foreground mt-0.5 block">{grn.receivedBy || "Warehouse Staff"}</span>
             </div>
             {grn.postedBy && grn.postedBy !== "System" && grn.postedBy !== "Not Posted" && (
               <div>
-                <span className="text-[10px] font-bold uppercase text-muted-foreground block">Posted By</span>
-                <span className="font-medium text-foreground">{grn.postedBy}</span>
+                <span className="text-xs font-medium text-muted-foreground block">Posted By</span>
+                <span className="text-sm font-semibold text-foreground mt-0.5 block">{grn.postedBy}</span>
               </div>
             )}
             {grn.carrier && grn.carrier !== "N/A" && (
               <div>
-                <span className="text-[10px] font-bold uppercase text-muted-foreground block">Carrier / Vehicle</span>
-                <span className="text-foreground">{grn.carrier}</span>
+                <span className="text-xs font-medium text-muted-foreground block">Carrier / Vehicle</span>
+                <span className="text-sm font-semibold text-foreground mt-0.5 block">{grn.carrier}</span>
               </div>
             )}
             {grn.supplierDrNumber && grn.supplierDrNumber !== "N/A" && (
               <div>
-                <span className="text-[10px] font-bold uppercase text-muted-foreground block">Supplier DR #</span>
-                <span className="text-foreground">{grn.supplierDrNumber}</span>
+                <span className="text-xs font-medium text-muted-foreground block">Supplier DR #</span>
+                <span className="text-sm font-semibold text-foreground mt-0.5 block">{grn.supplierDrNumber}</span>
               </div>
             )}
             {grn.supplierInvoiceNumber && grn.supplierInvoiceNumber !== "N/A" && (
               <div>
-                <span className="text-[10px] font-bold uppercase text-muted-foreground block">Supplier Invoice #</span>
-                <span className="text-foreground">{grn.supplierInvoiceNumber}</span>
+                <span className="text-xs font-medium text-muted-foreground block">Supplier Invoice #</span>
+                <span className="text-sm font-semibold text-foreground mt-0.5 block">{grn.supplierInvoiceNumber}</span>
               </div>
             )}
           </div>
 
           {grn.notes && (
-            <div className="pt-2 border-t border-border/60 text-xs">
-              <span className="font-bold text-foreground mr-1.5">Dock Notes:</span>
+            <div className="pt-2 border-t border-border/60 text-sm">
+              <span className="font-semibold text-foreground mr-1.5">Dock Notes:</span>
               <span className="text-muted-foreground">{grn.notes}</span>
             </div>
           )}
@@ -179,12 +179,12 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
 
         {/* WORKFLOW STATUS BANNER */}
         {(grn.status === "Received" || grn.status === "QaPending") && (
-          <div className="bg-muted/30 border border-border text-foreground rounded-2xl p-3.5 flex items-center justify-between text-xs">
+          <div className="bg-muted/30 border border-border text-foreground rounded-xl p-3.5 flex items-center justify-between text-sm">
             <div className="flex items-center gap-2.5">
               <span className="w-2 h-2 rounded-full bg-foreground shrink-0" />
               <div>
                 <div className="font-semibold text-foreground">Awaiting Quality Assurance Review</div>
-                <div className="text-muted-foreground text-[11px] mt-0.5">
+                <div className="text-muted-foreground text-xs mt-0.5">
                   Complete the Quality Assurance review for {grn.grnNumber} to release accepted items for Stock-In.
                 </div>
               </div>
@@ -193,12 +193,12 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
         )}
 
         {(grn.status === "QaCompleted" || grn.status === "PartiallyPutAway" || grn.status === "FullyPutAway") && (
-          <div className="bg-muted/30 border border-border text-foreground rounded-2xl p-3.5 flex items-center justify-between text-xs">
+          <div className="bg-muted/30 border border-border text-foreground rounded-xl p-3.5 flex items-center justify-between text-sm">
             <div className="flex items-center gap-2.5">
               <span className="w-2 h-2 rounded-full bg-foreground shrink-0" />
               <div>
                 <div className="font-semibold text-foreground">Quality Assurance Completed</div>
-                <div className="text-muted-foreground text-[11px] mt-0.5">
+                <div className="text-muted-foreground text-xs mt-0.5">
                   {grn.status === "FullyPutAway"
                     ? "All accepted items from this Goods Receipt Note have been stocked into inventory."
                     : "Accepted items from this Goods Receipt Note are ready for Stock-In."}
@@ -210,20 +210,20 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
 
         {/* ITEMS TABLE */}
         <div className="space-y-2">
-          <div className="text-xs font-semibold text-foreground uppercase tracking-wide">
+          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
             Received Line Items
           </div>
-          <div className="overflow-x-auto border border-border rounded-2xl bg-card">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-muted/30 uppercase text-muted-foreground font-bold tracking-wider text-[11px] border-b border-border">
-                <tr>
-                  <th className="px-4 py-3">Item Name</th>
-                  <th className="px-3 py-3 text-center">Unit of Measure</th>
-                  <th className="px-3 py-3 text-right">Ordered</th>
-                  <th className="px-3 py-3 text-right">Accepted / Received Qty</th>
-                  <th className="px-3 py-3 text-center">Variance</th>
-                  <th className="px-4 py-3">Supplier Lot #</th>
-                  <th className="px-3 py-3 text-center">Expiry Date</th>
+          <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+            <table className="w-full">
+              <thead className="border-b border-border bg-muted/30">
+                <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                  <th className="px-4 py-4">Item Name</th>
+                  <th className="px-4 py-4 text-center">Unit of Measure</th>
+                  <th className="px-4 py-4 text-right">Ordered</th>
+                  <th className="px-4 py-4 text-right">Accepted Qty</th>
+                  <th className="px-4 py-4 text-center">Variance</th>
+                  <th className="px-4 py-4">Supplier Lot #</th>
+                  <th className="px-4 py-4 text-center">Expiry Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -240,41 +240,36 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
                   const displayVarianceQty = Math.abs(netVariance !== 0 ? netVariance : item.varianceQuantity);
 
                   return (
-                    <tr key={item.grnItemId} className="hover:bg-muted/15 transition-colors">
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        <div>{item.itemName}</div>
-                        {isMultiBatch && (
-                          <div className="text-[10px] text-muted-foreground font-normal">
-                            Batch received: {item.deliveredQuantity} (Item total: {totalDeliveredForItem} of {declaredForItem})
-                          </div>
-                        )}
+                    <tr key={item.grnItemId} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
+                        {item.itemName}
                       </td>
-                      <td className="px-3 py-3 text-center text-muted-foreground">
+                      <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
                         {item.purchaseUomName}
                       </td>
-                      <td className="px-3 py-3 text-right text-muted-foreground">
+                      <td className="px-4 py-4 text-sm text-right text-muted-foreground whitespace-nowrap">
                         {item.orderedQuantity.toLocaleString()}
                       </td>
-                      <td className="px-3 py-3 text-right font-semibold text-foreground">
+                      <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
                         {item.deliveredQuantity.toLocaleString()}
                       </td>
-                      <td className="px-3 py-3 text-center">
+                      <td className="px-4 py-4 text-sm text-center whitespace-nowrap">
                         {isShort ? (
-                          <span className="text-[11px] font-semibold text-destructive bg-destructive/10 border border-destructive/20 px-2 py-0.5 rounded">
+                          <span className="text-xs font-semibold text-destructive bg-destructive/10 border border-destructive/20 px-2 py-0.5 rounded">
                             Short ({displayVarianceQty})
                           </span>
                         ) : isOver ? (
-                          <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                          <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
                             Over (+{displayVarianceQty})
                           </span>
                         ) : (
-                          <span className="text-[11px] font-semibold text-muted-foreground">Match</span>
+                          <span className="text-xs font-semibold text-muted-foreground">Match</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-foreground text-xs whitespace-nowrap">
+                      <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
                         {item.supplierLotCode || "—"}
                       </td>
-                      <td className="px-3 py-3 text-center text-muted-foreground whitespace-nowrap">
+                      <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
                         {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—"}
                       </td>
                     </tr>
@@ -292,7 +287,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
               type="button"
               onClick={() => setCancelModalOpen(true)}
               disabled={loading}
-              className="rounded-xl border border-destructive/30 bg-destructive/10 text-destructive px-5 py-2.5 text-sm font-semibold hover:bg-destructive/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="rounded-xl border border-destructive/30 bg-destructive/10 text-destructive px-5 py-2 text-sm font-semibold hover:bg-destructive/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               Cancel Draft
             </button>
@@ -302,7 +297,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
             type="button"
             onClick={handleExport}
             disabled={loading}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Export Goods Receipt Note
           </button>
@@ -310,7 +305,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
           <ModalNativeCloseButton
             fallbackOnClose={onClose}
             disabled={loading}
-            className="rounded-xl bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
+            className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
           >
             Close
           </ModalNativeCloseButton>
@@ -320,7 +315,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
               type="button"
               onClick={handlePost}
               disabled={loading}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? "Posting…" : "Post Goods Receipt Note"}
             </button>

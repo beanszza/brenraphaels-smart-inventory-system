@@ -917,19 +917,19 @@ export default function CreateGrnModal({
             {title} ({groupItems.length})
           </span>
         </div>
-        <div className="rounded-2xl border border-border bg-card overflow-hidden">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-border bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3">Item Description</th>
-                <th className="px-3 py-3 text-right">Declared</th>
-                <th className="px-3 py-3 text-right">Actual Received</th>
-                <th className="px-3 py-3 text-center">Expiry Date <span className="text-destructive">*</span></th>
-                <th className="px-3 py-3 text-center">Variance</th>
-                <th className="px-3 py-3 text-right">Batch Actions</th>
+        <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+          <table className="w-full">
+            <thead className="border-b border-border bg-muted/30">
+              <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                <th className="px-4 py-4">Item Description</th>
+                <th className="px-4 py-4 text-right">Declared</th>
+                <th className="px-4 py-4 text-right">Actual Received</th>
+                <th className="px-4 py-4 text-center">Expiry Date <span className="text-destructive">*</span></th>
+                <th className="px-4 py-4 text-center">Variance</th>
+                <th className="px-4 py-4 text-right">Batch Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/60">
+            <tbody className="divide-y divide-border">
               {groupItems.map((item) => {
                 const itemIndex = items.findIndex((i) => i.deliveryItemId === item.deliveryItemId);
                 const actualTotal = getItemTotalActual(item);
@@ -938,15 +938,12 @@ export default function CreateGrnModal({
 
                 return (
                   <React.Fragment key={item.deliveryItemId}>
-                    <tr className="hover:bg-muted/10 transition-colors">
-                      <td className="px-4 py-3 font-medium">
-                        <div className="font-semibold text-foreground">{item.itemName}</div>
-                        <div className="text-[11px] text-muted-foreground">
-                          {item.uom} {item.batches.length > 1 ? `· ${item.batches.length} Batches` : ""}
-                        </div>
+                    <tr className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
+                        {item.itemName}
                       </td>
-                      <td className="px-3 py-3 text-right font-semibold">{item.declared}</td>
-                      <td className="px-3 py-3 text-right">
+                      <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">{item.declared}</td>
+                      <td className="px-4 py-4 text-sm text-right">
                         <div className="flex flex-col items-end">
                           <input
                             type="number"
@@ -962,16 +959,16 @@ export default function CreateGrnModal({
                               fieldErrors[`qty_${itemIndex}_0`]
                                 ? "!border-destructive text-destructive focus:!ring-destructive"
                                 : "border-border"
-                            } bg-background px-2.5 py-1.5 text-right text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-foreground`}
+                            } bg-background px-2.5 py-1.5 text-right text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-foreground`}
                           />
                           {fieldErrors[`qty_${itemIndex}_0`] && (
-                            <span className="text-[10px] text-destructive font-medium mt-0.5 whitespace-nowrap">
+                            <span className="text-xs text-destructive font-medium mt-0.5 whitespace-nowrap">
                               {fieldErrors[`qty_${itemIndex}_0`]}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-3 text-center">
+                      <td className="px-4 py-4 text-sm text-center">
                         <div className="flex flex-col items-center">
                           <input
                             type="date"
@@ -983,35 +980,35 @@ export default function CreateGrnModal({
                               fieldErrors[`expiry_${itemIndex}_0`]
                                 ? "!border-destructive text-destructive focus:!ring-destructive"
                                 : "border-border"
-                            } bg-background px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-foreground`}
+                            } bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-foreground`}
                           />
                           {fieldErrors[`expiry_${itemIndex}_0`] && (
-                            <span className="text-[10px] text-destructive font-medium mt-0.5 whitespace-nowrap">
+                            <span className="text-xs text-destructive font-medium mt-0.5 whitespace-nowrap">
                               {fieldErrors[`expiry_${itemIndex}_0`]}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-3 text-center font-medium">
+                      <td className="px-4 py-4 text-sm text-center font-medium whitespace-nowrap">
                         {variance === null ? (
-                          <span className="text-muted-foreground/60 text-xs">—</span>
+                          <span className="text-muted-foreground/60">—</span>
                         ) : variance === 0 ? (
-                          <span className="font-semibold text-foreground text-xs">Match</span>
+                          <span className="font-semibold text-foreground">Match</span>
                         ) : variance < 0 ? (
-                          <span className="text-destructive font-bold text-xs">
+                          <span className="text-destructive font-semibold">
                             Short {Math.abs(variance)}
                           </span>
                         ) : (
-                          <span className="text-destructive font-bold text-xs">
+                          <span className="text-destructive font-semibold">
                             Over +{variance}
                           </span>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-right">
+                      <td className="px-4 py-4 text-right whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => addBatch(itemIndex)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
                         >
                           <Plus size={14} className="shrink-0" />
                           <span>Add Batch</span>
@@ -1023,14 +1020,14 @@ export default function CreateGrnModal({
                       const batchIndex = subIdx + 1;
                       return (
                         <tr key={batch.id} className="bg-muted/15 border-t border-border/40">
-                          <td className="px-4 py-2 pl-8 font-medium">
-                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                          <td className="px-4 py-3 pl-8 text-sm font-medium">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
                               <span>Batch #{batchIndex + 1}</span>
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-right text-[11px] text-muted-foreground">—</td>
-                          <td className="px-3 py-2 text-right">
+                          <td className="px-4 py-3 text-right text-sm text-muted-foreground">—</td>
+                          <td className="px-4 py-3 text-right">
                             <div className="flex flex-col items-end">
                               <input
                                 type="number"
@@ -1046,16 +1043,16 @@ export default function CreateGrnModal({
                                   fieldErrors[`qty_${itemIndex}_${batchIndex}`]
                                     ? "!border-destructive text-destructive focus:!ring-destructive"
                                     : "border-border"
-                                } bg-background px-2.5 py-1.5 text-right text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-foreground`}
+                                } bg-background px-2.5 py-1.5 text-right text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-foreground`}
                               />
                               {fieldErrors[`qty_${itemIndex}_${batchIndex}`] && (
-                                <span className="text-[10px] text-destructive font-medium mt-0.5 whitespace-nowrap">
+                                <span className="text-xs text-destructive font-medium mt-0.5 whitespace-nowrap">
                                   {fieldErrors[`qty_${itemIndex}_${batchIndex}`]}
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-center">
+                          <td className="px-4 py-3 text-center">
                             <div className="flex flex-col items-center">
                               <input
                                 type="date"
@@ -1067,21 +1064,21 @@ export default function CreateGrnModal({
                                   fieldErrors[`expiry_${itemIndex}_${batchIndex}`]
                                     ? "!border-destructive text-destructive focus:!ring-destructive"
                                     : "border-border"
-                                } bg-background px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-foreground`}
+                                } bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-foreground`}
                               />
                               {fieldErrors[`expiry_${itemIndex}_${batchIndex}`] && (
-                                <span className="text-[10px] text-destructive font-medium mt-0.5 whitespace-nowrap">
+                                <span className="text-xs text-destructive font-medium mt-0.5 whitespace-nowrap">
                                   {fieldErrors[`expiry_${itemIndex}_${batchIndex}`]}
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-center text-xs text-muted-foreground">—</td>
-                          <td className="px-3 py-2 text-right">
+                          <td className="px-4 py-3 text-center text-sm text-muted-foreground">—</td>
+                          <td className="px-4 py-3 text-right">
                             <button
                               type="button"
                               onClick={() => removeBatch(itemIndex, batchIndex)}
-                              className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors focus:outline-none"
+                              className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors focus:outline-none cursor-pointer"
                               title="Remove Batch"
                             >
                               <Trash2 size={16} className="text-destructive" />
@@ -1197,20 +1194,20 @@ export default function CreateGrnModal({
                 )}
 
                 {selected && (
-                  <div className="mt-3 rounded-xl border border-border bg-muted/20 p-3 text-xs">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  <div className="mt-3 rounded-xl border border-border bg-muted/20 p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                       <div>
-                        <span className="text-[10px] font-bold uppercase text-muted-foreground block">Supplier</span>
-                        <span className="font-semibold text-foreground">{selected.supplierName}</span>
+                        <span className="text-xs font-medium text-muted-foreground block">Supplier</span>
+                        <span className="text-sm font-semibold text-foreground mt-0.5 block">{selected.supplierName}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] font-bold uppercase text-muted-foreground block">Delivery No.</span>
-                        <span className="font-semibold text-foreground">{selected.deliveryNumber}</span>
+                        <span className="text-xs font-medium text-muted-foreground block">Delivery No.</span>
+                        <span className="text-sm font-semibold text-foreground mt-0.5 block">{selected.deliveryNumber}</span>
                       </div>
                       {selected.carrier && selected.carrier !== "N/A" && (
                         <div>
-                          <span className="text-[10px] font-bold uppercase text-muted-foreground block">Carrier</span>
-                          <span className="font-semibold text-foreground">{selected.carrier}</span>
+                          <span className="text-xs font-medium text-muted-foreground block">Carrier</span>
+                          <span className="text-sm font-semibold text-foreground mt-0.5 block">{selected.carrier}</span>
                         </div>
                       )}
                     </div>
@@ -1264,12 +1261,12 @@ export default function CreateGrnModal({
                   </section>
 
                   <label className="block space-y-1.5">
-                    <span className="text-xs font-semibold text-foreground">Receiving Gate Notes</span>
+                    <span className="text-xs font-semibold text-foreground block">Receiving Gate Notes</span>
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       rows={2}
-                      className="w-full rounded-xl border border-border bg-card px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-foreground"
+                      className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-foreground"
                       placeholder="Document quantity differences, packaging condition, or gate inspection notes."
                     />
                   </label>
@@ -1281,7 +1278,7 @@ export default function CreateGrnModal({
                 <ModalNativeCloseButton
                   fallbackOnClose={onClose}
                   disabled={submitting}
-                  className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   Cancel
                 </ModalNativeCloseButton>
@@ -1292,7 +1289,7 @@ export default function CreateGrnModal({
                       type="button"
                       disabled={submitting}
                       onClick={() => setShowRejectModal(true)}
-                      className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     >
                       Reject Entire Shipment
                     </button>
@@ -1301,7 +1298,7 @@ export default function CreateGrnModal({
                     type="button"
                     disabled={submitting || !isReadyForQa}
                     onClick={executeProceedToQa}
-                    className="rounded-xl bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
                   >
                     {submitting ? "Proceeding…" : "Proceed to Quality Assurance"}
                   </button>
@@ -1349,17 +1346,17 @@ export default function CreateGrnModal({
                           className="flex items-center justify-between p-3.5 bg-muted/60 dark:bg-muted/40 text-foreground border-b border-border/80 cursor-pointer hover:bg-muted/80 dark:hover:bg-muted/60 transition-colors select-none"
                         >
                           <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="font-bold text-sm text-foreground">{qaItem.itemName}</span>
-                            <span className="rounded-md bg-card border border-border text-muted-foreground px-2 py-0.5 text-[10px] font-semibold">
+                            <span className="font-semibold text-sm text-foreground">{qaItem.itemName}</span>
+                            <span className="rounded-md bg-card border border-border text-muted-foreground px-2 py-0.5 text-xs font-medium">
                               {qaItem.categoryName || "Raw Material"}
                             </span>
                             {(qaItem.totalBatches || 1) > 1 && (
-                              <span className="rounded-md bg-card border border-border text-foreground px-2 py-0.5 text-[10px] font-medium">
+                              <span className="rounded-md bg-card border border-border text-foreground px-2 py-0.5 text-xs font-medium">
                                 Batch #{qaItem.batchNumber || 1} of {qaItem.totalBatches}
                               </span>
                             )}
                             {qaItem.expiryDate && (
-                              <span className="rounded-md bg-card border border-border text-foreground px-2 py-0.5 text-[10px] font-medium">
+                              <span className="rounded-md bg-card border border-border text-foreground px-2 py-0.5 text-xs font-medium">
                                 Exp: {qaItem.expiryDate}
                               </span>
                             )}
@@ -1471,7 +1468,7 @@ export default function CreateGrnModal({
                                         </option>
                                       ))}
                                     </select>
-                                    <p className="text-[10px] text-destructive pt-1">
+                                    <p className="text-xs text-destructive pt-1">
                                       Notice: Rejected units will automatically log a Discrepancy record for resolution.
                                     </p>
                                   </div>
@@ -1545,7 +1542,7 @@ export default function CreateGrnModal({
                   type="button"
                   onClick={() => setStep(1)}
                   disabled={submitting}
-                  className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   Back to Receiving Counts
                 </button>
@@ -1555,7 +1552,7 @@ export default function CreateGrnModal({
                     type="button"
                     disabled={!isQaDone || submitting}
                     onClick={handleExportGrnReport}
-                    className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Export Goods Receipt Note
                   </button>
@@ -1563,7 +1560,7 @@ export default function CreateGrnModal({
                     type="button"
                     disabled={!isQaDone || submitting}
                     onClick={() => setConfirmFinishGrnOpen(true)}
-                    className="rounded-xl bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
                   >
                     {submitting ? "Finishing…" : "Confirm & Sign Off Quality Assurance Review"}
                   </button>
@@ -1667,33 +1664,33 @@ export default function CreateGrnModal({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border text-xs">
+          <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
             <div>
-              <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
+              <span className="text-xs font-medium text-muted-foreground block mb-0.5">
                 Goods Receipt Note #
               </span>
-              <span className="font-bold text-foreground text-sm">
+              <span className="font-semibold text-foreground text-sm">
                 {activeGrn?.grnNumber || previewGrnNo || "—"}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
+              <span className="text-xs font-medium text-muted-foreground block mb-0.5">
                 Delivery Reference
               </span>
-              <span className="font-bold text-foreground text-sm">
+              <span className="font-semibold text-foreground text-sm">
                 {selected?.deliveryNumber || activeGrn?.deliveryNumber || "—"}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
+              <span className="text-xs font-medium text-muted-foreground block mb-0.5">
                 Supplier
               </span>
-              <span className="font-bold text-foreground text-sm">
+              <span className="font-semibold text-foreground text-sm">
                 {selected?.supplierName || activeGrn?.supplierName || "—"}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
+              <span className="text-xs font-medium text-muted-foreground block mb-0.5">
                 Inspection Status
               </span>
               <span className="font-semibold text-primary text-sm">
@@ -1701,53 +1698,50 @@ export default function CreateGrnModal({
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
+              <span className="text-xs font-medium text-muted-foreground block mb-0.5">
                 Total Accepted (Good)
               </span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-sm">
                 {qaItems.reduce((s, i) => s + Number(i.acceptedQuantity || 0), 0)} units
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] font-semibold uppercase tracking-wider mb-1">
+              <span className="text-xs font-medium text-muted-foreground block mb-0.5">
                 Total Rejected (Bad)
               </span>
-              <span className="font-bold text-destructive text-sm">
+              <span className="font-semibold text-destructive text-sm">
                 {qaItems.reduce((s, i) => s + Number(i.rejectedQuantity || 0), 0)} units
               </span>
             </div>
           </div>
 
-          <div className="border border-border rounded-xl overflow-hidden bg-card">
-            <table className="w-full text-xs">
-              <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[11px]">
-                <tr>
-                  <th className="px-3 py-2.5 text-left font-bold">ITEM DESCRIPTION</th>
-                  <th className="px-3 py-2.5 text-right font-bold">RECEIVED</th>
-                  <th className="px-3 py-2.5 text-right font-bold text-emerald-600 dark:text-emerald-400">ACCEPTED</th>
-                  <th className="px-3 py-2.5 text-right font-bold text-destructive">REJECTED</th>
-                  <th className="px-3 py-2.5 text-left font-bold">REASON / REMARKS</th>
+          <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+            <table className="w-full">
+              <thead className="border-b border-border bg-muted/30">
+                <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+                  <th className="px-4 py-4">Item Description</th>
+                  <th className="px-4 py-4 text-right">Received</th>
+                  <th className="px-4 py-4 text-right text-emerald-600 dark:text-emerald-400">Accepted</th>
+                  <th className="px-4 py-4 text-right text-destructive">Rejected</th>
+                  <th className="px-4 py-4">Reason / Remarks</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {qaItems.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-muted/10">
-                    <td className="px-3 py-2.5 font-medium text-foreground">
-                      <div>{item.itemName}</div>
-                      {item.expiryDate && (
-                        <div className="text-[10px] text-muted-foreground">Exp: {item.expiryDate}</div>
-                      )}
+                  <tr key={idx} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
+                      {item.itemName}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-semibold text-foreground">
+                    <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
                       {item.deliveredQuantity}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-semibold text-emerald-600 dark:text-emerald-400">
+                    <td className="px-4 py-4 text-sm text-right font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                       {item.acceptedQuantity}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-semibold text-destructive">
+                    <td className="px-4 py-4 text-sm text-right font-semibold text-destructive whitespace-nowrap">
                       {item.rejectedQuantity}
                     </td>
-                    <td className="px-3 py-2.5 text-muted-foreground text-[11px]">
+                    <td className="px-4 py-4 text-sm text-muted-foreground">
                       {Number(item.rejectedQuantity) > 0 ? (
                         <span className="text-destructive font-medium">{item.defectReason || "Rejected"}</span>
                       ) : (
@@ -1765,7 +1759,7 @@ export default function CreateGrnModal({
               type="button"
               onClick={() => setConfirmFinishGrnOpen(false)}
               disabled={submitting}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               Back to Edit
             </button>
@@ -1773,7 +1767,7 @@ export default function CreateGrnModal({
               type="button"
               disabled={submitting}
               onClick={executeFinishGrn}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
             >
               {submitting ? "Signing Off..." : "Confirm & Complete Quality Assurance"}
             </button>

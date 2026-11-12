@@ -127,32 +127,32 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
 
             {/* Selected GRN preview */}
             {selected && (
-              <div className="mt-3 bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+              <div className="mt-3 bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
-                  <div className="text-muted-foreground font-semibold">Goods Receipt Note No.</div>
-                  <div className="font-bold mt-0.5">{selected.grnNumber}</div>
+                  <div className="text-xs font-medium text-muted-foreground">Goods Receipt Note No.</div>
+                  <div className="text-sm font-semibold text-foreground mt-0.5">{selected.grnNumber}</div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground font-semibold">Purchase Order</div>
-                  <div className="mt-0.5">{selected.poNumber}</div>
+                  <div className="text-xs font-medium text-muted-foreground">Purchase Order</div>
+                  <div className="text-sm font-semibold text-foreground mt-0.5">{selected.poNumber}</div>
                 </div>
                 {selected.deliveryNumber && selected.deliveryNumber !== "—" && (
                   <div>
-                    <div className="text-muted-foreground font-semibold">Delivery No.</div>
-                    <div className="mt-0.5">{selected.deliveryNumber}</div>
+                    <div className="text-xs font-medium text-muted-foreground">Delivery No.</div>
+                    <div className="text-sm font-semibold text-foreground mt-0.5">{selected.deliveryNumber}</div>
                   </div>
                 )}
                 <div>
-                  <div className="text-muted-foreground font-semibold">Supplier</div>
-                  <div className="font-medium mt-0.5">{selected.supplierName}</div>
+                  <div className="text-xs font-medium text-muted-foreground">Supplier</div>
+                  <div className="text-sm font-semibold text-foreground mt-0.5">{selected.supplierName}</div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground font-semibold">Received Date</div>
-                  <div className="mt-0.5">{new Date(selected.receivedDate).toLocaleDateString()}</div>
+                  <div className="text-xs font-medium text-muted-foreground">Received Date</div>
+                  <div className="text-sm font-semibold text-foreground mt-0.5">{new Date(selected.receivedDate).toLocaleDateString()}</div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground font-semibold">Items</div>
-                  <div className="mt-0.5">{selected.items?.length ?? "—"} line items</div>
+                  <div className="text-xs font-medium text-muted-foreground">Items</div>
+                  <div className="text-sm font-semibold text-foreground mt-0.5">{selected.items?.length ?? "—"} line items</div>
                 </div>
               </div>
             )}
@@ -164,7 +164,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
           <ModalNativeCloseButton
             fallbackOnClose={onClose}
             disabled={searching}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             Cancel
           </ModalNativeCloseButton>
@@ -172,7 +172,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
             type="button"
             onClick={handleStartInspection}
             disabled={!selected || searching}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {searching ? "Finding Inspection…" : "Start Quality Assurance Inspection"}
           </button>
