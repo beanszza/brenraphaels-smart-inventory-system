@@ -18,6 +18,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { toast } from "sonner";
 import {
   AlertTriangle,
+  Calendar,
   Package,
   CheckCircle2,
   Clock,
@@ -646,22 +647,22 @@ export default function ProductionRequestModal({
         {/* Form Inputs (Organized Top Section) */}
         <div className="space-y-4">
           {/* Row 1: Finished Product, Variant, Recipe / BOM */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
             {/* Finished Product */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Finished Product</label>
+              <label className="block text-xs font-semibold text-foreground">Finished Product</label>
               {isViewMode ? (
-                <div className="p-2.5 rounded-xl border border-border bg-card text-xs font-medium text-foreground">
+                <div className="flex h-10 items-center px-3 rounded-xl border border-border bg-card text-sm font-medium text-foreground">
                   {initialRequest?.productName}
                 </div>
               ) : (
                 <Select value={selectedProductName} onValueChange={handleProductSelect}>
-                  <SelectTrigger className="w-full h-10 text-xs rounded-xl border-border bg-card">
+                  <SelectTrigger className="w-full h-10 px-3 text-sm rounded-xl border-border bg-card">
                     <SelectValue placeholder="Select product..." />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">
                     {uniqueProductNames.map((name) => (
-                      <SelectItem key={name} value={name} className="text-xs">
+                      <SelectItem key={name} value={name} className="text-sm">
                         {name}
                       </SelectItem>
                     ))}
@@ -672,9 +673,9 @@ export default function ProductionRequestModal({
 
             {/* Variant */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Variant</label>
+              <label className="block text-xs font-semibold text-foreground">Variant</label>
               {isViewMode ? (
-                <div className="p-2.5 rounded-xl border border-border bg-card text-xs font-medium text-foreground">
+                <div className="flex h-10 items-center px-3 rounded-xl border border-border bg-card text-sm font-medium text-foreground">
                   {initialRequest?.variant || "Standard"}
                 </div>
               ) : (
@@ -683,7 +684,7 @@ export default function ProductionRequestModal({
                   onValueChange={handleVariantSelect}
                   disabled={!selectedProductName || availableVariants.length === 0}
                 >
-                  <SelectTrigger className="w-full h-10 text-xs rounded-xl border-border bg-card">
+                  <SelectTrigger className="w-full h-10 px-3 text-sm rounded-xl border-border bg-card">
                     <SelectValue
                       placeholder={
                         !selectedProductName
@@ -696,7 +697,7 @@ export default function ProductionRequestModal({
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">
                     {availableVariants.map((v) => (
-                      <SelectItem key={v} value={v} className="text-xs">
+                      <SelectItem key={v} value={v} className="text-sm">
                         {v}
                       </SelectItem>
                     ))}
@@ -707,9 +708,9 @@ export default function ProductionRequestModal({
 
             {/* Recipe / BOM */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Recipe / BOM</label>
+              <label className="block text-xs font-semibold text-foreground">Recipe / BOM</label>
               {isViewMode ? (
-                <div className="p-2.5 rounded-xl border border-border bg-card text-xs font-medium text-foreground">
+                <div className="flex h-10 items-center px-3 rounded-xl border border-border bg-card text-sm font-medium text-foreground">
                   {initialRequest?.recipeName}
                 </div>
               ) : (
@@ -726,7 +727,7 @@ export default function ProductionRequestModal({
                   }}
                   disabled={!productId || filteredRecipes.length === 0}
                 >
-                  <SelectTrigger className="w-full h-10 text-xs rounded-xl border-border bg-card">
+                  <SelectTrigger className="w-full h-10 px-3 text-sm rounded-xl border-border bg-card">
                     <SelectValue
                       placeholder={
                         !selectedProductName
@@ -742,12 +743,12 @@ export default function ProductionRequestModal({
                   <SelectContent className="bg-popover border-border">
                     {filteredRecipes.length > 0 ? (
                       filteredRecipes.map((r) => (
-                        <SelectItem key={r.recipeId} value={String(r.recipeId)} className="text-xs">
+                        <SelectItem key={r.recipeId} value={String(r.recipeId)} className="text-sm">
                           {r.recipeName}
                         </SelectItem>
                       ))
                     ) : (
-                      <div className="p-3 text-xs text-muted-foreground text-center">
+                      <div className="p-3 text-sm text-muted-foreground text-center">
                         No recipe configured for this variant.
                       </div>
                     )}
@@ -758,12 +759,12 @@ export default function ProductionRequestModal({
           </div>
 
           {/* Row 2: Target Quantity, Priority Level, Required Date, Required Time */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
             {/* Target Output Quantity */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Target Output Quantity</label>
+              <label className="block text-xs font-semibold text-foreground">Target Output Quantity</label>
               {isViewMode ? (
-                <div className="p-2.5 rounded-xl border border-border bg-card text-xs font-bold text-foreground">
+                <div className="flex h-10 items-center px-3 rounded-xl border border-border bg-card text-sm font-semibold text-foreground">
                   {initialRequest?.quantity} {initialRequest?.yieldUom}
                 </div>
               ) : (
@@ -773,7 +774,7 @@ export default function ProductionRequestModal({
                   readOnly
                   disabled
                   tabIndex={-1}
-                  className="h-10 text-xs rounded-xl border-border bg-muted/50 cursor-not-allowed font-bold text-foreground opacity-90 select-none"
+                  className="h-10 w-full rounded-xl border-border bg-muted/50 px-3 py-2 text-sm font-medium text-foreground placeholder:font-normal placeholder:text-muted-foreground cursor-not-allowed opacity-90 select-none"
                   placeholder={recipeId ? String(quantity) : "Select recipe first"}
                 />
               )}
@@ -781,24 +782,24 @@ export default function ProductionRequestModal({
 
             {/* Priority Level: Low, Medium, High */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Priority Level</label>
+              <label className="block text-xs font-semibold text-foreground">Priority Level</label>
               {isViewMode ? (
-                <div className="p-2.5 rounded-xl border border-border bg-card text-xs font-semibold text-foreground">
+                <div className="flex h-10 items-center px-3 rounded-xl border border-border bg-card text-sm font-medium text-foreground">
                   {priority}
                 </div>
               ) : (
                 <Select value={priority} onValueChange={(val: any) => setPriority(val)}>
-                  <SelectTrigger className="w-full h-10 text-xs rounded-xl border-border bg-card font-medium">
+                  <SelectTrigger className="w-full h-10 px-3 text-sm rounded-xl border-border bg-card font-medium">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">
-                    <SelectItem value="Low" className="text-xs">
+                    <SelectItem value="Low" className="text-sm">
                       Low
                     </SelectItem>
-                    <SelectItem value="Medium" className="text-xs">
+                    <SelectItem value="Medium" className="text-sm">
                       Medium
                     </SelectItem>
-                    <SelectItem value="High" className="text-xs">
+                    <SelectItem value="High" className="text-sm">
                       High
                     </SelectItem>
                   </SelectContent>
@@ -806,30 +807,33 @@ export default function ProductionRequestModal({
               )}
             </div>
 
-            {/* Required Date (No duplicate icons, min={today}) */}
+            {/* Required Date (Date left-aligned, calendar icon on far right end) */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Required Date</label>
+              <label className="block text-xs font-semibold text-foreground">Required Date</label>
               {isViewMode ? (
-                <div className="p-2.5 rounded-xl border border-border bg-card text-xs text-foreground">
+                <div className="flex h-10 items-center px-3 rounded-xl border border-border bg-card text-sm text-foreground">
                   {initialRequest?.requiredDate ? new Date(initialRequest.requiredDate).toLocaleDateString() : "—"}
                 </div>
               ) : (
-                <Input
-                  type="date"
-                  min={today}
-                  max={getMaxFutureDateString()}
-                  value={requiredDate}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  className="h-10 text-xs rounded-xl border-border bg-card"
-                />
+                <div className="relative">
+                  <Input
+                    type="date"
+                    min={today}
+                    max={getMaxFutureDateString()}
+                    value={requiredDate}
+                    onChange={(e) => handleDateChange(e.target.value)}
+                    className="h-10 w-full rounded-xl border-border bg-card px-3 pr-9 py-2 text-sm text-foreground [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:top-1/2 [&::-webkit-calendar-picker-indicator]:-translate-y-1/2 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                  />
+                  <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                </div>
               )}
             </div>
 
             {/* Required Time (12-hour format with AM/PM) */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Required Time</label>
+              <label className="block text-xs font-semibold text-foreground">Required Time</label>
               {isViewMode ? (
-                <div className="h-10 px-3 rounded-xl border border-border bg-card text-xs font-semibold text-foreground flex items-center justify-between">
+                <div className="h-10 px-3 rounded-xl border border-border bg-card text-sm font-medium text-foreground flex items-center justify-between">
                   <span>{formatTimeTo12Hour(initialRequest?.requiredTime || requiredTime)}</span>
                   <span className="text-[10px] px-2 py-0.5 rounded-md bg-muted text-muted-foreground font-bold uppercase">
                     {parse24HTo12H(initialRequest?.requiredTime || requiredTime).period}
@@ -842,33 +846,33 @@ export default function ProductionRequestModal({
                     value={timeHour}
                     onValueChange={(val) => updateTime(val, timeMinute, timePeriod)}
                   >
-                    <SelectTrigger className="h-10 flex-1 text-xs font-medium rounded-xl border-border bg-card px-2 text-center shadow-xs">
+                    <SelectTrigger className="h-10 flex-1 text-sm font-medium rounded-xl border-border bg-card px-2.5 text-center shadow-xs">
                       <SelectValue placeholder="HH" />
                     </SelectTrigger>
                     <SelectContent className="max-h-56 bg-popover border-border">
                       {HOURS_12.map((h) => (
-                        <SelectItem key={h} value={h} className="text-xs">
+                        <SelectItem key={h} value={h} className="text-sm">
                           {h}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
 
-                  <span className="text-muted-foreground font-bold text-xs shrink-0">:</span>
+                  <span className="text-muted-foreground font-semibold text-sm shrink-0">:</span>
 
                   {/* Minute */}
                   <Select
                     value={timeMinute}
                     onValueChange={(val) => updateTime(timeHour, val, timePeriod)}
                   >
-                    <SelectTrigger className="h-10 flex-1 text-xs font-medium rounded-xl border-border bg-card px-2 text-center shadow-xs">
+                    <SelectTrigger className="h-10 flex-1 text-sm font-medium rounded-xl border-border bg-card px-2.5 text-center shadow-xs">
                       <SelectValue placeholder="MM" />
                     </SelectTrigger>
                     <SelectContent className="max-h-56 bg-popover border-border">
                       {Array.from(new Set([...MINUTES_OPTIONS, timeMinute]))
                         .sort((a, b) => Number(a) - Number(b))
                         .map((m) => (
-                          <SelectItem key={m} value={m} className="text-xs">
+                          <SelectItem key={m} value={m} className="text-sm">
                             {m}
                           </SelectItem>
                         ))}
@@ -880,7 +884,7 @@ export default function ProductionRequestModal({
                     <button
                       type="button"
                       onClick={() => updateTime(timeHour, timeMinute, "AM")}
-                      className={`h-full px-2.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                      className={`h-full px-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
                         timePeriod === "AM"
                           ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -891,7 +895,7 @@ export default function ProductionRequestModal({
                     <button
                       type="button"
                       onClick={() => updateTime(timeHour, timeMinute, "PM")}
-                      className={`h-full px-2.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                      className={`h-full px-2.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
                         timePeriod === "PM"
                           ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -907,20 +911,20 @@ export default function ProductionRequestModal({
 
           {/* Row 3: Reason / Batch Purpose Dropdown */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">Reason / Batch Purpose</label>
+            <label className="block text-xs font-semibold text-foreground">Reason / Batch Purpose</label>
             {isViewMode ? (
-              <div className="p-2.5 rounded-xl border border-border bg-card text-xs text-foreground truncate">
+              <div className="flex h-10 items-center px-3 rounded-xl border border-border bg-card text-sm text-foreground truncate">
                 {initialRequest?.reason || "Regular Stock Replenishment"}
               </div>
             ) : (
               <div className="space-y-2">
                 <Select value={selectedReasonOption} onValueChange={setSelectedReasonOption}>
-                  <SelectTrigger className="w-full h-10 text-xs rounded-xl border-border bg-card">
+                  <SelectTrigger className="w-full h-10 px-3 text-sm rounded-xl border-border bg-card">
                     <SelectValue placeholder="Select reason..." />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">
                     {REASON_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">
+                      <SelectItem key={opt} value={opt} className="text-sm">
                         {opt}
                       </SelectItem>
                     ))}
@@ -932,7 +936,7 @@ export default function ProductionRequestModal({
                     value={customReason}
                     onChange={(e) => setCustomReason(e.target.value)}
                     placeholder="Specify other reason..."
-                    className="h-9 text-xs rounded-xl border-border bg-card"
+                    className="h-10 px-3 text-sm rounded-xl border-border bg-card"
                   />
                 )}
               </div>
@@ -1170,7 +1174,7 @@ export default function ProductionRequestModal({
             type="button"
             variant="outline"
             fallbackOnClose={onClose}
-            className="text-xs font-semibold rounded-xl border-border hover:bg-muted"
+            className="text-sm font-semibold rounded-xl border-border px-5 py-2.5 hover:bg-muted"
           >
             {isViewMode ? "Close" : "Cancel"}
           </ModalCloseButton>
@@ -1181,7 +1185,7 @@ export default function ProductionRequestModal({
                 type="button"
                 onClick={() => handleSubmit(true)}
                 disabled={submitting || !productId || !recipeId || !quantity || quantity <= 0 || !requiredDate}
-                className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting
                   ? "Processing..."
@@ -1199,7 +1203,7 @@ export default function ProductionRequestModal({
                       variant="outline"
                       onClick={() => setActionModal({ open: true, type: "reject" })}
                       disabled={submitting}
-                      className="text-xs font-semibold text-foreground rounded-xl border-border hover:bg-muted cursor-pointer"
+                      className="text-sm font-semibold text-foreground rounded-xl border-border px-5 py-2.5 hover:bg-muted cursor-pointer"
                     >
                       Reject Request
                     </Button>
@@ -1207,7 +1211,7 @@ export default function ProductionRequestModal({
                       type="button"
                       onClick={() => setActionModal({ open: true, type: "approve" })}
                       disabled={submitting}
-                      className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
+                      className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
                     >
                       Approve Request
                     </Button>
@@ -1220,7 +1224,7 @@ export default function ProductionRequestModal({
                     type="button"
                     variant="outline"
                     onClick={handleCreatePrDirect}
-                    className="text-xs font-semibold text-foreground rounded-xl border-border hover:bg-muted cursor-pointer"
+                    className="text-sm font-semibold text-foreground rounded-xl border-border px-5 py-2.5 hover:bg-muted cursor-pointer"
                   >
                     Create Purchase Requisition
                   </Button>
@@ -1234,7 +1238,7 @@ export default function ProductionRequestModal({
                       onProceedToIssuance(initialRequest.prodReqId);
                       onClose();
                     }}
-                    className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
+                    className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
                   >
                     Proceed to Material Issuance
                   </Button>
@@ -1250,7 +1254,7 @@ export default function ProductionRequestModal({
                         onClose();
                       }
                     }}
-                    className="bg-primary text-primary-foreground font-semibold text-xs px-5 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
+                    className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
                   >
                     Start Production
                   </Button>

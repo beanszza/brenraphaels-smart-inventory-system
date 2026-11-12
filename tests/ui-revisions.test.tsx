@@ -18,6 +18,7 @@ import DiscrepancyDetailsModal from "@/components/receiving/DiscrepancyDetailsMo
 import InventoryTable from "@/components/inventory/InventoryTable";
 import CategoryModal from "@/components/resources-suppliers/CategoryModal";
 import CategoryTable from "@/components/resources-suppliers/CategoryTable";
+import ProductionRequestModal from "@/components/production/ProductionRequestModal";
 import LotsTable from "@/components/lots/LotsTable";
 import GrnDetailsModal from "@/components/receiving/GrnDetailsModal";
 import StockInDetailsModal from "@/components/receiving/StockInDetailsModal";
@@ -33,6 +34,7 @@ vi.mock("@/app/actions/orders/orders", () => ({
 vi.mock("@/app/actions/orders/deliveries", () => ({ listDeliveries: vi.fn() }));
 vi.mock("@/context/StaffContext", () => ({
   useStaff: () => ({ name: "Staff", username: "staff" }),
+  useIsAdmin: () => true,
 }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
@@ -579,6 +581,24 @@ describe("Inventory status badges and Category HasExpiry UI", () => {
       />
     );
     expect(stockInNonExpiryHtml).not.toContain("Expiry Date");
+  });
+
+  it("matches resources-suppliers modal typography, aligns Target Output Quantity, and puts calendar icon on far right in ProductionRequestModal", () => {
+    const html = renderToStaticMarkup(
+      <ProductionRequestModal open onClose={() => { }} onSuccess={() => { }} />
+    );
+
+    expect(html).toContain("font-sans");
+    expect(html).not.toContain("font-mono");
+    // Labels use block text-xs font-semibold like CategoryModal / SupplyModal
+    expect(html).toContain('class="block text-xs font-semibold text-foreground">Target Output Quantity</label>');
+    // Target Output Quantity input uses h-10 text-sm and normal placeholder weight
+    expect(html).toContain("placeholder:font-normal");
+    expect(html).toContain("Select recipe first");
+    // Required Date hides native middle calendar indicator and places lucide Calendar icon at right-3
+    expect(html).toContain("pr-9");
+    expect(html).toContain("right-3 top-1/2");
+    expect(html).toContain("lucide-calendar");
   });
 });
 
