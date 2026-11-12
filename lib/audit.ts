@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import type { ImsAuditAction } from "@/lib/audit-actions";
+import { parseCompatEvent, safeAuditMetadata, type ImsAuditAction } from "@/lib/audit-actions";
 import { gatewayPort, WRITE_TIMEOUT_MS, type AuditEventRecord, type GatewayPort } from "@/lib/gateway/audit";
 import type { Module } from "@/lib/portal/config";
 import type { Staff } from "@/lib/portal/client";
@@ -26,17 +26,7 @@ export function auditContext(headers: Headers): AuditContext {
   };
 }
 
-/** Recursively omit service-forbidden keys, including keys inside arrays. */
-export function safeAuditMetadata(value: Record<string, unknown>): Record<string, unknown> {
-  const clean = (entry: unknown): unknown => {
-    if (Array.isArray(entry)) return entry.map(clean);
-    if (entry && typeof entry === "object") return Object.fromEntries(
-      Object.entries(entry).filter(([key]) => !/password|token|secret|authorization|card|cvv/i.test(key)).map(([key, child]) => [key, clean(child)]),
-    );
-    return entry;
-  };
-  return clean(value) as Record<string, unknown>;
-}
+export { safeAuditMetadata } from "@/lib/audit-actions";
 
 /** Stable across object key ordering and gateway retries. Never includes request time. */
 export function auditVersion(value: unknown): string {
@@ -107,6 +97,7 @@ export async function readImsAuditEvents(
   const events = await gateway.listAudit({ modules: options.modules, limit: options.limit ?? 500 });
   return events
     .filter((event) => event.source === "IMS")
+    .map(parseCompatEvent)
     .sort((a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at))
     .slice(0, options.limit ?? 500);
 }

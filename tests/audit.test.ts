@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readImsAuditEvents, recordAudit, auditVersion, auditContext, safeAuditMetadata } from "@/lib/audit";
+import { IMS_ACTIONS, auditActionLabel, parseCompatEvent, toLegacyAuditAction } from "@/lib/audit-actions";
+import { gatewayPort } from "@/lib/gateway/audit";
 import type { AuditEventInput, AuditEventRecord, GatewayPort } from "@/lib/gateway/audit";
 
 const staff = { id: "u1", name: "Ana Cruz", username: "2026-AB-001", email: "ana@example.com" };
@@ -167,5 +169,108 @@ describe("IMS event identity and context", () => {
     expect(auditVersion({ b: 2, a: { d: 4, c: 3 } })).toBe(auditVersion({ a: { c: 3, d: 4 }, b: 2 }));
     expect(auditVersion({ status: "Approved" })).not.toBe(auditVersion({ status: "Rejected" }));
     expect(auditContext(new Headers()).request_id).toBeTruthy();
+  });
+});
+
+
+describe("legacy audit wire compatibility", () => {
+  it.each(IMS_ACTIONS)("maps %s to the expected legacy action", (action) => {
+    const created = ["purchase_requisition.submitted", "purchase_order.created", "delivery.received",
+      "delivery.discrepancy_logged", "return_to_vendor.submitted", "stock_in.put_away",
+      "loss_report.submitted", "production_request.submitted", "material.issued", "stock_transfer.requested"];
+    const expected = action.startsWith("record.") ? action
+      : action.startsWith("ims.") ? "record.viewed"
+      : created.includes(action) ? "record.created" : "record.updated";
+    expect(toLegacyAuditAction(action)).toBe(expected);
+  });
+
+  it("writes every action to a legacy-only service, preserving identity and context", async () => {
+    vi.stubEnv("IMS_GATEWAY_URL", "https://gw.test");
+    vi.stubEnv("IMS_GATEWAY_CALLER_KEY", "write-key");
+    vi.stubEnv("IMS_AUDIT_LEGACY_ACTIONS", undefined);
+    const written: AuditEventInput[] = [];
+    const signal = AbortSignal.timeout(3000);
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+      const event = JSON.parse(init.body as string) as AuditEventInput;
+      if (!["record.created", "record.updated", "record.deleted", "record.viewed"].includes(event.action)) {
+        return Response.json({ error: "Unknown Action for Source" }, { status: 400 });
+      }
+      expect(init.signal).toBe(signal);
+      expect(init.headers).toMatchObject({ Authorization: "Bearer write-key" });
+      written.push(event);
+      return Response.json({ id: "saved" }, { status: 201 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    for (const action of IMS_ACTIONS) {
+      const event: AuditEventInput = {
+        source: "IMS", module: action.startsWith("ims.") ? null : "Orders & Procurement", action,
+        outcome: "failure", actor: { type: "user", id: staff.id, display_name: staff.name },
+        subject: { type: "user", id: "requester", display_name: "Ben" },
+        target: { type: "purchase-order", id: "42", display_name: "PO-42" },
+        description: "Ana reviewed PO-42", occurred_at: at.toISOString(),
+        idempotency_key: `${action}:purchase-order:42:failure:revision-2`,
+        request_id: "req-1", ip_address: "192.0.2.1", user_agent: "IMS test",
+        metadata: { reason: "Review", ims_action: "untrusted", nested: { password: "hidden", count: 2 } },
+      };
+      await expect(gatewayPort.writeAudit(event, signal)).resolves.toBeUndefined();
+      const wire = written.at(-1)!;
+      expect(wire).toMatchObject({ ...event, action: toLegacyAuditAction(action),
+        description: action.startsWith("record.") ? event.description : `[${action}] ${event.description}`,
+        metadata: action.startsWith("record.") ? event.metadata
+          : { reason: "Review", ims_action: action, nested: { count: 2 } } });
+      expect(event.action).toBe(action);
+      expect(event.metadata?.ims_action).toBe("untrusted");
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(IMS_ACTIONS.length);
+    const approved = written.find(e => e.idempotency_key.startsWith("purchase_order.approved:"))!;
+    const rejected = written.find(e => e.idempotency_key.startsWith("purchase_order.rejected:"))!;
+    expect(approved.action).toBe(rejected.action);
+    expect(approved.idempotency_key).not.toBe(rejected.idempotency_key);
+  });
+
+  it("supports native actions after a catalog update without modifying their payload", async () => {
+    vi.stubEnv("IMS_GATEWAY_URL", "https://gw.test");
+    vi.stubEnv("IMS_GATEWAY_CALLER_KEY", "write-key");
+    vi.stubEnv("IMS_AUDIT_LEGACY_ACTIONS", "false");
+    const fetchMock = vi.fn(async () => new Response(null, { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { gateway, written } = fakeGateway();
+    await recordAudit(staff, { module: "Inventory", action: "stock_in.put_away",
+      target: { type: "stock-in", id: 1, name: "SI-1" }, description: "Ana put away SI-1", context: {} }, gateway);
+    await gatewayPort.writeAudit(written[0], AbortSignal.timeout(3000));
+    const init = (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1];
+    expect(JSON.parse(init.body as string)).toEqual(written[0]);
+  });
+
+  it("retains gateway failures", async () => {
+    vi.stubEnv("IMS_GATEWAY_URL", "https://gw.test");
+    vi.stubEnv("IMS_GATEWAY_CALLER_KEY", "write-key");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 503 })));
+    const { gateway, written } = fakeGateway();
+    await recordAudit(staff, { module: null, action: "ims.signed_in",
+      target: { type: "user", id: staff.id, name: staff.name }, description: "Signed in", context: {} }, gateway);
+    await expect(gatewayPort.writeAudit(written[0], AbortSignal.timeout(3000))).rejects.toThrow("503");
+  });
+
+  it("shows native and historical tagged events with specific labels and clean descriptions", async () => {
+    const base: AuditEventRecord = { id: "1", source: "IMS", module: "Orders & Procurement",
+      action: "record.updated", outcome: "success", actor: { type: "user", id: staff.id, display_name: staff.name },
+      target: { type: "purchase-order", id: "42", display_name: "PO-42" },
+      description: "[purchase_order.approved] Ana approved PO-42", occurred_at: at.toISOString() };
+    const { gateway } = fakeGateway({ listAudit: async () => [base,
+      { ...base, id: "2", action: "purchase_order.rejected", description: "Ana rejected PO-42" }] });
+    const events = await readImsAuditEvents({}, gateway);
+    expect(events.map(e => `${auditActionLabel(e.action)} / ${e.description}`)).toEqual([
+      "Purchase Order Approved / Ana approved PO-42", "Purchase Order Rejected / Ana rejected PO-42"]);
+    expect(base.description).toContain("[purchase_order.approved]");
+  });
+
+  it.each([
+    ["record.updated", "[unknown.action] Keep this"],
+    ["record.created", "[purchase_order.approved] Keep this"],
+    ["purchase_order.approved", "[purchase_order.approved] Keep this"],
+    ["record.updated", "No tag here"],
+  ])("preserves unrecognized or unrelated descriptions: %s %s", (action, description) => {
+    expect(parseCompatEvent({ action, description })).toEqual({ action, description });
   });
 });
