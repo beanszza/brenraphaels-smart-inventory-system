@@ -541,21 +541,21 @@ export default function ProductionBatchDetailView({
   const isPostQaPhase = status === "For Stock-in" || status === "Stocked In" || status === "Completed";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 min-w-0">
       {/* Top Navigation Bar */}
-      <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3.5">
+        <div className="flex flex-wrap items-center gap-2.5 min-w-0">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={onBack}
-            className="flex items-center gap-1.5 text-xs font-semibold rounded-xl border-border hover:bg-muted cursor-pointer"
+            className="flex items-center gap-1.5 text-sm font-semibold rounded-xl border-border hover:bg-muted h-9 px-3 cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to Active Batches
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Active Batches</span>
           </Button>
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border hidden sm:block" />
           <span className="text-sm font-semibold text-foreground">
             {batch.batchNumber}
           </span>
@@ -567,7 +567,7 @@ export default function ProductionBatchDetailView({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Reject Batch Button (strictly visible during Production cooking stages only, NOT packaging) */}
           {isCookingPhase && !isAdmin && (
             <Button
@@ -575,7 +575,7 @@ export default function ProductionBatchDetailView({
               variant="outline"
               size="sm"
               onClick={() => setShowRejectModal(true)}
-              className="text-sm font-semibold border-destructive/40 text-destructive hover:bg-destructive/10 rounded-xl px-4 h-9 cursor-pointer"
+              className="text-sm font-semibold border-destructive/40 text-destructive hover:bg-destructive/10 rounded-xl px-3.5 h-9 cursor-pointer"
             >
               Reject Batch
             </Button>
@@ -586,43 +586,47 @@ export default function ProductionBatchDetailView({
             variant="outline"
             size="sm"
             onClick={() => fetchBatchDetail(true)}
-            className="text-sm font-semibold text-foreground rounded-xl border-border hover:bg-muted px-3.5 h-9 cursor-pointer flex items-center gap-1.5"
+            className="text-sm font-semibold text-foreground rounded-xl border-border hover:bg-muted px-3 h-9 cursor-pointer flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Refresh
+            <span>Refresh</span>
           </Button>
         </div>
       </div>
 
       {/* Main Header Card */}
       <div className="p-5 rounded-2xl border border-border bg-card space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h2 className="text-lg font-semibold text-foreground">{batch.productName}</h2>
-              {batch.variant && (
-                <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full">
-                  {batch.variant}
-                </span>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-              <span>Recipe: <strong className="text-foreground font-semibold">{batch.recipeName}</strong></span>
-              <span>•</span>
-              <span>Target Output: <strong className="text-foreground font-semibold">{reqQty.toLocaleString()} {batch.yieldUom || "units"}</strong></span>
-              {batch.requestedBy && (
-                <>
-                  <span>•</span>
-                  <span>Requested by <strong className="text-foreground font-semibold">{resolveStaffName(batch.requestedBy) || batch.requestedBy}</strong></span>
-                </>
-              )}
-              {batch.approvedBy && (
-                <>
-                  <span>•</span>
-                  <span>Approved by <strong className="text-foreground font-semibold">{resolveStaffName(batch.approvedBy) || batch.approvedBy}</strong></span>
-                </>
-              )}
-            </div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <h2 className="text-lg font-semibold text-foreground">{batch.productName}</h2>
+          {batch.variant && (
+            <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full">
+              {batch.variant}
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground block">Recipe</span>
+            <span className="text-sm font-semibold text-foreground">{batch.recipeName || "—"}</span>
+          </div>
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground block">Target Output</span>
+            <span className="text-sm font-semibold text-foreground">
+              {reqQty.toLocaleString()} {batch.yieldUom || "units"}
+            </span>
+          </div>
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground block">Requested By</span>
+            <span className="text-sm font-semibold text-foreground">
+              {resolveStaffName(batch.requestedBy) || batch.requestedBy || "—"}
+            </span>
+          </div>
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground block">Approved By</span>
+            <span className="text-sm font-semibold text-foreground">
+              {resolveStaffName(batch.approvedBy) || batch.approvedBy || "—"}
+            </span>
           </div>
         </div>
 
@@ -689,11 +693,11 @@ export default function ProductionBatchDetailView({
         <div className="lg:col-span-2 space-y-6">
           {/* ── PHASE 1: COOKING WATERFALL STAGES ── */}
           {isCookingPhase && (
-            <div className="p-6 rounded-2xl border border-border bg-card space-y-5">
+            <div className="p-5 rounded-2xl border border-border bg-card space-y-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-base font-bold text-foreground">Kitchen Production Stages</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <h3 className="text-base font-semibold text-foreground">Kitchen Production Stages</h3>
+                  <p className="text-sm text-muted-foreground mt-0.5">
                     Follow sequential kitchen stages to produce the batch.
                   </p>
                 </div>
@@ -701,7 +705,7 @@ export default function ProductionBatchDetailView({
 
               {/* Waterfall Stages List */}
               <div className="space-y-3">
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Stages for this product
                 </p>
 
@@ -723,20 +727,20 @@ export default function ProductionBatchDetailView({
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-muted-foreground">
+                            <span className="text-sm font-semibold text-muted-foreground">
                               {idx + 1}.
                             </span>
-                            <span className="text-xs font-bold text-foreground">{stName}</span>
+                            <span className="text-sm font-semibold text-foreground">{stName}</span>
                           </div>
                           <div>
                             {isDone ? (
-                              <span className="text-[11px] text-muted-foreground">
+                              <span className="text-xs text-muted-foreground">
                                 ✓ Done ({formatTo12Hour(stageLogs[stName].endTime)})
                               </span>
                             ) : isCurrent ? (
                               <StatusBadge status="In Progress">Current Stage</StatusBadge>
                             ) : (
-                              <span className="text-[11px] text-muted-foreground">• Waiting</span>
+                              <span className="text-xs text-muted-foreground">• Waiting</span>
                             )}
                           </div>
                         </div>
@@ -1186,10 +1190,10 @@ export default function ProductionBatchDetailView({
         <div className="space-y-6">
           <div className="p-5 rounded-2xl border border-border bg-card space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Reserved Materials
               </h3>
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 BOM Verification
               </span>
             </div>
