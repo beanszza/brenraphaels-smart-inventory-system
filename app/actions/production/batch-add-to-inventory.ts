@@ -124,7 +124,7 @@ export async function commitBatchInventory(idInput: string | number, body: any =
                         UomId: batch.FinishedProducts?.Items?.UomId || 1,
                         UnitCost: Number(batch.UnitCost || 0),
                         ReferenceType: "ProductionBatch",
-                        ReferenceId: String(id),
+                        ReferenceId: batch.BatchNumber,
                         UserId: staff.username,
                         UserName: staff.name,
                         PostedAt: now,

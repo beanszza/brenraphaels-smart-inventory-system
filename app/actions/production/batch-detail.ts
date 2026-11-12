@@ -145,3 +145,268 @@ export async function deleteBatch(idInput: string | number) {
         return { result: resourceResult({ success: true, message: "Batch deleted." }), audit: { module: "Production & Quality", change: "deleted", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} deleted production batch (${String(id)})` } };
     });
 }
+
+export interface BatchLifecycleSummaryData {
+    batchId: number;
+    batchNumber: string;
+    status: string;
+    currentStage: string;
+    productName: string;
+    productCode: string;
+    variant: string;
+    sku: string;
+    recipeName: string;
+    yieldUom: string;
+    request: {
+        prodReqId: number | null;
+        reqNumber: string;
+        requestedBy: string;
+        createdAt: string | null;
+        approvedBy: string;
+        approvedAt: string | null;
+        requiredDate: string | null;
+        requiredTime: string;
+        priority: string;
+        reason: string;
+        targetQuantity: number;
+        status: string;
+    };
+    issuance: {
+        issuanceNumber: string;
+        issuedBy: string;
+        issuedAt: string | null;
+        status: string;
+        materials: Array<{
+            itemName: string;
+            lotCode: string;
+            requiredQuantity: number;
+            quantityUsed: number;
+            uomAbbr: string;
+            unitCost: number;
+            verifiedByScan: boolean;
+        }>;
+    };
+    production: {
+        assignedCook: string;
+        startedAt: string | null;
+        completedDate: string | null;
+        stages: Array<{
+            stage: string;
+            endTime: string;
+            completedBy: string;
+            notes: string;
+        }>;
+        activities: Array<{
+            timestamp: string;
+            title: string;
+            actor: string;
+        }>;
+    };
+    packaging: {
+        packagedBy: string;
+        packagedAt: string | null;
+        finalQuantity: number;
+        yieldPercentage: number;
+        expiryDate: string | null;
+        fgLotCode: string;
+        fgLotStatus: string;
+    };
+    qa: {
+        inspectionNumber: string;
+        inspectorName: string;
+        inspectionDate: string | null;
+        status: string;
+        totalReceivedQuantity: number;
+        totalAcceptedQuantity: number;
+        totalRejectedQuantity: number;
+        acceptedReason: string;
+        rejectedReason: string;
+        remarks: string;
+        lossReportNumber: string | null;
+    } | null;
+    stockIn: {
+        postedAt: string | null;
+        postedBy: string;
+        locationName: string;
+        quantity: number;
+        fgLotCode: string;
+    } | null;
+}
+
+export async function getBatchLifecycleSummary(idInput: string | number) {
+    await requireModule("Production & Quality");
+    return read(async () => {
+        const id = positiveId(idInput);
+        const batch = await prisma.productionBatches.findUnique({
+            where: { BatchId: id },
+            include: {
+                FinishedProducts: { include: { Items: true } },
+                Recipes: { include: { UnitOfMeasures: true } },
+                InventoryLots: { include: { Locations: true } },
+                ProductionRequests: {
+                    include: {
+                        MaterialIssuances: {
+                            include: { MaterialIssuanceScans: true },
+                            orderBy: { IssuanceId: "desc" },
+                        },
+                    },
+                },
+                BatchConsumptions: {
+                    include: {
+                        Items: true,
+                        UnitOfMeasures: true,
+                        InventoryLots: true,
+                    },
+                },
+            },
+        });
+        if (!batch) {
+            return refuse("Batch not found.");
+        }
+
+        const [inspection, stockLedger] = await Promise.all([
+            prisma.qualityInspections.findFirst({
+                where: { ReferenceType: "ProductionBatch", ReferenceId: id },
+                orderBy: { InspectionId: "desc" },
+            }),
+            prisma.stockLedgers.findFirst({
+                where: {
+                    ReferenceType: "ProductionBatch",
+                    ReferenceId: { in: [batch.BatchNumber, String(id)] },
+                    MovementType: { in: ["IN", "PRODUCTION_FG_STOCKIN"] },
+                },
+                include: { Locations: true },
+                orderBy: { LedgerId: "desc" },
+            }),
+        ]);
+
+        const lines = String(batch.Notes || "").split(/\r?\n/);
+        const stages: BatchLifecycleSummaryData["production"]["stages"] = [];
+        const activities: BatchLifecycleSummaryData["production"]["activities"] = [];
+        for (const line of lines) {
+            const stageMatch = line.match(/^\[STAGE:([^|\]]+)\|END:([^|\]]+)\|BY:([^|\]]+)(?:\|NOTES:([^\]]*))?\]$/);
+            if (stageMatch) {
+                stages.push({
+                    stage: stageMatch[1].trim(),
+                    endTime: stageMatch[2].trim(),
+                    completedBy: stageMatch[3].trim(),
+                    notes: (stageMatch[4] || "").trim(),
+                });
+                continue;
+            }
+            const actMatch = line.match(/^\[ACTIVITY:([^|\]]+)\|TITLE:([^|\]]+)\|ACTOR:([^\]]+)\]$/);
+            if (actMatch) {
+                activities.push({
+                    timestamp: actMatch[1].trim(),
+                    title: actMatch[2].trim(),
+                    actor: actMatch[3].trim(),
+                });
+            }
+        }
+
+        const prodReq = batch.ProductionRequests;
+        const latestIssuance = prodReq?.MaterialIssuances?.find((i) => i.Status === "Issued")
+            ?? prodReq?.MaterialIssuances?.[0]
+            ?? null;
+        const verifiedLotIds = new Set(
+            (latestIssuance?.MaterialIssuanceScans ?? [])
+                .filter((s) => s.IsVerified)
+                .map((s) => s.LotId)
+        );
+
+        let qaNotesParsed: any = {};
+        if (inspection?.OverallNotes) {
+            try {
+                qaNotesParsed = JSON.parse(inspection.OverallNotes);
+            }
+            catch {
+                qaNotesParsed = { remarks: inspection.OverallNotes };
+            }
+        }
+
+        const yieldUom = batch.Recipes?.UnitOfMeasures?.Abbreviation ?? "units";
+        const data: BatchLifecycleSummaryData = {
+            batchId: batch.BatchId,
+            batchNumber: batch.BatchNumber,
+            status: batch.Status,
+            currentStage: batch.CurrentStage || batch.Stage,
+            productName: batch.FinishedProducts?.Items?.ItemName ?? "",
+            productCode: batch.FinishedProducts?.Items?.ItemCode ?? "",
+            variant: batch.FinishedProducts?.Variant ?? "Standard",
+            sku: batch.FinishedProducts?.Sku ?? "",
+            recipeName: batch.Recipes?.RecipeName ?? "",
+            yieldUom,
+            request: {
+                prodReqId: prodReq?.ProdReqId ?? null,
+                reqNumber: prodReq?.ReqNumber ?? "—",
+                requestedBy: prodReq?.RequestedBy ?? "—",
+                createdAt: prodReq?.CreatedAt?.toISOString() ?? null,
+                approvedBy: prodReq?.ApprovedBy ?? "—",
+                approvedAt: prodReq?.ApprovedAt?.toISOString() ?? null,
+                requiredDate: prodReq?.RequiredDate?.toISOString() ?? null,
+                requiredTime: prodReq?.RequiredTime ?? "",
+                priority: prodReq?.Priority ?? "Medium",
+                reason: prodReq?.Reason ?? "",
+                targetQuantity: Number(prodReq?.Quantity ?? batch.EstimatedQuantity),
+                status: prodReq?.Status ?? batch.Status,
+            },
+            issuance: {
+                issuanceNumber: latestIssuance?.IssuanceNumber ?? "—",
+                issuedBy: latestIssuance?.IssuedBy ?? "—",
+                issuedAt: latestIssuance?.IssuedAt?.toISOString() ?? null,
+                status: latestIssuance?.Status ?? "—",
+                materials: (batch.BatchConsumptions ?? []).map((c) => ({
+                    itemName: c.Items?.ItemName ?? "",
+                    lotCode: c.InventoryLots?.LotCode ?? "—",
+                    requiredQuantity: Number(c.RequiredQuantity),
+                    quantityUsed: Number(c.QuantityUsed),
+                    uomAbbr: c.UnitOfMeasures?.Abbreviation ?? "",
+                    unitCost: Number(c.UnitCost),
+                    verifiedByScan: c.LotId ? verifiedLotIds.has(c.LotId) : false,
+                })),
+            },
+            production: {
+                assignedCook: batch.AssignedCook || "—",
+                startedAt: batch.StartedAt?.toISOString() ?? batch.ProductionDate?.toISOString() ?? null,
+                completedDate: batch.CompletedDate?.toISOString() ?? null,
+                stages,
+                activities,
+            },
+            packaging: {
+                packagedBy: batch.PackagedBy ?? "—",
+                packagedAt: batch.PackagedAt?.toISOString() ?? null,
+                finalQuantity: Number(batch.FinalQuantity ?? batch.ActualQuantity ?? 0),
+                yieldPercentage: Number(batch.YieldPercentage ?? 0),
+                expiryDate: batch.ExpiryDate?.toISOString() ?? null,
+                fgLotCode: batch.InventoryLots?.LotCode ?? "—",
+                fgLotStatus: batch.InventoryLots?.Status ?? "—",
+            },
+            qa: inspection
+                ? {
+                    inspectionNumber: inspection.InspectionNumber,
+                    inspectorName: inspection.InspectorName || inspection.InspectorId || "—",
+                    inspectionDate: inspection.InspectionDate?.toISOString() ?? null,
+                    status: inspection.Status,
+                    totalReceivedQuantity: Number(inspection.TotalReceivedQuantity),
+                    totalAcceptedQuantity: Number(inspection.TotalAcceptedQuantity),
+                    totalRejectedQuantity: Number(inspection.TotalRejectedQuantity),
+                    acceptedReason: qaNotesParsed.acceptedReason || "",
+                    rejectedReason: qaNotesParsed.rejectedReason || "",
+                    remarks: qaNotesParsed.remarks || "",
+                    lossReportNumber: qaNotesParsed.lossReportNumber || null,
+                }
+                : null,
+            stockIn: stockLedger
+                ? {
+                    postedAt: stockLedger.PostedAt?.toISOString() ?? null,
+                    postedBy: stockLedger.UserName || stockLedger.UserId || "—",
+                    locationName: stockLedger.Locations?.LocationName ?? batch.InventoryLots?.Locations?.LocationName ?? "—",
+                    quantity: Number(stockLedger.Quantity),
+                    fgLotCode: batch.InventoryLots?.LotCode ?? "—",
+                }
+                : null,
+        };
+
+        return resourceResult({ success: true, data });
+    });
+}

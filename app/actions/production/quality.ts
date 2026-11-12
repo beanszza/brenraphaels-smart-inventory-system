@@ -197,6 +197,20 @@ export async function reviewProductionQa(body: any = {}) {
                     },
                 });
             }
+            // 6. Sync Finished Goods InventoryLot status with QA outcome
+            if (batch.FgLotId) {
+                await tx.inventoryLots.update({
+                    where: { LotId: batch.FgLotId },
+                    data: acceptedQuantity === 0
+                        ? {
+                            Status: "Rejected",
+                            HoldReason: rejectedReason || "Rejected during QA inspection",
+                        }
+                        : {
+                            HoldReason: "Cleared QA — Pending Stock-In",
+                        },
+                });
+            }
             return { updatedBatch, inspection, lossReportNumber };
         })();
         return { result: resourceResult({

@@ -84,6 +84,7 @@ export async function packageBatch(idInput: string | number, body: any = {}) {
                     ItemId: batch.FinishedProducts?.ItemId || batch.ProductId,
                     LocationId: locationId,
                     SourceType: "Production",
+                    ProductionOrderId: batch.BatchId,
                     ReceivedDate: now,
                     ManufactureDate: packageDate,
                     ExpiryDate: expiryDate,

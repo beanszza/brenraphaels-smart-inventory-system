@@ -20,6 +20,7 @@ vi.mock("@/app/actions/production/product-detail", () => ({ updateFinishedProduc
 vi.mock("@/app/actions/production/lookups", () => ({ listItems: read }));
 vi.mock("@/app/actions/production/batch-add-to-inventory", () => ({ commitBatchInventory: vi.fn() }));
 vi.mock("@/components/production/ProductionRequestModal", () => ({ default: () => null, formatTimeTo12Hour: vi.fn() }));
+vi.mock("@/components/production/BatchLifecycleSummaryModal", () => ({ default: () => null }));
 vi.mock("@/components/production/MaterialIssuanceModal", () => ({ default: () => null }));
 vi.mock("@/components/production/ProductionBatchDetailView", () => ({ default: () => null }));
 vi.mock("@/components/production/ProductionImage", () => ({ ProductionImage: () => null }));
@@ -55,4 +56,20 @@ it.each([
   expect(html).toContain("No ");
   expect(html).not.toContain("Loading Production");
   expect(read).not.toHaveBeenCalled();
+});
+
+it("displays Batch Number for In Progress / Completed requests and omits min-h-[280px]", () => {
+  const row = {
+    prodReqId: 2,
+    reqNumber: "PRQ-2026-0002",
+    productName: "Ube Jam Havanero",
+    status: "Completed",
+    quantity: 30,
+    priority: "Medium",
+    recipeName: "Ube Halaya v1",
+    batches: [{ batchId: 10, batchNumber: "BTH-UBEJAM-20261112-0001", status: "Stocked In", stage: "Completed", currentStage: "Completed", estimatedQuantity: 30, actualQuantity: 30, productionDate: null, startedAt: null, completedDate: null }],
+  } as ProductionRequestEntity;
+  const html = renderToStaticMarkup(<ProductionRequestsTab initialRows={[row]} currentUser="staff" />);
+  expect(html).toContain("BTH-UBEJAM-20261112-0001");
+  expect(html).not.toContain("min-h-[280px]");
 });

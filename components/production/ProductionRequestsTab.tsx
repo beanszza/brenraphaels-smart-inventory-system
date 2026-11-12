@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { ProductionRequestEntity } from "./types";
 import ProductionRequestModal, { formatTimeTo12Hour } from "./ProductionRequestModal";
 import PrSummaryModal from "./PrSummaryModal";
+import BatchLifecycleSummaryModal from "./BatchLifecycleSummaryModal";
 import { filterProductionRequests } from "@/lib/production/filters";
 
 const STATUS_TABS = [
@@ -84,6 +85,7 @@ export default function ProductionRequestsTab({
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedRequest, setSelectedRequest] = useState<ProductionRequestEntity | null>(null);
   const [prSummaryData, setPrSummaryData] = useState<any | null>(null);
+  const [summaryBatchId, setSummaryBatchId] = useState<number | null>(null);
   const [adminActionModal, setAdminActionModal] = useState<{
     open: boolean;
     type: "approve" | "reject";
@@ -155,6 +157,15 @@ export default function ProductionRequestsTab({
   };
 
   const handleViewRequest = (req: ProductionRequestEntity) => {
+    const isCompletedRow =
+      req.status === "Completed" ||
+      req.status === "For Stock-in" ||
+      req.status === "Stocked In";
+    const batchId = req.batches?.[0]?.batchId;
+    if (isCompletedRow && batchId) {
+      setSummaryBatchId(batchId);
+      return;
+    }
     setSelectedRequest(req);
     setIsModalOpen(true);
   };
@@ -313,11 +324,17 @@ export default function ProductionRequestsTab({
 
       {/* Requests Table */}
       <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
-        <div className="overflow-x-auto min-h-[280px]">
+        <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-muted/40 border-b border-border">
               <tr>
-                <th className="py-3 px-4 font-semibold text-muted-foreground whitespace-nowrap">Request Number</th>
+                <th className="py-3 px-4 font-semibold text-muted-foreground whitespace-nowrap">
+                  {activeTab === "In Progress" || activeTab === "Completed"
+                    ? "Batch Number"
+                    : activeTab === "All"
+                    ? "Request / Batch No."
+                    : "Request Number"}
+                </th>
                 <th className="py-3 px-4 font-semibold text-muted-foreground">Product</th>
                 <th className="py-3 px-4 font-semibold text-muted-foreground">Variant</th>
                 <th className="py-3 px-4 font-semibold text-muted-foreground">Recipe</th>
@@ -368,9 +385,11 @@ export default function ProductionRequestsTab({
                         isHigh ? "bg-muted/15 border-l-2 border-l-foreground" : ""
                       }`}
                     >
-                      {/* Request Number (No #, No red dot) */}
+                      {/* Request / Batch Number */}
                       <td className="py-3.5 px-4 font-mono font-bold text-foreground whitespace-nowrap">
-                        {req.reqNumber}
+                        {(isInProd || isCompleted) && req.batches?.[0]?.batchNumber
+                          ? req.batches[0].batchNumber
+                          : req.reqNumber}
                       </td>
 
                       {/* Product (Product name only) */}
@@ -438,12 +457,26 @@ export default function ProductionRequestsTab({
                                   type="button"
                                   onClick={() => {
                                     setOpenDropdownId(null);
-                                    handleViewRequest(req);
+                                    setSelectedRequest(req);
+                                    setIsModalOpen(true);
                                   }}
                                   className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
                                 >
                                   View Details
                                 </button>
+
+                                {req.batches?.[0]?.batchId && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenDropdownId(null);
+                                      setSummaryBatchId(req.batches[0].batchId);
+                                    }}
+                                    className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border"
+                                  >
+                                    Batch Summary &amp; PDF
+                                  </button>
+                                )}
 
                                 {/* Issue Materials shortcut for IMS Manager on Approved */}
                                 {isImsManager && req.status === "Approved" && onNavigateToIssuance && (
@@ -559,6 +592,13 @@ export default function ProductionRequestsTab({
         open={Boolean(prSummaryData)}
         onClose={() => setPrSummaryData(null)}
         prData={prSummaryData}
+      />
+
+      {/* Batch Lifecycle Summary & PDF Modal */}
+      <BatchLifecycleSummaryModal
+        open={Boolean(summaryBatchId)}
+        onClose={() => setSummaryBatchId(null)}
+        batchId={summaryBatchId}
       />
 
       {/* Admin Approve / Reject Confirmation Modal */}

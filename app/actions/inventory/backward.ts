@@ -14,15 +14,27 @@ export async function traceBackward(query = "") {
       return resourceResult({ success: false, message: "batchId query param is required." });
     }
 
-    // Support both numeric ID and batch number string
+    // Support numeric BatchId, BatchNumber string, or Finished Goods LotCode
     const numericId = parseInt(batchId, 10);
     const batch = await prisma.productionBatches.findFirst({
       where: isNaN(numericId)
-        ? { BatchNumber: batchId }
-        : { OR: [{ BatchId: numericId }, { BatchNumber: batchId }] },
+        ? {
+            OR: [
+              { BatchNumber: batchId },
+              { InventoryLots: { LotCode: batchId } },
+            ],
+          }
+        : {
+            OR: [
+              { BatchId: numericId },
+              { BatchNumber: batchId },
+              { InventoryLots: { LotCode: batchId } },
+            ],
+          },
       include: {
         FinishedProducts: { include: { Items: true } },
         Recipes: true,
+        InventoryLots: true,
         BatchConsumptions: {
           include: {
             Items: { include: { Category: true } },
@@ -36,30 +48,44 @@ export async function traceBackward(query = "") {
     });
 
     if (!batch) {
-      return resourceResult({ success: false, message: `Batch "${batchId}" not found.` });
+      return resourceResult({ success: false, message: `Batch or FG lot "${batchId}" not found.` });
     }
+
+    const ingredientLots = batch.BatchConsumptions.map((bc) => ({
+      consumptionId: bc.BatchConsumptionId,
+      itemId: bc.ItemId,
+      itemName: bc.Items?.ItemName ?? "",
+      categoryName: bc.Items?.Category?.CategoryName ?? "",
+      requiredQuantity: Number(bc.RequiredQuantity),
+      quantityUsed: Number(bc.QuantityUsed),
+      uomAbbr: bc.UnitOfMeasures?.Abbreviation ?? "",
+      lotId: bc.LotId ?? null,
+      lotCode: bc.InventoryLots?.LotCode ?? null,
+      supplierName: bc.InventoryLots?.Suppliers?.CompanyName ?? "",
+      locationName: bc.InventoryLots?.Locations?.LocationName ?? "",
+      receivedDate: bc.InventoryLots?.ReceivedDate?.toISOString() ?? null,
+      unitCost: Number(bc.UnitCost),
+    }));
 
     const data = {
       batchId: batch.BatchId,
       batchNumber: batch.BatchNumber,
+      fgLotCode: batch.InventoryLots?.LotCode ?? null,
       productName: batch.FinishedProducts?.Items?.ItemName ?? "",
       recipeName: batch.Recipes?.RecipeName ?? "",
       status: batch.Status,
       productionDate: batch.ProductionDate?.toISOString() ?? null,
-      ingredients: batch.BatchConsumptions.map((bc) => ({
-        consumptionId: bc.BatchConsumptionId,
-        itemId: bc.ItemId,
-        itemName: bc.Items?.ItemName ?? "",
-        categoryName: bc.Items?.Category?.CategoryName ?? "",
-        requiredQuantity: Number(bc.RequiredQuantity),
-        quantityUsed: Number(bc.QuantityUsed),
-        uomAbbr: bc.UnitOfMeasures?.Abbreviation ?? "",
-        lotId: bc.LotId ?? null,
-        lotCode: bc.InventoryLots?.LotCode ?? null,
-        supplierName: bc.InventoryLots?.Suppliers?.CompanyName ?? "",
-        locationName: bc.InventoryLots?.Locations?.LocationName ?? "",
-        unitCost: Number(bc.UnitCost),
-      })),
+      ingredients: ingredientLots,
+      producedInBatches: [
+        {
+          batchId: batch.BatchId,
+          batchNumber: batch.BatchNumber,
+          recipeName: batch.Recipes?.RecipeName ?? "",
+          productionDate: batch.ProductionDate?.toISOString() ?? null,
+          status: batch.Status,
+          ingredientLots,
+        },
+      ],
     };
 
     return resourceResult({ success: true, data });

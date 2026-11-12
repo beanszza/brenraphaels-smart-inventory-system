@@ -29,6 +29,7 @@ export async function traceForward(query = "") {
               include: {
                 FinishedProducts: { include: { Items: true } },
                 Recipes: true,
+                InventoryLots: true,
               },
             },
           },
@@ -54,14 +55,31 @@ export async function traceForward(query = "") {
       quantityRemaining: Number(lot.QuantityRemaining),
       status: lot.Status,
       grnNumber: lot.GoodsReceiptItems?.[0]?.GoodsReceipts?.GrnNumber ?? null,
-      usedInBatches: lot.BatchConsumptions.map((bc) => ({
-        batchId: bc.BatchId,
-        batchNumber: bc.ProductionBatches?.BatchNumber ?? "",
-        productName: bc.ProductionBatches?.FinishedProducts?.Items?.ItemName ?? "",
-        recipeName: bc.ProductionBatches?.Recipes?.RecipeName ?? "",
-        quantityUsed: Number(bc.QuantityUsed),
-        status: bc.ProductionBatches?.Status ?? "",
-      })),
+      usedInBatches: lot.BatchConsumptions.map((bc) => {
+        const batch = bc.ProductionBatches;
+        const fgLot = batch?.InventoryLots;
+        const productName = batch?.FinishedProducts?.Items?.ItemName ?? "";
+        return {
+          batchId: bc.BatchId,
+          batchNumber: batch?.BatchNumber ?? "",
+          productName,
+          recipeName: batch?.Recipes?.RecipeName ?? "",
+          productionDate: batch?.ProductionDate?.toISOString() ?? null,
+          quantityUsed: Number(bc.QuantityUsed),
+          status: batch?.Status ?? "",
+          fgLots: fgLot
+            ? [
+                {
+                  fgLotCode: fgLot.LotCode,
+                  productName,
+                  expiryDate: fgLot.ExpiryDate ? fgLot.ExpiryDate.toISOString() : null,
+                  status: fgLot.Status,
+                  shipments: [],
+                },
+              ]
+            : [],
+        };
+      }),
     };
 
     return resourceResult({ success: true, data });
