@@ -28,6 +28,7 @@ import { ScheduleTransferModal } from "./ScheduleTransferModal";
 import { DispatchTransferModal } from "./DispatchTransferModal";
 import { STRActionModal } from "./STRActionModal";
 import Pagination from "@/components/Pagination";
+import { useIsAdmin } from "@/context/StaffContext";
 
 const STATUS_TABS = [
   "All",
@@ -42,11 +43,18 @@ const STATUS_TABS = [
 
 export default function StockTransferModule({ requests, metrics, locations, activeMainTab }: StockTransferScreen & { activeMainTab: "transfers" | "locations" }) {
   const router = useRouter();
+  const isAdmin = useIsAdmin();
   const [loading, startTransition] = useTransition();
   const refreshAll = () => startTransition(() => router.refresh());
 
   // Status Filter within Transfers tab (can be "Requests" for Admin or standard statuses)
   const [activeStatusTab, setActiveStatusTab] = useState<string>("All");
+
+  React.useEffect(() => {
+    if (!isAdmin && activeStatusTab === "Requests") {
+      setActiveStatusTab("All");
+    }
+  }, [isAdmin, activeStatusTab]);
 
   // Search & Pagination
   const [search, setSearch] = useState("");
@@ -255,32 +263,34 @@ export default function StockTransferModule({ requests, metrics, locations, acti
           {/* Sub-status Tabs Row (Admin Requests tab + Status Tabs) */}
           <div className="border-b border-border overflow-x-auto pb-2">
             <div className="flex items-center gap-1.5 min-w-max">
-              {/* Admin Requests Tab (Identical to Orders & Procurement PRTab!) */}
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveStatusTab("Requests");
-                  setPage(1);
-                }}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeStatusTab === "Requests"
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <span>Requests</span>
-                {statusCounts.Requests > 0 && (
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                      activeStatusTab === "Requests"
-                        ? "bg-background text-foreground"
-                        : "bg-foreground/20 text-foreground"
-                    }`}
-                  >
-                    {statusCounts.Requests}
-                  </span>
-                )}
-              </button>
+              {/* Admin Requests Tab (Visible ONLY to Admin) */}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveStatusTab("Requests");
+                    setPage(1);
+                  }}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeStatusTab === "Requests"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <span>Requests</span>
+                  {statusCounts.Requests > 0 && (
+                    <span
+                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                        activeStatusTab === "Requests"
+                          ? "bg-background text-foreground"
+                          : "bg-foreground/20 text-foreground"
+                      }`}
+                    >
+                      {statusCounts.Requests}
+                    </span>
+                  )}
+                </button>
+              )}
 
               {/* Standard Status Tabs */}
               {STATUS_TABS.map((tab) => {
@@ -323,6 +333,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
           <STRTable
             requests={paginatedRequests}
             loading={loading}
+            isAdmin={isAdmin}
             onView={(req) => setSelectedSTRForDetails(req)}
             onApprove={(req) => setStrAction({ request: req, type: "approve" })}
             onReject={(req) => setStrAction({ request: req, type: "reject" })}
@@ -374,6 +385,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
       <STRDetailsModal
         request={selectedSTRForDetails}
         open={!!selectedSTRForDetails}
+        isAdmin={isAdmin}
         onClose={() => setSelectedSTRForDetails(null)}
         onApprove={(req) => setStrAction({ request: req, type: "approve" })}
         onReject={(req) => setStrAction({ request: req, type: "reject" })}

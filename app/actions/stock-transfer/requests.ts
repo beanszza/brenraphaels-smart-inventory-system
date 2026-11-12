@@ -183,6 +183,21 @@ export async function listRequests(query = "") {
   });
 }
 
+export async function getNextRequestNumber() {
+  await requireModule("Stock Transfer");
+  return read(async () => {
+    const year = new Date().getFullYear();
+    const seq = await prisma.documentSequences.findUnique({
+      where: { DocType_Year: { DocType: "STR", Year: year } },
+    });
+    const nextSeq = (seq ? Number(seq.LastNumber) : 0) + 1;
+    return resourceResult({
+      success: true,
+      data: `STR-${year}-${String(nextSeq).padStart(4, "0")}`,
+    });
+  });
+}
+
 export async function createRequest(body: any = {}) {
   await ensureUbeJamHavaneroStock();
   const staff = await requireModule("Stock Transfer");
@@ -275,7 +290,7 @@ export async function createRequest(body: any = {}) {
             const alloc = Math.min(rem, remainingToAllocate);
             suggestedLots.push({
               lotId: lot.LotId,
-              lotCode: lot.LotCode,
+              lotCode: (lot.LotCode || "").replace(/^FG-/i, ""),
               expiryDate: lot.ExpiryDate?.toISOString() || null,
               qty: alloc,
             });
@@ -296,14 +311,39 @@ export async function createRequest(body: any = {}) {
       })
     );
 
-    // Generate Request Number (STR-YYYY-XXXX)
+    // Generate Request Number (STR-YYYY-XXXX), avoiding duplications
     const year = new Date().getFullYear();
-    const seq = await tx.documentSequences.upsert({
-      where: { DocType_Year: { DocType: "STR", Year: year } },
-      update: { LastNumber: { increment: 1 } },
-      create: { DocType: "STR", Year: year, LastNumber: 1 },
-    });
-    const requestNumber = `STR-${year}-${String(seq.LastNumber).padStart(4, "0")}`;
+    let requestNumber = typeof body.requestNumber === "string" && body.requestNumber.trim().startsWith("STR-")
+      ? body.requestNumber.trim()
+      : null;
+
+    if (requestNumber) {
+      const exists = await tx.stockTransferRequests.findUnique({
+        where: { RequestNumber: requestNumber },
+      });
+      if (exists) {
+        requestNumber = null;
+      }
+    }
+
+    if (!requestNumber) {
+      const seq = await tx.documentSequences.upsert({
+        where: { DocType_Year: { DocType: "STR", Year: year } },
+        update: { LastNumber: { increment: 1 } },
+        create: { DocType: "STR", Year: year, LastNumber: 1 },
+      });
+      requestNumber = `STR-${year}-${String(seq.LastNumber).padStart(4, "0")}`;
+    } else {
+      const parts = requestNumber.split("-");
+      const numPart = parseInt(parts[2], 10);
+      if (!isNaN(numPart)) {
+        await tx.documentSequences.upsert({
+          where: { DocType_Year: { DocType: "STR", Year: year } },
+          update: { LastNumber: { set: Math.max(numPart, 1) } },
+          create: { DocType: "STR", Year: year, LastNumber: numPart },
+        });
+      }
+    }
 
     // Create record with items
     const createdRequest = await tx.stockTransferRequests.create({

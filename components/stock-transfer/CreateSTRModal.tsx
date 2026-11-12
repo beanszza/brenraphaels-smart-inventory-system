@@ -2,7 +2,7 @@
 import { toast } from "sonner";
 import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 import { Skeleton } from "@/components/ui/skeleton";
-import { createRequest } from "@/app/actions/stock-transfer/requests";
+import { createRequest, getNextRequestNumber } from "@/app/actions/stock-transfer/requests";
 import { suggestLots } from "@/app/actions/stock-transfer/lot-suggestions";
 import { listFinishedProducts } from "@/app/actions/stock-transfer/products";
 
@@ -11,17 +11,36 @@ import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Plus, Trash2, AlertCircle, Package } from "lucide-react";
+import { X, Plus, Trash2, AlertCircle, Package, Calendar } from "lucide-react";
 import { FinishedProductOption, LocationOption } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 
+export const STR_REASON_CHOICES = [
+  "Branch Replenishment",
+  "Safety Stock Buffer",
+  "Upcoming Promotion / Event",
+  "Emergency Restock",
+  "Seasonal Demand Preparation",
+  "Stock Rebalancing",
+  "Damaged / Expired Goods Replacement",
+  "Other",
+] as const;
+
 interface CreateSTRModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+}
+
+export interface AllocatedLotItem {
+  lotId: number;
+  lotCode: string;
+  quantityRemaining: number;
+  allocatedQuantity: number;
+  expiryDate: string;
 }
 
 interface NewItemRow {
@@ -31,6 +50,7 @@ interface NewItemRow {
   sku: string;
   requestedQuantity: number | "";
   availableQuantity: number;
+  allocatedLots: AllocatedLotItem[];
   lotCode?: string;
   lotExpiry?: string;
   isChecking: boolean;
@@ -44,13 +64,14 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
   const [locations, setLocations] = useState<LocationOption[]>([]);
 
   // Form Fields
-  const requestNumber = "Assigned on submission";
+  const [requestNumber, setRequestNumber] = useState<string>("");
   const [prerequisitesReady, setPrerequisitesReady] = useState(false);
   const [prerequisitesLoading, setPrerequisitesLoading] = useState(false);
   const [toLocationId, setToLocationId] = useState<string>("");
   const [requiredDate, setRequiredDate] = useState<string>("");
-  const [priority, setPriority] = useState<string>("Normal");
-  const [reason, setReason] = useState<string>("");
+  const [priority, setPriority] = useState<string>("Medium");
+  const [reasonChoice, setReasonChoice] = useState<string>("");
+  const [customReason, setCustomReason] = useState<string>("");
   const [items, setItems] = useState<NewItemRow[]>([
     {
       productId: "",
@@ -59,6 +80,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
       sku: "",
       requestedQuantity: 1,
       availableQuantity: 0,
+      allocatedLots: [],
       lotCode: "",
       lotExpiry: "",
       isChecking: false,
@@ -87,11 +109,15 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
     setPrerequisitesReady(false);
     setFormError(null);
     try {
-      const [prodRes, locRes] = await Promise.all([
+      const [reqNumRes, prodRes, locRes] = await Promise.all([
+        actionResponse(getNextRequestNumber()),
         actionResponse(listFinishedProducts()),
         actionResponse(listLocations()),
       ]);
 
+      if (reqNumRes.data?.success && reqNumRes.data?.data) {
+        setRequestNumber(reqNumRes.data.data);
+      }
       if (prodRes.data?.success) {
         setProducts(prodRes.data.data || []);
       }
@@ -117,15 +143,39 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
       const res = await actionResponse(suggestLots(`productId=${prodId}&quantity=${qty || 1}`));
       if (res.data?.success) {
         const totalAvail = res.data.data.totalAvailable || 0;
-        const suggestedLots = res.data.data.suggestedLots || [];
-        const firstLot = suggestedLots[0];
+        const suggestedLots: any[] = res.data.data.suggestedLots || [];
+
+        // Identify lots allocated according to FEFO order
+        const allocated: AllocatedLotItem[] = suggestedLots
+          .filter((l) => Number(l.allocatedQuantity) > 0)
+          .map((l) => ({
+            lotId: l.lotId,
+            lotCode: (l.lotCode || "").replace(/^FG-/i, ""),
+            quantityRemaining: l.quantityRemaining,
+            allocatedQuantity: l.allocatedQuantity,
+            expiryDate: l.expiryDate || "No Expiry",
+          }));
+
+        // If none allocated (e.g. qty is 0), fall back to first lot
+        const finalAllocated: AllocatedLotItem[] = allocated.length > 0
+          ? allocated
+          : (suggestedLots[0] ? [{
+              lotId: suggestedLots[0].lotId,
+              lotCode: (suggestedLots[0].lotCode || "").replace(/^FG-/i, ""),
+              quantityRemaining: suggestedLots[0].quantityRemaining,
+              allocatedQuantity: 0,
+              expiryDate: suggestedLots[0].expiryDate || "No Expiry",
+            }] : []);
+
+        const firstLot = finalAllocated[0];
 
         setItems((prev) => {
           const next = [...prev];
           if (next[index]) {
             next[index].availableQuantity = totalAvail;
+            next[index].allocatedLots = finalAllocated;
             next[index].lotCode = firstLot ? firstLot.lotCode : "No Lot";
-            next[index].lotExpiry = firstLot ? (firstLot.expiryDate ? firstLot.expiryDate : "No Expiry") : "No Lot";
+            next[index].lotExpiry = firstLot ? firstLot.expiryDate : "No Lot";
             next[index].isChecking = false;
           }
           return next;
@@ -187,6 +237,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
         sku: "",
         requestedQuantity: 1,
         availableQuantity: 0,
+        allocatedLots: [],
         lotCode: "",
         lotExpiry: "",
         isChecking: false,
@@ -216,6 +267,16 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
       return;
     }
 
+    if (!reasonChoice) {
+      setFormError("Please select a reason for the transfer request.");
+      return;
+    }
+
+    if (reasonChoice === "Other" && !customReason.trim()) {
+      setFormError("Please specify the reason for the transfer request.");
+      return;
+    }
+
     for (let i = 0; i < items.length; i++) {
       const row = items[i];
       if (!row.productId) {
@@ -230,11 +291,13 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
 
     setLoading(true);
     try {
+      const effectiveReason = reasonChoice === "Other" ? customReason.trim() : reasonChoice;
       const payload = {
+        requestNumber: requestNumber || undefined,
         toLocationId: parseInt(toLocationId, 10),
         requiredDate,
         priority,
-        reason: reason.trim() || null,
+        reason: effectiveReason,
         items: items.map((i) => ({
           productId: i.productId,
           requestedQuantity: Number(i.requestedQuantity),
@@ -278,9 +341,11 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
               <h2 className="text-xl font-bold text-foreground">
                 Create Stock Transfer Request
               </h2>
-              <span className="text-xs px-2.5 py-1 rounded-lg bg-muted border border-border text-foreground font-bold tracking-wide">
-                {requestNumber}
-              </span>
+              {requestNumber && (
+                <span className="text-xs px-2.5 py-1 rounded-lg bg-muted border border-border text-foreground font-mono font-bold tracking-wide">
+                  {requestNumber}
+                </span>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               Submit a transfer request to distribute finished goods to a branch
@@ -310,13 +375,13 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
 
           {/* Form Top Grid - Request No, Destination, Required Date, Priority */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            {/* Request Number (Auto-assigned) */}
+            {/* Request Number (Auto-assigned, visible immediately) */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-foreground">
                 Request Number
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-bold text-foreground select-all">
-                {requestNumber}
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-mono font-bold text-foreground select-all">
+                {requestNumber || "Generating..."}
               </div>
             </div>
 
@@ -339,19 +404,22 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
               </Select>
             </div>
 
-            {/* Required Fulfillment Date */}
+            {/* Required Fulfillment Date with far-right calendar icon */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-foreground">
                 Required Date <span className="text-destructive">*</span>
               </label>
-              <Input
-                type="date"
-                min={getTodayDateString()}
-                max={getMaxFutureDateString()}
-                value={requiredDate}
-                onChange={(e) => setRequiredDate(e.target.value)}
-                className="bg-card text-foreground border-border text-xs rounded-xl h-10"
-              />
+              <div className="relative">
+                <Input
+                  type="date"
+                  min={getTodayDateString()}
+                  max={getMaxFutureDateString()}
+                  value={requiredDate}
+                  onChange={(e) => setRequiredDate(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-border bg-card px-3.5 pr-10 text-xs text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                />
+                <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              </div>
             </div>
 
             {/* Priority */}
@@ -364,26 +432,54 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                   <SelectValue placeholder="Select Priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Normal">Normal</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
                   <SelectItem value="High">High</SelectItem>
-                  <SelectItem value="Urgent">Urgent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Reason / Remarks */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">
-              Reason / Purpose
-            </label>
-            <Textarea
-              rows={2}
-              placeholder="e.g. Branch replenishment, upcoming promotion stock, event catering..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="text-xs resize-none bg-background border-border rounded-xl p-3"
-            />
+            {/* Reason / Purpose Dropdown matching Destination Branch column width */}
+            <div className="space-y-1.5 sm:col-span-1">
+              <label className="text-xs font-semibold text-foreground">
+                Reason / Purpose <span className="text-destructive">*</span>
+              </label>
+              <Select
+                value={reasonChoice}
+                onValueChange={(val) => {
+                  setReasonChoice(val);
+                  setFormError(null);
+                }}
+              >
+                <SelectTrigger className="h-10 rounded-xl border border-border bg-card text-xs font-medium text-foreground">
+                  <SelectValue placeholder="Select Reason" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STR_REASON_CHOICES.map((choice) => (
+                    <SelectItem key={choice} value={choice}>
+                      {choice === "Other" ? "Other (Please specify)" : choice}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* If 'Other' chosen: Specify Reason field */}
+            {reasonChoice === "Other" && (
+              <div className="space-y-1.5 sm:col-span-3">
+                <label className="text-xs font-semibold text-foreground">
+                  Specify Reason <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Please specify reason for stock transfer..."
+                  value={customReason}
+                  onChange={(e) => setCustomReason(e.target.value)}
+                  className="h-10 rounded-xl border border-border bg-card text-xs text-foreground"
+                  maxLength={100}
+                />
+              </div>
+            )}
           </div>
 
           {/* Dynamic Items Table */}
@@ -443,7 +539,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                           </td>
 
                           <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                            {row.sku || "â€”"}
+                            {row.sku || "—"}
                           </td>
 
                           <td className="px-4 py-3 font-medium whitespace-nowrap">
@@ -463,37 +559,48 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                                 )}
                               </div>
                             ) : (
-                              <span className="text-muted-foreground">â€”</span>
+                              <span className="text-muted-foreground">—</span>
                             )}
                           </td>
 
-                          <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                          <td className="px-4 py-3 text-muted-foreground">
                             {row.productId ? (
                               row.isChecking ? (
                                 <Skeleton aria-label="Checking stock" className="h-4 w-16" />
-                              ) : row.lotCode && row.lotCode !== "No Lot" ? (
-                                <div className="space-y-0.5">
-                                  <span className="font-semibold text-foreground text-xs">
-                                    {row.lotExpiry && row.lotExpiry !== "No Expiry" && row.lotExpiry !== "N/A"
-                                      ? (() => {
-                                          try {
-                                            const d = new Date(row.lotExpiry);
-                                            return isNaN(d.getTime()) ? row.lotExpiry : d.toLocaleDateString();
-                                          } catch {
-                                            return row.lotExpiry;
-                                          }
-                                        })()
-                                      : "No Expiry"}
-                                  </span>
-                                  <div className="text-[10px] text-muted-foreground">
-                                    Lot: {row.lotCode}
-                                  </div>
+                              ) : row.allocatedLots && row.allocatedLots.length > 0 ? (
+                                <div className="space-y-1.5 py-0.5">
+                                  {row.allocatedLots.map((al, aIdx) => (
+                                    <div key={aIdx} className="space-y-0.5">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="font-semibold text-foreground text-xs">
+                                          {al.expiryDate && al.expiryDate !== "No Expiry" && al.expiryDate !== "N/A"
+                                            ? (() => {
+                                                try {
+                                                  const d = new Date(al.expiryDate);
+                                                  return isNaN(d.getTime()) ? al.expiryDate : d.toLocaleDateString();
+                                                } catch {
+                                                  return al.expiryDate;
+                                                }
+                                              })()
+                                            : "No Expiry"}
+                                        </span>
+                                        {al.allocatedQuantity > 0 && (
+                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-muted text-foreground border border-border">
+                                            {al.allocatedQuantity} pcs
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="text-[10px] text-muted-foreground font-mono">
+                                        Lot: {al.lotCode}
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
                               ) : (
                                 <span className="text-muted-foreground text-xs">No lot</span>
                               )
                             ) : (
-                              <span className="text-muted-foreground">â€”</span>
+                              <span className="text-muted-foreground text-xs">—</span>
                             )}
                           </td>
 

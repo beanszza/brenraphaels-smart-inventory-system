@@ -33,3 +33,17 @@ it("uses skeletons for pending table refreshes", () => {
 it("renders empty request state on the server", () => {
   expect(renderToStaticMarkup(<STRTable requests={[]} loading={false} onView={vi.fn()} />)).toContain("No stock transfers found");
 });
+
+it("does not render corrupted characters in STRTable cells", () => {
+  const row = {
+    requestId: 2,
+    requestNumber: "STR-100",
+    toLocationName: "Davao branch",
+    status: "Pending Approval",
+    items: [],
+  } as unknown as StockTransferRequest;
+  const html = renderToStaticMarkup(<STRTable requests={[row]} loading={false} onView={vi.fn()} />);
+  expect(html).not.toContain("â€”");
+  expect(html).not.toContain("â€\"");
+  expect(html).toContain("—");
+});

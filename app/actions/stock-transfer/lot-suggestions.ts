@@ -100,22 +100,30 @@ export async function suggestLots(query = "") {
       });
     }
 
-    // Fallback if no batch-linked lots exist and item only has one variant
+    // Fallback if no batch-linked lots exist: check lots for this ItemId
     if (lots.length === 0) {
-      const variantCount = await prisma.finishedProducts.count({
-        where: { ItemId: product.ItemId },
+      lots = await prisma.inventoryLots.findMany({
+        where: {
+          ItemId: product.ItemId,
+          ...(commissaryIds.length > 0 ? { LocationId: { in: commissaryIds } } : {}),
+          OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
+          Status: { in: ["Active", "Available"] },
+          QuantityRemaining: { gt: 0 },
+        },
+        orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
       });
-      if (variantCount <= 1) {
-        lots = await prisma.inventoryLots.findMany({
-          where: {
-            ItemId: product.ItemId,
-            OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
-            Status: { in: ["Active", "Available"] },
-            QuantityRemaining: { gt: 0 },
-          },
-          orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
-        });
-      }
+    }
+
+    if (lots.length === 0) {
+      lots = await prisma.inventoryLots.findMany({
+        where: {
+          ItemId: product.ItemId,
+          OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
+          Status: { in: ["Active", "Available"] },
+          QuantityRemaining: { gt: 0 },
+        },
+        orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
+      });
     }
 
     if (lots.length === 0) {
@@ -183,7 +191,7 @@ export async function suggestLots(query = "") {
 
       suggestedLots.push({
         lotId: lot.LotId,
-        lotCode: lot.LotCode,
+        lotCode: (lot.LotCode || "").replace(/^FG-/i, ""),
         quantityRemaining: remaining,
         allocatedQuantity: allocate,
         expiryDate: lot.ExpiryDate ? lot.ExpiryDate.toISOString().split("T")[0] : "No Expiry",

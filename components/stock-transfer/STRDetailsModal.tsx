@@ -10,6 +10,7 @@ import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 interface STRDetailsModalProps {
   request: StockTransferRequest | null;
   open: boolean;
+  isAdmin?: boolean;
   onClose: () => void;
   onApprove?: (req: StockTransferRequest) => void;
   onReject?: (req: StockTransferRequest) => void;
@@ -21,6 +22,7 @@ interface STRDetailsModalProps {
 export function STRDetailsModal({
   request,
   open,
+  isAdmin = false,
   onClose,
   onApprove,
   onReject,
@@ -210,19 +212,30 @@ export function STRDetailsModal({
                           <td className="px-5 py-4 text-right font-medium text-foreground">
                             {item.availableQuantity}
                           </td>
-                          <td className="px-5 py-4 whitespace-nowrap">
-                            {firstLot ? (
-                              <div className="space-y-0.5">
-                                <span className="font-semibold text-foreground text-xs">
-                                  {firstLot.expiryDate
-                                    ? new Date(firstLot.expiryDate).toLocaleDateString()
-                                    : "No Expiry"}
-                                </span>
-                                {firstLot.lotCode && (
-                                  <div className="text-[10px] text-muted-foreground">
-                                    Lot: {firstLot.lotCode}
+                          <td className="px-5 py-4">
+                            {item.suggestedLots && item.suggestedLots.length > 0 ? (
+                              <div className="space-y-1.5 py-0.5">
+                                {item.suggestedLots.map((sl, slIdx) => (
+                                  <div key={slIdx} className="space-y-0.5">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="font-semibold text-foreground text-xs">
+                                        {sl.expiryDate
+                                          ? new Date(sl.expiryDate).toLocaleDateString()
+                                          : "No Expiry"}
+                                      </span>
+                                      {sl.qty ? (
+                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-muted text-foreground border border-border">
+                                          {sl.qty} pcs
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                    {sl.lotCode && (
+                                      <div className="text-[10px] text-muted-foreground font-mono">
+                                        Lot: {sl.lotCode.replace(/^FG-/i, "")}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
+                                ))}
                               </div>
                             ) : (
                               <span className="text-muted-foreground text-xs">—</span>
@@ -309,7 +322,7 @@ export function STRDetailsModal({
 
           <div className="flex items-center gap-2.5">
             {/* Admin-only Approve / Reject */}
-            {request.status === "Pending Approval" && (
+            {isAdmin && request.status === "Pending Approval" && (
               <>
                 {onReject && (
                   <button

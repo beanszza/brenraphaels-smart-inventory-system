@@ -55,7 +55,7 @@ export interface StockTransferRequest {
   requestedBy: string;
   requestDate: string;
   requiredDate: string;
-  priority: "Normal" | "High" | "Urgent" | string;
+  priority: "Low" | "Medium" | "High" | "Normal" | "Urgent" | string;
   reason: string;
   status: STRStatus | string;
   adminNotes: string;

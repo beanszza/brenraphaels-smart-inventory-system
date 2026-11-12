@@ -15,6 +15,7 @@ import {
 interface STRTableProps {
   requests: StockTransferRequest[];
   loading: boolean;
+  isAdmin?: boolean;
   onView: (req: StockTransferRequest) => void;
   onApprove?: (req: StockTransferRequest) => void;
   onReject?: (req: StockTransferRequest) => void;
@@ -26,6 +27,7 @@ interface STRTableProps {
 export function STRTable({
   requests,
   loading,
+  isAdmin = false,
   onView,
   onApprove,
   onReject,
@@ -78,13 +80,13 @@ export function STRTable({
                 ? new Date(transferRef.scheduledDate).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
                 : req.requiredDate
                 ? new Date(req.requiredDate).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
-                : "â€”";
+                : "—";
 
               const courierDriver = transferRef?.courierName
                 ? transferRef.courierName
                 : transferRef?.driverName
                 ? transferRef.driverName
-                : "â€”";
+                : "—";
 
               return (
                 <tr
@@ -114,7 +116,7 @@ export function STRTable({
                         )}
                       </div>
                     ) : (
-                      <span className="text-muted-foreground font-mono">â€”</span>
+                      <span className="text-muted-foreground font-mono">—</span>
                     )}
                   </td>
 
@@ -125,7 +127,7 @@ export function STRTable({
                         {firstItem.variant}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground font-mono">â€”</span>
+                      <span className="text-muted-foreground font-mono">—</span>
                     )}
                   </td>
 
@@ -180,7 +182,7 @@ export function STRTable({
                         </DropdownMenuItem>
 
                         {/* Admin-only Approve / Reject */}
-                        {isPending && (
+                        {isAdmin && isPending && (
                           <>
                             {onApprove && (
                               <DropdownMenuItem
