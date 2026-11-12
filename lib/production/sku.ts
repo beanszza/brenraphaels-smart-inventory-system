@@ -157,10 +157,80 @@ export function getVariantAbbreviation(variantName: string): string {
 /**
  * Constructs a candidate variant SKU from product name and variant string.
  */
+export function getSkuProductCode(productName: string): string {
+  const clean = (productName || "").trim().toLowerCase();
+  if (clean.includes("ube") && (clean.includes("halaya") || clean.includes("jam"))) {
+    return "UBH";
+  }
+  const stopWords = new Set(["classic", "original", "havanero", "habanero", "extreme", "supreme", "smooth", "tidbits", "tidbit", "spicy", "sweet", "special"]);
+  const words = clean
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w && !stopWords.has(w));
+
+  if (words.length >= 3) {
+    return words.slice(0, 3).map((w) => w[0]).join("").toUpperCase();
+  }
+  if (words.length === 2) {
+    return (words[0].slice(0, 2) + words[1].slice(0, 1)).toUpperCase();
+  }
+  if (words.length === 1) {
+    return words[0].slice(0, 3).toUpperCase().padEnd(3, "X");
+  }
+  return "PRD";
+}
+
+export function getSkuVariantCode(productName: string, variantName: string): string {
+  const combined = `${productName || ""} ${variantName || ""}`.toLowerCase();
+  if (combined.includes("classic") || combined.includes("original")) return "CLS";
+  if (combined.includes("havanero") || combined.includes("habanero")) return "HAV";
+  if (combined.includes("extreme")) return "EXT";
+  if (combined.includes("supreme")) return "SUP";
+  if (combined.includes("smooth")) return "SMH";
+  if (combined.includes("tidbit")) return "TBT";
+  if (combined.includes("spicy")) return "SPC";
+  if (combined.includes("sweet")) return "SWT";
+  if (combined.includes("cheese")) return "CHS";
+  return "STD";
+}
+
+export function getSkuPackagingCode(variantName: string): string {
+  const lower = (variantName || "").toLowerCase();
+  if (lower.includes("glass")) return "GLS";
+  if (lower.includes("jar") || lower.includes("bottle")) return "JAR";
+  if (lower.includes("container") || lower.includes("tub")) return "CON";
+  if (lower.includes("pouch") || lower.includes("pack")) return "POU";
+  if (lower.includes("box")) return "BOX";
+  return "JAR";
+}
+
+export function getSkuWeightCode(variantName: string): string {
+  const clean = (variantName || "").trim();
+  const unitShortened = clean
+    .replace(/\bmillilit(?:er|re)s?\b/gi, "ML")
+    .replace(/\bkilograms?\b/gi, "KG")
+    .replace(/\bgrams?\b/gi, "G")
+    .replace(/\blit(?:er|re)s?\b/gi, "L")
+    .replace(/\bounces?\b/gi, "OZ")
+    .replace(/\bpounds?\b/gi, "LB");
+
+  const match = unitShortened.match(/(\d+(?:\.\d+)?)\s*(ML|KG|G|L|OZ|LB)\b/i);
+  if (match) {
+    return `${match[1]}${match[2].toUpperCase()}`;
+  }
+  return "STD";
+}
+
+/**
+ * Constructs a candidate variant SKU in [PRODUCT]-[VARIANT]-[PACKAGING]-[WEIGHT] format.
+ * e.g. ("Classic Ube Halaya", "12oz Glass Jar") -> "UBH-CLS-GLS-12OZ"
+ */
 export function buildBaseVariantSku(productName: string, variantName: string): string {
-  const pCode = getProductAbbreviation(productName);
-  const vCode = getVariantAbbreviation(variantName);
-  return `${pCode}-${vCode}`.toUpperCase();
+  const pCode = getSkuProductCode(productName);
+  const vCode = getSkuVariantCode(productName, variantName);
+  const pkgCode = getSkuPackagingCode(variantName);
+  const wCode = getSkuWeightCode(variantName);
+  return `${pCode}-${vCode}-${pkgCode}-${wCode}`.toUpperCase();
 }
 
 /**

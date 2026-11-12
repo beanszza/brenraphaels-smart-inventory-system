@@ -5,6 +5,7 @@ import { resourceResult } from "@/lib/resources/result";
 import { isFileId } from "@/lib/files";
 import { notifyApprovalRequested } from "@/lib/production/notify";
 import { mutate, refuse, positiveId, validateInput } from "@/lib/production/mutate";
+import { getLotItemAbbreviation } from "@/lib/inventory/lot-code";
 export async function packageBatch(idInput: string | number, body: any = {}) {
     const staff = await requireModule("Production & Quality");
     return mutate(staff, async (tx) => {
@@ -45,29 +46,23 @@ export async function packageBatch(idInput: string | number, body: any = {}) {
         if (batch.Status === "Rejected") {
             return refuse("Cannot package a rejected batch.");
         }
-        // Auto-generate Finished Goods Lot Number: [PROD_INITIALS]-[YYMMDD]-[DAILY_SEQ]
-        // Example: Calamansi Chili Sauce -> CCS-261008-01
+        // Auto-generate Finished Goods Lot Number: FG-[ITEM]-[YYMMDD]-[DAILY_SEQ]
+        // Example: Ube Jam Havanero -> FG-UJH-261112-01
         const productName = batch.FinishedProducts?.Items?.ItemName || "PROD";
-        const initials = productName
-            .split(/\s+/)
-            .map((w: string) => w[0])
-            .join("")
-            .toUpperCase()
-            .replace(/[^A-Z]/g, "")
-            .slice(0, 4) || "FG";
+        const itemAbbrev = getLotItemAbbreviation(productName);
         const now = new Date();
         const year = now.getFullYear();
         const yy = String(year).slice(-2);
         const mm = String(now.getMonth() + 1).padStart(2, "0");
         const dd = String(now.getDate()).padStart(2, "0");
         const yymmdd = `${yy}${mm}${dd}`;
-        const seqDocType = `FG_LOT_${initials}_${yymmdd}`;
+        const seqDocType = `FG_LOT_${itemAbbrev}_${yymmdd}`;
         const seq = await tx.documentSequences.upsert({
             where: { DocType_Year: { DocType: seqDocType, Year: year } },
             update: { LastNumber: { increment: 1 } },
             create: { DocType: seqDocType, Year: year, LastNumber: 1 },
         });
-        const fgLotCode = `${initials}-${yymmdd}-${String(seq.LastNumber).padStart(2, "0")}`;
+        const fgLotCode = `FG-${itemAbbrev}-${yymmdd}-${String(seq.LastNumber).padStart(2, "0")}`;
         const reqQty = Number(batch.ProductionRequests?.Quantity || batch.EstimatedQuantity);
         const yieldPercentage = reqQty > 0 ? (finalQuantity / reqQty) * 100 : 100;
         // Get location for Finished Goods lot creation (e.g. location 1 or system warehouse)

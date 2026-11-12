@@ -10,6 +10,7 @@ import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import NestedDialog from "./NestedDialog";
 import { GRN, StockIn } from "./types";
 import { downloadStockInLabelPdf } from "./downloadStockInLabelPdf";
+import { formatLotCode } from "@/lib/inventory/lot-code";
 
 interface Props {
   open: boolean;
@@ -90,12 +91,6 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
         : [];
 
       const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const dd = String(now.getDate()).padStart(2, "0");
-      const dateStr = `${yyyy}${mm}${dd}`;
-
-      const cleanGrn = (fullGrn.grnNumber || `${dateStr}`).replace(/^GRN-?/i, "");
       let seq = 1;
 
       const draftedLines: StockInLineDraft[] = (fullGrn.items || [])
@@ -103,13 +98,15 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
         .map((item) => {
           const invMatch = invList.find((i: any) => i.itemId === item.itemId);
           const currentStock = Number(invMatch?.currentStock ?? invMatch?.quantityOnHand ?? 0);
-          const generatedLot = `LOT-${cleanGrn}-${item.itemId}-${String(seq).padStart(2, "0")}`;
+          const categoryName = invMatch?.categoryName || item.categoryName || "Raw Material";
+          const generatedLot = formatLotCode(categoryName, item.itemName, now, seq);
           seq++;
 
           return {
             grnItemId: item.grnItemId,
             itemId: item.itemId,
             itemName: item.itemName || `Item #${item.itemId}`,
+            categoryName,
             purchaseUomId: item.purchaseUomId,
             purchaseUomName: item.purchaseUomName || "Unit",
             quantityToStock: Number(item.deliveredQuantity) || 0,
