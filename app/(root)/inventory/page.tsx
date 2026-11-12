@@ -2,6 +2,7 @@ import ViewInventory from "@/components/pages/ViewInventory";
 import { requireModule } from "@/lib/portal/staff";
 import { listInventory } from "@/app/actions/inventory/balances";
 import { listLots } from "@/app/actions/inventory/lots";
+import { migrateLegacySkusAndLots } from "@/lib/inventory/migrate-codes";
 import { inventoryPages } from "@/lib/inventory/screen-data";
 import { prisma } from "@/lib/prisma";
 import { decodeCategoryDescription } from "@/lib/resources-suppliers/category-status";
@@ -10,6 +11,7 @@ import type { LotItem } from "@/components/lots/types";
 
 export default async function InventoryPage() {
   await requireModule("Inventory");
+  await migrateLegacySkusAndLots();
 
   // Load categories, inventory, and lots in parallel
   const [inventory, lots, categories] = await Promise.all([
