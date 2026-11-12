@@ -11,7 +11,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { CheckCircle2, Package, AlertTriangle, ArrowLeft, RefreshCw, Clock } from "lucide-react";
+import { CheckCircle2, Package, AlertTriangle, ArrowLeft, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -556,9 +556,6 @@ export default function ProductionBatchDetailView({
             <span>Back to Active Batches</span>
           </Button>
           <div className="h-4 w-px bg-border hidden sm:block" />
-          <span className="text-sm font-semibold text-foreground">
-            {batch.batchNumber}
-          </span>
           <StatusBadge status={batch.status} />
           {batch.fgLotCode && (
             <span className="text-xs text-muted-foreground bg-muted px-2.5 py-0.5 rounded-md font-medium">
@@ -567,9 +564,9 @@ export default function ProductionBatchDetailView({
           )}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Reject Batch Button (strictly visible during Production cooking stages only, NOT packaging) */}
-          {isCookingPhase && !isAdmin && (
+        {/* Action Buttons */}
+        {isCookingPhase && !isAdmin && (
+          <div className="flex items-center gap-2 shrink-0">
             <Button
               type="button"
               variant="outline"
@@ -579,19 +576,8 @@ export default function ProductionBatchDetailView({
             >
               Reject Batch
             </Button>
-          )}
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => fetchBatchDetail(true)}
-            className="text-sm font-semibold text-foreground rounded-xl border-border hover:bg-muted px-3 h-9 cursor-pointer flex items-center gap-1.5"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Refresh</span>
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Main Header Card */}
@@ -607,8 +593,8 @@ export default function ProductionBatchDetailView({
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
           <div>
-            <span className="text-xs font-semibold text-muted-foreground block">Recipe</span>
-            <span className="text-sm font-semibold text-foreground">{batch.recipeName || "—"}</span>
+            <span className="text-xs font-semibold text-muted-foreground block">Batch No.</span>
+            <span className="text-sm font-semibold text-foreground">{batch.batchNumber}</span>
           </div>
           <div>
             <span className="text-xs font-semibold text-muted-foreground block">Target Output</span>
