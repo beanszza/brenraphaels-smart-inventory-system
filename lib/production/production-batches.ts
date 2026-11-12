@@ -1,4 +1,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Existing DTO helpers moved out of route exports. */
+export function productInitialsCode(itemName?: string | null): string {
+  const cleaned = String(itemName || "").trim();
+  if (!cleaned) return "PROD";
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    const initials = words
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 6);
+    if (initials) return initials;
+  }
+  return cleaned.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 6) || "PROD";
+}
+
+export function formatBatchNumber(batchNumber?: string | null, itemName?: string | null): string {
+  const raw = String(batchNumber || "");
+  if (!raw) return "";
+  const initials = productInitialsCode(itemName);
+  return raw.replace(/^BTH-FP\d+-(\d{8}-\d+)$/i, `BTH-${initials}-$1`);
+}
+
 export function mapBatch(b: any) {
   const product = b.FinishedProducts;
   const recipe = b.Recipes;
@@ -7,7 +30,7 @@ export function mapBatch(b: any) {
 
   return {
     batchId: b.BatchId,
-    batchNumber: b.BatchNumber,
+    batchNumber: formatBatchNumber(b.BatchNumber, itemName),
     prodReqId: b.ProdReqId,
     reqNumber: b.ProductionRequests?.ReqNumber ?? "",
     productId: b.ProductId,

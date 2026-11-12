@@ -5,6 +5,7 @@ import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { notifyBatchRequester } from "@/lib/production/notify";
 import { mutate, read, refuse, validateInput } from "@/lib/production/mutate";
+import { formatBatchNumber } from "@/lib/production/production-batches";
 export async function listProductionQa(query = "") {
     await requireModule("Production & Quality");
     return read(async () => {
@@ -41,7 +42,7 @@ export async function listProductionQa(query = "") {
         });
         const mapped = batches.map((b) => ({
             batchId: b.BatchId,
-            batchNumber: b.BatchNumber,
+            batchNumber: formatBatchNumber(b.BatchNumber, b.FinishedProducts?.Items?.ItemName),
             prodReqId: b.ProdReqId,
             reqNumber: b.ProductionRequests?.ReqNumber ?? "",
             requestedBy: b.ProductionRequests?.RequestedBy ?? "",

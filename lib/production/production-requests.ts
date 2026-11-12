@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Existing DTO helpers moved out of route exports. */
+import { formatBatchNumber } from "./production-batches";
+
 export function mapProductionRequest(r: any) {
   const product = r.FinishedProducts;
   const recipe = r.Recipes;
@@ -76,7 +78,7 @@ export function mapProductionRequest(r: any) {
     })),
     batches: (r.ProductionBatches ?? []).map((b: any) => ({
       batchId: b.BatchId,
-      batchNumber: b.BatchNumber,
+      batchNumber: formatBatchNumber(b.BatchNumber, itemName),
       status: b.Status,
       stage: b.CurrentStage || b.Stage,
       currentStage: b.CurrentStage || b.Stage,

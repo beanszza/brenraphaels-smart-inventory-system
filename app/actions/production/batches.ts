@@ -1,7 +1,7 @@
 "use server";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { prisma } from "@/lib/prisma";
-import { mapBatch, BATCH_INCLUDE } from "@/lib/production/production-batches";
+import { mapBatch, BATCH_INCLUDE, productInitialsCode } from "@/lib/production/production-batches";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, read, refuse, validateInput } from "@/lib/production/mutate";
@@ -70,9 +70,10 @@ export async function createBatch(body: any = {}) {
         if (prodReq.Status !== "Materials Issued") {
             return refuse(`Only requests with 'Materials Issued' status can be started. Current status: ${prodReq.Status}`);
         }
-        // Determine product code for batch number
-        const rawCode = prodReq.FinishedProducts?.Items?.ItemCode || prodReq.FinishedProducts?.Items?.ItemName || "PROD";
-        const productCode = rawCode.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 8);
+        // Determine product initials code for batch number (e.g. "Ube Jam Havanero" -> "UJH")
+        const productCode = productInitialsCode(
+            prodReq.FinishedProducts?.Items?.ItemName || prodReq.FinishedProducts?.Items?.ItemCode
+        );
         const now = new Date();
         const year = now.getFullYear();
         const dateStr = now.toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD

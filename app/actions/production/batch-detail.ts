@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, read, refuse, positiveId, validateInput } from "@/lib/production/mutate";
+import { formatBatchNumber } from "@/lib/production/production-batches";
 const BATCH_INCLUDE = {
     FinishedProducts: {
         include: { Items: true },
@@ -36,7 +37,7 @@ function mapBatch(b: any) {
     const prodReq = b.ProductionRequests;
     return {
         batchId: b.BatchId,
-        batchNumber: b.BatchNumber,
+        batchNumber: formatBatchNumber(b.BatchNumber, product?.Items?.ItemName),
         prodReqId: b.ProdReqId,
         reqNumber: prodReq?.ReqNumber ?? "",
         requestedBy: prodReq?.RequestedBy ?? "",
@@ -325,12 +326,13 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
         }
 
         const yieldUom = batch.Recipes?.UnitOfMeasures?.Abbreviation ?? "units";
+        const productName = batch.FinishedProducts?.Items?.ItemName ?? "";
         const data: BatchLifecycleSummaryData = {
             batchId: batch.BatchId,
-            batchNumber: batch.BatchNumber,
+            batchNumber: formatBatchNumber(batch.BatchNumber, productName),
             status: batch.Status,
             currentStage: batch.CurrentStage || batch.Stage,
-            productName: batch.FinishedProducts?.Items?.ItemName ?? "",
+            productName,
             productCode: batch.FinishedProducts?.Items?.ItemCode ?? "",
             variant: batch.FinishedProducts?.Variant ?? "Standard",
             sku: batch.FinishedProducts?.Sku ?? "",

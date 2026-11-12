@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { read } from "@/lib/inventory/mutate";
+import { formatBatchNumber } from "@/lib/production/production-batches";
 
 export async function traceBackward(query = "") {
   await requireModule("Inventory");
@@ -16,21 +17,16 @@ export async function traceBackward(query = "") {
 
     // Support numeric BatchId, BatchNumber string, or Finished Goods LotCode
     const numericId = parseInt(batchId, 10);
+    const suffixMatch = batchId.match(/^BTH-[A-Z0-9]+-(\d{8}-\d+)$/i);
+    const batchOrConditions: any[] = [
+      { BatchNumber: batchId },
+      { InventoryLots: { LotCode: batchId } },
+      ...(suffixMatch ? [{ BatchNumber: { endsWith: `-${suffixMatch[1]}` } }] : []),
+    ];
     const batch = await prisma.productionBatches.findFirst({
       where: isNaN(numericId)
-        ? {
-            OR: [
-              { BatchNumber: batchId },
-              { InventoryLots: { LotCode: batchId } },
-            ],
-          }
-        : {
-            OR: [
-              { BatchId: numericId },
-              { BatchNumber: batchId },
-              { InventoryLots: { LotCode: batchId } },
-            ],
-          },
+        ? { OR: batchOrConditions }
+        : { OR: [{ BatchId: numericId }, ...batchOrConditions] },
       include: {
         FinishedProducts: { include: { Items: true } },
         Recipes: true,
@@ -67,11 +63,13 @@ export async function traceBackward(query = "") {
       unitCost: Number(bc.UnitCost),
     }));
 
+    const productName = batch.FinishedProducts?.Items?.ItemName ?? "";
+    const formattedBatchNo = formatBatchNumber(batch.BatchNumber, productName);
     const data = {
       batchId: batch.BatchId,
-      batchNumber: batch.BatchNumber,
+      batchNumber: formattedBatchNo,
       fgLotCode: batch.InventoryLots?.LotCode ?? null,
-      productName: batch.FinishedProducts?.Items?.ItemName ?? "",
+      productName,
       recipeName: batch.Recipes?.RecipeName ?? "",
       status: batch.Status,
       productionDate: batch.ProductionDate?.toISOString() ?? null,
@@ -79,7 +77,7 @@ export async function traceBackward(query = "") {
       producedInBatches: [
         {
           batchId: batch.BatchId,
-          batchNumber: batch.BatchNumber,
+          batchNumber: formattedBatchNo,
           recipeName: batch.Recipes?.RecipeName ?? "",
           productionDate: batch.ProductionDate?.toISOString() ?? null,
           status: batch.Status,
