@@ -795,7 +795,9 @@ export default function MaterialIssuanceModal({
                     <th className="py-2.5 px-4 font-semibold text-muted-foreground">Supply No.</th>
                     <th className="py-2.5 px-4 font-semibold text-muted-foreground">Suggested Lot</th>
                     <th className="py-2.5 px-4 font-semibold text-muted-foreground text-right">Reserved Qty</th>
-                    <th className="py-2.5 px-4 font-semibold text-muted-foreground">Expiry Date</th>
+                    {issuance?.reservations?.some((r) => Boolean(r.expiryDate)) && (
+                      <th className="py-2.5 px-4 font-semibold text-muted-foreground">Expiry Date</th>
+                    )}
                     <th className="py-2.5 px-4 font-semibold text-muted-foreground text-center">Status</th>
                   </tr>
                 </thead>
@@ -834,9 +836,11 @@ export default function MaterialIssuanceModal({
                         </td>
 
                         {/* Expiry Date */}
-                        <td className="py-3 px-4 text-muted-foreground text-[11px] whitespace-nowrap">
-                          {res.expiryDate ? new Date(res.expiryDate).toLocaleDateString() : "—"}
-                        </td>
+                        {issuance?.reservations?.some((r) => Boolean(r.expiryDate)) && (
+                          <td className="py-3 px-4 text-muted-foreground text-[11px] whitespace-nowrap">
+                            {res.expiryDate ? new Date(res.expiryDate).toLocaleDateString() : "No Expiry"}
+                          </td>
+                        )}
 
                         {/* Status Column: Checkmark when verified, Pending Scan otherwise */}
                         <td className="py-3 px-4 text-center whitespace-nowrap">
@@ -851,7 +855,7 @@ export default function MaterialIssuanceModal({
                   })}
                   {(!issuance?.reservations || issuance.reservations.length === 0) && (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
+                      <td colSpan={issuance?.reservations?.some((r) => Boolean(r.expiryDate)) ? 6 : 5} className="py-8 text-center text-xs text-muted-foreground">
                         No material reservations recorded for this issuance.
                       </td>
                     </tr>

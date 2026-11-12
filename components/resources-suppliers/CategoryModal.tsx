@@ -16,6 +16,7 @@ interface CategoryModalProps {
     categoryName: string;
     description: string;
     isActive: boolean;
+    hasExpiry: boolean;
   }) => Promise<void> | void;
 }
 
@@ -38,6 +39,7 @@ function CategoryModalForm({
   const [categoryName, setCategoryName] = useState(editingCategory?.categoryName ?? "");
   const [description, setDescription] = useState(editingCategory?.description ?? "");
   const [isActive, setIsActive] = useState(editingCategory ? editingCategory.isActive !== false : true);
+  const [hasExpiry, setHasExpiry] = useState(editingCategory ? editingCategory.hasExpiry !== false : true);
   const [nameError, setNameError] = useState("");
   const [nameWarning, setNameWarning] = useState("");
   const [descError, setDescError] = useState("");
@@ -132,6 +134,7 @@ function CategoryModalForm({
         categoryName: categoryName.trim(),
         description: description.trim(),
         isActive,
+        hasExpiry,
       });
     } catch (err: any) {
       setSaveError(err instanceof Error ? err.message : "Unable to save category. Please try again.");
@@ -208,6 +211,30 @@ function CategoryModalForm({
           ) : descWarning ? (
             <p className="mt-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">{descWarning}</p>
           ) : null}
+        </div>
+
+        {/* Expiry Tracking Option */}
+        <div className="rounded-xl border border-border bg-muted/20 p-3.5">
+          <label
+            htmlFor="category-has-expiry"
+            className="flex items-start gap-2.5 cursor-pointer select-none"
+          >
+            <input
+              id="category-has-expiry"
+              type="checkbox"
+              checked={hasExpiry}
+              onChange={(e) => setHasExpiry(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-border accent-primary cursor-pointer"
+            />
+            <span className="space-y-0.5">
+              <span className="block text-xs font-semibold text-foreground">
+                This category has an expiry date
+              </span>
+              <span className="block text-[11px] text-muted-foreground leading-relaxed">
+                Changes only affect new Goods Receipts. Existing receipts and lots keep their recorded expiry.
+              </span>
+            </span>
+          </label>
         </div>
 
         {/* Status (Edit only) */}

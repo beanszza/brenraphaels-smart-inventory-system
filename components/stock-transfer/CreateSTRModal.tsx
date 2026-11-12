@@ -125,7 +125,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
           if (next[index]) {
             next[index].availableQuantity = totalAvail;
             next[index].lotCode = firstLot ? firstLot.lotCode : "No Lot";
-            next[index].lotExpiry = firstLot ? (firstLot.expiryDate ? firstLot.expiryDate : "N/A") : "N/A";
+            next[index].lotExpiry = firstLot ? (firstLot.expiryDate ? firstLot.expiryDate : "No Expiry") : "No Lot";
             next[index].isChecking = false;
           }
           return next;
@@ -471,23 +471,23 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                             {row.productId ? (
                               row.isChecking ? (
                                 <Skeleton aria-label="Checking stock" className="h-4 w-16" />
-                              ) : row.lotExpiry && row.lotExpiry !== "N/A" ? (
+                              ) : row.lotCode && row.lotCode !== "No Lot" ? (
                                 <div className="space-y-0.5">
                                   <span className="font-semibold text-foreground text-xs">
-                                    {(() => {
-                                      try {
-                                        const d = new Date(row.lotExpiry);
-                                        return isNaN(d.getTime()) ? row.lotExpiry : d.toLocaleDateString();
-                                      } catch {
-                                        return row.lotExpiry;
-                                      }
-                                    })()}
+                                    {row.lotExpiry && row.lotExpiry !== "No Expiry" && row.lotExpiry !== "N/A"
+                                      ? (() => {
+                                          try {
+                                            const d = new Date(row.lotExpiry);
+                                            return isNaN(d.getTime()) ? row.lotExpiry : d.toLocaleDateString();
+                                          } catch {
+                                            return row.lotExpiry;
+                                          }
+                                        })()
+                                      : "No Expiry"}
                                   </span>
-                                  {row.lotCode && row.lotCode !== "No Lot" && (
-                                    <div className="text-[10px] text-muted-foreground">
-                                      Lot: {row.lotCode}
-                                    </div>
-                                  )}
+                                  <div className="text-[10px] text-muted-foreground">
+                                    Lot: {row.lotCode}
+                                  </div>
                                 </div>
                               ) : (
                                 <span className="text-muted-foreground text-xs">No lot</span>

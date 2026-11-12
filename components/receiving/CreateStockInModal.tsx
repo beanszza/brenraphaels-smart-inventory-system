@@ -234,7 +234,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
               supplier: selectedGrn?.supplierName || "—",
               qty: line.quantityToStock,
               uom: line.purchaseUomName,
-              expiry: line.expiryDate || "N/A",
+              ...(line.expiryDate ? { expiry: line.expiryDate } : {}),
             });
             return (
               <div key={`qr-${line.itemId}-${idx}`}>
@@ -316,7 +316,9 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
                     <th className="px-4 py-4 text-right">Stock to Put In</th>
                     <th className="px-4 py-4 text-right">Current Stock</th>
                     <th className="px-4 py-4">Lot No.</th>
-                    <th className="px-4 py-4 text-center">Expiry Date</th>
+                    {lines.some((l) => Boolean(l.expiryDate)) && (
+                      <th className="px-4 py-4 text-center">Expiry Date</th>
+                    )}
                     <th className="px-4 py-4 text-center">QR Label</th>
                   </tr>
                 </thead>
@@ -341,15 +343,17 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
                       <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
                         {line.lotCode}
                       </td>
-                      <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
-                        {line.expiryDate
-                          ? new Date(line.expiryDate).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "2-digit",
-                              day: "2-digit",
-                            })
-                          : "—"}
-                      </td>
+                      {lines.some((l) => Boolean(l.expiryDate)) && (
+                        <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
+                          {line.expiryDate
+                            ? new Date(line.expiryDate).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                              })
+                            : "No Expiry"}
+                        </td>
+                      )}
                       <td className="px-4 py-4 text-center whitespace-nowrap">
                         <button
                           type="button"

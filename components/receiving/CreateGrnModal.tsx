@@ -37,6 +37,7 @@ interface ItemRow {
   itemId: number;
   itemName: string;
   categoryName: string;
+  hasExpiry: boolean;
   ordered: number;
   previous: number;
   declared: number;
@@ -49,6 +50,7 @@ interface QaItemRow {
   itemId: number;
   itemName: string;
   categoryName?: string;
+  hasExpiry?: boolean;
   lotId?: number;
   batchNumber?: number;
   totalBatches?: number;
@@ -72,13 +74,13 @@ const rawMaterialChecks = [
   { id: "documents", label: "COA, certificate, temperature, and storage requirements reviewed" },
 ];
 
-const toolAndSupplyChecks = [
+const nonExpiryChecks = [
   { id: "identity", label: "Item identity, model, size, and approved specification match" },
   { id: "quantity", label: "Quantity, unit of measure, and pack count verified" },
   { id: "condition", label: "Item is undamaged, clean, and fit for use" },
   { id: "packaging", label: "Packaging and seals are intact where applicable" },
   { id: "safety", label: "Safety, hygiene, and contact-use requirements checked" },
-  { id: "documents", label: "Certificate, warranty, expiry, or supplier document reviewed" },
+  { id: "documents", label: "Certificate, warranty, or supplier document reviewed" },
 ];
 
 const acceptanceReasons = [
@@ -126,7 +128,7 @@ export default function CreateGrnModal({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [previewGrnNo, setPreviewGrnNo] = useState<string>("GRN-Pending");
   const [notes, setNotes] = useState("");
-  const categoryCacheRef = useRef<Record<number, string> | null>(null);
+  const categoryCacheRef = useRef<Record<number, { categoryName: string; hasExpiry: boolean }> | null>(null);
 
   // Step 1: Receiving Check checkboxes
   const [verified, setVerified] = useState<Record<string, boolean>>({
@@ -223,7 +225,7 @@ export default function CreateGrnModal({
     }
   }, [open, initialDeliveryId]);
 
-  const getCategoryMap = async (): Promise<Record<number, string>> => {
+  const getCategoryMap = async (): Promise<Record<number, { categoryName: string; hasExpiry: boolean }>> => {
     if (categoryCacheRef.current) return categoryCacheRef.current;
     try {
       const itemsCatalogRes = await actionResponse(listItemChoices());
@@ -232,10 +234,13 @@ export default function CreateGrnModal({
         : Array.isArray(itemsCatalogRes.data?.data)
         ? itemsCatalogRes.data.data
         : [];
-      const map: Record<number, string> = {};
+      const map: Record<number, { categoryName: string; hasExpiry: boolean }> = {};
       catalogItems.forEach((catItem: any) => {
         if (catItem.itemId) {
-          map[catItem.itemId] = catItem.categoryName || "";
+          map[catItem.itemId] = {
+            categoryName: catItem.categoryName || "",
+            hasExpiry: catItem.categoryHasExpiry !== false,
+          };
         }
       });
       categoryCacheRef.current = map;
@@ -261,11 +266,17 @@ export default function CreateGrnModal({
       const rows: ItemRow[] = (deliveryResult.data?.data?.items || []).map((line: any) => {
         const po = poItems.find((p: any) => p.poItemId === line.poItemId) || line;
         const declared = Number(line.declaredQuantity);
+        const catInfo = categoryMap[line.itemId];
         const resolvedCategory =
-          categoryMap[line.itemId] ||
+          catInfo?.categoryName ||
           po.categoryName ||
           line.categoryName ||
           "Raw Materials";
+        const resolvedHasExpiry =
+          catInfo?.hasExpiry ??
+          po.categoryHasExpiry ??
+          line.categoryHasExpiry ??
+          true;
 
         return {
           poItemId: line.poItemId,
@@ -273,6 +284,7 @@ export default function CreateGrnModal({
           itemId: line.itemId,
           itemName: line.itemName || `Item #${line.itemId}`,
           categoryName: resolvedCategory,
+          hasExpiry: resolvedHasExpiry,
           ordered: Number(po.quantity ?? line.poOrderedQuantity ?? 0),
           previous: Number(po.receivedQuantity ?? line.poTotalReceivedQuantity ?? 0),
           declared,
@@ -379,13 +391,7 @@ export default function CreateGrnModal({
     );
   };
 
-  const isItemExpiryRequired = (item: ItemRow): boolean => {
-    const isToolOrSupply =
-      item.categoryName?.toLowerCase().includes("tool") ||
-      item.categoryName?.toLowerCase().includes("suppl") ||
-      item.categoryName?.toLowerCase().includes("equip");
-    return !isToolOrSupply;
-  };
+  const isItemExpiryRequired = (item: ItemRow): boolean => item.hasExpiry;
 
   const isBatchValid = (b: ItemBatch, reqExpiry: boolean): boolean => {
     const hasQty =
@@ -438,7 +444,7 @@ export default function CreateGrnModal({
               deliveryItemId: i.deliveryItemId,
               itemId: i.itemId,
               deliveredQuantity: Number(b.deliveredQuantity) || 0,
-              expiryDate: b.expiryDate ? `${b.expiryDate.split("T")[0]}T12:00:00Z` : undefined,
+              expiryDate: i.hasExpiry && b.expiryDate ? `${b.expiryDate.split("T")[0]}T12:00:00Z` : undefined,
             }))
           )
         : (selected.items || []).map((line) => ({
@@ -551,7 +557,7 @@ export default function CreateGrnModal({
           deliveryItemId: i.deliveryItemId,
           itemId: i.itemId,
           deliveredQuantity: Number(b.deliveredQuantity) || 0,
-          expiryDate: b.expiryDate ? b.expiryDate.split("T")[0] : undefined,
+          expiryDate: i.hasExpiry && b.expiryDate ? b.expiryDate.split("T")[0] : undefined,
         }))
       );
 
@@ -640,7 +646,7 @@ export default function CreateGrnModal({
                 lotId: undefined,
                 batchNumber: bIdx + 1,
                 totalBatches: src.batches.length,
-                expiryDate: b.expiryDate ? b.expiryDate.split("T")[0] : undefined,
+                expiryDate: src.hasExpiry && b.expiryDate ? b.expiryDate.split("T")[0] : undefined,
               }))
             );
 
@@ -669,6 +675,7 @@ export default function CreateGrnModal({
           itemId: qItem.itemId,
           itemName: qItem.itemName || matchingSource?.itemName || `Item #${qItem.itemId}`,
           categoryName: matchingSource?.categoryName || "Raw Materials",
+          hasExpiry: Boolean(expiry) || (matchingSource?.hasExpiry ?? true),
           lotId: qItem.lotId || qItem.lot?.lotId,
           batchNumber: batchNum,
           totalBatches: totalBatches,
@@ -681,7 +688,7 @@ export default function CreateGrnModal({
           defectReason: "",
           notes: "",
           checks: Object.fromEntries(
-            [...rawMaterialChecks, ...toolAndSupplyChecks].map((c) => [c.id, false])
+            [...rawMaterialChecks, ...nonExpiryChecks].map((c) => [c.id, false])
           ),
         };
       });
@@ -702,8 +709,7 @@ export default function CreateGrnModal({
 
   // STEP 2 QA Handlers
   const getQaChecks = (item: QaItemRow) => {
-    const isTool = /tool|suppl/i.test(item.categoryName || "");
-    return isTool ? toolAndSupplyChecks : rawMaterialChecks;
+    return item.expiryDate || item.hasExpiry !== false ? rawMaterialChecks : nonExpiryChecks;
   };
 
   const handleSetAccepted = (index: number, valStr: string) => {
@@ -909,6 +915,7 @@ export default function CreateGrnModal({
 
   const renderItemTableSection = (groupItems: ItemRow[], title: string) => {
     if (groupItems.length === 0) return null;
+    const showExpiryCol = groupItems.some((item) => item.hasExpiry);
 
     return (
       <div className="space-y-2">
@@ -924,7 +931,9 @@ export default function CreateGrnModal({
                 <th className="px-4 py-4">Item Description</th>
                 <th className="px-4 py-4 text-right">Declared</th>
                 <th className="px-4 py-4 text-right">Actual Received</th>
-                <th className="px-4 py-4 text-center">Expiry Date <span className="text-destructive">*</span></th>
+                {showExpiryCol && (
+                  <th className="px-4 py-4 text-center">Expiry Date <span className="text-destructive">*</span></th>
+                )}
                 <th className="px-4 py-4 text-center">Variance</th>
                 <th className="px-4 py-4 text-right">Batch Actions</th>
               </tr>
@@ -968,27 +977,33 @@ export default function CreateGrnModal({
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-sm text-center">
-                        <div className="flex flex-col items-center">
-                          <input
-                            type="date"
-                            min={getTodayDateString()}
-                            max={getMaxFutureDateString()}
-                            value={item.batches[0].expiryDate}
-                            onChange={(e) => updateBatchExpiry(itemIndex, 0, e.target.value)}
-                            className={`rounded-xl border ${
-                              fieldErrors[`expiry_${itemIndex}_0`]
-                                ? "!border-destructive text-destructive focus:!ring-destructive"
-                                : "border-border"
-                            } bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-foreground`}
-                          />
-                          {fieldErrors[`expiry_${itemIndex}_0`] && (
-                            <span className="text-xs text-destructive font-medium mt-0.5 whitespace-nowrap">
-                              {fieldErrors[`expiry_${itemIndex}_0`]}
-                            </span>
+                      {showExpiryCol && (
+                        <td className="px-4 py-4 text-sm text-center">
+                          {item.hasExpiry ? (
+                            <div className="flex flex-col items-center">
+                              <input
+                                type="date"
+                                min={getTodayDateString()}
+                                max={getMaxFutureDateString()}
+                                value={item.batches[0].expiryDate}
+                                onChange={(e) => updateBatchExpiry(itemIndex, 0, e.target.value)}
+                                className={`rounded-xl border ${
+                                  fieldErrors[`expiry_${itemIndex}_0`]
+                                    ? "!border-destructive text-destructive focus:!ring-destructive"
+                                    : "border-border"
+                                } bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-foreground`}
+                              />
+                              {fieldErrors[`expiry_${itemIndex}_0`] && (
+                                <span className="text-xs text-destructive font-medium mt-0.5 whitespace-nowrap">
+                                  {fieldErrors[`expiry_${itemIndex}_0`]}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">No Expiry</span>
                           )}
-                        </div>
-                      </td>
+                        </td>
+                      )}
                       <td className="px-4 py-4 text-sm text-center font-medium whitespace-nowrap">
                         {variance === null ? (
                           <span className="text-muted-foreground/60">—</span>
@@ -1052,27 +1067,33 @@ export default function CreateGrnModal({
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-center">
-                            <div className="flex flex-col items-center">
-                              <input
-                                type="date"
-                                min={getTodayDateString()}
-                                max={getMaxFutureDateString()}
-                                value={batch.expiryDate}
-                                onChange={(e) => updateBatchExpiry(itemIndex, batchIndex, e.target.value)}
-                                className={`rounded-xl border ${
-                                  fieldErrors[`expiry_${itemIndex}_${batchIndex}`]
-                                    ? "!border-destructive text-destructive focus:!ring-destructive"
-                                    : "border-border"
-                                } bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-foreground`}
-                              />
-                              {fieldErrors[`expiry_${itemIndex}_${batchIndex}`] && (
-                                <span className="text-xs text-destructive font-medium mt-0.5 whitespace-nowrap">
-                                  {fieldErrors[`expiry_${itemIndex}_${batchIndex}`]}
-                                </span>
+                          {showExpiryCol && (
+                            <td className="px-4 py-3 text-center">
+                              {item.hasExpiry ? (
+                                <div className="flex flex-col items-center">
+                                  <input
+                                    type="date"
+                                    min={getTodayDateString()}
+                                    max={getMaxFutureDateString()}
+                                    value={batch.expiryDate}
+                                    onChange={(e) => updateBatchExpiry(itemIndex, batchIndex, e.target.value)}
+                                    className={`rounded-xl border ${
+                                      fieldErrors[`expiry_${itemIndex}_${batchIndex}`]
+                                        ? "!border-destructive text-destructive focus:!ring-destructive"
+                                        : "border-border"
+                                    } bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-foreground`}
+                                  />
+                                  {fieldErrors[`expiry_${itemIndex}_${batchIndex}`] && (
+                                    <span className="text-xs text-destructive font-medium mt-0.5 whitespace-nowrap">
+                                      {fieldErrors[`expiry_${itemIndex}_${batchIndex}`]}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">No Expiry</span>
                               )}
-                            </div>
-                          </td>
+                            </td>
+                          )}
                           <td className="px-4 py-3 text-center text-sm text-muted-foreground">—</td>
                           <td className="px-4 py-3 text-right">
                             <button
@@ -1232,9 +1253,15 @@ export default function CreateGrnModal({
                 <>
                   <section className="space-y-4">
                     <div>
-                      <p className="text-sm font-bold text-foreground">Physical Count &amp; Expiry Verification</p>
+                      <p className="text-sm font-bold text-foreground">
+                        {items.some((i) => i.hasExpiry)
+                          ? "Physical Count & Expiry Verification"
+                          : "Physical Count Verification"}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        Enter actual counts and expiry dates for each item. Click &quot;Add Batch&quot; on the right if received across multiple lots or expiry dates.
+                        {items.some((i) => i.hasExpiry)
+                          ? 'Enter actual counts and expiry dates for each item. Click "Add Batch" on the right if received across multiple lots or expiry dates.'
+                          : 'Enter actual counts for each item. Click "Add Batch" on the right if received across multiple lots.'}
                       </p>
                     </div>
 

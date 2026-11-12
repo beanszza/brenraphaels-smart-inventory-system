@@ -223,7 +223,9 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
                   <th className="px-4 py-4 text-right">Accepted Qty</th>
                   <th className="px-4 py-4 text-center">Variance</th>
                   <th className="px-4 py-4">Supplier Lot #</th>
-                  <th className="px-4 py-4 text-center">Expiry Date</th>
+                  {grn.items.some((i) => Boolean(i.expiryDate)) && (
+                    <th className="px-4 py-4 text-center">Expiry Date</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -269,9 +271,11 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
                       <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
                         {item.supplierLotCode || "—"}
                       </td>
-                      <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
-                        {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—"}
-                      </td>
+                      {grn.items.some((i) => Boolean(i.expiryDate)) && (
+                        <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
+                          {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "No Expiry"}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

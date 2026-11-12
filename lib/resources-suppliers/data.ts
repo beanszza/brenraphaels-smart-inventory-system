@@ -24,6 +24,7 @@ export async function getResources() {
         CategoryId: true,
         CategoryName: true,
         Description: true,
+        HasExpiry: true,
         _count: { select: { Items: true } },
       },
       orderBy: { CategoryId: "asc" },
@@ -74,12 +75,12 @@ export async function getResources() {
       }
       finalCategories = await prisma.categories.findMany({
         where: { NOT: { CategoryName: { in: ["Finished Goods", "Finished Good"] } } },
-        select: { CategoryId: true, CategoryName: true, Description: true, _count: { select: { Items: true } } },
+        select: { CategoryId: true, CategoryName: true, Description: true, HasExpiry: true, _count: { select: { Items: true } } },
         orderBy: { CategoryId: "asc" },
       });
     } catch (e) {
       console.warn("Could not seed initial categories:", e);
-      finalCategories = DEFAULT_CATS.map((c, i) => ({ ...c, CategoryId: i + 1, _count: { Items: 0 } }));
+      finalCategories = DEFAULT_CATS.map((c, i) => ({ ...c, CategoryId: i + 1, HasExpiry: true, _count: { Items: 0 } }));
     }
   }
 
@@ -150,12 +151,13 @@ export async function getResources() {
         categoryName: c.CategoryName,
         description,
         isActive,
+        hasExpiry: c.HasExpiry !== false,
         itemCount: c._count?.Items ?? 0,
       };
     }),
     categories: finalCategories
       .filter((c) => decodeCategoryDescription(c.Description, (c as any).IsActive).isActive)
-      .map((c) => ({ categoryId: c.CategoryId, categoryName: c.CategoryName })),
+      .map((c) => ({ categoryId: c.CategoryId, categoryName: c.CategoryName, hasExpiry: c.HasExpiry !== false })),
     units: finalUnits.map((u) => ({
       uomId: u.UomId,
       code: u.Code,

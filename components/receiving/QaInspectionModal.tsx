@@ -21,6 +21,7 @@ interface ItemRow {
   itemId: number;
   itemName: string;
   categoryName?: string;
+  expiryDate?: string | null;
   lotId?: number;
   lotCode?: string;
   deliveredQuantity: number;
@@ -41,13 +42,13 @@ const rawMaterialChecks = [
   { id: "documents", label: "COA, certificate, temperature, and storage requirements reviewed" },
 ];
 
-const toolAndSupplyChecks = [
+const nonExpiryChecks = [
   { id: "identity", label: "Item identity, model, size, and approved specification match" },
   { id: "quantity", label: "Quantity, unit of measure, and pack count verified" },
   { id: "condition", label: "Item is undamaged, clean, and fit for use" },
   { id: "packaging", label: "Packaging and seals are intact where applicable" },
   { id: "safety", label: "Safety, hygiene, and contact-use requirements checked" },
-  { id: "documents", label: "Certificate, warranty, expiry, or supplier document reviewed" },
+  { id: "documents", label: "Certificate, warranty, or supplier document reviewed" },
 ];
 
 export default function QaInspectionModal({ inspection, open, onClose, onSuccess }: QaInspectionModalProps) {
@@ -73,6 +74,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
         itemId: i.itemId,
         itemName: i.itemName,
         categoryName: i.categoryName,
+        expiryDate: i.expiryDate || null,
         lotId: i.lotId,
         lotCode: i.lotCode,
         deliveredQuantity: i.deliveredQuantity,
@@ -82,7 +84,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
         concessionQuantity: i.concessionQuantity || 0,
         defectReason: i.defectReason || "",
         notes: i.notes || "",
-        checks: Object.fromEntries([...rawMaterialChecks, ...toolAndSupplyChecks].map((check) => [check.id, inspection.status !== "Pending"])),
+        checks: Object.fromEntries([...rawMaterialChecks, ...nonExpiryChecks].map((check) => [check.id, inspection.status !== "Pending"])),
       }));
       setItems(rows);
       setExpandedItems(Object.fromEntries(rows.map((row, index) => [row.inspectionItemId, index === 0])));
@@ -92,8 +94,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
   if (!inspection) return null;
 
   const getChecks = (item: ItemRow) => {
-    const isToolOrSupply = /tool|suppl/i.test(item.categoryName || "");
-    return isToolOrSupply ? toolAndSupplyChecks : rawMaterialChecks;
+    return item.expiryDate ? rawMaterialChecks : nonExpiryChecks;
   };
 
   const updateItem = (index: number, field: keyof ItemRow, val: any) => {
@@ -305,6 +306,11 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                           <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-muted text-foreground border border-border">
                             {item.categoryName || "Raw Materials"}
                           </span>
+                          {item.expiryDate && (
+                            <span className="text-xs text-muted-foreground bg-muted/40 px-2 py-0.5 rounded">
+                              Exp: {new Date(item.expiryDate).toLocaleDateString()}
+                            </span>
+                          )}
                           {item.lotCode && (
                             <span className="text-xs text-muted-foreground bg-muted/40 px-2 py-0.5 rounded">
                               Lot: {item.lotCode}
@@ -312,7 +318,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">
-                          Protocol: {getChecks(item) === toolAndSupplyChecks ? "Tools & Supplies Verification" : "Food / Raw Material Specification"}
+                          Protocol: {getChecks(item) === nonExpiryChecks ? "Non-Expiry Verification" : "Food / Raw Material Specification"}
                         </div>
                       </div>
                     </span>

@@ -3,6 +3,7 @@ export interface GRNItem {
   poItemId: number;
   itemId: number;
   itemName: string;
+  categoryName?: string;
   orderedQuantity: number;
   previouslyReceivedQuantity: number;
   declaredQuantity?: number;
@@ -100,6 +101,7 @@ export interface QAInspectionItem {
   itemId: number;
   itemName: string;
   categoryName?: string;
+  expiryDate?: string;
   lotId?: number;
   lotCode?: string;
   deliveredQuantity: number;
@@ -251,6 +253,8 @@ export interface ArrivedDelivery {
     poItemId: number;
     itemId: number;
     itemName: string;
+    categoryName?: string;
+    categoryHasExpiry?: boolean;
     orderedQuantity: number;
     declaredQuantity: number;
     uomName: string;

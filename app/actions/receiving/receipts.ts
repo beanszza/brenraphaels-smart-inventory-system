@@ -10,6 +10,21 @@ import type { ReceiptInput } from "@/lib/receiving/inputs";
 
 const MODULE = "Goods Receiving";
 
+async function loadItemHasExpiryMap(
+  tx: import("@prisma/client").Prisma.TransactionClient,
+  itemIds: number[]
+) {
+  const rows = itemIds.length > 0
+    ? await tx.items.findMany({
+        where: { ItemId: { in: itemIds } },
+        select: { ItemId: true, Category: { select: { HasExpiry: true } } },
+      })
+    : [];
+  return new Map<number, boolean>(
+    rows.map((row) => [row.ItemId, row.Category?.HasExpiry !== false])
+  );
+}
+
 export async function listReceipts(query = "") {
   await requireModule(MODULE);
   return read(async () => {
@@ -179,6 +194,11 @@ export async function createReceipt(body: ReceiptInput) {
       }
     }
 
+    const itemHasExpiryMap = await loadItemHasExpiryMap(
+      tx,
+      [...new Set(delivery.DeliveryItems.map(i => i.ItemId))]
+    );
+
     const grnItems = [];
     for (const itemReq of body.items) {
       const delItem = delivery.DeliveryItems.find(i =>
@@ -203,6 +223,7 @@ export async function createReceipt(body: ReceiptInput) {
       const totalDeliveredForItem = totalDeliveredByDeliveryItem.get(delItem.DeliveryItemId) ?? delivered;
       const netVariance = totalDeliveredForItem - declared;
 
+      const categoryHasExpiry = itemHasExpiryMap.get(delItem.ItemId) ?? true;
       grnItems.push({
         PoItemId: poItem.PoItemId,
         ItemId: delItem.ItemId,
@@ -216,7 +237,7 @@ export async function createReceipt(body: ReceiptInput) {
         PurchaseUomId: poItem.PurchaseUomId,
         SupplierLotCode: itemReq.supplierLotCode?.trim() || null,
         ManufactureDate: itemReq.manufactureDate ? new Date(itemReq.manufactureDate) : null,
-        ExpiryDate: itemReq.expiryDate ? new Date(itemReq.expiryDate) : null,
+        ExpiryDate: categoryHasExpiry && itemReq.expiryDate ? new Date(itemReq.expiryDate) : null,
         Notes: itemReq.notes?.trim() || null,
       });
     }
@@ -409,6 +430,11 @@ export async function updateReceipt(idInput: string | number, body: ReceiptInput
       totalDeliveredByItem.set(key, (totalDeliveredByItem.get(key) || 0) + qty);
     }
 
+    const itemHasExpiryMap = await loadItemHasExpiryMap(
+      tx,
+      [...new Set([...(grn.Deliveries?.DeliveryItems || []).map(i => i.ItemId), ...body.items.map(i => i.itemId)])]
+    );
+
     const grnItems = [];
     for (const itemReq of body.items) {
       const oldItem = grn.GoodsReceiptItems?.find(i =>
@@ -438,9 +464,11 @@ export async function updateReceipt(idInput: string | number, body: ReceiptInput
       const totalDeliveredForItem = totalDeliveredByItem.get(key) ?? delivered;
       const netVariance = totalDeliveredForItem - declared;
 
+      const resolvedItemId = oldItem?.ItemId ?? delItem!.ItemId;
+      const categoryHasExpiry = itemHasExpiryMap.get(resolvedItemId) ?? true;
       grnItems.push({
         PoItemId: oldItem?.PoItemId ?? poItem?.PoItemId ?? itemReq.poItemId!,
-        ItemId: oldItem?.ItemId ?? delItem!.ItemId,
+        ItemId: resolvedItemId,
         OrderedQuantity: oldItem?.OrderedQuantity ?? poItem?.PoItemQuantity ?? declared,
         PreviouslyReceivedQuantity: oldItem?.PreviouslyReceivedQuantity ?? 0,
         DeclaredQuantity: declared,
@@ -451,7 +479,9 @@ export async function updateReceipt(idInput: string | number, body: ReceiptInput
         PurchaseUomId: oldItem?.PurchaseUomId ?? poItem?.PurchaseUomId ?? 1,
         SupplierLotCode: itemReq.supplierLotCode?.trim() || oldItem?.SupplierLotCode || null,
         ManufactureDate: itemReq.manufactureDate ? new Date(itemReq.manufactureDate) : oldItem?.ManufactureDate ?? null,
-        ExpiryDate: itemReq.expiryDate ? new Date(itemReq.expiryDate) : oldItem?.ExpiryDate ?? null,
+        ExpiryDate: categoryHasExpiry && itemReq.expiryDate
+          ? new Date(itemReq.expiryDate)
+          : oldItem?.ExpiryDate ?? null,
         Notes: itemReq.notes?.trim() || oldItem?.Notes || null,
       });
     }

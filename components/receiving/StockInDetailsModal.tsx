@@ -64,7 +64,7 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
               supply: line.itemName,
               supplier: stockIn.supplierName,
               lot: line.lotCode,
-              expiry: line.expiryDate ? line.expiryDate.split("T")[0] : "N/A",
+              ...(line.expiryDate ? { expiry: line.expiryDate.split("T")[0] } : {}),
               qty: line.quantityToStock,
               uom: line.purchaseUomName,
             });
@@ -138,7 +138,9 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
                   <th className="px-4 py-4 text-right">Stock Put In</th>
                   <th className="px-4 py-4 text-right">Previous Stock</th>
                   <th className="px-4 py-4">Lot No.</th>
-                  <th className="px-4 py-4 text-center">Expiry Date</th>
+                  {stockIn.lines.some((l) => Boolean(l.expiryDate)) && (
+                    <th className="px-4 py-4 text-center">Expiry Date</th>
+                  )}
                   <th className="px-4 py-4 text-center">Printable Tag</th>
                 </tr>
               </thead>
@@ -160,9 +162,11 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
                     <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
                       {line.lotCode}
                     </td>
-                    <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
-                      {line.expiryDate ? new Date(line.expiryDate).toLocaleDateString() : "—"}
-                    </td>
+                    {stockIn.lines.some((l) => Boolean(l.expiryDate)) && (
+                      <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
+                        {line.expiryDate ? new Date(line.expiryDate).toLocaleDateString() : "No Expiry"}
+                      </td>
+                    )}
                     <td className="px-4 py-4 text-center whitespace-nowrap">
                       <button
                         type="button"

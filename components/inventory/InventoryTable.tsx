@@ -28,9 +28,18 @@ function formatDate(dateStr: string | null | undefined): string {
   });
 }
 
+const INVENTORY_STATUS_BADGE_CLASSES: Record<"In Stock" | "Low Stock" | "Out of Stock", string> = {
+  "In Stock":
+    "min-w-[96px] justify-center whitespace-nowrap border-transparent bg-badge-success text-badge-success-foreground",
+  "Low Stock":
+    "min-w-[96px] justify-center whitespace-nowrap border-transparent bg-badge-warning text-badge-warning-foreground",
+  "Out of Stock":
+    "min-w-[96px] justify-center whitespace-nowrap border-transparent bg-badge-destructive text-badge-destructive-foreground",
+};
+
 function getExpiryDisplay(lot: LotItem) {
   if (!lot.expiryDate) {
-    return <span className="text-muted-foreground">—</span>;
+    return <span className="text-muted-foreground">No Expiry</span>;
   }
   const exp = new Date(lot.expiryDate);
   const now = new Date();
@@ -253,8 +262,11 @@ export default function InventoryTable({
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-3.5">
-                      <StatusBadge status={statusText} />
+                    <td className="px-3 py-3.5 whitespace-nowrap">
+                      <StatusBadge
+                        status={statusText}
+                        className={INVENTORY_STATUS_BADGE_CLASSES[statusText]}
+                      />
                     </td>
                     <td className="px-3 py-3.5 text-center">
                       {isLow ? (
@@ -311,7 +323,9 @@ export default function InventoryTable({
                             <div className="py-5 text-center text-xs text-muted-foreground">
                               No active lots found for this item.
                             </div>
-                          ) : (
+                          ) : (() => {
+                            const hasAnyExpiry = availableLots.some((lot) => Boolean(lot.expiryDate));
+                            return (
                             <div className="overflow-x-auto">
                               <table className="w-full text-xs">
                                 <thead>
@@ -322,9 +336,11 @@ export default function InventoryTable({
                                     <th className="px-3 py-2 text-left font-semibold">
                                       Delivered Date
                                     </th>
-                                    <th className="px-3 py-2 text-left font-semibold">
-                                      Expiry Date
-                                    </th>
+                                    {hasAnyExpiry && (
+                                      <th className="px-3 py-2 text-left font-semibold">
+                                        Expiry Date
+                                      </th>
+                                    )}
                                     <th className="px-3 py-2 text-right font-semibold">
                                       Qty Remaining
                                     </th>
@@ -365,9 +381,11 @@ export default function InventoryTable({
                                         <td className="px-3 py-2.5 text-muted-foreground">
                                           {formatDate(lot.receivedDate)}
                                         </td>
-                                        <td className="px-3 py-2.5">
-                                          {getExpiryDisplay(lot)}
-                                        </td>
+                                        {hasAnyExpiry && (
+                                          <td className="px-3 py-2.5">
+                                            {getExpiryDisplay(lot)}
+                                          </td>
+                                        )}
                                         <td className="px-3 py-2.5 text-right font-mono font-semibold text-foreground">
                                           {lot.quantityRemaining.toLocaleString(
                                             undefined,
@@ -413,7 +431,8 @@ export default function InventoryTable({
                                 </tbody>
                               </table>
                             </div>
-                          )}
+                            );
+                          })()}
                         </div>
                       </td>
                     </tr>

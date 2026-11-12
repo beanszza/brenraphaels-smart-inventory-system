@@ -240,14 +240,14 @@ it("allows editing a category to inactive and excludes inactive categories from 
     isActive: false,
   });
   // Inactive category must not appear in Supply category dropdown options
-  expect(resources.categories).toEqual([{ categoryId: 1, categoryName: "Raw Materials" }]);
+  expect(resources.categories).toEqual([{ categoryId: 1, categoryName: "Raw Materials", hasExpiry: true }]);
 
   // Reactivating restores it to Supply category options
   await toggleCategoryStatus(2, true);
   const afterReactivate = await getResources();
   expect(afterReactivate.categories).toEqual([
-    { categoryId: 1, categoryName: "Raw Materials" },
-    { categoryId: 2, categoryName: "Ingredients" },
+    { categoryId: 1, categoryName: "Raw Materials", hasExpiry: true },
+    { categoryId: 2, categoryName: "Ingredients", hasExpiry: true },
   ]);
 });
 
@@ -344,4 +344,40 @@ it("enforces category, supplier, and supply character and numeric validation rul
     success: false,
     message: expect.stringContaining("50"),
   });
+});
+
+it("persists category hasExpiry flag on create and edit", async () => {
+  db.categories.findFirst.mockResolvedValue(null);
+  db.categories.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({
+    CategoryId: 22,
+    ...data,
+  }));
+  expect(await saveCategory({
+    categoryName: "Safety Gear",
+    description: "PPE and kitchen hardware",
+    isActive: true,
+    hasExpiry: false,
+  })).toEqual({
+    success: true,
+    message: "Category saved successfully.",
+  });
+  expect(db.categories.create).toHaveBeenCalledWith(expect.objectContaining({
+    data: expect.objectContaining({ CategoryName: "Safety Gear", HasExpiry: false }),
+  }));
+
+  db.categories.findUnique.mockResolvedValue({ CategoryId: 22, CategoryName: "Safety Gear" });
+  db.categories.update.mockResolvedValue({ CategoryId: 22, CategoryName: "Safety Gear", HasExpiry: true });
+  expect(await saveCategory({
+    categoryName: "Safety Gear",
+    description: "PPE and kitchen hardware",
+    isActive: true,
+    hasExpiry: true,
+  }, 22)).toEqual({
+    success: true,
+    message: "Category saved successfully.",
+  });
+  expect(db.categories.update).toHaveBeenCalledWith(expect.objectContaining({
+    where: { CategoryId: 22 },
+    data: expect.objectContaining({ HasExpiry: true }),
+  }));
 });

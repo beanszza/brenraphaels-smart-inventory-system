@@ -30,6 +30,7 @@ export async function listInspections(query = "") {
           include: {
             Items: {
               include: {
+                Category: true,
                 UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: true,
                 Uom: true,
               }
@@ -40,7 +41,29 @@ export async function listInspections(query = "") {
       }
     });
 
-    const responseData = inspections.map((q: typeof inspections[number]) => ({
+    const grnIds = [...new Set(inspections.map((q) => q.ReferenceId).filter((id) => Number.isFinite(id)))];
+    const grnLines = grnIds.length > 0
+      ? await prisma.goodsReceiptItems.findMany({
+          where: { GrnId: { in: grnIds } },
+          select: { GrnId: true, ItemId: true, ExpiryDate: true },
+          orderBy: { GrnItemId: "asc" },
+        })
+      : [];
+    const grnExpiryBuckets = new Map<string, string[]>();
+    for (const row of grnLines) {
+      const key = `${row.GrnId}:${row.ItemId}`;
+      const list = grnExpiryBuckets.get(key) || [];
+      if (row.ExpiryDate) {
+        list.push(row.ExpiryDate.toISOString());
+      } else {
+        list.push("");
+      }
+      grnExpiryBuckets.set(key, list);
+    }
+
+    const responseData = inspections.map((q: typeof inspections[number]) => {
+      const itemOffsets = new Map<number, number>();
+      return {
       inspectionId: q.InspectionId,
       inspectionNumber: q.ReferenceNumber || q.InspectionNumber,
       inspectionType: q.InspectionType,
@@ -54,12 +77,22 @@ export async function listInspections(query = "") {
       status: q.Status,
       overallNotes: q.OverallNotes,
       completedAt: q.CompletedAt,
-      items: q.QualityInspectionItems.map((qi: typeof q.QualityInspectionItems[number]) => ({
+      items: q.QualityInspectionItems.map((qi: typeof q.QualityInspectionItems[number]) => {
+        const offset = itemOffsets.get(qi.ItemId) ?? 0;
+        itemOffsets.set(qi.ItemId, offset + 1);
+        const bucket = grnExpiryBuckets.get(`${q.ReferenceId}:${qi.ItemId}`);
+        const grnExpiry = bucket && bucket[offset] ? bucket[offset] : undefined;
+        const resolvedExpiry = qi.InventoryLots?.ExpiryDate
+          ? qi.InventoryLots.ExpiryDate.toISOString()
+          : grnExpiry;
+        return {
         inspectionItemId: qi.InspectionItemId,
         itemId: qi.ItemId,
         itemName: qi.Items?.ItemName,
-        categoryName: "",
+        categoryName: qi.Items?.Category?.CategoryName || "",
+        expiryDate: resolvedExpiry,
         lotId: qi.LotId,
+        lotCode: qi.InventoryLots?.LotCode || "",
         deliveredQuantity: Number(qi.DeliveredQuantity),
         acceptedQuantity: Number(qi.AcceptedQuantity),
         rejectedQuantity: Number(qi.RejectedQuantity),
@@ -71,8 +104,10 @@ export async function listInspections(query = "") {
           lotCode: qi.InventoryLots.LotCode,
           expiryDate: qi.InventoryLots.ExpiryDate
         } : null
-      }))
-    }));
+      };
+      })
+    };
+    });
 
     return resourceResult({ success: true, data: responseData });
 

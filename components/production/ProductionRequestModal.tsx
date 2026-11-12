@@ -1015,7 +1015,13 @@ export default function ProductionRequestModal({
                           : "Reserved Lots"
                         : "Suggested Lots"}
                     </th>
-                    <th className="py-2.5 px-4 font-semibold text-muted-foreground min-w-[120px]">Expiry Date</th>
+                    {(lotSuggestions?.ingredients || []).some((ing: any) => {
+                      const r = (ing.lots || []).filter((l: any) => l.isReleased);
+                      const a = (ing.lots || []).filter((l: any) => Number(l.suggestedQuantity) > 0);
+                      return (initialRequest?.status === "Rejected" && r.length > 0 ? r : a).some((l: any) => Boolean(l.expiryDate));
+                    }) && (
+                      <th className="py-2.5 px-4 font-semibold text-muted-foreground min-w-[120px]">Expiry Date</th>
+                    )}
                     <th className="py-2.5 px-4 font-semibold text-muted-foreground text-center">Stock Status</th>
                   </tr>
                 </thead>
@@ -1097,19 +1103,25 @@ export default function ProductionRequestModal({
                         </td>
 
                         {/* Expiry Date Column */}
-                        <td className="py-3 px-4 min-w-[120px] whitespace-nowrap">
-                          {(isRejected && releasedLots.length > 0 ? releasedLots : activeLots).length > 0 ? (
-                            <div className="space-y-1.5">
-                              {(isRejected && releasedLots.length > 0 ? releasedLots : activeLots).map((l: any) => (
-                                <div key={l.lotId} className="text-[11px] text-muted-foreground py-0.5">
-                                  {l.expiryDate ? new Date(l.expiryDate).toLocaleDateString() : "—"}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-muted-foreground italic">—</span>
-                          )}
-                        </td>
+                        {(lotSuggestions?.ingredients || []).some((ing: any) => {
+                          const r = (ing.lots || []).filter((l: any) => l.isReleased);
+                          const a = (ing.lots || []).filter((l: any) => Number(l.suggestedQuantity) > 0);
+                          return (isRejected && r.length > 0 ? r : a).some((l: any) => Boolean(l.expiryDate));
+                        }) && (
+                          <td className="py-3 px-4 min-w-[120px] whitespace-nowrap">
+                            {(isRejected && releasedLots.length > 0 ? releasedLots : activeLots).length > 0 ? (
+                              <div className="space-y-1.5">
+                                {(isRejected && releasedLots.length > 0 ? releasedLots : activeLots).map((l: any) => (
+                                  <div key={l.lotId} className="text-[11px] text-muted-foreground py-0.5">
+                                    {l.expiryDate ? new Date(l.expiryDate).toLocaleDateString() : "No Expiry"}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground italic">—</span>
+                            )}
+                          </td>
+                        )}
 
                         {/* Stock Status */}
                         <td className="py-3 px-4 text-center whitespace-nowrap">
@@ -1130,7 +1142,18 @@ export default function ProductionRequestModal({
                   })}
                   {(!lotSuggestions || lotSuggestions.ingredients.length === 0 || (!isViewMode && (!productId || !recipeId))) && (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-xs text-muted-foreground">
+                      <td
+                        colSpan={
+                          (lotSuggestions?.ingredients || []).some((ing: any) => {
+                            const r = (ing.lots || []).filter((l: any) => l.isReleased);
+                            const a = (ing.lots || []).filter((l: any) => Number(l.suggestedQuantity) > 0);
+                            return (initialRequest?.status === "Rejected" && r.length > 0 ? r : a).some((l: any) => Boolean(l.expiryDate));
+                          })
+                            ? 8
+                            : 7
+                        }
+                        className="py-8 text-center text-xs text-muted-foreground"
+                      >
                         Select a product and recipe to preview bill of materials and suggested lots.
                       </td>
                     </tr>

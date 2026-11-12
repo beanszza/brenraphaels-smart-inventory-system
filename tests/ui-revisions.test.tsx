@@ -15,8 +15,14 @@ import { POApprovalModal } from "@/components/orders-procurement/po/POApprovalMo
 import { POTable } from "@/components/orders-procurement/po/POTable";
 import { DeliveryDetailsModal } from "@/components/orders-procurement/delivery/DeliveryDetailsModal";
 import DiscrepancyDetailsModal from "@/components/receiving/DiscrepancyDetailsModal";
+import InventoryTable from "@/components/inventory/InventoryTable";
+import CategoryModal from "@/components/resources-suppliers/CategoryModal";
+import CategoryTable from "@/components/resources-suppliers/CategoryTable";
+import LotsTable from "@/components/lots/LotsTable";
+import GrnDetailsModal from "@/components/receiving/GrnDetailsModal";
+import StockInDetailsModal from "@/components/receiving/StockInDetailsModal";
 import type { Delivery, PurchaseOrderPO } from "@/components/orders-procurement/types";
-import type { Discrepancy } from "@/components/receiving/types";
+import type { Discrepancy, GRN, StockIn } from "@/components/receiving/types";
 
 vi.mock("@/lib/orders/client", () => ({ procurement: {} }));
 vi.mock("@/app/actions/orders/screens", () => ({ requisitionSupplies: vi.fn() }));
@@ -175,9 +181,9 @@ describe("Modal layout, typography, and date bounds", () => {
     const pendingHtml = renderToStaticMarkup(
       <PODetailsModal
         po={pendingPo}
-        onClose={() => {}}
-        onCancel={() => {}}
-        onApproveWithForm={() => {}}
+        onClose={() => { }}
+        onCancel={() => { }}
+        onApproveWithForm={() => { }}
       />
     );
     expect(pendingHtml).not.toContain("UNIT PRICE");
@@ -205,7 +211,7 @@ describe("Modal layout, typography, and date bounds", () => {
     } as unknown as PurchaseOrderPO;
 
     const approvedHtml = renderToStaticMarkup(
-      <PODetailsModal po={approvedPo} onClose={() => {}} />
+      <PODetailsModal po={approvedPo} onClose={() => { }} />
     );
     expect(approvedHtml).toContain("UNIT PRICE");
     expect(approvedHtml).toContain("TOTAL AMOUNT DUE");
@@ -236,7 +242,7 @@ describe("Modal layout, typography, and date bounds", () => {
     } as unknown as PurchaseOrderPO;
 
     const approvalHtml = renderToStaticMarkup(
-      <POApprovalModal po={zeroPricePo} onClose={() => {}} onSuccess={() => {}} />
+      <POApprovalModal po={zeroPricePo} onClose={() => { }} onSuccess={() => { }} />
     );
     expect(approvalHtml).toContain(">Close<");
     expect(approvalHtml).not.toContain(">Cancel<");
@@ -244,7 +250,7 @@ describe("Modal layout, typography, and date bounds", () => {
     expect(approvalHtml).toContain("Enter a confirmed quantity and total price greater than ₱0.00");
 
     const deliveryHtml = renderToStaticMarkup(
-      <CreateDeliveryModal open initialPo={zeroPricePo} onClose={() => {}} onSuccess={() => {}} />
+      <CreateDeliveryModal open initialPo={zeroPricePo} onClose={() => { }} onSuccess={() => { }} />
     );
     expect(deliveryHtml).toContain("Planned Dispatch Date");
 
@@ -256,9 +262,9 @@ describe("Modal layout, typography, and date bounds", () => {
     const approvedDetailsHtml = renderToStaticMarkup(
       <PODetailsModal
         po={approvedPo}
-        onClose={() => {}}
-        onCancel={() => {}}
-        onCreateDelivery={() => {}}
+        onClose={() => { }}
+        onCancel={() => { }}
+        onCreateDelivery={() => { }}
       />
     );
     expect(approvedDetailsHtml).not.toContain("Cancel Purchase Order");
@@ -272,9 +278,9 @@ describe("Modal layout, typography, and date bounds", () => {
     const orderedDetailsHtml = renderToStaticMarkup(
       <PODetailsModal
         po={orderedPo}
-        onClose={() => {}}
-        onCancel={() => {}}
-        onCreateDelivery={() => {}}
+        onClose={() => { }}
+        onCancel={() => { }}
+        onCreateDelivery={() => { }}
       />
     );
     expect(orderedDetailsHtml).not.toContain("Schedule Delivery");
@@ -287,15 +293,15 @@ describe("Modal layout, typography, and date bounds", () => {
     const partialDetailsHtml = renderToStaticMarkup(
       <PODetailsModal
         po={partiallyDeliveredPo}
-        onClose={() => {}}
-        onCancel={() => {}}
-        onCreateDelivery={() => {}}
+        onClose={() => { }}
+        onCancel={() => { }}
+        onCreateDelivery={() => { }}
       />
     );
     expect(partialDetailsHtml).toContain("Schedule Delivery");
 
     const tableHtml = renderToStaticMarkup(
-      <POTable orders={[approvedPo]} onView={() => {}} onCancel={() => {}} />
+      <POTable orders={[approvedPo]} onView={() => { }} onCancel={() => { }} />
     );
     expect(tableHtml).not.toContain("Cancel Purchase Order");
 
@@ -315,8 +321,8 @@ describe("Modal layout, typography, and date bounds", () => {
       <DiscrepancyDetailsModal
         discrepancy={rejectedDisc}
         open
-        onClose={() => {}}
-        onResolved={() => {}}
+        onClose={() => { }}
+        onResolved={() => { }}
       />
     );
     expect(discHtml).toContain("Wait for Replacement Delivery");
@@ -334,14 +340,245 @@ describe("Modal layout, typography, and date bounds", () => {
     const deliveryDetailsHtml = renderToStaticMarkup(
       <DeliveryDetailsModal
         delivery={scheduledDelivery}
-        onClose={() => {}}
-        onArrive={() => {}}
-        onCancel={() => {}}
+        onClose={() => { }}
+        onArrive={() => { }}
+        onCancel={() => { }}
       />
     );
     expect(deliveryDetailsHtml).toContain("Cancel Delivery");
     expect(deliveryDetailsHtml.indexOf("Cancel Delivery")).toBeLessThan(deliveryDetailsHtml.indexOf(">Close<"));
     expect(deliveryDetailsHtml.indexOf(">Close<")).toBeLessThan(deliveryDetailsHtml.indexOf("Confirm Arrival"));
+  });
+});
+
+describe("Inventory status badges and Category HasExpiry UI", () => {
+  it("renders uniform fixed-width status badges across Ingredients and Finished Goods tables", () => {
+    const baseItems = [
+      {
+        inventoryId: 1,
+        itemId: 1,
+        itemName: "Sugar",
+        supplyNo: "SPL-0001",
+        categoryName: "Ingredients",
+        uomName: "Pack",
+        stockUomName: "Pack",
+        stockUomAbbr: "pk",
+        locationId: 1,
+        locationName: "Commissary",
+        currentStock: 100,
+        reservedQuantity: 0,
+        minStockLevel: 10,
+        maxStockLevel: 120,
+        isLowStock: false,
+        stockStatus: "In Stock",
+        lotCount: 1,
+      },
+      {
+        inventoryId: 2,
+        itemId: 2,
+        itemName: "Milk",
+        supplyNo: "SPL-0002",
+        categoryName: "Ingredients",
+        uomName: "Bottle",
+        stockUomName: "Bottle",
+        stockUomAbbr: "btl",
+        locationId: 1,
+        locationName: "Commissary",
+        currentStock: 5,
+        reservedQuantity: 0,
+        minStockLevel: 20,
+        maxStockLevel: 100,
+        isLowStock: true,
+        stockStatus: "Low Stock",
+        lotCount: 1,
+      },
+      {
+        inventoryId: 3,
+        itemId: 3,
+        itemName: "PPE Mask",
+        supplyNo: "SPL-0003",
+        categoryName: "Tools & Supplies",
+        uomName: "Box",
+        stockUomName: "Box",
+        stockUomAbbr: "box",
+        locationId: 1,
+        locationName: "Commissary",
+        currentStock: 0,
+        reservedQuantity: 0,
+        minStockLevel: 5,
+        maxStockLevel: 50,
+        isLowStock: true,
+        stockStatus: "Out of Stock",
+        lotCount: 0,
+      },
+    ];
+
+    const ingHtml = renderToStaticMarkup(
+      <InventoryTable items={baseItems} currentPage={1} pageSize={10} />
+    );
+    const fgHtml = renderToStaticMarkup(
+      <InventoryTable items={baseItems} currentPage={1} pageSize={10} isFinishedGoods />
+    );
+
+    for (const html of [ingHtml, fgHtml]) {
+      expect(html).toContain("min-w-[96px] justify-center whitespace-nowrap");
+      expect(html).toContain("bg-badge-success");
+      expect(html).toContain("bg-badge-warning");
+      expect(html).toContain("bg-badge-destructive");
+    }
+  });
+
+  it("renders CategoryModal HasExpiry checkbox and CategoryTable Expiry column", () => {
+    const newCatHtml = renderToStaticMarkup(
+      <CategoryModal open editingCategory={null} onClose={() => { }} onSave={() => { }} />
+    );
+    expect(newCatHtml).toContain("This category has an expiry date");
+    expect(newCatHtml).toContain("checked");
+
+    const tableHtml = renderToStaticMarkup(
+      <CategoryTable
+        items={[
+          { categoryId: 1, categoryName: "Ingredients", description: "", isActive: true, hasExpiry: true, itemCount: 5 },
+          { categoryId: 2, categoryName: "Tools & Supplies", description: "", isActive: true, hasExpiry: false, itemCount: 2 },
+        ]}
+        currentPage={1}
+        pageSize={10}
+        canConfigure
+        onEdit={() => { }}
+      />
+    );
+    expect(tableHtml).toContain("Has Expiry");
+    expect(tableHtml).toContain("No Expiry");
+  });
+
+  it("hides Expiry columns when all rows lack expiry and shows No Expiry when mixed", () => {
+    const baseLot = {
+      locationId: 1,
+      locationName: "Commissary",
+      sourceType: "Purchase",
+      supplierId: null,
+      supplierName: "Acme",
+      supplierLotNo: null,
+      receivedDate: "2026-11-12",
+      isExpired: false,
+      status: "Available",
+      isOpeningBalance: false,
+      unitCost: 100,
+    };
+
+    const nonExpiryLotsHtml = renderToStaticMarkup(
+      <LotsTable
+        items={[
+          {
+            ...baseLot,
+            lotId: 1,
+            lotCode: "LOT-PPE-1",
+            itemId: 1,
+            itemName: "Face Mask",
+            uomName: "box",
+            expiryDate: null,
+            quantityReceived: 10,
+            quantityRemaining: 10,
+          },
+        ]}
+        currentPage={1}
+        pageSize={10}
+      />
+    );
+    expect(nonExpiryLotsHtml).not.toContain(">EXPIRY<");
+
+    const mixedLotsHtml = renderToStaticMarkup(
+      <LotsTable
+        items={[
+          {
+            ...baseLot,
+            lotId: 1,
+            lotCode: "LOT-PPE-1",
+            itemId: 1,
+            itemName: "Face Mask",
+            uomName: "box",
+            expiryDate: null,
+            quantityReceived: 10,
+            quantityRemaining: 10,
+          },
+          {
+            ...baseLot,
+            lotId: 2,
+            lotCode: "LOT-MLK-1",
+            itemId: 2,
+            itemName: "Milk",
+            uomName: "btl",
+            expiryDate: "2027-01-10",
+            quantityReceived: 20,
+            quantityRemaining: 20,
+          },
+        ]}
+        currentPage={1}
+        pageSize={10}
+      />
+    );
+    expect(mixedLotsHtml).toContain(">EXPIRY<");
+    expect(mixedLotsHtml).toContain("No Expiry");
+
+    const grnNonExpiryHtml = renderToStaticMarkup(
+      <GrnDetailsModal
+        open
+        onClose={() => { }}
+        onUpdated={() => { }}
+        onPosted={() => { }}
+        grn={{
+          grnId: 1,
+          grnNumber: "GRN-2026-0001",
+          receivedDate: "2026-11-12",
+          status: "Draft",
+          physicalQuantityVerified: true,
+          expiryDatesChecked: false,
+          items: [
+            {
+              itemId: 1,
+              itemName: "Mixer",
+              orderedQuantity: 1,
+              previouslyReceivedQuantity: 0,
+              declaredQuantity: 1,
+              deliveredQuantity: 1,
+              varianceQuantity: 0,
+              purchaseUomName: "unit",
+              expiryDate: null,
+            },
+          ],
+        } as unknown as GRN}
+      />
+    );
+    expect(grnNonExpiryHtml).not.toContain("Expiry Date");
+
+    const stockInNonExpiryHtml = renderToStaticMarkup(
+      <StockInDetailsModal
+        open
+        onClose={() => { }}
+        onSuccess={() => { }}
+        stockIn={{
+          stockInId: 1,
+          stockInNumber: "SI-2026-0001",
+          status: "Committed",
+          grnId: 1,
+          grnNumber: "GRN-2026-0001",
+          createdAt: "2026-11-12",
+          lines: [
+            {
+              lineId: 1,
+              itemId: 1,
+              itemName: "Mixer",
+              purchaseUomName: "unit",
+              quantityToStock: 1,
+              lotId: 1,
+              lotCode: "LOT-MIX-1",
+              expiryDate: null,
+            },
+          ],
+        } as unknown as StockIn}
+      />
+    );
+    expect(stockInNonExpiryHtml).not.toContain("Expiry Date");
   });
 });
 

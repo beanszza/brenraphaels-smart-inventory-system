@@ -57,6 +57,7 @@ export type FinishedProduct = {
 export type CategoryOption = {
   categoryId: number;
   categoryName: string;
+  hasExpiry?: boolean;
 };
 
 export type CategoryItem = {
@@ -64,6 +65,7 @@ export type CategoryItem = {
   categoryName: string;
   description: string;
   isActive: boolean;
+  hasExpiry: boolean;
   itemCount?: number;
 };
 

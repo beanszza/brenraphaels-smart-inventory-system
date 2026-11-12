@@ -19,6 +19,7 @@ export async function listSupplyCategories() {
         CategoryId: true,
         CategoryName: true,
         Description: true,
+        HasExpiry: true,
       },
     });
 
@@ -28,6 +29,7 @@ export async function listSupplyCategories() {
         categoryId: cat.CategoryId,
         categoryName: cat.CategoryName,
         description: decodeCategoryDescription(cat.Description, (cat as any).IsActive).description,
+        hasExpiry: cat.HasExpiry !== false,
       }));
 
     // Custom sorting to match the C# backend logic

@@ -35,7 +35,7 @@ export const PO_INCLUDE = {
   Suppliers: true,
   PurchaseRequisition: true,
   PurchaseOrderItems: {
-    include: { Items: { include: { UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: true } }, UnitOfMeasures: true },
+    include: { Items: { include: { Category: true, UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: true } }, UnitOfMeasures: true },
   },
   Deliveries: {
     select: {
@@ -53,7 +53,7 @@ export const DELIVERY_INCLUDE = {
   PurchaseOrders: { include: { Suppliers: true } },
   DeliveryItems: {
     include: {
-      Items: { include: { UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: true } },
+      Items: { include: { Category: true, UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: true } },
       UnitOfMeasures: true,
       PurchaseOrderItems: true,
     },
@@ -205,6 +205,8 @@ export function poDto(po: PO) {
         itemId: i.ItemId,
         itemCode: i.Items?.ItemCode || `SPL-${String(i.ItemId).padStart(4, "0")}`,
         itemName: i.Items?.ItemName || "",
+        categoryName: i.Items?.Category?.CategoryName ?? "",
+        categoryHasExpiry: i.Items?.Category?.HasExpiry !== false,
         poItemQuantity: qty,
         receivedQuantity: Number(i.ReceivedQuantity),
         totalPrice: total,
@@ -253,6 +255,8 @@ export function deliveryDto(d: Delivery) {
       itemId: i.ItemId,
       itemCode: i.Items?.ItemCode || `SPL-${String(i.ItemId).padStart(4, "0")}`,
       itemName: i.Items?.ItemName || "",
+      categoryName: i.Items?.Category?.CategoryName ?? "",
+      categoryHasExpiry: i.Items?.Category?.HasExpiry !== false,
       poOrderedQuantity: Number(i.PurchaseOrderItems?.PoItemQuantity || i.DeclaredQuantity || 0),
       poTotalReceivedQuantity: Number(i.PurchaseOrderItems?.ReceivedQuantity || 0),
       poOutstandingQuantity: Math.max(

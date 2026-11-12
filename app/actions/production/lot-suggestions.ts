@@ -114,6 +114,7 @@ export async function suggestRequestLots(idInput: string | number, query = "") {
                     orderBy: [
                         { ExpiryDate: "asc" },
                         { ReceivedDate: "asc" },
+                        { LotId: "asc" },
                     ],
                 });
                 for (const lot of otherLots) {

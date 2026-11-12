@@ -19,6 +19,7 @@ const fake = vi.hoisted(() => ({
   pending: [] as { model: string; data: Record<string, unknown> }[],
   committed: [] as { model: string; data: Record<string, unknown> }[],
   transactionOpen: false, commitFails: false, gatewayFails: false, missing: false, foreignLine: false, knownMissing: false,
+  itemHasExpiry: undefined as boolean | undefined, existingItemExpiry: undefined as Date | undefined,
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -49,7 +50,7 @@ vi.mock("@/lib/gateway/notifications", () => ({
 vi.mock("@/lib/prisma", () => {
   const line = () => ({ GrnItemId: 1, ItemId: 1, PoItemId: 1, DeliveryItemId: 1, InspectionItemId: fake.foreignLine ? 2 : 1,
     DeclaredQuantity: 10, DeliveredQuantity: 10, OrderedQuantity: 10, PreviouslyReceivedQuantity: 0,
-    VarianceQuantity: 0, PurchaseUomId: 1, ItemName: "Flour", ItemCode: "FLOUR", Category: { CategoryName: "Ingredients" },
+    VarianceQuantity: 0, PurchaseUomId: 1, ExpiryDate: fake.existingItemExpiry ?? null, ItemName: "Flour", ItemCode: "FLOUR", Category: { CategoryName: "Ingredients" },
     Items: { ItemName: "Flour", UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: { Abbreviation: "kg" } }, UnitOfMeasures: { Abbreviation: "kg" } });
   const row = (model: string) => ({
     GrnId: 1, GrnNumber: "GRN-2026-0001", DeliveryId: 1, DeliveryNumber: "DLV-2026-0001", PoId: 1,
@@ -70,7 +71,10 @@ vi.mock("@/lib/prisma", () => {
           { StaffId: "actor-id", Name: "Ada", Username: "actor-username", Modules: ["Goods Receiving"] },
           { StaffId: "approver-id", Name: "Ben", Username: "approver-username", Modules: ["Goods Receiving"] },
           { StaffId: "other-module", Name: "Cook", Username: "cook", Modules: ["Production & Quality"] },
-        ].filter(staff => !where?.Modules?.has || staff.Modules.includes(where.Modules.has)) : [],
+        ].filter(staff => !where?.Modules?.has || staff.Modules.includes(where.Modules.has))
+      : name === "items" && fake.itemHasExpiry !== undefined
+        ? [{ ItemId: 1, Category: { HasExpiry: fake.itemHasExpiry } }]
+        : [],
     count: async () => 0,
     groupBy: async () => [],
     aggregate: async () => ({ _sum: { QuantityToStock: 0, CurrentStock: 5 } }),
@@ -128,7 +132,8 @@ const mutations: { name: string; run: () => Promise<ResourceResult>; status?: Re
 
 beforeEach(() => {
   Object.assign(fake, { signed: true, decision: "allowed", status: {}, written: [], sent: [], pending: [], committed: [],
-    transactionOpen: false, commitFails: false, gatewayFails: false, missing: false, foreignLine: false, knownMissing: false });
+    transactionOpen: false, commitFails: false, gatewayFails: false, missing: false, foreignLine: false, knownMissing: false,
+    itemHasExpiry: undefined, existingItemExpiry: undefined });
   fake.dataAccess.mockClear();
   vi.stubEnv("IMS_DEV_BYPASS", "false"); vi.stubEnv("PORTAL_URL", "https://portal.test");
   vi.stubEnv("PORTAL_SYSTEM_SECRET", "test-secret"); vi.stubEnv("IMS_APP_URL", "https://localhost:3003");
@@ -259,4 +264,36 @@ it("returns serializable dates and decimals at the action boundary", async () =>
   expect(result.success).toBe(true);
   expect(typeof result.data.ApprovedAt).toBe("string");
   expect(JSON.parse(JSON.stringify(result))).toEqual(result);
+});
+
+it("omits expiryDate when creating a GRN for a No-Expiry category and persists it for Has-Expiry categories", async () => {
+  fake.status.deliveries = "Arrived";
+  fake.itemHasExpiry = false;
+  expect(await receipts.createReceipt({
+    ...receipt,
+    items: [{ itemId: 1, deliveryItemId: 1, deliveredQuantity: 10, expiryDate: "2027-01-01" }],
+  })).toMatchObject({ success: true });
+  const noExpCreate = fake.committed.find(row => row.model === "goodsReceipts")?.data as { GoodsReceiptItems: { create: Array<{ ExpiryDate: Date | null }> } };
+  expect(noExpCreate.GoodsReceiptItems.create[0].ExpiryDate).toBeNull();
+
+  fake.committed = [];
+  fake.itemHasExpiry = true;
+  expect(await receipts.createReceipt({
+    ...receipt,
+    items: [{ itemId: 1, deliveryItemId: 1, deliveredQuantity: 10, expiryDate: "2027-01-01" }],
+  })).toMatchObject({ success: true });
+  const expCreate = fake.committed.find(row => row.model === "goodsReceipts")?.data as { GoodsReceiptItems: { create: Array<{ ExpiryDate: Date | null }> } };
+  expect(expCreate.GoodsReceiptItems.create[0].ExpiryDate).toEqual(new Date("2027-01-01"));
+});
+
+it("preserves already-saved expiryDate on an existing GRN item when its category is edited to No-Expiry", async () => {
+  const savedExpiry = new Date("2027-05-01");
+  fake.existingItemExpiry = savedExpiry;
+  fake.itemHasExpiry = false;
+  expect(await receipts.updateReceipt(1, {
+    ...receipt,
+    items: [{ itemId: 1, deliveryItemId: 1, deliveredQuantity: 10 }],
+  })).toMatchObject({ success: true });
+  const grnUpdate = fake.committed.find(row => row.model === "goodsReceipts")?.data as { GoodsReceiptItems: { create: Array<{ ExpiryDate: Date | null }> } };
+  expect(grnUpdate.GoodsReceiptItems.create[0].ExpiryDate).toEqual(savedExpiry);
 });

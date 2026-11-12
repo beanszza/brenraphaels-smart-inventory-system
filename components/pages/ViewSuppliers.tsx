@@ -120,7 +120,7 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
   const [openRecipeModal, setOpenRecipeModal] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 
-  const handleSaveCategory = async (input: { categoryName: string; description: string; isActive: boolean }) => {
+  const handleSaveCategory = async (input: { categoryName: string; description: string; isActive: boolean; hasExpiry: boolean }) => {
     const result = await saveCategory(input, editingCategory?.categoryId);
     if (!result.success) throw new Error(result.message);
     if (editingCategory) {
@@ -132,6 +132,7 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
                 categoryName: input.categoryName.trim(),
                 description: input.description.trim(),
                 isActive: input.isActive,
+                hasExpiry: input.hasExpiry,
               }
             : c
         )

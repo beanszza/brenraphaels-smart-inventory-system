@@ -28,7 +28,9 @@ export default function LotsTable({ items, currentPage, pageSize }: LotsTablePro
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">LOCATION</th>
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">SUPPLIER</th>
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">RECEIVED</th>
-            <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">EXPIRY</th>
+            {items.some((lot) => Boolean(lot.expiryDate)) && (
+              <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">EXPIRY</th>
+            )}
             <th className="px-3 py-3 text-right font-bold text-muted-foreground tracking-wider whitespace-nowrap">QTY REMAINING</th>
             <th className="px-3 py-3 text-right font-bold text-muted-foreground tracking-wider whitespace-nowrap">RESERVED</th>
             <th className="px-3 py-3 text-center font-bold text-muted-foreground tracking-wider whitespace-nowrap">STATUS</th>
@@ -37,7 +39,7 @@ export default function LotsTable({ items, currentPage, pageSize }: LotsTablePro
         <tbody className="divide-y divide-border">
           {items.length === 0 ? (
             <tr>
-              <td colSpan={9} className="px-5 py-10 text-center text-sm font-semibold text-muted-foreground">
+              <td colSpan={items.some((lot) => Boolean(lot.expiryDate)) ? 9 : 8} className="px-5 py-10 text-center text-sm font-semibold text-muted-foreground">
                 No Results Found
               </td>
             </tr>
@@ -66,16 +68,18 @@ export default function LotsTable({ items, currentPage, pageSize }: LotsTablePro
                     {lot.supplierLotNo && <span className="text-[10px] ml-1">({lot.supplierLotNo})</span>}
                   </td>
                   <td className="px-3 py-3 text-muted-foreground">{formatDate(lot.receivedDate)}</td>
-                  <td className="px-3 py-3">
-                    {lot.expiryDate ? (
-                      <span className={lot.isExpired ? "text-red-600 font-semibold" : "text-foreground"}>
-                        {formatDate(lot.expiryDate)}
-                        {lot.isExpired && " (exp)"}
-                      </span>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
+                  {items.some((l) => Boolean(l.expiryDate)) && (
+                    <td className="px-3 py-3">
+                      {lot.expiryDate ? (
+                        <span className={lot.isExpired ? "text-red-600 font-semibold" : "text-foreground"}>
+                          {formatDate(lot.expiryDate)}
+                          {lot.isExpired && " (exp)"}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">No Expiry</span>
+                      )}
+                    </td>
+                  )}
                   <td className="px-3 py-3 font-mono font-semibold text-foreground text-right whitespace-nowrap">
                     {lot.quantityRemaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {lot.uomName}
                   </td>

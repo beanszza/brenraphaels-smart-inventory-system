@@ -16,7 +16,7 @@ export type SupplierInput = { companyName: string; contactPerson: string; email:
   address: string; website?: string; isActive: boolean; suppliedItemIds: number[] };
 export type RecipeInput = { recipeName: string; productId: number; outputQuantity: number;
   notes: string; isActive: boolean; ingredients: { itemId: number; uomId: number; standardQuantity: number }[] };
-export type CategoryInput = { categoryName: string; description?: string; isActive?: boolean };
+export type CategoryInput = { categoryName: string; description?: string; isActive?: boolean; hasExpiry?: boolean };
 
 class ValidationError extends Error {}
 function check(condition: unknown, message: string): asserts condition {
@@ -200,9 +200,11 @@ export async function saveCategory(input: CategoryInput, id?: number): Promise<R
     check(!existing, "A category with this name already exists.");
 
     const isActive = input.isActive !== false;
+    const hasExpiry = input.hasExpiry !== false;
     const data = {
       CategoryName: categoryName,
       Description: encodeCategoryDescription(description, isActive),
+      HasExpiry: hasExpiry,
     };
 
     let targetId: number = id ?? 0;
@@ -220,7 +222,7 @@ export async function saveCategory(input: CategoryInput, id?: number): Promise<R
       module: "Resources & Suppliers",
       change: id ? "updated" : "created",
       target: { type: "category", id: targetId, name: categoryName },
-      description: `${staff.name} ${id ? "updated" : "created"} category ${categoryName} (${isActive ? "Active" : "Inactive"})`,
+      description: `${staff.name} ${id ? "updated" : "created"} category ${categoryName} (${isActive ? "Active" : "Inactive"}, ${hasExpiry ? "Has Expiry" : "No Expiry"})`,
     });
     return saved("Category saved successfully.");
   } catch (error) {

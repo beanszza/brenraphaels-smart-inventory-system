@@ -109,22 +109,24 @@ export async function downloadStockInLabelPdf(label: StockInLabelPdfInput) {
   doc.setLineWidth(0.3);
   doc.line(7, 49.5, 103, 49.5);
 
-  // Footer metadata: Lot Number & Expiry Date
+  // Footer metadata: Lot Number & Expiry Date (when applicable)
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6.5);
   doc.setTextColor(100, 100, 100);
   doc.text("LOT NUMBER", 7, 54);
-  doc.text("EXPIRY DATE", 103, 54, { align: "right" });
+  if (label.expiryDate) {
+    doc.text("EXPIRY DATE", 103, 54, { align: "right" });
+  }
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
   doc.setTextColor(20, 20, 20);
   doc.text(label.lotCode || "—", 7, 59);
 
-  const formattedExpiry = label.expiryDate
-    ? new Date(label.expiryDate).toLocaleDateString()
-    : "N/A";
-  doc.text(formattedExpiry, 103, 59, { align: "right" });
+  if (label.expiryDate) {
+    const formattedExpiry = new Date(label.expiryDate).toLocaleDateString();
+    doc.text(formattedExpiry, 103, 59, { align: "right" });
+  }
 
   const safeFileSlug = String(label.lotCode || label.fallbackFileId || "item").replace(/[\\/:*?"<>|]/g, "-");
   doc.save(`Label-${safeFileSlug}.pdf`);

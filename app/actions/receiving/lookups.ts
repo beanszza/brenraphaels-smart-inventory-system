@@ -9,8 +9,22 @@ import { read } from "@/lib/receiving/mutate";
 export async function listItemChoices() {
   await requireModule("Goods Receiving");
   return read(async () => {
-    const items = await prisma.items.findMany({ select: { ItemId: true, ItemName: true, Category: { select: { CategoryName: true } } } });
-    return resourceResult({ success: true, data: items.map(item => ({ itemId: item.ItemId, itemName: item.ItemName, categoryName: item.Category.CategoryName })) });
+    const items = await prisma.items.findMany({
+      select: {
+        ItemId: true,
+        ItemName: true,
+        Category: { select: { CategoryName: true, HasExpiry: true } },
+      },
+    });
+    return resourceResult({
+      success: true,
+      data: items.map((item) => ({
+        itemId: item.ItemId,
+        itemName: item.ItemName,
+        categoryName: item.Category.CategoryName,
+        categoryHasExpiry: item.Category.HasExpiry !== false,
+      })),
+    });
   });
 }
 

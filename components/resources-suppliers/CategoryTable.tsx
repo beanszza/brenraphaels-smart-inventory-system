@@ -31,6 +31,7 @@ export default function CategoryTable({
             <th className="px-5 py-4">Category Name</th>
             <th className="px-5 py-4">Description</th>
             <th className="px-5 py-4">Linked Items</th>
+            <th className="px-5 py-4">Expiry</th>
             <th className="px-5 py-4">Status</th>
             {canConfigure && <th className="px-5 py-4 text-center">Actions</th>}
           </tr>
@@ -39,7 +40,7 @@ export default function CategoryTable({
           {items.length === 0 ? (
             <tr>
               <td
-                colSpan={canConfigure ? 6 : 5}
+                colSpan={canConfigure ? 7 : 6}
                 className="px-5 py-12 text-center text-sm font-normal text-muted-foreground"
               >
                 No categories found.
@@ -61,6 +62,11 @@ export default function CategoryTable({
                 </td>
                 <td className="px-5 py-4 text-sm text-muted-foreground whitespace-nowrap">
                   {item.itemCount !== undefined ? `${item.itemCount} item(s)` : "-"}
+                </td>
+                <td className="px-5 py-4 whitespace-nowrap">
+                  <StatusBadge status={item.hasExpiry !== false ? "Yes" : "No"}>
+                    {item.hasExpiry !== false ? "Has Expiry" : "No Expiry"}
+                  </StatusBadge>
                 </td>
                 <td className="px-5 py-4 whitespace-nowrap">
                   <StatusBadge status={item.isActive !== false ? "Active" : "Inactive"} />
