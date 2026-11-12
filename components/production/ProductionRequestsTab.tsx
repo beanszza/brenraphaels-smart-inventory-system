@@ -10,6 +10,12 @@ import { ProductionActionModal } from "./ProductionActionModal";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Plus, MoreHorizontal, FileText, Play } from "lucide-react";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -328,21 +334,21 @@ export default function ProductionRequestsTab({
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-muted/40 border-b border-border">
               <tr>
-                <th className="py-3 px-4 font-semibold text-muted-foreground whitespace-nowrap">
+                <th className="py-3 px-3 font-semibold text-muted-foreground whitespace-nowrap">
                   {activeTab === "In Progress" || activeTab === "Completed"
                     ? "Batch Number"
                     : activeTab === "All"
                     ? "Request / Batch No."
                     : "Request Number"}
                 </th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground">Product</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground">Variant</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground">Recipe</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground text-right whitespace-nowrap">Target Output</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground text-center">Priority</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground text-center">Status</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground whitespace-nowrap">Required Date</th>
-                <th className="py-3 px-4 font-semibold text-muted-foreground text-right w-20">Actions</th>
+                <th className="py-3 px-3 font-semibold text-muted-foreground">Product</th>
+                <th className="py-3 px-3 font-semibold text-muted-foreground">Variant</th>
+                <th className="py-3 px-3 font-semibold text-muted-foreground">Recipe</th>
+                <th className="py-3 px-3 font-semibold text-muted-foreground text-right whitespace-nowrap">Target Output</th>
+                <th className="py-3 px-3 font-semibold text-muted-foreground text-center">Priority</th>
+                <th className="py-3 px-3 font-semibold text-muted-foreground text-center">Status</th>
+                <th className="py-3 px-3 font-semibold text-muted-foreground whitespace-nowrap">Required Date</th>
+                <th className="py-3 px-3 font-semibold text-muted-foreground text-right w-16">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -386,34 +392,34 @@ export default function ProductionRequestsTab({
                       }`}
                     >
                       {/* Request / Batch Number */}
-                      <td className="py-3.5 px-4 font-mono font-bold text-foreground whitespace-nowrap">
+                      <td className="py-3.5 px-3 font-semibold text-foreground whitespace-nowrap">
                         {(isInProd || isCompleted) && req.batches?.[0]?.batchNumber
                           ? req.batches[0].batchNumber
                           : req.reqNumber}
                       </td>
 
                       {/* Product (Product name only) */}
-                      <td className="py-3.5 px-4 font-semibold text-foreground">
+                      <td className="py-3.5 px-3 font-semibold text-foreground">
                         {req.productName}
                       </td>
 
                       {/* Variant (Dedicated column) */}
-                      <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap">
+                      <td className="py-3.5 px-3 text-muted-foreground">
                         {req.variant || "Standard"}
                       </td>
 
                       {/* Recipe */}
-                      <td className="py-3.5 px-4 text-muted-foreground">
+                      <td className="py-3.5 px-3 text-muted-foreground">
                         {req.recipeName}
                       </td>
 
                       {/* Target Output */}
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-foreground whitespace-nowrap">
+                      <td className="py-3.5 px-3 text-right font-semibold text-foreground whitespace-nowrap">
                         {req.quantity} {req.yieldUom}
                       </td>
 
                       {/* Priority (Monochromatic badge - No red) */}
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      <td className="py-3.5 px-3 text-center whitespace-nowrap">
                         <span
                           className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
                             isHigh
@@ -428,126 +434,93 @@ export default function ProductionRequestsTab({
                       </td>
 
                       {/* Status Badge */}
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      <td className="py-3.5 px-3 text-center whitespace-nowrap">
                         <StatusBadge status={displayStatus} />
                       </td>
 
                       {/* Required Schedule (Date only) */}
-                      <td className="py-3.5 px-4 whitespace-nowrap font-medium text-foreground">
+                      <td className="py-3.5 px-3 whitespace-nowrap font-medium text-foreground">
                         <div>{req.requiredDate ? new Date(req.requiredDate).toLocaleDateString() : "—"}</div>
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <td className="py-3.5 px-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end">
-                          {/* Three Dots Menu Container */}
-                          <div className="relative inline-block text-left action-menu-container">
-                            <button
-                              type="button"
-                              onClick={() => setOpenDropdownId(isMenuOpen ? null : req.prodReqId)}
-                              className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
-                              title="Actions"
-                            >
-                              <MoreHorizontal className="w-4 h-4 text-foreground" />
-                            </button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors cursor-pointer"
+                                title="Actions"
+                              >
+                                <MoreHorizontal className="w-4 h-4 text-foreground" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44 rounded-xl border-border bg-card shadow-lg">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedRequest(req);
+                                  setIsModalOpen(true);
+                                }}
+                                className="text-xs font-medium cursor-pointer"
+                              >
+                                View Details
+                              </DropdownMenuItem>
 
-                            {isMenuOpen && (
-                              <div className="absolute right-0 mt-1 w-40 rounded-xl border border-border bg-card shadow-lg py-1 z-30 animate-in fade-in zoom-in-95">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenDropdownId(null);
-                                    setSelectedRequest(req);
-                                    setIsModalOpen(true);
-                                  }}
-                                  className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+                              {req.batches?.[0]?.batchId && (
+                                <DropdownMenuItem
+                                  onClick={() => setSummaryBatchId(req.batches[0].batchId)}
+                                  className="text-xs font-medium cursor-pointer"
                                 >
-                                  View Details
-                                </button>
+                                  Batch Summary &amp; PDF
+                                </DropdownMenuItem>
+                              )}
 
-                                {req.batches?.[0]?.batchId && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setOpenDropdownId(null);
-                                      setSummaryBatchId(req.batches[0].batchId);
-                                    }}
-                                    className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border"
+                              {isImsManager && req.status === "Approved" && onNavigateToIssuance && (
+                                <DropdownMenuItem
+                                  onClick={() => onNavigateToIssuance(req.prodReqId)}
+                                  className="text-xs font-medium cursor-pointer"
+                                >
+                                  Issue Materials
+                                </DropdownMenuItem>
+                              )}
+
+                              {isHeadCook && isReadyForProd && (
+                                <DropdownMenuItem
+                                  onClick={() => handleStartProduction(req)}
+                                  className="text-xs font-semibold cursor-pointer"
+                                >
+                                  Start Production
+                                </DropdownMenuItem>
+                              )}
+
+                              {isAdmin && req.status === "Pending Approval" && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() => setAdminActionModal({ open: true, type: "approve", request: req })}
+                                    className="text-xs font-medium cursor-pointer"
                                   >
-                                    Batch Summary &amp; PDF
-                                  </button>
-                                )}
-
-                                {/* Issue Materials shortcut for IMS Manager on Approved */}
-                                {isImsManager && req.status === "Approved" && onNavigateToIssuance && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setOpenDropdownId(null);
-                                      onNavigateToIssuance(req.prodReqId);
-                                    }}
-                                    className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border"
+                                    Approve
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => setAdminActionModal({ open: true, type: "reject", request: req })}
+                                    className="text-xs font-medium cursor-pointer"
                                   >
-                                    Issue Materials
-                                  </button>
-                                )}
+                                    Reject
+                                  </DropdownMenuItem>
+                                </>
+                              )}
 
-                                {/* Start Production for Head Cook on Ready for Production */}
-                                {isHeadCook && isReadyForProd && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setOpenDropdownId(null);
-                                      handleStartProduction(req);
-                                    }}
-                                    className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border font-semibold"
-                                  >
-                                    Start Production
-                                  </button>
-                                )}
-
-                                {/* Admin Approval Action on Pending Approval */}
-                                {isAdmin && req.status === "Pending Approval" && (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setOpenDropdownId(null);
-                                        setAdminActionModal({ open: true, type: "approve", request: req });
-                                      }}
-                                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border"
-                                    >
-                                      Approve
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setOpenDropdownId(null);
-                                        setAdminActionModal({ open: true, type: "reject", request: req });
-                                      }}
-                                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border"
-                                    >
-                                      Reject
-                                    </button>
-                                  </>
-                                )}
-
-                                {/* In Progress items shortcut to track (Head Cook & Admin) */}
-                                {isInProd && onStartBatchAndTrack && req.batches?.[0]?.batchId && (isHeadCook || isAdmin) && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setOpenDropdownId(null);
-                                      onStartBatchAndTrack(req.batches[0].batchId);
-                                    }}
-                                    className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border"
-                                  >
-                                    Track Batch
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                              {isInProd && onStartBatchAndTrack && req.batches?.[0]?.batchId && (isHeadCook || isAdmin) && (
+                                <DropdownMenuItem
+                                  onClick={() => onStartBatchAndTrack(req.batches[0].batchId)}
+                                  className="text-xs font-medium cursor-pointer"
+                                >
+                                  Track Batch
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </td>
                     </tr>

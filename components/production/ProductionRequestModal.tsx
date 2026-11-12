@@ -28,6 +28,7 @@ import { ProductionRequestEntity, LotSuggestionsResponse } from "./types";
 import { ProductionActionModal, ProductionActionType } from "./ProductionActionModal";
 import { useIsAdmin } from "@/context/StaffContext";
 import { getFutureDateError, getMaxFutureDateString } from "@/lib/date-limits";
+import { resolveStaffName } from "@/lib/orders/dto";
 
 interface ProductionRequestModalProps {
   open: boolean;
@@ -595,7 +596,7 @@ export default function ProductionRequestModal({
               <div className="space-y-1">
                 <h4 className="text-sm font-semibold text-foreground">Production Request Rejected</h4>
                 <p className="text-sm text-muted-foreground">
-                  Rejected by <strong className="text-foreground">{initialRequest.rejectedBy || "Admin"}</strong>
+                  Rejected by <strong className="text-foreground">{resolveStaffName(initialRequest.rejectedBy) || "Admin"}</strong>
                   {initialRequest.rejectedAt ? ` on ${new Date(initialRequest.rejectedAt).toLocaleDateString()}` : ""}.
                   {initialRequest.rejectionReason && (
                     <span> Reason: &quot;{initialRequest.rejectionReason}&quot;.</span>
@@ -617,7 +618,7 @@ export default function ProductionRequestModal({
               <div className="space-y-0.5">
                 <h4 className="text-sm font-semibold text-foreground">Production Request Approved &amp; Lots Finalized</h4>
                 <p className="text-sm text-muted-foreground">
-                  Approved by <strong className="text-foreground">{initialRequest.approvedBy || "Admin"}</strong>
+                  Approved by <strong className="text-foreground">{resolveStaffName(initialRequest.approvedBy) || "Admin"}</strong>
                   {initialRequest.approvedAt ? ` on ${new Date(initialRequest.approvedAt).toLocaleDateString()}` : ""}.
                   The reserved ingredient lots shown below are locked for this request and will be consumed upon Material Issuance.
                 </p>

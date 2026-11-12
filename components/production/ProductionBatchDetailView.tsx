@@ -22,6 +22,7 @@ import { ProductionBatchEntity } from "./types";
 
 import { BatchProofField } from "./BatchProofField";
 import { getMaxFutureDateString } from "@/lib/date-limits";
+import { resolveStaffName } from "@/lib/orders/dto";
 
 export const COOKING_STAGES = [
   "Steaming",
@@ -555,12 +556,12 @@ export default function ProductionBatchDetailView({
             Back to Active Batches
           </Button>
           <div className="h-4 w-px bg-border" />
-          <span className="text-xs font-bold text-foreground">
+          <span className="text-sm font-semibold text-foreground">
             {batch.batchNumber}
           </span>
           <StatusBadge status={batch.status} />
           {batch.fgLotCode && (
-            <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+            <span className="text-xs text-muted-foreground bg-muted px-2.5 py-0.5 rounded-md font-medium">
               Lot: {batch.fgLotCode}
             </span>
           )}
@@ -574,7 +575,7 @@ export default function ProductionBatchDetailView({
               variant="outline"
               size="sm"
               onClick={() => setShowRejectModal(true)}
-              className="text-xs font-semibold border-destructive/40 text-destructive hover:bg-destructive/10 rounded-xl cursor-pointer"
+              className="text-sm font-semibold border-destructive/40 text-destructive hover:bg-destructive/10 rounded-xl px-4 h-9 cursor-pointer"
             >
               Reject Batch
             </Button>
@@ -582,10 +583,10 @@ export default function ProductionBatchDetailView({
 
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={() => fetchBatchDetail(true)}
-            className="text-xs text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1"
+            className="text-sm font-semibold text-foreground rounded-xl border-border hover:bg-muted px-3.5 h-9 cursor-pointer flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh
@@ -594,31 +595,31 @@ export default function ProductionBatchDetailView({
       </div>
 
       {/* Main Header Card */}
-      <div className="p-6 rounded-2xl border border-border bg-card space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-xl font-bold text-foreground">{batch.productName}</h2>
+      <div className="p-5 rounded-2xl border border-border bg-card space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="text-lg font-semibold text-foreground">{batch.productName}</h2>
               {batch.variant && (
                 <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full">
                   {batch.variant}
                 </span>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-muted-foreground">
-              <span>Recipe: <strong className="text-foreground">{batch.recipeName}</strong></span>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+              <span>Recipe: <strong className="text-foreground font-semibold">{batch.recipeName}</strong></span>
               <span>•</span>
-              <span>Request qty: <strong className="text-foreground">{reqQty.toLocaleString()} {batch.yieldUom || "units"}</strong></span>
+              <span>Target Output: <strong className="text-foreground font-semibold">{reqQty.toLocaleString()} {batch.yieldUom || "units"}</strong></span>
               {batch.requestedBy && (
                 <>
                   <span>•</span>
-                  <span>Requested by <strong className="text-foreground">{batch.requestedBy}</strong></span>
+                  <span>Requested by <strong className="text-foreground font-semibold">{resolveStaffName(batch.requestedBy) || batch.requestedBy}</strong></span>
                 </>
               )}
               {batch.approvedBy && (
                 <>
                   <span>•</span>
-                  <span>Approved by <strong className="text-foreground">{batch.approvedBy}</strong></span>
+                  <span>Approved by <strong className="text-foreground font-semibold">{resolveStaffName(batch.approvedBy) || batch.approvedBy}</strong></span>
                 </>
               )}
             </div>
@@ -626,8 +627,8 @@ export default function ProductionBatchDetailView({
         </div>
 
         {/* 2-Step Sequential Kitchen Stepper */}
-        <div className="pt-2 border-t border-border">
-          <p className="text-[11px] font-bold text-muted-foreground tracking-wider uppercase mb-3">
+        <div className="pt-3 border-t border-border">
+          <p className="text-xs font-semibold text-muted-foreground tracking-wider uppercase mb-2.5">
             Workflow
           </p>
           <div className="flex items-center gap-3">
@@ -755,7 +756,7 @@ export default function ProductionBatchDetailView({
                                   max={getMaxFutureDateString()}
                                   value={stageDate}
                                   onChange={(e) => setStageDate(e.target.value)}
-                                  className="h-10 text-xs border-border bg-card rounded-xl px-3 text-foreground"
+                                  className="h-10 text-sm border-border bg-card rounded-xl px-3 text-foreground"
                                 />
                               </div>
 
@@ -774,7 +775,7 @@ export default function ProductionBatchDetailView({
                                       setStageMinute(cur.minute);
                                       setStagePeriod(cur.period);
                                     }}
-                                    className="text-[11px] font-medium text-primary hover:underline cursor-pointer"
+                                    className="text-xs font-medium text-primary hover:underline cursor-pointer"
                                   >
                                     Set to Now
                                   </button>
@@ -784,20 +785,20 @@ export default function ProductionBatchDetailView({
                                   <select
                                     value={stageHour}
                                     onChange={(e) => setStageHour(e.target.value)}
-                                    className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                                    className="h-10 flex-1 px-3 text-sm border border-border rounded-xl bg-card text-foreground font-medium focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                                   >
                                     {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0")).map((h) => (
                                       <option key={h} value={h}>{h}</option>
                                     ))}
                                   </select>
 
-                                  <span className="font-bold text-muted-foreground text-sm shrink-0">:</span>
+                                  <span className="font-semibold text-muted-foreground text-sm shrink-0">:</span>
 
                                   {/* Minute Selector */}
                                   <select
                                     value={stageMinute}
                                     onChange={(e) => setStageMinute(e.target.value)}
-                                    className="h-10 flex-1 px-3 text-xs border border-border rounded-xl bg-card text-foreground font-bold focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                                    className="h-10 flex-1 px-3 text-sm border border-border rounded-xl bg-card text-foreground font-medium focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                                   >
                                     {Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0")).map((m) => (
                                       <option key={m} value={m}>{m}</option>
@@ -809,7 +810,7 @@ export default function ProductionBatchDetailView({
                                     <button
                                       type="button"
                                       onClick={() => setStagePeriod("AM")}
-                                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
                                         stagePeriod === "AM"
                                           ? "bg-primary text-primary-foreground shadow-xs"
                                           : "text-muted-foreground hover:text-foreground"
@@ -820,7 +821,7 @@ export default function ProductionBatchDetailView({
                                     <button
                                       type="button"
                                       onClick={() => setStagePeriod("PM")}
-                                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
                                         stagePeriod === "PM"
                                           ? "bg-primary text-primary-foreground shadow-xs"
                                           : "text-muted-foreground hover:text-foreground"
@@ -842,22 +843,17 @@ export default function ProductionBatchDetailView({
                                 placeholder="Chef observations, temperature, consistency..."
                                 value={stageNotes}
                                 onChange={(e) => setStageNotes(e.target.value)}
-                                className="h-10 text-xs border-border bg-card rounded-xl text-foreground placeholder:text-muted-foreground"
+                                className="h-10 text-sm border-border bg-card rounded-xl px-3 text-foreground placeholder:text-muted-foreground"
                               />
                             </div>
 
                             {/* Bottom Controls with Live Validation Status */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border/60">
                               <div className="text-xs text-muted-foreground">
-                                {validateStageDateTime() ? (
+                                {validateStageDateTime() && (
                                   <span className="text-destructive font-medium flex items-center gap-1.5">
                                     <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                                     <span>{validateStageDateTime()}</span>
-                                  </span>
-                                ) : (
-                                  <span className="text-muted-foreground flex items-center gap-1.5">
-                                    <span>Recorded End:</span>
-                                    <strong className="text-foreground">{stageDate} at {stageHour}:{stageMinute} {stagePeriod}</strong>
                                   </span>
                                 )}
                               </div>
@@ -868,7 +864,7 @@ export default function ProductionBatchDetailView({
                                     type="button"
                                     onClick={handleOpenCompleteModal}
                                     disabled={stageLoading || Boolean(validateStageDateTime())}
-                                    className="h-10 px-5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                    className="h-10 px-5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                                   >
                                     <CheckCircle2 className="w-4 h-4" />
                                     <span>{stageLoading ? "Completing..." : `Complete ${stName}`}</span>

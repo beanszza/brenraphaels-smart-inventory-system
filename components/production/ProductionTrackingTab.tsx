@@ -93,16 +93,18 @@ export default function ProductionTrackingTab({
             Track active kitchen batches, advance cooking stages, complete packaging, and record batch outcomes.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchBatches}
-            className="text-xs h-8 rounded-lg border-border hover:bg-muted font-semibold cursor-pointer"
-          >
-            Refresh
-          </Button>
-        </div>
+        {!selectedBatchId && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchBatches}
+              className="text-sm h-9 px-3.5 rounded-xl border-border hover:bg-muted font-semibold cursor-pointer"
+            >
+              Refresh
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* ── Slim Sidebar + Spacious Main Production Layout ── */}
@@ -112,8 +114,8 @@ export default function ProductionTrackingTab({
           <div className="border border-border rounded-2xl bg-card p-3.5 space-y-3 shadow-xs">
             {/* Card Header matching user reference */}
             <div className="flex items-center justify-between pb-1 border-b border-border/60">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-foreground">Active Batches</h3>
-              <span className="text-[11px] font-semibold text-muted-foreground font-mono">
+              <h3 className="font-semibold text-xs uppercase tracking-wider text-foreground">Active Batches</h3>
+              <span className="text-xs font-medium text-muted-foreground">
                 {activeBatches.length} {activeBatches.length === 1 ? "Batch" : "Batches"}
               </span>
             </div>
@@ -150,28 +152,28 @@ export default function ProductionTrackingTab({
                     >
                       <div className="flex items-start justify-between gap-1.5">
                         <div className="min-w-0 flex-1">
-                          <span className="font-mono font-bold text-xs text-foreground block truncate">
+                          <span className="font-semibold text-xs text-foreground block truncate">
                             {b.batchNumber}
                           </span>
-                          <span className="font-semibold text-xs text-foreground block mt-0.5 truncate">
+                          <span className="font-semibold text-sm text-foreground block mt-0.5 truncate">
                             {b.productName}
                           </span>
                           {b.variant && (
-                            <span className="text-[10px] text-muted-foreground block truncate">
+                            <span className="text-xs text-muted-foreground block truncate">
                               {b.variant}
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border border-border bg-background text-foreground shrink-0">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded border border-border bg-background text-foreground shrink-0">
                           {b.status}
                         </span>
                       </div>
 
-                      <div className="mt-2.5 pt-2 border-t border-border/70 flex items-center justify-between text-[11px]">
-                        <span className="font-medium text-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border text-[10px]">
+                      <div className="mt-2.5 pt-2 border-t border-border/70 flex items-center justify-between text-xs">
+                        <span className="font-medium text-foreground bg-muted/60 px-2 py-0.5 rounded border border-border text-xs">
                           {b.currentStage || b.stage || "Pre-Production"}
                         </span>
-                        <span className="font-mono font-bold text-foreground text-[11px]">
+                        <span className="font-semibold text-foreground text-xs">
                           {b.estimatedQuantity} {b.yieldUom || "jars"}
                         </span>
                       </div>
