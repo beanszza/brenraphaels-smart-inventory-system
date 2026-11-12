@@ -37,87 +37,105 @@ export async function migrateLegacySkusAndLots() {
       return;
     }
 
-    await prisma.$transaction(async (tx) => {
-      // 1. Migrate legacy SKUs to [PRODUCT]-[VARIANT]-[PACKAGING]-[WEIGHT]
-      if (fpsToUpdate.length > 0) {
-        const usedSkus = new Set(fps.map((f) => (f.Sku || "").trim().toUpperCase()));
-        for (const fp of fpsToUpdate) {
-          const oldSku = (fp.Sku || "").trim().toUpperCase();
-          usedSkus.delete(oldSku);
-          const base = buildBaseVariantSku(fp.Items?.ItemName || "", fp.Variant || "");
-          let candidate = base;
-          let counter = 2;
-          while (usedSkus.has(candidate)) {
-            candidate = `${base}-${counter++}`;
+    // 1. Migrate legacy SKUs to [PRODUCT]-[VARIANT]-[PACKAGING]-[WEIGHT]
+    if (fpsToUpdate.length > 0) {
+      await prisma.$transaction(
+        async (tx) => {
+          const usedSkus = new Set(fps.map((f) => (f.Sku || "").trim().toUpperCase()));
+          for (const fp of fpsToUpdate) {
+            const oldSku = (fp.Sku || "").trim().toUpperCase();
+            usedSkus.delete(oldSku);
+            const base = buildBaseVariantSku(fp.Items?.ItemName || "", fp.Variant || "");
+            let candidate = base;
+            let counter = 2;
+            while (usedSkus.has(candidate)) {
+              candidate = `${base}-${counter++}`;
+            }
+            usedSkus.add(candidate);
+            await tx.finishedProducts.update({
+              where: { ProductId: fp.ProductId },
+              data: { Sku: candidate },
+            });
           }
-          usedSkus.add(candidate);
-          await tx.finishedProducts.update({
-            where: { ProductId: fp.ProductId },
-            data: { Sku: candidate },
-          });
-        }
-      }
+        },
+        { maxWait: 10000, timeout: 30000 }
+      );
+    }
 
-      // 2. Migrate legacy LotCodes to [CATEGORY]-[ITEM]-[YYMMDD]-[BATCH#]
-      if (lotsToUpdate.length > 0) {
-        const usedLotLocKeys = new Set(
-          lots.map((l) => `${(l.LotCode || "").trim().toUpperCase()}|${l.LocationId}`)
+    // 2. Migrate legacy LotCodes to [CATEGORY]-[ITEM]-[YYMMDD]-[BATCH#] in small chunks
+    // to avoid Prisma's 5s default interactive transaction timeout on remote DBs.
+    if (lotsToUpdate.length > 0) {
+      const usedLotLocKeys = new Set(
+        lots.map((l) => `${(l.LotCode || "").trim().toUpperCase()}|${l.LocationId}`)
+      );
+      const seqMap = new Map<string, number>();
+
+      const plannedLotUpdates = lotsToUpdate.map((lot) => {
+        const oldCode = lot.LotCode;
+        const oldKey = `${(oldCode || "").trim().toUpperCase()}|${lot.LocationId}`;
+        usedLotLocKeys.delete(oldKey);
+
+        const categoryName =
+          lot.SourceType === "Production"
+            ? "Finished Goods"
+            : lot.Items?.Category?.CategoryName || "Raw Material";
+        const itemName = lot.Items?.ItemName || "Item";
+        const date = lot.ManufactureDate || lot.ReceivedDate || new Date();
+
+        const cat = getLotCategoryCode(categoryName);
+        const itemAbbr = getLotItemAbbreviation(itemName);
+        const yy = String(date.getFullYear()).slice(-2);
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
+        const bucketKey = `${cat}|${itemAbbr}|${yy}${mm}${dd}|${lot.LocationId}`;
+
+        let seq = (seqMap.get(bucketKey) || 0) + 1;
+        let newCode = formatLotCode(categoryName, itemName, date, seq);
+        while (usedLotLocKeys.has(`${newCode}|${lot.LocationId}`)) {
+          seq++;
+          newCode = formatLotCode(categoryName, itemName, date, seq);
+        }
+        seqMap.set(bucketKey, seq);
+        usedLotLocKeys.add(`${newCode}|${lot.LocationId}`);
+
+        return { lot, oldCode, newCode };
+      });
+
+      const CHUNK_SIZE = 10;
+      for (let i = 0; i < plannedLotUpdates.length; i += CHUNK_SIZE) {
+        const chunk = plannedLotUpdates.slice(i, i + CHUNK_SIZE);
+        await prisma.$transaction(
+          async (tx) => {
+            for (const { lot, oldCode, newCode } of chunk) {
+              await tx.inventoryLots.update({
+                where: { LotId: lot.LotId },
+                data: { LotCode: newCode },
+              });
+
+              await Promise.all([
+                tx.materialIssuanceScans.updateMany({
+                  where: { LotId: lot.LotId },
+                  data: { LotCode: newCode },
+                }),
+                tx.stockInLines.updateMany({
+                  where: { ItemId: lot.ItemId, LotCode: oldCode },
+                  data: { LotCode: newCode },
+                }),
+                tx.putAwayTransactions.updateMany({
+                  where: { LotCode: oldCode },
+                  data: { LotCode: newCode },
+                }),
+                tx.recallRecords.updateMany({
+                  where: { TargetLotCode: oldCode },
+                  data: { TargetLotCode: newCode },
+                }),
+              ]);
+            }
+          },
+          { maxWait: 10000, timeout: 60000 }
         );
-        const seqMap = new Map<string, number>();
-
-        for (const lot of lotsToUpdate) {
-          const oldCode = lot.LotCode;
-          const oldKey = `${(oldCode || "").trim().toUpperCase()}|${lot.LocationId}`;
-          usedLotLocKeys.delete(oldKey);
-
-          const categoryName =
-            lot.SourceType === "Production"
-              ? "Finished Goods"
-              : lot.Items?.Category?.CategoryName || "Raw Material";
-          const itemName = lot.Items?.ItemName || "Item";
-          const date = lot.ManufactureDate || lot.ReceivedDate || new Date();
-
-          const cat = getLotCategoryCode(categoryName);
-          const itemAbbr = getLotItemAbbreviation(itemName);
-          const yy = String(date.getFullYear()).slice(-2);
-          const mm = String(date.getMonth() + 1).padStart(2, "0");
-          const dd = String(date.getDate()).padStart(2, "0");
-          const bucketKey = `${cat}|${itemAbbr}|${yy}${mm}${dd}|${lot.LocationId}`;
-
-          let seq = (seqMap.get(bucketKey) || 0) + 1;
-          let newCode = formatLotCode(categoryName, itemName, date, seq);
-          while (usedLotLocKeys.has(`${newCode}|${lot.LocationId}`)) {
-            seq++;
-            newCode = formatLotCode(categoryName, itemName, date, seq);
-          }
-          seqMap.set(bucketKey, seq);
-          usedLotLocKeys.add(`${newCode}|${lot.LocationId}`);
-
-          await tx.inventoryLots.update({
-            where: { LotId: lot.LotId },
-            data: { LotCode: newCode },
-          });
-
-          // Keep historical LotCode text references in sync
-          await tx.materialIssuanceScans.updateMany({
-            where: { LotId: lot.LotId },
-            data: { LotCode: newCode },
-          });
-          await tx.stockInLines.updateMany({
-            where: { ItemId: lot.ItemId, LotCode: oldCode },
-            data: { LotCode: newCode },
-          });
-          await tx.putAwayTransactions.updateMany({
-            where: { LotCode: oldCode },
-            data: { LotCode: newCode },
-          });
-          await tx.recallRecords.updateMany({
-            where: { TargetLotCode: oldCode },
-            data: { TargetLotCode: newCode },
-          });
-        }
       }
-    }, { isolationLevel: "Serializable" });
+    }
 
     legacyCodesMigrated = true;
   } catch (err) {
