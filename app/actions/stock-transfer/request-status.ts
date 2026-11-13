@@ -36,6 +36,30 @@ validateInput(body);
 
     const newStatus = action === "Approve" ? "Approved" : "Rejected";
 
+    // If rejected, release any lot reservations made for this request
+    if (action === "Reject") {
+      const items = await tx.stockTransferRequestItems.findMany({
+        where: { RequestId: requestId },
+      });
+      for (const item of items) {
+        const sLots = (item.SuggestedLots as any[]) || [];
+        for (const sLot of sLots) {
+          if (sLot.lotId && sLot.qty > 0) {
+            const lot = await tx.inventoryLots.findUnique({ where: { LotId: sLot.lotId } });
+            if (lot) {
+              const toRelease = Math.min(Number(lot.ReservedQuantity || 0), Number(sLot.qty));
+              if (toRelease > 0) {
+                await tx.inventoryLots.update({
+                  where: { LotId: sLot.lotId },
+                  data: { ReservedQuantity: { decrement: toRelease } },
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
     const updated = await tx.stockTransferRequests.update({
       where: { RequestId: requestId },
       data: {

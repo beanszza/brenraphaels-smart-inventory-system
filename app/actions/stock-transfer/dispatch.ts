@@ -99,6 +99,24 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
       }
     }
 
+    // 1b. Check if this transfer has lot reservations under its parent request
+    const reservedLotsMap: Record<number, number> = {};
+    if (transfer.RequestId) {
+      const strItem = await tx.stockTransferRequestItems.findFirst({
+        where: {
+          RequestId: transfer.RequestId,
+          ProductId: transfer.ProductId,
+        },
+      });
+      if (strItem?.SuggestedLots && Array.isArray(strItem.SuggestedLots)) {
+        for (const sLot of strItem.SuggestedLots as any[]) {
+          if (sLot.lotId && sLot.qty > 0) {
+            reservedLotsMap[sLot.lotId] = (reservedLotsMap[sLot.lotId] || 0) + Number(sLot.qty);
+          }
+        }
+      }
+    }
+
     let remainingToDeduct = transferQty;
     const lotDeductions: Array<{ lotId: number; deducted: number }> = [];
 
@@ -106,20 +124,34 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
       if (remainingToDeduct <= 0) break;
 
       const currentRem = Number(lot.QuantityRemaining);
-      const available = Math.max(0, currentRem - Number(lot.ReservedQuantity || 0));
-      const toDeduct = Math.min(available, remainingToDeduct);
+      const currentReserved = Number(lot.ReservedQuantity || 0);
+
+      // How much of this lot's reserved quantity belongs to this transfer request
+      const reservedForThis = Math.min(currentReserved, reservedLotsMap[lot.LotId] || 0);
+      const unreservedInLot = Math.max(0, currentRem - currentReserved);
+
+      // Available to deduct for this transfer includes its own reservation plus any unreserved stock
+      const availableForThis = unreservedInLot + reservedForThis;
+      const toDeduct = Math.min(availableForThis, remainingToDeduct);
       if (toDeduct <= 0) continue;
+
+      // How much to deduct from ReservedQuantity (clearing the reservation as we deduct)
+      const reservedToDeduct = Math.min(reservedForThis, toDeduct);
 
       await tx.inventoryLots.update({
         where: { LotId: lot.LotId },
         data: {
           QuantityRemaining: { decrement: toDeduct },
+          ...(reservedToDeduct > 0 ? { ReservedQuantity: { decrement: reservedToDeduct } } : {}),
           Status: currentRem - toDeduct <= 0 ? "Depleted" : "Active",
         },
       });
 
       lotDeductions.push({ lotId: lot.LotId, deducted: toDeduct });
       remainingToDeduct -= toDeduct;
+      if (reservedLotsMap[lot.LotId]) {
+        reservedLotsMap[lot.LotId] -= reservedToDeduct;
+      }
     }
 
     if (remainingToDeduct > 0.001) {

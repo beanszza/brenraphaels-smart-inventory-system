@@ -386,6 +386,22 @@ export async function createRequest(body: any = {}) {
       },
     });
 
+    // Reserve lots for this request so other transfers or kitchen batches cannot take them
+    for (const pi of preparedItems) {
+      if (pi.suggestedLots && Array.isArray(pi.suggestedLots)) {
+        for (const sLot of pi.suggestedLots) {
+          if (sLot.lotId && sLot.qty > 0) {
+            await tx.inventoryLots.update({
+              where: { LotId: sLot.lotId },
+              data: {
+                ReservedQuantity: { increment: sLot.qty },
+              },
+            });
+          }
+        }
+      }
+    }
+
     return saved(
       staff,
       "stock-transfer-request",
