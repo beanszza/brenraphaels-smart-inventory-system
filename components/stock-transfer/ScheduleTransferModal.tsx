@@ -1,18 +1,17 @@
 "use client";
-import { toast } from "sonner";
-import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
-import { actionResponse } from "@/lib/resources/action-response";
-import { scheduleTransfer } from "@/app/actions/stock-transfer/transfers";
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Calendar, Truck, AlertCircle, Package } from "lucide-react";
+import { X, Calendar, MapPin, AlertCircle, Package, Truck, Phone, FileText } from "lucide-react";
+import { toast } from "sonner";
+import { actionResponse } from "@/lib/resources/action-response";
+import { scheduleTransfer } from "@/app/actions/stock-transfer/transfers";
 import { StockTransferRequest, STRItem } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
-import { StockTransferConfirmModal } from "./StockTransferConfirmModal";
+import { safeIsoDate } from "@/lib/stock-transfer/operations";
 
 interface ScheduleTransferModalProps {
   open: boolean;
@@ -21,15 +20,22 @@ interface ScheduleTransferModalProps {
   request: StockTransferRequest | null;
 }
 
-const COURIER_OPTIONS = [
+const TRANSPORT_PROVIDERS = [
+  "Company-owned Vehicle",
   "Lalamove",
   "Transportify",
-  "Grab Express",
-  "Ninja Van",
-  "J&T Express",
-  "In-House Fleet / Driver",
-  "Branch Pickup",
-  "Other Third-Party",
+  "Other Third-party Provider",
+];
+
+const VEHICLE_TYPES = [
+  "Motorcycle",
+  "Sedan",
+  "MPV",
+  "Van",
+  "Pickup Truck",
+  "Closed Van",
+  "6-Wheeler Truck",
+  "10-Wheeler Truck",
 ];
 
 export function ScheduleTransferModal({
@@ -40,25 +46,17 @@ export function ScheduleTransferModal({
 }: ScheduleTransferModalProps) {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // Selected Product within the request (if multiple items)
-  const [selectedProductId, setSelectedProductId] = useState<string>("");
-  const [transferQuantity, setTransferQuantity] = useState<number | "">("");
-  const [scheduledDate, setScheduledDate] = useState<string>("");
-  const [courierName, setCourierName] = useState<string>("Lalamove");
-  const [driverName, setDriverName] = useState<string>("");
-  const [vehiclePlate, setVehiclePlate] = useState<string>("");
-  const [notes, setNotes] = useState<string>("");
   const [formError, setFormError] = useState<string | null>(null);
-  const [showScheduleConfirm, setShowScheduleConfirm] = useState(false);
 
-  const getUnscheduledQty = (prodId: number, reqQty: number) => {
-    const scheduledTotal =
-      request?.transfers
-        ?.filter((t) => t.productId === prodId && t.status !== "Cancelled")
-        .reduce((sum, t) => sum + Number(t.transferQuantity), 0) || 0;
-    return Math.max(0, reqQty - scheduledTotal);
-  };
+  // Form State
+  const [transportProvider, setTransportProvider] = useState<string>("");
+  const [vehicleType, setVehicleType] = useState<string>("");
+  const [plateNumber, setPlateNumber] = useState<string>("");
+  const [bookingReference, setBookingReference] = useState<string>("");
+  const [driverName, setDriverName] = useState<string>("");
+  const [driverContact, setDriverContact] = useState<string>("");
+  const [transferFee, setTransferFee] = useState<string>("");
+  const [schedulingRemarks, setSchedulingRemarks] = useState<string>("");
 
   useEffect(() => {
     setMounted(true);
@@ -69,21 +67,15 @@ export function ScheduleTransferModal({
       const original = document.body.style.overflow;
       document.body.style.overflow = "hidden";
 
-      // Prefill product and quantity based on remaining unscheduled qty
-      if (request.items && request.items.length > 0) {
-        const itemWithRemaining =
-          request.items.find((i) => getUnscheduledQty(i.productId, i.requestedQuantity) > 0) ||
-          request.items[0];
-
-        setSelectedProductId(String(itemWithRemaining.productId));
-        const rem = getUnscheduledQty(itemWithRemaining.productId, itemWithRemaining.requestedQuantity);
-        setTransferQuantity(rem > 0 ? rem : itemWithRemaining.requestedQuantity);
-      }
-      setScheduledDate(new Date().toISOString().split("T")[0]);
-      setCourierName("Lalamove");
+      // Reset form fields
+      setTransportProvider("Company-owned Vehicle");
+      setVehicleType("Van");
+      setPlateNumber("");
+      setBookingReference("");
       setDriverName("");
-      setVehiclePlate("");
-      setNotes("");
+      setDriverContact("");
+      setTransferFee("");
+      setSchedulingRemarks("");
       setFormError(null);
 
       return () => {
@@ -92,105 +84,123 @@ export function ScheduleTransferModal({
     }
   }, [open, request]);
 
+  const { requestClose, confirmModal } = useConfirmedClose(onClose);
+
   if (!open || !mounted || !request) return null;
 
-  const selectedItem: STRItem | undefined = request.items?.find(
-    (i) => String(i.productId) === selectedProductId
-  );
-
-  const remainingForSelected = selectedItem
-    ? getUnscheduledQty(selectedItem.productId, selectedItem.requestedQuantity)
-    : 0;
-
-  const handleProductChange = (prodId: string) => {
-    setSelectedProductId(prodId);
-    const itm = request.items?.find((i) => String(i.productId) === prodId);
-    if (itm) {
-      const unscheduled = getUnscheduledQty(itm.productId, itm.requestedQuantity);
-      setTransferQuantity(unscheduled > 0 ? unscheduled : itm.requestedQuantity);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading || !request) return;
     setFormError(null);
 
-    if (!selectedProductId) {
-      setFormError("Please select the product to transfer.");
+    // Validations
+    if (!transportProvider) {
+      setFormError("Please select a transport provider.");
       return;
     }
-    if (typeof transferQuantity !== "number" || transferQuantity <= 0) {
-      setFormError("Transfer quantity must be greater than zero.");
+    if (!vehicleType) {
+      setFormError("Please select a vehicle type.");
       return;
     }
-    if (remainingForSelected > 0 && transferQuantity > remainingForSelected) {
-      setFormError(`Transfer quantity cannot exceed remaining unscheduled quantity (${remainingForSelected}).`);
+    if (!plateNumber.trim()) {
+      setFormError("Plate number is required.");
       return;
     }
-    const schedError = getFutureDateError(scheduledDate, "Scheduled transfer date");
-    if (schedError) {
-      setFormError(schedError);
+    if (!driverName.trim()) {
+      setFormError("Driver name is required.");
+      return;
+    }
+    if (!driverContact.trim()) {
+      setFormError("Driver contact number is required.");
       return;
     }
 
-    setShowScheduleConfirm(true);
-  };
-
-  const doSchedule = async () => {
-    if (!request) return;
     setLoading(true);
-    setFormError(null);
     try {
-      const payload = {
-        requestId: request.requestId,
-        productId: parseInt(selectedProductId, 10),
-        transferQuantity: Number(transferQuantity),
-        scheduledDate,
-        courierName: courierName || null,
-        driverName: driverName.trim() || null,
-        vehiclePlate: vehiclePlate.trim() || null,
-        notes: notes.trim() || null,
+      const todayStr = new Date().toISOString().split("T")[0];
+      const scheduledDate = request.requiredDate ? request.requiredDate.split("T")[0] : todayStr;
+
+      const itemsToSchedule = request.items && request.items.length > 0 ? request.items : [];
+      if (itemsToSchedule.length === 0) {
+        throw new Error("No products found in this request to schedule.");
+      }
+
+      const scheduleMetadata = {
+        transportProvider,
+        vehicleType,
+        plateNumber: plateNumber.trim(),
+        bookingReference: bookingReference.trim() || null,
+        driverName: driverName.trim(),
+        driverContact: driverContact.trim(),
+        transferFee: transferFee ? Number(transferFee) : null,
+        remarks: schedulingRemarks.trim() || null,
       };
 
-      const res = await actionResponse(scheduleTransfer(payload));
-      if (res.data?.success) {
-        toast.success("Transfer scheduled successfully. Request is now Scheduled for Dispatch.");
-        setShowScheduleConfirm(false);
+      let scheduledCount = 0;
+      let lastErrorMessage = "";
+
+      for (const item of itemsToSchedule) {
+        // Calculate remaining unscheduled quantity
+        const alreadyScheduled = request.transfers
+          ?.filter((t) => t.productId === item.productId && t.status !== "Cancelled")
+          .reduce((sum, t) => sum + Number(t.transferQuantity), 0) || 0;
+        const remQty = Math.max(0, item.requestedQuantity - alreadyScheduled);
+        const qtyToSchedule = remQty > 0 ? remQty : item.requestedQuantity;
+
+        const res = await actionResponse(
+          scheduleTransfer({
+            requestId: request.requestId,
+            productId: item.productId,
+            transferQuantity: qtyToSchedule,
+            scheduledDate,
+            courierName: transportProvider,
+            driverName: driverName.trim(),
+            vehiclePlate: plateNumber.trim(),
+            notes: JSON.stringify(scheduleMetadata),
+          })
+        );
+
+        if (res.data?.success) {
+          scheduledCount++;
+        } else if (res.data?.message) {
+          lastErrorMessage = res.data.message;
+        }
+      }
+
+      if (scheduledCount > 0) {
+        toast.success("Stock transfer scheduled successfully.");
         onSuccess();
         onClose();
       } else {
-        setFormError(res.data?.message || "Failed to schedule transfer.");
-        setShowScheduleConfirm(false);
+        setFormError(lastErrorMessage || "Failed to schedule stock transfer.");
       }
     } catch (err: unknown) {
-      setFormError((err instanceof Error ? err.message : null) || "Failed to schedule transfer.");
-      setShowScheduleConfirm(false);
+      setFormError(err instanceof Error ? err.message : "Failed to schedule stock transfer.");
     } finally {
       setLoading(false);
     }
   };
 
-  const { requestClose, confirmModal } = useConfirmedClose(onClose);
+  const formatDateDisplay = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "—";
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString("en-US");
+  };
 
   return createPortal(
-    <div
-      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
-    >
+    <div className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150">
       {confirmModal}
       <div
-        style={{ width: "100%", maxWidth: "780px" }}
+        style={{ width: "100%", maxWidth: "920px" }}
         className="w-full max-h-[92vh] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-5">
           <div>
-            <h2 className="text-xl font-bold text-foreground">
-              Schedule Formal Stock Transfer
-            </h2>
+            <h2 className="text-xl font-bold text-foreground">Schedule Stock Transfer</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Assign dispatch logistics and schedule transfer for Request {request.requestNumber}
+              Set the transportation arrangements and delivery schedule for the approved stock transfer.
             </p>
           </div>
           <button
@@ -211,189 +221,229 @@ export function ScheduleTransferModal({
             </div>
           )}
 
-          {/* Request Context Banner */}
-          <div className="rounded-2xl border border-border bg-muted/20 p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Originating Request
-              </span>
-              <div className="text-base font-bold text-foreground mt-0.5">
-                {request.requestNumber}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                Destination: <strong className="text-foreground">{request.toLocationName}</strong>
-              </div>
-            </div>
-
-            <div className="text-left sm:text-right">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Transfer Record
-              </span>
-              <div className="text-sm font-semibold text-foreground mt-0.5">
-                STF-YYYY-XXXX (Auto-assigned)
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                Priority: <span className="font-semibold text-foreground">{request.priority}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Product & Variant Highlight */}
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+          {/* Section A: Stock Transfer Information */}
+          <div className="rounded-2xl border border-border bg-muted/20 p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Package className="w-4 h-4 text-muted-foreground" />
-                Product & Variant to Schedule
-              </label>
+              <h3 className="text-sm font-bold text-foreground">A. Stock Transfer Information</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+                REQUEST INFORMATION · READ-ONLY
+              </span>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Product selector if request has multiple items */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  Finished Product <span className="text-destructive">*</span>
-                </label>
-                {request.items && request.items.length > 1 ? (
-                  <Select value={selectedProductId} onValueChange={handleProductChange}>
-                    <SelectTrigger className="h-10 rounded-xl bg-card border-border text-foreground">
-                      <SelectValue placeholder="Select Product" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border-border text-foreground">
-                      {(request.items || []).map((i) => {
-                        const rem = getUnscheduledQty(i.productId, i.requestedQuantity);
-                        return (
-                          <SelectItem key={i.productId} value={String(i.productId)}>
-                            {i.productName} ({i.variant || "Standard"}) — Rem: {rem}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    readOnly
-                    value={`${selectedItem?.productName || "Product"} (${selectedItem?.variant || "Standard"})`}
-                    className="h-10 rounded-xl bg-muted/30 border-border text-foreground cursor-not-allowed font-medium"
-                  />
-                )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Request Number</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">{request.requestNumber}</p>
               </div>
-
-              {/* Transfer Quantity */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-foreground">
-                    Transfer Quantity <span className="text-destructive">*</span>
-                  </label>
-                  {remainingForSelected > 0 && (
-                    <span className="text-[11px] text-muted-foreground font-medium">
-                      Unscheduled: <strong className="text-foreground">{remainingForSelected}</strong>
-                    </span>
-                  )}
-                </div>
-                <Input
-                  type="number"
-                  min={1}
-                  max={remainingForSelected > 0 ? remainingForSelected : undefined}
-                  value={transferQuantity}
-                  onChange={(e) =>
-                    setTransferQuantity(e.target.value === "" ? "" : parseFloat(e.target.value))
-                  }
-                  placeholder="Enter quantity"
-                  required
-                  className="h-10 rounded-xl bg-card border-border text-foreground font-semibold"
-                />
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Destination Branch</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">{request.toLocationName || "—"}</p>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Required Date</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">{formatDateDisplay(request.requiredDate)}</p>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Priority</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">{request.priority || "Medium"}</p>
+              </div>
+              <div className="sm:col-span-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Reason / Purpose</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">{request.reason || "Branch Replenishment"}</p>
               </div>
             </div>
           </div>
 
-          {/* Logistics & Dispatch Scheduling */}
+          {/* Section B: Finished Products to Transfer */}
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-foreground">B. Finished Products to Transfer</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+                PRODUCT DETAILS · READ-ONLY
+              </span>
+            </div>
+            <div className="overflow-x-auto rounded-xl border border-border">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-muted/40 border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    <th className="py-2.5 px-4">Product & Variant</th>
+                    <th className="py-2.5 px-3">SKU</th>
+                    <th className="py-2.5 px-3">Commissary Stock</th>
+                    <th className="py-2.5 px-3">Expiry Date / Lot</th>
+                    <th className="py-2.5 px-4 text-right">Requested Qty</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {(request.items || []).map((item, idx) => (
+                    <tr key={item.requestItemId || idx} className="hover:bg-muted/10 transition-colors">
+                      <td className="py-3 px-4 font-semibold text-foreground">
+                        {item.productName}
+                        {item.variant ? <span className="block text-[11px] font-normal text-muted-foreground">{item.variant}</span> : null}
+                      </td>
+                      <td className="py-3 px-3 font-mono text-[11px] text-muted-foreground">{item.sku || "—"}</td>
+                      <td className="py-3 px-3 font-medium text-foreground">
+                        {item.availableQuantity ?? "—"}{" "}
+                        <span className="text-[10px] text-muted-foreground font-normal">(In Stock)</span>
+                      </td>
+                      <td className="py-3 px-3">
+                        {item.suggestedLots && item.suggestedLots.length > 0 ? (
+                          <div className="space-y-1">
+                            {item.suggestedLots.map((lot, lIdx) => (
+                              <div key={lIdx} className="text-[11px]">
+                                <span className="font-semibold text-foreground">{formatDateDisplay(lot.expiryDate)}</span>
+                                <span className="ml-1.5 inline-block bg-muted px-1.5 py-0.2 rounded text-[10px] font-semibold">
+                                  {lot.qty} pcs
+                                </span>
+                                <span className="block text-[10px] text-muted-foreground font-mono">Lot: {lot.lotCode}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right font-bold text-foreground text-sm">{item.requestedQuantity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Section C: Transportation Details */}
           <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <Truck className="w-4 h-4 text-muted-foreground" />
-              Dispatch Logistics
-            </label>
-
+            <h3 className="text-sm font-bold text-foreground">C. Transportation Details</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Scheduled Date */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                  Scheduled Transfer Date <span className="text-destructive">*</span>
-                </label>
-                <Input
-                  type="date"
-                  min={getTodayDateString()}
-                  max={getMaxFutureDateString()}
-                  value={scheduledDate}
-                  onChange={(e) => setScheduledDate(e.target.value)}
-                  required
-                  className="h-10 rounded-xl bg-card border-border text-foreground"
-                />
-              </div>
-
-              {/* Courier Selection */}
+              {/* Transport Provider */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
-                  Courier / Logistics Provider
+                  Transport Provider <span className="text-destructive">*</span>
                 </label>
-                <Select value={courierName} onValueChange={(val) => setCourierName(val)}>
+                <Select value={transportProvider} onValueChange={setTransportProvider}>
                   <SelectTrigger className="h-10 rounded-xl bg-card border-border text-foreground">
-                    <SelectValue placeholder="Select Courier" />
+                    <SelectValue placeholder="Select Provider" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border text-foreground">
-                    {COURIER_OPTIONS.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
+                    {TRANSPORT_PROVIDERS.map((provider) => (
+                      <SelectItem key={provider} value={provider}>
+                        {provider}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* Vehicle Type */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  Vehicle Type <span className="text-destructive">*</span>
+                </label>
+                <Select value={vehicleType} onValueChange={setVehicleType}>
+                  <SelectTrigger className="h-10 rounded-xl bg-card border-border text-foreground">
+                    <SelectValue placeholder="Select Vehicle Type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border text-foreground">
+                    {VEHICLE_TYPES.map((vType) => (
+                      <SelectItem key={vType} value={vType}>
+                        {vType}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Plate Number */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  Plate Number <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  value={plateNumber}
+                  onChange={(e) => setPlateNumber(e.target.value)}
+                  placeholder="Enter Plate Number"
+                  className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
+                />
+              </div>
+
+              {/* Booking Reference */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  Booking Reference <span className="text-[11px] text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                <Input
+                  value={bookingReference}
+                  onChange={(e) => setBookingReference(e.target.value)}
+                  placeholder="Enter Booking Reference"
+                  className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section D: Driver & Delivery Information */}
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+            <h3 className="text-sm font-bold text-foreground">D. Driver & Delivery Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Driver Name */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
-                  Driver Name (Optional)
+                  Driver Name <span className="text-destructive">*</span>
                 </label>
                 <Input
                   value={driverName}
                   onChange={(e) => setDriverName(e.target.value)}
-                  placeholder="e.g. Juan dela Cruz"
-                  className="h-10 rounded-xl bg-card border-border text-foreground"
+                  placeholder="Enter Driver Name"
+                  className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
                 />
               </div>
 
-              {/* Vehicle Plate */}
+              {/* Driver Contact Number */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
-                  Vehicle Plate / Motorcycle No.
+                  Driver Contact Number <span className="text-destructive">*</span>
                 </label>
                 <Input
-                  value={vehiclePlate}
-                  onChange={(e) => setVehiclePlate(e.target.value)}
-                  placeholder="e.g. ABC 1234"
-                  className="h-10 rounded-xl bg-card border-border text-foreground"
+                  value={driverContact}
+                  onChange={(e) => setDriverContact(e.target.value)}
+                  placeholder="Enter Contact Number"
+                  className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
                 />
               </div>
-            </div>
 
-            {/* Notes */}
-            <div className="space-y-1.5 pt-1">
-              <label className="text-xs font-semibold text-foreground">
-                Logistics Instructions / Handling Notes
-              </label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Fragile items, keep chilled, call store manager upon arrival..."
-                rows={2}
-                className="rounded-xl bg-card border-border text-foreground text-xs"
-              />
+              {/* Transfer Fee */}
+              <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
+                <label className="text-xs font-semibold text-foreground">
+                  Transfer Fee <span className="text-[11px] text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-xs text-muted-foreground font-semibold">₱</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={transferFee}
+                    onChange={(e) => setTransferFee(e.target.value)}
+                    placeholder="Enter Amount"
+                    className="h-10 pl-7 rounded-xl bg-card border-border text-foreground text-xs"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Footer Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          {/* Section E: Scheduling Remarks */}
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-2">
+            <h3 className="text-sm font-bold text-foreground">E. Scheduling Remarks</h3>
+            <Textarea
+              value={schedulingRemarks}
+              onChange={(e) => setSchedulingRemarks(e.target.value)}
+              placeholder="Enter additional scheduling instructions or remarks (Optional)..."
+              rows={3}
+              className="rounded-xl bg-card border-border text-foreground text-xs"
+            />
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
             <button
               type="button"
               onClick={requestClose}
@@ -407,24 +457,11 @@ export function ScheduleTransferModal({
               disabled={loading}
               className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Scheduling..." : "Schedule Transfer"}
+              {loading ? "Scheduling..." : "Confirm Schedule"}
             </button>
           </div>
         </form>
       </div>
-
-      {showScheduleConfirm && request && (
-        <StockTransferConfirmModal
-          open={showScheduleConfirm}
-          title="Schedule Stock Transfer"
-          subtitle={`Request No: ${request.requestNumber}`}
-          description={`Are you sure you want to schedule this transfer of ${transferQuantity} units to ${request.toLocationName} on ${scheduledDate}?`}
-          confirmText="Confirm & Schedule"
-          loading={loading}
-          onCancel={() => setShowScheduleConfirm(false)}
-          onConfirm={doSchedule}
-        />
-      )}
     </div>,
     document.body
   );

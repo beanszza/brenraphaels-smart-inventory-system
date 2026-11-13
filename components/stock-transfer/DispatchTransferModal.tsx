@@ -1,49 +1,53 @@
 "use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { X, Calendar, Clock, User, Upload, CheckCircle, AlertCircle, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 import { actionResponse } from "@/lib/resources/action-response";
 import { dispatchTransfer } from "@/app/actions/stock-transfer/dispatch";
-
-import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { X, Truck, AlertTriangle } from "lucide-react";
-import { StockTransfer } from "./types";
-import { Input } from "@/components/ui/input";
+import { StockTransfer, StockTransferRequest } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
-import { StockTransferConfirmModal } from "./StockTransferConfirmModal";
 
 interface DispatchTransferModalProps {
   transfer: StockTransfer | null;
+  request?: StockTransferRequest | null;
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-const COURIER_OPTIONS = [
-  "Lalamove",
-  "Transportify",
-  "Grab Express",
-  "Ninja Van",
-  "J&T Express",
-  "In-House Fleet / Driver",
-  "Branch Pickup",
-  "Other Third-Party",
+const PERSONNEL_OPTIONS = [
+  "Vince Neil Madeja (Warehouse Supervisor)",
+  "Commissary Logistics Lead",
+  "Inventory Officer",
+  "Authorized Dispatch Staff",
 ];
 
 export function DispatchTransferModal({
   transfer,
+  request,
   open,
   onClose,
   onSuccess,
 }: DispatchTransferModalProps) {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [driverName, setDriverName] = useState("");
-  const [vehiclePlate, setVehiclePlate] = useState("");
-  const [courierName, setCourierName] = useState("Lalamove");
-  const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [showDispatchConfirm, setShowDispatchConfirm] = useState(false);
+
+  // Form states
+  const [actualDispatchDate, setActualDispatchDate] = useState<string>("");
+  const [actualDispatchTime, setActualDispatchTime] = useState<string>("");
+  const [releasedBy, setReleasedBy] = useState<string>("");
+  const [odometerReading, setOdometerReading] = useState<string>("");
+  const [vehicleSealNumber, setVehicleSealNumber] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [dispatchRemarks, setDispatchRemarks] = useState<string>("");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -51,75 +55,157 @@ export function DispatchTransferModal({
 
   useEffect(() => {
     if (open && transfer) {
-      setDriverName(transfer.driverName || "");
-      setVehiclePlate(transfer.vehiclePlate || "");
-      setCourierName(transfer.courierName || "Lalamove");
-      setNotes("");
+      const original = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+
+      const now = new Date();
+      const todayStr = now.toISOString().split("T")[0];
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const timeStr = `${hours}:${minutes}`;
+
+      setActualDispatchDate(todayStr);
+      setActualDispatchTime(timeStr);
+      setReleasedBy("Vince Neil Madeja (Warehouse Supervisor)");
+      setOdometerReading("");
+      setVehicleSealNumber("");
+      setSelectedFile(null);
+      setDispatchRemarks("");
       setError(null);
+
+      return () => {
+        document.body.style.overflow = original;
+      };
     }
   }, [open, transfer]);
 
+  const { requestClose, confirmModal } = useConfirmedClose(onClose);
+
   if (!open || !mounted || !transfer) return null;
 
-  const handleDispatch = () => {
-    if (loading) return;
-    setError(null);
-    setShowDispatchConfirm(true);
+  // Extract scheduled information from transfer.notes or fields
+  let scheduledInfo = {
+    transportProvider: transfer.courierName || "—",
+    vehicleType: "—",
+    plateNumber: transfer.vehiclePlate || "—",
+    bookingReference: "—",
+    transferFee: "—",
+    driverName: transfer.driverName || "—",
+    driverContact: "—",
   };
 
-  const doDispatch = async () => {
+  try {
+    if (transfer.notes) {
+      const parsed = JSON.parse(transfer.notes);
+      if (parsed && typeof parsed === "object") {
+        if (parsed.transportProvider) scheduledInfo.transportProvider = parsed.transportProvider;
+        if (parsed.vehicleType) scheduledInfo.vehicleType = parsed.vehicleType;
+        if (parsed.plateNumber) scheduledInfo.plateNumber = parsed.plateNumber;
+        if (parsed.bookingReference) scheduledInfo.bookingReference = parsed.bookingReference;
+        if (parsed.transferFee) scheduledInfo.transferFee = `₱${Number(parsed.transferFee).toLocaleString()}`;
+        if (parsed.driverName) scheduledInfo.driverName = parsed.driverName;
+        if (parsed.driverContact) scheduledInfo.driverContact = parsed.driverContact;
+      }
+    }
+  } catch {
+    // If not JSON, use raw values
+  }
+
+  const formatDateDisplay = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "—";
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString("en-US");
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleConfirmDispatch = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (loading || !transfer) return;
-    setLoading(true);
     setError(null);
+
+    if (!actualDispatchDate) {
+      setError("Actual dispatch date is required.");
+      return;
+    }
+    if (!actualDispatchTime) {
+      setError("Actual dispatch time is required.");
+      return;
+    }
+    if (!releasedBy) {
+      setError("Please select the releasing personnel.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      const res = await actionResponse(dispatchTransfer(transfer.transferId, {
-        driverName: driverName.trim() || undefined,
-        vehiclePlate: vehiclePlate.trim() || undefined,
-        courierName: courierName.trim() || undefined,
-        notes: notes.trim() || undefined,
-      }));
+      const dispatchMetadata = {
+        actualDispatchDate,
+        actualDispatchTime,
+        releasedBy,
+        odometerReading: odometerReading.trim() || null,
+        vehicleSealNumber: vehicleSealNumber.trim() || null,
+        proofFileName: selectedFile?.name || null,
+        remarks: dispatchRemarks.trim() || null,
+      };
+
+      const res = await actionResponse(
+        dispatchTransfer(transfer.transferId, {
+          driverName: scheduledInfo.driverName !== "—" ? scheduledInfo.driverName : transfer.driverName,
+          vehiclePlate: scheduledInfo.plateNumber !== "—" ? scheduledInfo.plateNumber : transfer.vehiclePlate,
+          courierName: scheduledInfo.transportProvider !== "—" ? scheduledInfo.transportProvider : transfer.courierName,
+          notes: JSON.stringify(dispatchMetadata),
+        })
+      );
 
       if (res.data?.success) {
-        toast.success("Transfer dispatched.");
-        setShowDispatchConfirm(false);
+        toast.success("Stock transfer dispatched successfully and commissary stock deducted.");
         onSuccess();
         onClose();
       } else {
-        setError(res.data?.message || "Failed to dispatch transfer.");
-        setShowDispatchConfirm(false);
+        setError(res.data?.message || "Failed to dispatch stock transfer.");
       }
     } catch (err: unknown) {
-      setError((err instanceof Error ? err.message : null) || "Failed to dispatch transfer.");
-      setShowDispatchConfirm(false);
+      setError(err instanceof Error ? err.message : "Failed to dispatch stock transfer.");
     } finally {
       setLoading(false);
     }
   };
 
-  const { requestClose, confirmModal } = useConfirmedClose(onClose);
+  const displayItems =
+    request?.items && request.items.length > 0
+      ? request.items
+      : [
+          {
+            requestItemId: 1,
+            productName: transfer.productName,
+            variant: transfer.variant,
+            sku: transfer.sku,
+            availableQuantity: transfer.transferQuantity,
+            requestedQuantity: transfer.transferQuantity,
+            suggestedLots: [],
+          },
+        ];
 
   return createPortal(
-    <div
-      className="font-sans fixed inset-0 z-[250] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
-    >
+    <div className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150">
       {confirmModal}
       <div
-        style={{ width: "100%", maxWidth: "640px" }}
+        style={{ width: "100%", maxWidth: "960px" }}
         className="w-full max-h-[92vh] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-5 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <Truck className="w-5 h-5 text-foreground" />
-            <div>
-              <h2 className="text-lg font-bold text-foreground">
-                Dispatch Stock Transfer
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Deduct commissary stock and release transfer goods
-              </p>
-            </div>
+        <div className="flex items-center justify-between border-b border-border px-6 py-5">
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Dispatch Stock Transfer</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Confirm the actual release of products from the commissary. Review the original stock transfer request and scheduled transportation details before recording the dispatch.
+            </p>
           </div>
           <button
             type="button"
@@ -130,129 +216,316 @@ export function DispatchTransferModal({
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        {/* Content Body */}
+        <form onSubmit={handleConfirmDispatch} className="flex-1 overflow-y-auto p-6 space-y-6">
           {error && (
             <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3.5 text-xs text-destructive flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Transfer Summary Box (Source location removed per user instruction!) */}
-          <div className="rounded-2xl border border-border bg-muted/20 p-4.5 space-y-2 text-xs">
+          {/* Section A: Stock Transfer Information */}
+          <div className="rounded-2xl border border-border bg-muted/20 p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-sm text-foreground">
-                {transfer.transferNumber}
-              </span>
-              <span className="text-muted-foreground text-[11px]">
-                Ref: {transfer.requestNumber || "Direct"}
+              <h3 className="text-sm font-bold text-foreground">A. Stock Transfer Information</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+                REQUEST INFORMATION · READ-ONLY
               </span>
             </div>
-            <div className="pt-1 flex items-center justify-between font-medium">
-              <span className="text-foreground text-sm font-semibold">
-                {transfer.productName} ({transfer.variant || "Standard"})
-              </span>
-              <span className="font-extrabold text-foreground text-base">
-                Qty: {transfer.transferQuantity}
-              </span>
-            </div>
-            <div className="text-[11px] text-muted-foreground pt-1">
-              Destination Branch: <strong className="text-foreground">{transfer.destLocationName}</strong>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Request Number</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">
+                  {request?.requestNumber || transfer.requestNumber || transfer.transferNumber}
+                </p>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Destination Branch</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">
+                  {request?.toLocationName || transfer.destLocationName || "—"}
+                </p>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Required Date</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">
+                  {formatDateDisplay(request?.requiredDate || transfer.scheduledDate || transfer.transferDate)}
+                </p>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Priority</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">
+                  {request?.priority || transfer.priority || "Medium"}
+                </p>
+              </div>
+              <div className="sm:col-span-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Reason / Purpose</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">
+                  {request?.reason || "Branch Replenishment"}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Inventory Deduction Alert */}
-          <div className="rounded-2xl border border-border bg-card p-4 text-xs flex items-start gap-3">
-            <AlertTriangle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-            <div className="text-muted-foreground leading-relaxed">
-              Dispatching will immediately deduct <strong className="text-foreground">{transfer.transferQuantity} units</strong> from Commissary stock following First-Expiry-First-Out (FEFO) lots.
+          {/* Section B: Finished Products to Transfer */}
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-foreground">B. Finished Products to Transfer</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+                PRODUCT DETAILS · READ-ONLY
+              </span>
             </div>
-          </div>
-
-          {/* Logistics Fields */}
-          <div className="space-y-3.5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
-                Courier Partner
-              </label>
-              <Select value={courierName} onValueChange={setCourierName}>
-                <SelectTrigger className="h-10 rounded-xl border border-border bg-card text-xs font-medium text-foreground">
-                  <SelectValue placeholder="Select Courier Partner" />
-                </SelectTrigger>
-                <SelectContent>
-                  {COURIER_OPTIONS.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
+            <div className="overflow-x-auto rounded-xl border border-border">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-muted/40 border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    <th className="py-2.5 px-4">Product & Variant</th>
+                    <th className="py-2.5 px-3">SKU</th>
+                    <th className="py-2.5 px-3">Commissary Stock</th>
+                    <th className="py-2.5 px-3">Expiry Date / Lot</th>
+                    <th className="py-2.5 px-4 text-right">Requested Qty</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {displayItems.map((item, idx) => (
+                    <tr key={item.requestItemId || idx} className="hover:bg-muted/10 transition-colors">
+                      <td className="py-3 px-4 font-semibold text-foreground">
+                        {item.productName}
+                        {item.variant ? <span className="block text-[11px] font-normal text-muted-foreground">{item.variant}</span> : null}
+                      </td>
+                      <td className="py-3 px-3 font-mono text-[11px] text-muted-foreground">{item.sku || "—"}</td>
+                      <td className="py-3 px-3 font-medium text-foreground">
+                        {item.availableQuantity ?? "—"}{" "}
+                        <span className="text-[10px] text-muted-foreground font-normal">(In Stock)</span>
+                      </td>
+                      <td className="py-3 px-3">
+                        {item.suggestedLots && item.suggestedLots.length > 0 ? (
+                          <div className="space-y-1">
+                            {item.suggestedLots.map((lot, lIdx) => (
+                              <div key={lIdx} className="text-[11px]">
+                                <span className="font-semibold text-foreground">{formatDateDisplay(lot.expiryDate)}</span>
+                                <span className="ml-1.5 inline-block bg-muted px-1.5 py-0.2 rounded text-[10px] font-semibold">
+                                  {lot.qty} pcs
+                                </span>
+                                <span className="block text-[10px] text-muted-foreground font-mono">Lot: {lot.lotCode}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right font-bold text-foreground text-sm">{item.requestedQuantity}</td>
+                    </tr>
                   ))}
-                </SelectContent>
-              </Select>
+                </tbody>
+              </table>
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-3.5">
+          {/* Section C: Transportation Details */}
+          <div className="rounded-2xl border border-border bg-muted/20 p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-foreground">C. Transportation Details</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+                SCHEDULED INFORMATION · READ-ONLY
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transport Provider</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.transportProvider}</p>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Vehicle Type</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.vehicleType}</p>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Plate Number</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.plateNumber}</p>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Booking Reference</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.bookingReference}</p>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transfer Fee</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.transferFee}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Section D: Driver Information */}
+          <div className="rounded-2xl border border-border bg-muted/20 p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-foreground">D. Driver Information</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+                SCHEDULED INFORMATION · READ-ONLY
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Driver Name</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.driverName}</p>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Driver Contact Number</span>
+                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.driverContact}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Section E: Dispatch Details */}
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+            <h3 className="text-sm font-bold text-foreground">E. Dispatch Details</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Actual Dispatch Date */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
-                  Driver Name
+                  Actual Dispatch Date <span className="text-destructive">*</span>
                 </label>
                 <Input
-                  type="text"
-                  placeholder="Driver name"
-                  value={driverName}
-                  onChange={(e) => setDriverName(e.target.value)}
-                  className="h-10 rounded-xl border border-border bg-card text-xs text-foreground"
+                  type="date"
+                  value={actualDispatchDate}
+                  onChange={(e) => setActualDispatchDate(e.target.value)}
+                  className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
                 />
               </div>
 
+              {/* Actual Dispatch Time */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
-                  Vehicle Plate
+                  Actual Dispatch Time <span className="text-destructive">*</span>
                 </label>
                 <Input
-                  type="text"
-                  placeholder="Plate number"
-                  value={vehiclePlate}
-                  onChange={(e) => setVehiclePlate(e.target.value)}
-                  className="h-10 rounded-xl border border-border bg-card text-xs text-foreground"
+                  type="time"
+                  value={actualDispatchTime}
+                  onChange={(e) => setActualDispatchTime(e.target.value)}
+                  className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
+                />
+              </div>
+
+              {/* Released By */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  Released By <span className="text-destructive">*</span>
+                </label>
+                <Select value={releasedBy} onValueChange={setReleasedBy}>
+                  <SelectTrigger className="h-10 rounded-xl bg-card border-border text-foreground">
+                    <SelectValue placeholder="Select Personnel" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border text-foreground">
+                    {PERSONNEL_OPTIONS.map((person) => (
+                      <SelectItem key={person} value={person}>
+                        {person}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Odometer Reading */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  Odometer Reading <span className="text-[11px] text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                <Input
+                  value={odometerReading}
+                  onChange={(e) => setOdometerReading(e.target.value)}
+                  placeholder="Enter Reading (Optional)"
+                  className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
+                />
+              </div>
+
+              {/* Vehicle Seal Number */}
+              <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
+                <label className="text-xs font-semibold text-foreground">
+                  Vehicle Seal Number <span className="text-[11px] text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                <Input
+                  value={vehicleSealNumber}
+                  onChange={(e) => setVehicleSealNumber(e.target.value)}
+                  placeholder="Enter Seal Number (Optional)"
+                  className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
                 />
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4.5 bg-muted/10">
-          <button
-            type="button"
-            onClick={requestClose}
-            disabled={loading}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleDispatch}
-            disabled={loading}
-            className="flex items-center gap-2 rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            {loading ? "Deducting & Dispatching..." : "Confirm Dispatch"}
-          </button>
-        </div>
+          {/* Section F: Dispatch Documents */}
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+            <h3 className="text-sm font-bold text-foreground">F. Dispatch Documents</h3>
+            <div>
+              <p className="text-xs text-muted-foreground">
+                Upload delivery receipts, loading photos, or signed dispatch documents.
+              </p>
+            </div>
+            <div className="pt-1 flex flex-col sm:flex-row sm:items-center gap-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              >
+                <Upload className="w-4 h-4 text-muted-foreground" />
+                Upload Files
+              </button>
+              {selectedFile ? (
+                <div className="flex items-center gap-2 text-xs font-medium text-foreground bg-muted/40 px-3 py-2 rounded-xl border border-border">
+                  <FileCheck className="w-4 h-4 text-emerald-500" />
+                  <span className="truncate max-w-[240px]">{selectedFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFile(null)}
+                    className="text-muted-foreground hover:text-destructive text-xs ml-1 cursor-pointer"
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground">Accepted documents: PDF, JPG, PNG</span>
+              )}
+            </div>
+          </div>
+
+          {/* Section G: Dispatch Remarks */}
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-2">
+            <h3 className="text-sm font-bold text-foreground">G. Dispatch Remarks</h3>
+            <Textarea
+              value={dispatchRemarks}
+              onChange={(e) => setDispatchRemarks(e.target.value)}
+              placeholder="Enter additional dispatch instructions or remarks (Optional)..."
+              rows={3}
+              className="rounded-xl bg-card border-border text-foreground text-xs"
+            />
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+            <button
+              type="button"
+              onClick={requestClose}
+              disabled={loading}
+              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Dispatching..." : "Confirm Dispatch"}
+            </button>
+          </div>
+        </form>
       </div>
-
-      {showDispatchConfirm && transfer && (
-        <StockTransferConfirmModal
-          open={showDispatchConfirm}
-          title="Dispatch Stock Transfer"
-          subtitle={`Transfer No: ${transfer.transferNumber}`}
-          description={`Are you sure you want to dispatch transfer ${transfer.transferNumber}? This will mark the items as in transit to ${transfer.destLocationName || "destination"} and deduct commissary inventory lots.`}
-          confirmText="Confirm & Dispatch"
-          loading={loading}
-          onCancel={() => setShowDispatchConfirm(false)}
-          onConfirm={doDispatch}
-        />
-      )}
     </div>,
     document.body
   );

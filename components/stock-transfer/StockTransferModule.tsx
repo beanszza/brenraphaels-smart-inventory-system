@@ -134,26 +134,6 @@ export default function StockTransferModule({ requests, metrics, locations, acti
         action: type === "approve" ? "Approve" : "Reject", adminNotes: notes,
       }));
       toast.success(type === "approve" ? "Request approved successfully." : "Request rejected.");
-    } else if (type === "schedule") {
-      const todayStr = new Date().toISOString().split("T")[0];
-      const itemsToSchedule = request.items && request.items.length > 0 ? request.items : [];
-      let scheduledAny = false;
-      for (const item of itemsToSchedule) {
-        const res = await actionResponse(scheduleTransfer({
-          requestId: request.requestId,
-          productId: item.productId,
-          transferQuantity: item.requestedQuantity,
-          scheduledDate: todayStr,
-          courierName: "In-House Fleet / Driver",
-          notes: notes || undefined,
-        }));
-        if (res.data?.success) scheduledAny = true;
-      }
-      if (scheduledAny) {
-        toast.success("Stock transfer scheduled successfully.");
-      } else {
-        toast.error("Failed to schedule transfer.");
-      }
     } else {
       await actionResponse(cancelRequest(request.requestId, { reason: notes }));
       toast.success("Request cancelled successfully.");
@@ -358,7 +338,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
             onView={(req) => setSelectedSTRForDetails(req)}
             onApprove={(req) => setStrAction({ request: req, type: "approve" })}
             onReject={(req) => setStrAction({ request: req, type: "reject" })}
-            onSchedule={(req) => setStrAction({ request: req, type: "schedule" })}
+            onSchedule={(req) => setScheduleTargetReq(req)}
             onDispatch={(req) => handleOpenDispatch(req)}
             onCancel={(req) => setStrAction({ request: req, type: "cancel" })}
           />
@@ -397,6 +377,11 @@ export default function StockTransferModule({ requests, metrics, locations, acti
       {/* 3. Dispatch Transfer Modal */}
       <DispatchTransferModal
         transfer={dispatchTargetTransfer}
+        request={
+          dispatchTargetTransfer
+            ? requests.find((r) => r.requestId === dispatchTargetTransfer.requestId) || null
+            : null
+        }
         open={!!dispatchTargetTransfer}
         onClose={() => setDispatchTargetTransfer(null)}
         onSuccess={refreshAll}
@@ -412,7 +397,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
         onReject={(req) => setStrAction({ request: req, type: "reject" })}
         onSchedule={(req) => {
           setSelectedSTRForDetails(null);
-          setStrAction({ request: req, type: "schedule" });
+          setScheduleTargetReq(req);
         }}
         onDispatch={(req, transferId) => handleOpenDispatch(req, transferId)}
         onCancel={(req) => setStrAction({ request: req, type: "cancel" })}

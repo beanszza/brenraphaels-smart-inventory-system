@@ -5,7 +5,8 @@ import { STRTable } from "@/components/stock-transfer/STRTable";
 import { LocationsTab } from "@/components/stock-transfer/LocationsTab";
 import DistributionTable from "@/components/distribution/StockTransferTable";
 import { ScheduleTransferModal } from "@/components/stock-transfer/ScheduleTransferModal";
-import type { StockTransferRequest } from "@/components/stock-transfer/types";
+import { DispatchTransferModal } from "@/components/stock-transfer/DispatchTransferModal";
+import type { StockTransferRequest, StockTransfer } from "@/components/stock-transfer/types";
 
 it("renders persisted request rows in the server HTML", () => {
   const row = { requestId: 1, requestNumber: "STR-99", toLocationName: "Manila branch", status: "Approved",
@@ -73,6 +74,56 @@ it("renders ScheduleTransferModal without throwing", () => {
     <ScheduleTransferModal
       open={true}
       request={row as any}
+      onClose={vi.fn()}
+      onSuccess={vi.fn()}
+    />
+  );
+  expect(html).toBeDefined();
+});
+
+it("renders DispatchTransferModal without throwing", () => {
+  const transfer = {
+    transferId: 1,
+    transferNumber: "STF-2026-0001",
+    requestId: 1,
+    requestNumber: "STR-2026-0014",
+    productId: 1,
+    productName: "Ube Jam Havanero",
+    variant: "500g Container",
+    sku: "UBH-HAV-CON-500G",
+    sourceLocationId: 1,
+    sourceLocationName: "Commissary",
+    destLocationId: 2,
+    destLocationName: "Antipolo Store Branch",
+    transferQuantity: 60,
+    status: "Scheduled",
+    scheduledDate: "2026-11-21T00:00:00Z",
+    transferDate: "2026-11-21T00:00:00Z",
+    dispatchedDate: null,
+    receivedDate: null,
+    driverName: "Juan Driver",
+    vehiclePlate: "ABC 1234",
+    courierName: "Company-owned Vehicle",
+    proofOfReceipt: "",
+    priority: "Low",
+    notes: JSON.stringify({
+      transportProvider: "Company-owned Vehicle",
+      vehicleType: "Van",
+      plateNumber: "ABC 1234",
+      bookingReference: "BK-999",
+      transferFee: 350,
+      driverName: "Juan Driver",
+      driverContact: "09123456789",
+    }),
+    receivedBy: "",
+    createdAt: "2026-11-13T00:00:00Z",
+  } as StockTransfer;
+
+  const html = renderToStaticMarkup(
+    <DispatchTransferModal
+      open={true}
+      transfer={transfer}
+      request={null}
       onClose={vi.fn()}
       onSuccess={vi.fn()}
     />
