@@ -107,3 +107,26 @@ export async function mutate(
   revalidatePath("/distribution-analytics");
   return savedResult.result;
 }
+
+export function safeIsoDate(val: unknown): string | null {
+  if (!val) return null;
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return null;
+    try {
+      return val.toISOString();
+    } catch {
+      return null;
+    }
+  }
+  if (typeof val === "string") {
+    if (!val.trim() || val.includes("infinity")) return null;
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return null;
+    try {
+      return d.toISOString();
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}

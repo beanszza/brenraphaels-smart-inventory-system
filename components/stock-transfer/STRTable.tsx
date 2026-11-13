@@ -211,7 +211,6 @@ export function STRTable({
                             onClick={() => onSchedule(req)}
                             className="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs font-semibold text-foreground"
                           >
-                            <Truck className="w-4 h-4 text-foreground" />
                             <span>Schedule Transfer</span>
                           </DropdownMenuItem>
                         )}

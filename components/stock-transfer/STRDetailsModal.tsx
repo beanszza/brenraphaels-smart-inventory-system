@@ -6,6 +6,7 @@ import { X, Calendar, MapPin, User, AlertCircle, CheckCircle, Package, Truck, Se
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransferRequest } from "./types";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
+import { resolveStaffName } from "@/lib/orders/dto";
 
 interface STRDetailsModalProps {
   request: StockTransferRequest | null;
@@ -90,80 +91,120 @@ export function STRDetailsModal({
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Metadata & Purpose Section */}
-          <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-5 bg-muted/20 border-b border-border text-xs">
-              <div className="space-y-1">
-                <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
-                  Destination Branch
-                </span>
-                <div className="flex items-center gap-1.5 font-semibold text-foreground text-sm">
-                  <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <span>{request.toLocationName}</span>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
-                  Requester & Priority
-                </span>
-                <div className="flex items-center gap-2 font-medium text-foreground">
-                  <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  <span>{request.requestedBy}</span>
-                  <span className="px-2 py-0.5 rounded-md bg-card text-[10px] font-bold border border-border">
-                    {request.priority}
+          {/* Review Status Banner (Approved / Reviewed / Rejected) */}
+          {request.reviewedBy ? (
+            <div className="p-4 rounded-2xl border border-border bg-muted/20 space-y-1">
+              <div className="flex items-center justify-between text-xs flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-foreground">
+                    {request.status === "Approved" ? "Approved by" : "Reviewed by"}:
                   </span>
+                  <span className="text-foreground font-semibold">
+                    {resolveStaffName(request.reviewedBy) || request.reviewedBy}
+                  </span>
+                  {request.reviewedAt && (
+                    <span className="text-muted-foreground">
+                      on {new Date(request.reviewedAt).toLocaleDateString()}
+                    </span>
+                  )}
                 </div>
+                <StatusBadge status={request.status} />
               </div>
-
-              <div className="space-y-1">
-                <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
-                  Request Date
-                </span>
-                <div className="flex items-center gap-1.5 font-medium text-foreground">
-                  <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  <span>{new Date(request.requestDate).toLocaleDateString()}</span>
-                </div>
+              {request.adminNotes && (
+                <p className="text-xs text-muted-foreground pt-1 italic">
+                  "{request.adminNotes}"
+                </p>
+              )}
+            </div>
+          ) : (request.status === "Cancelled" || request.status === "Rejected") ? (
+            <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 space-y-1.5 text-destructive">
+              <div className="flex items-center gap-2 text-xs font-bold">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{request.status === "Cancelled" ? "Cancellation Reason:" : "Rejection Reason:"}</span>
               </div>
+              <p className="text-xs pl-6 text-muted-foreground italic">
+                {request.adminNotes || "No rejection or cancellation reason recorded."}
+              </p>
+            </div>
+          ) : null}
 
-              <div className="space-y-1">
-                <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
-                  Required Date
-                </span>
-                <div className="flex items-center gap-1.5 font-medium text-foreground">
-                  <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  <span>{new Date(request.requiredDate).toLocaleDateString()}</span>
-                </div>
+          {/* Structured Read-only Form matching PR & PO Details Modals */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
+            {/* Request Number */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Request Number
+              </label>
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-all font-mono font-medium">
+                {request.requestNumber}
               </div>
             </div>
 
-            {/* Reason / Remarks inside container */}
-            {request.reason && (
-              <div className="px-5 py-3.5 bg-card text-xs flex items-center gap-2 border-b border-border last:border-b-0">
-                <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] shrink-0">
-                  Reason / Purpose:
-                </span>
-                <span className="text-foreground font-medium">{request.reason}</span>
+            {/* Destination Branch */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Destination Branch
+              </label>
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground font-semibold">
+                <MapPin className="w-3.5 h-3.5 mr-2 text-muted-foreground shrink-0" />
+                <span className="truncate">{request.toLocationName}</span>
               </div>
-            )}
+            </div>
 
-            {/* Admin Review Notes (if any) */}
-            {request.adminNotes && (
-              <div className="px-5 py-3.5 bg-muted/40 text-xs flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-foreground uppercase tracking-wider text-[10px] shrink-0">
-                    Admin Remarks:
-                  </span>
-                  <span className="text-foreground font-semibold">{request.adminNotes}</span>
-                </div>
-                {request.reviewedBy && (
-                  <span className="text-muted-foreground text-[10px] shrink-0">
-                    Reviewed by {request.reviewedBy}{" "}
-                    {request.reviewedAt && `on ${new Date(request.reviewedAt).toLocaleDateString()}`}
-                  </span>
-                )}
+            {/* Requested By (Actual Full Name) */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Requested By
+              </label>
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground font-semibold">
+                <User className="w-3.5 h-3.5 mr-2 text-muted-foreground shrink-0" />
+                <span>{resolveStaffName(request.requestedBy) || request.requestedBy}</span>
               </div>
-            )}
+            </div>
+
+            {/* Request Date */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Request Date
+              </label>
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                <Calendar className="w-3.5 h-3.5 mr-2 text-muted-foreground shrink-0" />
+                <span>{new Date(request.requestDate).toLocaleDateString()}</span>
+              </div>
+            </div>
+
+            {/* Required Date */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Required Date
+              </label>
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                <Calendar className="w-3.5 h-3.5 mr-2 text-muted-foreground shrink-0" />
+                <span>{new Date(request.requiredDate).toLocaleDateString()}</span>
+              </div>
+            </div>
+
+            {/* Priority */}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Priority
+              </label>
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground font-semibold">
+                <span className="px-2 py-0.5 rounded-md bg-card text-[11px] font-bold border border-border">
+                  {request.priority}
+                </span>
+              </div>
+            </div>
+
+            {/* Reason / Purpose (Full Width) */}
+            <div className="col-span-full">
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Reason / Purpose
+              </label>
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground font-medium">
+                {request.reason || "Branch Replenishment"}
+              </div>
+            </div>
           </div>
 
           {/* Items Table */}
@@ -375,9 +416,8 @@ export function STRDetailsModal({
                     onClose();
                     onSchedule(request);
                   }}
-                  className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer flex items-center gap-2"
+                  className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
                 >
-                  <Truck className="w-3.5 h-3.5" />
                   Schedule Transfer
                 </button>
               )}

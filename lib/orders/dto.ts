@@ -13,7 +13,14 @@ const STAFF_NAME_MAP: Record<string, string> = {
 export function resolveStaffName(usernameOrName: string | null | undefined): string {
   if (!usernameOrName) return "";
   const trimmed = usernameOrName.trim();
-  return STAFF_NAME_MAP[trimmed] || trimmed;
+  if (STAFF_NAME_MAP[trimmed]) return STAFF_NAME_MAP[trimmed];
+  const upper = trimmed.toUpperCase();
+  for (const [key, name] of Object.entries(STAFF_NAME_MAP)) {
+    if (upper === key.toUpperCase() || upper.includes(key.toUpperCase())) {
+      return name;
+    }
+  }
+  return trimmed;
 }
 
 export const PR_INCLUDE = {

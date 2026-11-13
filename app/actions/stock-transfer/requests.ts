@@ -3,9 +3,10 @@
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
-import { read, mutate, refuse, validateInput, saved } from "@/lib/stock-transfer/operations";
+import { read, mutate, refuse, validateInput, saved, safeIsoDate } from "@/lib/stock-transfer/operations";
 import { notifyApprovalRequested } from "@/lib/stock-transfer/notify";
 import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
+import { resolveStaffName } from "@/lib/orders/dto";
 
 export async function listRequests(query = "") {
   await requireModule("Stock Transfer");
@@ -93,6 +94,20 @@ export async function listRequests(query = "") {
       lotsByItem[lot.ItemId].push(lot);
     }
 
+    const knownStaffList = await prisma.knownStaff
+      .findMany({ select: { StaffId: true, Username: true, Name: true } })
+      .catch(() => []);
+    const nameMap = new Map<string, string>();
+    for (const s of knownStaffList) {
+      if (s.StaffId && s.Name) nameMap.set(s.StaffId.trim(), s.Name.trim());
+      if (s.Username && s.Name) nameMap.set(s.Username.trim(), s.Name.trim());
+    }
+    const resolveName = (u: string | null | undefined): string => {
+      if (!u) return "";
+      const t = u.trim();
+      return nameMap.get(t) || resolveStaffName(t) || t;
+    };
+
     const data = requests.map((req) => {
       const hasScheduledTransfer = req.StockTransfers?.some((st) => st.Status === "Scheduled");
       const hasDispatchedTransfer = req.StockTransfers?.some((st) => st.Status === "Dispatched");
@@ -108,16 +123,16 @@ export async function listRequests(query = "") {
         requestNumber: req.RequestNumber,
         toLocationId: req.ToLocationId,
         toLocationName: req.Locations?.LocationName || "",
-        requestedBy: req.RequestedBy,
-        requestDate: req.RequestDate.toISOString(),
-        requiredDate: req.RequiredDate.toISOString(),
+        requestedBy: resolveName(req.RequestedBy),
+        requestDate: safeIsoDate(req.RequestDate) || new Date().toISOString(),
+        requiredDate: safeIsoDate(req.RequiredDate) || new Date().toISOString(),
         priority: req.Priority,
         reason: req.Reason || "",
         status: effectiveStatus,
         adminNotes: req.AdminNotes || "",
-        reviewedBy: req.ReviewedBy || null,
-        reviewedAt: req.ReviewedAt?.toISOString() || null,
-        createdAt: req.CreatedAt.toISOString(),
+        reviewedBy: req.ReviewedBy ? resolveName(req.ReviewedBy) : null,
+        reviewedAt: safeIsoDate(req.ReviewedAt),
+        createdAt: safeIsoDate(req.CreatedAt) || new Date().toISOString(),
         items: req.StockTransferRequestItems.map((item) => {
           let avail = Number(item.AvailableQuantity);
           let isInsuff = item.IsInsufficient;
@@ -136,7 +151,7 @@ export async function listRequests(query = "") {
               suggestedLots = matchingLots.map((l) => ({
                 lotId: l.LotId,
                 lotCode: l.LotCode,
-                expiryDate: l.ExpiryDate?.toISOString() || null,
+                expiryDate: safeIsoDate(l.ExpiryDate),
                 qty: Math.min(Number(l.QuantityRemaining), Number(item.RequestedQuantity)),
               }));
             }
@@ -155,14 +170,14 @@ export async function listRequests(query = "") {
             notes: item.Notes || "",
           };
         }),
-        transfers: req.StockTransfers.map((st) => ({
+        transfers: (req.StockTransfers || []).map((st) => ({
           transferId: st.TransferId,
-          transferNumber: st.TransferNumber,
+          transferNumber: st.TransferNumber || "",
           productId: st.ProductId,
           status: st.Status,
-          transferQuantity: Number(st.TransferQuantity),
-          scheduledDate: st.ScheduledDate?.toISOString() || null,
-          dispatchedDate: st.DispatchedDate?.toISOString() || null,
+          transferQuantity: Number(st.TransferQuantity || 0),
+          scheduledDate: safeIsoDate(st.ScheduledDate),
+          dispatchedDate: safeIsoDate(st.DispatchedDate),
           driverName: st.DriverName || null,
           vehiclePlate: st.VehiclePlate || null,
           courierName: st.CourierName || null,

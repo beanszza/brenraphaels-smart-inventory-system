@@ -3,8 +3,9 @@
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
-import { read, mutate, refuse, positiveId, validateInput, saved } from "@/lib/stock-transfer/operations";
+import { read, mutate, refuse, positiveId, validateInput, saved, safeIsoDate } from "@/lib/stock-transfer/operations";
 import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
+import { resolveStaffName } from "@/lib/orders/dto";
 
 const TRANSFER_INCLUDE = {
   FinishedProducts: { include: { Items: true } },
@@ -16,7 +17,7 @@ const TRANSFER_INCLUDE = {
 function mapTransfer(t: any) {
   return {
     transferId: t.TransferId,
-    transferNumber: t.TransferNumber,
+    transferNumber: t.TransferNumber || "",
     requestId: t.RequestId ?? null,
     requestNumber: t.StockTransferRequests?.RequestNumber ?? null,
     productId: t.ProductId,
@@ -27,20 +28,20 @@ function mapTransfer(t: any) {
     sourceLocationName: t.Locations_StockTransfers_SourceLocationIdToLocations?.LocationName ?? "Commissary",
     destLocationId: t.DestLocationId,
     destLocationName: t.Locations_StockTransfers_DestLocationIdToLocations?.LocationName ?? "",
-    transferQuantity: Number(t.TransferQuantity),
+    transferQuantity: Number(t.TransferQuantity || 0),
     status: t.Status,
-    scheduledDate: t.ScheduledDate?.toISOString() ?? null,
-    transferDate: t.TransferDate?.toISOString() ?? null,
-    dispatchedDate: t.DispatchedDate?.toISOString() ?? null,
-    receivedDate: t.ReceivedDate?.toISOString() ?? null,
+    scheduledDate: safeIsoDate(t.ScheduledDate),
+    transferDate: safeIsoDate(t.TransferDate),
+    dispatchedDate: safeIsoDate(t.DispatchedDate),
+    receivedDate: safeIsoDate(t.ReceivedDate),
     driverName: t.DriverName ?? "",
     vehiclePlate: t.VehiclePlate ?? "",
     courierName: t.CourierName ?? "",
     proofOfReceipt: t.ProofOfReceipt ?? "",
     priority: t.Priority ?? "Normal",
     notes: t.Notes ?? "",
-    receivedBy: t.ReceivedBy ?? "",
-    createdAt: t.CreatedAt?.toISOString() ?? t.TransferDate?.toISOString() ?? null,
+    receivedBy: resolveStaffName(t.ReceivedBy) || t.ReceivedBy || "",
+    createdAt: safeIsoDate(t.CreatedAt) ?? safeIsoDate(t.TransferDate) ?? new Date().toISOString(),
   };
 }
 
@@ -174,7 +175,7 @@ export async function scheduleTransfer(body: any = {}) {
     }
 
     // Identify Commissary source location
-    const commissary = await tx.locations.findFirst({
+    const commissary = (await tx.locations.findFirst({
       where: {
         OR: [
           { LocationName: { contains: "Finished", mode: "insensitive" } },
@@ -188,10 +189,10 @@ export async function scheduleTransfer(body: any = {}) {
         ],
       },
       orderBy: { LocationId: "asc" },
-    });
+    })) || (await tx.locations.findFirst({ orderBy: { LocationId: "asc" } }));
 
     if (!commissary) {
-      return refuse("Commissary source location not found.");
+      return refuse("Source commissary location not found.");
     }
 
     // Generate formal Transfer Number: STF-YYYY-XXXX

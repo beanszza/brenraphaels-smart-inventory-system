@@ -104,7 +104,7 @@ export function ScheduleTransferModal({
 
   const handleProductChange = (prodId: string) => {
     setSelectedProductId(prodId);
-    const itm = request.items.find((i) => String(i.productId) === prodId);
+    const itm = request.items?.find((i) => String(i.productId) === prodId);
     if (itm) {
       const unscheduled = getUnscheduledQty(itm.productId, itm.requestedQuantity);
       setTransferQuantity(unscheduled > 0 ? unscheduled : itm.requestedQuantity);
@@ -259,7 +259,7 @@ export function ScheduleTransferModal({
                       <SelectValue placeholder="Select Product" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border-border text-foreground">
-                      {request.items.map((i) => {
+                      {(request.items || []).map((i) => {
                         const rem = getUnscheduledQty(i.productId, i.requestedQuantity);
                         return (
                           <SelectItem key={i.productId} value={String(i.productId)}>
@@ -400,14 +400,14 @@ export function ScheduleTransferModal({
               disabled={loading}
               className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
-              Cancel
+              Close
             </button>
             <button
               type="submit"
               disabled={loading}
               className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Scheduling..." : "Confirm & Schedule Transfer"}
+              {loading ? "Scheduling..." : "Schedule Transfer"}
             </button>
           </div>
         </form>
@@ -418,7 +418,7 @@ export function ScheduleTransferModal({
           open={showScheduleConfirm}
           title="Schedule Stock Transfer"
           subtitle={`Request No: ${request.requestNumber}`}
-          description={`Are you sure you want to schedule this transfer of ${transferQuantity} units to ${request.toLocationName} on ${scheduledDate}? Driver: ${driverName.trim() || "In-House"}.`}
+          description={`Are you sure you want to schedule this transfer of ${transferQuantity} units to ${request.toLocationName} on ${scheduledDate}?`}
           confirmText="Confirm & Schedule"
           loading={loading}
           onCancel={() => setShowScheduleConfirm(false)}
