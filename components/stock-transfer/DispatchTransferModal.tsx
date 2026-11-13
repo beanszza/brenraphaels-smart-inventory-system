@@ -37,6 +37,7 @@ export function DispatchTransferModal({
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   // Form states
   const [actualDispatchDate, setActualDispatchDate] = useState<string>("");
@@ -72,6 +73,7 @@ export function DispatchTransferModal({
       setSelectedFile(null);
       setDispatchRemarks("");
       setError(null);
+      setShowConfirm(false);
 
       return () => {
         document.body.style.overflow = original;
@@ -123,7 +125,7 @@ export function DispatchTransferModal({
     }
   };
 
-  const handleConfirmDispatch = async (e: React.FormEvent) => {
+  const handlePreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (loading || !transfer) return;
     setError(null);
@@ -141,7 +143,13 @@ export function DispatchTransferModal({
       return;
     }
 
+    setShowConfirm(true);
+  };
+
+  const handleExecuteDispatch = async () => {
+    if (loading || !transfer) return;
     setLoading(true);
+    setError(null);
     try {
       const dispatchMetadata = {
         actualDispatchDate,
@@ -164,13 +172,16 @@ export function DispatchTransferModal({
 
       if (res.data?.success) {
         toast.success("Stock transfer dispatched successfully and commissary stock deducted.");
+        setShowConfirm(false);
         onSuccess();
         onClose();
       } else {
         setError(res.data?.message || "Failed to dispatch stock transfer.");
+        setShowConfirm(false);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to dispatch stock transfer.");
+      setShowConfirm(false);
     } finally {
       setLoading(false);
     }
@@ -196,7 +207,7 @@ export function DispatchTransferModal({
       {confirmModal}
       <div
         style={{ width: "100%", maxWidth: "960px" }}
-        className="w-full max-h-[92vh] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
+        className="w-full max-h-[92vh] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0 relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -217,7 +228,7 @@ export function DispatchTransferModal({
         </div>
 
         {/* Content Body */}
-        <form onSubmit={handleConfirmDispatch} className="flex-1 overflow-y-auto p-6 space-y-6">
+        <form onSubmit={handlePreSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
           {error && (
             <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3.5 text-xs text-destructive flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -225,10 +236,10 @@ export function DispatchTransferModal({
             </div>
           )}
 
-          {/* Section A: Stock Transfer Information */}
+          {/* Stock Transfer Information */}
           <div className="rounded-2xl border border-border bg-muted/20 p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">A. Stock Transfer Information</h3>
+              <h3 className="text-sm font-bold text-foreground">Stock Transfer Information</h3>
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
                 REQUEST INFORMATION · READ-ONLY
               </span>
@@ -267,10 +278,10 @@ export function DispatchTransferModal({
             </div>
           </div>
 
-          {/* Section B: Finished Products to Transfer */}
+          {/* Finished Products to Transfer */}
           <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">B. Finished Products to Transfer</h3>
+              <h3 className="text-sm font-bold text-foreground">Finished Products to Transfer</h3>
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
                 PRODUCT DETAILS · READ-ONLY
               </span>
@@ -323,10 +334,10 @@ export function DispatchTransferModal({
             </div>
           </div>
 
-          {/* Section C: Transportation Details */}
+          {/* Transportation Details */}
           <div className="rounded-2xl border border-border bg-muted/20 p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">C. Transportation Details</h3>
+              <h3 className="text-sm font-bold text-foreground">Transportation Details</h3>
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
                 SCHEDULED INFORMATION · READ-ONLY
               </span>
@@ -355,10 +366,10 @@ export function DispatchTransferModal({
             </div>
           </div>
 
-          {/* Section D: Driver Information */}
+          {/* Driver Information */}
           <div className="rounded-2xl border border-border bg-muted/20 p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">D. Driver Information</h3>
+              <h3 className="text-sm font-bold text-foreground">Driver Information</h3>
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
                 SCHEDULED INFORMATION · READ-ONLY
               </span>
@@ -375,9 +386,9 @@ export function DispatchTransferModal({
             </div>
           </div>
 
-          {/* Section E: Dispatch Details */}
+          {/* Dispatch Details */}
           <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-            <h3 className="text-sm font-bold text-foreground">E. Dispatch Details</h3>
+            <h3 className="text-sm font-bold text-foreground">Dispatch Details</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Actual Dispatch Date */}
               <div className="space-y-1.5">
@@ -452,9 +463,9 @@ export function DispatchTransferModal({
             </div>
           </div>
 
-          {/* Section F: Dispatch Documents */}
+          {/* Dispatch Documents */}
           <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-            <h3 className="text-sm font-bold text-foreground">F. Dispatch Documents</h3>
+            <h3 className="text-sm font-bold text-foreground">Dispatch Documents</h3>
             <div>
               <p className="text-xs text-muted-foreground">
                 Upload delivery receipts, loading photos, or signed dispatch documents.
@@ -494,9 +505,9 @@ export function DispatchTransferModal({
             </div>
           </div>
 
-          {/* Section G: Dispatch Remarks */}
+          {/* Dispatch Remarks */}
           <div className="rounded-2xl border border-border bg-card p-5 space-y-2">
-            <h3 className="text-sm font-bold text-foreground">G. Dispatch Remarks</h3>
+            <h3 className="text-sm font-bold text-foreground">Dispatch Remarks</h3>
             <Textarea
               value={dispatchRemarks}
               onChange={(e) => setDispatchRemarks(e.target.value)}
@@ -521,10 +532,65 @@ export function DispatchTransferModal({
               disabled={loading}
               className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Dispatching..." : "Confirm Dispatch"}
+              Confirm Dispatch
             </button>
           </div>
         </form>
+
+        {/* Confirmation Modal Overlay */}
+        {showConfirm && (
+          <div
+            className="font-sans fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+            onClick={() => {
+              if (!loading) setShowConfirm(false);
+            }}
+          >
+            <div
+              role="alertdialog"
+              aria-modal="true"
+              style={{ width: "100%", maxWidth: "440px" }}
+              className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0 outline-none animate-in fade-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+                  <CheckCircle className="w-6 h-6" />
+                </div>
+
+                <h2 className="text-xl font-bold text-foreground mb-1">
+                  Dispatch Stock Transfer
+                </h2>
+
+                <p className="text-xs font-semibold text-muted-foreground mb-3 font-mono">
+                  Transfer No: {transfer.transferNumber || `TR-${transfer.transferId}`}
+                </p>
+
+                <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                  Are you sure you want to record the actual dispatch of <strong className="text-foreground">{transfer.transferQuantity} units</strong> to <strong className="text-foreground">{request?.toLocationName || transfer.destLocationName}</strong>? Commissary stock will be deducted accordingly.
+                </p>
+
+                <div className="flex justify-center gap-3 w-full">
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(false)}
+                    disabled={loading}
+                    className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExecuteDispatch}
+                    disabled={loading}
+                    className="flex-1 px-5 py-2.5 text-sm font-semibold text-background bg-foreground hover:bg-foreground/85 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                  >
+                    {loading ? "Dispatching..." : "Confirm & Dispatch"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>,
     document.body
