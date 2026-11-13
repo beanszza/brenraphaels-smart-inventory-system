@@ -308,22 +308,17 @@ export function STRDetailsModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-start gap-3 border-t border-border px-6 py-4.5 bg-muted/10">
-          {/* Admin on Pending Approval: Approve Request in Left corner, followed by Reject Request, then Close */}
+        <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4.5 bg-muted/10">
+          {/* Admin on Pending Approval: Close, Reject Request, Approve Request (Approve in right corner) */}
           {isAdmin && request.status === "Pending Approval" ? (
             <>
-              {onApprove && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onApprove(request);
-                  }}
-                  className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
-                >
-                  Approve Request
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={requestClose}
+                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              >
+                Close
+              </button>
               {onReject && (
                 <button
                   type="button"
@@ -336,6 +331,21 @@ export function STRDetailsModal({
                   Reject Request
                 </button>
               )}
+              {onApprove && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onApprove(request);
+                  }}
+                  className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+                >
+                  Approve Request
+                </button>
+              )}
+            </>
+          ) : (
+            <>
               <button
                 type="button"
                 onClick={requestClose}
@@ -343,9 +353,7 @@ export function STRDetailsModal({
               >
                 Close
               </button>
-            </>
-          ) : (
-            <>
+
               {hasScheduledTransfer && onDispatch && (
                 <button
                   type="button"
@@ -373,14 +381,6 @@ export function STRDetailsModal({
                   Schedule Transfer
                 </button>
               )}
-
-              <button
-                type="button"
-                onClick={requestClose}
-                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
-              >
-                Close
-              </button>
             </>
           )}
         </div>
