@@ -311,6 +311,13 @@ export async function createRequest(body: any = {}) {
       })
     );
 
+    const shortageItem = preparedItems.find((itm) => itm.isInsufficient);
+    if (shortageItem) {
+      return refuse(
+        `Requested quantity (${shortageItem.requestedQuantity}) exceeds available commissary stock (${shortageItem.availableQuantity}).`
+      );
+    }
+
     // Generate Request Number (STR-YYYY-XXXX), avoiding duplications
     const year = new Date().getFullYear();
     let requestNumber = typeof body.requestNumber === "string" && body.requestNumber.trim().startsWith("STR-")

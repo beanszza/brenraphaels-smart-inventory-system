@@ -149,7 +149,7 @@ export function STRActionModal({
               type="button"
               onClick={() => { if (!loading) onClose(); }}
               disabled={loading}
-              className="flex-1 rounded-xl bg-card border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+              className="flex-1 rounded-xl bg-card border border-border px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
@@ -157,7 +157,7 @@ export function STRActionModal({
               type="button"
               onClick={handleConfirm}
               disabled={loading}
-              className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50"
+              className="flex-1 rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? "Processing..." : "Confirm"}
             </button>

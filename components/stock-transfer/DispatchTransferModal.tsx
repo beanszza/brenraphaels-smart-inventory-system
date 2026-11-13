@@ -10,6 +10,7 @@ import { StockTransfer } from "./types";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
+import { StockTransferConfirmModal } from "./StockTransferConfirmModal";
 
 interface DispatchTransferModalProps {
   transfer: StockTransfer | null;
@@ -42,6 +43,7 @@ export function DispatchTransferModal({
   const [courierName, setCourierName] = useState("Lalamove");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showDispatchConfirm, setShowDispatchConfirm] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -59,8 +61,14 @@ export function DispatchTransferModal({
 
   if (!open || !mounted || !transfer) return null;
 
-  const handleDispatch = async () => {
+  const handleDispatch = () => {
     if (loading) return;
+    setError(null);
+    setShowDispatchConfirm(true);
+  };
+
+  const doDispatch = async () => {
+    if (loading || !transfer) return;
     setLoading(true);
     setError(null);
     try {
@@ -73,13 +81,16 @@ export function DispatchTransferModal({
 
       if (res.data?.success) {
         toast.success("Transfer dispatched.");
+        setShowDispatchConfirm(false);
         onSuccess();
         onClose();
       } else {
         setError(res.data?.message || "Failed to dispatch transfer.");
+        setShowDispatchConfirm(false);
       }
     } catch (err: unknown) {
       setError((err instanceof Error ? err.message : null) || "Failed to dispatch transfer.");
+      setShowDispatchConfirm(false);
     } finally {
       setLoading(false);
     }
@@ -215,7 +226,7 @@ export function DispatchTransferModal({
             type="button"
             onClick={requestClose}
             disabled={loading}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -223,12 +234,25 @@ export function DispatchTransferModal({
             type="button"
             onClick={handleDispatch}
             disabled={loading}
-            className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-2 rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {loading ? "Deducting & Dispatching..." : "Confirm Dispatch"}
           </button>
         </div>
       </div>
+
+      {showDispatchConfirm && transfer && (
+        <StockTransferConfirmModal
+          open={showDispatchConfirm}
+          title="Dispatch Stock Transfer"
+          subtitle={`Transfer No: ${transfer.transferNumber}`}
+          description={`Are you sure you want to dispatch transfer ${transfer.transferNumber}? This will mark the items as in transit to ${transfer.destLocationName || "destination"} and deduct commissary inventory lots.`}
+          confirmText="Confirm & Dispatch"
+          loading={loading}
+          onCancel={() => setShowDispatchConfirm(false)}
+          onConfirm={doDispatch}
+        />
+      )}
     </div>,
     document.body
   );

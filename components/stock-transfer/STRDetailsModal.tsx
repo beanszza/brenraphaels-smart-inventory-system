@@ -194,11 +194,6 @@ export function STRDetailsModal({
                         <tr key={idx} className="hover:bg-muted/20 transition-colors">
                           <td className="px-5 py-4 font-bold text-foreground">
                             {item.productName}
-                            {item.notes && (
-                              <p className="text-[11px] text-muted-foreground font-normal mt-0.5">
-                                Note: {item.notes}
-                              </p>
-                            )}
                           </td>
                           <td className="px-5 py-4 text-muted-foreground whitespace-nowrap">
                             {item.sku || "—"}
@@ -296,7 +291,7 @@ export function STRDetailsModal({
                             onClose();
                             onDispatch(request, st.transferId);
                           }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors shadow-xs cursor-pointer shrink-0"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-foreground text-background text-xs font-semibold hover:bg-foreground/85 transition-colors shadow-xs cursor-pointer shrink-0"
                         >
                           <Send className="w-3.5 h-3.5" />
                           Dispatch Transfer
@@ -315,7 +310,7 @@ export function STRDetailsModal({
           <button
             type="button"
             onClick={requestClose}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
           >
             Close
           </button>
@@ -331,7 +326,7 @@ export function STRDetailsModal({
                       onClose();
                       onReject(request);
                     }}
-                    className="rounded-xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                    className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
                   >
                     Reject Request
                   </button>
@@ -343,7 +338,7 @@ export function STRDetailsModal({
                       onClose();
                       onApprove(request);
                     }}
-                    className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+                    className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
                   >
                     Approve Request
                   </button>
@@ -360,7 +355,7 @@ export function STRDetailsModal({
                     onClose();
                     onDispatch(request);
                   }}
-                  className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer flex items-center gap-2"
+                  className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer flex items-center gap-2"
                 >
                   <Send className="w-3.5 h-3.5" />
                   Dispatch Transfer
@@ -374,7 +369,7 @@ export function STRDetailsModal({
                     onClose();
                     onSchedule(request);
                   }}
-                  className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer flex items-center gap-2"
+                  className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer flex items-center gap-2"
                 >
                   <Truck className="w-3.5 h-3.5" />
                   Schedule Transfer
@@ -388,7 +383,7 @@ export function STRDetailsModal({
                     onClose();
                     onCancel(request);
                   }}
-                  className="rounded-xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
                 >
                   Cancel Request
                 </button>

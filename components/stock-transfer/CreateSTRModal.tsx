@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
+import { StockTransferConfirmModal } from "./StockTransferConfirmModal";
 
 export const STR_REASON_CHOICES = [
   "Branch Replenishment",
@@ -88,6 +89,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
     },
   ]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -221,6 +223,13 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
       return next;
     });
 
+    const row = items[index];
+    if (typeof parsed === "number" && row.availableQuantity > 0 && parsed > row.availableQuantity) {
+      setFormError(`Requested quantity (${parsed}) for "${row.productName || "product"}" exceeds available commissary stock (${row.availableQuantity}).`);
+    } else {
+      setFormError(null);
+    }
+
     const prodId = items[index].productId;
     if (typeof prodId === "number" && typeof parsed === "number" && parsed > 0) {
       checkAvailability(index, prodId, parsed);
@@ -251,7 +260,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
     setItems((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (loading || !prerequisitesReady) return;
     setFormError(null);
@@ -287,9 +296,24 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
         setFormError(`Please enter a valid quantity greater than zero for row #${i + 1}.`);
         return;
       }
+      if (row.availableQuantity <= 0) {
+        setFormError(`"${row.productName || "Product"}" in row #${i + 1} is currently out of stock.`);
+        return;
+      }
+      if (row.requestedQuantity > row.availableQuantity) {
+        setFormError(
+          `Requested quantity (${row.requestedQuantity}) for "${row.productName || "Product"}" in row #${i + 1} exceeds available commissary stock (${row.availableQuantity}).`
+        );
+        return;
+      }
     }
 
+    setShowSubmitConfirm(true);
+  };
+
+  const doSubmit = async () => {
     setLoading(true);
+    setFormError(null);
     try {
       const effectiveReason = reasonChoice === "Other" ? customReason.trim() : reasonChoice;
       const payload = {
@@ -308,13 +332,16 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
       const res = await actionResponse(createRequest(payload));
       if (res.data?.success) {
         toast.success("Transfer request created.");
+        setShowSubmitConfirm(false);
         onSuccess();
         onClose();
       } else {
         setFormError(res.data?.message || "Failed to create transfer request.");
+        setShowSubmitConfirm(false);
       }
     } catch (err: unknown) {
       setFormError((err instanceof Error ? err.message : null) || "Failed to create transfer request.");
+      setShowSubmitConfirm(false);
     } finally {
       setLoading(false);
     }
@@ -600,11 +627,19 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                             <Input
                               type="number"
                               min="1"
+                              max={row.availableQuantity > 0 ? row.availableQuantity : undefined}
                               step="1"
                               value={row.requestedQuantity}
                               onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                              className="h-9 rounded-xl border border-border bg-card text-xs text-foreground font-semibold w-24"
+                              className={`h-9 rounded-xl border bg-card text-xs text-foreground font-semibold w-24 ${
+                                isInsufficient ? "border-destructive text-destructive focus-visible:ring-destructive" : "border-border"
+                              }`}
                             />
+                            {isInsufficient && (
+                              <p className="text-[10px] text-destructive font-semibold mt-1">
+                                Exceeds stock ({row.availableQuantity})
+                              </p>
+                            )}
                           </td>
 
                           <td className="px-3 py-3 text-center">
@@ -632,20 +667,45 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
               type="button"
               onClick={requestClose}
               disabled={loading}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading || !prerequisitesReady || items.some(row => row.isChecking)}
-              className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+              disabled={
+                loading ||
+                !prerequisitesReady ||
+                items.some(
+                  (row) =>
+                    row.isChecking ||
+                    !row.productId ||
+                    typeof row.requestedQuantity !== "number" ||
+                    row.requestedQuantity <= 0 ||
+                    row.availableQuantity <= 0 ||
+                    row.requestedQuantity > row.availableQuantity
+                )
+              }
+              className="flex items-center gap-2 rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? "Submitting..." : "Submit Request"}
             </button>
           </div>
         </form>
       </div>
+
+      {showSubmitConfirm && (
+        <StockTransferConfirmModal
+          open={showSubmitConfirm}
+          title="Submit Stock Transfer Request"
+          subtitle={requestNumber ? `Request No: ${requestNumber}` : undefined}
+          description={`Are you sure you want to submit stock transfer request ${requestNumber || ""} for ${items.length} product(s) to ${locations.find((l) => String(l.locationId) === toLocationId)?.locationName || "the branch"}? Once submitted, it will be routed to the Admin for approval.`}
+          confirmText="Confirm & Submit"
+          loading={loading}
+          onCancel={() => setShowSubmitConfirm(false)}
+          onConfirm={doSubmit}
+        />
+      )}
     </div>,
     document.body
   );

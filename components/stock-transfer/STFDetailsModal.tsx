@@ -210,7 +210,7 @@ export function STFDetailsModal({
           <button
             type="button"
             onClick={requestClose}
-            className="rounded-xl bg-card border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+            className="rounded-xl bg-card border border-border px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
           >
             Close
           </button>
@@ -225,7 +225,7 @@ export function STFDetailsModal({
                     onClose();
                     onCancel(transfer);
                   }}
-                  className="rounded-xl bg-card border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+                  className="rounded-xl bg-card border border-border px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
                 >
                   Cancel Transfer
                 </button>
@@ -237,7 +237,7 @@ export function STFDetailsModal({
                     onClose();
                     onDispatch(transfer);
                   }}
-                  className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm"
+                  className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
                 >
                   Dispatch Transfer
                 </button>

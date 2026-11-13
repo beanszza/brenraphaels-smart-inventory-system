@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
+import { StockTransferConfirmModal } from "./StockTransferConfirmModal";
 
 interface ScheduleTransferModalProps {
   open: boolean;
@@ -49,6 +50,7 @@ export function ScheduleTransferModal({
   const [vehiclePlate, setVehiclePlate] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [showScheduleConfirm, setShowScheduleConfirm] = useState(false);
 
   const getUnscheduledQty = (prodId: number, reqQty: number) => {
     const scheduledTotal =
@@ -109,9 +111,9 @@ export function ScheduleTransferModal({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loading) return;
+    if (loading || !request) return;
     setFormError(null);
 
     if (!selectedProductId) {
@@ -132,7 +134,13 @@ export function ScheduleTransferModal({
       return;
     }
 
+    setShowScheduleConfirm(true);
+  };
+
+  const doSchedule = async () => {
+    if (!request) return;
     setLoading(true);
+    setFormError(null);
     try {
       const payload = {
         requestId: request.requestId,
@@ -148,13 +156,16 @@ export function ScheduleTransferModal({
       const res = await actionResponse(scheduleTransfer(payload));
       if (res.data?.success) {
         toast.success("Transfer scheduled successfully. Request is now Scheduled for Dispatch.");
+        setShowScheduleConfirm(false);
         onSuccess();
         onClose();
       } else {
         setFormError(res.data?.message || "Failed to schedule transfer.");
+        setShowScheduleConfirm(false);
       }
     } catch (err: unknown) {
       setFormError((err instanceof Error ? err.message : null) || "Failed to schedule transfer.");
+      setShowScheduleConfirm(false);
     } finally {
       setLoading(false);
     }
@@ -387,20 +398,33 @@ export function ScheduleTransferModal({
               type="button"
               onClick={requestClose}
               disabled={loading}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Scheduling..." : "Confirm & Schedule Transfer"}
             </button>
           </div>
         </form>
       </div>
+
+      {showScheduleConfirm && request && (
+        <StockTransferConfirmModal
+          open={showScheduleConfirm}
+          title="Schedule Stock Transfer"
+          subtitle={`Request No: ${request.requestNumber}`}
+          description={`Are you sure you want to schedule this transfer of ${transferQuantity} units to ${request.toLocationName} on ${scheduledDate}? Driver: ${driverName.trim() || "In-House"}.`}
+          confirmText="Confirm & Schedule"
+          loading={loading}
+          onCancel={() => setShowScheduleConfirm(false)}
+          onConfirm={doSchedule}
+        />
+      )}
     </div>,
     document.body
   );
