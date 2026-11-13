@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { BrandLockup } from "@/components/brand/brand-lockup";
 import type { ReactNode } from "react";
 
 /** The shared frame of the sign-in screens: a centred card that fits a phone. */
@@ -14,14 +14,7 @@ export function AuthScreen({
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
       <div className="flex w-full max-w-md flex-col items-center gap-5 rounded-2xl border border-border bg-card p-6 text-center shadow-sm sm:p-10">
-        <Image
-          src="/images/bren-raphaels-logo.svg"
-          alt="Bren Raphael's"
-          width={56}
-          height={56}
-          unoptimized
-          className="size-14 rounded-xl"
-        />
+        <BrandLockup system="Enterprise Suite" />
         <div className="space-y-2">
           <h1 className="text-xl font-bold text-foreground sm:text-2xl">{title}</h1>
           <div className="text-sm leading-relaxed text-muted-foreground">{children}</div>
