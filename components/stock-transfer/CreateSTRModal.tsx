@@ -79,7 +79,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
       productName: "",
       variant: "",
       sku: "",
-      requestedQuantity: 1,
+      requestedQuantity: "",
       availableQuantity: 0,
       allocatedLots: [],
       lotCode: "",
@@ -244,7 +244,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
         productName: "",
         variant: "",
         sku: "",
-        requestedQuantity: 1,
+        requestedQuantity: "",
         availableQuantity: 0,
         allocatedLots: [],
         lotCode: "",
@@ -534,7 +534,9 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                   <tbody className="divide-y divide-border">
                     {items.map((row, idx) => {
                       const isInsufficient =
+                        Boolean(row.productId) &&
                         typeof row.requestedQuantity === "number" &&
+                        row.requestedQuantity > 0 &&
                         row.requestedQuantity > row.availableQuantity;
 
                       return (
@@ -669,7 +671,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
               disabled={loading}
               className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
-              Cancel
+              Close
             </button>
             <button
               type="submit"

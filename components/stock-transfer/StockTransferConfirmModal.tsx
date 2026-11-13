@@ -89,3 +89,4 @@ export function StockTransferConfirmModal({
     document.body
   );
 }
+
