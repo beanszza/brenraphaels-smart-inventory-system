@@ -337,16 +337,9 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-5">
           <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-foreground">
-                Create Stock Transfer Request
-              </h2>
-              {requestNumber && (
-                <span className="text-xs px-2.5 py-1 rounded-lg bg-muted border border-border text-foreground font-mono font-bold tracking-wide">
-                  {requestNumber}
-                </span>
-              )}
-            </div>
+            <h2 className="text-xl font-bold text-foreground">
+              Create Stock Transfer Request
+            </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
               Submit a transfer request to distribute finished goods to a branch
             </p>
@@ -503,12 +496,11 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                 <table className="w-full text-left text-xs">
                   <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
                     <tr>
-                      <th className="px-4 py-3 min-w-[220px]">Product & Variant</th>
+                      <th className="px-4 py-3 min-w-[240px]">Product & Variant</th>
                       <th className="px-4 py-3 min-w-[130px] whitespace-nowrap">SKU</th>
-                      <th className="px-4 py-3 min-w-[125px] whitespace-nowrap">Commissary Stock</th>
-                      <th className="px-4 py-3 min-w-[130px] whitespace-nowrap">Expiry Date</th>
-                      <th className="px-4 py-3 min-w-[100px] whitespace-nowrap">Quantity</th>
-                      <th className="px-4 py-3 min-w-[160px]">Notes</th>
+                      <th className="px-4 py-3 min-w-[130px] whitespace-nowrap">Commissary Stock</th>
+                      <th className="px-4 py-3 min-w-[220px]">Expiry Date & Lots</th>
+                      <th className="px-4 py-3 min-w-[110px] whitespace-nowrap">Quantity</th>
                       <th className="px-3 py-3 w-10 text-center"></th>
                     </tr>
                   </thead>
@@ -612,23 +604,6 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                               value={row.requestedQuantity}
                               onChange={(e) => handleQuantityChange(idx, e.target.value)}
                               className="h-9 rounded-xl border border-border bg-card text-xs text-foreground font-semibold w-24"
-                            />
-                          </td>
-
-                          <td className="px-4 py-3">
-                            <Input
-                              type="text"
-                              placeholder="Notes / instructions..."
-                              value={row.notes}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setItems((prev) => {
-                                  const next = [...prev];
-                                  next[idx].notes = val;
-                                  return next;
-                                });
-                              }}
-                              className="h-9 rounded-xl border border-border bg-card text-xs text-foreground"
                             />
                           </td>
 
