@@ -1,6 +1,6 @@
 "use client";
 import { actionResponse } from "@/lib/resources/action-response";
-import { listTransfers, getTransfer } from "@/app/actions/stock-transfer/transfers";
+import { listTransfers, getTransfer, scheduleTransfer } from "@/app/actions/stock-transfer/transfers";
 import { cancelRequest } from "@/app/actions/stock-transfer/request-cancel";
 
 import { reviewRequest } from "@/app/actions/stock-transfer/request-status";
@@ -133,10 +133,31 @@ export default function StockTransferModule({ requests, metrics, locations, acti
       await actionResponse(reviewRequest(request.requestId, {
         action: type === "approve" ? "Approve" : "Reject", adminNotes: notes,
       }));
+      toast.success(type === "approve" ? "Request approved successfully." : "Request rejected.");
+    } else if (type === "schedule") {
+      const todayStr = new Date().toISOString().split("T")[0];
+      const itemsToSchedule = request.items && request.items.length > 0 ? request.items : [];
+      let scheduledAny = false;
+      for (const item of itemsToSchedule) {
+        const res = await actionResponse(scheduleTransfer({
+          requestId: request.requestId,
+          productId: item.productId,
+          transferQuantity: item.requestedQuantity,
+          scheduledDate: todayStr,
+          courierName: "In-House Fleet / Driver",
+          notes: notes || undefined,
+        }));
+        if (res.data?.success) scheduledAny = true;
+      }
+      if (scheduledAny) {
+        toast.success("Stock transfer scheduled successfully.");
+      } else {
+        toast.error("Failed to schedule transfer.");
+      }
     } else {
       await actionResponse(cancelRequest(request.requestId, { reason: notes }));
+      toast.success("Request cancelled successfully.");
     }
-    toast.success("Request updated successfully.");
     refreshAll();
   };
 
@@ -337,7 +358,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
             onView={(req) => setSelectedSTRForDetails(req)}
             onApprove={(req) => setStrAction({ request: req, type: "approve" })}
             onReject={(req) => setStrAction({ request: req, type: "reject" })}
-            onSchedule={(req) => setScheduleTargetReq(req)}
+            onSchedule={(req) => setStrAction({ request: req, type: "schedule" })}
             onDispatch={(req) => handleOpenDispatch(req)}
             onCancel={(req) => setStrAction({ request: req, type: "cancel" })}
           />
@@ -389,7 +410,10 @@ export default function StockTransferModule({ requests, metrics, locations, acti
         onClose={() => setSelectedSTRForDetails(null)}
         onApprove={(req) => setStrAction({ request: req, type: "approve" })}
         onReject={(req) => setStrAction({ request: req, type: "reject" })}
-        onSchedule={(req) => setScheduleTargetReq(req)}
+        onSchedule={(req) => {
+          setSelectedSTRForDetails(null);
+          setStrAction({ request: req, type: "schedule" });
+        }}
         onDispatch={(req, transferId) => handleOpenDispatch(req, transferId)}
         onCancel={(req) => setStrAction({ request: req, type: "cancel" })}
       />

@@ -4,6 +4,7 @@ import { expect, it, vi } from "vitest";
 import { STRTable } from "@/components/stock-transfer/STRTable";
 import { LocationsTab } from "@/components/stock-transfer/LocationsTab";
 import DistributionTable from "@/components/distribution/StockTransferTable";
+import { ScheduleTransferModal } from "@/components/stock-transfer/ScheduleTransferModal";
 import type { StockTransferRequest } from "@/components/stock-transfer/types";
 
 it("renders persisted request rows in the server HTML", () => {
@@ -46,4 +47,35 @@ it("does not render corrupted characters in STRTable cells", () => {
   expect(html).not.toContain("â€”");
   expect(html).not.toContain("â€\"");
   expect(html).toContain("—");
+});
+
+it("renders ScheduleTransferModal without throwing", () => {
+  const row = {
+    requestId: 1,
+    requestNumber: "STR-2026-0014",
+    toLocationId: 2,
+    toLocationName: "Antipolo Store Branch",
+    status: "Approved",
+    priority: "Low",
+    requiredDate: "2026-11-21T00:00:00Z",
+    items: [
+      {
+        productId: 1,
+        productName: "Ube Jam Havanero",
+        variant: "500g Container",
+        requestedQuantity: 60,
+      },
+    ],
+    transfers: [],
+  };
+
+  const html = renderToStaticMarkup(
+    <ScheduleTransferModal
+      open={true}
+      request={row as any}
+      onClose={vi.fn()}
+      onSuccess={vi.fn()}
+    />
+  );
+  expect(html).toBeDefined();
 });

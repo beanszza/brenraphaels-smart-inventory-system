@@ -41,6 +41,8 @@ export function STRActionModal({
         return "Reject Stock Transfer Request";
       case "cancel":
         return "Cancel Stock Transfer Request";
+      case "schedule":
+        return "Schedule Stock Transfer";
     }
   };
 
@@ -52,6 +54,8 @@ export function STRActionModal({
         return `Please provide a reason for rejecting request ${requestNumber}. Once rejected, this request cannot be reused or revised, and a new request number must be generated if needed.`;
       case "cancel":
         return `Are you sure you want to cancel request ${requestNumber}? Any transfers scheduled under this request will also be cancelled.`;
+      case "schedule":
+        return `Are you sure you want to schedule request ${requestNumber}? This will mark it as Scheduled for dispatch.`;
     }
   };
 
@@ -88,7 +92,7 @@ export function STRActionModal({
         <div className="flex flex-col items-center justify-center text-center">
           {/* Circular Alert Icon */}
           <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
-            {actionType === "approve" ? (
+            {actionType === "approve" || actionType === "schedule" ? (
               <CheckCircle className="w-6 h-6" />
             ) : actionType === "reject" ? (
               <XCircle className="w-6 h-6" />
@@ -113,10 +117,14 @@ export function STRActionModal({
           </p>
 
           {/* Required / Optional Reason Input */}
-          {(requiresReason || actionType === "cancel") && (
+          {(requiresReason || actionType === "cancel" || actionType === "schedule") && (
             <div className="w-full text-left space-y-1.5 mb-5">
               <label className="text-xs font-semibold text-foreground flex items-center gap-1">
-                {actionType === "reject" ? "Rejection Reason" : "Cancellation Reason"}{" "}
+                {actionType === "reject"
+                  ? "Rejection Reason"
+                  : actionType === "cancel"
+                  ? "Cancellation Reason"
+                  : "Handling / Dispatch Notes"}{" "}
                 {requiresReason && <span className="text-destructive">*</span>}
               </label>
               <Textarea
@@ -124,7 +132,9 @@ export function STRActionModal({
                 placeholder={
                   actionType === "reject"
                     ? "Explain why this request is rejected (required)..."
-                    : "Specify reason for cancellation (optional)..."
+                    : actionType === "cancel"
+                    ? "Specify reason for cancellation (optional)..."
+                    : "Add any instructions or notes for the dispatch driver (optional)..."
                 }
                 value={reason}
                 onChange={(e) => {
@@ -159,7 +169,15 @@ export function STRActionModal({
               disabled={loading}
               className="flex-1 rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              {loading ? "Processing..." : "Confirm"}
+              {loading
+                ? "Processing..."
+                : actionType === "schedule"
+                ? "Schedule Transfer"
+                : actionType === "approve"
+                ? "Approve Request"
+                : actionType === "reject"
+                ? "Reject Request"
+                : "Confirm"}
             </button>
           </div>
         </div>
