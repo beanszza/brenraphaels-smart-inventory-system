@@ -207,6 +207,77 @@ export function STRDetailsModal({
             </div>
           </div>
 
+          {/* Scheduled Transportation Details Card */}
+          {Boolean(
+            (request.status === "Scheduled" || request.status === "Dispatched" || hasScheduledTransfer) &&
+            request.transfers && request.transfers.length > 0
+          ) && (() => {
+            const scheduledTransfer =
+              request.transfers?.find((t) => t.status === "Scheduled" || t.status === "Dispatched") ||
+              request.transfers?.[0];
+            let schedMeta: any = {};
+            if (scheduledTransfer?.notes) {
+              try {
+                schedMeta = JSON.parse(scheduledTransfer.notes);
+              } catch {
+                // not json
+              }
+            }
+            return (
+              <div className="p-5 rounded-2xl bg-muted/20 border border-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-foreground" />
+                    <h3 className="text-sm font-bold text-foreground">
+                      Scheduled Transportation & Driver Details
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+                    {scheduledTransfer?.status.toUpperCase() || "SCHEDULED"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transfer Number</span>
+                    <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledTransfer?.transferNumber || "—"}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transport Provider</span>
+                    <p className="text-sm font-semibold text-foreground mt-0.5">{schedMeta.transportProvider || scheduledTransfer?.courierName || "—"}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Vehicle Type & Plate</span>
+                    <p className="text-sm font-semibold text-foreground mt-0.5">
+                      {schedMeta.vehicleType ? `${schedMeta.vehicleType} • ` : ""}
+                      {schedMeta.plateNumber || scheduledTransfer?.vehiclePlate || "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Driver Name</span>
+                    <p className="text-sm font-semibold text-foreground mt-0.5">{schedMeta.driverName || scheduledTransfer?.driverName || "—"}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Driver Contact</span>
+                    <p className="text-sm font-semibold text-foreground mt-0.5">{schedMeta.driverContact || "—"}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Booking Reference / Fee</span>
+                    <p className="text-sm font-semibold text-foreground mt-0.5">
+                      {schedMeta.bookingReference ? `Ref: ${schedMeta.bookingReference}` : ""}
+                      {schedMeta.transferFee ? ` (₱${Number(schedMeta.transferFee).toLocaleString()})` : (!schedMeta.bookingReference ? "—" : "")}
+                    </p>
+                  </div>
+                </div>
+                {schedMeta.remarks && (
+                  <div className="pt-2 border-t border-border/50 text-xs text-muted-foreground">
+                    <strong className="text-foreground">Logistics Instructions:</strong> {schedMeta.remarks}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Items Table */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">

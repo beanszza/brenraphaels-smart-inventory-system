@@ -7,10 +7,10 @@ import { toast } from "sonner";
 import { actionResponse } from "@/lib/resources/action-response";
 import { dispatchTransfer } from "@/app/actions/stock-transfer/dispatch";
 import { StockTransfer, StockTransferRequest } from "./types";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
+import { useOptionalStaff } from "@/context/StaffContext";
 
 interface DispatchTransferModalProps {
   transfer: StockTransfer | null;
@@ -20,13 +20,6 @@ interface DispatchTransferModalProps {
   onSuccess: () => void;
 }
 
-const PERSONNEL_OPTIONS = [
-  "Vince Neil Madeja (Warehouse Supervisor)",
-  "Commissary Logistics Lead",
-  "Inventory Officer",
-  "Authorized Dispatch Staff",
-];
-
 export function DispatchTransferModal({
   transfer,
   request,
@@ -34,6 +27,9 @@ export function DispatchTransferModal({
   onClose,
   onSuccess,
 }: DispatchTransferModalProps) {
+  const staff = useOptionalStaff();
+  const currentStaffName = staff?.name?.trim() || "Vince Neil Madeja";
+
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,13 +38,19 @@ export function DispatchTransferModal({
   // Form states
   const [actualDispatchDate, setActualDispatchDate] = useState<string>("");
   const [actualDispatchTime, setActualDispatchTime] = useState<string>("");
-  const [releasedBy, setReleasedBy] = useState<string>("");
+  const [releasedBy, setReleasedBy] = useState<string>(currentStaffName);
   const [odometerReading, setOdometerReading] = useState<string>("");
   const [vehicleSealNumber, setVehicleSealNumber] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dispatchRemarks, setDispatchRemarks] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
+  const maxDate = new Date(today);
+  maxDate.setDate(maxDate.getDate() + 30);
+  const maxDateStr = maxDate.toISOString().split("T")[0];
 
   useEffect(() => {
     setMounted(true);
@@ -60,14 +62,14 @@ export function DispatchTransferModal({
       document.body.style.overflow = "hidden";
 
       const now = new Date();
-      const todayStr = now.toISOString().split("T")[0];
+      const currentToday = now.toISOString().split("T")[0];
       const hours = String(now.getHours()).padStart(2, "0");
       const minutes = String(now.getMinutes()).padStart(2, "0");
       const timeStr = `${hours}:${minutes}`;
 
-      setActualDispatchDate(todayStr);
+      setActualDispatchDate(currentToday);
       setActualDispatchTime(timeStr);
-      setReleasedBy("Vince Neil Madeja (Warehouse Supervisor)");
+      setReleasedBy(currentStaffName);
       setOdometerReading("");
       setVehicleSealNumber("");
       setSelectedFile(null);
@@ -79,7 +81,7 @@ export function DispatchTransferModal({
         document.body.style.overflow = original;
       };
     }
-  }, [open, transfer]);
+  }, [open, transfer, currentStaffName]);
 
   const { requestClose, confirmModal } = useConfirmedClose(onClose);
 
@@ -119,6 +121,18 @@ export function DispatchTransferModal({
     return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString("en-US");
   };
 
+  const handleDateChange = (val: string) => {
+    if (val) {
+      const parts = val.split("-");
+      if (parts[0] && parts[0].length > 4) {
+        parts[0] = parts[0].slice(0, 4);
+        val = parts.join("-");
+      }
+    }
+    setActualDispatchDate(val);
+    setError(null);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
@@ -134,12 +148,22 @@ export function DispatchTransferModal({
       setError("Actual dispatch date is required.");
       return;
     }
-    if (!actualDispatchTime) {
-      setError("Actual dispatch time is required.");
+
+    if (actualDispatchDate < todayStr) {
+      setError("Actual dispatch date cannot be in the past.");
       return;
     }
-    if (!releasedBy) {
-      setError("Please select the releasing personnel.");
+
+    const yearParts = actualDispatchDate.split("-");
+    const year = parseInt(yearParts[0], 10);
+    const currentYear = new Date().getFullYear();
+    if (year < currentYear || year > currentYear + 1) {
+      setError(`Please enter a valid dispatch date between ${currentYear} and ${currentYear + 1}.`);
+      return;
+    }
+
+    if (!actualDispatchTime) {
+      setError("Actual dispatch time is required.");
       return;
     }
 
@@ -154,7 +178,7 @@ export function DispatchTransferModal({
       const dispatchMetadata = {
         actualDispatchDate,
         actualDispatchTime,
-        releasedBy,
+        releasedBy: currentStaffName,
         odometerReading: odometerReading.trim() || null,
         vehicleSealNumber: vehicleSealNumber.trim() || null,
         proofFileName: selectedFile?.name || null,
@@ -395,12 +419,16 @@ export function DispatchTransferModal({
                 <label className="text-xs font-semibold text-foreground">
                   Actual Dispatch Date <span className="text-destructive">*</span>
                 </label>
-                <Input
-                  type="date"
-                  value={actualDispatchDate}
-                  onChange={(e) => setActualDispatchDate(e.target.value)}
-                  className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
-                />
+                <div className="relative">
+                  <Input
+                    type="date"
+                    min={todayStr}
+                    max={maxDateStr}
+                    value={actualDispatchDate}
+                    onChange={(e) => handleDateChange(e.target.value)}
+                    className="h-10 rounded-xl bg-card border-border text-foreground text-xs px-3.5 pr-3 w-full cursor-pointer flex justify-between items-center [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:ml-auto"
+                  />
+                </div>
               </div>
 
               {/* Actual Dispatch Time */}
@@ -408,31 +436,26 @@ export function DispatchTransferModal({
                 <label className="text-xs font-semibold text-foreground">
                   Actual Dispatch Time <span className="text-destructive">*</span>
                 </label>
-                <Input
-                  type="time"
-                  value={actualDispatchTime}
-                  onChange={(e) => setActualDispatchTime(e.target.value)}
-                  className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
-                />
+                <div className="relative">
+                  <Input
+                    type="time"
+                    value={actualDispatchTime}
+                    onChange={(e) => setActualDispatchTime(e.target.value)}
+                    className="h-10 rounded-xl bg-card border-border text-foreground text-xs px-3.5 pr-3 w-full cursor-pointer flex justify-between items-center [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:ml-auto"
+                  />
+                </div>
               </div>
 
-              {/* Released By */}
+              {/* Released By (Locked to Current Account User) */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
                   Released By <span className="text-destructive">*</span>
                 </label>
-                <Select value={releasedBy} onValueChange={setReleasedBy}>
-                  <SelectTrigger className="h-10 rounded-xl bg-card border-border text-foreground">
-                    <SelectValue placeholder="Select Personnel" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-border text-foreground">
-                    {PERSONNEL_OPTIONS.map((person) => (
-                      <SelectItem key={person} value={person}>
-                        {person}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  readOnly
+                  value={currentStaffName}
+                  className="h-10 rounded-xl bg-muted/40 border-border text-foreground font-medium text-xs cursor-not-allowed select-none"
+                />
               </div>
 
               {/* Odometer Reading */}
@@ -465,44 +488,59 @@ export function DispatchTransferModal({
 
           {/* Dispatch Documents */}
           <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-            <h3 className="text-sm font-bold text-foreground">Dispatch Documents</h3>
-            <div>
-              <p className="text-xs text-muted-foreground">
-                Upload delivery receipts, loading photos, or signed dispatch documents.
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-foreground">Dispatch Documents</h3>
+              <span className="text-[10px] font-semibold text-muted-foreground">Optional</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Upload delivery receipts, loading photos, or signed dispatch documents.
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-border hover:border-foreground/40 rounded-2xl p-7 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-muted/20 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2.5 text-muted-foreground group-hover:text-foreground group-hover:scale-105 transition-all">
+                <Upload className="w-5 h-5" />
+              </div>
+              <p className="text-xs font-semibold text-foreground">
+                Click to upload dispatch documents or proof photo
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                JPG, PNG, PDF up to 8MB
               </p>
             </div>
-            <div className="pt-1 flex flex-col sm:flex-row sm:items-center gap-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
-              >
-                <Upload className="w-4 h-4 text-muted-foreground" />
-                Upload Files
-              </button>
-              {selectedFile ? (
-                <div className="flex items-center gap-2 text-xs font-medium text-foreground bg-muted/40 px-3 py-2 rounded-xl border border-border">
-                  <FileCheck className="w-4 h-4 text-emerald-500" />
-                  <span className="truncate max-w-[240px]">{selectedFile.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedFile(null)}
-                    className="text-muted-foreground hover:text-destructive text-xs ml-1 cursor-pointer"
-                  >
-                    ×
-                  </button>
+            {selectedFile && (
+              <div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-card">
+                <div className="flex items-center gap-2.5">
+                  <FileCheck className="w-5 h-5 text-emerald-500" />
+                  <div>
+                    <p className="text-xs font-semibold text-foreground truncate max-w-[280px]">
+                      {selectedFile.name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {(selectedFile.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
                 </div>
-              ) : (
-                <span className="text-xs text-muted-foreground">Accepted documents: PDF, JPG, PNG</span>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedFile(null);
+                  }}
+                  className="text-xs text-muted-foreground hover:text-destructive px-2 py-1 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Dispatch Remarks */}

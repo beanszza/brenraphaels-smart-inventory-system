@@ -19,6 +19,10 @@ export function useStaff(): Staff {
   return staff;
 }
 
+export function useOptionalStaff(): Staff | null {
+  return useContext(StaffContext);
+}
+
 export function useIsAdmin(): boolean {
   const staff = useContext(StaffContext);
   return isAdminStaff(staff);

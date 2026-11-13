@@ -501,51 +501,65 @@ export function ScheduleTransferModal({
             </div>
           </div>
 
-          {/* Driver & Vehicle Photo / Attachment */}
+          {/* Proof of Booking / Transaction Receipt */}
           <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">Driver & Vehicle Photo / Proof</h3>
+              <h3 className="text-sm font-bold text-foreground">Proof of Booking / Transaction Receipt</h3>
               <span className="text-[10px] font-semibold text-muted-foreground">Optional</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Attach a photo of the driver's license, delivery vehicle, or courier booking confirmation.
+              Attach an image proof of receipt, Lalamove/Grab booking screenshot, or delivery transaction document.
             </p>
-            <div className="pt-1 flex flex-col sm:flex-row sm:items-center gap-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".jpg,.jpeg,.png,.pdf"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    setAttachmentFile(e.target.files[0]);
-                  }
-                }}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
-              >
-                <Upload className="w-4 h-4 text-muted-foreground" />
-                Upload Photo / Document
-              </button>
-              {attachmentFile ? (
-                <div className="flex items-center gap-2 text-xs font-medium text-foreground bg-muted/40 px-3 py-2 rounded-xl border border-border">
-                  <FileCheck className="w-4 h-4 text-emerald-500" />
-                  <span className="truncate max-w-[240px]">{attachmentFile.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => setAttachmentFile(null)}
-                    className="text-muted-foreground hover:text-destructive text-xs ml-1 cursor-pointer"
-                  >
-                    ×
-                  </button>
-                </div>
-              ) : (
-                <span className="text-xs text-muted-foreground">Accepted files: JPG, PNG, PDF</span>
-              )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.pdf"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  setAttachmentFile(e.target.files[0]);
+                }
+              }}
+              className="hidden"
+            />
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-border hover:border-foreground/40 rounded-2xl p-7 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-muted/20 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2.5 text-muted-foreground group-hover:text-foreground group-hover:scale-105 transition-all">
+                <Upload className="w-5 h-5" />
+              </div>
+              <p className="text-xs font-semibold text-foreground">
+                Click to upload receipt or proof photo
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                JPG, PNG, PDF up to 8MB
+              </p>
             </div>
+            {attachmentFile && (
+              <div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-card">
+                <div className="flex items-center gap-2.5">
+                  <FileCheck className="w-5 h-5 text-emerald-500" />
+                  <div>
+                    <p className="text-xs font-semibold text-foreground truncate max-w-[280px]">
+                      {attachmentFile.name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {(attachmentFile.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAttachmentFile(null);
+                  }}
+                  className="text-xs text-muted-foreground hover:text-destructive px-2 py-1 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Scheduling Remarks */}
