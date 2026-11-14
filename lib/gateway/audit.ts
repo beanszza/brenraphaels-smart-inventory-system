@@ -4,7 +4,8 @@ export type AuditEventInput = {
   module: string;
   action: "record.created" | "record.updated" | "record.deleted";
   outcome: "success";
-  actor: { type: "staff"; id: string; display_name: string };
+  idempotency_key?: string;
+  actor: { type: "staff" | "service"; id: string; display_name: string };
   target: { type: string; id: string; display_name: string };
   description: string;
   occurred_at: string;
