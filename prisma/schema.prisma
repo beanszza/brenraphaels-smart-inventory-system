@@ -1297,3 +1297,22 @@ model KnownStaff {
   Modules  String[]
   SeenAt   DateTime @db.Timestamptz(6)
 }
+
+// Durable idempotency and original lot allocations for the shop's Order lines.
+model ShopStockLines {
+  OrderId     String @db.VarChar(128)
+  LineId      String @db.VarChar(128)
+  ProductId   Int
+  WarehouseId Int
+  Quantity    Decimal @db.Decimal(18, 3)
+  State       String @db.VarChar(16)
+  Allocations Json
+
+  @@id([OrderId, LineId])
+}
+
+// Pending delivery only, removed after the central audit service acknowledges it.
+model ShopStockAuditOutbox {
+  Key   String @id @db.VarChar(64)
+  Event Json
+}

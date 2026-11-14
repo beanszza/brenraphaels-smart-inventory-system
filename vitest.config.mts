@@ -7,6 +7,7 @@ export default defineConfig({
     alias: { "@": path.resolve(import.meta.dirname, ".") },
   },
   test: {
+    include: ["tests/**/*.test.{ts,tsx}"],
     testTimeout: 15000,
   },
 });

@@ -15,6 +15,7 @@ const PUBLIC_PATHS = new Set([
 /** External server-to-server endpoints called by external systems (e.g. POS) */
 function isExternalIntegrationPath(pathname: string): boolean {
   return (
+    pathname === "/api/shop/stock" ||
     pathname === "/api/pos/locations/sync" ||
     pathname === "/api/scms/locations/sync" ||
     pathname.startsWith("/api/scms/transfers/") ||

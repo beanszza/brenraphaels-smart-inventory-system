@@ -15,5 +15,6 @@ it("only Portal plumbing remains as route handlers", () => {
     "../app/api/pos/locations/sync/route.ts",
     "../app/api/scms/locations/sync/route.ts",
     "../app/api/scms/transfers/[transferId]/receive-confirmation/route.ts",
+    "../app/api/shop/stock/route.ts",
   ]);
 });
