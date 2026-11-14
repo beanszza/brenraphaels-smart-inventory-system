@@ -7,7 +7,7 @@ Implements [CREOMS #335](https://github.com/fjdvm/epic-crms/issues/335), part of
 1. Apply `prisma/sql/shop-stock.sql` using a **direct**, non-pooled connection to the existing IMS database. The migration is additive, transactional and repeatable; it does not alter existing stock. Do not use `prisma db push` on production.
 2. Run `npm run prisma:generate` when installing/building the application (the build script already does this).
 3. Configure `IMS_SHOP_API_KEY` with a random secret of at least 32 characters. Share it only with the storefront server. It is separate from POS and Portal credentials. Missing/short keys refuse every request.
-4. Set `IMS_SHOP_WAREHOUSE_ID` to the one active Warehouse's `Locations.LocationId`. Supported types are Warehouse, Commissary and Finished Goods (case insensitive). Branch locations are refused. The setting has no coded default; choosing the Warehouse remains an operator/Admin configuration step. It must match the location that actually holds sellable lots, not a POS branch with a similar name.
+4. Set `IMS_SHOP_WAREHOUSE_ID` to the one active Warehouse's `Locations.LocationId`. Supported types are Warehouse, Commissary and Finished Goods (case insensitive). Branch locations are refused. The setting has no coded default; choosing the Warehouse remains an operator/Admin configuration step. It must match the location that actually holds sellable lots, not a POS branch with a similar name. The parent spec’s Admin-managed Portal selection and authenticated settings contract are explicitly tracked in [#368](https://github.com/fjdvm/epic-crms/issues/368); this ticket provides the IMS setting, not that separate Portal UI.
 
 ## Read
 
@@ -17,7 +17,7 @@ Implements [CREOMS #335](https://github.com/fjdvm/epic-crms/issues/335), part of
 { "warehouseId": 1000, "productId": 123, "quantity": 10, "reserved": 3, "available": 7 }
 ```
 
-The product reference is `FinishedProducts.ProductId`, representing one Size. Quantities come from that Warehouse's Active/Available, unexpired lots; available is remaining minus all reservations, floored at zero per lot. Stock already dispatched/distributed to branches cannot contribute. For multiple Sizes sharing one Item, only lots linked through the Size's ProductionBatch contribute. Unlinked opening stock is accepted only when the Item has one Size. IMS does not guess a Size from a shared Item or a product name. If this leaves no matching lots, available is zero.
+The product reference is `FinishedProducts.ProductId`, representing one Size. Quantities come from that Warehouse's Active/Available, unexpired lots. They are also capped by reconciled aggregate Inventory, because cycle counts can lower physical stock independently of lot balances. Available is bounded by both remaining-minus-reserved per matching lot and aggregate Item inventory minus every Warehouse reservation of that Item (including other Sizes and held/expired lots). Missing aggregate Inventory means zero available. Stock already dispatched/distributed to branches cannot contribute. For multiple Sizes sharing one Item, only lots linked through the Size's ProductionBatch contribute. Unlinked opening stock is accepted only when the Item has one Size. IMS does not guess a Size from a shared Item or a product name. If this leaves no matching lots, available is zero.
 
 Responses carry `Cache-Control: no-store`. Call on a user action or an established reconnect/update event; do not poll.
 

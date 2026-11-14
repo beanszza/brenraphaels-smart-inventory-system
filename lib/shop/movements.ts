@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { gatewayPort, WRITE_TIMEOUT_MS, type AuditEventInput } from "@/lib/gateway/audit";
-import { productId, StockRefusal, warehouse, sellableLots } from "./stock";
+import { productId, StockRefusal, warehouse, stockAvailability } from "./stock";
 
 const operations = ["reserve", "release", "deduct", "add_back"] as const;
 type Operation = typeof operations[number];
@@ -114,7 +114,8 @@ export async function moveStock(input: Input) {
         }
         if (input.operation !== "reserve") throw new StockRefusal(404, "line_not_found", "Reserve this Order line first.");
         const warehouseId = await warehouse(tx);
-        const { lots } = await sellableLots(tx, input.productId, warehouseId);
+        const { lots, available } = await stockAvailability(tx, input.productId, warehouseId);
+        if (available.lessThan(input.quantity)) throw new StockRefusal(409, "insufficient_stock", "There is not enough available stock for this Order line.");
         let remaining = new Prisma.Decimal(input.quantity);
         const allocations: Allocation[] = [];
         for (const lot of lots) {

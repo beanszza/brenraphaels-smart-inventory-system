@@ -160,14 +160,7 @@ it("never offers another Size's lots when finished products share one Item", asy
   await prisma.finishedProducts.create({ data: { ProductId: 2, ItemId: 1, Sku: "UBE-500", Variant: "500g", SellingPrice: 200 } });
   // Unlinked opening stock cannot be assigned to one of several Sizes by guessing.
   expect(await (await GET(request())).json()).toMatchObject({ available: 0 });
-  for (const id of [1, 2]) {
-    await prisma.recipes.create({ data: { RecipeId: id, ProductId: id, OutputQuantity: 1, Notes: "", IsActive: true } });
-    await prisma.productionBatches.create({ data: {
-      RecipeId: id, ProductId: id, BatchMultiplier: 1, EstimatedQuantity: 10, ActualQuantity: 10,
-      ProductionDate: new Date(), Stage: "Done", QualityStatus: "Passed", RejectionReason: "", ImageUrl: "", Notes: "",
-      FgLotId: id, Status: "Completed",
-    } });
-  }
+  for (const id of [1, 2]) await linkSizeToLot(id, id);
   expect(await (await GET(request())).json()).toMatchObject({ available: 7 });
   expect(await (await GET(request("productId=2"))).json()).toMatchObject({ available: 0 });
   expect((await move("reserve", "wrong-size", "line", 1, 2)).status).toBe(409);
@@ -205,4 +198,34 @@ it("keeps concurrent release, deduction and add-back retries idempotent", async 
     expect(responses.map(r => r.status)).toEqual([200, 200]);
   }
   expect(await (await GET(request())).json()).toMatchObject({ quantity: 10, reserved: 3, available: 7 });
+});
+it("respects reconciled Warehouse inventory when a cycle count lowers it below lot balances", async () => {
+  // Cycle count reconciliation changes aggregate Inventory independently of lot balances.
+  await prisma.inventories.update({ where: { ItemId_LocationId: { ItemId: 1, LocationId: 1 } }, data: { CurrentStock: 6 } });
+  expect(await (await GET(request())).json()).toMatchObject({ quantity: 6, reserved: 3, available: 3 });
+  expect((await move("reserve")).status).toBe(409);
+  expect((await move("reserve", "fits", "line", 3)).status).toBe(200);
+  expect(await (await GET(request())).json()).toMatchObject({ available: 0 });
+});
+
+async function linkSizeToLot(productId: number, lotId: number) {
+  const recipe = await prisma.recipes.create({ data: { ProductId: productId, OutputQuantity: 1, Notes: "", IsActive: true } });
+  await prisma.productionBatches.create({ data: {
+    RecipeId: recipe.RecipeId, ProductId: productId, BatchMultiplier: 1, EstimatedQuantity: 10, ActualQuantity: 10,
+    ProductionDate: new Date(), Stage: "Done", QualityStatus: "Passed", RejectionReason: "", ImageUrl: "", Notes: "",
+    FgLotId: lotId, Status: "Completed",
+  } });
+}
+it("protects other Sizes' reservations when aggregate inventory is shared", async () => {
+  await prisma.finishedProducts.create({ data: { ProductId: 2, ItemId: 1, Sku: "UBE-500", Variant: "500g", SellingPrice: 200 } });
+  await prisma.inventoryLots.create({ data: {
+    LotId: 3, LotCode: "SIZE-2", ItemId: 1, LocationId: 1, SourceType: "Opening", ReceivedDate: new Date(),
+    IsExpiryEstimated: false, QuantityReceived: 5, QuantityRemaining: 5, ReservedQuantity: 4,
+    UomId: 1, UnitCost: 10, Status: "Active", IsOpeningBalance: true,
+  } });
+  await linkSizeToLot(1, 1); await linkSizeToLot(2, 3);
+  expect(await (await GET(request())).json()).toMatchObject({ available: 3 });
+  expect((await move("reserve")).status).toBe(409);
+  expect((await move("reserve", "fits", "line", 3)).status).toBe(200);
+  expect(await (await GET(request("productId=2"))).json()).toMatchObject({ available: 0 });
 });
