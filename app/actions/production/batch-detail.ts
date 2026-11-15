@@ -1,5 +1,8 @@
 "use server";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
+import { unlinkFile } from "@/lib/files";
+import { filesGateway } from "@/lib/gateway/files";
+import { batchImage } from "@/lib/file-routes";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
@@ -143,6 +146,7 @@ export async function deleteBatch(idInput: string | number) {
         if (!["Draft", "Pending Approval", "Rejected"].includes(batch.Status)) {
             return refuse("Only Draft, Pending Approval, or Rejected batches can be deleted.");
         }
+        await unlinkFile(filesGateway, staff, batchImage, id, batch.ImageUrl);
         await tx.productionBatches.delete({ where: { BatchId: id } });
         return { result: resourceResult({ success: true, message: "Batch deleted." }), audit: { module: "Production & Quality", change: "deleted", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} deleted production batch (${String(id)})` } };
     });

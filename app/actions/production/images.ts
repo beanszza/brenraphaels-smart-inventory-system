@@ -2,8 +2,8 @@
 import { requireModule } from "@/lib/portal/staff";
 import { productImage, batchImage } from "@/lib/file-routes";
 import { fileResult, requestImage, confirmImage, resolveImage, type UploadMetadata } from "@/lib/production/files";
-import { prisma } from "@/lib/prisma";
-import crypto from "crypto";
+import { FileError, removeFile } from "@/lib/files";
+import { filesGateway, type ImageVariant } from "@/lib/gateway/files";
 
 export async function requestProductImageUpload(id: number, meta: UploadMetadata) {
     const staff = await requireModule("Production & Quality");
@@ -13,9 +13,9 @@ export async function confirmProductImageUpload(id: number, fileId: string) {
     const staff = await requireModule("Production & Quality");
     return fileResult(() => confirmImage(staff, productImage, id, fileId));
 }
-export async function resolveProductImage(id: number) {
+export async function resolveProductImage(id: number, variant?: ImageVariant) {
     const staff = await requireModule("Production & Quality");
-    return fileResult(() => resolveImage(staff, productImage, id));
+    return fileResult(() => resolveImage(staff, productImage, id, variant));
 }
 export async function requestBatchImageUpload(id: number, meta: UploadMetadata) {
     const staff = await requireModule("Production & Quality");
@@ -25,9 +25,9 @@ export async function confirmBatchImageUpload(id: number, fileId: string) {
     const staff = await requireModule("Production & Quality");
     return fileResult(() => confirmImage(staff, batchImage, id, fileId));
 }
-export async function resolveBatchImage(id: number) {
+export async function resolveBatchImage(id: number, variant?: ImageVariant) {
     const staff = await requireModule("Production & Quality");
-    return fileResult(() => resolveImage(staff, batchImage, id));
+    return fileResult(() => resolveImage(staff, batchImage, id, variant));
 }
 
 /**
@@ -43,9 +43,6 @@ export async function uploadBatchImageDirect(id: number, formData: FormData) {
 
     let contentType = file.type || "image/jpeg";
     if (contentType === "image/jpg") contentType = "image/jpeg";
-    if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)) {
-        contentType = "image/jpeg";
-    }
 
     const meta: UploadMetadata = {
         filename: file.name || "packaging-proof.jpg",
@@ -73,14 +70,9 @@ export async function uploadBatchImageDirect(id: number, formData: FormData) {
         await confirmImage(staff, batchImage, id, address.fileId);
 
         return { success: true, data: { fileId: address.fileId } };
-    } catch (err: any) {
-        console.warn("Storage gateway upload failed for batch, falling back to database link:", err?.message || err);
-        const fallbackId = crypto.randomUUID();
-        await prisma.productionBatches.update({
-            where: { BatchId: id },
-            data: { ImageUrl: fallbackId },
-        });
-        return { success: true, data: { fileId: fallbackId } };
+    } catch (error) {
+        console.error("Image upload failed", error);
+        return { success: false, message: error instanceof FileError ? error.message : "The image could not be uploaded. Please try again." };
     }
 }
 
@@ -97,9 +89,6 @@ export async function uploadProductImageDirect(id: number, formData: FormData) {
 
     let contentType = file.type || "image/jpeg";
     if (contentType === "image/jpg") contentType = "image/jpeg";
-    if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)) {
-        contentType = "image/jpeg";
-    }
 
     const meta: UploadMetadata = {
         filename: file.name || "product.jpg",
@@ -127,11 +116,17 @@ export async function uploadProductImageDirect(id: number, formData: FormData) {
         await confirmImage(staff, productImage, id, address.fileId);
 
         return { success: true, data: { fileId: address.fileId } };
-    } catch (err: any) {
-        console.warn("Storage gateway upload failed for product, falling back to inline data URL:", err?.message || err);
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const dataUrl = `data:${contentType};base64,${buffer.toString("base64")}`;
-        await productImage.save(id, dataUrl);
-        return { success: true, data: { fileId: dataUrl } };
+    } catch (error) {
+        console.error("Image upload failed", error);
+        return { success: false, message: error instanceof FileError ? error.message : "The image could not be uploaded. Please try again." };
     }
+}
+
+export async function removeProductImage(id: number) {
+    const staff = await requireModule("Production & Quality");
+    return fileResult(() => removeFile(filesGateway, staff, productImage, id));
+}
+export async function removeBatchImage(id: number) {
+    const staff = await requireModule("Production & Quality");
+    return fileResult(() => removeFile(filesGateway, staff, batchImage, id));
 }

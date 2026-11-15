@@ -1,5 +1,8 @@
 "use server";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
+import { unlinkFile } from "@/lib/files";
+import { filesGateway } from "@/lib/gateway/files";
+import { productImage, batchImage } from "@/lib/file-routes";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId, validateInput } from "@/lib/production/mutate";
@@ -211,6 +214,10 @@ export async function deleteFinishedProduct(idInput: string | number) {
     if (!product) {
       return refuse("Finished product variant not found.");
     }
+
+    const batches = await tx.productionBatches.findMany({ where: { ProductId: id }, select: { BatchId: true, ImageUrl: true } });
+    for (const batch of batches) await unlinkFile(filesGateway, staff, batchImage, batch.BatchId, batch.ImageUrl);
+    await unlinkFile(filesGateway, staff, productImage, id, product.ImageUrl);
 
     // Safely delete or detach dependent records to prevent foreign key errors
     await (tx as any).stockTransferRequestItems.deleteMany({ where: { ProductId: id } }).catch(() => {});

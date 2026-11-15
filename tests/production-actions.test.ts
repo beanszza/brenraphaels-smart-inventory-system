@@ -43,6 +43,15 @@ vi.mock("@/lib/gateway/files", () => ({ filesGateway: {
     fake.fileAccess("request", input, actor);
     return { id: "3f2b8c1e-5a4d-4c6e-9b7a-1d2e3f4a5b6c", uploadUrl: "https://storage.test/put", uploadUrlExpiresInSeconds: 600 };
   },
+  requestReplacement: async (id: string, input: unknown, actor: string) => {
+    fake.fileAccess("replace", id, input, actor);
+    return { id, uploadUrl: "https://storage.test/replace", uploadUrlExpiresInSeconds: 600 };
+  },
+  confirmReplacement: async (_id: string, actor: string) => {
+    fake.fileAccess("confirm-replacement", actor);
+    return { id: FILE, status: "active", visibility: fake.filePrivate ? "private" : "public", retentionType: "permanent" };
+  },
+  removeLink: async (...args: unknown[]) => { fake.fileAccess("unlink", ...args); },
   confirm: async (_id: string, actor: string) => {
     fake.fileAccess("confirm", actor);
     return { id: "3f2b8c1e-5a4d-4c6e-9b7a-1d2e3f4a5b6c", status: "active", visibility: fake.filePrivate ? "private" : "public", retentionType: "permanent" };
@@ -254,7 +263,8 @@ for (const kind of ["batch", "product"] as const) {
     const confirm = kind === "batch" ? images.confirmBatchImageUpload : images.confirmProductImageUpload;
     const resolve = kind === "batch" ? images.resolveBatchImage : images.resolveProductImage;
     expect(await request(1, { filename: "photo.png", contentType: "image/png", size: 50 })).toMatchObject({ success: true, data: { fileId: FILE } });
-    expect(fake.fileAccess).toHaveBeenCalledWith("request", expect.objectContaining({ visibility: kind === "batch" ? "private" : "public", retentionType: "permanent" }), "actor-username");
+    expect(fake.fileAccess).toHaveBeenCalledWith("replace", FILE, { contentType: "image/png", size: 50 }, "actor-id");
+    expect(fake.fileAccess).not.toHaveBeenCalledWith("request", expect.anything(), expect.anything());
     expect(await confirm(1, FILE)).toMatchObject({ success: true });
     expect(fake.committed[0]).toMatchObject({ data: { ImageUrl: FILE } });
     expect(fake.written.map(e => e.action)).toEqual(["record.created", "record.updated"]);
@@ -291,4 +301,35 @@ it("supports recipe and lot preview reads with only the Production Module", asyn
   expect(await recipes.getRecipe(1)).toMatchObject({ success: true });
   expect(await production.suggestRequestLots("preview", "recipeId=1&quantity=10")).toMatchObject({ data: { success: true, data: { quantity: 10 } } });
   expect(fake.written).toHaveLength(0);
+});
+
+for (const upload of [images.uploadBatchImageDirect, images.uploadProductImageDirect]) {
+  it("preserves the stored file reference when a direct replacement upload fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const portalFetch = globalThis.fetch;
+    vi.stubGlobal("fetch", async (url: Parameters<typeof fetch>[0], init?: RequestInit) => {
+      if (String(url).startsWith("https://storage.test/")) return new Response(null, { status: 503 });
+      return portalFetch(url, init);
+    });
+    const form = new FormData();
+    form.set("file", new File(["image bytes"], "image.png", { type: "image/png" }));
+    expect(await upload(1, form)).toMatchObject({ success: false });
+    expect(fake.fileAccess).toHaveBeenCalledWith("replace", FILE, { contentType: "image/png", size: 11 }, "actor-id");
+    expect(fake.committed).toHaveLength(0);
+    expect(fake.fileAccess.mock.calls.some(call => call[0] === "confirm-replacement")).toBe(false);
+  });
+}
+
+it("unlinks a batch's image on deletion with Portal identity", async () => {
+  fake.statuses.productionBatches = "Draft";
+  await production.deleteBatch(1);
+  expect(fake.fileAccess).toHaveBeenCalledWith("unlink", FILE,
+    { system: "IMS", entityType: "production-batch", entityId: "1", role: "batch image" }, "actor-id");
+});
+
+it("clears an uploaded batch image through the file service", async () => {
+  expect(await images.removeBatchImage(1)).toMatchObject({ success: true });
+  expect(fake.fileAccess).toHaveBeenCalledWith("unlink", FILE,
+    { system: "IMS", entityType: "production-batch", entityId: "1", role: "batch image" }, "actor-id");
+  expect(fake.committed).toContainEqual({ model: "productionBatches", data: { ImageUrl: "" } });
 });

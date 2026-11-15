@@ -1,5 +1,8 @@
 "use server";
 
+import { unlinkFile } from "@/lib/files";
+import { filesGateway } from "@/lib/gateway/files";
+import { purchaseOrderReceipt } from "@/lib/file-routes";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
@@ -357,6 +360,7 @@ export async function discardDraftOrder(idInput: string | number) {
     }
 
     await tx.purchaseOrderItems.deleteMany({ where: { OR: [{ PoId: id }, { PurchaseOrderPoId: id }] } });
+    await unlinkFile(filesGateway, staff, purchaseOrderReceipt, id, order.ProofImageUrl);
     await tx.purchaseOrders.deleteMany({ where: { PoId: id } });
 
     const match = /^PO-(\d{4})-(\d+)$/.exec(order.PoNumber || "");

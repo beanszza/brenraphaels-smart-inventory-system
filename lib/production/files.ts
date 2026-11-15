@@ -1,5 +1,5 @@
 import { confirmAndLink, FileError, requestUpload, resolveFile, type FileTarget } from "@/lib/files";
-import { filesGateway } from "@/lib/gateway/files";
+import { filesGateway, type ImageVariant } from "@/lib/gateway/files";
 import { recordAudit } from "@/lib/audit";
 import type { Staff } from "@/lib/portal/client";
 import { resourceResult } from "@/lib/resources/result";
@@ -19,7 +19,7 @@ export async function fileResult(work: () => Promise<unknown>) {
 }
 export async function requestImage(staff: Staff, target: FileTarget, id: number, meta: UploadMetadata) {
   await exists(target, id);
-  const address = await requestUpload(filesGateway, staff, { ...meta, kind: target.kind });
+  const address = await requestUpload(filesGateway, staff, { ...meta, kind: target.kind }, target, id);
   await recordAudit(staff, {
     module: "Production & Quality", change: "created", target: { type: "file", id: address.id, name: meta.filename },
     description: `${staff.name} requested a ${target.role} upload for ${target.entityType} ${id}`,
@@ -35,11 +35,11 @@ export async function confirmImage(staff: Staff, target: FileTarget, id: number,
   });
   return { fileId: file.id, status: file.status };
 }
-export async function resolveImage(staff: Staff, target: FileTarget, id: number) {
+export async function resolveImage(staff: Staff, target: FileTarget, id: number, variant?: ImageVariant) {
   await exists(target, id);
   const currentRef = await target.current(id);
   if (currentRef && currentRef.startsWith("data:image/")) {
     return { kind: "file" as const, url: currentRef, private: false as const };
   }
-  return resolveFile(filesGateway, staff, currentRef);
+  return resolveFile(filesGateway, staff, currentRef, variant);
 }
