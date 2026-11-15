@@ -108,7 +108,9 @@ node --env-file=.env scripts/verification/verify-stock-http.mjs \
 ```
 
 The HTTP verifier uses only owner-approved demo Sizes 1 and 2, checks the known
-20-unit baseline, and restores any live test reservations/deductions on failure.
+20-unit baseline, and reconciles each test line before restoring reservations/deductions on failure.
+Recovery continues across line failures and records any incomplete recovery as
+a failed result with the immutable references needed for replay.
 It uses finite user-triggered requests, never a repeating timer. The test branch
 for audit validation expires automatically; the storefront clone was the isolated
 branch created by #336. Neither test environment replaces production databases.

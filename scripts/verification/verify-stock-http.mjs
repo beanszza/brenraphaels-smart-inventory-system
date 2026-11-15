@@ -78,17 +78,33 @@ try {
     proof.auditEventIds = body.events.map(event => event.id); passed('central audit contains exactly one event for each committed movement');
   }
   proof.completed = true;
+} catch (error) {
+  proof.failure = error instanceof Error ? error.message : String(error);
+  throw error;
 } finally {
+  const cleanupErrors = [];
   for (const line of lines.values()) {
-    if (line.state === 'unknown') {
-      const result = await move('reserve', line.orderId, line.quantity, line.productId);
-      if (![200, 404, 409].includes(result.status)) throw new Error('Demo stock recovery needs operator attention.');
-    }
-    if (line.state === 'reserved' || line.state === 'deducted') {
-      const result = await move(line.state === 'reserved' ? 'release' : 'add_back', line.orderId, line.quantity, line.productId);
-      assert.equal(result.status, 200);
+    if (line.state === 'refused') continue;
+    try {
+      // Reconcile EVERY immutable key, including an apparently reserved line whose deduct/release reply was lost.
+      const previousState = line.state;
+      const current = await move('reserve', line.orderId, line.quantity, line.productId);
+      if ([404, 409].includes(current.status) && previousState === 'unknown') continue;
+      assert.equal(current.status, 200);
+      if (line.state === 'reserved' || line.state === 'deducted') {
+        const result = await move(line.state === 'reserved' ? 'release' : 'add_back', line.orderId, line.quantity, line.productId);
+        assert.equal(result.status, 200);
+      }
+      assert.ok(['released', 'added_back'].includes(line.state));
+    } catch (error) {
+      cleanupErrors.push({ orderId: line.orderId, lineId: line.lineId, error: error instanceof Error ? error.message : String(error) });
+      // An unavailable line must not prevent recovery of other reservations.
     }
   }
+  proof.cleanupComplete = cleanupErrors.length === 0;
+  proof.cleanupErrors = cleanupErrors;
+  proof.completed = proof.completed && proof.cleanupComplete;
   proof.finishedAt = new Date().toISOString();
   await writeFile(evidencePath, JSON.stringify(proof, null, 2) + '\n');
+  if (cleanupErrors.length) throw new Error('Demo stock recovery is incomplete; inspect the evidence and replay the recorded immutable references.');
 }
