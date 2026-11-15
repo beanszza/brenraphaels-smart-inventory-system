@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { getMaxFutureDateString } from "@/lib/date-limits";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { Button } from "@/components/ui/button";
-import { Calendar, RotateCcw, Upload } from "lucide-react";
+import { Calendar, RotateCcw, Download } from "lucide-react";
 
 interface AuditLogsFilterBarProps {
   filterMode: "all" | "specific" | "range";
@@ -93,7 +93,7 @@ export default function AuditLogsFilterBar({
             onClick={onExportCSV}
             className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 h-[38px] text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm whitespace-nowrap"
           >
-            <Upload size={14} /> Export CSV
+            <Download size={14} /> Export CSV
           </Button>
         </div>
       </div>

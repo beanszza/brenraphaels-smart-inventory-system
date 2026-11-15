@@ -958,9 +958,9 @@ export function CreatePOModal({
                       variant="outline"
                       size="sm"
                       onClick={() => setStep(1)}
-                      className="flex items-center gap-1 text-xs rounded-xl cursor-pointer"
+                      className="flex items-center gap-1.5 text-xs rounded-xl cursor-pointer"
                     >
-                      <ChevronLeft className="w-3.5 h-3.5" /> Back
+                      <ArrowLeft className="w-3.5 h-3.5" /> Back
                     </Button>
                   </div>
                   <div>
@@ -1037,9 +1037,9 @@ export function CreatePOModal({
                         variant="outline"
                         size="sm"
                         onClick={() => setStep(2)}
-                        className="flex items-center gap-1 text-xs rounded-xl cursor-pointer"
+                        className="flex items-center gap-1.5 text-xs rounded-xl cursor-pointer"
                       >
-                        <ChevronLeft className="w-3.5 h-3.5" /> Back
+                        <ArrowLeft className="w-3.5 h-3.5" /> Back
                       </Button>
                     </div>
                   )}
