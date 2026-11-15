@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Retain existing transfer DTOs during migration. */
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
@@ -75,7 +77,7 @@ export async function reviewRequest(idInput: number, body: any = {}) {
       },
     });
 
-    return saved(staff, "stock-transfer-request", updated.RequestId, updated.RequestNumber || String(updated.RequestId), action === "Approve" ? "approved" : "rejected", resourceResult({
+    return saved(staff, "stock-transfer-request", updated.RequestId, updated.RequestNumber || String(updated.RequestId), action === "Approve" ? "stock_transfer.approved" : "stock_transfer.rejected", resourceResult({
       success: true,
       message: `Stock transfer request successfully ${action === "Approve" ? "approved" : "rejected"}.`,
       data: {
@@ -83,7 +85,7 @@ export async function reviewRequest(idInput: number, body: any = {}) {
         status: updated.Status,
         adminNotes: updated.AdminNotes,
       },
-    }), () => notifyRequester(existing.RequestedBy, action === "Approve" ? "approved" : "rejected", existing.RequestNumber));
+    }), () => notifyRequester(existing.RequestedBy, action === "Approve" ? "approved" : "rejected", existing.RequestNumber), existing.RequestedBy);
 
-  });
+  }, { module: "Stock Transfer", action: "record.updated", target: { type: "operation", id: String(idInput), name: "reviewRequest" }, description: "Validation refused for reviewRequest", version: auditVersion([idInput, body]) });
 }

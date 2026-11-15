@@ -38,7 +38,7 @@ vi.mock("@/lib/gateway/audit", () => ({
   gatewayPort: {
     writeAudit: async (event: AuditEventInput) => {
       // The mutation must have persisted before the event can be sent.
-      expect(fake.committed.length).toBeGreaterThan(0);
+      if (event.outcome === "success") expect(fake.committed.length).toBeGreaterThan(0);
       expect(fake.transactionOpen).toBe(false);
       if (fake.auditFails) throw new Error("Gateway unavailable");
       fake.written.push(event);
@@ -181,7 +181,7 @@ for (const [path, load] of Object.entries(actionModules)) {
         expect(fake.dataAccess).not.toHaveBeenCalled();
         expect(fake.written).toEqual([]);
         expect(fake.sent).toEqual([]);
-        if (signed) expect(fake.requested).toEqual([owner]);
+        if (signed) expect(fake.requested[0]).toBe(owner);
       });
     }
   });
@@ -198,13 +198,13 @@ const mutations = [
   ["update requisition", "Draft", () => requisitions.updateRequisition(5, prInput), "record.updated", "purchase-requisition", "5", "PR-2026-0001"],
   ["set requisition status", "Draft", () => requisitions.setRequisitionStatus(5, { status: "Cancelled" }), "record.updated", "purchase-requisition", "5", "PR-2026-0001"],
   ["convert requisition", "Approved", () => requisitions.convertRequisitionToOrders(5), "record.updated", "purchase-requisition", "5", "PR-2026-0001"],
-  ["create order", "Draft", () => orders.createOrder(poInput), "record.created", "purchase-order", "6", "PO-2026-0001"],
+  ["create order", "Draft", () => orders.createOrder(poInput), "purchase_order.created", "purchase-order", "6", "PO-2026-0001"],
   ["update order", "Draft", () => orders.updateOrder(6, poInput), "record.updated", "purchase-order", "6", "PO-2026-0001"],
   ["set order status", "Draft", () => orders.setOrderStatus(6, { status: "Cancelled" }), "record.updated", "purchase-order", "6", "PO-2026-0001"],
   ["discard draft order", "Draft", () => orders.discardDraftOrder(6), "record.deleted", "purchase-order", "6", "PO-2026-0001"],
   ["create delivery", "Approved", () => deliveries.createDelivery(deliveryInput), "record.created", "delivery", "7", "DLV-2026-0001"],
   ["cancel delivery", "Scheduled", () => deliveries.cancelDelivery(7, { reason: "Late" }), "record.updated", "delivery", "7", "DLV-2026-0001"],
-  ["arrive delivery", "Scheduled", () => deliveries.arriveDelivery(7, {}), "record.updated", "delivery", "7", "DLV-2026-0001"],
+  ["arrive delivery", "Scheduled", () => deliveries.arriveDelivery(7, {}), "delivery.received", "delivery", "7", "DLV-2026-0001"],
   ["confirm receipt", "Draft", () => receipts.confirmReceiptUpload(6, "3f2b8c1e-5a4d-4c6e-9b7a-1d2e3f4a5b6c"), "record.updated", "purchase-order", "6", "PO-2026-0001"],
 ] as const;
 
@@ -214,7 +214,7 @@ it.each(mutations)("%s emits the persisted target and session actor through the 
   expect(fake.written).toHaveLength(1);
   expect(fake.written[0]).toMatchObject({
     source: "IMS", module: "Orders & Procurement", action, outcome: "success",
-    actor: { type: "staff", id: "2026-AB-001", display_name: "Ada Santos" },
+    actor: { type: "user", id: "staff-1", display_name: "Ada Santos" },
     target: { type, id, display_name },
   });
   expect(fake.written[0].description).toContain("Ada Santos");
@@ -249,14 +249,16 @@ it("records the session Username on a new requisition, order and delivery, whate
 });
 
 describe("refusals", () => {
-  it("writes nothing and emits no event or notification when validation rejects", async () => {
+  it("writes no business data and audits validation refusals without notifying", async () => {
     expect(await requisitions.createRequisition({ items: [] })).toMatchObject({ success: false, message: "Requisition must contain at least one item." });
     expect(await requisitions.createRequisition({ items: [line, line], submitForApproval: true })).toMatchObject({ success: false });
     expect(await orders.createOrder({ supplierId: 3, items: [] })).toMatchObject({ success: false });
     expect(await deliveries.createDelivery({ poId: 6, items: [] })).toMatchObject({ success: false });
     expect(fake.committed).toEqual([]);
-    expect(fake.written).toEqual([]);
+    expect(fake.written.filter(event => event.outcome !== "failure")).toEqual([]);
     expect(fake.sent).toEqual([]);
+    expect(fake.written).toHaveLength(4);
+    expect(fake.written.every(event => event.outcome === "failure")).toBe(true);
   });
 
   it("refuses an edit of a requisition that is no longer a draft", async () => {
@@ -264,13 +266,13 @@ describe("refusals", () => {
     expect(await requisitions.updateRequisition(5, prInput)).toMatchObject({ success: false });
     expect(await orders.updateOrder(6, poInput)).toMatchObject({ success: false });
     expect(await orders.discardDraftOrder(6)).toMatchObject({ success: false });
-    expect(fake.written).toEqual([]);
+    expect(fake.written.filter(event => event.outcome !== "failure")).toEqual([]);
   });
 
   it("refuses an unknown status", async () => {
     expect(await requisitions.setRequisitionStatus(5, { status: "Nonsense" })).toMatchObject({ success: false });
     expect(await orders.setOrderStatus(6, { status: "Nonsense" })).toMatchObject({ success: false });
-    expect(fake.written).toEqual([]);
+    expect(fake.written.filter(event => event.outcome !== "failure")).toEqual([]);
   });
 });
 

@@ -4,7 +4,7 @@ import { requireModule } from "@/lib/portal/staff";
 import { confirmAndLink, FileError, removeFile, requestUpload, resolveFile } from "@/lib/files";
 import { filesGateway } from "@/lib/gateway/files";
 import { purchaseOrderReceipt } from "@/lib/file-routes";
-import { recordAudit } from "@/lib/audit";
+import { auditVersion, recordAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { errorMessage, resourceResult } from "@/lib/resources/result";
 
@@ -44,7 +44,7 @@ export async function confirmReceiptUpload(poId: number, fileId: string) {
     const file = await confirmAndLink(filesGateway, staff, purchaseOrderReceipt, poId, fileId);
     const order = await prisma.purchaseOrders.findUnique({ where: { PoId: poId } });
     await recordAudit(staff, {
-      module: MODULE, change: "updated",
+      module: MODULE, action: "record.updated", version: auditVersion(file.id),
       target: { type: "purchase-order", id: poId, name: order?.PoNumber ?? `Purchase order ${poId}` },
       description: `${staff.name} uploaded a receipt for purchase order ${order?.PoNumber ?? poId}`,
     });

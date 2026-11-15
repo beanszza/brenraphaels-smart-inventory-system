@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { ISSUANCE_INCLUDE, mapMaterialIssuance } from "@/lib/production/material-issuances";
 import { requireModule } from "@/lib/portal/staff";
@@ -137,6 +139,6 @@ export async function issueMaterials(idInput: string | number, body: any = {}) {
                 success: true,
                 message: `Materials issued successfully for ${issuance.ProductionRequests.ReqNumber}. The Head Cook can now start production.`,
                 data: mapMaterialIssuance(fullUpdated),
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "material-issuance", id: id, name: String(id) }, description: `${staff.name} issued production materials (${String(id)})` } };
-    });
+            }), audit: { module: "Production & Quality", action: "material.issued", target: { type: "material-issuance", id: id, name: String(id) }, description: `${staff.name} issued production materials (${String(id)})` } };
+    }, { module: "Production & Quality", action: "material.issued", target: { type: "operation", id: String(idInput), name: "issueMaterials" }, description: "Validation refused for issueMaterials", version: auditVersion([idInput, body]) });
 }

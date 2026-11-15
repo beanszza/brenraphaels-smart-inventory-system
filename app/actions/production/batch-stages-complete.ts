@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
@@ -60,6 +62,6 @@ export async function completeBatchStage(idInput: string | number, body: any = {
                     stage: updated.Stage,
                     notes: updated.Notes,
                 },
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} completed production batch stage (${String(id)})` } };
-    });
+            }), audit: { module: "Production & Quality", action: "production_batch.stage_changed", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} completed production batch stage (${String(id)})` } };
+    }, { module: "Production & Quality", action: "production_batch.stage_changed", target: { type: "operation", id: String(idInput), name: "completeBatchStage" }, description: "Validation refused for completeBatchStage", version: auditVersion([idInput, body]) });
 }

@@ -171,3 +171,11 @@ used when the caller knows the file is no longer shared; unlinking alone retains
 
 `tests/orders-actions.test.ts` exercises every action's denial paths and every mutation's
 audit event, gateway failure, failed commit and notification with fake Portal/gateway boundaries.
+
+### IMS audit compatibility
+
+Audit events use Portal user IDs, workflow actions, request context, and deterministic idempotency keys. Audit delivery remains best effort after business commits, with a three-second gateway deadline. Validation refusals produce failure events without success notifications.
+
+`IMS_AUDIT_LEGACY_ACTIONS` defaults to `true`: workflow actions are mapped to accepted `record.*` wire actions, with the original action retained in metadata, the description prefix, and the idempotency key. The logs page restores those prefixes into readable labels. Set it to `false` only after the upstream IMS catalog is deployed and verified through `GET /events/valid-values`. The companion change already exists as [Audit Logs PR #62](https://github.com/fjdvm/brenraphaels-audit-logs/pull/62).
+
+Unknown historical requester names are omitted as subjects rather than used as Portal IDs. Access denials are audited only when the Portal independently confirms the actor's identity.

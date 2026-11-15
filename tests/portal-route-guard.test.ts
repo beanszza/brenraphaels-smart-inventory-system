@@ -49,3 +49,18 @@ it("returns only the Portal identity after validation", async () => {
     },
   });
 });
+
+it("audits a module denial only after independently resolving the Portal identity", async () => {
+  vi.stubEnv("IMS_GATEWAY_URL", "https://gateway.test");
+  vi.stubEnv("IMS_GATEWAY_CALLER_KEY", "test-key");
+  const events: unknown[] = [];
+  vi.stubGlobal("fetch", async (url: string, init: RequestInit) => {
+    const body = JSON.parse(String(init.body));
+    if (url.startsWith("https://gateway.test")) { events.push(body); return Response.json({ id: "1" }, { status: 201 }); }
+    return body.module === "Inventory" ? Response.json({ error: "access_denied" }, { status: 403 }) : Response.json({ active: true, user_id: "staff-1", system: "IMS", module: body.module, staff: { name: "Ada", username: "ada", email: "ada@example.test" } });
+  });
+  const request = new NextRequest("https://localhost:3003/api/items", { headers: { "x-request-id": "denial-1", "x-real-ip": "127.0.0.1", "user-agent": "Test" } });
+  request.cookies.set("ims_session", "opaque");
+  expect((await requireRouteModule(request, "Inventory")).ok).toBe(false);
+  expect(events).toMatchObject([{ actor: { type: "user", id: "staff-1" }, module: null, outcome: "failure", metadata: { ims_action: "ims.access_denied" }, request_id: "denial-1", target: { type: "module", id: "Inventory" } }]);
+});

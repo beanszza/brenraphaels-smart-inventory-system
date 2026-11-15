@@ -29,7 +29,7 @@ vi.mock("@/lib/gateway/audit", () => ({
   WRITE_TIMEOUT_MS: 3000,
   gatewayPort: { writeAudit: async (event: AuditEventInput) => {
     expect(fake.transactionOpen).toBe(false);
-    expect(fake.committed.length).toBeGreaterThan(0);
+    if (event.outcome === "success") expect(fake.committed.length).toBeGreaterThan(0);
     if (fake.gatewayFails) throw new Error("Audit unavailable");
     fake.written.push(event);
   } },
@@ -65,7 +65,7 @@ vi.mock("@/lib/prisma", () => {
   });
   const model = (name: string) => ({
     findUnique: async () => fake.missing ? null : row(name),
-    findFirst: async () => fake.missing ? null : name === "knownStaff" ? fake.knownMissing ? null : { StaffId: "requester-id" } : row(name),
+    findFirst: async () => fake.missing ? null : name === "knownStaff" ? fake.knownMissing ? null : { StaffId: "requester-id", Name: "Requester" } : row(name),
     findMany: async ({ where }: { where?: { Modules?: { has: string } } } = {}) => name === "knownStaff"
       ? [
           { StaffId: "actor-id", Name: "Ada", Username: "actor-username", Modules: ["Inventory"] },
@@ -120,13 +120,13 @@ const stockInput = { grnId: 1, submitForApproval: true, lines: [
 ] };
 const mutations: { name: string; run: () => Promise<ResourceResult>; status?: Record<string, string>; action: string; target: string }[] = [
   { name: "create cycle count", run: () => createCycleCount({ locationId: 1 }), action: "record.created", target: "cycle-count" },
-  { name: "reconcile cycle count", run: () => reconcileCycleCount(1), status: { cycleCounts: "Open" }, action: "record.updated", target: "cycle-count" },
-  { name: "recall lot", run: () => recallLot({ lotCode: "LOT-1", applyHold: true }), action: "record.updated", target: "inventory-lot" },
+  { name: "reconcile cycle count", run: () => reconcileCycleCount(1), status: { cycleCounts: "Open" }, action: "cycle_count.reconciled", target: "cycle-count" },
+  { name: "recall lot", run: () => recallLot({ lotCode: "LOT-1", applyHold: true }), action: "lot.recalled", target: "inventory-lot" },
   { name: "create stock-in", run: () => stock.createStockIn(stockInput), status: { goodsReceipts: "Received" }, action: "record.created", target: "stock-in" },
   { name: "submit stock-in", run: () => stock.submitStockIn(1), action: "record.updated", target: "stock-in" },
-  { name: "approve stock-in", run: () => stock.approveStockIn(1), status: { stockIns: "PendingApproval" }, action: "record.updated", target: "stock-in" },
-  { name: "reject stock-in", run: () => stock.rejectStockIn(1, { reason: "Incorrect quantity" }), status: { stockIns: "PendingApproval" }, action: "record.updated", target: "stock-in" },
-  { name: "commit stock-in", run: () => stock.commitStockIn(1), status: { stockIns: "Approved" }, action: "record.updated", target: "stock-in" },
+  { name: "approve stock-in", run: () => stock.approveStockIn(1), status: { stockIns: "PendingApproval" }, action: "stock_in.approved", target: "stock-in" },
+  { name: "reject stock-in", run: () => stock.rejectStockIn(1, { reason: "Incorrect quantity" }), status: { stockIns: "PendingApproval" }, action: "stock_in.rejected", target: "stock-in" },
+  { name: "commit stock-in", run: () => stock.commitStockIn(1), status: { stockIns: "Approved" }, action: "stock_in.put_away", target: "stock-in" },
 ];
 
 for (const test of mutations) {
@@ -135,7 +135,7 @@ for (const test of mutations) {
     expect(await test.run()).toMatchObject({ success: true });
     expect(fake.written).toHaveLength(1);
     expect(fake.written[0]).toMatchObject({ source: "IMS", module: "Inventory", action: test.action,
-      actor: { id: "actor-username", display_name: "Ada" }, target: { type: test.target, id: "1" } });
+      actor: { type: "user", id: "actor-id", display_name: "Ada" }, target: { type: test.target, id: "1" } });
     expect(fake.written[0].description).toContain("Ada");
     expect(fake.written[0].description.length).toBeGreaterThan(15);
   });
@@ -145,10 +145,10 @@ for (const test of mutations) {
     expect(await test.run()).toMatchObject({ success: false });
     expect(fake.committed).toHaveLength(0); expect(fake.written).toHaveLength(0); expect(fake.sent).toHaveLength(0);
   });
-  it(`${test.name} sends nothing for a missing record`, async () => {
+  it(`${test.name} sends no success event for a missing record`, async () => {
     fake.status = test.status || {}; fake.missing = true;
     expect(await test.run()).toMatchObject({ success: false });
-    expect(fake.written).toHaveLength(0); expect(fake.sent).toHaveLength(0);
+    expect(fake.written.filter(event => event.outcome !== "failure")).toHaveLength(0); expect(fake.sent).toHaveLength(0);
   });
 }
 
@@ -223,7 +223,7 @@ it("refuses repeated reconciliation or approval", async () => {
   fake.status.cycleCounts = "Reconciled"; fake.status.stockIns = "Approved";
   expect(await reconcileCycleCount(1)).toMatchObject({ success: false });
   expect(await stock.approveStockIn(1)).toMatchObject({ success: false });
-  expect(fake.committed).toHaveLength(0); expect(fake.written).toHaveLength(0);
+  expect(fake.committed).toHaveLength(0); expect(fake.written.filter(event => event.outcome !== "failure")).toHaveLength(0);
 });
 
 it("loads serializable inventory data on the server for permitted Staff", async () => {
@@ -235,6 +235,13 @@ it("loads serializable inventory data on the server for permitted Staff", async 
 it.each([NaN, Infinity, -1, 0, 1.5])("refuses invalid record id %s", async id => {
   expect(await createCycleCount({ locationId: id })).toMatchObject({ success: false });
   expect(await reconcileCycleCount(id)).toMatchObject({ success: false });
-  expect(fake.committed).toHaveLength(0); expect(fake.written).toHaveLength(0);
+  expect(fake.committed).toHaveLength(0); expect(fake.written.filter(event => event.outcome !== "failure")).toHaveLength(0);
 });
 
+
+it("audits validation failure after rollback without recording a success", async () => {
+  fake.status.cycleCounts = "Reconciled";
+  expect(await reconcileCycleCount(1)).toMatchObject({ success: false });
+  expect(fake.committed).toHaveLength(0);
+  expect(fake.written).toMatchObject([{ action: "cycle_count.reconciled", outcome: "failure", actor: { type: "user", id: "actor-id" }, idempotency_key: expect.stringContaining(":failure:") }]);
+});

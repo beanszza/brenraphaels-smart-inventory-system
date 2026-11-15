@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Retain existing transfer DTOs during migration. */
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
@@ -284,7 +286,7 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
       "stock-transfer",
       transfer.TransferId,
       transfer.TransferNumber || String(transfer.TransferId),
-      "updated",
+      "stock_transfer.dispatched",
       resourceResult({
         success: true,
         message: "Transfer dispatched successfully and commissary stock deducted.",
@@ -327,5 +329,5 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
         }
       }
     );
-  });
+  }, { module: "Stock Transfer", action: "stock_transfer.dispatched", target: { type: "operation", id: String(idInput), name: "dispatchTransfer" }, description: "Validation refused for dispatchTransfer", version: auditVersion([idInput, body]) });
 }

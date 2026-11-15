@@ -1,13 +1,20 @@
+import { auditText, formatCompatDescription, safeAuditMetadata, toLegacyAuditAction, type ImsAuditAction } from "@/lib/audit-actions";
+
 /** Wire shape of an Audit event as audit-logs accepts it through the gateway. */
 export type AuditEventInput = {
   source: "IMS";
-  module: string;
-  action: "record.created" | "record.updated" | "record.deleted";
-  outcome: "success";
-  idempotency_key?: string;
-  actor: { type: "staff" | "service"; id: string; display_name: string };
+  module: string | null;
+  action: ImsAuditAction;
+  outcome: "success" | "failure";
+  actor: { type: "user" | "service"; id: string; display_name: string };
   target: { type: string; id: string; display_name: string };
   description: string;
+  subject?: { type: "user"; id: string; display_name: string };
+  idempotency_key?: string;
+  request_id?: string;
+  ip_address?: string;
+  user_agent?: string;
+  metadata?: Record<string, unknown>;
   occurred_at: string;
 };
 
@@ -45,7 +52,14 @@ export const gatewayPort: GatewayPort = {
     const response = await fetch(`${base}/audit/events`, {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify(event),
+      body: JSON.stringify({
+        ...event,
+        ...(process.env.IMS_AUDIT_LEGACY_ACTIONS !== "false" ? {
+          action: toLegacyAuditAction(event.action),
+          description: formatCompatDescription(event.action, auditText(event.description)),
+          metadata: { ...safeAuditMetadata({ ...event.metadata, ims_action: event.action }), ims_action: event.action },
+        } : {}),
+      }),
       signal,
     });
     if (!response.ok) throw new Error(`The gateway refused the audit event: ${response.status}`);

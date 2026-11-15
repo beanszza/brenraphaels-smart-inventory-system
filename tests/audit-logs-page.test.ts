@@ -28,7 +28,7 @@ describe("IMS audit logs page", () => {
   it("shows gateway events as log entries", async () => {
     readImsAuditEvents.mockResolvedValue([
       {
-        id: "e1",
+        id: "e1", action: "purchase_order.approved", outcome: "success",
         description: "Ana approved PO-1",
         target: { display_name: "PO-1" },
         actor: { display_name: "Ana Cruz" },
@@ -38,7 +38,7 @@ describe("IMS audit logs page", () => {
     const props = viewProps(await Page({ searchParams: Promise.resolve({ type: "inventory" }) }) as never);
     expect(readImsAuditEvents).toHaveBeenCalledWith({ modules: ["Inventory"] });
     expect(props.initialLogs).toEqual([
-      { id: "e1", activity: "Ana approved PO-1", entityName: "PO-1", timestamp: "2026-01-02T03:04:05.000Z", user: "Ana Cruz" },
+      { id: "e1", activity: "Purchase order approved: Ana approved PO-1", entityName: "PO-1", timestamp: "2026-01-02T03:04:05.000Z", user: "Ana Cruz" },
     ]);
     expect(props.unavailable).toBe(false);
   });
@@ -50,4 +50,10 @@ describe("IMS audit logs page", () => {
     expect(props.unavailable).toBe(true);
     expect(props.initialLogs).toEqual([]);
   });
+});
+
+it("labels failures while retaining historical record actions", async () => {
+  readImsAuditEvents.mockResolvedValue([{ id: "failed", action: "record.updated", outcome: "failure", description: "Validation refused", target: { display_name: "SI-1" }, actor: { display_name: "Ada" }, occurred_at: "2026-01-01T00:00:00Z" }]);
+  const props = viewProps(await Page({ searchParams: Promise.resolve({}) }) as never);
+  expect(props.initialLogs).toMatchObject([{ activity: "Failed: Record updated: Validation refused" }]);
 });

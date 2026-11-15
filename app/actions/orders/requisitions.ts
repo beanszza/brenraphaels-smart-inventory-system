@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -124,12 +126,12 @@ export async function createRequisition(body: RequisitionInput) {
     return {
       result: resourceResult({ success: true, message: "Purchase requisition created successfully.", data: prDto(pr) }),
       audit: {
-        module: MODULE, change: "created", target: target(pr),
+        module: MODULE, action: body.submitForApproval ? "purchase_requisition.submitted" : "record.created", target: target(pr),
         description: `${staff.name} created purchase requisition ${pr.PrNumber}`,
       } satisfies AuditAction,
       after: statusNotice(staff, pr.PrNumber, pr.RequestedBy, pr.Status),
     };
-  });
+  }, { module: "Orders & Procurement", action: "record.updated", target: { type: "operation", id: "createRequisition", name: "createRequisition" }, description: "Validation refused for createRequisition", version: auditVersion([body]) });
 }
 
 export async function updateRequisition(idInput: string | number, body: RequisitionInput) {
@@ -165,12 +167,12 @@ export async function updateRequisition(idInput: string | number, body: Requisit
     return {
       result: resourceResult({ success: true, message: "Purchase requisition updated successfully.", data: prDto(updated) }),
       audit: {
-        module: MODULE, change: "updated", target: target(updated),
+        module: MODULE, action: body.submitForApproval ? "purchase_requisition.submitted" : "record.updated", target: target(updated),
         description: `${staff.name} updated purchase requisition ${updated.PrNumber}`,
       } satisfies AuditAction,
       after: body.submitForApproval ? () => notifyApprovalRequested(staff, updated.PrNumber) : undefined,
     };
-  });
+  }, { module: "Orders & Procurement", action: "record.updated", target: { type: "operation", id: String(idInput), name: "updateRequisition" }, description: "Validation refused for updateRequisition", version: auditVersion([idInput, body]) });
 }
 
 /** Approving, rejecting, returning or cancelling: the status moves and the right people hear of it. */
@@ -195,12 +197,12 @@ export async function setRequisitionStatus(idInput: string | number, body: Statu
     return {
       result: resourceResult({ success: true, message: `Requisition status updated to ${body.status}.`, data: prDto(updated) }),
       audit: {
-        module: MODULE, change, target: target(updated),
+        module: MODULE, action: body.status === "Approved" ? "purchase_requisition.approved" : body.status === "Rejected" ? "purchase_requisition.rejected" : body.status === "PendingApproval" ? "purchase_requisition.submitted" : "record.updated", subjectUsername: updated.RequestedBy, target: target(updated),
         description: `${staff.name} ${change === "updated" ? `set purchase requisition ${updated.PrNumber} to ${body.status}` : `${change} purchase requisition ${updated.PrNumber}`}`,
       } satisfies AuditAction,
       after: statusNotice(staff, updated.PrNumber, updated.RequestedBy, body.status),
     };
-  });
+  }, { module: "Orders & Procurement", action: "record.updated", target: { type: "operation", id: String(idInput), name: "setRequisitionStatus" }, description: "Validation refused for setRequisitionStatus", version: auditVersion([idInput, body]) });
 }
 
 /** One Purchase Order per supplier for an Approved requisition. */
@@ -287,11 +289,11 @@ export async function convertRequisitionToOrders(idInput: string | number) {
         data: { generatedPos: generated },
       }),
       audit: {
-        module: MODULE, change: "updated", target: target(pr),
+        module: MODULE, action: "record.updated", target: target(pr),
         description: `${staff.name} converted purchase requisition ${pr.PrNumber} to ${generated.map((g) => g.poNumber).join(", ")}`,
       } satisfies AuditAction,
     };
-  });
+  }, { module: "Orders & Procurement", action: "record.updated", target: { type: "operation", id: String(idInput), name: "convertRequisitionToOrders" }, description: "Validation refused for convertRequisitionToOrders", version: auditVersion([idInput]) });
 }
 
 /** Full end-to-end lifecycle report for a Purchase Requisition: Ordering -> Delivery -> Receiving -> Inventory. */

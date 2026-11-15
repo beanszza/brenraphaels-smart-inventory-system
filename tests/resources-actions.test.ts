@@ -159,7 +159,7 @@ it.each(mutations)("%s emits the persisted target and session actor through the 
   expect(fake.written).toHaveLength(1);
   expect(fake.written[0]).toMatchObject({
     source: "IMS", module: "Resources & Suppliers", action, outcome: "success",
-    actor: { type: "staff", id: "2026-AB-001", display_name: "Ada Santos" },
+    actor: { type: "user", id: "staff-1", display_name: "Ada Santos" },
     target: { type, id, display_name },
   });
   expect(fake.written[0].description).toContain("Ada Santos");
@@ -195,7 +195,7 @@ it("loads recipe choices with the Resources Module alone", async () => {
 it("does not emit a success event or write data when validation rejects an item", async () => {
   expect(await items.createItem({ ...itemInput, itemName: "123" })).toMatchObject({ success: false });
   expect(fake.committed).toEqual([]);
-  expect(fake.written).toEqual([]);
+  expect(fake.written.filter(event => event.outcome !== "failure")).toEqual([]);
 });
 
 it("denies the resource page before loading its data during a Portal outage", async () => {

@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { unlinkFile } from "@/lib/files";
 import { filesGateway } from "@/lib/gateway/files";
@@ -196,12 +198,12 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
       result: resourceResult({ success: true, data: response }),
       audit: {
         module: "Production & Quality",
-        change: "updated",
+        action: "record.updated",
         target: { type: "finished-product", id: id, name: String(id) },
         description: `${staff.name} updated finished product (${String(id)})`,
       },
     };
-  });
+  }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: String(idInput), name: "updateFinishedProduct" }, description: "Validation refused for updateFinishedProduct", version: auditVersion([idInput, body]) });
 }
 
 export async function deleteFinishedProduct(idInput: string | number) {
@@ -231,10 +233,10 @@ export async function deleteFinishedProduct(idInput: string | number) {
       result: resourceResult({ success: true, data: true }),
       audit: {
         module: "Production & Quality",
-        change: "deleted",
+        action: "record.deleted",
         target: { type: "finished-product", id: id, name: String(id) },
         description: `${staff.name} deleted finished product (${String(id)})`,
       },
     };
-  });
+  }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: String(idInput), name: "deleteFinishedProduct" }, description: "Validation refused for deleteFinishedProduct", version: auditVersion([idInput]) });
 }

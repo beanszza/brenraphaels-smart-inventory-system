@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
@@ -120,6 +122,6 @@ export async function scanIssuance(idInput: string | number, body: any = {}) {
                     lotCode: matchingReservation.InventoryLots.LotCode,
                     itemName: matchingReservation.Items.ItemName,
                 },
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "material-issuance", id: id, name: String(id) }, description: `${staff.name} verified material lot for issuance (${String(id)})` } };
-    });
+            }), audit: { module: "Production & Quality", action: "record.updated", target: { type: "material-issuance", id: id, name: String(id) }, description: `${staff.name} verified material lot for issuance (${String(id)})` } };
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: String(idInput), name: "scanIssuance" }, description: "Validation refused for scanIssuance", version: auditVersion([idInput, body]) });
 }

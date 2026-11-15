@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { prisma } from "@/lib/prisma";
 import { mapBatch, BATCH_INCLUDE, productInitialsCode } from "@/lib/production/production-batches";
@@ -156,6 +158,6 @@ export async function createBatch(body: any = {}) {
                 success: true,
                 message: `Production Batch ${createdBatch.BatchNumber} created and started.`,
                 data: mapBatch(createdBatch),
-            }), audit: { module: "Production & Quality", change: "created", target: { type: "production-batch", id: createdBatch.BatchId, name: createdBatch.BatchNumber }, description: `${staff.name} created production batch (${createdBatch.BatchNumber})` } };
-    });
+            }), audit: { module: "Production & Quality", action: "record.created", target: { type: "production-batch", id: createdBatch.BatchId, name: createdBatch.BatchNumber }, description: `${staff.name} created production batch (${createdBatch.BatchNumber})` } };
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: "createBatch", name: "createBatch" }, description: "Validation refused for createBatch", version: auditVersion([body]) });
 }

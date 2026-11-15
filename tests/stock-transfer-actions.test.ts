@@ -73,7 +73,7 @@ vi.mock("@/lib/prisma", () => {
       }
       return row(name);
     },
-    findFirst: async () => name === "knownStaff" ? fake.knownMissing ? null : { StaffId: "requester-id" } : row(name),
+    findFirst: async () => name === "knownStaff" ? fake.knownMissing ? null : { StaffId: "requester-id", Name: "Requester" } : row(name),
     findMany: async (args?: unknown) => {
       if (name === "knownStaff") return [{ StaffId: "actor-id", Modules: ["Stock Transfer"] }, { StaffId: "approver-id", Modules: ["Stock Transfer"] }];
       if (name === "inventoryLots") {
@@ -155,8 +155,8 @@ for (const test of mutations) {
     if (test.transferStatus) fake.transferStatus = test.transferStatus;
     expect(await test.run()).toMatchObject({ success: true });
     expect(fake.committed.length).toBeGreaterThan(0);
-    expect(fake.written).toEqual([expect.objectContaining({ source: "IMS", module: "Stock Transfer", action: `record.${test.change || "updated"}`,
-      actor: { type: "staff", id: "actor-username", display_name: "Ada" }, target: expect.objectContaining({ type: test.target }) })]);
+    expect(fake.written).toEqual([expect.objectContaining({ source: "IMS", module: "Stock Transfer", action: (({"create request": "stock_transfer.requested", "approve request": "stock_transfer.approved", "reject request": "stock_transfer.rejected", "dispatch": "stock_transfer.dispatched", "receive": "stock_transfer.received"} as Record<string, string>)[test.name] ?? `record.${test.change || "updated"}`),
+      actor: { type: "user", id: "actor-id", display_name: "Ada" }, target: expect.objectContaining({ type: test.target }) })]);
     expect(JSON.stringify(fake.committed)).not.toContain("forged");
   });
   it(`${test.name} emits no audit or notification on rollback`, async () => {
@@ -211,9 +211,10 @@ it("dispatch uses source location and unreserved, unexpired FEFO lots", async ()
   expect(await dispatchTransfer(1)).toMatchObject({ success: true, data: { lotDeductions: [{ lotId: 1, deducted: 5 }] } });
   expect(fake.lotQuery).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ LocationId: 1, OR: expect.any(Array) }), orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }] }));
 });
-it("short stock rolls back dispatch without auditing", async () => {
+it("short stock rolls back dispatch and audits failure", async () => {
   fake.lotsEmpty = true;
-  expect(await dispatchTransfer(1)).toMatchObject({ success: false }); expect(fake.committed).toHaveLength(0); expect(fake.written).toHaveLength(0);
+  expect(await dispatchTransfer(1)).toMatchObject({ success: false }); expect(fake.committed).toHaveLength(0);
+  expect(fake.written).toMatchObject([{ action: "stock_transfer.dispatched", outcome: "failure" }]);
 });
 it.each(["Dispatched", "Received", "Completed"])("cannot dispatch or cancel %s transfers", async status => {
   fake.transferStatus = status;
@@ -232,7 +233,7 @@ it("lot previews and list reads return serializable data without mutation events
 it("reserved stock is unavailable to dispatch", async () => {
   fake.lotRemaining = 6; fake.lotReserved = 2;
   expect(await dispatchTransfer(1)).toMatchObject({ success: false });
-  expect(fake.committed).toHaveLength(0); expect(fake.written).toHaveLength(0);
+  expect(fake.committed).toHaveLength(0); expect(fake.written.filter(event => event.outcome !== "failure")).toHaveLength(0);
 });
 it("previews subtract reservations", async () => {
   fake.lotRemaining = 6; fake.lotReserved = 2;
@@ -241,7 +242,7 @@ it("previews subtract reservations", async () => {
 it("received transfers cannot be received again", async () => {
   fake.transferStatus = "Received";
   expect(await updateTransferStatus(1, { status: "Received" })).toMatchObject({ success: false });
-  expect(fake.committed).toHaveLength(0); expect(fake.written).toHaveLength(0);
+  expect(fake.committed).toHaveLength(0); expect(fake.written.filter(event => event.outcome !== "failure")).toHaveLength(0);
 });
 
 it("refuses Admin on create, schedule, dispatch, and cancel, while allowing review", async () => {

@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
@@ -206,9 +208,9 @@ export async function createDelivery(body: DeliveryInput) {
           items: deliveryDto(delivery).items,
         },
       }),
-      audit: { module: MODULE, change: "created", target: target(delivery), ...change(staff, delivery, "scheduled") },
+      audit: { module: MODULE, action: "record.created", target: target(delivery), ...change(staff, delivery, "scheduled") },
     };
-  });
+  }, { module: "Orders & Procurement", action: "record.updated", target: { type: "operation", id: "createDelivery", name: "createDelivery" }, description: "Validation refused for createDelivery", version: auditVersion([body]) });
 }
 
 export async function cancelDelivery(idInput: string | number, body: DeliveryUpdateInput = {}) {
@@ -232,9 +234,9 @@ export async function cancelDelivery(idInput: string | number, body: DeliveryUpd
     await syncRequisitionLifecycleByPoId(tx, delivery.PoId);
     return {
       result: resourceResult({ success: true, message: "Delivery cancelled successfully.", data: updated }),
-      audit: { module: MODULE, change: "updated", target: target(updated), ...change(staff, updated, "cancelled") },
+      audit: { module: MODULE, action: "record.updated", target: target(updated), ...change(staff, updated, "cancelled") },
     };
-  });
+  }, { module: "Orders & Procurement", action: "record.updated", target: { type: "operation", id: String(idInput), name: "cancelDelivery" }, description: "Validation refused for cancelDelivery", version: auditVersion([idInput, body]) });
 }
 
 export async function arriveDelivery(idInput: string | number, body: DeliveryUpdateInput = {}) {
@@ -261,7 +263,7 @@ export async function arriveDelivery(idInput: string | number, body: DeliveryUpd
     });
     return {
       result: resourceResult({ success: true, message: "Delivery marked as arrived.", data: updated }),
-      audit: { module: MODULE, change: "updated", target: target(updated), ...change(staff, updated, "marked as arrived") },
+      audit: { module: MODULE, action: "delivery.received", target: target(updated), ...change(staff, updated, "marked as arrived") },
     };
-  });
+  }, { module: "Orders & Procurement", action: "delivery.received", target: { type: "operation", id: String(idInput), name: "arriveDelivery" }, description: "Validation refused for arriveDelivery", version: auditVersion([idInput, body]) });
 }

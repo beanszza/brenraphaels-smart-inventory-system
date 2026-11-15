@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId } from "@/lib/production/mutate";
@@ -18,6 +20,6 @@ export async function cancelBatch(idInput: string | number) {
             where: { BatchId: id },
             data: { Status: "Cancelled" },
         });
-        return { result: resourceResult({ success: true, message: "Batch cancelled.", data: { batchId: updated.BatchId, status: updated.Status } }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} cancelled production batch (${String(id)})` } };
-    });
+        return { result: resourceResult({ success: true, message: "Batch cancelled.", data: { batchId: updated.BatchId, status: updated.Status } }), audit: { module: "Production & Quality", action: "record.updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} cancelled production batch (${String(id)})` } };
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: String(idInput), name: "cancelBatch" }, description: "Validation refused for cancelBatch", version: auditVersion([idInput]) });
 }

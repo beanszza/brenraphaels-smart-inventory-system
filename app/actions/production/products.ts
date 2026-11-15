@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
@@ -180,7 +182,7 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
     }
 
     // Resolve default UOM fallback
-    let fallbackUomId = body.uomId ? positiveId(body.uomId) : 1;
+    const fallbackUomId = body.uomId ? positiveId(body.uomId) : 1;
 
     // Normalize and validate variants
     const seenNames = new Set<string>();
@@ -382,12 +384,12 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
       }),
       audit: {
         module: "Production & Quality",
-        change: "created",
+        action: "record.created",
         target: { type: "finished-product", id: createdVariants[0]?.productId || primaryItem.ItemId, name: primaryItem.ItemName },
         description: `${staff.name} created finished product ${primaryItem.ItemName} with ${createdVariants.length} variant(s)`,
       },
     };
-  });
+  }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: "createFinishedProductWithVariants", name: "createFinishedProductWithVariants" }, description: "Validation refused for createFinishedProductWithVariants", version: auditVersion([body]) });
 }
 
 export async function createFinishedProduct(body: any = {}) {
@@ -491,10 +493,10 @@ export async function createFinishedProduct(body: any = {}) {
       result: resourceResult({ success: true, data: response }),
       audit: {
         module: "Production & Quality",
-        change: "created",
+        action: "record.created",
         target: { type: "finished-product", id: newProduct.ProductId, name: newProduct.Items?.ItemName || trimmedName },
         description: `${staff.name} created finished product (${newProduct.Items?.ItemName || trimmedName})`,
       },
     };
-  });
+  }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: "createFinishedProduct", name: "createFinishedProduct" }, description: "Validation refused for createFinishedProduct", version: auditVersion([body]) });
 }

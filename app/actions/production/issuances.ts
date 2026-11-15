@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { prisma } from "@/lib/prisma";
 import { mapMaterialIssuance, ISSUANCE_INCLUDE } from "@/lib/production/material-issuances";
@@ -91,6 +93,6 @@ export async function createIssuance(body: any = {}) {
                 success: true,
                 message: "Material issuance session initialized.",
                 data: mapMaterialIssuance(newIssuance),
-            }), audit: { module: "Production & Quality", change: "created", target: { type: "material-issuance", id: newIssuance.IssuanceId, name: newIssuance.IssuanceNumber }, description: `${staff.name} created material issuance (${newIssuance.IssuanceNumber})` } };
-    });
+            }), audit: { module: "Production & Quality", action: "record.created", target: { type: "material-issuance", id: newIssuance.IssuanceId, name: newIssuance.IssuanceNumber }, description: `${staff.name} created material issuance (${newIssuance.IssuanceNumber})` } };
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: "createIssuance", name: "createIssuance" }, description: "Validation refused for createIssuance", version: auditVersion([body]) });
 }

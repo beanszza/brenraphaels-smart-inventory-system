@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { prisma } from "@/lib/prisma";
 import { PROD_REQ_INCLUDE, mapProductionRequest } from "@/lib/production/production-requests";
@@ -290,8 +292,8 @@ export async function updateProductionRequest(idInput: string | number, body: an
                 success: true,
                 message: `Production request updated successfully.`,
                 data: mapProductionRequest(fullResult),
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-request", id, name: existing.ReqNumber }, description: `${staff.name} ${action === "approve" ? "approved" : action === "reject" ? "rejected" : action === "submit_approval" ? "submitted for approval" : action === "cancel" ? "cancelled" : "updated"} production request ${existing.ReqNumber}` }, after: () => body.action === "submit_approval" ? notifyApprovalRequested(staff, existing.ReqNumber) : ["approve", "reject"].includes(body.action) ? notifyRequester(existing.RequestedBy, body.action === "approve" ? "approved" : "rejected", existing.ReqNumber) : Promise.resolve() };
-    });
+            }), audit: { module: "Production & Quality", action: action === "approve" ? "production_request.approved" : action === "reject" ? "production_request.rejected" : action === "submit_approval" ? "production_request.submitted" : "record.updated", subjectUsername: existing.RequestedBy, target: { type: "production-request", id, name: existing.ReqNumber }, description: `${staff.name} ${action === "approve" ? "approved" : action === "reject" ? "rejected" : action === "submit_approval" ? "submitted for approval" : action === "cancel" ? "cancelled" : "updated"} production request ${existing.ReqNumber}` }, after: () => body.action === "submit_approval" ? notifyApprovalRequested(staff, existing.ReqNumber) : ["approve", "reject"].includes(body.action) ? notifyRequester(existing.RequestedBy, body.action === "approve" ? "approved" : "rejected", existing.ReqNumber) : Promise.resolve() };
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: String(idInput), name: "updateProductionRequest" }, description: "Validation refused for updateProductionRequest", version: auditVersion([idInput, body]) });
 }
 export async function deleteProductionRequest(idInput: string | number) {
     const staff = await requireModule("Production & Quality");
@@ -324,6 +326,6 @@ export async function deleteProductionRequest(idInput: string | number) {
             await tx.productionReqLotReservations.deleteMany({ where: { ProdReqId: id } });
             await tx.productionRequests.delete({ where: { ProdReqId: id } });
         })();
-        return { result: resourceResult({ success: true, message: "Production request deleted." }), audit: { module: "Production & Quality", change: "deleted", target: { type: "production-request", id: id, name: String(id) }, description: `${staff.name} deleted production request (${String(id)})` } };
-    });
+        return { result: resourceResult({ success: true, message: "Production request deleted." }), audit: { module: "Production & Quality", action: "record.deleted", target: { type: "production-request", id: id, name: String(id) }, description: `${staff.name} deleted production request (${String(id)})` } };
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: String(idInput), name: "deleteProductionRequest" }, description: "Validation refused for deleteProductionRequest", version: auditVersion([idInput]) });
 }

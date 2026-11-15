@@ -1,3 +1,5 @@
+
+import { auditVersion } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import type { Staff } from "@/lib/portal/client";
@@ -187,10 +189,10 @@ export function stockInActions(module: "Inventory" | "Goods Receiving", staff: S
       }
 
       return { result: resourceResult({ success: true, message: autoCommit ? "Stock-In created and committed to inventory successfully." : "Stock-In created successfully.", data: stockIn }),
-        audit: { module: module, change: "created", target: { type: "stock-in", id: stockIn.StockInId, name: stockIn.StockInNumber },
+        audit: { module: module, action: "record.created", target: { type: "stock-in", id: stockIn.StockInId, name: stockIn.StockInNumber },
           description: `${staff.name} created${autoCommit ? " and committed" : ""} stock-in ${stockIn.StockInNumber}` },
         after: !autoCommit && body.submitForApproval ? () => notifyApprovalRequested(staff, stockIn.StockInNumber) : undefined };
-    });
+    }, { module: module, action: "record.updated", target: { type: "operation", id: "createStockIn", name: "createStockIn" }, description: "Validation refused for createStockIn", version: auditVersion([body]) });
   }
 
   async function listStockIns(query = "") {
@@ -296,9 +298,9 @@ export function stockInActions(module: "Inventory" | "Goods Receiving", staff: S
         }
       });
 
-      return { result: resourceResult({ success: true, data: updated, message: "Stock-In submitted successfully." }), audit: { module: module, change: "updated", target: { type: "stock-in", id: updated.StockInId, name: updated.StockInNumber }, description: `${staff.name} submitted stock-in for approval ${updated.StockInNumber}` }, after: () => notifyApprovalRequested(staff, updated.StockInNumber) };
+      return { result: resourceResult({ success: true, data: updated, message: "Stock-In submitted successfully." }), audit: { module: module, action: "record.updated", target: { type: "stock-in", id: updated.StockInId, name: updated.StockInNumber }, description: `${staff.name} submitted stock-in for approval ${updated.StockInNumber}` }, after: () => notifyApprovalRequested(staff, updated.StockInNumber) };
 
-    });
+    }, { module: module, action: "record.updated", target: { type: "operation", id: String(idInput), name: "submitStockIn" }, description: "Validation refused for submitStockIn", version: auditVersion([idInput]) });
   }
 
   async function approveStockIn(idInput: string | number, body: NotesInput = {}) {
@@ -328,9 +330,9 @@ export function stockInActions(module: "Inventory" | "Goods Receiving", staff: S
         }
       });
 
-      return { result: resourceResult({ success: true, data: updated, message: "Stock-In approved successfully." }), audit: { module: module, change: "approved", target: { type: "stock-in", id: updated.StockInId, name: updated.StockInNumber }, description: `${staff.name} approved stock-in ${updated.StockInNumber}` }, after: () => notifyRequester(stockIn.SubmittedBy || stockIn.CreatedBy, "approved", updated.StockInNumber) };
+      return { result: resourceResult({ success: true, data: updated, message: "Stock-In approved successfully." }), audit: { module: module, action: "stock_in.approved", subjectUsername: stockIn.SubmittedBy || stockIn.CreatedBy, target: { type: "stock-in", id: updated.StockInId, name: updated.StockInNumber }, description: `${staff.name} approved stock-in ${updated.StockInNumber}` }, after: () => notifyRequester(stockIn.SubmittedBy || stockIn.CreatedBy, "approved", updated.StockInNumber) };
 
-    });
+    }, { module: module, action: "stock_in.approved", target: { type: "operation", id: String(idInput), name: "approveStockIn" }, description: "Validation refused for approveStockIn", version: auditVersion([idInput, body]) });
   }
 
   async function rejectStockIn(idInput: string | number, body: NotesInput = {}) {
@@ -361,9 +363,9 @@ export function stockInActions(module: "Inventory" | "Goods Receiving", staff: S
         }
       });
 
-      return { result: resourceResult({ success: true, data: updated, message: "Stock-In rejected successfully." }), audit: { module: module, change: "rejected", target: { type: "stock-in", id: updated.StockInId, name: updated.StockInNumber }, description: `${staff.name} rejected stock-in ${updated.StockInNumber}` }, after: () => notifyRequester(stockIn.SubmittedBy || stockIn.CreatedBy, "rejected", updated.StockInNumber) };
+      return { result: resourceResult({ success: true, data: updated, message: "Stock-In rejected successfully." }), audit: { module: module, action: "stock_in.rejected", subjectUsername: stockIn.SubmittedBy || stockIn.CreatedBy, target: { type: "stock-in", id: updated.StockInId, name: updated.StockInNumber }, description: `${staff.name} rejected stock-in ${updated.StockInNumber}` }, after: () => notifyRequester(stockIn.SubmittedBy || stockIn.CreatedBy, "rejected", updated.StockInNumber) };
 
-    });
+    }, { module: module, action: "stock_in.rejected", target: { type: "operation", id: String(idInput), name: "rejectStockIn" }, description: "Validation refused for rejectStockIn", version: auditVersion([idInput, body]) });
   }
 
   async function commitStockIn(idInput: string | number, body: NotesInput = {}) {
@@ -401,9 +403,9 @@ export function stockInActions(module: "Inventory" | "Goods Receiving", staff: S
         return result;
       })();
 
-      return { result: resourceResult({ success: true, data: updated, message: "Stock-In committed to inventory successfully." }), audit: { module: module, change: "updated", target: { type: "stock-in", id: updated.StockInId, name: updated.StockInNumber }, description: `${staff.name} committed stock-in ${updated.StockInNumber}` } };
+      return { result: resourceResult({ success: true, data: updated, message: "Stock-In committed to inventory successfully." }), audit: { module: module, action: "stock_in.put_away", target: { type: "stock-in", id: updated.StockInId, name: updated.StockInNumber }, description: `${staff.name} committed stock-in ${updated.StockInNumber}` } };
 
-    });
+    }, { module: module, action: "stock_in.put_away", target: { type: "operation", id: String(idInput), name: "commitStockIn" }, description: "Validation refused for commitStockIn", version: auditVersion([idInput, body]) });
   }
 
   return { createStockIn, listStockIns, submitStockIn, approveStockIn, rejectStockIn, commitStockIn };

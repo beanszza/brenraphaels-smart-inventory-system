@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
@@ -314,11 +316,11 @@ export async function completeInspection(idInput: string | number, body: Inspect
       result: resourceResult({ success: true, data: updatedInspection, message: `Quality Assurance completed for ${refGrnNumber}.` }),
       audit: {
         module: MODULE,
-        change: "updated",
+        action: "goods_receipt.inspected",
         target: { type: "quality-inspection", id: updatedInspection.InspectionId, name: updatedInspection.InspectionNumber },
         description: `${staff.name} completed quality inspection ${updatedInspection.InspectionNumber}`,
       },
     };
 
-  });
+  }, { module: "Goods Receiving", action: "goods_receipt.inspected", target: { type: "operation", id: String(idInput), name: "completeInspection" }, description: "Validation refused for completeInspection", version: auditVersion([idInput, body]) });
 }
