@@ -16,6 +16,7 @@ interface STRTableProps {
   requests: StockTransferRequest[];
   loading: boolean;
   isAdmin?: boolean;
+  activeStatusTab?: string;
   onView: (req: StockTransferRequest) => void;
   onApprove?: (req: StockTransferRequest) => void;
   onReject?: (req: StockTransferRequest) => void;
@@ -24,10 +25,25 @@ interface STRTableProps {
   onCancel?: (req: StockTransferRequest) => void;
 }
 
+const HIDE_TARGET_DATE_TABS = new Set([
+  "Scheduled",
+  "Dispatched",
+  "Cancelled",
+  "Rejected",
+]);
+
+const HIDE_COURIER_TABS = new Set([
+  "Requests",
+  "Pending Approval",
+  "Approved",
+  "Rejected",
+]);
+
 export function STRTable({
   requests,
   loading,
   isAdmin = false,
+  activeStatusTab = "All",
   onView,
   onApprove,
   onReject,
@@ -35,6 +51,8 @@ export function STRTable({
   onDispatch,
   onCancel,
 }: STRTableProps) {
+  const showTargetDate = !HIDE_TARGET_DATE_TABS.has(activeStatusTab);
+  const showCourier = !HIDE_COURIER_TABS.has(activeStatusTab);
 
   if (loading) return <TransferSkeleton />;
 
@@ -57,8 +75,12 @@ export function STRTable({
               <th className="px-5 py-3.5 whitespace-nowrap">PRODUCT</th>
               <th className="px-5 py-3.5 whitespace-nowrap">VARIANT</th>
               <th className="px-5 py-3.5 text-right whitespace-nowrap">QTY</th>
-              <th className="px-5 py-3.5 whitespace-nowrap">TARGET DATE</th>
-              <th className="px-5 py-3.5 whitespace-nowrap">COURIER / DRIVER</th>
+              {showTargetDate && (
+                <th className="px-5 py-3.5 whitespace-nowrap">TARGET DATE</th>
+              )}
+              {showCourier && (
+                <th className="px-5 py-3.5 whitespace-nowrap">COURIER / DRIVER</th>
+              )}
               <th className="px-5 py-3.5 whitespace-nowrap">STATUS</th>
               <th className="px-5 py-3.5 text-center whitespace-nowrap w-16">ACTIONS</th>
             </tr>
@@ -137,19 +159,23 @@ export function STRTable({
                   </td>
 
                   {/* Target Date */}
-                  <td className="px-5 py-4 text-muted-foreground whitespace-nowrap">
-                    {targetDate}
-                  </td>
+                  {showTargetDate && (
+                    <td className="px-5 py-4 text-muted-foreground whitespace-nowrap">
+                      {targetDate}
+                    </td>
+                  )}
 
                   {/* Courier / Driver */}
-                  <td className="px-5 py-4 text-muted-foreground whitespace-nowrap">
-                    <div>{courierDriver}</div>
-                    {transferRef?.vehiclePlate && (
-                      <span className="text-[10px] font-mono text-muted-foreground">
-                        [{transferRef.vehiclePlate}]
-                      </span>
-                    )}
-                  </td>
+                  {showCourier && (
+                    <td className="px-5 py-4 text-muted-foreground whitespace-nowrap">
+                      <div>{courierDriver}</div>
+                      {transferRef?.vehiclePlate && (
+                        <span className="text-[10px] font-mono text-muted-foreground">
+                          [{transferRef.vehiclePlate}]
+                        </span>
+                      )}
+                    </td>
+                  )}
 
                   {/* Status */}
                   <td className="px-5 py-4 whitespace-nowrap">

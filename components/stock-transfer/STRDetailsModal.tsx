@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Calendar, MapPin, User, AlertCircle, CheckCircle, Package, Truck, Send } from "lucide-react";
+import { X, Calendar, MapPin, User, AlertCircle, CheckCircle, Package, Truck } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransferRequest } from "./types";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
@@ -67,18 +67,11 @@ export function STRDetailsModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-xl font-bold text-foreground">
-                  Stock Transfer Request Details
-                </h2>
-                <StatusBadge status={hasScheduledTransfer && request.status === "Approved" ? "Scheduled" : request.status} />
-              </div>
-              <p className="text-xs font-semibold text-muted-foreground mt-0.5">
-                {request.requestNumber}
-              </p>
-            </div>
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-xl font-bold text-foreground">
+              Stock Transfer Request Details
+            </h2>
+            <StatusBadge status={hasScheduledTransfer && request.status === "Approved" ? "Scheduled" : request.status} />
           </div>
           <button
             type="button"
@@ -332,11 +325,6 @@ export function STRDetailsModal({
                                           ? new Date(sl.expiryDate).toLocaleDateString()
                                           : "No Expiry"}
                                       </span>
-                                      {sl.qty ? (
-                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-muted text-foreground border border-border">
-                                          {sl.qty} pcs
-                                        </span>
-                                      ) : null}
                                     </div>
                                     {sl.lotCode && (
                                       <div className="text-[10px] text-muted-foreground font-mono">
@@ -369,54 +357,6 @@ export function STRDetailsModal({
               </div>
             </div>
           </div>
-
-          {/* Associated Scheduled / Dispatched Formal Transfers */}
-          {request.transfers && request.transfers.length > 0 && (
-            <div className="space-y-3 pt-2">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                <Truck className="w-4 h-4 text-muted-foreground" />
-                Associated Formal Stock Transfers ({request.transfers.length})
-              </h3>
-              <div className="border border-border rounded-2xl overflow-hidden bg-card divide-y divide-border text-xs">
-                {request.transfers.map((st) => (
-                  <div key={st.transferId} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-foreground text-sm">{st.transferNumber}</span>
-                        <StatusBadge status={st.status} />
-                      </div>
-                      <div className="text-muted-foreground text-[11px] mt-0.5">
-                        Quantity: <strong className="text-foreground">{st.transferQuantity}</strong>
-                        {st.courierName && ` • Courier: ${st.courierName}`}
-                        {st.driverName && ` • Driver: ${st.driverName}`}
-                        {st.vehiclePlate && ` [${st.vehiclePlate}]`}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {st.scheduledDate && (
-                        <span className="text-muted-foreground text-[11px]">
-                          Scheduled: {new Date(st.scheduledDate).toLocaleDateString()}
-                        </span>
-                      )}
-                      {st.status === "Scheduled" && onDispatch && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onClose();
-                            onDispatch(request, st.transferId);
-                          }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-foreground text-background text-xs font-semibold hover:bg-foreground/85 transition-colors shadow-xs cursor-pointer shrink-0"
-                        >
-                          <Send className="w-3.5 h-3.5" />
-                          Dispatch Transfer
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer Actions */}
@@ -473,9 +413,8 @@ export function STRDetailsModal({
                     onClose();
                     onDispatch(request);
                   }}
-                  className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer flex items-center gap-2"
+                  className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
                 >
-                  <Send className="w-3.5 h-3.5" />
                   Dispatch Transfer
                 </button>
               )}

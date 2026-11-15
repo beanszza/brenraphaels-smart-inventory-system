@@ -130,3 +130,27 @@ it("renders DispatchTransferModal without throwing", () => {
   );
   expect(html).toBeDefined();
 });
+
+it("hides Target Date and Courier / Driver columns in STRTable based on activeStatusTab", () => {
+  const row = {
+    requestId: 3,
+    requestNumber: "STR-2026-0099",
+    toLocationName: "Antipolo Store Branch",
+    status: "Approved",
+    requiredDate: "2026-11-25T00:00:00Z",
+    items: [{ productName: "Toffee Jam", variant: "301ml Jar", requestedQuantity: 10 }],
+    transfers: [{ transferId: 1, transferNumber: "STF-1", courierName: "Lalamove", scheduledDate: "2026-11-24T00:00:00Z", status: "Scheduled" }],
+  } as unknown as StockTransferRequest;
+
+  const approvedHtml = renderToStaticMarkup(<STRTable requests={[row]} loading={false} activeStatusTab="Approved" onView={vi.fn()} />);
+  expect(approvedHtml).toContain("TARGET DATE");
+  expect(approvedHtml).not.toContain("COURIER / DRIVER");
+
+  const scheduledHtml = renderToStaticMarkup(<STRTable requests={[row]} loading={false} activeStatusTab="Scheduled" onView={vi.fn()} />);
+  expect(scheduledHtml).not.toContain("TARGET DATE");
+  expect(scheduledHtml).toContain("COURIER / DRIVER");
+
+  const rejectedHtml = renderToStaticMarkup(<STRTable requests={[row]} loading={false} activeStatusTab="Rejected" onView={vi.fn()} />);
+  expect(rejectedHtml).not.toContain("TARGET DATE");
+  expect(rejectedHtml).not.toContain("COURIER / DRIVER");
+});

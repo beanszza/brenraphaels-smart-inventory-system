@@ -335,6 +335,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
             requests={paginatedRequests}
             loading={loading}
             isAdmin={isAdmin}
+            activeStatusTab={activeStatusTab}
             onView={(req) => setSelectedSTRForDetails(req)}
             onApprove={(req) => setStrAction({ request: req, type: "approve" })}
             onReject={(req) => setStrAction({ request: req, type: "reject" })}

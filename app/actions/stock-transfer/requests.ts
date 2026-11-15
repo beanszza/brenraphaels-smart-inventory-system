@@ -230,6 +230,15 @@ export async function createRequest(body: any = {}) {
       return refuse("Required Date is required.");
     }
 
+    const seenProductIds = new Set<number>();
+    for (const itm of items) {
+      const pid = Number(itm.productId);
+      if (seenProductIds.has(pid)) {
+        return refuse("Duplicate products are not allowed in the same stock transfer request.");
+      }
+      seenProductIds.add(pid);
+    }
+
     // Identify Commissary source locations
     const commissaryLocations = await tx.locations.findMany({
       where: {

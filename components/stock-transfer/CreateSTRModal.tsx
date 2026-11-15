@@ -286,12 +286,18 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
       return;
     }
 
+    const seenProductIds = new Set<number>();
     for (let i = 0; i < items.length; i++) {
       const row = items[i];
       if (!row.productId) {
         setFormError(`Please select a finished product for item row #${i + 1}.`);
         return;
       }
+      if (seenProductIds.has(Number(row.productId))) {
+        setFormError(`"${row.productName || "Product"}" is already added in another row. Duplicate products are not allowed.`);
+        return;
+      }
+      seenProductIds.add(Number(row.productId));
       if (typeof row.requestedQuantity !== "number" || row.requestedQuantity <= 0) {
         setFormError(`Please enter a valid quantity greater than zero for row #${i + 1}.`);
         return;
@@ -512,7 +518,8 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
               <button
                 type="button"
                 onClick={addItemRow}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                disabled={products.length > 0 && items.length >= products.length}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Product
               </button>
@@ -550,11 +557,17 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                                 <SelectValue placeholder="Select Finished Product" />
                               </SelectTrigger>
                               <SelectContent className="max-h-60">
-                                {products.map((p) => (
-                                  <SelectItem key={p.productId} value={String(p.productId)}>
-                                    {p.itemName} ({p.variant || "Standard"})
-                                  </SelectItem>
-                                ))}
+                                {products
+                                  .filter(
+                                    (p) =>
+                                      p.productId === row.productId ||
+                                      !items.some((other, oIdx) => oIdx !== idx && other.productId === p.productId)
+                                  )
+                                  .map((p) => (
+                                    <SelectItem key={p.productId} value={String(p.productId)}>
+                                      {p.itemName} ({p.variant || "Standard"})
+                                    </SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                           </td>
@@ -605,11 +618,6 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                                               })()
                                             : "No Expiry"}
                                         </span>
-                                        {al.allocatedQuantity > 0 && (
-                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-muted text-foreground border border-border">
-                                            {al.allocatedQuantity} pcs
-                                          </span>
-                                        )}
                                       </div>
                                       <div className="text-[10px] text-muted-foreground font-mono">
                                         Lot: {al.lotCode}
