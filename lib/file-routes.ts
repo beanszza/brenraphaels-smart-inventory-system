@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { confirmAndLink, FileError, requestUpload, resolveFile, type FileTarget } from "@/lib/files";
-import { filesGateway, type FilesPort } from "@/lib/gateway/files";
+import { confirmAndLink, FileError, removeFile, requestUpload, resolveFile, type FileTarget } from "@/lib/files";
+import { filesGateway, type FilesPort, type ImageVariant } from "@/lib/gateway/files";
 import type { Module } from "@/lib/portal/config";
 import { requireRouteModule } from "@/lib/portal/staff";
 import { prisma } from "@/lib/prisma";
@@ -65,6 +65,10 @@ export const batchImage: FileTarget = {
   save: async (id, fileId) => void (await prisma.productionBatches.update({ where: { BatchId: id }, data: { ImageUrl: fileId } })),
 };
 
+function preferredVariant(value: string | null): ImageVariant | undefined {
+  return value === "small" || value === "medium" || value === "large" ? value : undefined;
+}
+
 function failure(error: unknown) {
   if (error instanceof FileError) return NextResponse.json({ message: error.message }, { status: error.status });
   console.error("File request failed", error);
@@ -78,19 +82,27 @@ async function recordId(props: Params) {
 }
 
 /**
- * The three handlers for one file-holding record. Each checks the Module before doing anything:
+ * Handlers for one file-holding record. Each checks the Module before doing anything:
  * `resolve` returns where to show the file from, `upload` an address to PUT the bytes to,
- * and `confirm` links the finished upload to the record.
+ * `confirm` links the finished upload to the record, and `remove` clears its IMS association.
  */
 export function fileRoutes(module: Module, target: FileTarget, port: FilesPort = filesGateway) {
   return {
+    async remove(request: NextRequest, props: Params) {
+      const access = await requireRouteModule(request, module);
+      if (!access.ok) return access.response;
+      try {
+        await removeFile(port, access.staff, target, await recordId(props));
+        return new NextResponse(null, { status: 204 });
+      } catch (error) { return failure(error); }
+    },
     async resolve(request: NextRequest, props: Params) {
       const access = await requireRouteModule(request, module);
       if (!access.ok) return access.response;
       try {
         const id = await recordId(props);
         if (!(await target.exists(id))) throw new FileError("Record not found.", 404);
-        const file = await resolveFile(port, access.staff, await target.current(id));
+        const file = await resolveFile(port, access.staff, await target.current(id), preferredVariant(request.nextUrl.searchParams.get("variant")));
         // A private address expires, so it must never be cached.
         return NextResponse.json(file, { headers: file.private ? { "Cache-Control": "no-store" } : {} });
       } catch (error) {
@@ -110,7 +122,7 @@ export function fileRoutes(module: Module, target: FileTarget, port: FilesPort =
           filename: body?.filename as string,
           contentType: body?.contentType as string,
           size: body?.size as number,
-        });
+        }, target, id);
         return NextResponse.json(
           { fileId: address.id, uploadUrl: address.uploadUrl, uploadUrlExpiresInSeconds: address.uploadUrlExpiresInSeconds },
           { status: 201, headers: { "Cache-Control": "no-store" } },

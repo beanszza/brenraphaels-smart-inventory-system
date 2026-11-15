@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Upload, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { removeBatchImage } from "@/app/actions/production/images";
 import { uploadProductionImage } from "@/lib/production/image-client";
 
 export function BatchProofField({
@@ -47,11 +48,18 @@ export function BatchProofField({
     }
   };
 
-  const handleRemove = () => {
-    setPreviewUrl("");
-    setFileName("");
+  const handleRemove = async () => {
+    setBusy(true);
     setError("");
-    onChange("");
+    try {
+      const result = await removeBatchImage(batchId);
+      if (!result.success) throw new Error(result.message || "The image could not be removed.");
+      setPreviewUrl("");
+      setFileName("");
+      onChange("");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "The image could not be removed.");
+    } finally { setBusy(false); }
   };
 
   return (

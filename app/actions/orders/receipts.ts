@@ -1,7 +1,7 @@
 "use server";
 
 import { requireModule } from "@/lib/portal/staff";
-import { confirmAndLink, FileError, requestUpload, resolveFile } from "@/lib/files";
+import { confirmAndLink, FileError, removeFile, requestUpload, resolveFile } from "@/lib/files";
 import { filesGateway } from "@/lib/gateway/files";
 import { purchaseOrderReceipt } from "@/lib/file-routes";
 import { recordAudit } from "@/lib/audit";
@@ -27,7 +27,7 @@ export async function requestReceiptUpload(poId: number, file: { filename: strin
   const staff = await requireModule(MODULE);
   try {
     await exists(poId);
-    const address = await requestUpload(filesGateway, staff, { kind: "receipt", ...file });
+    const address = await requestUpload(filesGateway, staff, { ...file, kind: "receipt" }, purchaseOrderReceipt, poId);
     return resourceResult({
       success: true,
       data: { fileId: address.id, uploadUrl: address.uploadUrl, uploadUrlExpiresInSeconds: address.uploadUrlExpiresInSeconds },
@@ -63,4 +63,12 @@ export async function resolveReceipt(poId: number) {
   } catch (error) {
     return refusal(error);
   }
+}
+
+export async function removeReceipt(poId: number) {
+  const staff = await requireModule(MODULE);
+  try {
+    await removeFile(filesGateway, staff, purchaseOrderReceipt, poId);
+    return resourceResult({ success: true });
+  } catch (error) { return refusal(error); }
 }

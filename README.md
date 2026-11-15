@@ -155,5 +155,19 @@ Username in Known Staff). Audit and notification failures are logged and never f
 action. Receipts are uploaded straight to file storage through `requestReceiptUpload` and
 `confirmReceiptUpload`.
 
+File uploads for products, batches and purchase orders replace an existing stored UUID in
+place, preserving the ID and other systems' references. Missing files (404), legacy paths
+and empty references start a new upload with an IMS record link attached immediately.
+File storage receives the Portal user ID (`staff.id`) as `X-Actor-Id`. Upload failures
+preserve the existing reference and are returned to the caller.
+
+`resolveFile` accepts a preferred `small`, `medium` or `large` image variant and falls back
+to the original when that variant is unavailable. `ProductionImage` and `FileImage` use
+`small` by default and accept a `variant` prop. Private file responses remain uncached.
+Image removal and record deletion remove the exact IMS link, preserving files other systems
+may still use. `filesGateway.deleteFile` deletes bytes for all consumers and must only be
+used when the caller knows the file is no longer shared; unlinking alone retains the bytes.
+`filesGateway.listByRecord` supports record filters, optional role and cursor pagination.
+
 `tests/orders-actions.test.ts` exercises every action's denial paths and every mutation's
 audit event, gateway failure, failed commit and notification with fake Portal/gateway boundaries.
