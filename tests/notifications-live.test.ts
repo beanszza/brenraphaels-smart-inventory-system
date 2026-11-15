@@ -31,8 +31,8 @@ it("opens one socket and refetches the feed on connect and on events", async () 
   expect(sockets).toHaveLength(1);
   sockets[0].onopen!();
   expect(onSync).toHaveBeenCalledTimes(1);
-  sockets[0].onmessage!({ data: JSON.stringify({ type: "notification.created" }) });
-  sockets[0].onmessage!({ data: JSON.stringify({ type: "notifications.read" }) });
+  sockets[0].onmessage!({ data: JSON.stringify({ type: "notification.created", notification: { id: "n1", type: "approval", title: "Ready", body: "Review", link: null, sendingApp: "IMS", targetApp: "IMS", userId: "ada", createdAt: "2026-11-01T00:00:00Z", readAt: null } }) });
+  sockets[0].onmessage!({ data: JSON.stringify({ type: "notifications.read", ids: ["n1"] }) });
   expect(onSync).toHaveBeenCalledTimes(3);
   sockets[0].onmessage!({ data: JSON.stringify({ type: "other" }) });
   sockets[0].onmessage!({ data: "not json" });

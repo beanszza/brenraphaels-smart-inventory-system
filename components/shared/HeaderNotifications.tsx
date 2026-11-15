@@ -7,9 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useStaff } from "@/context/StaffContext";
-import { getMyNotificationLiveUrl } from "@/app/actions/notifications";
-import { startLiveNotifications } from "@/lib/notifications/live";
 import { requestNotifications, type NotificationAction, type NotificationSnapshot } from "@/lib/notifications/client";
+import { getMyNotificationLiveTicket } from "@/app/actions/notifications";
+import { applyLiveEvent, needsLiveRefresh, startLiveNotifications, type LiveEvent } from "@/lib/notifications/live";
 
 export function NotificationSkeletons() {
   return <div aria-hidden="true" className="space-y-sm p-sm">{[0, 1, 2].map((key) =>
@@ -28,34 +28,61 @@ function StaffNotifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
-  const stale = useRef(false);
+  const refreshPending = useRef(false);
+  const confirmed = useRef<NotificationSnapshot | null>(null);
   const mounted = useRef(false);
-  const request = useCallback(async (action: NotificationAction = { type: "list" }) => {
-    if (busy.current) { if (action.type === "list") stale.current = true; return; }
+  const request = useCallback(async function execute(action: NotificationAction = { type: "list" }) {
+    if (busy.current) {
+      if (action.type === "list") refreshPending.current = true;
+      return;
+    }
     busy.current = true;
     setLoading(true);
     setError(null);
     try {
       const data = await requestNotifications(action);
-      if (mounted.current) setSnapshot(data);
+      if (mounted.current) {
+        confirmed.current = data;
+        setSnapshot(data);
+      }
     } catch {
       if (mounted.current) setError(action.type === "list" ? "Could not load notifications. Please retry." : "Could not mark notifications as read. Please retry.");
     } finally {
       busy.current = false;
       if (mounted.current) setLoading(false);
-      // A socket event that arrived mid-request still needs the newer feed.
-      if (stale.current && mounted.current) { stale.current = false; void request(); }
+      if (mounted.current && refreshPending.current) {
+        refreshPending.current = false;
+        void execute();
+      }
     }
   }, []);
 
   useEffect(() => {
     mounted.current = true;
-    // The socket refetches on every connect and event; there is no focus or interval refetch.
-    void request();
-    const stop = startLiveNotifications({ getUrl: getMyNotificationLiveUrl, onSync: () => { void request(); } });
+    const initialRefresh = window.setTimeout(() => { void request(); }, 0);
+    const onEvent = (event: LiveEvent) => {
+      if (!mounted.current) return;
+      // A push received during REST may be newer than its response. Re-fetch after
+      // that response instead of applying a push which the response could erase.
+      if (busy.current || !confirmed.current) { void request(); return; }
+      const previous = confirmed.current;
+      const next = applyLiveEvent(previous, event);
+      confirmed.current = next;
+      setSnapshot(next);
+      if (needsLiveRefresh(previous, event)) {
+        void request();
+      }
+    };
+    const stopLive = startLiveNotifications({
+      getTicket: getMyNotificationLiveTicket,
+      onCreated: (notification) => onEvent({ type: "notification.created", notification }),
+      onRead: (ids) => onEvent({ type: "notifications.read", ids }),
+      onSync: () => { void request(); },
+    });
     return () => {
       mounted.current = false;
-      stop();
+      window.clearTimeout(initialRefresh);
+      stopLive();
     };
   }, [request]);
 

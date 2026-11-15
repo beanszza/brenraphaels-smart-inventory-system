@@ -24,6 +24,7 @@ export type NotificationInput = {
 
 /** The notification half of the gateway as IMS uses it; replaced with a fake in tests. */
 export interface NotificationGatewayPort {
+  issueLiveTicket(userId: string): Promise<{ url: string; ticket: string }>;
   /** Sends one notification to each Portal user id, addressed to the app IMS. */
   send(userIds: string[], input: NotificationInput, signal: AbortSignal): Promise<void>;
   list(userId: string, options: { unreadOnly?: boolean; limit: number }): Promise<NotificationRecord[]>;
@@ -58,6 +59,26 @@ async function call(path: string, init: { method?: string; body?: unknown; signa
 const inbox = (userId: string) => new URLSearchParams({ userId, app: NOTIFICATION_APP });
 
 export const notificationGateway: NotificationGatewayPort = {
+  async issueLiveTicket(userId) {
+    const { base, key } = gateway();
+    const response = await fetch(`${base}/live-tickets`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+      redirect: "error",
+      cache: "no-store",
+      signal: AbortSignal.timeout(READ_TIMEOUT_MS),
+    });
+    if (!response.ok) throw new Error("Could not issue notification live ticket");
+    const body: unknown = await response.json();
+    if (!body || typeof body !== "object" || !("ticket" in body) || typeof body.ticket !== "string" || !body.ticket) {
+      throw new Error("Invalid notification live ticket");
+    }
+    const url = new URL(`${base}/notifications/live`);
+    if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error("Invalid gateway URL");
+    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    return { url: url.toString(), ticket: body.ticket };
+  },
   async send(userIds, input, signal) {
     await call("", {
       method: "POST",
@@ -90,19 +111,10 @@ export const notificationGateway: NotificationGatewayPort = {
   },
 };
 
-/** A short-lived, single-use Live ticket for one Staff member, as the browser's WebSocket address. */
+/** Compatibility URL for existing bell callers; credentials stay on the server. */
 export async function notificationLiveUrl(userId: string): Promise<string> {
-  const { base, key } = gateway();
-  const response = await fetch(`${base}/live-tickets`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ userId }),
-    cache: "no-store",
-    redirect: "error",
-    signal: AbortSignal.timeout(READ_TIMEOUT_MS),
-  });
-  if (!response.ok) throw new Error(`The gateway refused a Live ticket: ${response.status}`);
-  const { ticket } = (await response.json()) as { ticket?: unknown };
-  if (typeof ticket !== "string" || !ticket) throw new Error("The gateway returned no Live ticket");
-  return `${base.replace(/^http/, "ws")}/notifications/live?ticket=${encodeURIComponent(ticket)}`;
+  const { url, ticket } = await notificationGateway.issueLiveTicket(userId);
+  const address = new URL(url);
+  address.searchParams.set("ticket", ticket);
+  return address.toString();
 }
