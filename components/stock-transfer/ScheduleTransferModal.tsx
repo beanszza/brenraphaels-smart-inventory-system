@@ -2,15 +2,16 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { X, Calendar, MapPin, AlertCircle, Package, Truck, Phone, FileText, Upload, FileCheck, CheckCircle, AlertTriangle } from "lucide-react";
+import { X, AlertCircle, Upload, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 import { actionResponse } from "@/lib/resources/action-response";
 import { scheduleTransfer } from "@/app/actions/stock-transfer/transfers";
-import { StockTransferRequest, STRItem } from "./types";
+import { StockTransferRequest } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
+import { StockTransferConfirmModal } from "./StockTransferConfirmModal";
 
 interface ScheduleTransferModalProps {
   open: boolean;
@@ -18,6 +19,13 @@ interface ScheduleTransferModalProps {
   onSuccess: () => void;
   request: StockTransferRequest | null;
 }
+
+const ALLOWED_FILE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".pdf"];
+const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
+const NAME_PATTERN = /^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-.]+$/;
+const PLATE_PATTERN = /^[A-Za-z0-9\s\-]{1,10}$/;
+const BOOKING_REF_PATTERN = /^[A-Za-z0-9\-]{1,40}$/;
+const CONTACT_PATTERN = /^09\d{9}$/;
 
 const TRANSPORT_PROVIDERS = [
   "Company-owned Vehicle",
@@ -112,6 +120,27 @@ export function ScheduleTransferModal({
     .filter(Boolean)
     .join(" ");
 
+  const sanitizeNameInput = (val: string) => val.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s'\-.]/g, "");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const lowerName = file.name.toLowerCase();
+    const validExt = ALLOWED_FILE_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
+    if (!validExt) {
+      setFormError("Invalid file format. Please upload a JPG, PNG, or PDF file.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setFormError("File size exceeds the 8MB limit.");
+      e.target.value = "";
+      return;
+    }
+    setAttachmentFile(file);
+    setFormError(null);
+  };
+
   const handlePreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (loading || !request) return;
@@ -126,20 +155,61 @@ export function ScheduleTransferModal({
       setFormError("Please select a vehicle type.");
       return;
     }
-    if (!plateNumber.trim()) {
+    const trimmedPlate = plateNumber.trim();
+    if (!trimmedPlate) {
       setFormError("Plate number is required.");
       return;
     }
-    if (!driverFirstName.trim()) {
+    if (!PLATE_PATTERN.test(trimmedPlate)) {
+      setFormError("Plate number must contain only letters, numbers, spaces, or dashes (max 10 characters).");
+      return;
+    }
+    const trimmedBooking = bookingReference.trim();
+    if (trimmedBooking && !BOOKING_REF_PATTERN.test(trimmedBooking)) {
+      setFormError("Booking reference must contain only letters, numbers, or dashes.");
+      return;
+    }
+    const trimmedFirst = driverFirstName.trim();
+    if (!trimmedFirst) {
       setFormError("Driver first name is required.");
       return;
     }
-    if (!driverLastName.trim()) {
+    if (!NAME_PATTERN.test(trimmedFirst)) {
+      setFormError("Driver first name must contain only letters and valid name characters (no numbers).");
+      return;
+    }
+    const trimmedMiddle = driverMiddleName.trim();
+    if (trimmedMiddle && !NAME_PATTERN.test(trimmedMiddle)) {
+      setFormError("Driver middle name must contain only letters and valid name characters (no numbers).");
+      return;
+    }
+    const trimmedLast = driverLastName.trim();
+    if (!trimmedLast) {
       setFormError("Driver last name is required.");
       return;
     }
-    if (!driverContact.trim()) {
+    if (!NAME_PATTERN.test(trimmedLast)) {
+      setFormError("Driver last name must contain only letters and valid name characters (no numbers).");
+      return;
+    }
+    const trimmedContact = driverContact.trim();
+    if (!trimmedContact) {
       setFormError("Driver contact number is required.");
+      return;
+    }
+    if (!CONTACT_PATTERN.test(trimmedContact)) {
+      setFormError("Driver contact number must be a valid 11-digit PH mobile number starting with 09 (e.g., 09123456789).");
+      return;
+    }
+    if (transferFee.trim() !== "") {
+      const feeNum = Number(transferFee);
+      if (isNaN(feeNum) || feeNum < 0 || !/^\d+(\.\d{1,2})?$/.test(transferFee.trim())) {
+        setFormError("Transfer fee must be a valid non-negative amount (up to 2 decimal places).");
+        return;
+      }
+    }
+    if (!attachmentFile) {
+      setFormError("Proof of Booking / Transaction Receipt is required.");
       return;
     }
 
@@ -333,9 +403,6 @@ export function ScheduleTransferModal({
                             {item.suggestedLots.map((lot, lIdx) => (
                               <div key={lIdx} className="text-[11px]">
                                 <span className="font-semibold text-foreground">{formatDateDisplay(lot.expiryDate)}</span>
-                                <span className="ml-1.5 inline-block bg-muted px-1.5 py-0.2 rounded text-[10px] font-semibold">
-                                  {lot.qty} pcs
-                                </span>
                                 <span className="block text-[10px] text-muted-foreground font-mono">Lot: {lot.lotCode}</span>
                               </div>
                             ))}
@@ -401,7 +468,11 @@ export function ScheduleTransferModal({
                 </label>
                 <Input
                   value={plateNumber}
-                  onChange={(e) => setPlateNumber(e.target.value)}
+                  maxLength={10}
+                  onChange={(e) => {
+                    setPlateNumber(e.target.value.replace(/[^A-Za-z0-9\s\-]/g, "").slice(0, 10));
+                    setFormError(null);
+                  }}
                   placeholder="Enter Plate Number"
                   className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
                 />
@@ -414,7 +485,11 @@ export function ScheduleTransferModal({
                 </label>
                 <Input
                   value={bookingReference}
-                  onChange={(e) => setBookingReference(e.target.value)}
+                  maxLength={40}
+                  onChange={(e) => {
+                    setBookingReference(e.target.value.replace(/[^A-Za-z0-9\-]/g, "").slice(0, 40));
+                    setFormError(null);
+                  }}
                   placeholder="Enter Booking Reference"
                   className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
                 />
@@ -433,7 +508,11 @@ export function ScheduleTransferModal({
                 </label>
                 <Input
                   value={driverFirstName}
-                  onChange={(e) => setDriverFirstName(e.target.value)}
+                  maxLength={50}
+                  onChange={(e) => {
+                    setDriverFirstName(sanitizeNameInput(e.target.value));
+                    setFormError(null);
+                  }}
                   placeholder="Enter First Name"
                   className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
                 />
@@ -446,7 +525,11 @@ export function ScheduleTransferModal({
                 </label>
                 <Input
                   value={driverMiddleName}
-                  onChange={(e) => setDriverMiddleName(e.target.value)}
+                  maxLength={50}
+                  onChange={(e) => {
+                    setDriverMiddleName(sanitizeNameInput(e.target.value));
+                    setFormError(null);
+                  }}
                   placeholder="Enter Middle Name"
                   className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
                 />
@@ -459,7 +542,11 @@ export function ScheduleTransferModal({
                 </label>
                 <Input
                   value={driverLastName}
-                  onChange={(e) => setDriverLastName(e.target.value)}
+                  maxLength={50}
+                  onChange={(e) => {
+                    setDriverLastName(sanitizeNameInput(e.target.value));
+                    setFormError(null);
+                  }}
                   placeholder="Enter Last Name"
                   className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
                 />
@@ -473,9 +560,14 @@ export function ScheduleTransferModal({
                   Driver Contact Number <span className="text-destructive">*</span>
                 </label>
                 <Input
+                  inputMode="numeric"
+                  maxLength={11}
                   value={driverContact}
-                  onChange={(e) => setDriverContact(e.target.value)}
-                  placeholder="Enter Contact Number"
+                  onChange={(e) => {
+                    setDriverContact(e.target.value.replace(/\D/g, "").slice(0, 11));
+                    setFormError(null);
+                  }}
+                  placeholder="09XXXXXXXXX"
                   className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
                 />
               </div>
@@ -492,7 +584,10 @@ export function ScheduleTransferModal({
                     step="0.01"
                     min="0"
                     value={transferFee}
-                    onChange={(e) => setTransferFee(e.target.value)}
+                    onChange={(e) => {
+                      setTransferFee(e.target.value);
+                      setFormError(null);
+                    }}
                     placeholder="Enter Amount"
                     className="h-10 pl-7 rounded-xl bg-card border-border text-foreground text-xs"
                   />
@@ -504,8 +599,9 @@ export function ScheduleTransferModal({
           {/* Proof of Booking / Transaction Receipt */}
           <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">Proof of Booking / Transaction Receipt</h3>
-              <span className="text-[10px] font-semibold text-muted-foreground">Optional</span>
+              <h3 className="text-sm font-bold text-foreground">
+                Proof of Booking / Transaction Receipt <span className="text-destructive">*</span>
+              </h3>
             </div>
             <p className="text-xs text-muted-foreground">
               Attach an image proof of receipt, Lalamove/Grab booking screenshot, or delivery transaction document.
@@ -514,11 +610,7 @@ export function ScheduleTransferModal({
               ref={fileInputRef}
               type="file"
               accept=".jpg,.jpeg,.png,.pdf"
-              onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  setAttachmentFile(e.target.files[0]);
-                }
-              }}
+              onChange={handleFileChange}
               className="hidden"
             />
             <div
@@ -569,6 +661,7 @@ export function ScheduleTransferModal({
               value={schedulingRemarks}
               onChange={(e) => setSchedulingRemarks(e.target.value)}
               placeholder="Enter additional scheduling instructions or remarks (Optional)..."
+              maxLength={250}
               rows={3}
               className="rounded-xl bg-card border-border text-foreground text-xs"
             />
@@ -596,57 +689,18 @@ export function ScheduleTransferModal({
 
         {/* Confirmation Modal Overlay */}
         {showConfirm && (
-          <div
-            className="font-sans fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-            onClick={() => {
+          <StockTransferConfirmModal
+            open={showConfirm}
+            title="Schedule Stock Transfer"
+            subtitle={`Request No: ${request.requestNumber}`}
+            description={`Are you sure you want to schedule this transfer of ${totalRequestedQty} units to ${request.toLocationName} with driver ${fullDriverName} via ${transportProvider}?`}
+            confirmText={loading ? "Scheduling..." : "Confirm & Schedule"}
+            loading={loading}
+            onCancel={() => {
               if (!loading) setShowConfirm(false);
             }}
-          >
-            <div
-              role="alertdialog"
-              aria-modal="true"
-              style={{ width: "100%", maxWidth: "440px" }}
-              className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0 outline-none animate-in fade-in zoom-in-95 duration-150"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
-                  <CheckCircle className="w-6 h-6" />
-                </div>
-
-                <h2 className="text-xl font-bold text-foreground mb-1">
-                  Schedule Stock Transfer
-                </h2>
-
-                <p className="text-xs font-semibold text-muted-foreground mb-3 font-mono">
-                  Request No: {request.requestNumber}
-                </p>
-
-                <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                  Are you sure you want to schedule this transfer of <strong className="text-foreground">{totalRequestedQty} units</strong> to <strong className="text-foreground">{request.toLocationName}</strong> with driver <strong className="text-foreground">{fullDriverName}</strong> via <strong className="text-foreground">{transportProvider}</strong>?
-                </p>
-
-                <div className="flex justify-center gap-3 w-full">
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm(false)}
-                    disabled={loading}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleExecuteSchedule}
-                    disabled={loading}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold text-background bg-foreground hover:bg-foreground/85 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50"
-                  >
-                    {loading ? "Scheduling..." : "Confirm & Schedule"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+            onConfirm={handleExecuteSchedule}
+          />
         )}
       </div>
     </div>,

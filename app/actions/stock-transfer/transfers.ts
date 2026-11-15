@@ -6,6 +6,7 @@ import { resourceResult } from "@/lib/resources/result";
 import { read, mutate, refuse, positiveId, validateInput, saved, safeIsoDate } from "@/lib/stock-transfer/operations";
 import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
 import { resolveStaffName } from "@/lib/orders/dto";
+import { isAdminStaff } from "@/lib/auth-roles";
 
 const TRANSFER_INCLUDE = {
   FinishedProducts: { include: { Items: true } },
@@ -129,6 +130,9 @@ export async function scheduleTransfer(body: any = {}) {
   await ensureUbeJamHavaneroStock();
   const staff = await requireModule("Stock Transfer");
   return mutate(staff, async (tx) => {
+    if (isAdminStaff(staff)) {
+      return refuse("Admin accounts have view and approval access only and cannot schedule stock transfers.");
+    }
     validateInput(body);
     const {
       requestId,
@@ -143,6 +147,44 @@ export async function scheduleTransfer(body: any = {}) {
 
     if (!requestId || !productId || !transferQuantity || !scheduledDate) {
       return refuse("Request ID, Product, Quantity, and Scheduled Date are required.");
+    }
+
+    if (driverName !== undefined && driverName !== null && String(driverName).trim() !== "") {
+      if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-.]+$/.test(String(driverName).trim())) {
+        return refuse("Driver name must contain only letters and valid name characters (no numbers).");
+      }
+    }
+
+    if (vehiclePlate !== undefined && vehiclePlate !== null && String(vehiclePlate).trim() !== "") {
+      if (!/^[A-Za-z0-9\s\-]{1,10}$/.test(String(vehiclePlate).trim())) {
+        return refuse("Plate number must contain only letters, numbers, spaces, or dashes (max 10 characters).");
+      }
+    }
+
+    if (notes && typeof notes === "string") {
+      let parsedNotes: any = null;
+      try {
+        parsedNotes = JSON.parse(notes);
+      } catch {
+        parsedNotes = null;
+      }
+      if (parsedNotes && typeof parsedNotes === "object") {
+        if (parsedNotes.driverContact && !/^09\d{9}$/.test(String(parsedNotes.driverContact).trim())) {
+          return refuse("Driver contact number must be a valid 11-digit PH mobile number starting with 09.");
+        }
+        if (parsedNotes.bookingReference && !/^[A-Za-z0-9\-]{1,40}$/.test(String(parsedNotes.bookingReference).trim())) {
+          return refuse("Booking reference must contain only letters, numbers, or dashes.");
+        }
+        if (parsedNotes.transferFee !== undefined && parsedNotes.transferFee !== null && parsedNotes.transferFee !== "") {
+          const feeNum = Number(parsedNotes.transferFee);
+          if (!Number.isFinite(feeNum) || feeNum < 0) {
+            return refuse("Transfer fee must be a valid non-negative number.");
+          }
+        }
+        if ("attachmentName" in parsedNotes && !parsedNotes.attachmentName) {
+          return refuse("Proof of Booking / Transaction Receipt is required.");
+        }
+      }
     }
 
     const str = await tx.stockTransferRequests.findUnique({

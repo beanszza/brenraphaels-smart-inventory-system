@@ -4,10 +4,15 @@ import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId, validateInput, saved } from "@/lib/stock-transfer/operations";
 import { notifyRequester } from "@/lib/stock-transfer/notify";
+import { isImsManager, isQaStaff, isHeadCook } from "@/lib/auth-roles";
+
 export async function reviewRequest(idInput: number, body: any = {}) {
   const staff = await requireModule("Stock Transfer");
   return mutate(staff, async (tx) => {
-validateInput(body);
+    if (isImsManager(staff) || isQaStaff(staff) || isHeadCook(staff)) {
+      return refuse("Only an Admin can approve or reject a stock transfer request.");
+    }
+    validateInput(body);
     const requestId = positiveId(idInput);
     if (isNaN(requestId)) {
       return refuse("Invalid request ID.");

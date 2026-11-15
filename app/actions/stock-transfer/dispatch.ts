@@ -5,17 +5,59 @@ import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId, validateInput, saved } from "@/lib/stock-transfer/operations";
 import { dispatchTransferManifestToPos } from "@/lib/pos/client";
 import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
+import { isAdminStaff } from "@/lib/auth-roles";
+import { getTodayDateString } from "@/lib/date-limits";
 
 export async function dispatchTransfer(idInput: number, body: any = {}) {
   await ensureUbeJamHavaneroStock();
   const staff = await requireModule("Stock Transfer");
   return mutate(staff, async (tx) => {
+    if (isAdminStaff(staff)) {
+      return refuse("Admin accounts have view and approval access only and cannot dispatch stock transfers.");
+    }
     validateInput(body);
     const transferId = positiveId(idInput);
     if (isNaN(transferId)) {
       return refuse("Invalid transfer ID.");
     }
-    const { driverName, vehiclePlate, courierName, notes } = body;
+    const { driverName, vehiclePlate, courierName, actualDispatchDate, actualDispatchTime, proofFileName, notes } = body;
+
+    if (actualDispatchDate !== undefined && actualDispatchDate !== null) {
+      const dateStr = String(actualDispatchDate).split("T")[0];
+      const todayStr = getTodayDateString();
+      if (dateStr < todayStr) {
+        return refuse("Actual dispatch date cannot be in the past.");
+      }
+    }
+
+    if ("proofFileName" in body && !String(proofFileName || "").trim()) {
+      return refuse("Dispatch proof document or photo is required.");
+    }
+
+    let finalNotes = notes;
+    if (notes && typeof notes === "string") {
+      let parsed: any = null;
+      try {
+        parsed = JSON.parse(notes);
+      } catch {
+        parsed = null;
+      }
+      if (parsed && typeof parsed === "object") {
+        if ("proofFileName" in parsed && !String(parsed.proofFileName || "").trim()) {
+          return refuse("Dispatch proof document or photo is required.");
+        }
+        if (parsed.actualDispatchDate) {
+          const dStr = String(parsed.actualDispatchDate).split("T")[0];
+          if (dStr < getTodayDateString()) {
+            return refuse("Actual dispatch date cannot be in the past.");
+          }
+        }
+        parsed.releasedBy = staff.name?.trim() || staff.username;
+        delete parsed.odometerReading;
+        delete parsed.vehicleSealNumber;
+        finalNotes = JSON.stringify(parsed);
+      }
+    }
 
     const transfer = await tx.stockTransfers.findUnique({
       where: { TransferId: transferId },
@@ -205,7 +247,7 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
         DriverName: driverName || transfer.DriverName,
         VehiclePlate: vehiclePlate || transfer.VehiclePlate,
         CourierName: courierName || transfer.CourierName,
-        Notes: notes ? (transfer.Notes ? `${transfer.Notes} | ${notes}` : notes) : transfer.Notes,
+        Notes: finalNotes ? (transfer.Notes ? `${transfer.Notes} | ${finalNotes}` : finalNotes) : transfer.Notes,
       },
     });
 

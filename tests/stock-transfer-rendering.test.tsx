@@ -131,7 +131,7 @@ it("renders DispatchTransferModal without throwing", () => {
   expect(html).toBeDefined();
 });
 
-it("hides Target Date and Courier / Driver columns in STRTable based on activeStatusTab", () => {
+it("hides Target Date on all tabs and shows Courier / Driver only on Scheduled and Dispatched in STRTable", () => {
   const row = {
     requestId: 3,
     requestNumber: "STR-2026-0099",
@@ -142,15 +142,15 @@ it("hides Target Date and Courier / Driver columns in STRTable based on activeSt
     transfers: [{ transferId: 1, transferNumber: "STF-1", courierName: "Lalamove", scheduledDate: "2026-11-24T00:00:00Z", status: "Scheduled" }],
   } as unknown as StockTransferRequest;
 
-  const approvedHtml = renderToStaticMarkup(<STRTable requests={[row]} loading={false} activeStatusTab="Approved" onView={vi.fn()} />);
-  expect(approvedHtml).toContain("TARGET DATE");
-  expect(approvedHtml).not.toContain("COURIER / DRIVER");
+  for (const tab of ["All", "Requests", "Pending Approval", "Approved", "Completed", "Cancelled", "Rejected"]) {
+    const html = renderToStaticMarkup(<STRTable requests={[row]} loading={false} activeStatusTab={tab} onView={vi.fn()} />);
+    expect(html).not.toContain("TARGET DATE");
+    expect(html).not.toContain("COURIER / DRIVER");
+  }
 
-  const scheduledHtml = renderToStaticMarkup(<STRTable requests={[row]} loading={false} activeStatusTab="Scheduled" onView={vi.fn()} />);
-  expect(scheduledHtml).not.toContain("TARGET DATE");
-  expect(scheduledHtml).toContain("COURIER / DRIVER");
-
-  const rejectedHtml = renderToStaticMarkup(<STRTable requests={[row]} loading={false} activeStatusTab="Rejected" onView={vi.fn()} />);
-  expect(rejectedHtml).not.toContain("TARGET DATE");
-  expect(rejectedHtml).not.toContain("COURIER / DRIVER");
+  for (const tab of ["Scheduled", "Dispatched"]) {
+    const html = renderToStaticMarkup(<STRTable requests={[row]} loading={false} activeStatusTab={tab} onView={vi.fn()} />);
+    expect(html).not.toContain("TARGET DATE");
+    expect(html).toContain("COURIER / DRIVER");
+  }
 });

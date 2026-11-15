@@ -2,7 +2,7 @@
 
 import React from "react";
 import { TransferSkeleton } from "./TransferSkeleton";
-import { Eye, Check, X, Truck, MoreHorizontal, Ban, Send } from "lucide-react";
+import { Eye, MoreHorizontal } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransferRequest } from "./types";
 import {
@@ -25,34 +25,15 @@ interface STRTableProps {
   onCancel?: (req: StockTransferRequest) => void;
 }
 
-const HIDE_TARGET_DATE_TABS = new Set([
-  "Scheduled",
-  "Dispatched",
-  "Cancelled",
-  "Rejected",
-]);
-
-const HIDE_COURIER_TABS = new Set([
-  "Requests",
-  "Pending Approval",
-  "Approved",
-  "Rejected",
-]);
+const SHOW_COURIER_TABS = new Set(["Scheduled", "Dispatched"]);
 
 export function STRTable({
   requests,
   loading,
-  isAdmin = false,
   activeStatusTab = "All",
   onView,
-  onApprove,
-  onReject,
-  onSchedule,
-  onDispatch,
-  onCancel,
 }: STRTableProps) {
-  const showTargetDate = !HIDE_TARGET_DATE_TABS.has(activeStatusTab);
-  const showCourier = !HIDE_COURIER_TABS.has(activeStatusTab);
+  const showCourier = SHOW_COURIER_TABS.has(activeStatusTab);
 
   if (loading) return <TransferSkeleton />;
 
@@ -75,9 +56,6 @@ export function STRTable({
               <th className="px-5 py-3.5 whitespace-nowrap">PRODUCT</th>
               <th className="px-5 py-3.5 whitespace-nowrap">VARIANT</th>
               <th className="px-5 py-3.5 text-right whitespace-nowrap">QTY</th>
-              {showTargetDate && (
-                <th className="px-5 py-3.5 whitespace-nowrap">TARGET DATE</th>
-              )}
               {showCourier && (
                 <th className="px-5 py-3.5 whitespace-nowrap">COURIER / DRIVER</th>
               )}
@@ -87,22 +65,12 @@ export function STRTable({
           </thead>
           <tbody className="divide-y divide-border">
             {requests.map((req) => {
-              const isPending = req.status === "Pending Approval";
-              const isApproved = req.status === "Approved";
               const hasScheduledTransfer = req.transfers?.some((t) => t.status === "Scheduled") ?? false;
-              const isDispatched = req.status === "Dispatched" || req.status === "Completed";
-              const isCancelled = req.status === "Cancelled" || req.status === "Rejected";
 
               const transferRef = req.transfers && req.transfers.length > 0 ? req.transfers[0] : null;
 
               const totalQty = req.items?.reduce((sum, i) => sum + i.requestedQuantity, 0) || 0;
               const firstItem = req.items?.[0];
-
-              const targetDate = transferRef?.scheduledDate
-                ? new Date(transferRef.scheduledDate).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
-                : req.requiredDate
-                ? new Date(req.requiredDate).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
-                : "—";
 
               const courierDriver = transferRef?.courierName
                 ? transferRef.courierName
@@ -158,13 +126,6 @@ export function STRTable({
                     {totalQty}
                   </td>
 
-                  {/* Target Date */}
-                  {showTargetDate && (
-                    <td className="px-5 py-4 text-muted-foreground whitespace-nowrap">
-                      {targetDate}
-                    </td>
-                  )}
-
                   {/* Courier / Driver */}
                   {showCourier && (
                     <td className="px-5 py-4 text-muted-foreground whitespace-nowrap">
@@ -182,7 +143,7 @@ export function STRTable({
                     <StatusBadge status={hasScheduledTransfer ? "Scheduled" : req.status} />
                   </td>
 
-                  {/* Actions (Three dots Menu) */}
+                  {/* Actions (Three dots Menu - View Details only) */}
                   <td
                     className="px-5 py-4 text-center whitespace-nowrap"
                     onClick={(e) => e.stopPropagation()}
@@ -198,7 +159,6 @@ export function STRTable({
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48 z-[200]">
-                        {/* View Details */}
                         <DropdownMenuItem
                           onClick={() => onView(req)}
                           className="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs font-medium"
@@ -206,62 +166,6 @@ export function STRTable({
                           <Eye className="w-4 h-4 text-muted-foreground" />
                           <span>View Details</span>
                         </DropdownMenuItem>
-
-                        {/* Admin-only Approve / Reject */}
-                        {isAdmin && isPending && (
-                          <>
-                            {onApprove && (
-                              <DropdownMenuItem
-                                onClick={() => onApprove(req)}
-                                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs font-semibold text-foreground"
-                              >
-                                <Check className="w-4 h-4 text-foreground" />
-                                <span>Approve Request</span>
-                              </DropdownMenuItem>
-                            )}
-                            {onReject && (
-                              <DropdownMenuItem
-                                onClick={() => onReject(req)}
-                                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs font-semibold text-destructive"
-                              >
-                                <X className="w-4 h-4 text-destructive" />
-                                <span>Reject Request</span>
-                              </DropdownMenuItem>
-                            )}
-                          </>
-                        )}
-
-                        {/* Inventory Manager: Schedule Transfer */}
-                        {isApproved && onSchedule && (
-                          <DropdownMenuItem
-                            onClick={() => onSchedule(req)}
-                            className="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs font-semibold text-foreground"
-                          >
-                            <span>Schedule Transfer</span>
-                          </DropdownMenuItem>
-                        )}
-
-                        {/* Inventory Manager: Dispatch Transfer */}
-                        {hasScheduledTransfer && onDispatch && (
-                          <DropdownMenuItem
-                            onClick={() => onDispatch(req)}
-                            className="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs font-semibold text-foreground"
-                          >
-                            <Send className="w-4 h-4 text-foreground" />
-                            <span>Dispatch Transfer</span>
-                          </DropdownMenuItem>
-                        )}
-
-                        {/* Cancel (only if not dispatched / not cancelled) */}
-                        {!isDispatched && !isCancelled && onCancel && (
-                          <DropdownMenuItem
-                            onClick={() => onCancel(req)}
-                            className="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs font-medium text-muted-foreground hover:text-destructive"
-                          >
-                            <Ban className="w-4 h-4" />
-                            <span>Cancel Request</span>
-                          </DropdownMenuItem>
-                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>

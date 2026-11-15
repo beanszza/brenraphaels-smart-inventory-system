@@ -28,7 +28,7 @@ import { ScheduleTransferModal } from "./ScheduleTransferModal";
 import { DispatchTransferModal } from "./DispatchTransferModal";
 import { STRActionModal } from "./STRActionModal";
 import Pagination from "@/components/Pagination";
-import { useIsAdmin } from "@/context/StaffContext";
+import { useIsAdmin, useIsImsManager } from "@/context/StaffContext";
 
 const STATUS_TABS = [
   "All",
@@ -44,6 +44,8 @@ const STATUS_TABS = [
 export default function StockTransferModule({ requests, metrics, locations, activeMainTab }: StockTransferScreen & { activeMainTab: "transfers" | "locations" }) {
   const router = useRouter();
   const isAdmin = useIsAdmin();
+  const isImsManager = useIsImsManager();
+  const canOperate = !isAdmin;
   const [loading, startTransition] = useTransition();
   const refreshAll = () => startTransition(() => router.refresh());
 
@@ -130,13 +132,19 @@ export default function StockTransferModule({ requests, metrics, locations, acti
     const { request, type } = strAction;
 
     if (type === "approve" || type === "reject") {
-      await actionResponse(reviewRequest(request.requestId, {
+      const res = await actionResponse(reviewRequest(request.requestId, {
         action: type === "approve" ? "Approve" : "Reject", adminNotes: notes,
       }));
+      if (!res.data?.success) {
+        throw new Error(res.data?.message || "Unable to review request.");
+      }
       toast.success(type === "approve" ? "Request approved successfully." : "Request rejected.");
     } else {
-      await actionResponse(cancelRequest(request.requestId, { reason: notes }));
-      toast.success("Request cancelled successfully.");
+      const res = await actionResponse(cancelRequest(request.requestId, { reason: notes }));
+      if (!res.data?.success) {
+        throw new Error(res.data?.message || "Unable to cancel request.");
+      }
+      toast.success("Request cancelled successfully and reserved stock released.");
     }
     refreshAll();
   };
@@ -195,13 +203,15 @@ export default function StockTransferModule({ requests, metrics, locations, acti
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </Button>
 
-            <Button
-              type="button"
-              onClick={() => setOpenCreateSTR(true)}
-              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" /> Create Transfer Request
-            </Button>
+            {canOperate && (
+              <Button
+                type="button"
+                onClick={() => setOpenCreateSTR(true)}
+                className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Create Transfer Request
+              </Button>
+            )}
           </div>
         }
       />
@@ -393,15 +403,20 @@ export default function StockTransferModule({ requests, metrics, locations, acti
         request={selectedSTRForDetails}
         open={!!selectedSTRForDetails}
         isAdmin={isAdmin}
+        isImsManager={isImsManager || canOperate}
         onClose={() => setSelectedSTRForDetails(null)}
-        onApprove={(req) => setStrAction({ request: req, type: "approve" })}
-        onReject={(req) => setStrAction({ request: req, type: "reject" })}
-        onSchedule={(req) => {
-          setSelectedSTRForDetails(null);
-          setScheduleTargetReq(req);
-        }}
-        onDispatch={(req, transferId) => handleOpenDispatch(req, transferId)}
-        onCancel={(req) => setStrAction({ request: req, type: "cancel" })}
+        onApprove={isAdmin ? (req) => setStrAction({ request: req, type: "approve" }) : undefined}
+        onReject={isAdmin ? (req) => setStrAction({ request: req, type: "reject" }) : undefined}
+        onSchedule={
+          canOperate
+            ? (req) => {
+                setSelectedSTRForDetails(null);
+                setScheduleTargetReq(req);
+              }
+            : undefined
+        }
+        onDispatch={canOperate ? (req, transferId) => handleOpenDispatch(req, transferId) : undefined}
+        onCancel={canOperate ? (req) => setStrAction({ request: req, type: "cancel" }) : undefined}
       />
 
       {/* 5. STR Action Confirmation Modal (Approve / Reject / Cancel) */}

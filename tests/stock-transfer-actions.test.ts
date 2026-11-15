@@ -19,7 +19,11 @@ import AnalyticsPage from "@/app/(root)/distribution-analytics/page";
 const fake = vi.hoisted(() => ({
   signed: true, decision: "allowed", open: false, commitFails: false, gatewayFails: false,
   requestStatus: "Approved", transferStatus: "Scheduled", lotsEmpty: false, knownMissing: false,
-  lotRemaining: 20, lotReserved: 2, totalScheduled: 0, dataAccess: vi.fn(), lotQuery: vi.fn(),
+  lotRemaining: 20, lotReserved: 2, totalScheduled: 0, lastSeq: 1,
+  staffRole: "generic" as "generic" | "admin" | "ims",
+  requestTransfers: [] as { Status: string }[],
+  requestSuggestedLots: [{ lotId: 1, lotCode: "LOT-1", expiryDate: null, qty: 10 }] as unknown[],
+  dataAccess: vi.fn(), lotQuery: vi.fn(),
   pending: [] as { model: string; data: Record<string, unknown> }[],
   committed: [] as { model: string; data: Record<string, unknown> }[],
   written: [] as AuditEventInput[], sent: [] as { ids: string[]; input: NotificationInput }[],
@@ -42,28 +46,42 @@ vi.mock("@/lib/gateway/notifications", () => ({ SEND_TIMEOUT_MS: 3000, notificat
 vi.mock("@/lib/prisma", () => {
   const product = { ProductId: 1, ItemId: 1, Items: { ItemName: "Jam" }, Sku: "JAM", Variant: "Regular" };
   const location = { LocationId: 1, LocationName: "Commissary", IsSystemLocation: true };
-  const item = { ProductId: 1, RequestedQuantity: 10, AvailableQuantity: 20, FinishedProducts: product };
   const row = (model: string): Record<string, unknown> => ({
-    RequestId: 1, RequestNumber: "STR-1", TransferId: 1, TransferNumber: "STF-1", ProductId: 1,
+    RequestId: 1, RequestNumber: "STR-2026-0001", TransferId: 1, TransferNumber: "STF-1", ProductId: 1,
     RequestedBy: "requester", CreatedBy: "creator", ToLocationId: 2, SourceLocationId: 1, DestLocationId: 2,
-    TransferQuantity: 5, CurrentStock: 20, LastNumber: 1, Locations: location, FinishedProducts: product,
+    TransferQuantity: 5, CurrentStock: 20, LastNumber: fake.lastSeq, Locations: location, FinishedProducts: product,
     RequestDate: new Date(), RequiredDate: new Date(), CreatedAt: new Date(),
-    StockTransferRequestItems: [item], StockTransfers: [],
+    LotId: 1, LotCode: "LOT-1", QuantityRemaining: fake.lotRemaining, ReservedQuantity: fake.lotReserved,
+    StockTransferRequestItems: [{ ProductId: 1, RequestedQuantity: 10, AvailableQuantity: 20, SuggestedLots: fake.requestSuggestedLots, FinishedProducts: product }],
+    StockTransfers: fake.requestTransfers,
     Status: model === "stockTransferRequests" ? fake.requestStatus : fake.transferStatus,
     ...(model === "finishedProducts" ? product : model === "locations" ? location : {}),
   });
   const write = (model: string, data: Record<string, unknown>) => {
+    if (model === "inventoryLots" && data.ReservedQuantity && typeof data.ReservedQuantity === "object") {
+      const rq = data.ReservedQuantity as { increment?: number; decrement?: number };
+      if (typeof rq.increment === "number") fake.lotReserved += rq.increment;
+      if (typeof rq.decrement === "number") fake.lotReserved = Math.max(0, fake.lotReserved - rq.decrement);
+    }
     (fake.open ? fake.pending : fake.committed).push({ model, data });
     return { ...row(model), ...data };
   };
   const model = (name: string) => ({
-    findUnique: async () => row(name),
+    findUnique: async (args?: { where?: { RequestNumber?: string } }) => {
+      if (name === "stockTransferRequests" && args?.where?.RequestNumber && args.where.RequestNumber !== "STR-2026-0001") {
+        return null;
+      }
+      return row(name);
+    },
     findFirst: async () => name === "knownStaff" ? fake.knownMissing ? null : { StaffId: "requester-id" } : row(name),
     findMany: async (args?: unknown) => {
       if (name === "knownStaff") return [{ StaffId: "actor-id", Modules: ["Stock Transfer"] }, { StaffId: "approver-id", Modules: ["Stock Transfer"] }];
       if (name === "inventoryLots") {
         fake.lotQuery(args);
         return fake.lotsEmpty ? [] : [{ LotId: 1, LotCode: "LOT-1", QuantityRemaining: fake.lotRemaining, ReservedQuantity: fake.lotReserved }];
+      }
+      if (name === "stockTransferRequestItems") {
+        return [{ RequestItemId: 1, ProductId: 1, RequestedQuantity: 10, AvailableQuantity: 20, SuggestedLots: fake.requestSuggestedLots, FinishedProducts: product }];
       }
       return [row(name)];
     },
@@ -72,7 +90,14 @@ vi.mock("@/lib/prisma", () => {
     create: async ({ data }: { data: Record<string, unknown> }) => write(name, data),
     update: async ({ data }: { data: Record<string, unknown> }) => write(name, data),
     updateMany: async ({ data }: { data: Record<string, unknown> }) => { write(name, data); return { count: 1 }; },
-    upsert: async () => { write(name, {}); return { LastNumber: 1 }; },
+    upsert: async (args?: { update?: { LastNumber?: { increment?: number; set?: number } } }) => {
+      if (name === "documentSequences") {
+        if (args?.update?.LastNumber?.increment) fake.lastSeq += args.update.LastNumber.increment;
+        else if (typeof args?.update?.LastNumber?.set === "number") fake.lastSeq = args.update.LastNumber.set;
+      }
+      write(name, (args?.update as Record<string, unknown>) || {});
+      return { LastNumber: fake.lastSeq };
+    },
   });
   const tx = new Proxy({}, { get: (_, key: string) => { fake.dataAccess(key); return model(key); } });
   return { prisma: new Proxy({}, { get: (_, key: string) => {
@@ -91,13 +116,19 @@ vi.mock("@/lib/prisma", () => {
 beforeEach(() => {
   Object.assign(fake, { signed: true, decision: "allowed", open: false, commitFails: false, gatewayFails: false,
     requestStatus: "Approved", transferStatus: "Scheduled", lotsEmpty: false, knownMissing: false, lotRemaining: 20, lotReserved: 2, totalScheduled: 0,
+    lastSeq: 1, staffRole: "generic", requestTransfers: [], requestSuggestedLots: [{ lotId: 1, lotCode: "LOT-1", expiryDate: null, qty: 10 }],
     pending: [], committed: [], written: [], sent: [] });
   fake.dataAccess.mockClear(); fake.lotQuery.mockClear();
   vi.stubEnv("IMS_DEV_BYPASS", "false"); vi.stubEnv("PORTAL_URL", "https://portal.test"); vi.stubEnv("PORTAL_SYSTEM_SECRET", "secret"); vi.stubEnv("IMS_APP_URL", "https://localhost:3003");
   vi.stubGlobal("fetch", async (_url: unknown, init?: RequestInit) => {
     expect(JSON.parse(String(init?.body)).module).toBe("Stock Transfer");
     if (fake.decision !== "allowed") return Response.json({ error: fake.decision === "invalid" ? "invalid_handle" : fake.decision }, { status: fake.decision === "invalid" ? 401 : fake.decision === "denied" ? 403 : 503 });
-    return Response.json({ active: true, user_id: "actor-id", system: "IMS", module: "Stock Transfer", staff: { name: "Ada", username: "actor-username", email: "ada@example.test" } });
+    const staff = fake.staffRole === "admin"
+      ? { name: "Jude Nitram", username: "2026-ADMIN-001", email: "jude.nitram08@gmail.com" }
+      : fake.staffRole === "ims"
+      ? { name: "Vince Neil Madeja", username: "2026-VM-007", email: "madejavinceneil@gmail.com" }
+      : { name: "Ada", username: "actor-username", email: "ada@example.test" };
+    return Response.json({ active: true, user_id: "actor-id", system: "IMS", module: "Stock Transfer", staff });
   });
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
@@ -211,4 +242,111 @@ it("received transfers cannot be received again", async () => {
   fake.transferStatus = "Received";
   expect(await updateTransferStatus(1, { status: "Received" })).toMatchObject({ success: false });
   expect(fake.committed).toHaveLength(0); expect(fake.written).toHaveLength(0);
+});
+
+it("refuses Admin on create, schedule, dispatch, and cancel, while allowing review", async () => {
+  fake.staffRole = "admin";
+  expect(await requests.createRequest(requestInput)).toMatchObject({ success: false });
+  expect(await transfers.scheduleTransfer(scheduleInput)).toMatchObject({ success: false });
+  expect(await dispatchTransfer(1)).toMatchObject({ success: false });
+  expect(await cancelRequest(1, { reason: "Admin attempt" })).toMatchObject({ success: false });
+  expect(fake.committed).toHaveLength(0);
+
+  fake.requestStatus = "Pending Approval";
+  expect(await reviewRequest(1, { action: "Approve" })).toMatchObject({ success: true });
+});
+
+it("refuses IMS Manager on approve/reject review", async () => {
+  fake.staffRole = "ims";
+  fake.requestStatus = "Pending Approval";
+  expect(await reviewRequest(1, { action: "Approve" })).toMatchObject({ success: false });
+  expect(await reviewRequest(1, { action: "Reject", adminNotes: "Reason" })).toMatchObject({ success: false });
+});
+
+it("blocks cancelling a request that already has a scheduled transfer", async () => {
+  fake.staffRole = "ims";
+  fake.requestStatus = "Approved";
+  fake.requestTransfers = [{ Status: "Scheduled" }];
+  expect(await cancelRequest(1, { reason: "Too late" })).toMatchObject({ success: false });
+  expect(fake.committed).toHaveLength(0);
+});
+
+it("reserves stock on create (50 -> 40) and releases back to 50 on cancel", async () => {
+  fake.staffRole = "ims";
+  fake.lotRemaining = 50;
+  fake.lotReserved = 0;
+
+  // Before request: 50 available
+  expect(await suggestLots("productId=1&quantity=10")).toMatchObject({
+    success: true,
+    data: { totalAvailable: 50 },
+  });
+
+  // Create STR for 10 units -> reserves 10
+  expect(
+    await requests.createRequest({
+      toLocationId: 2,
+      requiredDate: "2027-01-01",
+      items: [{ productId: 1, requestedQuantity: 10 }],
+    })
+  ).toMatchObject({ success: true });
+  expect(fake.lotReserved).toBe(10);
+
+  // Next STR preview shows 40 available
+  expect(await suggestLots("productId=1&quantity=10")).toMatchObject({
+    success: true,
+    data: { totalAvailable: 40 },
+  });
+
+  // Cancel the request -> releases 10 back to 0 reserved (50 available)
+  fake.requestStatus = "Pending Approval";
+  fake.requestSuggestedLots = [{ lotId: 1, lotCode: "LOT-1", expiryDate: null, qty: 10 }];
+  expect(await cancelRequest(1, { reason: "No longer needed" })).toMatchObject({ success: true });
+  expect(fake.lotReserved).toBe(0);
+
+  expect(await suggestLots("productId=1&quantity=10")).toMatchObject({
+    success: true,
+    data: { totalAvailable: 50 },
+  });
+});
+
+it("does not reuse cancelled STR numbers and never decrements the sequence counter", async () => {
+  fake.staffRole = "ims";
+  fake.lastSeq = 5;
+  await requests.createRequest({
+    ...requestInput,
+    requestNumber: "STR-2026-0002",
+  });
+  expect(fake.lastSeq).toBe(5);
+  const nextRes = await requests.getNextRequestNumber();
+  expect(nextRes).toMatchObject({ success: true, data: expect.stringMatching(/-0006$/) });
+});
+
+it("validates driver names, contact numbers, proof of booking, and dispatch proof", async () => {
+  fake.staffRole = "ims";
+  expect(
+    await transfers.scheduleTransfer({ ...scheduleInput, driverName: "Juan 123" })
+  ).toMatchObject({ success: false });
+
+  expect(
+    await transfers.scheduleTransfer({
+      ...scheduleInput,
+      notes: JSON.stringify({ driverContact: "12345" }),
+    })
+  ).toMatchObject({ success: false });
+
+  expect(
+    await transfers.scheduleTransfer({
+      ...scheduleInput,
+      notes: JSON.stringify({ attachmentName: null }),
+    })
+  ).toMatchObject({ success: false });
+
+  expect(
+    await dispatchTransfer(1, { proofFileName: "" })
+  ).toMatchObject({ success: false });
+
+  expect(
+    await dispatchTransfer(1, { actualDispatchDate: "2020-01-01", proofFileName: "proof.jpg" })
+  ).toMatchObject({ success: false });
 });

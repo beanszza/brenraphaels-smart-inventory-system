@@ -3,10 +3,15 @@
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId, validateInput, saved } from "@/lib/stock-transfer/operations";
+import { isAdminStaff, isQaStaff, isHeadCook } from "@/lib/auth-roles";
+
 export async function cancelRequest(idInput: number, body: any = {}) {
   const staff = await requireModule("Stock Transfer");
   return mutate(staff, async (tx) => {
-validateInput(body);
+    if (isAdminStaff(staff) || isQaStaff(staff) || isHeadCook(staff)) {
+      return refuse("Only the Inventory Manager can cancel a stock transfer request.");
+    }
+    validateInput(body);
     const requestId = positiveId(idInput);
     if (isNaN(requestId)) {
       return refuse("Invalid request ID.");
@@ -28,16 +33,15 @@ validateInput(body);
       return refuse(`Cannot cancel a request that is in '${existing.Status}' status. Only Pending Approval or Approved requests can be cancelled.`);
     }
 
-    const hasDispatchedTransfer = existing.StockTransfers.some(
-      (st) => st.Status === "Dispatched" || ["Completed", "Received", "In Transit"].includes(st.Status)
+    const hasActiveTransfer = existing.StockTransfers.some(
+      (st) => st.Status === "Scheduled" || st.Status === "Dispatched" || ["Completed", "Received", "In Transit"].includes(st.Status)
     );
-    if (hasDispatchedTransfer) {
-      return refuse("Cannot cancel this request because one or more associated transfers have already been dispatched.");
+    if (hasActiveTransfer) {
+      return refuse("Cannot cancel this request because it has already been scheduled or dispatched.");
     }
 
-    // Cancel the STR and any Scheduled transfers
+    // Cancel the STR and release any lot reservations held by this request
     const updated = await (async () => {
-      // Release any lot reservations held by this request
       const items = await tx.stockTransferRequestItems.findMany({
         where: { RequestId: requestId },
       });
@@ -47,11 +51,15 @@ validateInput(body);
           if (sLot.lotId && sLot.qty > 0) {
             const lot = await tx.inventoryLots.findUnique({ where: { LotId: sLot.lotId } });
             if (lot) {
-              const toRelease = Math.min(Number(lot.ReservedQuantity || 0), Number(sLot.qty));
+              const currentRes = Number(lot.ReservedQuantity || 0);
+              const toRelease = Math.max(0, Math.min(currentRes, Number(sLot.qty)));
               if (toRelease > 0) {
                 await tx.inventoryLots.update({
                   where: { LotId: sLot.lotId },
-                  data: { ReservedQuantity: { decrement: toRelease } },
+                  data: {
+                    ReservedQuantity: { decrement: toRelease },
+                    Status: Number(lot.QuantityRemaining || 0) > 0 ? "Available" : lot.Status,
+                  },
                 });
               }
             }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { X, Calendar, Clock, User, Upload, CheckCircle, AlertCircle, FileCheck } from "lucide-react";
+import { X, Calendar, Clock, Upload, AlertCircle, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 import { actionResponse } from "@/lib/resources/action-response";
 import { dispatchTransfer } from "@/app/actions/stock-transfer/dispatch";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 import { useOptionalStaff } from "@/context/StaffContext";
+import { StockTransferConfirmModal } from "./StockTransferConfirmModal";
 
 interface DispatchTransferModalProps {
   transfer: StockTransfer | null;
@@ -20,6 +21,9 @@ interface DispatchTransferModalProps {
   onSuccess: () => void;
 }
 
+const ALLOWED_FILE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".pdf"];
+const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
+
 export function DispatchTransferModal({
   transfer,
   request,
@@ -28,7 +32,7 @@ export function DispatchTransferModal({
   onSuccess,
 }: DispatchTransferModalProps) {
   const staff = useOptionalStaff();
-  const currentStaffName = staff?.name?.trim() || "Vince Neil Madeja";
+  const currentStaffName = staff?.name?.trim() || staff?.username?.trim() || "";
 
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,9 +42,6 @@ export function DispatchTransferModal({
   // Form states
   const [actualDispatchDate, setActualDispatchDate] = useState<string>("");
   const [actualDispatchTime, setActualDispatchTime] = useState<string>("");
-  const [releasedBy, setReleasedBy] = useState<string>(currentStaffName);
-  const [odometerReading, setOdometerReading] = useState<string>("");
-  const [vehicleSealNumber, setVehicleSealNumber] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dispatchRemarks, setDispatchRemarks] = useState<string>("");
 
@@ -69,9 +70,6 @@ export function DispatchTransferModal({
 
       setActualDispatchDate(currentToday);
       setActualDispatchTime(timeStr);
-      setReleasedBy(currentStaffName);
-      setOdometerReading("");
-      setVehicleSealNumber("");
       setSelectedFile(null);
       setDispatchRemarks("");
       setError(null);
@@ -134,9 +132,22 @@ export function DispatchTransferModal({
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const lowerName = file.name.toLowerCase();
+    const validExt = ALLOWED_FILE_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
+    if (!validExt) {
+      setError("Invalid file format. Please upload a JPG, PNG, or PDF file.");
+      e.target.value = "";
+      return;
     }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setError("File size exceeds the 8MB limit.");
+      e.target.value = "";
+      return;
+    }
+    setSelectedFile(file);
+    setError(null);
   };
 
   const handlePreSubmit = (e: React.FormEvent) => {
@@ -167,6 +178,22 @@ export function DispatchTransferModal({
       return;
     }
 
+    if (actualDispatchDate === todayStr) {
+      const now = new Date();
+      const nowHours = String(now.getHours()).padStart(2, "0");
+      const nowMinutes = String(now.getMinutes()).padStart(2, "0");
+      const nowTimeStr = `${nowHours}:${nowMinutes}`;
+      if (actualDispatchTime < nowTimeStr) {
+        setError("Actual dispatch time cannot be earlier than the current time today.");
+        return;
+      }
+    }
+
+    if (!selectedFile) {
+      setError("Dispatch proof document or photo is required.");
+      return;
+    }
+
     setShowConfirm(true);
   };
 
@@ -179,8 +206,6 @@ export function DispatchTransferModal({
         actualDispatchDate,
         actualDispatchTime,
         releasedBy: currentStaffName,
-        odometerReading: odometerReading.trim() || null,
-        vehicleSealNumber: vehicleSealNumber.trim() || null,
         proofFileName: selectedFile?.name || null,
         remarks: dispatchRemarks.trim() || null,
       };
@@ -190,6 +215,9 @@ export function DispatchTransferModal({
           driverName: scheduledInfo.driverName !== "—" ? scheduledInfo.driverName : transfer.driverName,
           vehiclePlate: scheduledInfo.plateNumber !== "—" ? scheduledInfo.plateNumber : transfer.vehiclePlate,
           courierName: scheduledInfo.transportProvider !== "—" ? scheduledInfo.transportProvider : transfer.courierName,
+          actualDispatchDate,
+          actualDispatchTime,
+          proofFileName: selectedFile?.name || "",
           notes: JSON.stringify(dispatchMetadata),
         })
       );
@@ -339,9 +367,6 @@ export function DispatchTransferModal({
                             {item.suggestedLots.map((lot, lIdx) => (
                               <div key={lIdx} className="text-[11px]">
                                 <span className="font-semibold text-foreground">{formatDateDisplay(lot.expiryDate)}</span>
-                                <span className="ml-1.5 inline-block bg-muted px-1.5 py-0.2 rounded text-[10px] font-semibold">
-                                  {lot.qty} pcs
-                                </span>
                                 <span className="block text-[10px] text-muted-foreground font-mono">Lot: {lot.lotCode}</span>
                               </div>
                             ))}
@@ -426,8 +451,9 @@ export function DispatchTransferModal({
                     max={maxDateStr}
                     value={actualDispatchDate}
                     onChange={(e) => handleDateChange(e.target.value)}
-                    className="h-10 rounded-xl bg-card border-border text-foreground text-xs px-3.5 pr-3 w-full cursor-pointer flex justify-between items-center [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:ml-auto"
+                    className="w-full h-10 rounded-xl border border-border bg-card px-3.5 pr-10 text-xs text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   />
+                  <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 </div>
               </div>
 
@@ -440,9 +466,13 @@ export function DispatchTransferModal({
                   <Input
                     type="time"
                     value={actualDispatchTime}
-                    onChange={(e) => setActualDispatchTime(e.target.value)}
-                    className="h-10 rounded-xl bg-card border-border text-foreground text-xs px-3.5 pr-3 w-full cursor-pointer flex justify-between items-center [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:ml-auto"
+                    onChange={(e) => {
+                      setActualDispatchTime(e.target.value);
+                      setError(null);
+                    }}
+                    className="w-full h-10 rounded-xl border border-border bg-card px-3.5 pr-10 text-xs text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   />
+                  <Clock className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 </div>
               </div>
 
@@ -453,34 +483,9 @@ export function DispatchTransferModal({
                 </label>
                 <Input
                   readOnly
+                  disabled
                   value={currentStaffName}
-                  className="h-10 rounded-xl bg-muted/40 border-border text-foreground font-medium text-xs cursor-not-allowed select-none"
-                />
-              </div>
-
-              {/* Odometer Reading */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  Odometer Reading <span className="text-[11px] text-muted-foreground font-normal">(Optional)</span>
-                </label>
-                <Input
-                  value={odometerReading}
-                  onChange={(e) => setOdometerReading(e.target.value)}
-                  placeholder="Enter Reading (Optional)"
-                  className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
-                />
-              </div>
-
-              {/* Vehicle Seal Number */}
-              <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
-                <label className="text-xs font-semibold text-foreground">
-                  Vehicle Seal Number <span className="text-[11px] text-muted-foreground font-normal">(Optional)</span>
-                </label>
-                <Input
-                  value={vehicleSealNumber}
-                  onChange={(e) => setVehicleSealNumber(e.target.value)}
-                  placeholder="Enter Seal Number (Optional)"
-                  className="h-10 rounded-xl bg-card border-border text-foreground text-xs"
+                  className="h-10 rounded-xl bg-muted/40 border-border text-foreground font-medium text-xs cursor-not-allowed select-none disabled:opacity-100"
                 />
               </div>
             </div>
@@ -489,8 +494,9 @@ export function DispatchTransferModal({
           {/* Dispatch Documents */}
           <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">Dispatch Documents</h3>
-              <span className="text-[10px] font-semibold text-muted-foreground">Optional</span>
+              <h3 className="text-sm font-bold text-foreground">
+                Dispatch Documents <span className="text-destructive">*</span>
+              </h3>
             </div>
             <p className="text-xs text-muted-foreground">
               Upload delivery receipts, loading photos, or signed dispatch documents.
@@ -550,6 +556,7 @@ export function DispatchTransferModal({
               value={dispatchRemarks}
               onChange={(e) => setDispatchRemarks(e.target.value)}
               placeholder="Enter additional dispatch instructions or remarks (Optional)..."
+              maxLength={250}
               rows={3}
               className="rounded-xl bg-card border-border text-foreground text-xs"
             />
@@ -577,57 +584,18 @@ export function DispatchTransferModal({
 
         {/* Confirmation Modal Overlay */}
         {showConfirm && (
-          <div
-            className="font-sans fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-            onClick={() => {
+          <StockTransferConfirmModal
+            open={showConfirm}
+            title="Dispatch Stock Transfer"
+            subtitle={`Transfer No: ${transfer.transferNumber || `TR-${transfer.transferId}`}`}
+            description={`Are you sure you want to record the actual dispatch of ${transfer.transferQuantity} units to ${request?.toLocationName || transfer.destLocationName}? Commissary stock will be deducted accordingly.`}
+            confirmText={loading ? "Dispatching..." : "Confirm & Dispatch"}
+            loading={loading}
+            onCancel={() => {
               if (!loading) setShowConfirm(false);
             }}
-          >
-            <div
-              role="alertdialog"
-              aria-modal="true"
-              style={{ width: "100%", maxWidth: "440px" }}
-              className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0 outline-none animate-in fade-in zoom-in-95 duration-150"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
-                  <CheckCircle className="w-6 h-6" />
-                </div>
-
-                <h2 className="text-xl font-bold text-foreground mb-1">
-                  Dispatch Stock Transfer
-                </h2>
-
-                <p className="text-xs font-semibold text-muted-foreground mb-3 font-mono">
-                  Transfer No: {transfer.transferNumber || `TR-${transfer.transferId}`}
-                </p>
-
-                <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                  Are you sure you want to record the actual dispatch of <strong className="text-foreground">{transfer.transferQuantity} units</strong> to <strong className="text-foreground">{request?.toLocationName || transfer.destLocationName}</strong>? Commissary stock will be deducted accordingly.
-                </p>
-
-                <div className="flex justify-center gap-3 w-full">
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm(false)}
-                    disabled={loading}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleExecuteDispatch}
-                    disabled={loading}
-                    className="flex-1 px-5 py-2.5 text-sm font-semibold text-background bg-foreground hover:bg-foreground/85 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50"
-                  >
-                    {loading ? "Dispatching..." : "Confirm & Dispatch"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+            onConfirm={handleExecuteDispatch}
+          />
         )}
       </div>
     </div>,

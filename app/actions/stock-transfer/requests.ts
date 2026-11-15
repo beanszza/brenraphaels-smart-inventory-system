@@ -7,6 +7,8 @@ import { read, mutate, refuse, validateInput, saved, safeIsoDate } from "@/lib/s
 import { notifyApprovalRequested } from "@/lib/stock-transfer/notify";
 import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
 import { resolveStaffName } from "@/lib/orders/dto";
+import { isAdminStaff } from "@/lib/auth-roles";
+import { getFutureDateError } from "@/lib/date-limits";
 
 export async function listRequests(query = "") {
   await requireModule("Stock Transfer");
@@ -207,7 +209,21 @@ export async function getNextRequestNumber() {
     const seq = await prisma.documentSequences.findUnique({
       where: { DocType_Year: { DocType: "STR", Year: year } },
     });
-    const nextSeq = (seq ? Number(seq.LastNumber) : 0) + 1;
+    const lastRequest = await prisma.stockTransferRequests
+      .findFirst({
+        where: { RequestNumber: { startsWith: `STR-${year}-` } },
+        orderBy: { RequestNumber: "desc" },
+        select: { RequestNumber: true },
+      })
+      .catch(() => null);
+    let maxExisting = seq ? Number(seq.LastNumber) : 0;
+    if (lastRequest?.RequestNumber) {
+      const parsed = parseInt(lastRequest.RequestNumber.split("-")[2], 10);
+      if (!isNaN(parsed) && parsed > maxExisting) {
+        maxExisting = parsed;
+      }
+    }
+    const nextSeq = maxExisting + 1;
     return resourceResult({
       success: true,
       data: `STR-${year}-${String(nextSeq).padStart(4, "0")}`,
@@ -219,6 +235,9 @@ export async function createRequest(body: any = {}) {
   await ensureUbeJamHavaneroStock();
   const staff = await requireModule("Stock Transfer");
   return mutate(staff, async (tx) => {
+    if (isAdminStaff(staff)) {
+      return refuse("Admin accounts have view and approval access only and cannot create stock transfer requests.");
+    }
     validateInput(body);
     const { toLocationId, requiredDate, priority = "Normal", reason, items } = body;
 
@@ -228,6 +247,11 @@ export async function createRequest(body: any = {}) {
 
     if (!requiredDate) {
       return refuse("Required Date is required.");
+    }
+
+    const dateErr = getFutureDateError(String(requiredDate).split("T")[0], "Required date");
+    if (dateErr) {
+      return refuse(dateErr);
     }
 
     const seenProductIds = new Set<number>();
@@ -287,6 +311,9 @@ export async function createRequest(body: any = {}) {
         let lots = await tx.inventoryLots.findMany({
           where: {
             ItemId: product.ItemId,
+            ProductionBatches: {
+              some: { ProductId: product.ProductId },
+            },
             ...(commissaryIds.length > 0 ? { LocationId: { in: commissaryIds } } : {}),
             OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
             Status: { in: ["Active", "Available"] },
@@ -294,6 +321,34 @@ export async function createRequest(body: any = {}) {
           },
           orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
         });
+
+        if (lots.length === 0) {
+          lots = await tx.inventoryLots.findMany({
+            where: {
+              ItemId: product.ItemId,
+              ProductionBatches: {
+                some: { ProductId: product.ProductId },
+              },
+              OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
+              Status: { in: ["Active", "Available"] },
+              QuantityRemaining: { gt: 0 },
+            },
+            orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
+          });
+        }
+
+        if (lots.length === 0) {
+          lots = await tx.inventoryLots.findMany({
+            where: {
+              ItemId: product.ItemId,
+              ...(commissaryIds.length > 0 ? { LocationId: { in: commissaryIds } } : {}),
+              OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
+              Status: { in: ["Active", "Available"] },
+              QuantityRemaining: { gt: 0 },
+            },
+            orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
+          });
+        }
 
         if (lots.length === 0) {
           lots = await tx.inventoryLots.findMany({
@@ -370,10 +425,15 @@ export async function createRequest(body: any = {}) {
       const parts = requestNumber.split("-");
       const numPart = parseInt(parts[2], 10);
       if (!isNaN(numPart)) {
+        const currentSeq = await tx.documentSequences.findUnique({
+          where: { DocType_Year: { DocType: "STR", Year: year } },
+        });
+        const prevMax = currentSeq ? Number(currentSeq.LastNumber) : 0;
+        const nextMax = Math.max(prevMax, numPart, 1);
         await tx.documentSequences.upsert({
           where: { DocType_Year: { DocType: "STR", Year: year } },
-          update: { LastNumber: { set: Math.max(numPart, 1) } },
-          create: { DocType: "STR", Year: year, LastNumber: numPart },
+          update: { LastNumber: { set: nextMax } },
+          create: { DocType: "STR", Year: year, LastNumber: nextMax },
         });
       }
     }

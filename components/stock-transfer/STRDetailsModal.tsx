@@ -12,6 +12,7 @@ interface STRDetailsModalProps {
   request: StockTransferRequest | null;
   open: boolean;
   isAdmin?: boolean;
+  isImsManager?: boolean;
   onClose: () => void;
   onApprove?: (req: StockTransferRequest) => void;
   onReject?: (req: StockTransferRequest) => void;
@@ -24,6 +25,7 @@ export function STRDetailsModal({
   request,
   open,
   isAdmin = false,
+  isImsManager = false,
   onClose,
   onApprove,
   onReject,
@@ -361,8 +363,7 @@ export function STRDetailsModal({
 
         {/* Footer Actions */}
         <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4.5 bg-muted/10">
-          {/* Admin on Pending Approval: Close, Reject Request, Approve Request (Approve in right corner) */}
-          {isAdmin && request.status === "Pending Approval" ? (
+          {isAdmin ? (
             <>
               <button
                 type="button"
@@ -371,7 +372,7 @@ export function STRDetailsModal({
               >
                 Close
               </button>
-              {onReject && (
+              {request.status === "Pending Approval" && onReject && (
                 <button
                   type="button"
                   onClick={() => {
@@ -383,7 +384,7 @@ export function STRDetailsModal({
                   Reject Request
                 </button>
               )}
-              {onApprove && (
+              {request.status === "Pending Approval" && onApprove && (
                 <button
                   type="button"
                   onClick={() => {
@@ -405,6 +406,22 @@ export function STRDetailsModal({
               >
                 Close
               </button>
+
+              {!isFullyScheduledOrDispatched &&
+                (request.status === "Pending Approval" || request.status === "Approved") &&
+                (isImsManager || !isAdmin) &&
+                onCancel && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onCancel(request);
+                    }}
+                    className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    Cancel Request
+                  </button>
+                )}
 
               {hasScheduledTransfer && onDispatch && (
                 <button

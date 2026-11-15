@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { AlertTriangle, AlertCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { STRActionType } from "./types";
 
@@ -31,7 +31,7 @@ export function STRActionModal({
     setMounted(true);
   }, []);
 
-  const requiresReason = actionType === "reject";
+  const requiresReason = actionType === "reject" || actionType === "cancel";
 
   const getTitle = () => {
     switch (actionType) {
@@ -51,7 +51,7 @@ export function STRActionModal({
       case "reject":
         return `Please provide a reason for rejecting request ${requestNumber}. Once rejected, this request cannot be reused or revised, and a new request number must be generated if needed.`;
       case "cancel":
-        return `Are you sure you want to cancel request ${requestNumber}? Any transfers scheduled under this request will also be cancelled.`;
+        return `Are you sure you want to cancel request ${requestNumber}? This action cannot be undone. Reserved stock will be released and this request number will be permanently marked as cancelled and cannot be reused.`;
     }
   };
 
@@ -80,6 +80,9 @@ export function STRActionModal({
       className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={getTitle()}
         style={{ width: "100%", maxWidth: "440px" }}
         className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
         onClick={(e) => e.stopPropagation()}
@@ -88,13 +91,7 @@ export function STRActionModal({
         <div className="flex flex-col items-center justify-center text-center">
           {/* Circular Alert Icon */}
           <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
-            {actionType === "approve" ? (
-              <CheckCircle className="w-6 h-6" />
-            ) : actionType === "reject" ? (
-              <XCircle className="w-6 h-6" />
-            ) : (
-              <AlertTriangle className="w-6 h-6" />
-            )}
+            <AlertTriangle className="w-6 h-6" />
           </div>
 
           {/* Title */}
@@ -104,7 +101,7 @@ export function STRActionModal({
 
           {/* Request Number Subtitle */}
           <p className="text-xs font-semibold text-muted-foreground mb-3">
-            Request No: {requestNumber}
+            Stock Transfer Request No: {requestNumber}
           </p>
 
           {/* Message / Description */}
@@ -112,19 +109,18 @@ export function STRActionModal({
             {getDescription()}
           </p>
 
-          {/* Required / Optional Reason Input */}
-          {(requiresReason || actionType === "cancel") && (
+          {/* Required Reason Input */}
+          {requiresReason && (
             <div className="w-full text-left space-y-1.5 mb-5">
               <label className="text-xs font-semibold text-foreground flex items-center gap-1">
-                {actionType === "reject" ? "Rejection Reason" : "Cancellation Reason"}{" "}
-                {requiresReason && <span className="text-destructive">*</span>}
+                Reason / Feedback Notes <span className="text-destructive">*</span>
               </label>
               <Textarea
                 rows={3}
                 placeholder={
                   actionType === "reject"
                     ? "Explain why this request is rejected (required)..."
-                    : "Specify reason for cancellation (optional)..."
+                    : "Please state the reason for cancellation (required)..."
                 }
                 value={reason}
                 onChange={(e) => {
@@ -143,13 +139,13 @@ export function STRActionModal({
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3 w-full">
+          {/* Uniform Action Buttons */}
+          <div className="flex justify-center gap-3 w-full">
             <button
               type="button"
               onClick={() => { if (!loading) onClose(); }}
               disabled={loading}
-              className="flex-1 rounded-xl bg-card border border-border px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
@@ -157,15 +153,9 @@ export function STRActionModal({
               type="button"
               onClick={handleConfirm}
               disabled={loading}
-              className="flex-1 rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              {loading
-                ? "Processing..."
-                : actionType === "approve"
-                ? "Approve Request"
-                : actionType === "reject"
-                ? "Reject Request"
-                : "Confirm"}
+              {loading ? "Processing..." : "Confirm"}
             </button>
           </div>
         </div>
