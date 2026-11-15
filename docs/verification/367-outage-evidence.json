@@ -1,0 +1,18 @@
+{
+  "run": "verify367-outage-793ddc65-10d9-4740-af14-08d6f120f177",
+  "origin": "http://127.0.0.1:3013",
+  "body": {
+    "orderId": "verify367-outage-793ddc65-10d9-4740-af14-08d6f120f177",
+    "lineId": "line-1",
+    "productId": 11,
+    "quantity": 1
+  },
+  "phase": "recovered",
+  "queued": 2,
+  "remainingQueued": 0,
+  "centralEventIds": [
+    "b1292e6a-3a1a-41bd-9ce6-ef39d5865e64",
+    "2f23a18c-a08f-4109-8b0d-0db76360e384"
+  ],
+  "completed": true
+}

@@ -30,14 +30,17 @@ try {
       if (existing.length > 1) throw new Error(`Duplicate Item code ${code}; reconcile it first.`);
       let item = existing[0];
       if (item && item.ItemName !== itemName) throw new Error(`Size ${size.sizeId} changed identity; review its existing stock before remapping.`);
+      if (item && (item.UomId !== unit.UomId || item.StockUomId !== unit.UomId || item.CategoryId !== category.CategoryId || !item.IsLotTracked || !item.IsExpiryTracked)) {
+        throw new Error(`Size ${size.sizeId} changed its count units/category/tracking; review existing stock before remapping.`);
+      }
       if (!item) item = await tx.items.create({ data: {
         ItemCode: code, ItemName: itemName, UomId: unit.UomId, StockUomId: unit.UomId,
         CategoryId: category.CategoryId, MinStockLevel: 0, MaxStockLevel: 0,
         IsActive: size.available, IsExpiryTracked: true, IsLotTracked: true,
       } });
-      const products = await tx.finishedProducts.findMany({ where: { Sku: code } });
-      if (products.length > 1 || (products[0] && (products[0].ItemId !== item.ItemId || products[0].Variant !== size.sizeLabel))) {
-        throw new Error(`SKU ${code} already identifies a different Size.`);
+      const products = await tx.finishedProducts.findMany({ where: { ItemId: item.ItemId } });
+      if (products.length > 1 || (products[0] && (products[0].Variant !== size.sizeLabel))) {
+        throw new Error(`SKU ${code} does not identify one exclusive Size.`);
       }
       const product = products[0] ?? await tx.finishedProducts.create({ data: {
         ItemId: item.ItemId, Sku: code, Variant: size.sizeLabel,

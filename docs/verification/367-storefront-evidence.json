@@ -1,0 +1,59 @@
+{
+  "run": "44a3ff64-5a98-4c72-aaad-b626eedddf05",
+  "isolatedDatabase": true,
+  "realIMS": "http://127.0.0.1:3013",
+  "checks": [
+    "later-line IMS refusal places no Order, preserves Cart, and compensates the earlier line",
+    "lost IMS acknowledgement and checkout replay reserve once; Customer cancellation releases once",
+    "authenticated HTTP cron expires GCash/Maya/bank transfer, releases their stock and queues one App email each",
+    "cron replay does not recancel; COD and paid Orders remain untouched; audit backlog does not block email"
+  ],
+  "completed": true,
+  "prepaidOrderIds": [
+    2000367001,
+    2000367002,
+    2000367003
+  ],
+  "codOrderId": 2000367004,
+  "paidOrderId": 2000367005,
+  "emailKeys": [
+    "order.unpaid-cancelled:2000367001",
+    "order.unpaid-cancelled:2000367002",
+    "order.unpaid-cancelled:2000367003"
+  ],
+  "finishedAt": "2026-11-15T08:52:18.700Z",
+  "delivery": [
+    {
+      "id": "5e5870b0-7943-4da2-9759-3db4c71bd819",
+      "idempotency_key": "order.unpaid-cancelled:2000367001",
+      "status": "sent",
+      "category": "app",
+      "template": "app-email",
+      "attempts": 1,
+      "hasMessageId": true
+    },
+    {
+      "id": "2a5c1d02-95d6-47eb-a05d-92e4cd4c2534",
+      "idempotency_key": "order.unpaid-cancelled:2000367002",
+      "status": "sent",
+      "category": "app",
+      "template": "app-email",
+      "attempts": 1,
+      "hasMessageId": true
+    },
+    {
+      "id": "8ae418f2-ad93-4d38-8867-0e6209c0a068",
+      "idempotency_key": "order.unpaid-cancelled:2000367003",
+      "status": "sent",
+      "category": "app",
+      "template": "app-email",
+      "attempts": 1,
+      "hasMessageId": true
+    }
+  ],
+  "exactlyOneEmailPerExpiry": true,
+  "emailDeliveryComplete": true,
+  "hostedStockAuditActionsAccepted": true,
+  "stockAuditCount": 13,
+  "stockAuditReplayNoDuplicates": true
+}
