@@ -22,6 +22,7 @@ import {
 import { CreatePRModal } from "@/components/orders-procurement/pr/CreatePRForm";
 import { PurchaseRequisition } from "@/components/orders-procurement/types";
 import ProductionRequestModal from "@/components/production/ProductionRequestModal";
+import { useIsAdmin, useIsHeadCook } from "@/context/StaffContext";
 
 function matchesCategory(itemCat: string, filter: string): boolean {
   if (!filter || filter === "All") return true;
@@ -67,6 +68,9 @@ export default function ViewInventory({
   asOf: string;
 }) {
   const router = useRouter();
+  const isAdmin = useIsAdmin();
+  const isHeadCook = useIsHeadCook();
+  const canPerformActions = !isAdmin && !isHeadCook;
   const allInventories = initialInventories;
   const [searchQuery, setSearchQuery] = useState("");
   const firstTabId =
@@ -226,6 +230,7 @@ export default function ViewInventory({
 
   // Order Now / Produce Now handler
   const handleOrderNow = (item: InventoryItem) => {
+    if (!canPerformActions) return;
     const neededQty = Math.max(
       1,
       Math.round((item.maxStockLevel > 0 ? item.maxStockLevel : 100) - item.currentStock)
@@ -381,8 +386,9 @@ export default function ViewInventory({
         items={paginatedInventories}
         currentPage={page}
         pageSize={pageSize}
-        onOrderNow={handleOrderNow}
+        onOrderNow={canPerformActions ? handleOrderNow : undefined}
         isFinishedGoods={categoryFilter === "Finished Goods"}
+        showActions={canPerformActions}
       />
 
       <Pagination

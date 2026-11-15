@@ -15,6 +15,7 @@ interface InventoryTableProps {
   pageSize: number;
   onOrderNow?: (item: InventoryItem) => void;
   isFinishedGoods?: boolean;
+  showActions?: boolean;
 }
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -72,11 +73,15 @@ export default function InventoryTable({
   pageSize,
   onOrderNow,
   isFinishedGoods,
+  showActions = true,
 }: InventoryTableProps) {
   const [expandedItemIds, setExpandedItemIds] = useState<Record<string, boolean>>({});
   const [itemLots, setItemLots] = useState<Record<string, LotItem[]>>({});
   const [lotErrors, setLotErrors] = useState<Record<string, string>>({});
   const [loadingLots, setLoadingLots] = useState<Record<string, boolean>>({});
+
+  const canShowActions = showActions;
+  const totalColumns = canShowActions ? 9 : 8;
 
   const toggleRow = async (item: InventoryItem) => {
     const key = item.productId ? `fp-${item.productId}` : String(item.itemId);
@@ -114,19 +119,15 @@ export default function InventoryTable({
             <th className="px-3 py-3.5 text-left font-bold tracking-wider whitespace-nowrap">
               Item Name
             </th>
-            {isFinishedGoods && (
-              <>
-                <th className="px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap">
-                  Variant
-                </th>
-                <th className="px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap">
-                  SKU
-                </th>
-              </>
+            {isFinishedGoods ? (
+              <th className="px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap">
+                Variant
+              </th>
+            ) : (
+              <th className="px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap">
+                UOM
+              </th>
             )}
-            <th className="px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap">
-              UOM
-            </th>
             <th className="px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap">
               Current Stock
             </th>
@@ -139,16 +140,18 @@ export default function InventoryTable({
             <th className="px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap">
               Status
             </th>
-            <th className="px-3 py-3 text-center font-bold tracking-wider whitespace-nowrap">
-              Actions
-            </th>
+            {canShowActions && (
+              <th className="px-3 py-3 text-center font-bold tracking-wider whitespace-nowrap">
+                Actions
+              </th>
+            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
           {items.length === 0 ? (
             <tr>
               <td
-                colSpan={isFinishedGoods ? 11 : 9}
+                colSpan={totalColumns}
                 className="px-5 py-12 text-center text-sm font-semibold text-muted-foreground"
               >
                 No Inventory Records Found
@@ -216,25 +219,21 @@ export default function InventoryTable({
                         {item.itemName}
                       </span>
                     </td>
-                    {isFinishedGoods && (
-                      <>
-                        <td className="px-3 py-3.5 text-foreground whitespace-nowrap">
-                          {item.variantName ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-muted border border-border text-foreground">
-                              {item.variantName}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground font-mono">—</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-3.5 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                          {item.variantSku || item.itemCode || "—"}
-                        </td>
-                      </>
+                    {isFinishedGoods ? (
+                      <td className="px-3 py-3.5 text-foreground whitespace-nowrap">
+                        {item.variantName ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-muted border border-border text-foreground">
+                            {item.variantName}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground font-mono">—</span>
+                        )}
+                      </td>
+                    ) : (
+                      <td className="px-3 py-3.5 text-muted-foreground">
+                        {item.uomName || "—"}
+                      </td>
                     )}
-                    <td className="px-3 py-3.5 text-muted-foreground">
-                      {item.uomName || "—"}
-                    </td>
                     <td className="px-3 py-3.5 font-semibold text-foreground">
                       {item.currentStock.toLocaleString(undefined, {
                         minimumFractionDigits: 0,
@@ -271,28 +270,30 @@ export default function InventoryTable({
                         className={INVENTORY_STATUS_BADGE_CLASSES[statusText]}
                       />
                     </td>
-                    <td className="px-3 py-3.5 text-center">
-                      {isLow ? (
-                        <Button
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onOrderNow?.(item);
-                          }}
-                          className="h-7 px-3 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer shadow-xs"
-                        >
-                          {isFinishedGoods ? "Produce Now" : "Order Now"}
-                        </Button>
-                      ) : (
-                        <span className="text-muted-foreground font-mono">—</span>
-                      )}
-                    </td>
+                    {canShowActions && (
+                      <td className="px-3 py-3.5 text-center">
+                        {isLow ? (
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOrderNow?.(item);
+                            }}
+                            className="h-7 px-3 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer shadow-xs"
+                          >
+                            {isFinishedGoods ? "Produce Now" : "Order Now"}
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground font-mono">—</span>
+                        )}
+                      </td>
+                    )}
                   </tr>
 
                   {/* Expandable Lot Detail Row */}
                   {isExpanded && (
                     <tr className="bg-muted/10 border-b border-border">
-                      <td colSpan={isFinishedGoods ? 11 : 9} className="p-4 sm:p-5">
+                      <td colSpan={totalColumns} className="p-4 sm:p-5">
                         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                           <div className="flex items-center justify-between border-b border-border pb-2">
                             <span className="font-semibold text-xs text-foreground">

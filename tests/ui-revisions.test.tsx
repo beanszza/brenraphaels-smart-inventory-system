@@ -428,6 +428,33 @@ describe("Inventory status badges and Category HasExpiry UI", () => {
       expect(html).toContain("bg-badge-warning");
       expect(html).toContain("bg-badge-destructive");
     }
+
+    // Ingredients shows UOM and Actions (Order Now), not Variant/SKU
+    expect(ingHtml).toContain(">UOM<");
+    expect(ingHtml).not.toContain(">Variant<");
+    expect(ingHtml).not.toContain(">SKU<");
+    expect(ingHtml).toContain(">Actions<");
+    expect(ingHtml).toContain("Order Now");
+
+    // Finished Goods shows Variant and Actions (Produce Now), but removes SKU and UOM columns
+    expect(fgHtml).toContain(">Variant<");
+    expect(fgHtml).not.toContain(">SKU<");
+    expect(fgHtml).not.toContain(">UOM<");
+    expect(fgHtml).toContain(">Actions<");
+    expect(fgHtml).toContain("Produce Now");
+
+    // Admin and Head Cook accounts have showActions={false} so Actions column and buttons are hidden
+    const readOnlyIngHtml = renderToStaticMarkup(
+      <InventoryTable items={baseItems} currentPage={1} pageSize={10} showActions={false} />
+    );
+    const readOnlyFgHtml = renderToStaticMarkup(
+      <InventoryTable items={baseItems} currentPage={1} pageSize={10} isFinishedGoods showActions={false} />
+    );
+    for (const html of [readOnlyIngHtml, readOnlyFgHtml]) {
+      expect(html).not.toContain(">Actions<");
+      expect(html).not.toContain("Order Now");
+      expect(html).not.toContain("Produce Now");
+    }
   });
 
   it("renders CategoryModal HasExpiry checkbox and CategoryTable Expiry column", () => {
