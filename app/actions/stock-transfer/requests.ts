@@ -112,12 +112,19 @@ export async function listRequests(query = "") {
     };
 
     const data = requests.map((req) => {
-      const hasScheduledTransfer = req.StockTransfers?.some((st) => st.Status === "Scheduled");
-      const hasDispatchedTransfer = req.StockTransfers?.some((st) => st.Status === "Dispatched");
+      const nonCancelledTransfers = (req.StockTransfers || []).filter((st) => st.Status !== "Cancelled");
+      const hasScheduledTransfer = nonCancelledTransfers.some((st) => st.Status === "Scheduled");
+      const hasDispatchedTransfer = nonCancelledTransfers.some((st) => st.Status === "Dispatched" || st.Status === "In Transit");
+      const allCompleted =
+        nonCancelledTransfers.length > 0 &&
+        nonCancelledTransfers.every((st) => st.Status === "Completed" || st.Status === "Received");
+
       let effectiveStatus = req.Status;
-      if (req.Status === "Approved" && hasScheduledTransfer) {
+      if (allCompleted) {
+        effectiveStatus = "Completed";
+      } else if (req.Status === "Approved" && hasScheduledTransfer) {
         effectiveStatus = "Scheduled";
-      } else if (req.Status === "Scheduled" && hasDispatchedTransfer && !hasScheduledTransfer) {
+      } else if ((req.Status === "Scheduled" || req.Status === "Approved") && hasDispatchedTransfer && !hasScheduledTransfer) {
         effectiveStatus = "Dispatched";
       }
 
@@ -175,7 +182,7 @@ export async function listRequests(query = "") {
         }),
         transfers: (req.StockTransfers || []).map((st) => ({
           transferId: st.TransferId,
-          transferNumber: st.TransferNumber || "",
+          transferNumber: req.RequestNumber || st.TransferNumber || "",
           productId: st.ProductId,
           status: st.Status,
           transferQuantity: Number(st.TransferQuantity || 0),

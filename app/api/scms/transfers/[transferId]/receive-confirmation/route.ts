@@ -17,11 +17,12 @@ export async function POST(
     const { transferId } = await context.params;
     const body = await req.json().catch(() => ({}));
 
-    // Find the transfer by TransferNumber or TransferId
+    // Find the transfer by TransferNumber, parent RequestNumber (STR-YYYY-XXXX), or TransferId
     const transfer = await prisma.stockTransfers.findFirst({
       where: {
         OR: [
           { TransferNumber: transferId },
+          { StockTransferRequests: { RequestNumber: transferId } },
           !isNaN(Number(transferId)) ? { TransferId: Number(transferId) } : {},
         ],
       },
@@ -78,6 +79,24 @@ export async function POST(
           : transfer.Notes,
       },
     });
+
+    if (transfer.RequestId && ["Completed", "Received"].includes(newStatus)) {
+      await prisma.stockTransfers.updateMany({
+        where: {
+          RequestId: transfer.RequestId,
+          Status: { in: ["Dispatched", "In Transit"] },
+        },
+        data: {
+          Status: "Completed",
+          ReceivedDate: body.receivedAt ? new Date(body.receivedAt) : new Date(),
+          ReceivedBy: body.receivedByName ? String(body.receivedByName) : transfer.ReceivedBy,
+        },
+      });
+      await prisma.stockTransferRequests.update({
+        where: { RequestId: transfer.RequestId },
+        data: { Status: "Completed" },
+      });
+    }
 
     return NextResponse.json({
       success: true,

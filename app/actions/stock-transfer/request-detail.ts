@@ -81,7 +81,7 @@ export async function getRequest(idInput: number) {
       })),
       transfers: (req.StockTransfers || []).map((st) => ({
         transferId: st.TransferId,
-        transferNumber: st.TransferNumber || "",
+        transferNumber: req.RequestNumber || st.TransferNumber || "",
         productId: st.ProductId,
         productName: st.FinishedProducts?.Items?.ItemName || "Unknown Product",
         status: st.Status,

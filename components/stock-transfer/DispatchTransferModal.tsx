@@ -587,7 +587,7 @@ export function DispatchTransferModal({
           <StockTransferConfirmModal
             open={showConfirm}
             title="Dispatch Stock Transfer"
-            subtitle={`Transfer No: ${transfer.transferNumber || `TR-${transfer.transferId}`}`}
+            subtitle={`Request No: ${request?.requestNumber || transfer.requestNumber || transfer.transferNumber || `STR-${transfer.transferId}`}`}
             description={`Are you sure you want to record the actual dispatch of ${transfer.transferQuantity} units to ${request?.toLocationName || transfer.destLocationName}? Commissary stock will be deducted accordingly.`}
             confirmText={loading ? "Dispatching..." : "Confirm & Dispatch"}
             loading={loading}

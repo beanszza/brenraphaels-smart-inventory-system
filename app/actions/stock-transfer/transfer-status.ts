@@ -32,6 +32,22 @@ validateInput(body);
       data: updateData,
     });
 
+    if (["Received", "Completed"].includes(newStatus) && transfer.RequestId) {
+      const remainingIncomplete = await tx.stockTransfers.count({
+        where: {
+          RequestId: transfer.RequestId,
+          Status: { notIn: ["Received", "Completed", "Cancelled"] },
+          TransferId: { not: id },
+        },
+      });
+      if (remainingIncomplete === 0) {
+        await tx.stockTransferRequests.update({
+          where: { RequestId: transfer.RequestId },
+          data: { Status: "Completed" },
+        });
+      }
+    }
+
     return saved(staff, "stock-transfer", updated.TransferId, updated.TransferNumber || String(updated.TransferId), "updated", resourceResult({ success: true, data: { transferId: updated.TransferId, status: updated.Status } }));
 
   });

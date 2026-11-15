@@ -234,10 +234,6 @@ export function STRDetailsModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transfer Number</span>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledTransfer?.transferNumber || "—"}</p>
-                  </div>
-                  <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transport Provider</span>
                     <p className="text-sm font-semibold text-foreground mt-0.5">{schedMeta.transportProvider || scheduledTransfer?.courierName || "—"}</p>
                   </div>

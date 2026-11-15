@@ -65,6 +65,7 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
         FinishedProducts: { include: { Items: true } },
         Locations_StockTransfers_SourceLocationIdToLocations: true,
         Locations_StockTransfers_DestLocationIdToLocations: true,
+        StockTransferRequests: true,
       },
     });
 
@@ -238,10 +239,16 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
       });
     }
 
-    // 3. Mark transfer as Dispatched
+    // 3. Mark transfer as Dispatched and unify TransferNumber with parent STR number
+    const unifiedNumber =
+      transfer.StockTransferRequests?.RequestNumber ||
+      transfer.TransferNumber ||
+      `STR-${new Date().getFullYear()}-${String(transfer.RequestId || transfer.TransferId).padStart(4, "0")}`;
+
     const updatedTransfer = await tx.stockTransfers.update({
       where: { TransferId: transferId },
       data: {
+        TransferNumber: unifiedNumber,
         Status: "Dispatched",
         DispatchedDate: new Date(),
         DriverName: driverName || transfer.DriverName,
@@ -293,7 +300,7 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
       async () => {
         try {
           await dispatchTransferManifestToPos({
-            transferId: transfer.TransferNumber || `TRANS-${transfer.TransferId}`,
+            transferId: unifiedNumber,
             sourceLocation: {
               locationId: "999",
               locationName:

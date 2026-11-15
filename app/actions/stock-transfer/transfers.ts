@@ -16,9 +16,10 @@ const TRANSFER_INCLUDE = {
 };
 
 function mapTransfer(t: any) {
+  const unifiedNumber = t.StockTransferRequests?.RequestNumber || t.TransferNumber || "";
   return {
     transferId: t.TransferId,
-    transferNumber: t.TransferNumber || "",
+    transferNumber: unifiedNumber,
     requestId: t.RequestId ?? null,
     requestNumber: t.StockTransferRequests?.RequestNumber ?? null,
     productId: t.ProductId,
@@ -237,14 +238,8 @@ export async function scheduleTransfer(body: any = {}) {
       return refuse("Source commissary location not found.");
     }
 
-    // Generate formal Transfer Number: STF-YYYY-XXXX
-    const year = new Date().getFullYear();
-    const seq = await tx.documentSequences.upsert({
-      where: { DocType_Year: { DocType: "StockTransfer", Year: year } },
-      update: { LastNumber: { increment: 1 } },
-      create: { DocType: "StockTransfer", Year: year, LastNumber: 1 },
-    });
-    const transferNumber = `STF-${year}-${String(seq.LastNumber).padStart(4, "0")}`;
+    // Use the parent STR RequestNumber as the unified TransferNumber (no separate STF code)
+    const transferNumber = str.RequestNumber || `STR-${new Date().getFullYear()}-${String(str.RequestId).padStart(4, "0")}`;
 
     const transfer = await tx.stockTransfers.create({
       data: {

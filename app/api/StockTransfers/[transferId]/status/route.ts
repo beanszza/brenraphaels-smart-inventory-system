@@ -21,6 +21,7 @@ export async function PUT(
       where: {
         OR: [
           { TransferNumber: transferId },
+          { StockTransferRequests: { RequestNumber: transferId } },
           !isNaN(Number(transferId)) ? { TransferId: Number(transferId) } : {},
         ],
       },
@@ -37,6 +38,20 @@ export async function PUT(
       where: { TransferId: transfer.TransferId },
       data: { Status: newStatus },
     });
+
+    if (transfer.RequestId && ["Completed", "Received"].includes(newStatus)) {
+      await prisma.stockTransfers.updateMany({
+        where: {
+          RequestId: transfer.RequestId,
+          Status: { in: ["Dispatched", "In Transit"] },
+        },
+        data: { Status: "Completed" },
+      });
+      await prisma.stockTransferRequests.update({
+        where: { RequestId: transfer.RequestId },
+        data: { Status: "Completed" },
+      });
+    }
 
     return NextResponse.json({
       success: true,

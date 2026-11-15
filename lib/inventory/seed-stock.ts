@@ -66,6 +66,46 @@ export async function ensureUbeJamHavaneroStock() {
       }
     }
 
+    // 2. Migrate any legacy STF-YYYY-XXXX TransferNumbers to their parent STR RequestNumber
+    // and sync parent STR Status to "Completed" if all its transfers are already Completed/Received
+    const transfersWithRequests = await (prisma as any).stockTransfers
+      ?.findMany({
+        where: { RequestId: { not: null } },
+        include: { StockTransferRequests: true },
+      })
+      .catch(() => []);
+
+    if (Array.isArray(transfersWithRequests)) {
+      const requestIdsToComplete = new Set<number>();
+      for (const st of transfersWithRequests) {
+        const parentStrNum = st.StockTransferRequests?.RequestNumber;
+        if (parentStrNum && st.TransferNumber !== parentStrNum) {
+          await (prisma as any).stockTransfers
+            ?.update({
+              where: { TransferId: st.TransferId },
+              data: { TransferNumber: parentStrNum },
+            })
+            .catch(() => {});
+        }
+        if (
+          st.RequestId &&
+          (st.Status === "Completed" || st.Status === "Received") &&
+          st.StockTransferRequests?.Status !== "Completed"
+        ) {
+          requestIdsToComplete.add(st.RequestId);
+        }
+      }
+
+      for (const reqId of requestIdsToComplete) {
+        await (prisma as any).stockTransferRequests
+          ?.update({
+            where: { RequestId: reqId },
+            data: { Status: "Completed" },
+          })
+          .catch(() => {});
+      }
+    }
+
     ubeJamStockEnsured = true;
   } catch (err) {
     console.warn("[ENSURE-UBE-JAM-STOCK-WARN]", err);
