@@ -23,6 +23,7 @@ import {
 } from "@/lib/production/sku";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 import { FinishedProductItem } from "./types";
 
 const CONTENT_UOM_OPTIONS: { value: VariantContentUom; label: string }[] = [
@@ -89,6 +90,7 @@ export default function AddFinishedProductModal({
   ]);
 
   const [submitting, setSubmitting] = useState(false);
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
   const allProductsRef = useRef<FinishedProductItem[]>(allProducts);
   allProductsRef.current = allProducts;
 
@@ -288,7 +290,7 @@ export default function AddFinishedProductModal({
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePromptSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const trimmedName = productName.trim();
@@ -338,6 +340,12 @@ export default function AddFinishedProductModal({
       }
       seenVariantNames.add(key);
     }
+
+    setConfirmSaveOpen(true);
+  };
+
+  const executeSaveProduct = async () => {
+    const trimmedName = productName.trim();
 
     try {
       setSubmitting(true);
@@ -466,7 +474,7 @@ export default function AddFinishedProductModal({
       onClose={onClose}
       size="max-w-3xl"
     >
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handlePromptSubmit} className="space-y-6">
         {/* ── Section 1: Product Information ── */}
         <div className="space-y-4">
           <div className="border-b border-border pb-2 flex items-center justify-between">
@@ -809,6 +817,25 @@ export default function AddFinishedProductModal({
           </Button>
         </div>
       </form>
+
+      <ActionConfirmModal
+        open={confirmSaveOpen}
+        title={isEditing ? "Save Finished Product Changes" : "Create Finished Product"}
+        subtitle={`Product: ${productName.trim() || "—"} • ${variants.length} Variant(s)`}
+        description={
+          isEditing
+            ? `Are you sure you want to save the updates to "${productName.trim()}" and its ${variants.length} variant(s)?`
+            : `Are you sure you want to create "${productName.trim()}" with ${variants.length} variant(s)?`
+        }
+        confirmText={isEditing ? "Save Changes" : "Confirm & Create"}
+        loading={submitting}
+        loadingText="Saving..."
+        onConfirm={async () => {
+          await executeSaveProduct();
+          setConfirmSaveOpen(false);
+        }}
+        onClose={() => setConfirmSaveOpen(false)}
+      />
     </ModalWrapper>
   );
 }

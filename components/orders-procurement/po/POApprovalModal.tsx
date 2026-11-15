@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import { PurchaseOrderPO } from "../types";
 import { approvePurchaseOrder } from "@/app/actions/orders/orders";
 import { actionResponse } from "@/lib/resources/action-response";
@@ -47,6 +48,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [confirmApproveOpen, setConfirmApproveOpen] = useState(false);
 
   // Handle quantity modification
   const handleQuantityChange = (index: number, value: string) => {
@@ -369,21 +371,39 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
               variant="outline"
               fallbackOnClose={onClose}
               disabled={submitting}
-              className="rounded-xl px-5 font-semibold border-border bg-card hover:bg-muted text-foreground cursor-pointer"
+              className="rounded-xl px-5 py-2.5 h-auto text-sm font-semibold border-border bg-card hover:bg-muted text-foreground cursor-pointer"
             >
               Close
             </ModalCloseButton>
             <Button
               type="button"
-              onClick={handleConfirmApproval}
+              onClick={() => {
+                if (validate()) {
+                  setConfirmApproveOpen(true);
+                }
+              }}
               disabled={submitting || hasMissingPriceOrQty}
-              className="rounded-xl px-6 font-semibold shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-xl px-6 py-2.5 h-auto text-sm font-semibold shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Approving..." : "Confirm & Approve Order"}
             </Button>
           </div>
         </div>
       </div>
+
+      <ActionConfirmModal
+        open={confirmApproveOpen}
+        title="Approve Purchase Order"
+        subtitle={`Purchase Order No: ${po.poNumber} • Supplier: ${po.supplierName}`}
+        description={`Are you sure you want to confirm supplier approval and finalize pricing (Total: ₱${calculatedGrandTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) for ${po.poNumber}?`}
+        confirmLabel="Confirm & Approve"
+        submitting={submitting}
+        onCancel={() => setConfirmApproveOpen(false)}
+        onConfirm={async () => {
+          setConfirmApproveOpen(false);
+          await handleConfirmApproval();
+        }}
+      />
     </ModalWrapper>
   );
 }

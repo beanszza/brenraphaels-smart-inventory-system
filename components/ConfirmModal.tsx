@@ -21,7 +21,7 @@ export default function ConfirmModal({ message, onConfirm, onCancel }: ConfirmMo
       <div
         role="alertdialog"
         aria-modal="true"
-        style={{ width: "100%", maxWidth: "420px" }}
+        style={{ width: "100%", maxWidth: "440px" }}
         className="font-sans w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
         onClick={e => e.stopPropagation()}
       >

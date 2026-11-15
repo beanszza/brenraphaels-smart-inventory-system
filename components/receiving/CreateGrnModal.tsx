@@ -143,6 +143,7 @@ export default function CreateGrnModal({
   const [rejectionReason, setRejectionReason] = useState("");
 
   // Confirmations
+  const [confirmProceedToQaOpen, setConfirmProceedToQaOpen] = useState(false);
   const [confirmFinishGrnOpen, setConfirmFinishGrnOpen] = useState(false);
 
   // Step 2: Quality Assurance state
@@ -167,6 +168,7 @@ export default function CreateGrnModal({
     setExpandedQaItems({});
     setShowRejectModal(false);
     setRejectionReason("");
+    setConfirmProceedToQaOpen(false);
     setConfirmFinishGrnOpen(false);
     setVerified({
       physicalQuantityVerified: false,
@@ -499,6 +501,45 @@ export default function CreateGrnModal({
     }
   };
 
+  // STEP 1 Action: Validate before opening Proceed to QA Confirmation Modal
+  const handlePromptProceedToQa = () => {
+    if (!selected) {
+      setFieldErrors({ delivery: "Please select an arrived delivery." });
+      return;
+    }
+
+    if (items.length === 0) {
+      setError("No items found for this delivery.");
+      return;
+    }
+
+    const errs: Record<string, string> = {};
+
+    items.forEach((item, itemIdx) => {
+      const reqExpiry = isItemExpiryRequired(item);
+      item.batches.forEach((b, batchIdx) => {
+        const hasQty =
+          b.deliveredQuantity !== "" &&
+          typeof b.deliveredQuantity === "number" &&
+          !isNaN(b.deliveredQuantity) &&
+          b.deliveredQuantity > 0;
+        if (!hasQty) {
+          errs[`qty_${itemIdx}_${batchIdx}`] = "Quantity required (> 0)";
+        }
+        if (reqExpiry && (!b.expiryDate || !b.expiryDate.trim())) {
+          errs[`expiry_${itemIdx}_${batchIdx}`] = "Expiry date required";
+        }
+      });
+    });
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
+
+    setConfirmProceedToQaOpen(true);
+  };
+
   // STEP 1 Action: Proceed to QA Step in same modal
   const executeProceedToQa = async () => {
     if (!selected) {
@@ -695,6 +736,7 @@ export default function CreateGrnModal({
 
       setQaItems(qaRows);
       setExpandedQaItems(Object.fromEntries(qaRows.map((r) => [r.inspectionItemId, true])));
+      setConfirmProceedToQaOpen(false);
       setStep(2);
     } catch (err: any) {
       const errorMsg =
@@ -702,6 +744,7 @@ export default function CreateGrnModal({
         err?.message ||
         "An error occurred while proceeding to Quality Assurance inspection.";
       setError(errorMsg);
+      setConfirmProceedToQaOpen(false);
     } finally {
       setSubmitting(false);
     }
@@ -1307,7 +1350,7 @@ export default function CreateGrnModal({
                 <ModalNativeCloseButton
                   fallbackOnClose={onClose}
                   disabled={submitting}
-                  className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   Cancel
                 </ModalNativeCloseButton>
@@ -1318,7 +1361,7 @@ export default function CreateGrnModal({
                       type="button"
                       disabled={submitting}
                       onClick={() => setShowRejectModal(true)}
-                      className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     >
                       Reject Entire Shipment
                     </button>
@@ -1326,8 +1369,8 @@ export default function CreateGrnModal({
                   <button
                     type="button"
                     disabled={submitting || !isReadyForQa}
-                    onClick={executeProceedToQa}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                    onClick={handlePromptProceedToQa}
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
                   >
                     {submitting ? "Proceeding…" : "Proceed to Quality Assurance"}
                   </button>
@@ -1571,7 +1614,7 @@ export default function CreateGrnModal({
                   type="button"
                   onClick={() => setStep(1)}
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Back to Receiving Counts
@@ -1582,7 +1625,7 @@ export default function CreateGrnModal({
                     type="button"
                     disabled={!isQaDone || submitting}
                     onClick={handleExportGrnReport}
-                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     <Download className="w-4 h-4" />
                     Export Goods Receipt Note
@@ -1591,7 +1634,7 @@ export default function CreateGrnModal({
                     type="button"
                     disabled={!isQaDone || submitting}
                     onClick={() => setConfirmFinishGrnOpen(true)}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
                   >
                     {submitting ? "Finishing…" : "Confirm & Sign Off Quality Assurance Review"}
                   </button>
@@ -1680,128 +1723,101 @@ export default function CreateGrnModal({
         </div>
       </NestedDialog>
 
-      {/* Confirmation before Finish GRN (Nested Radix Dialog matching Orders & Procurement) */}
+      {/* Confirmation before Proceeding to Step 2 QA (PO / PR Format) */}
+      <NestedDialog
+        open={confirmProceedToQaOpen}
+        title="Confirm Receiving Counts & Proceed to QA"
+        onClose={() => setConfirmProceedToQaOpen(false)}
+        maxWidth={440}
+      >
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+
+          <h2 className="text-xl font-bold text-foreground mb-1">
+            Confirm Receiving Counts
+          </h2>
+
+          <p className="text-xs font-semibold text-muted-foreground mb-3">
+            Delivery No: {selected?.deliveryNumber || "—"} • GRN No: {activeGrn?.grnNumber || previewGrnNo}
+          </p>
+
+          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+            Are you sure you want to record the physical receiving counts for{" "}
+            <strong className="text-foreground">{items.length} item(s)</strong> and proceed to{" "}
+            <strong className="text-foreground">Quality Assurance Review</strong>?
+          </p>
+
+          <div className="flex justify-center gap-3 w-full">
+            <button
+              type="button"
+              onClick={() => setConfirmProceedToQaOpen(false)}
+              disabled={submitting}
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={executeProceedToQa}
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+            >
+              {submitting ? "Proceeding…" : "Confirm & Proceed"}
+            </button>
+          </div>
+        </div>
+      </NestedDialog>
+
+      {/* Confirmation before Finish GRN (Exact 440px PO / PR Confirmation Format) */}
       <NestedDialog
         open={confirmFinishGrnOpen}
-        title="Review Quality Assurance Inspection"
+        title="Confirm Quality Assurance Review"
         onClose={() => setConfirmFinishGrnOpen(false)}
-        maxWidth={640}
+        maxWidth={440}
       >
-        <div className="space-y-4 text-foreground">
-          <div className="p-3.5 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground flex items-center gap-2">
-            <ClipboardCheck className="w-4 h-4 text-primary shrink-0" />
-            <span>
-              Please review the Quality Assurance inspection summary below before finalizing this Goods Receipt Note.
-            </span>
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+            <AlertTriangle className="w-6 h-6" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
-            <div>
-              <span className="text-xs font-medium text-muted-foreground block mb-0.5">
-                Goods Receipt Note #
-              </span>
-              <span className="font-semibold text-foreground text-sm">
-                {activeGrn?.grnNumber || previewGrnNo || "—"}
-              </span>
-            </div>
-            <div>
-              <span className="text-xs font-medium text-muted-foreground block mb-0.5">
-                Delivery Reference
-              </span>
-              <span className="font-semibold text-foreground text-sm">
-                {selected?.deliveryNumber || activeGrn?.deliveryNumber || "—"}
-              </span>
-            </div>
-            <div>
-              <span className="text-xs font-medium text-muted-foreground block mb-0.5">
-                Supplier
-              </span>
-              <span className="font-semibold text-foreground text-sm">
-                {selected?.supplierName || activeGrn?.supplierName || "—"}
-              </span>
-            </div>
-            <div>
-              <span className="text-xs font-medium text-muted-foreground block mb-0.5">
-                Inspection Status
-              </span>
-              <span className="font-semibold text-primary text-sm">
-                {qaVerificationChoice || "Quality Assurance Completed"}
-              </span>
-            </div>
-            <div>
-              <span className="text-xs font-medium text-muted-foreground block mb-0.5">
-                Total Accepted (Good)
-              </span>
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-sm">
-                {qaItems.reduce((s, i) => s + Number(i.acceptedQuantity || 0), 0)} units
-              </span>
-            </div>
-            <div>
-              <span className="text-xs font-medium text-muted-foreground block mb-0.5">
-                Total Rejected (Bad)
-              </span>
-              <span className="font-semibold text-destructive text-sm">
-                {qaItems.reduce((s, i) => s + Number(i.rejectedQuantity || 0), 0)} units
-              </span>
-            </div>
-          </div>
+          <h2 className="text-xl font-bold text-foreground mb-1">
+            Confirm Quality Assurance Review
+          </h2>
 
-          <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-            <table className="w-full">
-              <thead className="border-b border-border bg-muted/30">
-                <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                  <th className="px-4 py-4">Item Description</th>
-                  <th className="px-4 py-4 text-right">Received</th>
-                  <th className="px-4 py-4 text-right text-emerald-600 dark:text-emerald-400">Accepted</th>
-                  <th className="px-4 py-4 text-right text-destructive">Rejected</th>
-                  <th className="px-4 py-4">Reason / Remarks</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {qaItems.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
-                      {item.itemName}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
-                      {item.deliveredQuantity}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-right font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                      {item.acceptedQuantity}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-right font-semibold text-destructive whitespace-nowrap">
-                      {item.rejectedQuantity}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-muted-foreground">
-                      {Number(item.rejectedQuantity) > 0 ? (
-                        <span className="text-destructive font-medium">{item.defectReason || "Rejected"}</span>
-                      ) : (
-                        item.acceptedReason || item.notes || "Meets Specifications"
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <p className="text-xs font-semibold text-muted-foreground mb-3">
+            Goods Receipt Note No: {activeGrn?.grnNumber || previewGrnNo || "—"}
+          </p>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-border mt-4">
+          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+            You are approving{" "}
+            <strong className="text-foreground">
+              {qaItems.reduce((s, i) => s + Number(i.acceptedQuantity || 0), 0)} unit(s)
+            </strong>{" "}
+            across <strong className="text-foreground">{qaItems.length} item batch(es)</strong> to proceed to Stock-In
+            {qaItems.reduce((s, i) => s + Number(i.rejectedQuantity || 0), 0) > 0
+              ? ` and logging ${qaItems.reduce((s, i) => s + Number(i.rejectedQuantity || 0), 0)} rejected unit(s) for discrepancy resolution`
+              : ""}
+            . Are you sure you want to sign off and complete this Goods Receipt Note?
+          </p>
+
+          <div className="flex justify-center gap-3 w-full">
             <button
               type="button"
               onClick={() => setConfirmFinishGrnOpen(false)}
               disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
             >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Edit
+              Cancel
             </button>
             <button
               type="button"
               disabled={submitting}
               onClick={executeFinishGrn}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
             >
-              {submitting ? "Signing Off..." : "Confirm & Complete Quality Assurance"}
+              {submitting ? "Signing Off..." : "Sign Off & Complete"}
             </button>
           </div>
         </div>

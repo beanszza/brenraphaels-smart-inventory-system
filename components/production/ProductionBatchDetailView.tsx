@@ -1266,23 +1266,22 @@ export default function ProductionBatchDetailView({
                 <strong className="text-foreground">{formattedStageEndTime}</strong>? This action cannot be reversed.
               </p>
               <div className="flex justify-center gap-3 w-full">
-                <Button
+                <button
                   type="button"
-                  variant="outline"
                   onClick={() => setConfirmStageModal(false)}
                   disabled={stageLoading}
-                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer"
+                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer disabled:opacity-50"
                 >
                   Cancel
-                </Button>
-                <Button
+                </button>
+                <button
                   type="button"
                   onClick={handleCompleteCurrentStage}
                   disabled={stageLoading}
-                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors shadow-sm cursor-pointer"
+                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50"
                 >
                   {stageLoading ? "Confirming..." : "Confirm & Proceed"}
-                </Button>
+                </button>
               </div>
             </div>
           </div>
@@ -1322,23 +1321,22 @@ export default function ProductionBatchDetailView({
                 <strong className="text-foreground">Quality Assurance</strong>.
               </p>
               <div className="flex justify-center gap-3 w-full">
-                <Button
+                <button
                   type="button"
-                  variant="outline"
                   onClick={() => setConfirmPackagingModal(false)}
                   disabled={pkgLoading}
-                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer"
+                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer disabled:opacity-50"
                 >
                   Cancel
-                </Button>
-                <Button
+                </button>
+                <button
                   type="button"
                   onClick={handleFinishPackaging}
                   disabled={pkgLoading}
-                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors shadow-sm cursor-pointer"
+                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50"
                 >
                   {pkgLoading ? "Submitting..." : "Confirm & Send to QA"}
-                </Button>
+                </button>
               </div>
             </div>
           </div>
@@ -1352,21 +1350,28 @@ export default function ProductionBatchDetailView({
           className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
         >
           <div
-            className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border p-6 text-foreground outline-none animate-in fade-in zoom-in-95 duration-150"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Reject Production Batch"
+            style={{ width: "100%", maxWidth: "440px" }}
+            className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0 outline-none animate-in fade-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col items-center justify-center text-center">
-              <div className="w-12 h-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-4">
-                <AlertTriangle className="w-6 h-6 text-destructive" />
+              <div className="w-12 h-12 rounded-full bg-muted text-foreground flex items-center justify-center mb-4">
+                <AlertTriangle className="w-6 h-6 text-foreground" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-1">
+              <h2 className="text-xl font-bold text-foreground mb-1">
                 Reject Production Batch
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              </h2>
+              <p className="text-xs font-semibold text-muted-foreground mb-3">
+                Batch No: {batch.batchNumber}
+              </p>
+              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
                 Record reason and details for batch rejection. A loss report will be generated.
               </p>
 
-              <div className="space-y-3 w-full text-left mb-6">
+              <div className="space-y-3 w-full text-left mb-5">
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold text-foreground">
                     Reason for Rejection <span className="text-destructive">*</span>
@@ -1403,24 +1408,23 @@ export default function ProductionBatchDetailView({
                 </div>
               </div>
 
-              <div className="flex justify-center gap-3 w-full pt-1">
-                <Button
+              <div className="flex justify-center gap-3 w-full">
+                <button
                   type="button"
-                  variant="outline"
                   onClick={() => setShowRejectModal(false)}
                   disabled={rejectLoading}
-                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer"
+                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer disabled:opacity-50"
                 >
                   Cancel
-                </Button>
-                <Button
+                </button>
+                <button
                   type="button"
                   onClick={handleRejectBatch}
                   disabled={rejectLoading || !rejectReason.trim()}
-                  className="flex-1 px-5 py-2.5 text-sm font-semibold bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl transition-colors shadow-sm cursor-pointer"
+                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50"
                 >
                   {rejectLoading ? "Rejecting..." : "Confirm Rejection"}
-                </Button>
+                </button>
               </div>
             </div>
           </div>

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { X, Loader2, CheckCircle, XCircle } from "lucide-react";
 import { production } from "@/lib/production/client";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
+import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 
 interface Props {
   open: boolean;
@@ -31,6 +32,7 @@ export default function QAChecklistModal({ open, batchId, onClose, onSubmit }: P
   };
 
   const [submitting, setSubmitting] = useState(false);
+  const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
 
   const handleSubmit = async () => {
     if (!decision) return;
@@ -175,18 +177,37 @@ export default function QAChecklistModal({ open, batchId, onClose, onSubmit }: P
         {/* Footer */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button type="button" onClick={requestClose} className="px-4 py-2 text-xs font-semibold text-foreground border border-border rounded-lg hover:opacity-80 transition-opacity">Cancel</button>
+            <button type="button" onClick={requestClose} className="px-5 py-2.5 text-sm font-semibold text-foreground border border-border rounded-xl hover:bg-muted transition-colors cursor-pointer">Cancel</button>
           </div>
           <button
-            onClick={handleSubmit}
+            type="button"
+            onClick={() => setConfirmSubmitOpen(true)}
             disabled={!canSubmit}
-            className="px-4 py-2 text-sm rounded-xl bg-primary text-primary-foreground hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/85 transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
           >
             {submitting && <Loader2 size={16} className="animate-spin" />}
             Submit QA & Decision
           </button>
         </div>
       </div>
+
+      <ActionConfirmModal
+        open={confirmSubmitOpen}
+        title={decision === "reject" ? "Confirm Batch Rejection" : "Confirm QA Approval"}
+        subtitle={`Batch ID: ${batchId}`}
+        description={
+          decision === "reject"
+            ? `Are you sure you want to reject Batch ${batchId} following QA inspection?`
+            : `Are you sure you want to approve Batch ${batchId} and submit the QA checklist?`
+        }
+        confirmText={decision === "reject" ? "Confirm Rejection" : "Confirm Approval"}
+        loading={submitting}
+        onConfirm={async () => {
+          await handleSubmit();
+          setConfirmSubmitOpen(false);
+        }}
+        onClose={() => setConfirmSubmitOpen(false)}
+      />
     </div>
   );
 }

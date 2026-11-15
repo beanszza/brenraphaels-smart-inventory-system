@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { PurchaseRequisition, PRItem } from "../types";
 import { useStaff } from "@/context/StaffContext";
@@ -144,6 +145,7 @@ export function CreatePRModal({
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewAction, setReviewAction] = useState<"draft" | "submit">("submit");
   const [submitting, setSubmitting] = useState(false);
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
 
   // Reset or populate on open
   useEffect(() => {
@@ -500,7 +502,7 @@ export function CreatePRModal({
                 variant="outline"
                 onClick={() => setIsReviewing(false)}
                 disabled={submitting}
-                className="rounded-xl px-6 font-semibold cursor-pointer border-border bg-card hover:bg-muted text-foreground"
+                className="rounded-xl px-5 py-2.5 h-auto text-sm font-semibold cursor-pointer border-border bg-card hover:bg-muted text-foreground"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Edit
@@ -508,10 +510,8 @@ export function CreatePRModal({
               <Button
                 type="button"
                 disabled={submitting}
-                onClick={async () => {
-                  await executeSave(reviewAction === "submit");
-                }}
-                className="rounded-xl px-6 font-semibold shadow-sm bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer disabled:opacity-50"
+                onClick={() => setConfirmSaveOpen(true)}
+                className="rounded-xl px-6 py-2.5 h-auto text-sm font-semibold shadow-sm bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer disabled:opacity-50"
               >
                 {submitting ? "Submitting..." : `Confirm & ${reviewAction === "submit" ? "Submit" : "Save"}`}
               </Button>
@@ -890,6 +890,24 @@ export function CreatePRModal({
           </div>
         )}
       </ModalWrapper>
+
+      <ActionConfirmModal
+        open={confirmSaveOpen}
+        title={reviewAction === "submit" ? "Submit Purchase Requisition" : "Save Purchase Requisition Draft"}
+        subtitle={`Requisition No: ${prNumber || "PR-XXXX-XXXX"} • ${items.length} item(s)`}
+        description={
+          reviewAction === "submit"
+            ? `Are you sure you want to submit ${prNumber || "this purchase requisition"} for approval?`
+            : `Are you sure you want to save ${prNumber || "this purchase requisition"} as a draft?`
+        }
+        confirmLabel={reviewAction === "submit" ? "Confirm & Submit" : "Confirm & Save"}
+        submitting={submitting}
+        onCancel={() => setConfirmSaveOpen(false)}
+        onConfirm={async () => {
+          setConfirmSaveOpen(false);
+          await executeSave(reviewAction === "submit");
+        }}
+      />
     </>
   );
 }

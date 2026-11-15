@@ -64,13 +64,14 @@ export function ProductionActionModal({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(val) => { if (!val && !loading) onClose(); }}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="font-sans fixed inset-0 z-[300] bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" />
+        <DialogPrimitive.Overlay className="pointer-events-auto font-sans fixed inset-0 z-[100050] bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
           onPointerDownOutside={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
-          className="fixed left-1/2 top-1/2 z-[301] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 bg-card rounded-2xl shadow-2xl border border-border p-6 text-foreground outline-none animate-in fade-in zoom-in-95 duration-150"
+          style={{ width: "100%", maxWidth: "440px" }}
+          className="pointer-events-auto font-sans fixed left-1/2 top-1/2 z-[100051] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0 outline-none animate-in fade-in zoom-in-95 duration-150"
         >
           <div className="flex flex-col items-center justify-center text-center">
             {/* Circular Alert Icon */}
@@ -83,14 +84,19 @@ export function ProductionActionModal({
               {getTitle()}
             </DialogPrimitive.Title>
 
+            {/* Reference Subtitle */}
+            <p className="text-xs font-semibold text-muted-foreground mb-3">
+              Production Request No: {reqNumber}
+            </p>
+
             {/* Description */}
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
               {getDescription()}
             </p>
 
             {/* Reason Textarea (Required for Reject) */}
             {isReject && (
-              <div className="w-full text-left mb-4">
+              <div className="w-full text-left mb-5">
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">
                   Rejection Reason <span className="text-destructive">*</span>
                 </label>
@@ -102,7 +108,7 @@ export function ProductionActionModal({
                   }}
                   placeholder="State the reason why this production request is being rejected..."
                   rows={3}
-                  className={`w-full text-xs p-3 rounded-xl border bg-card text-foreground focus:outline-none transition-colors ${
+                  className={`w-full text-xs p-3 rounded-xl border bg-background text-foreground resize-none focus:outline-none transition-colors ${
                     error
                       ? "border-destructive focus:ring-1 focus:ring-destructive"
                       : "border-border focus:ring-1 focus:ring-foreground"
@@ -117,24 +123,23 @@ export function ProductionActionModal({
             )}
 
             {/* Action Buttons matching PR / PO confirmation */}
-            <div className="flex justify-center gap-3 w-full pt-1">
-              <Button
+            <div className="flex justify-center gap-3 w-full">
+              <button
                 type="button"
-                variant="outline"
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer"
+                className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer disabled:opacity-50"
               >
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
                 onClick={handleConfirm}
                 disabled={loading}
-                className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors shadow-sm cursor-pointer"
+                className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50"
               >
-                {loading ? "Confirming..." : isReject ? "Confirm Rejection" : "Confirm Approval"}
-              </Button>
+                {loading ? "Processing..." : isReject ? "Confirm Rejection" : "Confirm Approval"}
+              </button>
             </div>
           </div>
         </DialogPrimitive.Content>

@@ -442,14 +442,31 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                   {/* Action Buttons */}
                   <div className="flex items-center justify-end pt-2">
                     {!isAdmin ? (
-                      <Button
+                      <button
                         type="button"
                         disabled={submitting}
-                        onClick={() => setConfirmModal(true)}
-                        className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer shadow-xs"
+                        onClick={() => {
+                          const totalPacked = selectedBatch.packedQty;
+                          if (acceptedQty + rejectedQty !== totalPacked) {
+                            toast.error(
+                              `Accepted (${acceptedQty}) + Rejected (${rejectedQty}) must equal total packed units (${totalPacked}).`
+                            );
+                            return;
+                          }
+                          if (acceptedQty > 0 && !acceptedReason) {
+                            toast.error("Please select an acceptance reason.");
+                            return;
+                          }
+                          if (rejectedQty > 0 && !rejectedReason) {
+                            toast.error("Please select a rejection reason for rejected units.");
+                            return;
+                          }
+                          setConfirmModal(true);
+                        }}
+                        className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/85 transition-colors cursor-pointer shadow-sm disabled:opacity-50"
                       >
                         Confirm & Sign Off QA Review
-                      </Button>
+                      </button>
                     ) : (
                       <span className="text-xs text-muted-foreground italic">
                         Admin View-Only Mode (Inspection operated by Quality Assurance Officer)

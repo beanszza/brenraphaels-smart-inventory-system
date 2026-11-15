@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { ProductionRequestEntity, LotSuggestionsResponse } from "./types";
 import { ProductionActionModal, ProductionActionType } from "./ProductionActionModal";
+import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 import { useIsAdmin } from "@/context/StaffContext";
 import { getFutureDateError, getMaxFutureDateString } from "@/lib/date-limits";
 import { resolveStaffName } from "@/lib/orders/dto";
@@ -152,6 +153,8 @@ export default function ProductionRequestModal({
   // Action modal state (PR/PO confirmation style)
   const [actionModal, setActionModal] = useState<{ open: boolean; type: ProductionActionType } | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string>("");
+  const [confirmSubmitOpen, setConfirmSubmitOpen] = useState<boolean>(false);
+  const [confirmCreatePrOpen, setConfirmCreatePrOpen] = useState<boolean>(false);
 
   // Data fetching
   const [products, setProducts] = useState<ProductOption[]>([]);
@@ -244,6 +247,8 @@ export default function ProductionRequestModal({
         setLotSuggestions(null);
       }
       setActionModal(null);
+      setConfirmSubmitOpen(false);
+      setConfirmCreatePrOpen(false);
       setTimeError("");
     }
   }, [open, initialRequest, prefillData]);
@@ -421,6 +426,32 @@ export default function ProductionRequestModal({
       }
     }
     setTimeError("");
+  };
+
+  // Validate before opening Submit Confirmation Modal
+  const handlePromptSubmit = () => {
+    if (!productId || !recipeId || !quantity || quantity <= 0) {
+      toast.error("Please select a product, variant, and recipe.");
+      return;
+    }
+
+    const dateErr = getFutureDateError(requiredDate, "Required date");
+    if (dateErr) {
+      toast.error(dateErr);
+      return;
+    }
+
+    if (requiredDate === today) {
+      const currentTimeStr = getCurrentTime24();
+      if (requiredTime < currentTimeStr) {
+        const msg = `Required time cannot be in the past (current: ${formatTimeTo12Hour(currentTimeStr)}).`;
+        setTimeError(msg);
+        toast.error(msg);
+        return;
+      }
+    }
+
+    setConfirmSubmitOpen(true);
   };
 
   // Handle Save (Draft or Submit)
@@ -998,9 +1029,9 @@ export default function ProductionRequestModal({
             {isViewMode && !initialRequest?.linkedPrId && (
               <Button
                 type="button"
-                onClick={handleCreatePrDirect}
+                onClick={() => setConfirmCreatePrOpen(true)}
                 disabled={submitting}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs px-3.5 py-1.5 rounded-xl transition-colors shrink-0 shadow-sm"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs px-3.5 py-1.5 rounded-xl transition-colors shrink-0 shadow-sm cursor-pointer"
               >
                 Create PR Now
               </Button>
@@ -1218,9 +1249,9 @@ export default function ProductionRequestModal({
           {!isViewMode ? (
             <Button
               type="button"
-              onClick={() => handleSubmit(true)}
+              onClick={handlePromptSubmit}
               disabled={submitting || !productId || !recipeId || !quantity || quantity <= 0 || !requiredDate || Boolean(timeError)}
-              className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {submitting
                 ? "Processing..."
@@ -1258,7 +1289,7 @@ export default function ProductionRequestModal({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleCreatePrDirect}
+                  onClick={() => setConfirmCreatePrOpen(true)}
                   className="text-sm font-semibold text-foreground rounded-xl border-border px-5 py-2.5 hover:bg-muted cursor-pointer"
                 >
                   Create Purchase Requisition
@@ -1286,7 +1317,6 @@ export default function ProductionRequestModal({
                   onClick={() => {
                     if (initialRequest) {
                       onStartProduction(initialRequest);
-                      onClose();
                     }
                   }}
                   className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
@@ -1312,6 +1342,39 @@ export default function ProductionRequestModal({
           onClose={() => setActionModal(null)}
         />
       )}
+
+      {/* Submit New Production Request Confirmation Modal */}
+      <ActionConfirmModal
+        open={confirmSubmitOpen}
+        title={lotSuggestions?.hasAnyShortfall ? "Confirm Request & Create Requisition" : "Submit Production Request"}
+        subtitle={`${selectedProductName || "Product"} (${selectedVariant || "Standard"}) • Target: ${quantity} ${filteredRecipes.find((r) => String(r.recipeId) === recipeId)?.yieldUom || "units"}`}
+        description={
+          lotSuggestions?.hasAnyShortfall
+            ? "Available stock is insufficient for all required ingredients. Submitting will create this production request and redirect you to create a Purchase Requisition for the shortfall items."
+            : `Are you sure you want to submit this production request for ${selectedProductName} (${selectedVariant || "Standard"}) for approval? Suggested ingredient lots will be reserved.`
+        }
+        confirmText={lotSuggestions?.hasAnyShortfall ? "Confirm & Create PR" : "Confirm Submission"}
+        loading={submitting}
+        onConfirm={async () => {
+          setConfirmSubmitOpen(false);
+          await handleSubmit(true);
+        }}
+        onClose={() => setConfirmSubmitOpen(false)}
+      />
+
+      {/* Create Shortfall PR from View Mode Confirmation Modal */}
+      <ActionConfirmModal
+        open={confirmCreatePrOpen}
+        title="Create Purchase Requisition"
+        subtitle={initialRequest ? `Production Request No: ${initialRequest.reqNumber}` : undefined}
+        description="Are you sure you want to open the Purchase Requisition form prefilled with the shortfall ingredients for this production request?"
+        confirmText="Continue to PR"
+        onConfirm={() => {
+          setConfirmCreatePrOpen(false);
+          handleCreatePrDirect();
+        }}
+        onClose={() => setConfirmCreatePrOpen(false)}
+      />
     </ModalWrapper>
   );
 }

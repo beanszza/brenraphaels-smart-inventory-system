@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import ModalWrapper from "./ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import { Recipe, FinishedProduct, SupplyItem, Ingredient } from "./types";
 import RecipeIngredientItem from "./RecipeIngredientItem";
 import { parseVariantComponents } from "@/lib/production/sku";
@@ -40,6 +41,7 @@ function RecipeModalForm({
 }: RecipeModalProps) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
   const [recipeName, setRecipeName] = useState(editingRecipe?.recipeName ?? "");
   const [selectedProductName, setSelectedProductName] = useState(
     finishedProducts.find((p) => p.productId === editingRecipe?.productId)?.itemName ??
@@ -97,7 +99,7 @@ function RecipeModalForm({
     }
   };
 
-  const handleSave = async () => {
+  const handleRequestSave = () => {
     let isValid = true;
 
     if (!recipeName.trim()) {
@@ -129,6 +131,12 @@ function RecipeModalForm({
 
     if (!isValid) return;
 
+    setConfirmSaveOpen(true);
+  };
+
+  const handleSave = async () => {
+    const parsedBatchSize = Number(batchSize);
+    setConfirmSaveOpen(false);
     setSaving(true);
     setSaveError("");
     try {
@@ -179,7 +187,7 @@ function RecipeModalForm({
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          void handleSave();
+          handleRequestSave();
         }}
       >
         {saveError && (
@@ -425,6 +433,21 @@ function RecipeModalForm({
           </div>
         </fieldset>
       </form>
+
+      <ActionConfirmModal
+        open={confirmSaveOpen}
+        title={editingRecipe ? "Save Bill of Materials Changes" : "Create Bill of Materials"}
+        subtitle={`Recipe: ${recipeName.trim() || "—"} • ${ingredients.length} ingredient(s)`}
+        description={
+          editingRecipe
+            ? `Are you sure you want to save changes to recipe "${recipeName.trim()}"?`
+            : `Are you sure you want to create the recipe "${recipeName.trim()}"?`
+        }
+        confirmLabel={editingRecipe ? "Save Changes" : "Create Recipe"}
+        submitting={saving}
+        onCancel={() => setConfirmSaveOpen(false)}
+        onConfirm={handleSave}
+      />
     </ModalWrapper>
   );
 }

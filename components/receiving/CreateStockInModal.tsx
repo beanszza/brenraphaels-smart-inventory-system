@@ -389,7 +389,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
           <ModalNativeCloseButton
             fallbackOnClose={onClose}
             disabled={submitting}
-            className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Cancel
           </ModalNativeCloseButton>
@@ -397,7 +397,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
             type="button"
             disabled={lines.length === 0 || submitting}
             onClick={handleTryCommit}
-            className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/85 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
           >
             {submitting ? "Committing…" : "Commit to Inventory"}
           </button>

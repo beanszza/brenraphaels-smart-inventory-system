@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "./ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import { Supplier } from "./types";
 import AddressSelector from "@/components/shared/AddressSelector";
 
@@ -70,6 +71,7 @@ function SupplierModalForm({
 }: SupplierModalProps) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
   const [companyName, setCompanyName] = useState(editingSupplier?.companyName ?? "");
 
   const initialName = parseContact(editingSupplier?.contactPerson ?? "");
@@ -244,7 +246,7 @@ function SupplierModalForm({
 
   const fullAddress = [streetNumber.trim(), barangay.trim(), city.trim(), province.trim()].filter(Boolean).join(", ");
 
-  const handleSave = async () => {
+  const handleRequestSave = () => {
     if (saving) return;
     const v1 = validateCompanyName(companyName);
     const v2 = validateFirstName(firstName);
@@ -255,6 +257,12 @@ function SupplierModalForm({
     const v7 = validateAddress(streetNumber, barangay, city, province);
     const v8 = validateWebsite(website);
     if (!v1 || !v2 || !v3 || !v4 || !v5 || !v6 || !v7 || !v8) return;
+    setConfirmSaveOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (saving) return;
+    setConfirmSaveOpen(false);
 
     const formattedContact = lastName.trim() && firstName.trim()
       ? `${lastName.trim()}, ${firstName.trim()}${middleName.trim() ? ` ${middleName.trim()}` : ""}`
@@ -302,7 +310,7 @@ function SupplierModalForm({
       onClose={() => { if (!saving) onClose(); }}
       size="max-w-xl"
     >
-      <form onSubmit={(event) => { event.preventDefault(); void handleSave(); }}>
+      <form onSubmit={(event) => { event.preventDefault(); handleRequestSave(); }}>
         {saveError && <p role="alert" className="mb-3 text-sm text-destructive">{saveError}</p>}
         {saving && <p role="status" className="mb-3 text-sm text-muted-foreground">Saving...</p>}
         <fieldset disabled={saving} className="space-y-4">
@@ -585,6 +593,21 @@ function SupplierModalForm({
           </div>
         </fieldset>
       </form>
+
+      <ActionConfirmModal
+        open={confirmSaveOpen}
+        title={editingSupplier ? "Save Supplier Changes" : "Create New Supplier"}
+        subtitle={`Supplier: ${companyName.trim() || "—"}`}
+        description={
+          editingSupplier
+            ? `Are you sure you want to save changes to supplier "${companyName.trim()}"?`
+            : `Are you sure you want to create the supplier "${companyName.trim()}"?`
+        }
+        confirmLabel={editingSupplier ? "Save Changes" : "Create Supplier"}
+        submitting={saving}
+        onCancel={() => setConfirmSaveOpen(false)}
+        onConfirm={handleSave}
+      />
     </ModalWrapper>
   );
 }

@@ -23,6 +23,7 @@ import {
 import jsQR from "jsqr";
 import { MaterialIssuanceDTO, LotReservationDTO } from "./types";
 import { useIsAdmin } from "@/context/StaffContext";
+import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 
 interface MaterialIssuanceModalProps {
   open: boolean;
@@ -94,6 +95,7 @@ export default function MaterialIssuanceModal({
   const [issuance, setIssuance] = useState<MaterialIssuanceDTO | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [issuing, setIssuing] = useState<boolean>(false);
+  const [confirmIssueOpen, setConfirmIssueOpen] = useState<boolean>(false);
 
   // Last scanned item for live supermarket-style feedback
   const [lastScanned, setLastScanned] = useState<{
@@ -875,7 +877,7 @@ export default function MaterialIssuanceModal({
               stopCamera();
               onClose();
             }}
-            className="text-xs font-semibold rounded-xl border-border hover:bg-muted cursor-pointer"
+            className="text-sm font-semibold px-5 py-2.5 rounded-xl border-border hover:bg-muted cursor-pointer"
           >
             Close
           </ModalCloseButton>
@@ -884,9 +886,15 @@ export default function MaterialIssuanceModal({
             !isAdmin ? (
               <Button
                 type="button"
-                onClick={handleIssueMaterials}
+                onClick={() => {
+                  if (!allVerified && !isAlreadyIssued) {
+                    toast.error("Please verify all ingredient lots before issuing.");
+                    return;
+                  }
+                  setConfirmIssueOpen(true);
+                }}
                 disabled={!allVerified || issuing}
-                className={`text-xs font-semibold px-6 py-2 rounded-xl transition-all shadow-sm ${
+                className={`text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm ${
                   allVerified
                     ? "bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
                     : "bg-muted text-muted-foreground cursor-not-allowed"
@@ -906,6 +914,22 @@ export default function MaterialIssuanceModal({
           )}
         </div>
       </div>
+
+      {/* Confirm Material Issuance Modal (PO/PR Format) */}
+      <ActionConfirmModal
+        open={confirmIssueOpen}
+        title="Confirm Material Issuance"
+        subtitle={`Issuance No: ${issuance?.issuanceNumber || "—"} • Request No: ${issuance?.reqNumber || "—"}`}
+        description={`Are you sure you want to issue all ${totalLots} verified material lot(s) for ${issuance?.productName || "this request"}? This will deduct the reserved lots from stock and mark the request Ready for Production.`}
+        confirmText="Confirm Issuance"
+        loading={issuing}
+        loadingText="Issuing..."
+        onConfirm={async () => {
+          await handleIssueMaterials();
+          setConfirmIssueOpen(false);
+        }}
+        onClose={() => setConfirmIssueOpen(false)}
+      />
     </ModalWrapper>
   );
 }

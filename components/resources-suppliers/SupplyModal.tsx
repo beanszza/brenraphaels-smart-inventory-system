@@ -10,6 +10,7 @@ import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ModalWrapper from "./ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import { SupplyItem, UomOption } from "./types";
 
 interface Supplier {
@@ -193,6 +194,7 @@ function SupplyModalForm({
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
   const [itemName, setItemName] = useState(editingItem?.itemName ?? "");
   const [categoryId, setCategoryId] = useState(() => {
     if (editingItem?.categoryId && availableCategories.some((c) => c.categoryId === editingItem.categoryId)) {
@@ -310,7 +312,7 @@ function SupplyModalForm({
     setMaxStock(val); validateMaxStock(val, minStock);
   };
 
-  const handleSave = async () => {
+  const handleRequestSave = () => {
     if (saving) return;
     const isNameValid = validateItemName(itemName);
     const isMinValid = validateMinStock(minStock, maxStock);
@@ -318,6 +320,12 @@ function SupplyModalForm({
     const hasSupplier = selectedSupplierIds.length > 0;
     if (!hasSupplier) setSupplierError("At least one supplier is required.");
     if (!isNameValid || !isMinValid || !isMaxValid || !hasSupplier) return;
+    setConfirmSaveOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (saving) return;
+    setConfirmSaveOpen(false);
     setSaving(true);
     setSaveError("");
     try {
@@ -349,7 +357,7 @@ function SupplyModalForm({
       onClose={() => { if (!saving) onClose(); }}
       size="max-w-xl"
     >
-      <form onSubmit={(event) => { event.preventDefault(); void handleSave(); }}>
+      <form onSubmit={(event) => { event.preventDefault(); handleRequestSave(); }}>
       {saveError && <p role="alert" className="mb-3 text-sm text-destructive">{saveError}</p>}
       {saving && <p role="status" className="mb-3 text-sm text-muted-foreground">Saving...</p>}
       <fieldset disabled={saving} className="space-y-4">
@@ -626,6 +634,21 @@ function SupplyModalForm({
         </div>
       </fieldset>
       </form>
+
+      <ActionConfirmModal
+        open={confirmSaveOpen}
+        title={editingItem ? "Save Supply Item Changes" : "Create New Supply Item"}
+        subtitle={`Supply: ${itemName.trim() || "—"}`}
+        description={
+          editingItem
+            ? `Are you sure you want to save changes to supply item "${itemName.trim()}"?`
+            : `Are you sure you want to create the supply item "${itemName.trim()}"?`
+        }
+        confirmLabel={editingItem ? "Save Changes" : "Create Supply"}
+        submitting={saving}
+        onCancel={() => setConfirmSaveOpen(false)}
+        onConfirm={handleSave}
+      />
     </ModalWrapper>
   );
 }

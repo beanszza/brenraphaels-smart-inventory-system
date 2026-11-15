@@ -12,6 +12,7 @@ import { CheckCircle2, PackageCheck, AlertCircle, Sparkles } from "lucide-react"
 import { ProductionBatchEntity } from "./types";
 import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 import { getLotItemAbbreviation } from "@/lib/inventory/lot-code";
+import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 
 interface BatchCompletionModalProps {
   open: boolean;
@@ -38,6 +39,7 @@ export default function BatchCompletionModal({
   const [scrapReason, setScrapReason] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [confirmCompleteOpen, setConfirmCompleteOpen] = useState<boolean>(false);
 
   if (!batch) return null;
 
@@ -51,7 +53,7 @@ export default function BatchCompletionModal({
   const dd = String(now.getDate()).padStart(2, "0");
   const fgLotCode = batch.fgLotCode ? batch.fgLotCode.replace(/^FG-/i, "") : `${itemAbbrev}-${yy}${mm}${dd}-01`;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePromptSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (actualQuantity <= 0) {
       toast.error("Actual output quantity must be greater than 0.");
@@ -62,7 +64,10 @@ export default function BatchCompletionModal({
       toast.error(expiryErr);
       return;
     }
+    setConfirmCompleteOpen(true);
+  };
 
+  const executeCompleteBatch = async () => {
     setSubmitting(true);
     try {
       const res = await actionResponse(productionCompleteBatch(batch.batchId, {
@@ -76,6 +81,7 @@ export default function BatchCompletionModal({
 
       if (res.data?.success) {
         toast.success(res.data.message || "Batch successfully completed and Finished Goods lot stocked in!");
+        setConfirmCompleteOpen(false);
         onSuccess();
         onClose();
       } else {
@@ -96,7 +102,7 @@ export default function BatchCompletionModal({
       onClose={onClose}
       size="max-w-2xl"
     >
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handlePromptSubmit} className="space-y-6">
         {/* Banner summary */}
         <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/40 border border-border">
           <PackageCheck className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
@@ -219,7 +225,7 @@ export default function BatchCompletionModal({
             type="button"
             variant="outline"
             fallbackOnClose={onClose}
-            className="text-xs font-semibold rounded-xl border-border hover:bg-muted"
+            className="text-sm font-semibold px-5 py-2.5 rounded-xl border-border hover:bg-muted cursor-pointer"
           >
             Cancel
           </ModalCloseButton>
@@ -227,12 +233,24 @@ export default function BatchCompletionModal({
           <Button
             type="submit"
             disabled={submitting}
-            className="bg-primary text-primary-foreground font-semibold text-xs px-6 py-2 rounded-xl hover:bg-primary/90 transition-colors shadow-sm"
+            className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
           >
             {submitting ? "Finalizing..." : "Complete Batch & Stock In FG"}
           </Button>
         </div>
       </form>
+
+      <ActionConfirmModal
+        open={confirmCompleteOpen}
+        title="Confirm Batch Completion"
+        subtitle={`Batch No: ${batch.batchNumber} • FG Lot: ${fgLotCode}`}
+        description={`Are you sure you want to complete batch ${batch.batchNumber} with ${actualQuantity} ${batch.yieldUom} (${yieldPercentage.toFixed(1)}% yield) and stock it into Finished Goods inventory?`}
+        confirmText="Confirm & Complete"
+        loading={submitting}
+        loadingText="Finalizing..."
+        onConfirm={executeCompleteBatch}
+        onClose={() => setConfirmCompleteOpen(false)}
+      />
     </ModalWrapper>
   );
 }

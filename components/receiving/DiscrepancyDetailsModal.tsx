@@ -5,6 +5,7 @@ import { receiving } from "@/lib/receiving/client";
 import React, { useState } from "react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
+import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Discrepancy } from "./types";
 import { HR_EMPLOYEES } from "@/lib/employees";
@@ -38,6 +39,14 @@ export default function DiscrepancyDetailsModal({
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    kind: "direct" | "loss" | "rtv";
+    resolutionType?: string;
+    defaultNotes?: string;
+    title: string;
+    description: string;
+    confirmText: string;
+  } | null>(null);
 
   if (!discrepancy) return null;
 
@@ -276,15 +285,27 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     onClick={() => setActiveForm("none")}
                     disabled={submitting}
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
-                    onClick={handleCreateLossReport}
+                    onClick={() => {
+                      if (!lossReason.trim()) {
+                        setError("Please state the reason for writing off as a loss.");
+                        return;
+                      }
+                      setError(null);
+                      setPendingConfirm({
+                        kind: "loss",
+                        title: "Confirm Loss Report",
+                        description: `Are you sure you want to generate a Loss Report and permanently write off ${discrepancy.discrepancyQuantity.toLocaleString()} units of ${discrepancy.itemName}?`,
+                        confirmText: "Confirm Loss Report",
+                      });
+                    }}
                     disabled={submitting}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     {submitting ? "Writing Off..." : "Confirm Loss Report"}
                   </button>
@@ -340,15 +361,22 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     onClick={() => setActiveForm("none")}
                     disabled={submitting}
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
-                    onClick={handleCreateRtv}
+                    onClick={() =>
+                      setPendingConfirm({
+                        kind: "rtv",
+                        title: "Submit Return Request",
+                        description: `Are you sure you want to submit a Return to Supplier (RTV) request for ${discrepancy.discrepancyQuantity.toLocaleString()} units of ${discrepancy.itemName} for administrator approval?`,
+                        confirmText: "Confirm & Submit",
+                      })
+                    }
                     disabled={submitting}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     {submitting ? "Submitting..." : "Submit Return Request"}
                   </button>
@@ -363,7 +391,7 @@ export default function DiscrepancyDetailsModal({
           <ModalNativeCloseButton
             fallbackOnClose={onClose}
             disabled={submitting}
-            className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Close
           </ModalNativeCloseButton>
@@ -376,12 +404,16 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() =>
-                      handleResolveDirect(
-                        "NewDelivery",
-                        "Supplier notified to deliver remaining shortage on next shipment."
-                      )
+                      setPendingConfirm({
+                        kind: "direct",
+                        resolutionType: "NewDelivery",
+                        defaultNotes: "Supplier notified to deliver remaining shortage on next shipment.",
+                        title: "Wait for Next Delivery",
+                        description: `Are you sure you want to mark discrepancy ${discrepancy.discrepancyNumber} as awaiting the remaining ${discrepancy.discrepancyQuantity.toLocaleString()} units on the next supplier delivery?`,
+                        confirmText: "Confirm Resolution",
+                      })
                     }
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Wait for Next Delivery
                   </button>
@@ -390,12 +422,16 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() =>
-                      handleResolveDirect(
-                        "CloseRemaining",
-                        "Accepted partial delivery. Remaining shortage is closed and not expected."
-                      )
+                      setPendingConfirm({
+                        kind: "direct",
+                        resolutionType: "CloseRemaining",
+                        defaultNotes: "Accepted partial delivery. Remaining shortage is closed and not expected.",
+                        title: "Close Remaining Shortage",
+                        description: `Are you sure you want to accept this partial delivery and close the remaining shortage of ${discrepancy.discrepancyQuantity.toLocaleString()} units for ${discrepancy.itemName}?`,
+                        confirmText: "Confirm & Close",
+                      })
                     }
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Close Remaining
                   </button>
@@ -404,7 +440,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("loss")}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
                   >
                     Create Loss Report
                   </button>
@@ -417,12 +453,16 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() =>
-                      handleResolveDirect(
-                        "NewDelivery",
-                        "Supplier notified to deliver replacement units on next shipment."
-                      )
+                      setPendingConfirm({
+                        kind: "direct",
+                        resolutionType: "NewDelivery",
+                        defaultNotes: "Supplier notified to deliver replacement units on next shipment.",
+                        title: "Wait for Replacement Delivery",
+                        description: `Are you sure you want to resolve discrepancy ${discrepancy.discrepancyNumber} by awaiting ${discrepancy.discrepancyQuantity.toLocaleString()} replacement units on the next shipment?`,
+                        confirmText: "Confirm Resolution",
+                      })
                     }
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Wait for Replacement Delivery
                   </button>
@@ -431,7 +471,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("loss")}
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Create Loss Report
                   </button>
@@ -440,7 +480,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("rtv")}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
                   >
                     Request Return to Supplier
                   </button>
@@ -453,12 +493,16 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() =>
-                      handleResolveDirect(
-                        "KeepWithCredit",
-                        "Accepted excess inventory; credit note or adjusted invoice applied."
-                      )
+                      setPendingConfirm({
+                        kind: "direct",
+                        resolutionType: "KeepWithCredit",
+                        defaultNotes: "Accepted excess inventory; credit note or adjusted invoice applied.",
+                        title: "Keep Oversupply (With Credit Note)",
+                        description: `Are you sure you want to keep the excess ${discrepancy.discrepancyQuantity.toLocaleString()} units of ${discrepancy.itemName} with a supplier credit note or invoice adjustment?`,
+                        confirmText: "Confirm Resolution",
+                      })
                     }
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Keep (With Credit Note)
                   </button>
@@ -467,7 +511,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("rtv")}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
                   >
                     Request Return to Supplier
                   </button>
@@ -477,6 +521,29 @@ export default function DiscrepancyDetailsModal({
           )}
         </div>
       </div>
+
+      {/* Confirmation Modal (440px PO / PR Format) */}
+      <ActionConfirmModal
+        open={Boolean(pendingConfirm)}
+        title={pendingConfirm?.title || "Confirm Action"}
+        subtitle={`Discrepancy No: ${discrepancy.discrepancyNumber} • GRN No: ${discrepancy.grnNumber}`}
+        description={pendingConfirm?.description || ""}
+        confirmText={pendingConfirm?.confirmText || "Confirm"}
+        loading={submitting}
+        loadingText="Processing..."
+        onConfirm={async () => {
+          if (!pendingConfirm) return;
+          if (pendingConfirm.kind === "direct" && pendingConfirm.resolutionType) {
+            await handleResolveDirect(pendingConfirm.resolutionType, pendingConfirm.defaultNotes || "");
+          } else if (pendingConfirm.kind === "loss") {
+            await handleCreateLossReport();
+          } else if (pendingConfirm.kind === "rtv") {
+            await handleCreateRtv();
+          }
+          setPendingConfirm(null);
+        }}
+        onClose={() => setPendingConfirm(null)}
+      />
     </ModalWrapper>
   );
 }

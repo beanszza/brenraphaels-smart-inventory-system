@@ -6,6 +6,7 @@ import { updateProductionRequest as productionUpdateProductionRequest } from "@/
 import { actionResponse } from "@/lib/resources/action-response";
 import { useIsAdmin, useIsImsManager, useIsHeadCook } from "@/context/StaffContext";
 import { ProductionActionModal } from "./ProductionActionModal";
+import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -97,6 +98,7 @@ export default function ProductionRequestsTab({
     type: "approve" | "reject";
     request: ProductionRequestEntity;
   } | null>(null);
+  const [startProdConfirmReq, setStartProdConfirmReq] = useState<ProductionRequestEntity | null>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -199,9 +201,16 @@ export default function ProductionRequestsTab({
     }
   };
 
-  // Start Production -> Creates batch and navigates straight to Production Tracking
-  const handleStartProduction = async (req: ProductionRequestEntity, e?: React.MouseEvent) => {
+  // Prompt confirmation before starting production
+  const handleStartProduction = (req: ProductionRequestEntity, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    setStartProdConfirmReq(req);
+  };
+
+  // Start Production -> Creates batch and navigates straight to Production Tracking
+  const executeStartProduction = async () => {
+    if (!startProdConfirmReq) return;
+    const req = startProdConfirmReq;
 
     setStartingId(req.prodReqId);
     try {
@@ -213,6 +222,7 @@ export default function ProductionRequestsTab({
 
       if (res.data?.success && res.data.data) {
         toast.success(`Production batch ${res.data.data.batchNumber} started!`);
+        setStartProdConfirmReq(null);
         setIsModalOpen(false);
         fetchRequests();
         if (onStartBatchAndTrack) {
@@ -578,6 +588,23 @@ export default function ProductionRequestsTab({
           onClose={() => setAdminActionModal(null)}
         />
       )}
+
+      {/* Head Cook Start Production Confirmation Modal */}
+      <ActionConfirmModal
+        open={Boolean(startProdConfirmReq)}
+        title="Confirm Start Production"
+        subtitle={startProdConfirmReq ? `Production Request No: ${startProdConfirmReq.reqNumber}` : undefined}
+        description={
+          startProdConfirmReq
+            ? `Are you sure you want to start a kitchen production batch for ${startProdConfirmReq.productName} (${startProdConfirmReq.variant || "Standard"}) with a target output of ${startProdConfirmReq.quantity} ${startProdConfirmReq.yieldUom}?`
+            : ""
+        }
+        confirmText="Start Production"
+        loading={Boolean(startingId)}
+        loadingText="Starting..."
+        onConfirm={executeStartProduction}
+        onClose={() => setStartProdConfirmReq(null)}
+      />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { PurchaseRequisition, PurchaseOrderPO } from "../types";
 import { useStaff } from "@/context/StaffContext";
@@ -85,6 +86,8 @@ export function CreatePOModal({
   const [createdOrder, setCreatedOrder] = useState<PurchaseOrderPO | null>(null);
   const [gmailComposeUrl, setGmailComposeUrl] = useState<string>("");
   const [isConfirmedSent, setIsConfirmedSent] = useState(false);
+  const [confirmSendOpen, setConfirmSendOpen] = useState(false);
+  const [confirmDoneOpen, setConfirmDoneOpen] = useState(false);
 
   const [selectedSupplierDetails, setSelectedSupplierDetails] = useState<{
     supplierId: number;
@@ -644,7 +647,7 @@ export function CreatePOModal({
               <Button
                 type="button"
                 disabled={submitting}
-                onClick={handleMarkAsSentInGmail}
+                onClick={() => setConfirmDoneOpen(true)}
                 className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
               >
                 {submitting ? "Confirming..." : "Done"}
@@ -713,7 +716,7 @@ export function CreatePOModal({
               <Button
                 type="button"
                 disabled={submitting}
-                onClick={handleConfirmSendToSupplier}
+                onClick={() => setConfirmSendOpen(true)}
                 className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
               >
                 {submitting ? "Preparing Gmail Draft..." : "Confirm & Send to Supplier"}
@@ -1153,6 +1156,34 @@ export function CreatePOModal({
           </>
         )}
       </div>
+
+      <ActionConfirmModal
+        open={confirmSendOpen}
+        title="Confirm & Send Purchase Order"
+        subtitle={`Purchase Order No: ${nextPoNumber || initialPo?.poNumber || "Auto-assigned"} • Supplier: ${selectedSupplier?.supplierName || initialPo?.supplierName || "—"}`}
+        description="Are you sure you want to generate this Purchase Order PDF and open Gmail to send the order to the supplier?"
+        confirmLabel="Confirm & Send"
+        submitting={submitting}
+        onCancel={() => setConfirmSendOpen(false)}
+        onConfirm={() => {
+          setConfirmSendOpen(false);
+          void handleConfirmSendToSupplier();
+        }}
+      />
+
+      <ActionConfirmModal
+        open={confirmDoneOpen}
+        title="Confirm Purchase Order Sent"
+        subtitle={`Purchase Order No: ${createdOrder?.poNumber || "—"}`}
+        description={`Have you sent the email with ${createdOrder?.poNumber || "the Purchase Order"}.pdf attached in Gmail? Confirming will move ${createdOrder?.poNumber || "this order"} to Pending Approval.`}
+        confirmLabel="Confirm Sent"
+        submitting={submitting}
+        onCancel={() => setConfirmDoneOpen(false)}
+        onConfirm={() => {
+          setConfirmDoneOpen(false);
+          void handleMarkAsSentInGmail();
+        }}
+      />
     </ModalWrapper>
   );
 }

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "./ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import { CategoryItem } from "./types";
 
 interface CategoryModalProps {
@@ -46,6 +47,7 @@ function CategoryModalForm({
   const [descWarning, setDescWarning] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
 
   const validateName = (val: string) => {
     const trimmed = val.trim();
@@ -123,10 +125,15 @@ function CategoryModalForm({
     validateDescription(val);
   };
 
-  const handleSave = async () => {
+  const handleRequestSave = () => {
     const isNameValid = validateName(categoryName);
     const isDescValid = validateDescription(description);
     if (!isNameValid || !isDescValid) return;
+    setConfirmSaveOpen(true);
+  };
+
+  const handleSave = async () => {
+    setConfirmSaveOpen(false);
     try {
       setIsSaving(true);
       setSaveError("");
@@ -268,13 +275,28 @@ function CategoryModalForm({
           <Button
             type="button"
             disabled={hasErrors || isSaving}
-            onClick={handleSave}
+            onClick={handleRequestSave}
             className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? "Saving..." : editingCategory ? "Save Changes" : "Create Category"}
           </Button>
         </div>
       </div>
+
+      <ActionConfirmModal
+        open={confirmSaveOpen}
+        title={editingCategory ? "Save Category Changes" : "Create New Category"}
+        subtitle={`Category: ${categoryName.trim() || "—"}`}
+        description={
+          editingCategory
+            ? `Are you sure you want to save changes to category "${categoryName.trim()}"?`
+            : `Are you sure you want to create the category "${categoryName.trim()}"?`
+        }
+        confirmLabel={editingCategory ? "Save Changes" : "Create Category"}
+        submitting={isSaving}
+        onCancel={() => setConfirmSaveOpen(false)}
+        onConfirm={handleSave}
+      />
     </ModalWrapper>
   );
 }

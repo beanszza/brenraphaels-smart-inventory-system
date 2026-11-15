@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -50,6 +51,7 @@ export function CreateDeliveryModal({
   const [pendingPoId, setPendingPoId] = useState<number | null>(null);
   const [confirmPoChange, setConfirmPoChange] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
+  const [finalConfirmOpen, setFinalConfirmOpen] = useState(false);
   const [itemSearch, setItemSearch] = useState("");
 
   const [loadingPOs, setLoadingPOs] = useState(false);
@@ -942,7 +944,7 @@ export function CreateDeliveryModal({
               variant="outline"
               onClick={() => setConfirmModal(false)}
               disabled={submitting}
-              className="rounded-xl px-6 cursor-pointer"
+              className="rounded-xl px-5 py-2.5 h-auto text-sm font-semibold cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Edit
@@ -950,17 +952,29 @@ export function CreateDeliveryModal({
             <Button
               type="button"
               disabled={submitting}
-              onClick={() => {
-                setConfirmModal(false);
-                handleSubmit();
-              }}
-              className="rounded-xl px-6 shadow-sm bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer"
+              onClick={() => setFinalConfirmOpen(true)}
+              className="rounded-xl px-6 py-2.5 h-auto text-sm font-semibold shadow-sm bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer"
             >
               {submitting ? "Scheduling..." : "Confirm & Schedule Delivery"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      <ActionConfirmModal
+        open={finalConfirmOpen}
+        title="Schedule Delivery Order"
+        subtitle={`Delivery No: ${deliveryNumber} • PO: ${currentPO?.poNumber || "—"}`}
+        description={`Are you sure you want to schedule delivery ${deliveryNumber} for Purchase Order ${currentPO?.poNumber || "—"} (${items.filter((item) => item.orderQuantity > 0).length} item(s))?`}
+        confirmLabel="Confirm & Schedule"
+        submitting={submitting}
+        onCancel={() => setFinalConfirmOpen(false)}
+        onConfirm={() => {
+          setFinalConfirmOpen(false);
+          setConfirmModal(false);
+          void handleSubmit();
+        }}
+      />
     </>
   );
 }

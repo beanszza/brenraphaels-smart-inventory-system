@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -84,6 +85,8 @@ export default function ViewCycleCounts() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showReconcileDialog, setShowReconcileDialog] = useState(false);
+  const [confirmCreateOpen, setConfirmCreateOpen] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
   const [newCount, setNewCount] = useState({ locationId: "", countedBy: "" });
   const [saving, setSaving] = useState(false);
 
@@ -150,6 +153,7 @@ export default function ViewCycleCounts() {
 
   const handleCreateCount = async () => {
     if (!newCount.locationId) return;
+    setConfirmCreateOpen(false);
     setSaving(true);
     try {
       await inventory.createCycleCount({
@@ -167,6 +171,7 @@ export default function ViewCycleCounts() {
 
   const handleReconcile = async () => {
     if (!selectedCount) return;
+    setReconciling(true);
     try {
       await inventory.reconcileCycleCount(selectedCount.cycleCountId);
       setShowReconcileDialog(false);
@@ -174,6 +179,8 @@ export default function ViewCycleCounts() {
       fetchCounts();
     } catch (e) {
       console.error(e);
+    } finally {
+      setReconciling(false);
     }
   };
 
@@ -317,14 +324,25 @@ export default function ViewCycleCounts() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <ModalCloseButton variant="outline" size="sm" fallbackOnClose={() => setShowCreateModal(false)}>Cancel</ModalCloseButton>
-            <Button size="sm" onClick={handleCreateCount} disabled={saving || !newCount.locationId}>
+          <DialogFooter className="gap-3 pt-2">
+            <ModalCloseButton variant="outline" fallbackOnClose={() => setShowCreateModal(false)} className="rounded-xl px-5 py-2.5 h-auto text-sm font-semibold">Cancel</ModalCloseButton>
+            <Button onClick={() => setConfirmCreateOpen(true)} disabled={saving || !newCount.locationId} className="rounded-xl px-5 py-2.5 h-auto text-sm font-semibold">
               {saving ? "Creating..." : "Create Count"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ActionConfirmModal
+        open={confirmCreateOpen}
+        title="Create Cycle Count"
+        subtitle={`Location: ${locations.find((l) => String(l.locationId) === newCount.locationId)?.locationName || "Selected Location"}`}
+        description="Are you sure you want to start a new physical inventory cycle count for this location?"
+        confirmLabel="Create Count"
+        submitting={saving}
+        onCancel={() => setConfirmCreateOpen(false)}
+        onConfirm={handleCreateCount}
+      />
 
       {/* Detail Modal */}
       <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
@@ -378,10 +396,10 @@ export default function ViewCycleCounts() {
               </Table>
             </div>
           )}
-          <DialogFooter>
-            <ModalCloseButton variant="outline" size="sm" fallbackOnClose={() => setShowDetailModal(false)}>Close</ModalCloseButton>
+          <DialogFooter className="gap-3 pt-2">
+            <ModalCloseButton variant="outline" fallbackOnClose={() => setShowDetailModal(false)} className="rounded-xl px-5 py-2.5 h-auto text-sm font-semibold">Close</ModalCloseButton>
             {selectedCount?.status !== "Reconciled" && (
-              <Button size="sm" onClick={() => setShowReconcileDialog(true)}>
+              <Button onClick={() => setShowReconcileDialog(true)} className="rounded-xl px-5 py-2.5 h-auto text-sm font-semibold">
                 <CheckCircle className="w-3.5 h-3.5 mr-1.5" /> Reconcile
               </Button>
             )}
@@ -390,20 +408,16 @@ export default function ViewCycleCounts() {
       </Dialog>
 
       {/* Reconcile Confirm */}
-      <Dialog open={showReconcileDialog} onOpenChange={setShowReconcileDialog} confirmOnClose={false}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-base font-semibold">Reconcile Count</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            This will post ledger adjustments for all variance items in {selectedCount?.countNumber}. This action cannot be undone.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowReconcileDialog(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleReconcile}>Confirm & Post Adjustments</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ActionConfirmModal
+        open={showReconcileDialog}
+        title="Reconcile Cycle Count"
+        subtitle={selectedCount ? `Cycle Count No: ${selectedCount.countNumber} • Location: ${selectedCount.locationName}` : undefined}
+        description={`Are you sure you want to reconcile ${selectedCount?.countNumber || "this count"}? This will post ledger adjustments for all variance items and cannot be undone.`}
+        confirmLabel="Confirm & Post"
+        submitting={reconciling}
+        onCancel={() => setShowReconcileDialog(false)}
+        onConfirm={handleReconcile}
+      />
     </div>
   );
 }

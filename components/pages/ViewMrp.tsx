@@ -23,6 +23,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -359,47 +360,40 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
       )}
 
       {/* Create PR Dialog */}
-      <Dialog open={showPrModal} onOpenChange={setShowPrModal}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-base font-semibold">Create Purchase Requisition</DialogTitle>
-          </DialogHeader>
-          {selectedItem && (
-            <div className="space-y-3 text-sm">
-              <div className="p-3 bg-muted rounded-lg space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Item</span>
-                  <span className="font-medium">{selectedItem.itemName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Net Requirement</span>
-                  <span className="font-semibold">{selectedItem.netRequirement.toLocaleString()} {selectedItem.uomName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Preferred Supplier</span>
-                  <span>{selectedItem.preferredSupplier}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Estimated Cost</span>
-                  <span className="font-mono">
-                    ₱{selectedItem.estimatedCost.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                A Purchase Requisition will be created for {selectedItem.netRequirement.toLocaleString()} {selectedItem.uomName} of {selectedItem.itemName}.
-              </p>
+      <ActionConfirmModal
+        open={showPrModal && !!selectedItem}
+        title="Create Purchase Requisition"
+        subtitle={
+          selectedItem
+            ? `Item: ${selectedItem.itemName} • Net Req: ${selectedItem.netRequirement.toLocaleString()} ${selectedItem.uomName}`
+            : undefined
+        }
+        description={
+          selectedItem
+            ? `Are you sure you want to create a draft Purchase Requisition for ${selectedItem.netRequirement.toLocaleString()} ${selectedItem.uomName} of ${selectedItem.itemName}?`
+            : ""
+        }
+        confirmLabel="Confirm & Create PR"
+        submitting={prSaving}
+        onCancel={() => setShowPrModal(false)}
+        onConfirm={handleCreatePR}
+      >
+        {selectedItem && (
+          <div className="p-3 bg-muted/40 border border-border rounded-xl space-y-1.5 text-xs">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Preferred Supplier</span>
+              <span className="font-semibold text-foreground">{selectedItem.preferredSupplier}</span>
             </div>
-          )}
-          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-          <DialogFooter>
-            <ModalCloseButton variant="outline" size="sm" fallbackOnClose={() => setShowPrModal(false)}>Cancel</ModalCloseButton>
-            <Button size="sm" onClick={handleCreatePR} disabled={prSaving}>
-              {prSaving ? "Creating..." : "Create PR"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Estimated Cost</span>
+              <span className="font-mono font-semibold text-foreground">
+                ₱{selectedItem.estimatedCost.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+            {error && <p role="alert" className="text-xs text-destructive pt-1">{error}</p>}
+          </div>
+        )}
+      </ActionConfirmModal>
     </div>
   );
 }

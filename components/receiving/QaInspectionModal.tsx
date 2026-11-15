@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { ChevronDown, ChevronRight, ClipboardCheck } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
+import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 import { QAInspection } from "./types";
 
 interface QaInspectionModalProps {
@@ -429,7 +430,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
             {isReadOnly ? (
               <ModalNativeCloseButton
                 fallbackOnClose={onClose}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
               >
                 Close
               </ModalNativeCloseButton>
@@ -438,7 +439,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                 <ModalNativeCloseButton
                   fallbackOnClose={onClose}
                   disabled={submitting}
-                  className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   Cancel
                 </ModalNativeCloseButton>
@@ -446,7 +447,7 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
                   type="button"
                   onClick={handleSubmit}
                   disabled={submitting || mismatch || missingDefectReasons}
-                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
                 >
                   {submitting ? "Submitting..." : "Complete Quality Assurance Inspection"}
                 </button>
@@ -456,71 +457,18 @@ export default function QaInspectionModal({ inspection, open, onClose, onSuccess
         </div>
       </div>
 
-
-      {/* Review Modal Portal */}
-      {confirmModal &&
-        createPortal(
-          <div className="font-sans fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-background rounded-2xl shadow-xl w-full max-w-[500px] border border-border overflow-hidden">
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                    <ClipboardCheck className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground">
-                      Complete Quality Assurance Inspection
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      You are about to finalize this Quality Assurance Inspection.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-muted/30 rounded-xl p-4 mb-6 space-y-2 border border-border">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Inspection #:</span>
-                    <span className="font-semibold text-foreground">
-                      {inspection?.inspectionNumber || "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Total Items:</span>
-                    <span className="text-foreground font-semibold">
-                      {items.length} item(s)
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Action:</span>
-                    <span className="font-medium text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md">
-                      Finalize & Save
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3 border-t border-border pt-4 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => setConfirmModal(false)}
-                    disabled={submitting}
-                    className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    disabled={submitting}
-                    onClick={executeSubmit}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50"
-                  >
-                    {submitting ? "Processing..." : "Confirm & Save"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+      {/* Confirmation Modal (Matching 440px PO / PR Format) */}
+      <ActionConfirmModal
+        open={confirmModal}
+        title="Confirm Quality Assurance Inspection"
+        subtitle={`Inspection No: ${inspection?.inspectionNumber || "N/A"} • GRN No: ${inspection?.referenceNumber || inspection?.grnNumber || "—"}`}
+        description={`Are you sure you want to finalize and sign off this Quality Assurance Inspection for ${items.length} item(s) with outcome "${verificationChoice || "Completed"}"?`}
+        confirmText="Confirm & Save"
+        loading={submitting}
+        loadingText="Processing..."
+        onConfirm={executeSubmit}
+        onClose={() => setConfirmModal(false)}
+      />
     </ModalWrapper>
   );
 }

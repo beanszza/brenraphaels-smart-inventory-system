@@ -23,6 +23,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [postModalOpen, setPostModalOpen] = useState(false);
 
   if (!grn) return null;
 
@@ -291,7 +292,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
               type="button"
               onClick={() => setCancelModalOpen(true)}
               disabled={loading}
-              className="rounded-xl border border-destructive/30 bg-destructive/10 text-destructive px-5 py-2 text-sm font-semibold hover:bg-destructive/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="rounded-xl border border-destructive/30 bg-destructive/10 text-destructive px-5 py-2.5 text-sm font-semibold hover:bg-destructive/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               Cancel Draft
             </button>
@@ -301,7 +302,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
             type="button"
             onClick={handleExport}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <Download className="w-4 h-4" />
             Export Goods Receipt Note
@@ -310,7 +311,7 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
           <ModalNativeCloseButton
             fallbackOnClose={onClose}
             disabled={loading}
-            className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
+            className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
           >
             Close
           </ModalNativeCloseButton>
@@ -318,15 +319,59 @@ export default function GrnDetailsModal({ grn, open, onClose, onUpdated, onPoste
           {isDraft && (
             <button
               type="button"
-              onClick={handlePost}
+              onClick={() => setPostModalOpen(true)}
               disabled={loading}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? "Posting…" : "Post Goods Receipt Note"}
             </button>
           )}
         </div>
       </div>
+
+      {/* Confirmation Modal: Post Draft GRN */}
+      <NestedDialog
+        open={postModalOpen}
+        title="Post Goods Receipt Note"
+        onClose={() => setPostModalOpen(false)}
+        maxWidth={440}
+      >
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground mb-1">
+            Post Goods Receipt Note
+          </h2>
+          <p className="text-xs font-semibold text-muted-foreground mb-3">
+            GRN No: {grn.grnNumber}
+          </p>
+          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+            Are you sure you want to post Draft Goods Receipt Note {grn.grnNumber} and submit it for Quality Assurance review?
+          </p>
+          <div className="flex justify-center gap-3 w-full">
+            <button
+              type="button"
+              onClick={() => setPostModalOpen(false)}
+              disabled={loading}
+              className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={async () => {
+                setPostModalOpen(false);
+                await handlePost();
+              }}
+              className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+            >
+              {loading ? "Posting…" : "Confirm & Post"}
+            </button>
+          </div>
+        </div>
+      </NestedDialog>
 
       {/* Confirmation Modal: Cancel Draft GRN */}
       <NestedDialog

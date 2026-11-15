@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Check, Upload } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import { Order } from "./types";
 import { procurement } from "@/lib/orders/client";
 import { uploadWith } from "@/lib/file-upload";
@@ -37,18 +38,23 @@ export default function ProcurementQAInspectionModal({
   const [inspectedByError, setInspectedByError] = useState("");
   const [photoError, setPhotoError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!order) return null;
 
   const isAllChecked = checklist.quantityMatch && checklist.goodCondition && checklist.specsMatch && checklist.docsCorrect;
   const result = isAllChecked ? "Passed" : "Failed";
 
-  const handleComplete = async () => {
+  const handleRequestComplete = () => {
     let isValid = true;
     if (!inspectedBy.trim()) { setInspectedByError("Inspected by is required."); isValid = false; }
     if (!pictureFile) { setPhotoError("Inspection proof photo is required."); isValid = false; }
     if (!isValid) return;
+    setConfirmOpen(true);
+  };
 
+  const handleComplete = async () => {
+    setConfirmOpen(false);
     try {
       setIsSaving(true);
       const targetStatus = result === "Passed" ? "Completed" : "Rejected";
@@ -154,12 +160,23 @@ export default function ProcurementQAInspectionModal({
           <ModalCloseButton type="button" variant="outline" fallbackOnClose={onClose} disabled={isSaving} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
             Cancel
           </ModalCloseButton>
-          <Button type="button" onClick={handleComplete} disabled={isSaving} className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors flex items-center gap-2">
+          <Button type="button" onClick={handleRequestComplete} disabled={isSaving} className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors flex items-center gap-2">
             {isSaving && <Skeleton className="h-5 w-24" />}
             Submit Quality Assurance Inspection ({result})
           </Button>
         </div>
       </div>
+
+      <ActionConfirmModal
+        open={confirmOpen}
+        title="Submit Quality Assurance Inspection"
+        subtitle={`Order No: ${order.id} • Result: ${result}`}
+        description={`Are you sure you want to submit this Quality Assurance Inspection with status "${result}" for Order ${order.id}?`}
+        confirmLabel="Confirm & Submit"
+        submitting={isSaving}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleComplete}
+      />
     </ModalWrapper>
   );
 }

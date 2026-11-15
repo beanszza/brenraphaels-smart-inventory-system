@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/shared/SearchInput";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import { OrdersSkeleton } from "@/components/orders-procurement/OrdersSkeleton";
 import { procurement } from "@/lib/orders/client";
 import { PurchaseOrderPO, POStatus } from "../types";
@@ -98,6 +99,8 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [editingPO, setEditingPO] = useState<PurchaseOrderPO | null>(null);
   const [deliveryPO, setDeliveryPO] = useState<PurchaseOrderPO | null>(null);
+  const [discardingPO, setDiscardingPO] = useState<PurchaseOrderPO | null>(null);
+  const [discardSubmitting, setDiscardSubmitting] = useState(false);
 
   // Extract unique suppliers for filter
   const uniqueSuppliers = useMemo(() => {
@@ -279,15 +282,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           onView={(po) => setSelectedPO(po)}
           onEdit={(po) => setEditingPO(po)}
           onCancel={(po) => setActionModal({ po, type: "cancel" })}
-          onDiscardDraft={async (po) => {
-            try {
-              await procurement.discardDraftOrder(po.poId);
-              setNotice(`${po.poNumber} was not sent. Draft discarded — you can create and send it again.`);
-              fetchOrders();
-            } catch (e: any) {
-              setNotice(e?.message || "Failed to discard draft purchase order.");
-            }
-          }}
+          onDiscardDraft={(po) => setDiscardingPO(po)}
         />
       )}
 
@@ -421,6 +416,36 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           }}
         />
       )}
+
+      <ActionConfirmModal
+        open={!!discardingPO}
+        title="Discard Draft Purchase Order"
+        subtitle={discardingPO ? `Purchase Order No: ${discardingPO.poNumber}` : undefined}
+        description={
+          discardingPO
+            ? `Are you sure you want to discard unsent draft ${discardingPO.poNumber}? Its items will remain available on the Purchase Requisition.`
+            : ""
+        }
+        confirmLabel="Discard Draft"
+        submitting={discardSubmitting}
+        onCancel={() => setDiscardingPO(null)}
+        onConfirm={async () => {
+          if (!discardingPO) return;
+          const po = discardingPO;
+          setDiscardSubmitting(true);
+          try {
+            await procurement.discardDraftOrder(po.poId);
+            setNotice(`${po.poNumber} was not sent. Draft discarded — you can create and send it again.`);
+            setDiscardingPO(null);
+            fetchOrders();
+          } catch (e: any) {
+            setNotice(e?.message || "Failed to discard draft purchase order.");
+            setDiscardingPO(null);
+          } finally {
+            setDiscardSubmitting(false);
+          }
+        }}
+      />
     </div>
   );
 }

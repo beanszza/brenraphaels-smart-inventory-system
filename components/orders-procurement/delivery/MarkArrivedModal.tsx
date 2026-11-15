@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import { Delivery } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useStaff } from "@/context/StaffContext";
@@ -37,6 +38,7 @@ export function MarkArrivedModal({
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -56,7 +58,7 @@ export function MarkArrivedModal({
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -75,6 +77,11 @@ export function MarkArrivedModal({
       return;
     }
 
+    setConfirmOpen(true);
+  };
+
+  const executeConfirmArrival = async () => {
+    setConfirmOpen(false);
     try {
       setSubmitting(true);
       const combinedDateTime = new Date(`${actualArrivalDate}T12:00:00Z`).toISOString();
@@ -317,6 +324,17 @@ export function MarkArrivedModal({
           </Button>
         </div>
       </form>
+
+      <ActionConfirmModal
+        open={confirmOpen}
+        title="Confirm Delivery Arrival"
+        subtitle={`Delivery No: ${delivery.deliveryNumber} • PO: ${delivery.poNumber}`}
+        description={`Are you sure you want to confirm arrival for ${delivery.deliveryNumber} on ${actualArrivalDate} and generate the official Delivery Arrival Report?`}
+        confirmLabel="Confirm Arrival"
+        submitting={submitting}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={executeConfirmArrival}
+      />
     </ModalWrapper>
   );
 }

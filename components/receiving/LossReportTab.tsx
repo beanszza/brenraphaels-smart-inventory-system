@@ -24,6 +24,7 @@ import {
 import Pagination from "@/components/Pagination";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
+import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 import { LossReport } from "./types";
 
 export default function LossReportTab({ initialLossReports }: { initialLossReports: LossReport[] }) {
@@ -37,6 +38,7 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
 
   const [selectedReport, setSelectedReport] = useState<LossReport | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [confirmAckReport, setConfirmAckReport] = useState<LossReport | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -264,7 +266,7 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
                           </DropdownMenuItem>
                           {!isAck && (
                             <DropdownMenuItem
-                              onSelect={() => handleAcknowledge(r.lossReportId)}
+                              onSelect={() => setConfirmAckReport(r)}
                               disabled={actionLoadingId !== null}
                               className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer disabled:opacity-50"
                             >
@@ -418,16 +420,16 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
               <ModalNativeCloseButton
                 fallbackOnClose={() => setModalOpen(false)}
                 disabled={actionLoadingId !== null}
-                className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
+                className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
               >
                 Close
               </ModalNativeCloseButton>
               {!selectedReport.isAcknowledged && (
                 <button
                   type="button"
-                  onClick={() => handleAcknowledge(selectedReport.lossReportId)}
+                  onClick={() => setConfirmAckReport(selectedReport)}
                   disabled={actionLoadingId !== null}
-                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
+                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
                 >
                   {actionLoadingId === selectedReport.lossReportId ? "Acknowledging..." : "Acknowledge This Report"}
                 </button>
@@ -436,6 +438,27 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
           </div>
         </ModalWrapper>
       )}
+
+      {/* Acknowledge Loss Report Confirmation Modal (440px PO / PR Format) */}
+      <ActionConfirmModal
+        open={Boolean(confirmAckReport)}
+        title="Acknowledge Loss Report"
+        subtitle={confirmAckReport ? `Loss Report No: ${confirmAckReport.lossReportNumber}` : undefined}
+        description={
+          confirmAckReport
+            ? `Are you sure you want to acknowledge Loss & Disposal Report ${confirmAckReport.lossReportNumber} for ${confirmAckReport.lostQuantity.toLocaleString()} ${confirmAckReport.uomName || "Units"} of ${confirmAckReport.itemName}?`
+            : ""
+        }
+        confirmText="Confirm & Acknowledge"
+        loading={Boolean(confirmAckReport && actionLoadingId === confirmAckReport.lossReportId)}
+        loadingText="Acknowledging..."
+        onConfirm={async () => {
+          if (!confirmAckReport) return;
+          await handleAcknowledge(confirmAckReport.lossReportId);
+          setConfirmAckReport(null);
+        }}
+        onClose={() => setConfirmAckReport(null)}
+      />
     </div>
   );
 }

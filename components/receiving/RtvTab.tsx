@@ -25,6 +25,7 @@ import {
 import Pagination from "@/components/Pagination";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
+import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 import { RtvRecord } from "./types";
 
 export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[] }) {
@@ -40,6 +41,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
   const [selectedRtv, setSelectedRtv] = useState<RtvRecord | null>(null);
 
   // Modals for actions
+  const [approvingRtv, setApprovingRtv] = useState<RtvRecord | null>(null);
   const [rejectingRtv, setRejectingRtv] = useState<RtvRecord | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [rejectionError, setRejectionError] = useState<string | null>(null);
@@ -56,6 +58,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
     try {
       const res = await receiving.approveReturn(rtv.rtvId);
       if (res.data?.success) {
+        setApprovingRtv(null);
         setSelectedRtv(null);
         fetchRtvs();
       } else {
@@ -316,7 +319,10 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                           {isPendingApproval && (
                             <>
                               <DropdownMenuItem
-                                onSelect={() => handleApprove(rtv)}
+                                onSelect={() => {
+                                  setApprovingRtv(rtv);
+                                  setActionError(null);
+                                }}
                                 disabled={actionLoading}
                                 className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer disabled:opacity-50"
                               >
@@ -455,7 +461,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-4">
               <ModalNativeCloseButton
                 fallbackOnClose={() => setSelectedRtv(null)}
-                className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted transition-colors shadow-sm cursor-pointer"
+                className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors shadow-sm cursor-pointer"
               >
                 Close
               </ModalNativeCloseButton>
@@ -465,24 +471,24 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                     type="button"
                     onClick={() => {
                       const target = selectedRtv;
-                      setSelectedRtv(null);
                       setRejectingRtv(target);
                       setRejectionReason("");
                       setRejectionError(null);
+                      setActionError(null);
                     }}
                     disabled={actionLoading}
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
+                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     Reject
                   </button>
                   <button
                     type="button"
                     onClick={() => {
-                      handleApprove(selectedRtv);
-                      setSelectedRtv(null);
+                      setApprovingRtv(selectedRtv);
+                      setActionError(null);
                     }}
                     disabled={actionLoading}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     Approve Return
                   </button>
@@ -493,12 +499,12 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                   type="button"
                   onClick={() => {
                     const target = selectedRtv;
-                    setSelectedRtv(null);
                     setDispatchingRtv(target);
                     setCreditNoteNumber("");
+                    setActionError(null);
                   }}
                   disabled={actionLoading}
-                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                 >
                   Dispatch Shipment
                 </button>
@@ -508,160 +514,109 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
         </ModalWrapper>
       )}
 
-      {/* REJECT RTV MODAL */}
-      {rejectingRtv && (
-        <ModalWrapper
-          open={!!rejectingRtv}
-          title={`Reject Return Request - ${rejectingRtv.rtvNumber}`}
-          onClose={() => {
-            setRejectingRtv(null);
-            setRejectionReason("");
-            setRejectionError(null);
-            setActionError(null);
-          }}
-          size="max-w-md"
-        >
-          <div className="space-y-4 text-foreground text-sm">
-            {actionError && (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive flex items-center justify-between">
-                <span className="font-medium">{actionError}</span>
-                <button
-                  type="button"
-                  onClick={() => setActionError(null)}
-                  className="font-semibold underline ml-2 shrink-0 cursor-pointer text-xs"
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
+      {/* APPROVE RTV MODAL (440px PO / PR Format) */}
+      <ActionConfirmModal
+        open={Boolean(approvingRtv)}
+        title="Approve Return Request"
+        subtitle={approvingRtv ? `Return to Vendor No: ${approvingRtv.rtvNumber}` : undefined}
+        description={
+          approvingRtv
+            ? `Are you sure you want to approve return request ${approvingRtv.rtvNumber} for ${(approvingRtv.returnedQuantity ?? approvingRtv.quantityReturned ?? 0).toLocaleString()} ${approvingRtv.uomName || "Units"} of ${approvingRtv.itemName} to ${approvingRtv.supplierName}? This will authorize the return shipment for dispatch.`
+            : ""
+        }
+        confirmText="Confirm Approval"
+        loading={actionLoading}
+        loadingText="Approving..."
+        errorMessage={actionError}
+        onConfirm={() => {
+          if (approvingRtv) return handleApprove(approvingRtv);
+        }}
+        onClose={() => {
+          setApprovingRtv(null);
+          setActionError(null);
+        }}
+      />
 
-            <div className="bg-muted/20 border border-border rounded-xl p-3 space-y-1 text-xs">
-              <div className="text-sm font-semibold text-foreground">{rejectingRtv.itemName}</div>
-              <div className="text-muted-foreground">
-                Quantity: {(rejectingRtv.returnedQuantity ?? rejectingRtv.quantityReturned ?? 0).toLocaleString()} {rejectingRtv.uomName || "Units"}
-              </div>
-              <div className="text-muted-foreground">
-                Supplier: {rejectingRtv.supplierName}
-              </div>
-            </div>
+      {/* REJECT RTV MODAL (440px PO / PR Format) */}
+      <ActionConfirmModal
+        open={Boolean(rejectingRtv)}
+        title="Reject Return Request"
+        subtitle={rejectingRtv ? `Return to Vendor No: ${rejectingRtv.rtvNumber}` : undefined}
+        description={
+          rejectingRtv
+            ? `Please provide a reason for rejecting supplier return request ${rejectingRtv.rtvNumber} (${(rejectingRtv.returnedQuantity ?? rejectingRtv.quantityReturned ?? 0).toLocaleString()} ${rejectingRtv.uomName || "Units"} of ${rejectingRtv.itemName}).`
+            : ""
+        }
+        confirmText="Confirm Rejection"
+        loading={actionLoading}
+        loadingText="Rejecting..."
+        errorMessage={actionError}
+        onConfirm={handleConfirmReject}
+        onClose={() => {
+          setRejectingRtv(null);
+          setRejectionReason("");
+          setRejectionError(null);
+          setActionError(null);
+        }}
+      >
+        <div>
+          <label className="text-xs font-semibold text-foreground block mb-1.5">
+            Rejection Reason <span className="text-destructive">*</span>
+          </label>
+          <textarea
+            rows={3}
+            placeholder="Explain why this supplier return request is being rejected..."
+            value={rejectionReason}
+            onChange={(e) => {
+              setRejectionReason(e.target.value);
+              if (rejectionError) setRejectionError(null);
+            }}
+            className={`w-full bg-background border ${
+              rejectionError ? "!border-destructive focus:!ring-destructive" : "border-border"
+            } rounded-xl p-3 text-xs text-foreground resize-none focus:ring-1 focus:outline-none`}
+          />
+          {rejectionError && (
+            <p className="mt-1.5 text-xs font-medium text-destructive">
+              {rejectionError}
+            </p>
+          )}
+        </div>
+      </ActionConfirmModal>
 
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-1.5">
-                Rejection Reason <span className="text-destructive">*</span>
-              </label>
-              <textarea
-                rows={3}
-                placeholder="Explain why this supplier return request is being rejected..."
-                value={rejectionReason}
-                onChange={(e) => {
-                  setRejectionReason(e.target.value);
-                  if (rejectionError) setRejectionError(null);
-                }}
-                className={`w-full bg-card border ${
-                  rejectionError ? "!border-destructive focus:!ring-destructive" : "border-border"
-                } rounded-xl p-2.5 text-sm text-foreground focus:ring-1 focus:outline-none`}
-              />
-              {rejectionError && (
-                <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">
-                  {rejectionError}
-                </p>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setRejectingRtv(null);
-                  setRejectionError(null);
-                  setActionError(null);
-                }}
-                disabled={actionLoading}
-                className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmReject}
-                disabled={actionLoading}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
-              >
-                {actionLoading ? "Rejecting..." : "Confirm Rejection"}
-              </button>
-            </div>
-          </div>
-        </ModalWrapper>
-      )}
-
-      {/* DISPATCH RTV MODAL */}
-      {dispatchingRtv && (
-        <ModalWrapper
-          open={!!dispatchingRtv}
-          title={`Dispatch Return Shipment - ${dispatchingRtv.rtvNumber}`}
-          onClose={() => {
-            setDispatchingRtv(null);
-            setCreditNoteNumber("");
-            setActionError(null);
-          }}
-          size="max-w-md"
-        >
-          <div className="space-y-4 text-foreground text-sm">
-            {actionError && (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive flex items-center justify-between">
-                <span className="font-medium">{actionError}</span>
-                <button
-                  type="button"
-                  onClick={() => setActionError(null)}
-                  className="font-semibold underline ml-2 shrink-0 cursor-pointer text-xs"
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
-
-            <div className="bg-muted/20 border border-border rounded-xl p-3 space-y-1 text-xs">
-              <div className="text-sm font-semibold text-foreground">{dispatchingRtv.itemName}</div>
-              <div className="text-muted-foreground">
-                Returning {(dispatchingRtv.returnedQuantity ?? dispatchingRtv.quantityReturned ?? 0).toLocaleString()} {dispatchingRtv.uomName || "Units"} to {dispatchingRtv.supplierName}
-              </div>
-              <p className="text-xs text-muted-foreground pt-1">
-                Dispatching will physically remove the stock from quarantine/holding and log the transfer in the inventory ledger.
-              </p>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-1.5">Supplier Credit Note / Settlement Ref (Optional)</label>
-              <input
-                type="text"
-                placeholder="e.g. CN-2026-9901"
-                value={creditNoteNumber}
-                onChange={(e) => setCreditNoteNumber(e.target.value)}
-                className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-foreground focus:outline-none"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setDispatchingRtv(null)}
-                disabled={actionLoading}
-                className="rounded-xl border border-border bg-card text-foreground px-5 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDispatch}
-                disabled={actionLoading}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
-              >
-                {actionLoading ? "Dispatching..." : "Confirm Dispatch"}
-              </button>
-            </div>
-          </div>
-        </ModalWrapper>
-      )}
+      {/* DISPATCH RTV MODAL (440px PO / PR Format) */}
+      <ActionConfirmModal
+        open={Boolean(dispatchingRtv)}
+        title="Dispatch Return Shipment"
+        subtitle={dispatchingRtv ? `Return to Vendor No: ${dispatchingRtv.rtvNumber}` : undefined}
+        description={
+          dispatchingRtv
+            ? `Are you sure you want to dispatch ${(dispatchingRtv.returnedQuantity ?? dispatchingRtv.quantityReturned ?? 0).toLocaleString()} ${dispatchingRtv.uomName || "Units"} of ${dispatchingRtv.itemName} back to ${dispatchingRtv.supplierName}? This will remove the quarantined items and log the return in the stock ledger.`
+            : ""
+        }
+        confirmText="Confirm Dispatch"
+        loading={actionLoading}
+        loadingText="Dispatching..."
+        errorMessage={actionError}
+        onConfirm={handleConfirmDispatch}
+        onClose={() => {
+          setDispatchingRtv(null);
+          setCreditNoteNumber("");
+          setActionError(null);
+        }}
+      >
+        <div>
+          <label className="text-xs font-semibold text-foreground block mb-1.5">
+            Supplier Credit Note / Settlement Ref (Optional)
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. CN-2026-9901"
+            value={creditNoteNumber}
+            onChange={(e) => setCreditNoteNumber(e.target.value)}
+            className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-foreground focus:outline-none"
+          />
+        </div>
+      </ActionConfirmModal>
     </div>
   );
 }
