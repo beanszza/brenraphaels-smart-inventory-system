@@ -45,7 +45,8 @@ function gateway() {
 
 async function call(path: string, init: { method?: string; body?: unknown; signal?: AbortSignal } = {}) {
   const { base, key } = gateway();
-  const response = await fetch(`${base}/notifications${path}`, {
+  // The gateway mounts the service at /notifications; its REST resource is also /notifications.
+  const response = await fetch(`${base}/notifications/notifications${path}`, {
     method: init.method ?? "GET",
     headers: { Authorization: `Bearer ${key}`, ...(init.body ? { "Content-Type": "application/json" } : {}) },
     body: init.body ? JSON.stringify(init.body) : undefined,
