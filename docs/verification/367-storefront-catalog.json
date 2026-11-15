@@ -1,0 +1,98 @@
+[
+  {
+    "sizeId": 1,
+    "productSlug": "120-mesh-ube-powder",
+    "productName": "120 Mesh Ube Powder",
+    "sizeLabel": "100g",
+    "available": true,
+    "priceInCentavos": 21900
+  },
+  {
+    "sizeId": 2,
+    "productSlug": "80-mesh-ube-powder",
+    "productName": "80 Mesh Ube Powder",
+    "sizeLabel": "100g",
+    "available": true,
+    "priceInCentavos": 20900
+  },
+  {
+    "sizeId": 3,
+    "productSlug": "ube-jam-with-tidbits",
+    "productName": "Ube Jam With Tidbits",
+    "sizeLabel": "200g",
+    "available": true,
+    "priceInCentavos": 21900
+  },
+  {
+    "sizeId": 4,
+    "productSlug": "ube-jam-with-tidbits",
+    "productName": "Ube Jam With Tidbits",
+    "sizeLabel": "300g",
+    "available": false,
+    "priceInCentavos": 31900
+  },
+  {
+    "sizeId": 5,
+    "productSlug": "ube-jam-with-tidbits",
+    "productName": "Ube Jam With Tidbits",
+    "sizeLabel": "500g",
+    "available": false,
+    "priceInCentavos": 46900
+  },
+  {
+    "sizeId": 6,
+    "productSlug": "ube-jam-smooth",
+    "productName": "Ube Jam Smooth",
+    "sizeLabel": "200g",
+    "available": false,
+    "priceInCentavos": 21900
+  },
+  {
+    "sizeId": 7,
+    "productSlug": "ube-jam-smooth",
+    "productName": "Ube Jam Smooth",
+    "sizeLabel": "300g",
+    "available": false,
+    "priceInCentavos": 31900
+  },
+  {
+    "sizeId": 8,
+    "productSlug": "ube-jam-smooth",
+    "productName": "Ube Jam Smooth",
+    "sizeLabel": "500g",
+    "available": false,
+    "priceInCentavos": 46900
+  },
+  {
+    "sizeId": 9,
+    "productSlug": "ube-halaya-tidbits",
+    "productName": "Ube Halaya Tidbits",
+    "sizeLabel": "250g",
+    "available": true,
+    "priceInCentavos": 21900
+  },
+  {
+    "sizeId": 10,
+    "productSlug": "ube-halaya-tidbits",
+    "productName": "Ube Halaya Tidbits",
+    "sizeLabel": "500g",
+    "available": true,
+    "priceInCentavos": 39900
+  },
+  {
+    "sizeId": 11,
+    "productSlug": "ube-halaya-smooth",
+    "productName": "Ube Halaya Smooth",
+    "sizeLabel": "250g",
+    "available": true,
+    "priceInCentavos": 21900
+  },
+  {
+    "sizeId": 12,
+    "productSlug": "ube-halaya-smooth",
+    "productName": "Ube Halaya Smooth",
+    "sizeLabel": "500g",
+    "available": true,
+    "priceInCentavos": 39900
+  }
+]
