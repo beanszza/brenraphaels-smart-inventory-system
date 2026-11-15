@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { prisma } from "@/lib/prisma";
 import { mapProductionRequest, PROD_REQ_INCLUDE } from "@/lib/production/production-requests";
@@ -179,7 +181,7 @@ export async function createProductionRequest(body: any = {}) {
             }),
             audit: {
                 module: "Production & Quality",
-                change: "created",
+                action: initialStatus === "Pending Approval" ? "production_request.submitted" : "record.created",
                 target: { type: "production-request", id: createdRequest.ProdReqId, name: createdRequest.ReqNumber },
                 description: `${staff.name} created production request (${createdRequest.ReqNumber})`,
             },
@@ -205,5 +207,5 @@ export async function createProductionRequest(body: any = {}) {
                 await notifyApprovalRequested(staff, createdRequest.ReqNumber);
             },
         };
-    });
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: "createProductionRequest", name: "createProductionRequest" }, description: "Validation refused for createProductionRequest", version: auditVersion([body]) });
 }

@@ -84,7 +84,7 @@ vi.mock("@/lib/prisma", () => {
   });
   const model = (name: string) => ({
     findUnique: async () => fake.missing ? null : row(name),
-    findFirst: async () => fake.missing ? null : name === "knownStaff" ? fake.knownMissing ? null : { StaffId: "requester-id" } : name === "materialIssuanceScans" ? null : row(name),
+    findFirst: async () => fake.missing ? null : name === "knownStaff" ? fake.knownMissing ? null : { StaffId: "requester-id", Name: "Requester" } : name === "materialIssuanceScans" ? null : row(name),
     findMany: async ({ where }: { where?: { Modules?: { has: string } } } = {}) => {
       if (name === "knownStaff") return [
         { StaffId: "actor-id", Modules: ["Production & Quality"] }, { StaffId: "approver-id", Modules: ["Production & Quality"] }, { StaffId: "other-id", Modules: ["Inventory"] }, { StaffId: "procurement-id", Modules: ["Orders & Procurement"] },
@@ -182,8 +182,8 @@ for (const c of mutations) {
     expect(await run()).toMatchObject({ success: true });
     expect(fake.committed.length).toBeGreaterThan(0);
     expect(fake.written).toHaveLength(1);
-    expect(fake.written[0]).toMatchObject({ source: "IMS", module: "Production & Quality", action: `record.${c.change || "updated"}`,
-      actor: { id: "actor-username", display_name: "Ada" }, target: { type: c.target, id: "1" } });
+    expect(fake.written[0]).toMatchObject({ source: "IMS", module: "Production & Quality", action: (({"approve batch": "production_batch.stage_changed", "complete batch": "production_batch.stage_changed", "QA status": "production_batch.qa_approved", "advance stage": "production_batch.stage_changed", "complete stage": "production_batch.stage_changed", "package batch": "production_batch.stage_changed", "reject batch": "production_batch.qa_rejected", "create request": "production_request.submitted", "submit_approval request": "production_request.submitted", "approve request": "production_request.approved", "reject request": "production_request.rejected", "issue materials": "material.issued", "review QA": "production_batch.qa_approved"} as Record<string, string>)[c.name] ?? `record.${c.change || "updated"}`),
+      actor: { type: "user", id: "actor-id", display_name: "Ada" }, target: { type: c.target, id: "1" } });
   });
   it(`${c.name} emits no event or notification on rollback`, async () => {
     vi.spyOn(console, "error").mockImplementation(() => {}); fake.commitFails = true;
@@ -275,7 +275,7 @@ for (const kind of ["batch", "product"] as const) {
 it("does not link a batch file with the wrong visibility", async () => {
   fake.filePrivate = false;
   expect(await images.confirmBatchImageUpload(1, FILE)).toMatchObject({ success: false });
-  expect(fake.committed).toHaveLength(0); expect(fake.written).toHaveLength(0);
+  expect(fake.committed).toHaveLength(0); expect(fake.written.filter(event => event.outcome !== "failure")).toHaveLength(0);
 });
 it("denies uploads for missing records before contacting storage", async () => {
   fake.missing = true;

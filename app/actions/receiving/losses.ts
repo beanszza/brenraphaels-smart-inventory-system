@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
@@ -111,7 +113,7 @@ export async function acknowledgeLoss(idInput: string | number) {
     else if (lossReport.GrnId) await syncRequisitionLifecycleByGrnId(tx, lossReport.GrnId);
 
     const data = { ...updated, StockLedgerEntryId: updated.StockLedgerEntryId == null ? null : String(updated.StockLedgerEntryId) };
-    return { result: resourceResult({ success: true, data, message: "Loss Report acknowledged successfully." }), audit: { module: MODULE, change: "updated", target: { type: "loss-report", id: updated.LossReportId, name: updated.LossReportNumber }, description: `${staff.name} acknowledged loss report ${updated.LossReportNumber}` } };
+    return { result: resourceResult({ success: true, data, message: "Loss Report acknowledged successfully." }), audit: { module: MODULE, action: "record.updated", target: { type: "loss-report", id: updated.LossReportId, name: updated.LossReportNumber }, description: `${staff.name} acknowledged loss report ${updated.LossReportNumber}` } };
 
-  });
+  }, { module: "Goods Receiving", action: "record.updated", target: { type: "operation", id: String(idInput), name: "acknowledgeLoss" }, description: "Validation refused for acknowledgeLoss", version: auditVersion([idInput]) });
 }

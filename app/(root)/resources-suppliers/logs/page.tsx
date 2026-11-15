@@ -2,6 +2,7 @@ import React, { Suspense } from "react";
 import { AuditLogsSkeleton } from "@/components/loading/audit-logs-skeleton";
 import ViewTransactionalLogs from "@/components/pages/ViewTransactionalLogs";
 import type { LogEntry } from "@/components/pages/AuditLogsTable";
+import { auditActionLabel } from "@/lib/audit-actions";
 import { readImsAuditEvents } from "@/lib/audit";
 import type { Module } from "@/lib/portal/config";
 import { requireModule } from "@/lib/portal/staff";
@@ -23,7 +24,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
     const events = await readImsAuditEvents({ modules: MODULES_BY_TYPE[(type ?? "supply").toLowerCase()] });
     logs = events.map((event) => ({
       id: event.id,
-      activity: event.description,
+      activity: `${event.outcome === "failure" ? "Failed: " : ""}${auditActionLabel(event.action)}: ${event.description}`,
       entityName: event.target.display_name,
       timestamp: event.occurred_at,
       user: event.actor.display_name,

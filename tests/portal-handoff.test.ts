@@ -21,6 +21,9 @@ vi.mock("@/lib/known-staff", async (importOriginal) => ({
   prismaKnownStaff: { upsert: async () => {}, holding: async () => [] },
 }));
 
+const auditWrites = vi.hoisted(() => vi.fn(async () => {}));
+vi.mock("@/lib/gateway/audit", () => ({ WRITE_TIMEOUT_MS: 3000, gatewayPort: { writeAudit: auditWrites } }));
+
 const origin = "https://localhost:3003";
 const staff = {
   id: "staff-1",
@@ -34,6 +37,7 @@ beforeEach(() => {
   vi.stubEnv("PORTAL_URL", FAKE_PORTAL_URL);
   vi.stubEnv("PORTAL_SYSTEM_SECRET", FAKE_SECRET);
   vi.stubEnv("IMS_DEV_BYPASS", "false");
+  auditWrites.mockClear();
   portal = new FakePortal();
   portal.addStaff(staff.id, staff, ["Inventory"]);
   portal.signIn(staff.id);
@@ -188,4 +192,15 @@ it("refuses foreign origins for callback, login and logout", async () => {
       }),
     ).status,
   ).toBe(403);
+});
+
+it("audits a successful exchange with the Portal user and a state-derived version", async () => {
+  const { request, handoff } = await start();
+  await callback(request);
+  expect(auditWrites).toHaveBeenCalledWith(expect.objectContaining({
+    actor: { type: "user", id: "staff-1", display_name: "Ada" }, module: null,
+    action: "ims.signed_in", outcome: "success", request_id: expect.any(String),
+    idempotency_key: expect.stringMatching(/^ims.signed_in:system:IMS:success:[a-f0-9]{64}$/),
+  }), expect.any(AbortSignal));
+  expect(JSON.stringify(auditWrites.mock.calls)).not.toContain(JSON.parse(handoff.value).state);
 });

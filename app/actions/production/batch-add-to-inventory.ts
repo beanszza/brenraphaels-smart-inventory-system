@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
@@ -175,6 +177,6 @@ export async function commitBatchInventory(idInput: string | number, body: any =
                     quantityAdded: result.acceptedQty,
                     locationName: fgLocation.LocationName,
                 },
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} committed production batch to inventory (${String(id)})` } };
-    });
+            }), audit: { module: "Production & Quality", action: "record.updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} committed production batch to inventory (${String(id)})` } };
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: String(idInput), name: "commitBatchInventory" }, description: "Validation refused for commitBatchInventory", version: auditVersion([idInput, body]) });
 }

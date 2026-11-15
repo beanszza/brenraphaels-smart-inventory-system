@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
@@ -9,7 +11,7 @@ export async function updateQaStatus(idInput: string | number, body: any = {}) {
     return mutate(staff, async (tx) => {
         const id = positiveId(idInput);
         validateInput(body);
-        const batch = await tx.productionBatches.findUnique({ where: { BatchId: id } });
+        const batch = await tx.productionBatches.findUnique({ where: { BatchId: id }, include: { ProductionRequests: true } });
         if (!batch) {
             return refuse("Batch not found.");
         }
@@ -27,6 +29,6 @@ export async function updateQaStatus(idInput: string | number, body: any = {}) {
                 success: true,
                 message: `QA status updated: ${newStatus}.`,
                 data: { batchId: updated.BatchId, qualityStatus: updated.QualityStatus, status: updated.Status },
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id, name: batch.BatchNumber }, description: `${staff.name} set batch ${batch.BatchNumber} QA status to ${newStatus}` }, after: () => notifyBatchRequester(batch, isApproved ? "approved" : "rejected") };
-    });
+            }), audit: { module: "Production & Quality", action: isApproved ? "production_batch.qa_approved" : "production_batch.qa_rejected", subjectUsername: batch.ProductionRequests?.RequestedBy, target: { type: "production-batch", id, name: batch.BatchNumber }, description: `${staff.name} set batch ${batch.BatchNumber} QA status to ${newStatus}` }, after: () => notifyBatchRequester(batch, isApproved ? "approved" : "rejected") };
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: String(idInput), name: "updateQaStatus" }, description: "Validation refused for updateQaStatus", version: auditVersion([idInput, body]) });
 }

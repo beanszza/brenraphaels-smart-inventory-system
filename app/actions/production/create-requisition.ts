@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { notifyApprovalRequested } from "@/lib/orders/notify";
@@ -171,6 +173,6 @@ export async function createShortfallRequisition(idInput: string | number) {
                         estimatedUnitPrice: Number(item.EstimatedUnitPrice),
                     })),
                 },
-            }), audit: { module: "Production & Quality", change: "created", target: { type: "purchase-requisition", id: createdPr.PrId, name: createdPr.PrNumber }, description: `${staff.name} created shortfall requisition ${createdPr.PrNumber}` }, after: () => notifyApprovalRequested(staff, createdPr.PrNumber) };
-    });
+            }), audit: { module: "Production & Quality", action: "record.created", target: { type: "purchase-requisition", id: createdPr.PrId, name: createdPr.PrNumber }, description: `${staff.name} created shortfall requisition ${createdPr.PrNumber}` }, after: () => notifyApprovalRequested(staff, createdPr.PrNumber) };
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: String(idInput), name: "createShortfallRequisition" }, description: "Validation refused for createShortfallRequisition", version: auditVersion([idInput]) });
 }

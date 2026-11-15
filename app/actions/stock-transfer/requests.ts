@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Retain existing transfer DTOs during migration. */
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
@@ -500,7 +502,7 @@ export async function createRequest(body: any = {}) {
       "stock-transfer-request",
       createdRequest.RequestId,
       createdRequest.RequestNumber || String(createdRequest.RequestId),
-      "created",
+      "stock_transfer.requested",
       resourceResult({
         success: true,
         message: "Stock transfer request created successfully.",
@@ -512,5 +514,5 @@ export async function createRequest(body: any = {}) {
       }),
       () => notifyApprovalRequested(staff, createdRequest.RequestNumber)
     );
-  });
+  }, { module: "Stock Transfer", action: "stock_transfer.requested", target: { type: "operation", id: "createRequest", name: "createRequest" }, description: "Validation refused for createRequest", version: auditVersion([body]) });
 }

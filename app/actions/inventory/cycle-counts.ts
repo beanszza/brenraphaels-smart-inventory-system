@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 
 import { requireModule } from "@/lib/portal/staff";
 import { mutate, positiveId, refuse } from "@/lib/inventory/mutate";
@@ -25,9 +27,9 @@ export async function createCycleCount(input: { locationId: number; notes?: stri
         SystemQuantity: inv.CurrentStock, CountedQuantity: 0, UnitCost: 0 })) },
     }, include: { Locations: true, CycleCountItems: true } });
     return { result: resourceResult({ success: true, message: "Cycle count created.", data: mapCycleCount(count) }),
-      audit: { module: "Inventory", change: "created", target: { type: "cycle-count", id: count.CycleCountId, name: count.CountNumber },
+      audit: { module: "Inventory", action: "record.created", target: { type: "cycle-count", id: count.CycleCountId, name: count.CountNumber },
         description: `${staff.name} created cycle count ${count.CountNumber}` } };
-  });
+  }, { module: "Inventory", action: "record.updated", target: { type: "operation", id: "createCycleCount", name: "createCycleCount" }, description: "Validation refused for createCycleCount", version: auditVersion([input]) });
 }
 
 export async function reconcileCycleCount(idInput: number) {
@@ -48,7 +50,7 @@ export async function reconcileCycleCount(idInput: number) {
     } });
     return { result: resourceResult({ success: true, message: "Cycle count reconciled. Inventory adjusted.",
       data: { cycleCountId: updated.CycleCountId, status: updated.Status } }),
-      audit: { module: "Inventory", change: "updated", target: { type: "cycle-count", id, name: count.CountNumber },
+      audit: { module: "Inventory", action: "cycle_count.reconciled", target: { type: "cycle-count", id, name: count.CountNumber },
         description: `${staff.name} reconciled cycle count ${count.CountNumber} and adjusted inventory` } };
-  });
+  }, { module: "Inventory", action: "cycle_count.reconciled", target: { type: "operation", id: String(idInput), name: "reconcileCycleCount" }, description: "Validation refused for reconcileCycleCount", version: auditVersion([idInput]) });
 }

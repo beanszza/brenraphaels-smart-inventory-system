@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
@@ -92,9 +94,9 @@ export async function resolveDiscrepancy(idInput: string | number, body: Resolut
     });
     await syncRequisitionLifecycleByPoId(tx, discrepancy.PoId);
 
-    return { result: resourceResult({ success: true, data: updated, message: "Discrepancy resolved successfully." }), audit: { module: MODULE, change: "updated", target: { type: "discrepancy", id: updated.DiscrepancyId, name: updated.DiscrepancyNumber }, description: `${staff.name} resolved discrepancy ${updated.DiscrepancyNumber}` } };
+    return { result: resourceResult({ success: true, data: updated, message: "Discrepancy resolved successfully." }), audit: { module: MODULE, action: "record.updated", target: { type: "discrepancy", id: updated.DiscrepancyId, name: updated.DiscrepancyNumber }, description: `${staff.name} resolved discrepancy ${updated.DiscrepancyNumber}` } };
 
-  });
+  }, { module: "Goods Receiving", action: "record.updated", target: { type: "operation", id: String(idInput), name: "resolveDiscrepancy" }, description: "Validation refused for resolveDiscrepancy", version: auditVersion([idInput, body]) });
 }
 
 export async function resolveAsLoss(idInput: string | number, body: ResolutionInput = {}) {
@@ -128,9 +130,9 @@ export async function resolveAsLoss(idInput: string | number, body: ResolutionIn
     });
     await syncRequisitionLifecycleByPoId(tx, discrepancy.PoId);
 
-    return { result: resourceResult({ success: true, data: updated, message: "Discrepancy resolved via Loss Report." }), audit: { module: MODULE, change: "updated", target: { type: "discrepancy", id: updated.DiscrepancyId, name: updated.DiscrepancyNumber }, description: `${staff.name} resolved discrepancy via loss report ${updated.DiscrepancyNumber}` } };
+    return { result: resourceResult({ success: true, data: updated, message: "Discrepancy resolved via Loss Report." }), audit: { module: MODULE, action: "record.updated", target: { type: "discrepancy", id: updated.DiscrepancyId, name: updated.DiscrepancyNumber }, description: `${staff.name} resolved discrepancy via loss report ${updated.DiscrepancyNumber}` } };
 
-  });
+  }, { module: "Goods Receiving", action: "record.updated", target: { type: "operation", id: String(idInput), name: "resolveAsLoss" }, description: "Validation refused for resolveAsLoss", version: auditVersion([idInput, body]) });
 }
 
 export async function resolveAsReturn(idInput: string | number, body: ResolutionInput = {}) {
@@ -164,7 +166,7 @@ export async function resolveAsReturn(idInput: string | number, body: Resolution
     });
     await syncRequisitionLifecycleByPoId(tx, discrepancy.PoId);
 
-    return { result: resourceResult({ success: true, data: updated, message: "Discrepancy resolved via Return to Supplier." }), audit: { module: MODULE, change: "updated", target: { type: "discrepancy", id: updated.DiscrepancyId, name: updated.DiscrepancyNumber }, description: `${staff.name} resolved discrepancy via supplier return ${updated.DiscrepancyNumber}` } };
+    return { result: resourceResult({ success: true, data: updated, message: "Discrepancy resolved via Return to Supplier." }), audit: { module: MODULE, action: "record.updated", target: { type: "discrepancy", id: updated.DiscrepancyId, name: updated.DiscrepancyNumber }, description: `${staff.name} resolved discrepancy via supplier return ${updated.DiscrepancyNumber}` } };
 
-  });
+  }, { module: "Goods Receiving", action: "record.updated", target: { type: "operation", id: String(idInput), name: "resolveAsReturn" }, description: "Validation refused for resolveAsReturn", version: auditVersion([idInput, body]) });
 }

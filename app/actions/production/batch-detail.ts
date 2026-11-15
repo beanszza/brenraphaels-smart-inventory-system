@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { unlinkFile } from "@/lib/files";
 import { filesGateway } from "@/lib/gateway/files";
@@ -132,8 +134,8 @@ export async function updateBatch(idInput: string | number, body: any = {}) {
             },
             include: BATCH_INCLUDE,
         });
-        return { result: resourceResult({ success: true, data: mapBatch(updated) }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} updated production batch (${String(id)})` } };
-    });
+        return { result: resourceResult({ success: true, data: mapBatch(updated) }), audit: { module: "Production & Quality", action: "record.updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} updated production batch (${String(id)})` } };
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: String(idInput), name: "updateBatch" }, description: "Validation refused for updateBatch", version: auditVersion([idInput, body]) });
 }
 export async function deleteBatch(idInput: string | number) {
     const staff = await requireModule("Production & Quality");
@@ -148,8 +150,8 @@ export async function deleteBatch(idInput: string | number) {
         }
         await unlinkFile(filesGateway, staff, batchImage, id, batch.ImageUrl);
         await tx.productionBatches.delete({ where: { BatchId: id } });
-        return { result: resourceResult({ success: true, message: "Batch deleted." }), audit: { module: "Production & Quality", change: "deleted", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} deleted production batch (${String(id)})` } };
-    });
+        return { result: resourceResult({ success: true, message: "Batch deleted." }), audit: { module: "Production & Quality", action: "record.deleted", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} deleted production batch (${String(id)})` } };
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: String(idInput), name: "deleteBatch" }, description: "Validation refused for deleteBatch", version: auditVersion([idInput]) });
 }
 
 export interface BatchLifecycleSummaryData {

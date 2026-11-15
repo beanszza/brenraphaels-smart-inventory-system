@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
@@ -223,6 +225,6 @@ export async function reviewProductionQa(body: any = {}) {
                     nextStatus: nextBatchStatus,
                     lossReportNumber: result.lossReportNumber,
                 },
-            }), audit: { module: "Production & Quality", change: "created", target: { type: "quality-inspection", id: result.inspection.InspectionId, name: pqaNumber }, description: `${staff.name} completed quality inspection ${pqaNumber} (${qaStatus})` }, after: () => notifyBatchRequester(batch, acceptedQuantity > 0 ? "approved" : "rejected") };
-    });
+            }), audit: { module: "Production & Quality", action: acceptedQuantity > 0 ? "production_batch.qa_approved" : "production_batch.qa_rejected", subjectUsername: batch.ProductionRequests?.RequestedBy, target: { type: "quality-inspection", id: result.inspection.InspectionId, name: pqaNumber }, description: `${staff.name} completed quality inspection ${pqaNumber} (${qaStatus})` }, after: () => notifyBatchRequester(batch, acceptedQuantity > 0 ? "approved" : "rejected") };
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: "reviewProductionQa", name: "reviewProductionQa" }, description: "Validation refused for reviewProductionQa", version: auditVersion([body]) });
 }

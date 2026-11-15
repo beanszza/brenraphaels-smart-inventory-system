@@ -1,12 +1,12 @@
 import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { recordAudit, type AuditAction } from "@/lib/audit";
+import { auditVersion, recordAudit, type AuditAction } from "@/lib/audit";
 import type { Staff } from "@/lib/portal/client";
 import { resourceResult, type ResourceResult } from "@/lib/resources/result";
 
 type Saved = { result: ResourceResult; audit?: AuditAction; after?: () => Promise<void> };
-class Refusal extends Error {}
+class Refusal extends Error { name = "Refusal"; }
 export function refuse(message: string): never { throw new Refusal(message); }
 export function positiveId(input: string | number): number {
   if (typeof input !== "number" && typeof input !== "string") refuse("Select a valid record.");
@@ -25,7 +25,7 @@ export async function read(work: () => Promise<ResourceResult>): Promise<Resourc
   try { return await work(); } catch (error) { return failed(error); }
 }
 
-export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) => Promise<Saved>): Promise<ResourceResult> {
+export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) => Promise<Saved>, attempt?: AuditAction): Promise<ResourceResult> {
   let saved: Saved;
   try {
     // Serialize state transitions so concurrent approvals/posts cannot both save.
@@ -34,8 +34,11 @@ export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) 
       maxWait: 15000,
       timeout: 30000,
     });
-  } catch (error) { return failed(error); }
-  if (saved.audit) await recordAudit(staff, saved.audit);
+  } catch (error) {
+    if (error instanceof Error && error.name === "Refusal" && attempt) await recordAudit(staff, { ...attempt, outcome: "failure" });
+    return failed(error);
+  }
+  if (saved.audit) await recordAudit(staff, { ...saved.audit, version: saved.audit.version ?? auditVersion(saved.result) });
   if (saved.after) await saved.after().catch(error => console.error("Notification could not be sent", error));
   revalidatePath("/cycle-counts");
   revalidatePath("/traceability");

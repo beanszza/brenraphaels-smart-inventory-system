@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
@@ -108,6 +110,6 @@ export async function rejectBatch(idInput: string | number, body: any = {}) {
                     lossReportNumber: result.lossReport.LossReportNumber,
                     lossReportId: result.lossReport.LossReportId,
                 },
-            }), audit: { module: "Production & Quality", change: "updated", target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} rejected production batch (${String(id)})` }, after: () => notifyBatchRequester(batch, "rejected") };
-    });
+            }), audit: { module: "Production & Quality", action: "production_batch.qa_rejected", subjectUsername: batch.ProductionRequests?.RequestedBy, target: { type: "production-batch", id: id, name: String(id) }, description: `${staff.name} rejected production batch (${String(id)})` }, after: () => notifyBatchRequester(batch, "rejected") };
+    }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: String(idInput), name: "rejectBatch" }, description: "Validation refused for rejectBatch", version: auditVersion([idInput, body]) });
 }

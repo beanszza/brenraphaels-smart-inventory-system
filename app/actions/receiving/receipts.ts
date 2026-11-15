@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
@@ -333,9 +335,9 @@ export async function createReceipt(body: ReceiptInput) {
       }))
     };
 
-    return { result: resourceResult({ success: true, message: "Draft GRN created successfully.", data: response }), audit: { module: MODULE, change: "created", target: { type: "goods-receipt", id: newGrn.GrnId, name: newGrn.GrnNumber }, description: `${staff.name} created goods receipt ${newGrn.GrnNumber}` } };
+    return { result: resourceResult({ success: true, message: "Draft GRN created successfully.", data: response }), audit: { module: MODULE, action: "record.created", target: { type: "goods-receipt", id: newGrn.GrnId, name: newGrn.GrnNumber }, description: `${staff.name} created goods receipt ${newGrn.GrnNumber}` } };
 
-  });
+  }, { module: "Goods Receiving", action: "record.updated", target: { type: "operation", id: "createReceipt", name: "createReceipt" }, description: "Validation refused for createReceipt", version: auditVersion([body]) });
 }
 
 export async function getReceipt(idInput: string | number) {
@@ -539,9 +541,9 @@ export async function updateReceipt(idInput: string | number, body: ReceiptInput
       }))
     };
 
-    return { result: resourceResult({ success: true, message: "Draft GRN updated successfully.", data: response }), audit: { module: MODULE, change: "updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} updated goods receipt ${updatedGrn.GrnNumber}` } };
+    return { result: resourceResult({ success: true, message: "Draft GRN updated successfully.", data: response }), audit: { module: MODULE, action: "record.updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} updated goods receipt ${updatedGrn.GrnNumber}` } };
 
-  });
+  }, { module: "Goods Receiving", action: "record.updated", target: { type: "operation", id: String(idInput), name: "updateReceipt" }, description: "Validation refused for updateReceipt", version: auditVersion([idInput, body]) });
 }
 
 export async function postReceipt(idInput: string | number) {
@@ -634,9 +636,9 @@ export async function postReceipt(idInput: string | number) {
       return result;
     })();
 
-    return { result: resourceResult({ success: true, message: "GRN posted for QA inspection.", data: updatedGrn }), audit: { module: MODULE, change: "updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} posted goods receipt for QA ${updatedGrn.GrnNumber}` } };
+    return { result: resourceResult({ success: true, message: "GRN posted for QA inspection.", data: updatedGrn }), audit: { module: MODULE, action: "record.updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} posted goods receipt for QA ${updatedGrn.GrnNumber}` } };
 
-  });
+  }, { module: "Goods Receiving", action: "record.updated", target: { type: "operation", id: String(idInput), name: "postReceipt" }, description: "Validation refused for postReceipt", version: auditVersion([idInput]) });
 }
 
 export async function cancelReceipt(idInput: string | number) {
@@ -670,9 +672,9 @@ export async function cancelReceipt(idInput: string | number) {
     }
     await syncRequisitionLifecycleByPoId(tx, grn.PoId);
 
-    return { result: resourceResult({ success: true, message: "GRN cancelled successfully.", data: updatedGrn }), audit: { module: MODULE, change: "updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} cancelled goods receipt ${updatedGrn.GrnNumber}` } };
+    return { result: resourceResult({ success: true, message: "GRN cancelled successfully.", data: updatedGrn }), audit: { module: MODULE, action: "record.updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} cancelled goods receipt ${updatedGrn.GrnNumber}` } };
 
-  });
+  }, { module: "Goods Receiving", action: "record.updated", target: { type: "operation", id: String(idInput), name: "cancelReceipt" }, description: "Validation refused for cancelReceipt", version: auditVersion([idInput]) });
 }
 
 export async function rejectReceipt(idInput: string | number, body: ReceiptInput) {
@@ -789,9 +791,9 @@ export async function rejectReceipt(idInput: string | number, body: ReceiptInput
     }
     await syncRequisitionLifecycleByPoId(tx, grn.PoId);
 
-    return { result: resourceResult({ success: true, message: "GRN rejected and discrepancy records logged.", data: updatedGrn }), audit: { module: MODULE, change: "rejected", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} rejected goods receipt ${updatedGrn.GrnNumber}` }, after: () => notifyRequester(grn.CreatedBy, "rejected", updatedGrn.GrnNumber) };
+    return { result: resourceResult({ success: true, message: "GRN rejected and discrepancy records logged.", data: updatedGrn }), audit: { module: MODULE, action: "delivery.discrepancy_logged", subjectUsername: grn.CreatedBy, target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} rejected goods receipt ${updatedGrn.GrnNumber}` }, after: () => notifyRequester(grn.CreatedBy, "rejected", updatedGrn.GrnNumber) };
 
-  });
+  }, { module: "Goods Receiving", action: "record.updated", target: { type: "operation", id: String(idInput), name: "rejectReceipt" }, description: "Validation refused for rejectReceipt", version: auditVersion([idInput, body]) });
 }
 
 export async function proceedToQa(idInput: string | number) {
@@ -816,7 +818,7 @@ export async function proceedToQa(idInput: string | number) {
       data: { Status: "QaPending" }
     });
 
-    return { result: resourceResult({ success: true, message: "GRN moved to QA Pending.", data: updatedGrn }), audit: { module: MODULE, change: "updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} moved goods receipt to QA ${updatedGrn.GrnNumber}` } };
+    return { result: resourceResult({ success: true, message: "GRN moved to QA Pending.", data: updatedGrn }), audit: { module: MODULE, action: "record.updated", target: { type: "goods-receipt", id: updatedGrn.GrnId, name: updatedGrn.GrnNumber }, description: `${staff.name} moved goods receipt to QA ${updatedGrn.GrnNumber}` } };
 
-  });
+  }, { module: "Goods Receiving", action: "record.updated", target: { type: "operation", id: String(idInput), name: "proceedToQa" }, description: "Validation refused for proceedToQa", version: auditVersion([idInput]) });
 }

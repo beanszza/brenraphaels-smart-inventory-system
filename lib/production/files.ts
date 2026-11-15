@@ -1,6 +1,6 @@
 import { confirmAndLink, FileError, requestUpload, resolveFile, type FileTarget } from "@/lib/files";
 import { filesGateway, type ImageVariant } from "@/lib/gateway/files";
-import { recordAudit } from "@/lib/audit";
+import { auditVersion, recordAudit } from "@/lib/audit";
 import type { Staff } from "@/lib/portal/client";
 import { resourceResult } from "@/lib/resources/result";
 import { positiveId } from "./mutate";
@@ -21,7 +21,7 @@ export async function requestImage(staff: Staff, target: FileTarget, id: number,
   await exists(target, id);
   const address = await requestUpload(filesGateway, staff, { ...meta, kind: target.kind }, target, id);
   await recordAudit(staff, {
-    module: "Production & Quality", change: "created", target: { type: "file", id: address.id, name: meta.filename },
+    module: "Production & Quality", action: "record.created", version: auditVersion(address.id), target: { type: "file", id: address.id, name: meta.filename },
     description: `${staff.name} requested a ${target.role} upload for ${target.entityType} ${id}`,
   });
   return { fileId: address.id, uploadUrl: address.uploadUrl, uploadUrlExpiresInSeconds: address.uploadUrlExpiresInSeconds };
@@ -30,7 +30,7 @@ export async function confirmImage(staff: Staff, target: FileTarget, id: number,
   await exists(target, id);
   const file = await confirmAndLink(filesGateway, staff, target, id, fileId);
   await recordAudit(staff, {
-    module: "Production & Quality", change: "updated", target: { type: target.entityType, id, name: `${target.entityType} ${id}` },
+    module: "Production & Quality", action: "record.updated", version: auditVersion(file.id), target: { type: target.entityType, id, name: `${target.entityType} ${id}` },
     description: `${staff.name} attached a ${target.role} to ${target.entityType} ${id}`,
   });
   return { fileId: file.id, status: file.status };

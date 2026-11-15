@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Retain existing transfer DTOs during migration. */
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
@@ -37,7 +39,7 @@ validateInput(body);
       },
     });
 
-    return saved(staff, "stock-transfer", updated.TransferId, updated.TransferNumber || String(updated.TransferId), "updated", resourceResult({
+    return saved(staff, "stock-transfer", updated.TransferId, updated.TransferNumber || String(updated.TransferId), "record.updated", resourceResult({
       success: true,
       message: "Stock transfer cancelled successfully.",
       data: {
@@ -46,5 +48,5 @@ validateInput(body);
       },
     }));
 
-  });
+  }, { module: "Stock Transfer", action: "record.updated", target: { type: "operation", id: String(idInput), name: "cancelTransfer" }, description: "Validation refused for cancelTransfer", version: auditVersion([idInput, body]) });
 }

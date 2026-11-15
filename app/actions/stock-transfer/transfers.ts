@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Retain existing transfer DTOs during migration. */
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
@@ -273,12 +275,12 @@ export async function scheduleTransfer(body: any = {}) {
       "stock-transfer",
       transfer.TransferId,
       transfer.TransferNumber || String(transfer.TransferId),
-      "created",
+      "record.created",
       resourceResult({
         success: true,
         message: "Stock transfer scheduled successfully.",
         data: mapTransfer(transfer),
       })
     );
-  });
+  }, { module: "Stock Transfer", action: "record.updated", target: { type: "operation", id: "scheduleTransfer", name: "scheduleTransfer" }, description: "Validation refused for scheduleTransfer", version: auditVersion([body]) });
 }

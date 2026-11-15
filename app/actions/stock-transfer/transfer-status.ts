@@ -1,4 +1,6 @@
 "use server";
+import { auditVersion } from "@/lib/audit";
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Retain existing transfer DTOs during migration. */
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
@@ -48,7 +50,7 @@ validateInput(body);
       }
     }
 
-    return saved(staff, "stock-transfer", updated.TransferId, updated.TransferNumber || String(updated.TransferId), "updated", resourceResult({ success: true, data: { transferId: updated.TransferId, status: updated.Status } }));
+    return saved(staff, "stock-transfer", updated.TransferId, updated.TransferNumber || String(updated.TransferId), ["Received", "Completed"].includes(newStatus) ? "stock_transfer.received" : "record.updated", resourceResult({ success: true, data: { transferId: updated.TransferId, status: updated.Status } }));
 
-  });
+  }, { module: "Stock Transfer", action: "record.updated", target: { type: "operation", id: String(idInput), name: "updateTransferStatus" }, description: "Validation refused for updateTransferStatus", version: auditVersion([idInput, body]) });
 }
