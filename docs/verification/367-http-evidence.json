@@ -1,7 +1,7 @@
 {
-  "run": "verify367-36bfe025-fda4-4914-a1ad-010d88b7ecc7",
+  "run": "verify367-ad1a867d-de33-414b-b26f-0b80ecbf309f",
   "origin": "http://127.0.0.1:3013",
-  "startedAt": "2026-11-15T08:39:14.174Z",
+  "startedAt": "2026-11-15T09:15:20.793Z",
   "checks": [
     "missing credential refused",
     "wrong credential refused",
@@ -22,13 +22,15 @@
     "available": 20
   },
   "auditEventIds": [
-    "ba0136dd-8ec5-49a8-ad82-1f8fcfa56b76",
-    "19629dc2-3b6f-46ce-9882-47aa7bc28a65",
-    "f2a80fe1-e00f-4ca0-928e-6b9bdd5e9870",
-    "4cf6284e-90ff-48a5-b379-79f955dcd45c",
-    "c48ab706-b165-4a80-a771-feb58cb9d7bd",
-    "3e8fcec6-dcc1-45f3-9404-88861e765aa6",
-    "4ea86096-1706-4cae-834e-8209b0f94ef2"
+    "a034e536-b7e3-4626-96d0-43ad4eaa8eac",
+    "021963e9-406a-4380-8db5-131d4b081655",
+    "a72412b6-1efa-4539-83d7-29aebd168c67",
+    "0bd195f5-81c1-4ae5-9875-bba6358decab",
+    "4b5a4920-5f11-41a8-b1ef-03c5a39909f4",
+    "da3826a5-e005-4f09-bfa6-da3cbe64a377",
+    "18bb2990-38a2-4e8b-bbce-6bf86f3f5a4a"
   ],
-  "finishedAt": "2026-11-15T08:39:28.756Z"
+  "cleanupComplete": true,
+  "cleanupErrors": [],
+  "finishedAt": "2026-11-15T09:15:35.381Z"
 }

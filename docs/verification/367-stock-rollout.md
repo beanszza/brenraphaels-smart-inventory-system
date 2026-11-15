@@ -114,3 +114,16 @@ a failed result with the immutable references needed for replay.
 It uses finite user-triggered requests, never a repeating timer. The test branch
 for audit validation expires automatically; the storefront clone was the isolated
 branch created by #336. Neither test environment replaces production databases.
+
+Final validation: 1,506 IMS tests across 48 files pass, with route type generation,
+TypeScript and script lint. Audit service validation passed 81 tests. Standards
+and Spec review have zero unresolved findings. The verifier's deliberately lost
+successful deduction reply is covered against a real PostgreSQL/HTTP instance:
+it failed with 19 units before the fix and restores 20 with zero reservations
+afterward. The original real-service HTTP flow was rerun successfully after the
+fix. One transient database read returned 503 before any mutation; the verifier
+failed closed, and an explicit reread confirmed the unchanged 20-unit balance.
+
+The authenticated remote gate's 401 response is saved in 367-hosted-gate.json.
+It remains the one unchecked ticket requirement; the other checked flow items
+have the explicit preview/live-service evidence described above.
