@@ -17,11 +17,24 @@ export async function listItemLots(itemIdInput: number, productIdInput?: number)
     };
 
     if (productId) {
-      whereClause.ProductionBatches = {
-        some: {
-          ProductId: productId,
-        },
-      };
+      const variantCount =
+        typeof (prisma as any)?.finishedProducts?.count === "function"
+          ? await prisma.finishedProducts.count({ where: { ItemId: itemId } })
+          : 2;
+
+      delete whereClause.ItemId;
+      if (variantCount <= 1) {
+        whereClause.OR = [
+          { ItemId: itemId },
+          { ProductionBatches: { some: { ProductId: productId } } },
+        ];
+      } else {
+        whereClause.ProductionBatches = {
+          some: {
+            ProductId: productId,
+          },
+        };
+      }
     }
 
     const lots = await prisma.inventoryLots.findMany({

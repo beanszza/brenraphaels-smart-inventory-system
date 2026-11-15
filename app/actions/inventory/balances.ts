@@ -34,18 +34,6 @@ async function cleanupTestStock() {
         },
       },
     });
-    await prisma.inventories.deleteMany({
-      where: {
-        OR: [
-          { CurrentStock: { gte: 500 } },
-          {
-            Items: {
-              ItemName: { contains: "Ube Halaya", mode: "insensitive" },
-            },
-          },
-        ],
-      },
-    });
     testStockCleaned = true;
   } catch (err) {
     console.warn("[CLEANUP-TEST-STOCK-WARN]", err);

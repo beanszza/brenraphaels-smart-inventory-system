@@ -61,8 +61,59 @@ export async function ensureUbeJamHavaneroStock() {
         await (prisma as any).recipes
           ?.updateMany({ where: { ProductId: dupId }, data: { ProductId: primaryFp.ProductId } })
           .catch(() => {});
+        if (dupFp.ItemId !== primaryFp.ItemId) {
+          await (prisma as any).inventoryLots
+            ?.updateMany({ where: { ItemId: dupFp.ItemId }, data: { ItemId: primaryFp.ItemId } })
+            .catch(() => {});
+        }
 
         await prisma.finishedProducts.delete({ where: { ProductId: dupId } }).catch(() => {});
+      }
+    }
+
+    // 1b. Restore any missing Inventories rows for items that have active/available lots
+    // (e.g. Ube Halaya items whose Inventories record was wiped by legacy cleanupTestStock)
+    const activeLots = await (prisma as any).inventoryLots
+      ?.findMany({
+        where: {
+          Status: { in: ["Available", "Active"] },
+          QuantityRemaining: { gt: 0 },
+        },
+        select: {
+          ItemId: true,
+          LocationId: true,
+          QuantityRemaining: true,
+        },
+      })
+      .catch(() => []);
+
+    if (Array.isArray(activeLots) && activeLots.length > 0) {
+      const lotSumByItemLoc = new Map<string, { itemId: number; locationId: number; total: number }>();
+      for (const l of activeLots) {
+        const key = `${l.ItemId}|${l.LocationId}`;
+        const existing = lotSumByItemLoc.get(key) || { itemId: l.ItemId, locationId: l.LocationId, total: 0 };
+        existing.total += Number(l.QuantityRemaining || 0);
+        lotSumByItemLoc.set(key, existing);
+      }
+
+      for (const entry of lotSumByItemLoc.values()) {
+        const existingInv = await (prisma as any).inventories
+          ?.findFirst({
+            where: { ItemId: entry.itemId, LocationId: entry.locationId },
+          })
+          .catch(() => null);
+
+        if (!existingInv) {
+          await (prisma as any).inventories
+            ?.create({
+              data: {
+                ItemId: entry.itemId,
+                LocationId: entry.locationId,
+                CurrentStock: entry.total,
+              },
+            })
+            .catch(() => {});
+        }
       }
     }
 

@@ -24,18 +24,6 @@ async function cleanupTestStock() {
     await prisma.productionBatches.deleteMany({
       where: { BatchNumber: "BTH-UBH-2026-0001" },
     });
-    await prisma.inventories.deleteMany({
-      where: {
-        OR: [
-          { CurrentStock: { gte: 500 } },
-          {
-            Items: {
-              ItemName: { contains: "Ube Halaya", mode: "insensitive" },
-            },
-          },
-        ],
-      },
-    });
     testStockCleaned = true;
   } catch (err) {
     console.warn("[CLEANUP-TEST-STOCK-WARN]", err);

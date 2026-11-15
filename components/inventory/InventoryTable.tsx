@@ -160,7 +160,10 @@ export default function InventoryTable({
               const isExpanded = !!expandedItemIds[rowKey];
               const rawLots = itemLots[rowKey] || [];
               const availableLots = rawLots.filter(
-                (lot) => lot.status === "Available" || (lot.reservedQuantity && lot.reservedQuantity > 0)
+                (lot) =>
+                  lot.status === "Available" ||
+                  lot.status === "Active" ||
+                  (lot.reservedQuantity && lot.reservedQuantity > 0)
               );
               const isLoading = !!loadingLots[rowKey];
 
