@@ -1,0 +1,36 @@
+{
+  "run": "verify367-ad1a867d-de33-414b-b26f-0b80ecbf309f",
+  "origin": "http://127.0.0.1:3013",
+  "startedAt": "2026-11-15T09:15:20.793Z",
+  "checks": [
+    "missing credential refused",
+    "wrong credential refused",
+    "POS-style header refused",
+    "actual Portal credential refused",
+    "Warehouse read is on-demand, no-store, and excludes the separate 20-unit POS Branch fixture",
+    "concurrent Orders cannot oversell and cancellation release is idempotent",
+    "reserve replay changes stock once and delayed reserve does not resurrect a released line",
+    "packing deduction and sellable add-back replay once; another Size and original balances are unchanged",
+    "central audit contains exactly one event for each committed movement"
+  ],
+  "completed": true,
+  "baseline": {
+    "warehouseId": 1000,
+    "productId": 11,
+    "quantity": 20,
+    "reserved": 0,
+    "available": 20
+  },
+  "auditEventIds": [
+    "a034e536-b7e3-4626-96d0-43ad4eaa8eac",
+    "021963e9-406a-4380-8db5-131d4b081655",
+    "a72412b6-1efa-4539-83d7-29aebd168c67",
+    "0bd195f5-81c1-4ae5-9875-bba6358decab",
+    "4b5a4920-5f11-41a8-b1ef-03c5a39909f4",
+    "da3826a5-e005-4f09-bfa6-da3cbe64a377",
+    "18bb2990-38a2-4e8b-bbce-6bf86f3f5a4a"
+  ],
+  "cleanupComplete": true,
+  "cleanupErrors": [],
+  "finishedAt": "2026-11-15T09:15:35.381Z"
+}
