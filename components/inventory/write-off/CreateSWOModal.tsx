@@ -1120,25 +1120,6 @@ export function CreateSWOModal({
                               </div>
                             ))}
                           </div>
-
-                          {draftItem.photos.length < SWO_MAX_PHOTOS_PER_ITEM && (
-                            <div className="flex justify-end pt-2 border-t border-border/50">
-                              <label className="cursor-pointer text-xs font-semibold px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors flex items-center gap-1.5">
-                                <Upload className="w-3.5 h-3.5" />
-                                Upload More Photos
-                                <input
-                                  type="file"
-                                  accept=".jpg,.jpeg,.png,.webp"
-                                  multiple
-                                  onChange={(e) => {
-                                    handlePhotoUploadChange(itemIdx, e.target.files);
-                                    e.target.value = "";
-                                  }}
-                                  className="hidden"
-                                />
-                              </label>
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <label className="flex flex-col items-center justify-center cursor-pointer py-4 hover:bg-muted/30 rounded-xl transition-colors">

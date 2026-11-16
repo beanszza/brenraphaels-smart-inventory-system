@@ -38,12 +38,24 @@ export async function mutate(staff: Staff, work: (tx: Prisma.TransactionClient) 
     if (error instanceof Error && error.name === "Refusal" && attempt) await recordAudit(staff, { ...attempt, outcome: "failure" });
     return failed(error);
   }
-  if (saved.audit) await recordAudit(staff, { ...saved.audit, version: saved.audit.version ?? auditVersion(saved.result) });
-  if (saved.after) await saved.after().catch(error => console.error("Notification could not be sent", error));
-  revalidatePath("/cycle-counts");
-  revalidatePath("/traceability");
-  revalidatePath("/valuation");
-  revalidatePath("/inventory");
+  try {
+    if (saved.audit) await recordAudit(staff, { ...saved.audit, version: saved.audit.version ?? auditVersion(saved.result) });
+  } catch (auditErr) {
+    console.error("Audit could not be recorded", auditErr);
+  }
+  try {
+    if (saved.after) await saved.after().catch(error => console.error("Notification could not be sent", error));
+  } catch (afterErr) {
+    console.error("Post-action hook failed", afterErr);
+  }
+  try {
+    revalidatePath("/cycle-counts");
+    revalidatePath("/traceability");
+    revalidatePath("/valuation");
+    revalidatePath("/inventory");
+  } catch (revalErr) {
+    console.error("Path revalidation failed", revalErr);
+  }
   return saved.result;
 }
 

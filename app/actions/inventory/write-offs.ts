@@ -50,6 +50,12 @@ function requireWriteOffViewer(staff: Staff) {
 }
 
 function requireImsManagerRole(staff: Staff) {
+  if (!isImsManager(staff) && !isAdminStaff(staff)) {
+    refuse("Only the Inventory Manager and Administrator can perform this action.");
+  }
+}
+
+function requireImsManagerOnlyRole(staff: Staff) {
   if (!isImsManager(staff)) {
     refuse("Only the Inventory Manager can perform this action.");
   }
@@ -427,7 +433,7 @@ export async function createWriteOff(body: SwoCreateInput) {
       const lotAvailability: LotAvailabilityMap = {};
       const dbLotById = new Map<number, (typeof dbLots)[number]>();
       for (const lot of dbLots) {
-        if (!["Available", "Active"].includes(lot.Status)) continue;
+        if (["Disposed", "Consumed", "Archived"].includes(lot.Status)) continue;
         const remaining = Number(lot.QuantityRemaining || 0);
         const reserved = Number(lot.ReservedQuantity || 0);
         const pending = pendingMap.get(lot.LotId) || 0;
@@ -468,7 +474,10 @@ export async function createWriteOff(body: SwoCreateInput) {
       const itemsToCreate: Prisma.StockWriteOffItemsCreateWithoutStockWriteOffsInput[] = [];
 
       for (const itemInput of body.items) {
-        const firstLot = dbLotById.get(Number(itemInput.lots[0].lotId))!;
+        const firstLot = dbLotById.get(Number(itemInput.lots[0].lotId));
+        if (!firstLot) {
+          refuse("One or more selected batches / lots are no longer available in inventory.");
+        }
         const dbItem = firstLot.Items;
         const fp = (dbItem as any)?.FinishedProducts?.[0] ?? null;
         const isFinishedGood =
@@ -480,7 +489,7 @@ export async function createWriteOff(body: SwoCreateInput) {
           firstLot.UnitOfMeasures ??
           dbItem?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures ??
           dbItem?.Uom;
-        const uomId = uom?.UomId ?? firstLot.UomId;
+        const uomId = uom?.UomId ?? firstLot.UomId ?? 1;
         const uomName = uom?.Abbreviation || uom?.Name || "Unit";
         const itemCode =
           isFinishedGood && fp?.Sku
@@ -490,8 +499,11 @@ export async function createWriteOff(body: SwoCreateInput) {
         const linesToCreate: Prisma.StockWriteOffLinesCreateWithoutStockWriteOffItemsInput[] = [];
 
         for (const lotInput of itemInput.lots) {
-          const lotRow = dbLotById.get(Number(lotInput.lotId))!;
-          const availInfo = lotAvailability[lotRow.LotId];
+          const lotRow = dbLotById.get(Number(lotInput.lotId));
+          if (!lotRow) {
+            refuse(`Selected lot ID ${lotInput.lotId} is no longer available.`);
+          }
+          const availInfo = lotAvailability[lotRow.LotId] || { availableQuantity: 0 };
           const qty = Number(Number(lotInput.quantity).toFixed(3));
           const unitCost = Number(lotRow.UnitCost || 0);
           totalValue += qty * unitCost;
@@ -499,7 +511,7 @@ export async function createWriteOff(body: SwoCreateInput) {
           linesToCreate.push({
             InventoryLots: { connect: { LotId: lotRow.LotId } },
             LotCode: lotRow.LotCode,
-            ExpiryDate: hasExpiry ? lotRow.ExpiryDate : null,
+            ExpiryDate: hasExpiry && lotRow.ExpiryDate ? new Date(lotRow.ExpiryDate) : null,
             AvailableBefore: availInfo.availableQuantity,
             Quantity: qty,
             UnitCost: unitCost,
@@ -818,9 +830,9 @@ export async function removeWriteOffFromInventory(idInput: string | number) {
   const staff = await requireModule(MODULE);
   return mutate(
     staff,
-    async (tx) => {
-      requireImsManagerRole(staff);
-      const id = positiveId(idInput);
+      async (tx) => {
+        requireImsManagerOnlyRole(staff);
+        const id = positiveId(idInput);
 
       const writeOff = await tx.stockWriteOffs.findUnique({
         where: { WriteOffId: id },
