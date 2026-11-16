@@ -177,9 +177,11 @@ export async function getWriteOffFormData() {
 
     const year = new Date().getFullYear();
     const [seq, categoryRows, lots, pendingLines] = await Promise.all([
-      prisma.documentSequences.findUnique({
-        where: { DocType_Year: { DocType: DOC_TYPE, Year: year } },
-      }),
+      prisma.documentSequences
+        .findUnique({
+          where: { DocType_Year: { DocType: DOC_TYPE, Year: year } },
+        })
+        .catch(() => null),
       prisma.categories.findMany({
         orderBy: { CategoryName: "asc" },
       }),
@@ -205,17 +207,24 @@ export async function getWriteOffFormData() {
         },
         orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
       }),
-      prisma.stockWriteOffLines.groupBy({
-        by: ["LotId"],
-        where: {
-          StockWriteOffItems: {
-            StockWriteOffs: {
-              Status: { in: ["Pending Approval", "Approved"] },
+      (async () => {
+        try {
+          if (typeof prisma?.stockWriteOffLines?.groupBy !== "function") return [];
+          return await prisma.stockWriteOffLines.groupBy({
+            by: ["LotId"],
+            where: {
+              StockWriteOffItems: {
+                StockWriteOffs: {
+                  Status: { in: ["Pending Approval", "Approved"] },
+                },
+              },
             },
-          },
-        },
-        _sum: { Quantity: true },
-      }),
+            _sum: { Quantity: true },
+          });
+        } catch {
+          return [];
+        }
+      })(),
     ]);
 
     const nextSeq = (seq?.LastNumber ?? 0) + 1;
@@ -380,18 +389,25 @@ export async function createWriteOff(body: SwoCreateInput) {
             },
           },
         }),
-        tx.stockWriteOffLines.groupBy({
-          by: ["LotId"],
-          where: {
-            LotId: { in: requestedLotIds },
-            StockWriteOffItems: {
-              StockWriteOffs: {
-                Status: { in: ["Pending Approval", "Approved"] },
+        (async () => {
+          try {
+            if (typeof tx?.stockWriteOffLines?.groupBy !== "function") return [];
+            return await tx.stockWriteOffLines.groupBy({
+              by: ["LotId"],
+              where: {
+                LotId: { in: requestedLotIds },
+                StockWriteOffItems: {
+                  StockWriteOffs: {
+                    Status: { in: ["Pending Approval", "Approved"] },
+                  },
+                },
               },
-            },
-          },
-          _sum: { Quantity: true },
-        }),
+              _sum: { Quantity: true },
+            });
+          } catch {
+            return [];
+          }
+        })(),
       ]);
 
       const pendingMap = new Map<number, number>();

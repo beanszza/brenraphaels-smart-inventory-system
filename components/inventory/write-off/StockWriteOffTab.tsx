@@ -21,6 +21,8 @@ import { SWOTable } from "./SWOTable";
 import { SWODetailsModal } from "./SWODetailsModal";
 import { SWOActionModal, type SWOActionType } from "./SWOActionModal";
 import { CreateSWOModal } from "./CreateSWOModal";
+import type { InventoryItem } from "@/components/inventory/types";
+import type { LotItem } from "@/components/lots/types";
 import type { StockWriteOffDto, SwoStatus } from "./types";
 
 const STATUS_TABS: (SwoStatus | "All")[] = [
@@ -34,9 +36,17 @@ const STATUS_TABS: (SwoStatus | "All")[] = [
 
 interface StockWriteOffTabProps {
   initialWriteOffs: StockWriteOffDto[];
+  initialInventories?: InventoryItem[];
+  initialLots?: LotItem[];
+  initialCategories?: { categoryId: number; categoryName: string }[];
 }
 
-export function StockWriteOffTab({ initialWriteOffs }: StockWriteOffTabProps) {
+export function StockWriteOffTab({
+  initialWriteOffs,
+  initialInventories = [],
+  initialLots = [],
+  initialCategories = [],
+}: StockWriteOffTabProps) {
   const router = useRouter();
   const isAdmin = useIsAdmin();
   const isImsManager = useIsImsManager();
@@ -370,6 +380,10 @@ export function StockWriteOffTab({ initialWriteOffs }: StockWriteOffTabProps) {
             toast.success(msg || "Stock Write-Off request submitted.");
             refreshData();
           }}
+          initialWriteOffs={initialWriteOffs}
+          initialInventories={initialInventories}
+          initialLots={initialLots}
+          initialCategories={initialCategories}
         />
       )}
     </div>

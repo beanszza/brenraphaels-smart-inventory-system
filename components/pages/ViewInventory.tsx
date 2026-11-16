@@ -324,7 +324,12 @@ export default function ViewInventory({
       )}
 
       {canAccessWriteOff && mainTab === "write-off" ? (
-        <StockWriteOffTab initialWriteOffs={initialWriteOffs} />
+        <StockWriteOffTab
+          initialWriteOffs={initialWriteOffs}
+          initialInventories={allInventories}
+          initialLots={lots}
+          initialCategories={initialCategories}
+        />
       ) : (
         <>
           {/* 3 KPI Cards */}

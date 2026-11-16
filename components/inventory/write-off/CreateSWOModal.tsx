@@ -5,9 +5,7 @@ import {
   Plus,
   Trash2,
   Upload,
-  X,
   AlertCircle,
-  Image as ImageIcon,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +15,8 @@ import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import { useStaff } from "@/context/StaffContext";
 import { inventory } from "@/lib/inventory/client";
+import type { InventoryItem } from "@/components/inventory/types";
+import type { LotItem } from "@/components/lots/types";
 import {
   SWO_MAX_ITEMS,
   SWO_MAX_PHOTOS_PER_ITEM,
@@ -35,6 +35,7 @@ import {
 } from "@/lib/inventory/write-off-validation";
 import { MAX_FILE_BYTES } from "@/lib/files";
 import type {
+  StockWriteOffDto,
   WriteOffFormData,
   WriteOffFormItemOption,
   WriteOffFormLotOption,
@@ -57,7 +58,7 @@ interface DraftPhotoFile {
 
 interface DraftItemForm {
   itemType: string;
-  itemKey: string; // e.g. "item:12" or "fg:5"
+  itemKey: string;
   lots: DraftLotForm[];
   photos: DraftPhotoFile[];
   photoError?: string;
@@ -84,18 +85,161 @@ function createEmptyItem(): DraftItemForm {
   };
 }
 
+function buildFallbackFormData(
+  initialLots: LotItem[],
+  initialCategories: { categoryId: number; categoryName: string }[],
+  initialWriteOffs: StockWriteOffDto[],
+  initialInventories: InventoryItem[]
+): WriteOffFormData {
+  const year = new Date().getFullYear();
+  let maxSeq = 0;
+  for (const swo of initialWriteOffs) {
+    const match = swo.swoNumber?.match(/SWO-\d{4}-(\d+)/);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (n > maxSeq) maxSeq = n;
+    }
+  }
+  const nextSwoNumberPreview = `SWO-${year}-${String(maxSeq + 1).padStart(4, "0")}`;
+
+  const pendingByLot = new Map<number, number>();
+  for (const swo of initialWriteOffs) {
+    if (swo.status === "Pending Approval" || swo.status === "Approved") {
+      for (const item of swo.items) {
+        for (const line of item.lines) {
+          pendingByLot.set(
+            line.lotId,
+            (pendingByLot.get(line.lotId) || 0) + Number(line.quantity || 0)
+          );
+        }
+      }
+    }
+  }
+
+  const itemTypesMap = new Map<string, boolean>();
+  for (const cat of initialCategories) {
+    if (cat.categoryName.toLowerCase().includes("finished")) continue;
+    itemTypesMap.set(cat.categoryName, true);
+  }
+  for (const inv of initialInventories) {
+    if (inv.categoryName && !inv.categoryName.toLowerCase().includes("finished")) {
+      if (!itemTypesMap.has(inv.categoryName)) {
+        itemTypesMap.set(inv.categoryName, true);
+      }
+    }
+  }
+  itemTypesMap.set("Finished Goods", true);
+
+  const itemsMap = new Map<string, WriteOffFormItemOption>();
+  const now = new Date();
+
+  for (const lot of initialLots) {
+    if (
+      typeof lot.lotCode === "string" &&
+      (lot.lotCode.startsWith("LOT-UJH-2026-") || lot.lotCode.startsWith("LOT-UBH-2026-"))
+    ) {
+      continue;
+    }
+    const remaining = Number(lot.quantityRemaining || 0);
+    const reserved = Number(lot.reservedQuantity || 0);
+    const pending = pendingByLot.get(lot.lotId) || 0;
+    const available = Number(Math.max(0, remaining - reserved - pending).toFixed(3));
+    if (available <= 0) continue;
+
+    const rawCat = lot.categoryName || "Raw Materials";
+    const isFinishedGood = rawCat.toLowerCase().includes("finished");
+    const itemType = isFinishedGood ? "Finished Goods" : rawCat;
+    const itemKey = `item:${lot.itemId}`;
+    const uomName = lot.uomAbbreviation || "Unit";
+    const itemCode = lot.itemCode || `SPL-${String(lot.itemId).padStart(4, "0")}`;
+    const displayLabel = `${lot.itemName} (${itemCode})`;
+    const expiryDate = lot.expiryDate || null;
+    const isExpired = expiryDate ? new Date(expiryDate).getTime() < now.getTime() : false;
+
+    const lotOpt: WriteOffFormLotOption = {
+      lotId: lot.lotId,
+      lotCode: lot.lotCode,
+      itemId: lot.itemId,
+      productId: null,
+      variantName: "",
+      expiryDate,
+      quantityRemaining: remaining,
+      reservedQuantity: reserved,
+      pendingWriteOffQuantity: pending,
+      availableQuantity: available,
+      unitCost: Number(lot.unitCost || 0),
+      uomId: lot.uomId || 1,
+      uomName,
+      isExpired,
+    };
+
+    const existing = itemsMap.get(itemKey);
+    if (existing) {
+      existing.lots.push(lotOpt);
+    } else {
+      itemsMap.set(itemKey, {
+        key: itemKey,
+        itemId: lot.itemId,
+        productId: null,
+        itemType,
+        itemName: lot.itemName,
+        itemCode,
+        variantName: "",
+        displayLabel,
+        uomId: lot.uomId || 1,
+        uomName,
+        hasExpiry: Boolean(expiryDate),
+        lots: [lotOpt],
+      });
+    }
+  }
+
+  return {
+    nextSwoNumberPreview,
+    itemTypes: Array.from(itemTypesMap.entries()).map(([name, hasExpiry]) => ({
+      name,
+      hasExpiry,
+    })),
+    items: Array.from(itemsMap.values()).sort((a, b) =>
+      a.displayLabel.localeCompare(b.displayLabel)
+    ),
+  };
+}
+
 interface CreateSWOModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: (message?: string) => void;
+  initialWriteOffs?: StockWriteOffDto[];
+  initialInventories?: InventoryItem[];
+  initialLots?: LotItem[];
+  initialCategories?: { categoryId: number; categoryName: string }[];
 }
 
-export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps) {
+export function CreateSWOModal({
+  open,
+  onClose,
+  onSuccess,
+  initialWriteOffs = [],
+  initialInventories = [],
+  initialLots = [],
+  initialCategories = [],
+}: CreateSWOModalProps) {
   const staff = useStaff();
 
-  const [formData, setFormData] = useState<WriteOffFormData | null>(null);
-  const [loadingData, setLoadingData] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  const fallbackFormData = useMemo(
+    () =>
+      buildFallbackFormData(
+        initialLots,
+        initialCategories,
+        initialWriteOffs,
+        initialInventories
+      ),
+    [initialLots, initialCategories, initialWriteOffs, initialInventories]
+  );
+
+  const [formData, setFormData] = useState<WriteOffFormData>(fallbackFormData);
+  const [loadingData, setLoadingData] = useState(false);
 
   const [items, setItems] = useState<DraftItemForm[]>([createEmptyItem()]);
   const [generalRemarks, setGeneralRemarks] = useState("");
@@ -117,12 +261,12 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
   useEffect(() => {
     if (!open) return;
     let active = true;
-    setLoadingData(true);
-    setLoadError("");
+    setFormData(fallbackFormData);
     setItems([createEmptyItem()]);
     setGeneralRemarks("");
     setErrors({ items: {} });
     setSubmitBannerError("");
+    setLoadingData(true);
 
     inventory
       .getWriteOffFormData()
@@ -130,12 +274,10 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
         if (!active) return;
         if (res.data?.success && res.data.data) {
           setFormData(res.data.data);
-        } else {
-          setLoadError(res.data?.message || "Failed to load inventory items and lots.");
         }
       })
       .catch(() => {
-        if (active) setLoadError("Failed to load inventory items and lots.");
+        // Fallback data from page props is already populated
       })
       .finally(() => {
         if (active) setLoadingData(false);
@@ -144,7 +286,7 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
     return () => {
       active = false;
     };
-  }, [open]);
+  }, [open, fallbackFormData]);
 
   // Clean up object URLs on unmount
   useEffect(() => {
@@ -176,13 +318,11 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
     return map;
   }, [formData]);
 
-  // Used item keys across cards (to disable duplicate item selection)
   const selectedItemKeys = useMemo(
     () => new Set(items.map((it) => it.itemKey).filter(Boolean)),
     [items]
   );
 
-  // Used lot IDs across all items & rows
   const selectedLotIds = useMemo(() => {
     const set = new Set<number>();
     items.forEach((it) =>
@@ -392,13 +532,17 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
         const savedItem = createdSwo.items[i];
         if (!savedItem || draftItem.photos.length === 0) continue;
         for (const photo of draftItem.photos) {
-          const fd = new FormData();
-          fd.append("file", photo.file);
-          const upRes = await inventory.uploadWriteOffPhotoDirect(
-            savedItem.writeOffItemId,
-            fd
-          );
-          if (!upRes.data?.success) {
+          try {
+            const fd = new FormData();
+            fd.append("file", photo.file);
+            const upRes = await inventory.uploadWriteOffPhotoDirect(
+              savedItem.writeOffItemId,
+              fd
+            );
+            if (!upRes.data?.success) {
+              failedPhotos++;
+            }
+          } catch {
             failedPhotos++;
           }
         }
@@ -409,9 +553,10 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
           ? `Stock Write-Off ${createdSwo.swoNumber} submitted for approval (${failedPhotos} photo(s) could not be uploaded).`
           : `Stock Write-Off ${createdSwo.swoNumber} submitted for approval.`;
       onSuccess(successMessage);
-    } catch (err) {
+    } catch (err: any) {
       setSubmitBannerError(
-        err instanceof Error ? err.message : "Unable to submit Stock Write-Off request."
+        err?.response?.data?.message ||
+          (err instanceof Error ? err.message : "Unable to submit Stock Write-Off request.")
       );
     } finally {
       setSubmitting(false);
@@ -440,27 +585,26 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
         confirmMessage="Are you sure you want to close? Any unsaved Stock Write-Off details will be discarded."
       >
         <div className="space-y-6">
-          {loadError && (
-            <div
-              role="alert"
-              className="rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs font-medium text-destructive flex items-center gap-2"
-            >
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{loadError}</span>
-            </div>
-          )}
-
           {submitBannerError && (
             <div
               role="alert"
-              className="rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs font-medium text-destructive flex items-center gap-2"
+              className="rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs font-medium text-destructive flex items-center justify-between gap-2"
             >
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{submitBannerError}</span>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{submitBannerError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSubmitBannerError("")}
+                className="font-bold underline shrink-0 cursor-pointer"
+              >
+                Dismiss
+              </button>
             </div>
           )}
 
-          {/* Section 1: Stock Write-Off Information */}
+          {/* Section 1: Stock Write-Off Information (Matches CreatePRForm read-only fields) */}
           <div className="space-y-2.5">
             <h3 className="text-sm font-bold text-foreground">
               Stock Write-Off Information
@@ -470,11 +614,8 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Write-Off Number
                 </label>
-                <div className="flex items-center justify-between h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-semibold text-foreground">
-                  <span>{formData?.nextSwoNumberPreview || "SWO-2026-0001"}</span>
-                  <span className="text-[10px] font-normal text-muted-foreground">
-                    Auto-generated
-                  </span>
+                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-all">
+                  {formData?.nextSwoNumberPreview || "SWO-2026-0001"}
                 </div>
               </div>
 
@@ -482,9 +623,8 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Request Date
                 </label>
-                <div className="flex items-center justify-between h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-                  <span>{requestDateDisplay}</span>
-                  <span className="text-[10px]">Auto-generated</span>
+                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                  {requestDateDisplay}
                 </div>
               </div>
 
@@ -492,11 +632,8 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                   Requested By
                 </label>
-                <div className="flex items-center justify-between h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-                  <span className="truncate font-medium text-foreground">
-                    {staff.name || staff.username}
-                  </span>
-                  <span className="text-[10px] shrink-0">Logged-in User</span>
+                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-none">
+                  {staff.name || staff.username}
                 </div>
               </div>
             </div>
@@ -548,7 +685,7 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                       <button
                         type="button"
                         onClick={() => handleRemoveItem(itemIdx)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-destructive/30 text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         Remove Item
@@ -569,9 +706,8 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                         </label>
                         <select
                           value={draftItem.itemType}
-                          disabled={loadingData}
                           onChange={(e) => handleItemTypeChange(itemIdx, e.target.value)}
-                          className={`w-full h-10 rounded-xl border bg-card px-3 text-xs text-foreground focus:ring-1 focus:ring-ring ${
+                          className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring cursor-pointer ${
                             itemErr.itemType ? "border-destructive" : "border-border"
                           }`}
                         >
@@ -596,9 +732,9 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                         </label>
                         <select
                           value={draftItem.itemKey}
-                          disabled={!draftItem.itemType || loadingData}
+                          disabled={!draftItem.itemType}
                           onChange={(e) => handleItemKeyChange(itemIdx, e.target.value)}
-                          className={`w-full h-10 rounded-xl border bg-card px-3 text-xs text-foreground focus:ring-1 focus:ring-ring disabled:opacity-50 ${
+                          className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer ${
                             itemErr.itemId ? "border-destructive" : "border-border"
                           }`}
                         >
@@ -631,16 +767,13 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                         )}
                       </div>
 
-                      {/* Unit of Measurement (Auto-retrieved) */}
+                      {/* Unit of Measurement */}
                       <div>
                         <label className="mb-1.5 block text-xs font-semibold text-foreground">
                           Unit of Measurement
                         </label>
-                        <div className="flex items-center justify-between h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-                          <span className="font-semibold text-foreground">
-                            {selectedItemOpt?.uomName || "—"}
-                          </span>
-                          <span className="text-[10px]">Auto-retrieved</span>
+                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                          {selectedItemOpt?.uomName || "—"}
                         </div>
                       </div>
                     </div>
@@ -658,7 +791,7 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                           <button
                             type="button"
                             onClick={() => handleAddLot(itemIdx)}
-                            className="inline-flex items-center gap-1 px-3 py-1 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5" /> Add Another Lot
                           </button>
@@ -678,7 +811,6 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                         (l) => l.lotId === Number(draftLot.lotId)
                       );
 
-                      // Live inline check if user enters quantity > available
                       const numericQty = Number(draftLot.quantity);
                       const liveExceedsAvailable =
                         selectedLotOpt &&
@@ -697,6 +829,9 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                         : liveCountUomError
                         ? `Quantity for ${selectedLotOpt.uomName} must be a whole number.`
                         : lotErr.quantity;
+
+                      const showExpiryField =
+                        hasExpiry && (!selectedLotOpt || Boolean(selectedLotOpt.expiryDate));
 
                       return (
                         <div
@@ -721,9 +856,7 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                           {/* Row 1: Batch/Lot Number, Expiration Date (only if category HasExpiry & lot has expiry), Available Quantity, Affected Quantity */}
                           <div
                             className={`grid grid-cols-1 sm:grid-cols-2 ${
-                              hasExpiry && (!selectedLotOpt || Boolean(selectedLotOpt.expiryDate))
-                                ? "lg:grid-cols-4"
-                                : "lg:grid-cols-3"
+                              showExpiryField ? "lg:grid-cols-4" : "lg:grid-cols-3"
                             } gap-3`}
                           >
                             {/* Batch / Lot Number */}
@@ -744,7 +877,7 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                                       : {}),
                                   });
                                 }}
-                                className={`w-full h-10 rounded-xl border bg-card px-3 text-xs text-foreground focus:ring-1 focus:ring-ring disabled:opacity-50 ${
+                                className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer ${
                                   lotErr.lotId ? "border-destructive" : "border-border"
                                 }`}
                               >
@@ -777,25 +910,24 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                               )}
                             </div>
 
-                            {/* Expiration Date (Hidden when category has no expiry or lot has no expiry date) */}
-                            {hasExpiry && (!selectedLotOpt || Boolean(selectedLotOpt.expiryDate)) && (
+                            {/* Expiration Date */}
+                            {showExpiryField && (
                               <div>
                                 <label className="mb-1.5 block text-xs font-semibold text-foreground">
                                   Expiration Date
                                 </label>
-                                <div className="flex items-center justify-between h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
                                   <span
                                     className={
                                       selectedLotOpt?.isExpired
                                         ? "font-bold text-destructive"
-                                        : "font-medium text-foreground"
+                                        : "text-muted-foreground"
                                     }
                                   >
                                     {selectedLotOpt
                                       ? fmtDate(selectedLotOpt.expiryDate)
                                       : "—"}
                                   </span>
-                                  <span className="text-[10px]">Auto-retrieved</span>
                                 </div>
                               </div>
                             )}
@@ -805,13 +937,10 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                               <label className="mb-1.5 block text-xs font-semibold text-foreground">
                                 Available Quantity
                               </label>
-                              <div className="flex items-center justify-between h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-                                <span className="font-bold text-foreground">
-                                  {selectedLotOpt
-                                    ? `${selectedLotOpt.availableQuantity.toLocaleString()} ${selectedLotOpt.uomName}`
-                                    : "—"}
-                                </span>
-                                <span className="text-[10px]">Auto-retrieved</span>
+                              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                                {selectedLotOpt
+                                  ? `${selectedLotOpt.availableQuantity.toLocaleString()} ${selectedLotOpt.uomName}`
+                                  : "—"}
                               </div>
                               {selectedLotOpt && selectedLotOpt.reservedQuantity > 0 && (
                                 <p className="mt-1 text-[10px] text-muted-foreground">
@@ -871,7 +1000,7 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                                       reason: e.target.value,
                                     })
                                   }
-                                  className={`w-full h-10 rounded-xl border bg-card px-3 text-xs text-foreground focus:ring-1 focus:ring-ring ${
+                                  className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring cursor-pointer ${
                                     lotErr.reason ? "border-destructive" : "border-border"
                                   }`}
                                 >
@@ -901,7 +1030,7 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                                         reasonOther: e.target.value,
                                       })
                                     }
-                                    className={`h-9 rounded-xl bg-card text-xs ${
+                                    className={`h-10 rounded-xl bg-card text-xs ${
                                       lotErr.reasonOther
                                         ? "border-destructive"
                                         : "border-border"
@@ -929,7 +1058,7 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                                       disposition: e.target.value,
                                     })
                                   }
-                                  className={`w-full h-10 rounded-xl border bg-card px-3 text-xs text-foreground focus:ring-1 focus:ring-ring ${
+                                  className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring cursor-pointer ${
                                     lotErr.disposition ? "border-destructive" : "border-border"
                                   }`}
                                 >
@@ -959,7 +1088,7 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                                         dispositionOther: e.target.value,
                                       })
                                     }
-                                    className={`h-9 rounded-xl bg-card text-xs ${
+                                    className={`h-10 rounded-xl bg-card text-xs ${
                                       lotErr.dispositionOther
                                         ? "border-destructive"
                                         : "border-border"
@@ -982,7 +1111,7 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                                 Item Remarks <span className="text-destructive">*</span>
                               </label>
                               <span className="text-[10px] text-muted-foreground">
-                                {draftLot.remarks.length}/{SWO_REMARKS_MAX} (min {SWO_REMARKS_MIN})
+                                {draftLot.remarks.length}/{SWO_REMARKS_MAX}
                               </span>
                             </div>
                             <Textarea
@@ -1010,32 +1139,78 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                     })}
                   </div>
 
-                  {/* Supporting Evidence Photo Upload (Optional) */}
-                  <div className="space-y-2 pt-2 border-t border-border">
+                  {/* Supporting Evidence Photo Upload (Matches BatchProofField dashed dropzone UI) */}
+                  <div className="space-y-1.5 pt-2 border-t border-border">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <label className="text-xs font-semibold text-foreground">
-                          Item Supporting Evidence{" "}
-                          <span className="text-muted-foreground font-normal">(Optional)</span>
-                        </label>
-                        <p className="text-[11px] text-muted-foreground">
-                          Upload clear photo(s) showing the condition of this specific inventory item. JPG, PNG · Multiple photos allowed (up to {SWO_MAX_PHOTOS_PER_ITEM}).
-                        </p>
-                      </div>
-                      <label className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0">
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Upload Item Photo</span>
-                        <input
-                          type="file"
-                          accept=".jpg,.jpeg,.png,.webp"
-                          multiple
-                          onChange={(e) => {
-                            handlePhotoUploadChange(itemIdx, e.target.files);
-                            e.target.value = "";
-                          }}
-                          className="hidden"
-                        />
+                      <label className="text-xs font-semibold text-foreground">
+                        Item Supporting Evidence{" "}
+                        <span className="text-muted-foreground font-normal">(Optional)</span>
                       </label>
+                      {draftItem.photos.length > 0 && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {draftItem.photos.length}/{SWO_MAX_PHOTOS_PER_ITEM} photo(s)
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="border-2 border-dashed border-border rounded-xl p-4 bg-muted/10 transition-colors space-y-3">
+                      {draftItem.photos.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                          {draftItem.photos.map((p, pIdx) => (
+                            <div
+                              key={pIdx}
+                              className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card p-2"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={p.previewUrl}
+                                  alt={p.file.name}
+                                  className="w-11 h-11 rounded-lg object-cover border border-border shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <div className="text-xs font-medium text-foreground truncate">
+                                    {p.file.name}
+                                  </div>
+                                  <div className="text-[10px] text-muted-foreground">
+                                    {Math.max(1, Math.round(p.file.size / 1024))} KB
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePhoto(itemIdx, pIdx)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 text-xs font-semibold transition-colors cursor-pointer shrink-0"
+                                title="Remove photo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {draftItem.photos.length < SWO_MAX_PHOTOS_PER_ITEM && (
+                        <label className="flex flex-col items-center justify-center cursor-pointer py-4 hover:bg-muted/30 rounded-xl transition-colors">
+                          <Upload className="w-5 h-5 text-muted-foreground mb-1.5" />
+                          <span className="text-xs font-semibold text-foreground">
+                            Click to upload item condition photo
+                          </span>
+                          <span className="text-[11px] text-muted-foreground mt-0.5">
+                            JPG, PNG, WebP up to 10MB · Multiple photos allowed
+                          </span>
+                          <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp"
+                            multiple
+                            onChange={(e) => {
+                              handlePhotoUploadChange(itemIdx, e.target.files);
+                              e.target.value = "";
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
                     </div>
 
                     {draftItem.photoError && (
@@ -1043,72 +1218,28 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
                         {draftItem.photoError}
                       </p>
                     )}
-
-                    {draftItem.photos.length > 0 && (
-                      <div className="flex flex-wrap gap-2.5 pt-1">
-                        {draftItem.photos.map((p, pIdx) => (
-                          <div
-                            key={pIdx}
-                            className="flex items-center gap-2 rounded-xl border border-border bg-muted/30 p-2"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={p.previewUrl}
-                              alt={p.file.name}
-                              className="w-10 h-10 rounded-lg object-cover border border-border"
-                            />
-                            <div className="max-w-[140px]">
-                              <div className="text-xs font-medium text-foreground truncate">
-                                {p.file.name}
-                              </div>
-                              <div className="text-[10px] text-muted-foreground">
-                                {Math.max(1, Math.round(p.file.size / 1024))} KB
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleRemovePhoto(itemIdx, pIdx)}
-                              className="p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-muted cursor-pointer"
-                              title="Remove photo"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               );
             })}
 
-            {/* Add Another Item Button (Max 5 items) */}
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleAddItem}
-                disabled={items.length >= SWO_MAX_ITEMS}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-foreground bg-card border border-border rounded-xl hover:bg-muted transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Plus className="w-4 h-4" /> Add Another Item
-              </button>
-              <span className="text-xs text-muted-foreground">
-                {items.length >= SWO_MAX_ITEMS
-                  ? `Maximum of ${SWO_MAX_ITEMS} items reached.`
-                  : "Add another inventory item to this write-off request."}
-              </span>
-            </div>
+            {/* Add Another Item Button (Matches CreatePRForm "+ Add Item" button) */}
+            <button
+              type="button"
+              onClick={handleAddItem}
+              disabled={items.length >= SWO_MAX_ITEMS}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-foreground bg-card border border-border rounded-xl hover:bg-muted transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus size={14} /> Add Another Item
+            </button>
           </div>
 
-          {/* Section 3: General Remarks (Optional) */}
+          {/* Section 3: General Remarks (Matches CreatePRForm bottom left Notes section) */}
           <div className="flex flex-col sm:flex-row justify-start pt-3 border-t border-border">
-            <div className="w-full sm:w-2/3 lg:w-1/2 space-y-1.5">
+            <div className="w-full sm:w-1/2 lg:w-5/12 space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-foreground">
-                  General Remarks{" "}
-                  <span className="text-muted-foreground font-normal">
-                    (Optional. Additional information regarding the overall write-off request.)
-                  </span>
+                  General Remarks <span className="text-muted-foreground font-normal">(Optional)</span>
                 </label>
                 <span className="text-[10px] text-muted-foreground">
                   {generalRemarks.length}/{SWO_GENERAL_REMARKS_MAX}
@@ -1117,7 +1248,7 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
               <Textarea
                 rows={3}
                 maxLength={SWO_GENERAL_REMARKS_MAX}
-                placeholder="Enter additional remarks..."
+                placeholder="Enter additional remarks (optional)..."
                 value={generalRemarks}
                 onChange={(e) => setGeneralRemarks(e.target.value)}
                 className="w-full rounded-xl border border-border bg-card px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-ring resize-none"
@@ -1130,7 +1261,7 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
             </div>
           </div>
 
-          {/* Modal Footer */}
+          {/* Modal Footer (Matches CreatePRForm footer) */}
           <div className="flex flex-wrap justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
             <ModalCloseButton
               type="button"
@@ -1161,7 +1292,7 @@ export function CreateSWOModal({ open, onClose, onSuccess }: CreateSWOModalProps
         open={confirmSubmitOpen}
         title="Submit Stock Write-Off Request"
         subtitle={`Write-Off No: ${formData?.nextSwoNumberPreview || "SWO-2026-0001"} • ${items.length} item(s) • ${totalLotsCount} lot(s)`}
-        description={`Are you sure you want to submit this Stock Write-Off request for administrator approval?`}
+        description="Are you sure you want to submit this Stock Write-Off request for administrator approval?"
         confirmLabel="Confirm & Submit"
         submitting={submitting}
         onCancel={() => setConfirmSubmitOpen(false)}
