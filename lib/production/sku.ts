@@ -52,9 +52,14 @@ export function composeVariantName(
   packagingType: string
 ): string {
   const cleanSize = String(contentSize ?? "").trim();
-  const normalizedUom = normalizeVariantUom(uom);
-  const uomWord = VARIANT_UOM_NAMES[normalizedUom] || normalizedUom;
   const cleanPkg = (packagingType || "Jar").trim();
+  const cleanUom = (uom || "").trim();
+  if (!cleanUom) {
+    if (!cleanSize) return cleanPkg;
+    return `${cleanSize} ${cleanPkg}`.trim();
+  }
+  const normalizedUom = normalizeVariantUom(cleanUom);
+  const uomWord = VARIANT_UOM_NAMES[normalizedUom] || normalizedUom;
   if (!cleanSize) return `${uomWord} ${cleanPkg}`.trim();
   return `${cleanSize} ${uomWord} ${cleanPkg}`.trim();
 }
@@ -217,6 +222,10 @@ export function getSkuWeightCode(variantName: string): string {
   const match = unitShortened.match(/(\d+(?:\.\d+)?)\s*(ML|KG|G|L|OZ|LB)\b/i);
   if (match) {
     return `${match[1]}${match[2].toUpperCase()}`;
+  }
+  const numOnlyMatch = unitShortened.match(/(\d+(?:\.\d+)?)/);
+  if (numOnlyMatch) {
+    return numOnlyMatch[1];
   }
   return "STD";
 }

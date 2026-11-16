@@ -80,11 +80,11 @@ export default function AddFinishedProductModal({
     {
       id: "var-1",
       contentSize: "250",
-      contentUom: "ML",
+      contentUom: "" as any,
       packagingType: "Jar",
       minStockLevel: "10",
       maxStockLevel: "100",
-      variantName: composeVariantName("250", "ML", "Jar"),
+      variantName: composeVariantName("250", "", "Jar"),
       isActive: true,
     },
   ]);
@@ -222,11 +222,11 @@ export default function AddFinishedProductModal({
       {
         id: `var-${Date.now()}-${prev.length + 1}`,
         contentSize: "350",
-        contentUom: "ML",
+        contentUom: "" as any,
         packagingType: "Jar",
         minStockLevel: "10",
         maxStockLevel: "100",
-        variantName: composeVariantName("350", "ML", "Jar"),
+        variantName: composeVariantName("350", "", "Jar"),
         isActive: isActive,
       },
     ]);
@@ -596,7 +596,7 @@ export default function AddFinishedProductModal({
                 Product Variants
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Configure Content Size, Unit of Measurement, and Packaging Type to auto-generate Variant Name &amp; SKU
+                Configure Content Size and Packaging Type to auto-generate Variant Name &amp; SKU
               </p>
             </div>
             <Button
@@ -691,8 +691,8 @@ export default function AddFinishedProductModal({
                     </div>
                   </div>
 
-                  {/* Row 2: Content Size, Unit of Measurement, Packaging Type */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Row 2: Content Size, Packaging Type */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Content Size */}
                     <div>
                       <label className="mb-1.5 block text-xs font-semibold text-foreground">
@@ -710,26 +710,6 @@ export default function AddFinishedProductModal({
                         className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
                         required
                       />
-                    </div>
-
-                    {/* Unit of Measurement (Name + Abbreviation like Supply creation) */}
-                    <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                        Unit of Measurement <span className="text-destructive">*</span>
-                      </label>
-                      <select
-                        value={v.contentUom}
-                        onChange={(e) =>
-                          handleUpdateVariantField(v.id, "contentUom", e.target.value)
-                        }
-                        className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm h-9"
-                      >
-                        {CONTENT_UOM_OPTIONS.map((u) => (
-                          <option key={u.value} value={u.value}>
-                            {u.label}
-                          </option>
-                        ))}
-                      </select>
                     </div>
 
                     {/* Packaging Type (Jar, Container, Pouch) */}

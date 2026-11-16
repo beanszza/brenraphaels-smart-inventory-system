@@ -32,7 +32,7 @@ import { ProductionImage } from "./ProductionImage";
 import { listFinishedProducts as productionListFinishedProducts } from "@/app/actions/production/products";
 import { syncAllFinishedProductsToPos } from "@/app/actions/production/pos-sync";
 import { actionResponse } from "@/lib/resources/action-response";
-import { parseVariantComponents, formatVariantUomLabel } from "@/lib/production/sku";
+import { parseVariantComponents } from "@/lib/production/sku";
 import { toast } from "sonner";
 
 const PACKAGING_FILTERS = ["All", "Jar", "Container", "Pouch"] as const;
@@ -286,7 +286,6 @@ export default function ConfigurationTab({
                 <th className="w-16 px-4 py-4 text-center">Photo</th>
                 <th className="px-4 py-4">Product Name</th>
                 <th className="px-4 py-4">Variant</th>
-                <th className="px-4 py-4">UOM</th>
                 <th className="px-4 py-4">Packaging</th>
                 <th className="px-4 py-4">Variant SKU</th>
                 <th className="px-4 py-4 text-center">Status</th>
@@ -297,7 +296,7 @@ export default function ConfigurationTab({
               {paginatedProducts.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={8}
                     className="px-4 py-12 text-center text-sm font-normal text-muted-foreground"
                   >
                     {searchQuery || productFilter !== "All" || packagingFilter !== "All" || statusFilter !== "All"
@@ -347,11 +346,6 @@ export default function ConfigurationTab({
                       <span className="rounded-md bg-muted text-foreground border border-border px-2.5 py-0.5 text-xs font-semibold">
                         {product.variant || "Standard"}
                       </span>
-                    </td>
-
-                    {/* UOM */}
-                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
-                      {formatVariantUomLabel(product.contentUom || product.uomName)}
                     </td>
 
                     {/* Packaging */}

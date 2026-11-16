@@ -369,6 +369,18 @@ export async function createWriteOff(body: SwoCreateInput) {
         refuse(firstSwoErrorMessage(initialErrors) || "Please fix the validation errors.");
       }
 
+      // Prevent duplicate lot selection across all items in the request
+      const seenLotsCheck = new Set<number>();
+      for (const it of body.items) {
+        for (const l of it.lots) {
+          const lId = Number(l.lotId);
+          if (seenLotsCheck.has(lId)) {
+            refuse(`Duplicate lot detected: Lot ID ${lId} cannot be selected multiple times in the same request.`);
+          }
+          seenLotsCheck.add(lId);
+        }
+      }
+
       // Collect all requested lot IDs and verify live availability inside the Serializable tx
       const requestedLotIds = body.items.flatMap((it) => it.lots.map((l) => Number(l.lotId)));
       const [dbLots, pendingLines] = await Promise.all([
@@ -538,6 +550,20 @@ export async function createWriteOff(body: SwoCreateInput) {
         include: WRITE_OFF_INCLUDE,
       });
 
+      // Reserve affected lots so production requests & stock transfers cannot allocate them
+      for (const item of created.StockWriteOffItems) {
+        for (const line of item.StockWriteOffLines) {
+          if (line.LotId && Number(line.Quantity) > 0) {
+            await tx.inventoryLots.update({
+              where: { LotId: line.LotId },
+              data: {
+                ReservedQuantity: { increment: Number(line.Quantity) },
+              },
+            });
+          }
+        }
+      }
+
       const dto = mapWriteOff(created);
       return {
         result: resourceResult({
@@ -662,6 +688,26 @@ export async function rejectWriteOff(idInput: string | number, reasonInput: stri
         include: WRITE_OFF_INCLUDE,
       });
 
+      // Release reserved quantities on the affected lots
+      for (const item of updated.StockWriteOffItems) {
+        for (const line of item.StockWriteOffLines) {
+          if (line.LotId && Number(line.Quantity) > 0) {
+            const lot = await tx.inventoryLots.findUnique({ where: { LotId: line.LotId } });
+            if (lot) {
+              const toRelease = Math.min(Number(lot.ReservedQuantity || 0), Number(line.Quantity));
+              if (toRelease > 0) {
+                await tx.inventoryLots.update({
+                  where: { LotId: line.LotId },
+                  data: {
+                    ReservedQuantity: { decrement: toRelease },
+                  },
+                });
+              }
+            }
+          }
+        }
+      }
+
       return {
         result: resourceResult({
           success: true,
@@ -724,6 +770,26 @@ export async function cancelWriteOff(idInput: string | number, reasonInput: stri
         include: WRITE_OFF_INCLUDE,
       });
 
+      // Release reserved quantities on the affected lots
+      for (const item of updated.StockWriteOffItems) {
+        for (const line of item.StockWriteOffLines) {
+          if (line.LotId && Number(line.Quantity) > 0) {
+            const lot = await tx.inventoryLots.findUnique({ where: { LotId: line.LotId } });
+            if (lot) {
+              const toRelease = Math.min(Number(lot.ReservedQuantity || 0), Number(line.Quantity));
+              if (toRelease > 0) {
+                await tx.inventoryLots.update({
+                  where: { LotId: line.LotId },
+                  data: {
+                    ReservedQuantity: { decrement: toRelease },
+                  },
+                });
+              }
+            }
+          }
+        }
+      }
+
       return {
         result: resourceResult({
           success: true,
@@ -783,23 +849,25 @@ export async function removeWriteOffFromInventory(idInput: string | number) {
             refuse(`Lot ${line.LotCode} for ${item.ItemName} no longer exists.`);
           }
           const remaining = Number(lot.QuantityRemaining || 0);
-          const reserved = Number(lot.ReservedQuantity || 0);
-          const unreserved = Number(Math.max(0, remaining - reserved).toFixed(3));
           const qtyToRemove = Number(line.Quantity || 0);
 
-          if (qtyToRemove > unreserved + 1e-9) {
+          if (qtyToRemove > remaining + 1e-9) {
             refuse(
-              `Insufficient unreserved stock on lot ${lot.LotCode} (${item.ItemName}). Needed: ${qtyToRemove} ${item.UomName}, currently unreserved: ${unreserved} ${item.UomName}.`
+              `Insufficient stock on lot ${lot.LotCode} (${item.ItemName}). Needed: ${qtyToRemove} ${item.UomName}, currently remaining: ${remaining} ${item.UomName}.`
             );
           }
 
           const newRemaining = Number(Math.max(0, remaining - qtyToRemove).toFixed(3));
+          const toReleaseReservation = Math.min(Number(lot.ReservedQuantity || 0), qtyToRemove);
 
-          // 1. Decrement InventoryLots.QuantityRemaining & mark Depleted if 0
+          // 1. Decrement InventoryLots.QuantityRemaining & release write-off reservation, mark Depleted if 0
           await tx.inventoryLots.update({
             where: { LotId: lot.LotId },
             data: {
               QuantityRemaining: { decrement: qtyToRemove },
+              ...(toReleaseReservation > 0
+                ? { ReservedQuantity: { decrement: toReleaseReservation } }
+                : {}),
               ...(newRemaining <= 0 ? { Status: "Depleted" } : {}),
             },
           });

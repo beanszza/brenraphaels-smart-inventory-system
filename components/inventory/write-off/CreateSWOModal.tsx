@@ -650,7 +650,7 @@ export function CreateSWOModal({
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
               <div>
                 <h3 className="text-sm font-bold text-foreground">
-                  Write-Off Items ({items.length}/{SWO_MAX_ITEMS})
+                  Write-Off Items
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Add the inventory items that need to be written off (up to {SWO_MAX_ITEMS} items per request). You can select one or more batches / lots per item.
@@ -661,6 +661,10 @@ export function CreateSWOModal({
             {items.map((draftItem, itemIdx) => {
               const itemErr = errors.items[itemIdx] || { lots: {} };
               const selectedItemOpt = itemsByKey.get(draftItem.itemKey);
+              const isFinishedGood =
+                draftItem.itemType.trim().toLowerCase() === "finished goods" ||
+                draftItem.itemType.trim().toLowerCase() === "finished product" ||
+                Boolean(selectedItemOpt?.productId);
               const hasExpiry = selectedItemOpt
                 ? selectedItemOpt.hasExpiry
                 : formData?.itemTypes.find((t) => t.name === draftItem.itemType)?.hasExpiry ?? true;
@@ -678,11 +682,11 @@ export function CreateSWOModal({
                 >
                   {/* Item Card Header */}
                   <div className="flex items-center justify-between pb-3 border-b border-border">
-                    <div className="flex items-center gap-2.5">
-                      <span className="inline-flex items-center justify-center px-3 py-1 rounded-lg bg-primary text-primary-foreground text-xs font-bold">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md bg-primary text-primary-foreground text-xs font-bold">
                         Item {itemIdx + 1}
                       </span>
-                      <span className="text-[11px] font-semibold text-muted-foreground">
+                      <span className="text-[11px] font-medium text-muted-foreground">
                         Required
                       </span>
                     </div>
@@ -691,7 +695,7 @@ export function CreateSWOModal({
                       <button
                         type="button"
                         onClick={() => handleRemoveItem(itemIdx)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-destructive/30 text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-destructive/30 text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         Remove Item
@@ -699,12 +703,16 @@ export function CreateSWOModal({
                     )}
                   </div>
 
-                  {/* Inventory Details Row: Item Type, Item Name, UOM */}
+                  {/* Inventory Details Row: Item Type, Item Name, (UOM for non-finished goods) */}
                   <div className="space-y-2">
                     <div className="text-xs font-bold text-foreground uppercase tracking-wider">
                       Inventory Details
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div
+                      className={`grid grid-cols-1 ${
+                        isFinishedGood ? "sm:grid-cols-2" : "sm:grid-cols-3"
+                      } gap-3.5`}
+                    >
                       {/* Item Type */}
                       <div>
                         <label className="mb-1.5 block text-xs font-semibold text-foreground">
@@ -751,20 +759,11 @@ export function CreateSWOModal({
                               ? "No items with available stock"
                               : "Select inventory item"}
                           </option>
-                          {itemsForSelectedType.map((opt) => {
-                            const usedInOtherCard =
-                              selectedItemKeys.has(opt.key) && draftItem.itemKey !== opt.key;
-                            return (
-                              <option
-                                key={opt.key}
-                                value={opt.key}
-                                disabled={usedInOtherCard}
-                              >
-                                {opt.displayLabel}
-                                {usedInOtherCard ? " (already selected)" : ""}
-                              </option>
-                            );
-                          })}
+                          {itemsForSelectedType.map((opt) => (
+                            <option key={opt.key} value={opt.key}>
+                              {opt.displayLabel}
+                            </option>
+                          ))}
                         </select>
                         {itemErr.itemId && (
                           <p className="mt-1 text-[11px] text-destructive font-medium">
@@ -773,15 +772,17 @@ export function CreateSWOModal({
                         )}
                       </div>
 
-                      {/* Unit of Measurement */}
-                      <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                          Unit of Measurement
-                        </label>
-                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-                          {selectedItemOpt?.uomName || "—"}
+                      {/* Unit of Measurement (Shown only for non-finished goods) */}
+                      {!isFinishedGood && (
+                        <div>
+                          <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                            Unit of Measurement
+                          </label>
+                          <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                            {selectedItemOpt?.uomName || "—"}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
 
@@ -902,7 +903,7 @@ export function CreateSWOModal({
                                       value={l.lotId}
                                       disabled={usedElsewhere}
                                     >
-                                      {l.lotCode} — Avail: {l.availableQuantity} {l.uomName}
+                                      {l.lotCode} — Avail: {l.availableQuantity}{isFinishedGood ? "" : ` ${l.uomName}`}
                                       {l.isExpired ? " (EXPIRED)" : ""}
                                       {usedElsewhere ? " (already selected)" : ""}
                                     </option>
@@ -945,12 +946,12 @@ export function CreateSWOModal({
                               </label>
                               <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
                                 {selectedLotOpt
-                                  ? `${selectedLotOpt.availableQuantity.toLocaleString()} ${selectedLotOpt.uomName}`
+                                  ? `${selectedLotOpt.availableQuantity.toLocaleString()}${isFinishedGood ? "" : ` ${selectedLotOpt.uomName}`}`
                                   : "—"}
                               </div>
                               {selectedLotOpt && selectedLotOpt.reservedQuantity > 0 && (
                                 <p className="mt-1 text-[10px] text-muted-foreground">
-                                  ({selectedLotOpt.reservedQuantity} {selectedLotOpt.uomName} reserved for production excluded)
+                                  ({selectedLotOpt.reservedQuantity}{isFinishedGood ? "" : ` ${selectedLotOpt.uomName}`} reserved excluded)
                                 </p>
                               )}
                             </div>

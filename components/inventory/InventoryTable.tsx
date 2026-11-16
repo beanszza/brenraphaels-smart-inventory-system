@@ -397,10 +397,12 @@ export default function InventoryTable({
                                               minimumFractionDigits: 0,
                                               maximumFractionDigits: 2,
                                             }
-                                          )}{" "}
-                                          <span className="text-[10px] font-normal text-muted-foreground">
-                                            {lot.uomName}
-                                          </span>
+                                          )}
+                                          {!isFinishedGoods && lot.uomName && (
+                                            <span className="text-[10px] font-normal text-muted-foreground">
+                                              {" "}{lot.uomName}
+                                            </span>
+                                          )}
                                         </td>
                                         <td className="px-3 py-2.5 text-right font-mono font-semibold text-foreground">
                                           {resQty.toLocaleString(undefined, {

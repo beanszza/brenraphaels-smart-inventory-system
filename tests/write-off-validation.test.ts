@@ -109,7 +109,7 @@ describe("Stock Write-Off Input Validation", () => {
     expect(errors.formError).toContain(`at most ${SWO_MAX_ITEMS} items`);
   });
 
-  it("rejects duplicate items across item cards and duplicate lots", () => {
+  it("allows same item across cards but rejects duplicate lots anywhere in request", () => {
     const errors = validateSwoInput(
       {
         items: [
@@ -124,13 +124,6 @@ describe("Stock Write-Off Input Validation", () => {
                 disposition: "Disposal / Destruction",
                 remarks: "Water damage on outer bag",
               },
-              {
-                lotId: 101,
-                quantity: 5,
-                reason: "Damaged",
-                disposition: "Disposal / Destruction",
-                remarks: "Duplicate lot selection",
-              },
             ],
           },
           {
@@ -138,11 +131,11 @@ describe("Stock Write-Off Input Validation", () => {
             itemId: 10,
             lots: [
               {
-                lotId: 102,
+                lotId: 101,
                 quantity: 5,
                 reason: "Spoiled",
                 disposition: "Disposal / Destruction",
-                remarks: "Spoiled lot",
+                remarks: "Duplicate lot across items",
               },
             ],
           },
@@ -152,8 +145,9 @@ describe("Stock Write-Off Input Validation", () => {
     );
 
     expect(hasAnySwoErrors(errors)).toBe(true);
-    expect(errors.items[0].lots[1].lotId).toContain("already selected");
-    expect(errors.items[1].itemId).toContain("already added");
+    expect(errors.items[1].lots[0].lotId).toContain("already selected");
+    // Verify item itself is NOT flagged as already added (same item across cards is allowed)
+    expect(errors.items[1].itemId).toBeUndefined();
   });
 
   it("enforces whole numbers for count units (pcs) and max 3 decimals for weight units", () => {

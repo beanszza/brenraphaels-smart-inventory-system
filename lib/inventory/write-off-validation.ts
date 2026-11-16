@@ -212,8 +212,7 @@ export function validateSwoInput(
     errors.generalRemarks = `General remarks cannot exceed ${SWO_GENERAL_REMARKS_MAX} characters.`;
   }
 
-  // Track unique item keys across cards (Finished Goods keyed by itemId + productId; supplies by itemId)
-  const seenItemKeys = new Set<string>();
+  // Track unique lot IDs across the entire request (same item can be added across cards, but lots must be unique)
   const seenLotIds = new Set<number>();
 
   input.items.forEach((item, itemIdx) => {
@@ -229,16 +228,6 @@ export function validateSwoInput(
     const productId = item.productId ? Number(item.productId) : null;
     if (!Number.isSafeInteger(itemId) || itemId <= 0) {
       itemErr.itemId = "Select an inventory item.";
-    } else {
-      const key =
-        itemType.toLowerCase() === "finished goods" && productId
-          ? `fg:${productId}`
-          : `item:${itemId}`;
-      if (seenItemKeys.has(key)) {
-        itemErr.itemId = "This item is already added in another item section.";
-      } else {
-        seenItemKeys.add(key);
-      }
     }
 
     if (!Array.isArray(item.lots) || item.lots.length === 0) {

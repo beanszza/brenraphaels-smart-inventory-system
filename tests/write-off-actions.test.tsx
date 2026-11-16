@@ -189,6 +189,12 @@ vi.mock("@/lib/prisma", () => {
         if (data.QuantityRemaining?.decrement) {
           state.lotRemaining -= data.QuantityRemaining.decrement;
         }
+        if (data.ReservedQuantity?.increment) {
+          state.lotReserved += data.ReservedQuantity.increment;
+        }
+        if (data.ReservedQuantity?.decrement) {
+          state.lotReserved -= data.ReservedQuantity.decrement;
+        }
         if (data.Status) {
           state.lotStatus = data.Status;
         }
@@ -337,35 +343,41 @@ describe("Stock Write-Off Lifecycle & Role Enforcement", () => {
       ],
     };
 
-    // 1. IMS Manager creates SWO #1 -> SWO-YYYY-0001
+    // 1. IMS Manager creates SWO #1 -> SWO-YYYY-0001 (reserves 15 on lot)
     state.staff = imsManagerStaff;
+    const initialReserved = state.lotReserved;
     const first = await createWriteOff(payload);
     expect(first.success).toBe(true);
+    expect(state.lotReserved).toBe(initialReserved + 15);
     const swo1 = (first.data as any).swoNumber as string;
     expect(swo1).toMatch(/^SWO-\d{4}-0001$/);
 
-    // 2. Admin rejects SWO #1 -> SWO-YYYY-0001 is retired
+    // 2. Admin rejects SWO #1 -> SWO-YYYY-0001 is retired and reservation is released
     state.staff = adminStaff;
     const rejected = await rejectWriteOff(1, "Photo unclear, please re-verify lot");
     expect(rejected.success).toBe(true);
     expect((rejected.data as any).status).toBe("Rejected");
+    expect(state.lotReserved).toBe(initialReserved);
 
     // 3. IMS Manager creates SWO #2 -> must issue SWO-YYYY-0002 (never reuse 0001)
     state.staff = imsManagerStaff;
     const second = await createWriteOff(payload);
     expect(second.success).toBe(true);
+    expect(state.lotReserved).toBe(initialReserved + 15);
     const swo2 = (second.data as any).swoNumber as string;
     expect(swo2).toMatch(/^SWO-\d{4}-0002$/);
     expect(swo2).not.toBe(swo1);
 
-    // 4. IMS Manager cancels SWO #2 while Pending Approval -> SWO-YYYY-0002 is retired
+    // 4. IMS Manager cancels SWO #2 while Pending Approval -> SWO-YYYY-0002 is retired and reservation is released
     const cancelled = await cancelWriteOff(2, "Selected wrong lot number");
     expect(cancelled.success).toBe(true);
     expect((cancelled.data as any).status).toBe("Cancelled");
+    expect(state.lotReserved).toBe(initialReserved);
 
     // 5. IMS Manager creates SWO #3 -> must issue SWO-YYYY-0003
     const third = await createWriteOff(payload);
     expect(third.success).toBe(true);
+    expect(state.lotReserved).toBe(initialReserved + 15);
     const swo3 = (third.data as any).swoNumber as string;
     expect(swo3).toMatch(/^SWO-\d{4}-0003$/);
   });
@@ -426,6 +438,7 @@ describe("Stock Write-Off Lifecycle & Role Enforcement", () => {
     expect(removed.success).toBe(true);
     expect((removed.data as any).status).toBe("Removed");
     expect(state.lotRemaining).toBe(35);
+    expect(state.lotReserved).toBe(10);
     expect(state.inventoryStock).toBe(35);
     expect(state.ledgersCreated).toHaveLength(1);
     expect(state.ledgersCreated[0]).toMatchObject({
