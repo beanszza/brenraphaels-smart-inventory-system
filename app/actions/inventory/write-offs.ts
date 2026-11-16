@@ -111,7 +111,7 @@ function mapWriteOff(row: RawWriteOff): StockWriteOffDto {
     removedBy: row.RemovedBy ?? null,
     removedByName: row.RemovedByName ?? null,
     removedAt: row.RemovedAt ? row.RemovedAt.toISOString() : null,
-    totalValue: Number(row.TotalValue || 0),
+    totalValue: 0,
     updatedAt: row.UpdatedAt.toISOString(),
     items: (row.StockWriteOffItems || []).map((item) => ({
       writeOffItemId: item.WriteOffItemId,
@@ -127,7 +127,6 @@ function mapWriteOff(row: RawWriteOff): StockWriteOffDto {
       hasExpiry: Boolean(item.HasExpiry),
       lines: (item.StockWriteOffLines || []).map((line) => {
         const qty = Number(line.Quantity || 0);
-        const unitCost = Number(line.UnitCost || 0);
         return {
           lineId: line.LineId,
           writeOffItemId: line.WriteOffItemId,
@@ -136,8 +135,8 @@ function mapWriteOff(row: RawWriteOff): StockWriteOffDto {
           expiryDate: line.ExpiryDate ? line.ExpiryDate.toISOString().split("T")[0] : null,
           availableBefore: Number(line.AvailableBefore || 0),
           quantity: qty,
-          unitCost,
-          lineValue: Number((qty * unitCost).toFixed(4)),
+          unitCost: 0,
+          lineValue: 0,
           reason: line.Reason,
           reasonOther: line.ReasonOther ?? null,
           disposition: line.Disposition,
@@ -505,8 +504,6 @@ export async function createWriteOff(body: SwoCreateInput) {
           }
           const availInfo = lotAvailability[lotRow.LotId] || { availableQuantity: 0 };
           const qty = Number(Number(lotInput.quantity).toFixed(3));
-          const unitCost = Number(lotRow.UnitCost || 0);
-          totalValue += qty * unitCost;
 
           linesToCreate.push({
             InventoryLots: { connect: { LotId: lotRow.LotId } },
@@ -514,7 +511,7 @@ export async function createWriteOff(body: SwoCreateInput) {
             ExpiryDate: hasExpiry && lotRow.ExpiryDate ? new Date(lotRow.ExpiryDate) : null,
             AvailableBefore: availInfo.availableQuantity,
             Quantity: qty,
-            UnitCost: unitCost,
+            UnitCost: 0,
             Reason: lotInput.reason.trim(),
             ReasonOther:
               lotInput.reason.trim() === "Other" ? lotInput.reasonOther?.trim() || null : null,
@@ -553,7 +550,7 @@ export async function createWriteOff(body: SwoCreateInput) {
           RequestedByName: staff.name || staff.username,
           RequestedAt: now,
           GeneralRemarks: body.generalRemarks?.trim() || null,
-          TotalValue: Number(totalValue.toFixed(4)),
+          TotalValue: 0,
           UpdatedAt: now,
           StockWriteOffItems: {
             create: itemsToCreate,
@@ -871,15 +868,14 @@ export async function removeWriteOffFromInventory(idInput: string | number) {
 
           const newRemaining = Number(Math.max(0, remaining - qtyToRemove).toFixed(3));
           const toReleaseReservation = Math.min(Number(lot.ReservedQuantity || 0), qtyToRemove);
+          const newReserved = Number(Math.max(0, Number(lot.ReservedQuantity || 0) - toReleaseReservation).toFixed(3));
 
-          // 1. Decrement InventoryLots.QuantityRemaining & release write-off reservation, mark Depleted if 0
+          // 1. Update InventoryLots with exact newRemaining and newReserved, mark Depleted if 0
           await tx.inventoryLots.update({
             where: { LotId: lot.LotId },
             data: {
-              QuantityRemaining: { decrement: qtyToRemove },
-              ...(toReleaseReservation > 0
-                ? { ReservedQuantity: { decrement: toReleaseReservation } }
-                : {}),
+              QuantityRemaining: newRemaining,
+              ReservedQuantity: newReserved,
               ...(newRemaining <= 0 ? { Status: "Depleted" } : {}),
             },
           });
@@ -894,7 +890,7 @@ export async function removeWriteOffFromInventory(idInput: string | number) {
             },
           });
           if (inv) {
-            const nextStock = Math.max(0, Number(inv.CurrentStock) - qtyToRemove);
+            const nextStock = Number(Math.max(0, Number(inv.CurrentStock || 0) - qtyToRemove).toFixed(3));
             await tx.inventories.update({
               where: {
                 ItemId_LocationId: {
@@ -926,7 +922,7 @@ export async function removeWriteOffFromInventory(idInput: string | number) {
               MovementType: "WRITE_OFF",
               Quantity: -qtyToRemove,
               UomId: lot.UomId,
-              UnitCost: lot.UnitCost,
+              UnitCost: 0,
               ReferenceType: "StockWriteOff",
               ReferenceId: writeOff.SwoNumber,
               UserId: staff.username,

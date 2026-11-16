@@ -215,7 +215,7 @@ export function StockWriteOffTab({
               <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
                 <SelectValue placeholder="All Write-Off Reasons" />
               </SelectTrigger>
-              <SelectContent className="min-w-[210px]">
+              <SelectContent side="bottom" sideOffset={4} align="end" avoidCollisions={false} className="min-w-[210px]">
                 <SelectItem value="all">All Write-Off Reasons</SelectItem>
                 {SWO_REASONS.map((r) => (
                   <SelectItem key={r} value={r}>

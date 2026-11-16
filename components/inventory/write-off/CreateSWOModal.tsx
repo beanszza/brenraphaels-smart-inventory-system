@@ -834,7 +834,6 @@ export function CreateSWOModal({
                                     disabled={usedElsewhere}
                                   >
                                     {l.lotCode}
-                                    {l.isExpired ? " (EXPIRED)" : ""}
                                     {usedElsewhere ? " (already selected)" : ""}
                                   </option>
                                 );

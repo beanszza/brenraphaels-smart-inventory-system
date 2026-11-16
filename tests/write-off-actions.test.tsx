@@ -188,12 +188,16 @@ vi.mock("@/lib/prisma", () => {
       update: async ({ data }: any) => {
         if (data.QuantityRemaining?.decrement) {
           state.lotRemaining -= data.QuantityRemaining.decrement;
+        } else if (typeof data.QuantityRemaining === "number") {
+          state.lotRemaining = data.QuantityRemaining;
         }
         if (data.ReservedQuantity?.increment) {
           state.lotReserved += data.ReservedQuantity.increment;
         }
         if (data.ReservedQuantity?.decrement) {
           state.lotReserved -= data.ReservedQuantity.decrement;
+        } else if (typeof data.ReservedQuantity === "number") {
+          state.lotReserved = data.ReservedQuantity;
         }
         if (data.Status) {
           state.lotStatus = data.Status;

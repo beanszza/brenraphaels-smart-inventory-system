@@ -1,271 +1,265 @@
 import type { StockWriteOffDto } from "./types";
 
-const fmtDate = (d?: string | Date | null) =>
-  d
-    ? new Date(d).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "—";
-
-const fmtDateTime = (d?: string | Date | null) =>
-  d
-    ? new Date(d).toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "—";
-
-const fmtMoney = (n: number) =>
-  `PHP ${Number(n || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-
 export async function downloadStockWriteOffPdf(swo: StockWriteOffDto) {
-  const jspdfModule = await import("jspdf");
-  const jsPDF = jspdfModule.jsPDF || (jspdfModule as any).default;
-  const autoTableModule = await import("jspdf-autotable");
-  const autoTable = (autoTableModule as any).default || autoTableModule;
+  try {
+    const jspdfModule = await import("jspdf");
+    const jsPDF = jspdfModule.jsPDF || (jspdfModule as any).default;
+    const autoTableModule = await import("jspdf-autotable");
+    const autoTable = (autoTableModule as any).default || autoTableModule;
 
-  const doc = new jsPDF({ format: "a4", orientation: "portrait" });
+    const doc = new jsPDF({ format: "a4", orientation: "portrait" });
 
-  // Company Header (same style as PR / PO reports)
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.setTextColor(20, 20, 20);
-  doc.text("BREN RAPHAEL'S UBE JAM & HALAYA", 14, 20);
+    const fmtDate = (d?: string | Date | null) =>
+      d
+        ? new Date(d).toLocaleDateString("en-US", {
+            month: "2-digit",
+            day: "2-digit",
+            year: "numeric",
+          })
+        : "—";
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(80, 80, 80);
-  doc.text("Stock Write-Off Summary Report", 14, 25);
-  doc.text(`Generated: ${new Date().toLocaleString("en-US")}`, 14, 29.5);
+    const reportDate = new Date().toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    });
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  doc.text("STOCK WRITE-OFF NO:", 196, 20, { align: "right" });
-  doc.setFontSize(12);
-  doc.setTextColor(20, 20, 20);
-  doc.text(swo.swoNumber, 196, 26, { align: "right" });
-  doc.setFontSize(8);
-  doc.setTextColor(60, 60, 60);
-  doc.text(`STATUS: ${swo.status.toUpperCase()}`, 196, 31.5, { align: "right" });
+    const reportTime = new Date().toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
 
-  doc.setDrawColor(30, 30, 30);
-  doc.setLineWidth(0.5);
-  doc.line(14, 35, 196, 35);
+    // 1. Company Header (Top Left - Matches Delivery / PO / PR Reports)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(20, 20, 20);
+    doc.text("BREN RAPHAEL'S UBE JAM & HALAYA", 14, 20);
 
-  let y = 41;
-  const ensureSpace = (needed = 28) => {
-    if (y + needed > 275) {
-      doc.addPage();
-      y = 18;
-    }
-  };
-  const sectionTitle = (title: string) => {
-    ensureSpace(22);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 80, 80);
+    doc.text("Block 14 Lot1A, Marigman St., San Roque,", 14, 25);
+    doc.text("Antipolo, 1870 Rizal", 14, 29);
+    doc.text("Contact: (02) 8650-1234 | info@brenraphaels.com", 14, 33);
+
+    // Document Title & Number (Top Right)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text("STOCK WRITE-OFF REPORT", 196, 20, { align: "right" });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(20, 20, 20);
+    doc.text(swo.swoNumber, 196, 26, { align: "right" });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(60, 60, 60);
+    doc.text(`STATUS: ${swo.status.toUpperCase()}`, 196, 32, { align: "right" });
+
+    // Top Divider Line
+    doc.setDrawColor(30, 30, 30);
+    doc.setLineWidth(0.6);
+    doc.line(14, 38, 196, 38);
+
+    // 2. Write-Off Details (Left & Right Columns)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text("WRITE-OFF INFORMATION:", 14, 45);
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.setTextColor(91, 42, 134);
-    doc.text(title, 14, y);
-    y += 4;
-  };
-  const nextY = () => ((doc as any).lastAutoTable?.finalY ?? y) + 7;
+    doc.setTextColor(20, 20, 20);
+    doc.text((swo.requestedByName || swo.requestedBy || "—").toUpperCase(), 14, 50);
 
-  // Section 1: Write-Off Overview
-  sectionTitle("1. STOCK WRITE-OFF INFORMATION");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(60, 60, 60);
+    doc.text(`Requested By: ${swo.requestedByName || swo.requestedBy}`, 14, 55.5);
+    doc.text(`Request Date: ${fmtDate(swo.requestedAt)}`, 14, 60);
+    if (swo.approvedByName || swo.approvedBy) {
+      doc.text(`Approved By: ${swo.approvedByName || swo.approvedBy} (${fmtDate(swo.approvedAt)})`, 14, 64.5);
+    }
+    if (swo.removedByName || swo.removedBy) {
+      doc.text(`Removed By: ${swo.removedByName || swo.removedBy} (${fmtDate(swo.removedAt)})`, 14, 69);
+    }
 
-  const totalLotLines = swo.items.reduce((acc, it) => acc + it.lines.length, 0);
-  const infoRows: string[][] = [
-    ["Write-Off Number", swo.swoNumber, "Status", swo.status],
-    [
-      "Requested By",
-      swo.requestedByName || swo.requestedBy || "—",
-      "Request Date",
-      fmtDateTime(swo.requestedAt),
-    ],
-    [
-      "Items Count",
-      `${swo.items.length} item(s) / ${totalLotLines} lot line(s)`,
-      "Total Write-Off Value",
-      fmtMoney(swo.totalValue),
-    ],
-  ];
+    // Right Column
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text("DOCUMENT REFERENCE:", 196, 45, { align: "right" });
 
-  if (swo.approvedByName || swo.approvedBy) {
-    infoRows.push([
-      "Approved By",
-      swo.approvedByName || swo.approvedBy || "—",
-      "Approved Date",
-      fmtDateTime(swo.approvedAt),
-    ]);
-  }
-  if (swo.removedByName || swo.removedBy) {
-    infoRows.push([
-      "Removed From Inventory By",
-      swo.removedByName || swo.removedBy || "—",
-      "Removed Date",
-      fmtDateTime(swo.removedAt),
-    ]);
-  }
-  if (swo.rejectedByName || swo.rejectedBy) {
-    infoRows.push([
-      "Rejected By",
-      swo.rejectedByName || swo.rejectedBy || "—",
-      "Rejected Date",
-      fmtDateTime(swo.rejectedAt),
-    ]);
-  }
-  if (swo.cancelledByName || swo.cancelledBy) {
-    infoRows.push([
-      "Cancelled By",
-      swo.cancelledByName || swo.cancelledBy || "—",
-      "Cancelled Date",
-      fmtDateTime(swo.cancelledAt),
-    ]);
-  }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(20, 20, 20);
+    doc.text(swo.swoNumber, 196, 50, { align: "right" });
 
-  autoTable(doc, {
-    startY: y,
-    theme: "grid",
-    styles: { fontSize: 8, cellPadding: 2.5 },
-    headStyles: { fillColor: [243, 240, 248], textColor: [30, 30, 30], fontStyle: "bold" },
-    head: [["Field", "Details", "Field", "Details"]],
-    body: infoRows,
-  });
-  y = nextY();
-
-  // Section 2: Items & Lot Breakdown
-  sectionTitle("2. WRITE-OFF ITEMS & BATCH / LOT DETAILS");
-
-  const lineRows: string[][] = [];
-  swo.items.forEach((item, idx) => {
-    const itemDisplay = item.variantName
-      ? `${item.itemName} (${item.variantName})`
-      : item.itemName;
-    item.lines.forEach((line) => {
-      const reasonDisplay =
-        line.reason === "Other" && line.reasonOther
-          ? `Other: ${line.reasonOther}`
-          : line.reason;
-      const dispDisplay =
-        line.disposition === "Other" && line.dispositionOther
-          ? `Other: ${line.dispositionOther}`
-          : line.disposition;
-      const expiryDisplay = item.hasExpiry ? fmtDate(line.expiryDate) : "N/A";
-      lineRows.push([
-        String(idx + 1),
-        `${itemDisplay}\n[${item.itemType}]`,
-        line.lotCode,
-        expiryDisplay,
-        `${line.quantity.toLocaleString()} ${item.uomName}`,
-        fmtMoney(line.unitCost),
-        fmtMoney(line.lineValue),
-        reasonDisplay,
-        dispDisplay,
-        line.remarks || "—",
-      ]);
-    });
-  });
-
-  autoTable(doc, {
-    startY: y,
-    theme: "striped",
-    styles: { fontSize: 7.5, cellPadding: 2.2 },
-    headStyles: { fillColor: [91, 42, 134], textColor: [255, 255, 255], fontStyle: "bold" },
-    head: [
-      [
-        "#",
-        "Item & Type",
-        "Batch / Lot",
-        "Expiry",
-        "Affected Qty",
-        "Unit Cost",
-        "Line Value",
-        "Reason",
-        "Disposition",
-        "Condition / Remarks",
-      ],
-    ],
-    body: lineRows,
-    foot: [
-      [
-        "",
-        "TOTAL WRITE-OFF VALUE",
-        "",
-        "",
-        "",
-        "",
-        fmtMoney(swo.totalValue),
-        "",
-        "",
-        "",
-      ],
-    ],
-    footStyles: { fillColor: [243, 240, 248], textColor: [20, 20, 20], fontStyle: "bold" },
-  });
-  y = nextY();
-
-  // Section 3: Remarks & Admin Feedback
-  if (swo.generalRemarks || swo.approvalNotes || swo.rejectionReason || swo.cancelReason) {
-    sectionTitle("3. REMARKS & REVIEW NOTES");
-    const noteRows: string[][] = [];
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(60, 60, 60);
+    doc.text(`Total Items: ${swo.items.length}`, 196, 55.5, { align: "right" });
+    doc.text(`Report Generated: ${reportDate} ${reportTime}`, 196, 60, { align: "right" });
     if (swo.generalRemarks) {
-      noteRows.push(["General Remarks", swo.generalRemarks]);
+      doc.text(`Remarks: ${swo.generalRemarks.slice(0, 45)}`, 196, 64.5, { align: "right" });
     }
-    if (swo.approvalNotes) {
-      noteRows.push(["Admin Approval Notes", swo.approvalNotes]);
+
+    const infoBottomY = swo.removedByName ? 74 : 70;
+
+    // Section Divider Line
+    doc.setDrawColor(30, 30, 30);
+    doc.setLineWidth(0.6);
+    doc.line(14, infoBottomY, 196, infoBottomY);
+
+    // 3. Written-Off Items Table (NO Price, NO Cost, NO Total Value)
+    const tableData: string[][] = [];
+    let rowIdx = 1;
+    let totalQty = 0;
+
+    for (const item of swo.items) {
+      const isFinishedGood =
+        (item.itemType || "").toLowerCase().includes("finished") || Boolean(item.variantName);
+      const name = item.variantName ? `${item.itemName} — ${item.variantName}` : item.itemName;
+
+      for (const line of item.lines) {
+        totalQty += Number(line.quantity || 0);
+        const reason =
+          line.reason === "Other" && line.reasonOther ? `Other: ${line.reasonOther}` : line.reason;
+        const disposition =
+          line.disposition === "Other" && line.dispositionOther
+            ? `Other: ${line.dispositionOther}`
+            : line.disposition;
+
+        tableData.push([
+          String(rowIdx++),
+          name,
+          item.itemType,
+          line.lotCode,
+          item.hasExpiry && line.expiryDate ? fmtDate(line.expiryDate) : "—",
+          isFinishedGood ? `${line.quantity}` : `${line.quantity} ${item.uomName}`,
+          reason,
+          disposition,
+        ]);
+      }
     }
-    if (swo.rejectionReason) {
-      noteRows.push(["Rejection Reason", swo.rejectionReason]);
-    }
-    if (swo.cancelReason) {
-      noteRows.push(["Cancellation Reason", swo.cancelReason]);
-    }
+
     autoTable(doc, {
-      startY: y,
-      theme: "grid",
-      styles: { fontSize: 8, cellPadding: 2.5 },
-      headStyles: { fillColor: [243, 240, 248], textColor: [30, 30, 30], fontStyle: "bold" },
-      head: [["Note Type", "Details"]],
-      body: noteRows,
+      startY: infoBottomY + 4,
+      head: [
+        [
+          "#",
+          "ITEM NAME",
+          "CATEGORY",
+          "BATCH / LOT NO.",
+          "EXPIRY DATE",
+          "AFFECTED QTY",
+          "REASON",
+          "DISPOSITION",
+        ],
+      ],
+      body: tableData,
+      theme: "plain",
+      styles: {
+        fontSize: 8,
+        cellPadding: 3.5,
+        textColor: [30, 30, 30],
+        lineColor: [220, 220, 220],
+        lineWidth: 0.2,
+      },
+      headStyles: {
+        textColor: [10, 10, 10],
+        fontStyle: "bold",
+        fontSize: 8,
+        lineColor: [30, 30, 30],
+        lineWidth: 0.6,
+      },
+      columnStyles: {
+        0: { cellWidth: 10, halign: "center" },
+        1: { cellWidth: 42, halign: "left", fontStyle: "bold" },
+        2: { cellWidth: 24, halign: "left" },
+        3: { cellWidth: 32, halign: "left", fontStyle: "bold" },
+        4: { cellWidth: 20, halign: "center" },
+        5: { cellWidth: 22, halign: "right", fontStyle: "bold" },
+        6: { cellWidth: 24, halign: "left" },
+        7: { cellWidth: 24, halign: "left" },
+      },
     });
-    y = nextY();
+
+    let currentY = (doc as any).lastAutoTable.finalY + 4;
+
+    // 4. Total Quantity Summary (NO Total Value!)
+    doc.setDrawColor(30, 30, 30);
+    doc.setLineWidth(0.6);
+    doc.line(14, currentY, 196, currentY);
+
+    currentY += 6;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(20, 20, 20);
+    doc.text("TOTAL WRITTEN-OFF QUANTITY", 14, currentY);
+
+    doc.setFontSize(10.5);
+    doc.text(`${totalQty.toLocaleString()} unit(s)`, 196, currentY, { align: "right" });
+
+    currentY += 4;
+    doc.line(14, currentY, 196, currentY);
+
+    // 5. Signatures Section (Matches Official Report Template)
+    if (currentY + 38 > 275) {
+      doc.addPage();
+      currentY = 25;
+    } else {
+      currentY += 12;
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text("REQUESTED BY:", 14, currentY);
+    doc.text("APPROVED BY:", 80, currentY);
+    doc.text("REMOVED FROM INVENTORY BY:", 145, currentY);
+
+    currentY += 15;
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.4);
+    doc.line(14, currentY, 68, currentY);
+    doc.line(80, currentY, 134, currentY);
+    doc.line(145, currentY, 196, currentY);
+
+    currentY += 4;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(40, 40, 40);
+    doc.text(swo.requestedByName || swo.requestedBy || "Inventory Personnel", 14, currentY);
+    doc.text(swo.approvedByName || swo.approvedBy || "Operations Manager / Admin", 80, currentY);
+    doc.text(swo.removedByName || swo.removedBy || "Inventory Manager", 145, currentY);
+
+    currentY += 4;
+    doc.setFontSize(7.5);
+    doc.setTextColor(110, 110, 110);
+    doc.text(fmtDate(swo.requestedAt), 14, currentY);
+    doc.text(swo.approvedAt ? fmtDate(swo.approvedAt) : "—", 80, currentY);
+    doc.text(swo.removedAt ? fmtDate(swo.removedAt) : "—", 145, currentY);
+
+    // Footer on all pages
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(130, 130, 130);
+      doc.text(
+        `Bren Raphael's IMS — Stock Write-Off Document ${swo.swoNumber} | Page ${i} of ${pageCount}`,
+        14,
+        288
+      );
+    }
+
+    doc.save(`${swo.swoNumber}_Report.pdf`);
+  } catch (error) {
+    console.error("Failed to generate Stock Write-Off PDF report:", error);
   }
-
-  // Signature Block
-  ensureSpace(35);
-  y += 8;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.5);
-  doc.setTextColor(40, 40, 40);
-
-  doc.line(14, y + 12, 68, y + 12);
-  doc.text("Requested By:", 14, y + 17);
-  doc.setFont("helvetica", "normal");
-  doc.text(swo.requestedByName || swo.requestedBy || "Inventory Manager", 14, y + 22);
-
-  doc.setFont("helvetica", "bold");
-  doc.line(78, y + 12, 132, y + 12);
-  doc.text("Reviewed / Approved By:", 78, y + 17);
-  doc.setFont("helvetica", "normal");
-  doc.text(
-    swo.approvedByName || swo.rejectedByName || swo.approvedBy || "Administrator",
-    78,
-    y + 22
-  );
-
-  doc.setFont("helvetica", "bold");
-  doc.line(142, y + 12, 196, y + 12);
-  doc.text("Removed From Inventory By:", 142, y + 17);
-  doc.setFont("helvetica", "normal");
-  doc.text(swo.removedByName || swo.removedBy || "—", 142, y + 22);
-
-  doc.save(`${swo.swoNumber}-Stock-Write-Off-Report.pdf`);
 }

@@ -64,7 +64,7 @@ export function SWOActionModal({
       case "cancel":
         return `Please provide a reason for cancelling Stock Write-Off ${writeOff.swoNumber}. This action cannot be undone and ${writeOff.swoNumber} will be permanently blocked from reuse.`;
       case "remove":
-        return `Are you sure you want to remove the approved items in ${writeOff.swoNumber} from inventory? This will permanently deduct ${totalLotsCount} batch/lot line(s) across ${writeOff.items.length} item(s) (${fmtMoney(writeOff.totalValue)}) and record the write-off in the stock ledger.`;
+        return `Are you sure you want to remove the approved items in ${writeOff.swoNumber} from inventory? This will permanently deduct ${totalLotsCount} batch/lot line(s) across ${writeOff.items.length} item(s) and record the write-off in the stock ledger.`;
     }
   };
 

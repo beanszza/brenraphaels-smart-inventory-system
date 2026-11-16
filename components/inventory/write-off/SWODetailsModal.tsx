@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { AlertCircle, Download, Image as ImageIcon, PackageMinus } from "lucide-react";
+import { AlertCircle, Download, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
@@ -93,12 +93,6 @@ export function SWODetailsModal({
         })
       : "—";
 
-  const fmtMoney = (n: number) =>
-    `₱${Number(n || 0).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-
   const handleDownloadPdf = async () => {
     try {
       setDownloadingPdf(true);
@@ -107,8 +101,6 @@ export function SWODetailsModal({
       setDownloadingPdf(false);
     }
   };
-
-  const totalLotsCount = swo.items.reduce((acc, it) => acc + it.lines.length, 0);
 
   return (
     <ModalWrapper
@@ -129,13 +121,12 @@ export function SWODetailsModal({
             <SWOStatusBadge status={swo.status} />
             {(isRejected || isCancelled) && (
               <span className="text-[11px] font-semibold text-destructive">
-                SWO No. {swo.swoNumber} is permanently blocked and cannot be reused.
+                SWO No. {swo.swoNumber} is permanently retired and cannot be reused.
               </span>
             )}
           </div>
-          <div className="text-xs text-muted-foreground">
-            {swo.items.length} Item(s) · {totalLotsCount} Batch / Lot Line(s) · Total Value:{" "}
-            <span className="font-bold text-foreground">{fmtMoney(swo.totalValue)}</span>
+          <div className="text-xs text-muted-foreground font-medium">
+            {swo.items.length} Item(s)
           </div>
         </div>
 
@@ -164,254 +155,254 @@ export function SWODetailsModal({
           </div>
         )}
 
-        {/* Stock Write-Off Information Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Write-Off Number
-            </label>
-            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-semibold text-foreground select-all">
-              {swo.swoNumber}
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Request Date
-            </label>
-            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-              {fmtDateTime(swo.requestedAt)}
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Requested By
-            </label>
-            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-              {swo.requestedByName || swo.requestedBy}
-            </div>
-          </div>
-
-          {(swo.approvedByName || swo.approvedBy) && (
+        {/* Section 1: Stock Write-Off Information (Clean Grid Card matching CreateSWOModal) */}
+        <div className="space-y-2.5">
+          <h3 className="text-sm font-bold text-foreground">
+            Stock Write-Off Information
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Approved By
+                Write-Off Number
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-                {swo.approvedByName || swo.approvedBy} ({fmtDate(swo.approvedAt)})
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-semibold text-foreground select-all">
+                {swo.swoNumber}
               </div>
             </div>
-          )}
 
-          {(swo.removedByName || swo.removedBy) && (
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Removed From Inventory By
+                Request Date
               </label>
               <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-                {swo.removedByName || swo.removedBy} ({fmtDateTime(swo.removedAt)})
+                {fmtDate(swo.requestedAt)}
               </div>
             </div>
-          )}
 
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Total Write-Off Value
-            </label>
-            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-bold text-foreground">
-              {fmtMoney(swo.totalValue)}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                Requested By
+              </label>
+              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                {swo.requestedByName || swo.requestedBy}
+              </div>
             </div>
+
+            {(swo.approvedByName || swo.approvedBy) && (
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                  Approved By
+                </label>
+                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                  {swo.approvedByName || swo.approvedBy} ({fmtDate(swo.approvedAt)})
+                </div>
+              </div>
+            )}
+
+            {(swo.removedByName || swo.removedBy) && (
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                  Removed From Inventory By
+                </label>
+                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                  {swo.removedByName || swo.removedBy} ({fmtDateTime(swo.removedAt)})
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Write-Off Items Breakdown */}
+        {/* Section 2: Write-Off Items (Clean Item Cards matching CreateSWOModal layout) */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-foreground">
-              Write-Off Items ({swo.items.length})
+              Write-Off Items
             </h3>
           </div>
 
-          {swo.items.map((item, idx) => (
-            <div
-              key={item.writeOffItemId}
-              className="rounded-2xl border border-border bg-card p-4 space-y-4 shadow-xs"
-            >
-              {/* Item Card Header */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-border">
-                <div className="flex items-center gap-2.5">
-                  <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-bold">
+          {swo.items.map((item, idx) => {
+            const isFinishedGood =
+              (item.itemType || "").toLowerCase().includes("finished") ||
+              Boolean(item.variantName) ||
+              Boolean(item.productId);
+            const line = item.lines[0];
+
+            return (
+              <div
+                key={item.writeOffItemId}
+                className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xs"
+              >
+                {/* Item Card Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-border">
+                  <h4 className="text-xs font-bold text-foreground">
                     Item {idx + 1}
-                  </span>
+                  </h4>
+                </div>
+
+                {/* Sub-section 1: Item Details */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                   <div>
-                    <div className="text-sm font-bold text-foreground">
+                    <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                      Item Type
+                    </label>
+                    <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-medium text-foreground">
+                      {item.itemType}
+                    </div>
+                  </div>
+
+                  <div className={isFinishedGood ? "sm:col-span-2" : ""}>
+                    <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                      Item Name
+                    </label>
+                    <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-medium text-foreground">
                       {item.itemName}
-                      {item.variantName ? ` — ${item.variantName}` : ""}{" "}
-                      <span className="text-xs font-normal text-muted-foreground">
-                        ({item.itemCode})
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-muted-foreground">
-                      Item Type: <span className="font-semibold text-foreground">{item.itemType}</span> · Unit of Measurement:{" "}
-                      <span className="font-semibold text-foreground">{item.uomName}</span>
+                      {item.variantName ? ` — ${item.variantName}` : ""}
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Lots Table for this Item */}
-              <div className="overflow-x-auto rounded-xl border border-border">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/40">
-                      <th className="px-3.5 py-2.5 text-left font-bold text-muted-foreground whitespace-nowrap">
-                        BATCH / LOT NO.
-                      </th>
+                  {!isFinishedGood && (
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                        Unit of Measurement
+                      </label>
+                      <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground">
+                        {item.uomName || "—"}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sub-section 2: Batch / Lot & Write-Off Details (1 Lot) */}
+                {line && (
+                  <div className="space-y-3.5 pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                      <div>
+                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                          Batch / Lot Number
+                        </label>
+                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-semibold text-foreground">
+                          {line.lotCode}
+                        </div>
+                      </div>
+
                       {item.hasExpiry && (
-                        <th className="px-3.5 py-2.5 text-left font-bold text-muted-foreground whitespace-nowrap">
-                          EXPIRATION DATE
-                        </th>
-                      )}
-                      <th className="px-3.5 py-2.5 text-right font-bold text-muted-foreground whitespace-nowrap">
-                        AVAILABLE BEFORE
-                      </th>
-                      <th className="px-3.5 py-2.5 text-right font-bold text-muted-foreground whitespace-nowrap">
-                        AFFECTED QTY
-                      </th>
-                      <th className="px-3.5 py-2.5 text-right font-bold text-muted-foreground whitespace-nowrap">
-                        UNIT COST
-                      </th>
-                      <th className="px-3.5 py-2.5 text-right font-bold text-muted-foreground whitespace-nowrap">
-                        LINE VALUE
-                      </th>
-                      <th className="px-3.5 py-2.5 text-left font-bold text-muted-foreground whitespace-nowrap">
-                        WRITE-OFF REASON
-                      </th>
-                      <th className="px-3.5 py-2.5 text-left font-bold text-muted-foreground whitespace-nowrap">
-                        DISPOSITION METHOD
-                      </th>
-                      <th className="px-3.5 py-2.5 text-left font-bold text-muted-foreground">
-                        ITEM REMARKS
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {item.lines.map((line) => {
-                      const reasonText =
-                        line.reason === "Other" && line.reasonOther
-                          ? `Other (${line.reasonOther})`
-                          : line.reason;
-                      const dispositionText =
-                        line.disposition === "Other" && line.dispositionOther
-                          ? `Other (${line.dispositionOther})`
-                          : line.disposition;
-                      return (
-                        <tr key={line.lineId} className="hover:bg-muted/20">
-                          <td className="px-3.5 py-2.5 font-mono font-semibold text-foreground whitespace-nowrap">
-                            {line.lotCode}
-                          </td>
-                          {item.hasExpiry && (
-                            <td className="px-3.5 py-2.5 text-muted-foreground whitespace-nowrap">
-                              {fmtDate(line.expiryDate)}
-                            </td>
-                          )}
-                          <td className="px-3.5 py-2.5 text-right text-muted-foreground whitespace-nowrap">
-                            {line.availableBefore.toLocaleString()} {item.uomName}
-                          </td>
-                          <td className="px-3.5 py-2.5 text-right font-bold text-foreground whitespace-nowrap">
-                            {line.quantity.toLocaleString()} {item.uomName}
-                          </td>
-                          <td className="px-3.5 py-2.5 text-right text-muted-foreground whitespace-nowrap">
-                            {fmtMoney(line.unitCost)}
-                          </td>
-                          <td className="px-3.5 py-2.5 text-right font-semibold text-foreground whitespace-nowrap">
-                            {fmtMoney(line.lineValue)}
-                          </td>
-                          <td className="px-3.5 py-2.5 text-foreground whitespace-nowrap">
-                            {reasonText}
-                          </td>
-                          <td className="px-3.5 py-2.5 text-foreground whitespace-nowrap">
-                            {dispositionText}
-                          </td>
-                          <td className="px-3.5 py-2.5 text-muted-foreground min-w-[180px]">
-                            {line.remarks || "—"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Supporting Evidence Photos (Optional) */}
-              {item.photos && item.photos.length > 0 && (
-                <div className="space-y-2 pt-1">
-                  <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                    Supporting Evidence Photos ({item.photos.length})
-                  </div>
-                  <div className="flex flex-wrap gap-2.5">
-                    {item.photos.map((photo) => {
-                      const resolvedUrl = photoUrls[photo.photoId];
-                      return (
-                        <button
-                          key={photo.photoId}
-                          type="button"
-                          onClick={() => resolvedUrl && setPreviewUrl(resolvedUrl)}
-                          className="group relative flex items-center gap-2 rounded-xl border border-border bg-muted/30 p-2 hover:bg-muted transition-colors text-left cursor-pointer"
-                        >
-                          {resolvedUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={resolvedUrl}
-                              alt={photo.fileName}
-                              className="w-12 h-12 rounded-lg object-cover border border-border"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
-                              <ImageIcon className="w-5 h-5 text-muted-foreground" />
-                            </div>
-                          )}
-                          <div className="max-w-[140px]">
-                            <div className="text-xs font-medium text-foreground truncate">
-                              {photo.fileName}
-                            </div>
-                            <div className="text-[10px] text-muted-foreground">
-                              {Math.max(1, Math.round(photo.fileSize / 1024))} KB
-                            </div>
+                        <div>
+                          <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                            Expiration Date
+                          </label>
+                          <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground">
+                            {fmtDate(line.expiryDate)}
                           </div>
-                        </button>
-                      );
-                    })}
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                          Available Quantity
+                        </label>
+                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground">
+                          {line.availableBefore} {item.uomName}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                          Affected Quantity
+                        </label>
+                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-bold text-foreground">
+                          {line.quantity} {item.uomName}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                          Write-Off Reason
+                        </label>
+                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground">
+                          {line.reason === "Other" && line.reasonOther
+                            ? `Other (${line.reasonOther})`
+                            : line.reason}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                          Disposition Method
+                        </label>
+                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground">
+                          {line.disposition === "Other" && line.dispositionOther
+                            ? `Other (${line.dispositionOther})`
+                            : line.disposition}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                        Item Remarks
+                      </label>
+                      <div className="min-h-20 p-3 rounded-xl border border-border bg-muted/40 text-xs text-foreground whitespace-pre-wrap leading-relaxed">
+                        {line.remarks || "—"}
+                      </div>
+                    </div>
                   </div>
+                )}
+
+                {/* Sub-section 3: Item Supporting Evidence (Photos) */}
+                <div className="space-y-2 pt-1 border-t border-border/50">
+                  <label className="block text-xs font-semibold text-foreground">
+                    Item Supporting Evidence
+                  </label>
+                  {item.photos && item.photos.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {item.photos.map((p) => {
+                        const url = photoUrls[p.photoId] || p.fileId;
+                        return (
+                          <div
+                            key={p.photoId}
+                            onClick={() => url && setPreviewUrl(url)}
+                            className="group relative rounded-xl border border-border overflow-hidden bg-muted/20 cursor-pointer hover:border-primary transition-all aspect-video flex flex-col items-center justify-center p-2"
+                          >
+                            {url ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={url}
+                                alt={p.fileName || "Evidence photo"}
+                                className="h-full w-full object-contain rounded-lg"
+                              />
+                            ) : (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <ImageIcon className="w-4 h-4" />
+                                <span>{p.fileName}</span>
+                              </div>
+                            )}
+                            <span className="absolute bottom-1 right-1 text-[10px] font-semibold bg-background/80 px-1.5 py-0.5 rounded text-foreground backdrop-blur-xs">
+                              Click to view
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">
+                      No supporting evidence photos attached for this item.
+                    </p>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
 
-        {/* General Remarks */}
-        {swo.generalRemarks && (
-          <div className="flex justify-start pt-2 border-t border-border">
-            <div className="w-full sm:w-2/3 lg:w-1/2 space-y-1.5">
-              <label className="block text-xs font-semibold text-foreground">
-                General Remarks
-              </label>
-              <div className="w-full rounded-xl border border-border bg-muted/40 p-3 text-xs text-foreground leading-relaxed whitespace-pre-wrap">
-                {swo.generalRemarks}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Modal Footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
+        {/* Bottom Actions Row */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
           <div className="text-xs text-muted-foreground">
-            {swo.updatedAt ? `Last updated: ${fmtDateTime(swo.updatedAt)}` : ""}
+            Last updated: {fmtDateTime(swo.updatedAt)}
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap justify-end">
+          <div className="flex items-center gap-2.5">
             <ModalCloseButton
               type="button"
               variant="outline"
@@ -421,8 +412,8 @@ export function SWODetailsModal({
               Close
             </ModalCloseButton>
 
-            {/* Download PDF Report (Available on Removed, Approved, Rejected, Cancelled) */}
-            {(isRemoved || isApproved || isRejected || isCancelled) && (
+            {/* Download PDF Report — STRICTLY in Removed tab only */}
+            {isRemoved && (
               <Button
                 type="button"
                 variant="outline"
@@ -447,14 +438,13 @@ export function SWODetailsModal({
               </Button>
             )}
 
-            {/* IMS Manager: Remove Items from Inventory when Approved */}
+            {/* IMS Manager: Remove Items from Inventory when Approved (NO ICON as requested) */}
             {isImsManager && isApproved && onRemoveFromInventory && (
               <Button
                 type="button"
                 onClick={() => onRemoveFromInventory(swo)}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm inline-flex items-center gap-2 cursor-pointer"
+                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
               >
-                <PackageMinus className="w-4 h-4" />
                 Remove Items in Inventory
               </Button>
             )}

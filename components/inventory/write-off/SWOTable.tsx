@@ -85,9 +85,6 @@ export function SWOTable({
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">
               REASONS
             </th>
-            <th className="px-4 py-3 text-right font-bold text-muted-foreground tracking-wider whitespace-nowrap">
-              TOTAL VALUE
-            </th>
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">
               STATUS
             </th>
@@ -100,7 +97,7 @@ export function SWOTable({
           {writeOffs.length === 0 ? (
             <tr>
               <td
-                colSpan={8}
+                colSpan={7}
                 className="px-5 py-8 text-center text-xs font-medium text-muted-foreground"
               >
                 No stock write-off records found.
@@ -168,8 +165,8 @@ export function SWOTable({
                 });
               }
 
-              // Download PDF report for Removed / Approved / Rejected / Cancelled
-              if (isRemoved || isApproved || swo.status === "Rejected" || swo.status === "Cancelled") {
+              // Download PDF report strictly when completely removed in the Removed tab
+              if (isRemoved) {
                 actions.push({
                   label: "Download SWO Report (PDF)",
                   icon: <Download className="w-4 h-4 text-foreground" />,
@@ -219,11 +216,6 @@ export function SWOTable({
                     <span className="line-clamp-1">
                       {distinctReasons.join(", ") || "—"}
                     </span>
-                  </td>
-
-                  {/* Total Value */}
-                  <td className="px-4 py-3 text-right font-semibold text-foreground whitespace-nowrap">
-                    {fmtMoney(swo.totalValue)}
                   </td>
 
                   {/* Status */}
