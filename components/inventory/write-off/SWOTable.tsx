@@ -80,7 +80,10 @@ export function SWOTable({
               REQUESTED BY
             </th>
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">
-              ITEMS & LOTS
+              ITEM
+            </th>
+            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">
+              BATCH / LOT
             </th>
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">
               REASONS
@@ -97,7 +100,7 @@ export function SWOTable({
           {writeOffs.length === 0 ? (
             <tr>
               <td
-                colSpan={7}
+                colSpan={8}
                 className="px-5 py-8 text-center text-xs font-medium text-muted-foreground"
               >
                 No stock write-off records found.
@@ -199,16 +202,37 @@ export function SWOTable({
                     {swo.requestedByName || swo.requestedBy}
                   </td>
 
-                  {/* Items & Lots Summary */}
+                  {/* Item */}
                   <td className="px-4 py-3 text-foreground">
                     <div className="font-medium text-foreground">
                       {swo.items.map((it) => it.itemName).slice(0, 2).join(", ")}
                       {swo.items.length > 2 ? ` +${swo.items.length - 2} more` : ""}
                     </div>
-                    <div className="text-[11px] text-muted-foreground">
-                      {swo.items.length} {swo.items.length === 1 ? "item" : "items"} ·{" "}
-                      {totalLots} {totalLots === 1 ? "lot" : "lots"}
-                    </div>
+                    {swo.items.length > 1 && (
+                      <div className="text-[11px] text-muted-foreground">
+                        {swo.items.length} items
+                      </div>
+                    )}
+                  </td>
+
+                  {/* Batch / Lot */}
+                  <td className="px-4 py-3 text-foreground whitespace-nowrap">
+                    {(() => {
+                      const allLots = swo.items.flatMap((it) => it.lines.map((l) => l.lotCode));
+                      return (
+                        <>
+                          <div className="font-medium text-foreground">
+                            {allLots.slice(0, 2).join(", ") || "—"}
+                            {allLots.length > 2 ? ` +${allLots.length - 2} more` : ""}
+                          </div>
+                          {allLots.length > 1 && (
+                            <div className="text-[11px] text-muted-foreground">
+                              {allLots.length} lots
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </td>
 
                   {/* Reasons */}
