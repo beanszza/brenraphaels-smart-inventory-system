@@ -4,7 +4,6 @@ import { productImage, batchImage } from "@/lib/file-routes";
 import { fileResult, requestImage, confirmImage, resolveImage, type UploadMetadata } from "@/lib/production/files";
 import { FileError, removeFile } from "@/lib/files";
 import { filesGateway, type ImageVariant } from "@/lib/gateway/files";
-import { prisma } from "@/lib/prisma";
 
 export async function requestProductImageUpload(id: number, meta: UploadMetadata) {
     const staff = await requireModule("Production & Quality");
@@ -123,20 +122,7 @@ export async function uploadBatchImageDirect(id: number, formData: FormData) {
 
         return { success: true, data: { fileId: address.fileId } };
     } catch (error) {
-        console.warn("Gateway batch upload unavailable, falling back to base64 storage:", error);
-        // Fallback to storing base64 Data URL if gateway is offline/disabled (e.g. status 402)
-        if (buffer.length <= 5 * 1024 * 1024) {
-            const dataUrl = `data:${contentType};base64,${buffer.toString("base64")}`;
-            try {
-                await prisma.productionBatches.update({
-                    where: { BatchId: id },
-                    data: { ImageUrl: dataUrl },
-                });
-                return { success: true, data: { fileId: dataUrl } };
-            } catch (dbErr) {
-                console.error("Failed to save fallback image to database:", dbErr);
-            }
-        }
+        console.error("Image upload failed", error);
         return { success: false, message: error instanceof FileError ? error.message : "The image could not be uploaded. Please try again." };
     }
 }
@@ -233,19 +219,7 @@ export async function uploadProductImageDirect(id: number, formData: FormData) {
 
         return { success: true, data: { fileId: address.fileId } };
     } catch (error) {
-        console.warn("Gateway product upload unavailable, falling back to base64 storage:", error);
-        if (buffer.length <= 5 * 1024 * 1024) {
-            const dataUrl = `data:${contentType};base64,${buffer.toString("base64")}`;
-            try {
-                await prisma.finishedProducts.update({
-                    where: { ProductId: id },
-                    data: { ImageUrl: dataUrl },
-                });
-                return { success: true, data: { fileId: dataUrl } };
-            } catch (dbErr) {
-                console.error("Failed to save fallback product image to database:", dbErr);
-            }
-        }
+        console.error("Image upload failed", error);
         return { success: false, message: error instanceof FileError ? error.message : "The image could not be uploaded. Please try again." };
     }
 }
