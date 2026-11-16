@@ -34,7 +34,8 @@ export async function rejectBatch(idInput: string | number, body: any = {}) {
         if (!batch) {
             return refuse("Batch not found.");
         }
-        if (proofImageUrl && (!isFileId(proofImageUrl) || proofImageUrl !== batch.ImageUrl))
+        const isValidImageRef = !proofImageUrl || isFileId(proofImageUrl) || proofImageUrl.startsWith("data:image/") || proofImageUrl.startsWith("http://") || proofImageUrl.startsWith("https://");
+        if (!isValidImageRef || (proofImageUrl && proofImageUrl !== batch.ImageUrl))
             refuse("Upload and confirm a rejection photo for this batch first.");
         if (["Completed", "Stocked In", "Cancelled"].includes(batch.Status))
             refuse("Cannot reject a closed batch.");

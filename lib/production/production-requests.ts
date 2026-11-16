@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Existing DTO helpers moved out of route exports. */
+import { isFileId } from "@/lib/files";
 import { formatBatchNumber } from "./production-batches";
 
 export function mapProductionRequest(r: any) {
@@ -87,7 +88,7 @@ export function mapProductionRequest(r: any) {
       productionDate: b.ProductionDate ? b.ProductionDate.toISOString() : null,
       startedAt: b.StartedAt ? b.StartedAt.toISOString() : null,
       completedDate: b.CompletedDate ? b.CompletedDate.toISOString() : null,
-      imageUrl: b.ImageUrl ?? null,
+      imageUrl: isFileId(b.ImageUrl) ? null : (b.ImageUrl?.startsWith("data:") || b.ImageUrl?.startsWith("http") ? b.ImageUrl : null),
     })),
   };
 }

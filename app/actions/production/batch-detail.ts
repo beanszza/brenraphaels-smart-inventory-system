@@ -73,7 +73,7 @@ function mapBatch(b: any) {
         currentStage: b.CurrentStage || b.Stage,
         qualityStatus: b.QualityStatus,
         rejectionReason: b.RejectionReason ?? "",
-        imageUrl: b.ImageUrl ?? "",
+        imageUrl: isFileId(b.ImageUrl) ? "" : (b.ImageUrl?.startsWith("data:") || b.ImageUrl?.startsWith("http") ? b.ImageUrl : ""),
         notes: b.Notes ?? "",
         purpose: b.Purpose,
         status: b.Status,
@@ -355,12 +355,12 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
         let resolvedBatchImageUrl: string | null = null;
         if (batch.ImageUrl) {
             const raw = batch.ImageUrl.trim();
-            if (raw.startsWith("data:image/") || raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("/")) {
+            if (raw.startsWith("data:image/") || raw.startsWith("http://") || raw.startsWith("https://")) {
                 resolvedBatchImageUrl = raw;
             } else if (isFileId(raw)) {
                 try {
                     const resolved = await resolveFile(filesGateway, staff, raw, "large");
-                    if (resolved && resolved.kind === "file" && resolved.url && resolved.url !== FILE_PLACEHOLDER) {
+                    if (resolved && resolved.kind === "file" && resolved.url && resolved.url !== FILE_PLACEHOLDER && !resolved.url.includes("file-placeholder")) {
                         resolvedBatchImageUrl = resolved.url;
                     }
                 } catch (err) {

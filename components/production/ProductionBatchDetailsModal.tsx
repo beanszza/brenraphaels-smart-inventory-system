@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Package, Calendar, User, FileText, AlertTriangle } from "lucide-react";
+import { Package, Calendar, User, FileText, AlertTriangle, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,7 +14,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { ProductionRequest } from "./types";
 import { resolveProductionImage } from "@/lib/production/image-client";
-import { FILE_PLACEHOLDER } from "@/lib/files";
+import { FILE_PLACEHOLDER, isFileId } from "@/lib/files";
 
 interface ProductionBatchDetailsModalProps {
   open: boolean;
@@ -30,23 +30,31 @@ export default function ProductionBatchDetailsModal({
   const [previewImage, setPreviewImage] = React.useState<string | null>(null);
   const [resolvedUrl, setResolvedUrl] = React.useState<string | null>(null);
   const [imageError, setImageError] = React.useState(false);
+  const [lightboxError, setLightboxError] = React.useState(false);
 
   React.useEffect(() => {
     setImageError(false);
+    setLightboxError(false);
     if (!batch?.batchId) {
       setResolvedUrl(null);
       return;
     }
     const raw = batch.imageUrl?.trim();
-    if (raw && (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("data:image/") || raw.startsWith("/"))) {
+    if (raw && (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("data:image/"))) {
       setResolvedUrl(raw);
       return;
     }
-    if (raw) {
+    if (raw && isFileId(raw)) {
       let active = true;
       resolveProductionImage("batch", batch.batchId, "large")
         .then((url) => {
-          if (active && url && url !== FILE_PLACEHOLDER && !url.includes("file-placeholder")) {
+          if (
+            active &&
+            url &&
+            url !== FILE_PLACEHOLDER &&
+            !url.includes("file-placeholder") &&
+            (url.startsWith("data:image/") || url.startsWith("http://") || url.startsWith("https://"))
+          ) {
             setResolvedUrl(url);
           } else if (active) {
             setResolvedUrl(null);
@@ -206,7 +214,10 @@ export default function ProductionBatchDetailsModal({
                   src={resolvedUrl}
                   alt={batch.batchNumber}
                   onError={() => setImageError(true)}
-                  onClick={() => setPreviewImage(resolvedUrl)}
+                  onClick={() => {
+                    setLightboxError(false);
+                    setPreviewImage(resolvedUrl);
+                  }}
                   className="w-full h-full object-contain cursor-pointer hover:opacity-90 transition-opacity"
                 />
               </div>
@@ -217,7 +228,10 @@ export default function ProductionBatchDetailsModal({
         {/* Full Lightbox */}
         {previewImage && (
           <div
-            onClick={() => setPreviewImage(null)}
+            onClick={() => {
+              setPreviewImage(null);
+              setLightboxError(false);
+            }}
             className="font-sans fixed inset-0 z-[300] bg-black/70 flex items-center justify-center p-4"
           >
             <div
@@ -232,18 +246,35 @@ export default function ProductionBatchDetailsModal({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setPreviewImage(null)}
+                  onClick={() => {
+                    setPreviewImage(null);
+                    setLightboxError(false);
+                  }}
                   className="h-7 px-3 text-xs rounded-lg cursor-pointer shrink-0"
                 >
                   Close
                 </Button>
               </div>
-              <div className="flex items-center justify-center bg-muted/20 rounded-xl p-2 max-h-[70vh] overflow-auto">
-                <img
-                  src={previewImage}
-                  alt={batch.batchNumber}
-                  className="max-h-[65vh] max-w-full object-contain rounded-lg"
-                />
+              <div className="flex items-center justify-center bg-muted/20 rounded-xl p-4 min-h-[220px] max-h-[70vh] overflow-auto">
+                {lightboxError ? (
+                  <div className="flex flex-col items-center justify-center py-6 text-center space-y-2">
+                    <ImageIcon className="w-10 h-10 text-muted-foreground/50" />
+                    <p className="text-sm font-semibold text-foreground">Photo Unavailable</p>
+                    <p className="text-xs text-muted-foreground max-w-xs">
+                      The image could not be loaded or the storage preview has expired.
+                    </p>
+                  </div>
+                ) : (
+                  <img
+                    src={previewImage}
+                    alt={batch.batchNumber}
+                    onError={() => {
+                      setImageError(true);
+                      setLightboxError(true);
+                    }}
+                    className="max-h-[65vh] max-w-full object-contain rounded-lg"
+                  />
+                )}
               </div>
             </div>
           </div>

@@ -41,7 +41,8 @@ export async function packageBatch(idInput: string | number, body: any = {}) {
         if (!batch) {
             return refuse("Batch not found.");
         }
-        if (!isFileId(proofImageUrl) || proofImageUrl !== batch.ImageUrl)
+        const isValidImageRef = isFileId(proofImageUrl) || proofImageUrl.startsWith("data:image/") || proofImageUrl.startsWith("http://") || proofImageUrl.startsWith("https://");
+        if (!isValidImageRef || proofImageUrl !== batch.ImageUrl)
             refuse("Upload and confirm a packaging photo for this batch first.");
         if (batch.FgLotId || ["For QA", "For Stock-in", "Stocked In", "Completed", "Cancelled"].includes(batch.Status))
             refuse("This batch has already been packaged or closed.");

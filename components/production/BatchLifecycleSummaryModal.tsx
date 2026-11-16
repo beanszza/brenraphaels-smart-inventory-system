@@ -24,7 +24,7 @@ import {
 import { actionResponse } from "@/lib/resources/action-response";
 import { downloadProductionBatchPdf } from "./downloadProductionBatchPdf";
 import { resolveProductionImage } from "@/lib/production/image-client";
-import { FILE_PLACEHOLDER } from "@/lib/files";
+import { FILE_PLACEHOLDER, isFileId } from "@/lib/files";
 import { toast } from "sonner";
 
 interface BatchLifecycleSummaryModalProps {
@@ -50,25 +50,33 @@ export default function BatchLifecycleSummaryModal({
   const [previewImage, setPreviewImage] = useState<{ title: string; src: string } | null>(null);
   const [resolvedPhotoUrl, setResolvedPhotoUrl] = useState<string | null>(null);
   const [photoLoadError, setPhotoLoadError] = useState(false);
+  const [lightboxError, setLightboxError] = useState(false);
 
   useEffect(() => {
     setPhotoLoadError(false);
+    setLightboxError(false);
     if (!summary?.batchId) {
       setResolvedPhotoUrl(null);
       return;
     }
 
     const raw = summary.packaging?.imageUrl?.trim();
-    if (raw && (raw.startsWith("data:image/") || raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("/"))) {
+    if (raw && (raw.startsWith("data:image/") || raw.startsWith("http://") || raw.startsWith("https://"))) {
       setResolvedPhotoUrl(raw);
       return;
     }
 
-    if (raw) {
+    if (raw && isFileId(raw)) {
       let active = true;
       resolveProductionImage("batch", summary.batchId, "large")
         .then((url) => {
-          if (active && url && url !== FILE_PLACEHOLDER && !url.includes("file-placeholder")) {
+          if (
+            active &&
+            url &&
+            url !== FILE_PLACEHOLDER &&
+            !url.includes("file-placeholder") &&
+            (url.startsWith("data:image/") || url.startsWith("http://") || url.startsWith("https://"))
+          ) {
             setResolvedPhotoUrl(url);
           } else if (active) {
             setResolvedPhotoUrl(null);
@@ -307,12 +315,13 @@ export default function BatchLifecycleSummaryModal({
                         src={resolvedPhotoUrl}
                         alt="Packaging Proof"
                         onError={() => setPhotoLoadError(true)}
-                        onClick={() =>
+                        onClick={() => {
+                          setLightboxError(false);
                           setPreviewImage({
                             title: `${summary.batchNumber} — Packaging Verification Proof`,
                             src: resolvedPhotoUrl,
-                          })
-                        }
+                          });
+                        }}
                         className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                       />
                     </div>
@@ -321,12 +330,13 @@ export default function BatchLifecycleSummaryModal({
                       <p className="text-[11px] text-muted-foreground">Uploaded during packaging verification</p>
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          setLightboxError(false);
                           setPreviewImage({
                             title: `${summary.batchNumber} — Packaging Verification Proof`,
                             src: resolvedPhotoUrl,
-                          })
-                        }
+                          });
+                        }}
                         className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
                       >
                         <ExternalLink className="w-3 h-3" /> View Full Image
@@ -409,7 +419,10 @@ export default function BatchLifecycleSummaryModal({
       {/* Full Image Lightbox Modal */}
       {previewImage && (
         <div
-          onClick={() => setPreviewImage(null)}
+          onClick={() => {
+            setPreviewImage(null);
+            setLightboxError(false);
+          }}
           className="font-sans fixed inset-0 z-[300] bg-black/70 flex items-center justify-center p-4"
         >
           <div
@@ -422,18 +435,35 @@ export default function BatchLifecycleSummaryModal({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setPreviewImage(null)}
+                onClick={() => {
+                  setPreviewImage(null);
+                  setLightboxError(false);
+                }}
                 className="h-7 px-3 text-xs rounded-lg cursor-pointer shrink-0"
               >
                 Close
               </Button>
             </div>
-            <div className="flex items-center justify-center bg-muted/20 rounded-xl p-2 max-h-[70vh] overflow-auto">
-              <img
-                src={previewImage.src}
-                alt={previewImage.title}
-                className="max-h-[65vh] max-w-full object-contain rounded-lg"
-              />
+            <div className="flex items-center justify-center bg-muted/20 rounded-xl p-4 min-h-[220px] max-h-[70vh] overflow-auto">
+              {lightboxError ? (
+                <div className="flex flex-col items-center justify-center py-6 text-center space-y-2">
+                  <ImageIcon className="w-10 h-10 text-muted-foreground/50" />
+                  <p className="text-sm font-semibold text-foreground">Photo Unavailable</p>
+                  <p className="text-xs text-muted-foreground max-w-xs">
+                    The image could not be loaded or the storage preview has expired.
+                  </p>
+                </div>
+              ) : (
+                <img
+                  src={previewImage.src}
+                  alt={previewImage.title}
+                  onError={() => {
+                    setLightboxError(true);
+                    setPhotoLoadError(true);
+                  }}
+                  className="max-h-[65vh] max-w-full object-contain rounded-lg"
+                />
+              )}
             </div>
           </div>
         </div>

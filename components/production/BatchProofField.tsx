@@ -31,21 +31,26 @@ export function BatchProofField({
 
     setBusy(true);
     setError("");
-    const localPreview = URL.createObjectURL(file);
-    setPreviewUrl(localPreview);
-    setFileName(file.name);
 
-    try {
-      const fileId = await uploadProductionImage("batch", batchId, file);
-      onChange(fileId);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed. Please try again.");
-      setPreviewUrl("");
-      setFileName("");
-      onChange("");
-    } finally {
-      setBusy(false);
-    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      setPreviewUrl(dataUrl);
+      setFileName(file.name);
+
+      try {
+        const fileId = await uploadProductionImage("batch", batchId, file);
+        onChange(fileId || dataUrl);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Upload failed. Please try again.");
+        setPreviewUrl("");
+        setFileName("");
+        onChange("");
+      } finally {
+        setBusy(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleRemove = async () => {
