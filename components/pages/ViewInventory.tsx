@@ -77,7 +77,13 @@ export default function ViewInventory({
   const isImsManager = useIsImsManager();
   const canPerformActions = !isAdmin && !isHeadCook;
   const canAccessWriteOff = isAdmin || isImsManager;
-  const [mainTab, setMainTab] = useState<"inventory" | "write-off">("inventory");
+  const [mainTab, setMainTab] = useState<"inventory" | "write-off">(
+    isAdmin ? "write-off" : "inventory"
+  );
+  const pendingRequestsCount = useMemo(
+    () => (initialWriteOffs || []).filter((s) => s.status === "Pending Approval").length,
+    [initialWriteOffs]
+  );
   const allInventories = initialInventories;
   const [searchQuery, setSearchQuery] = useState("");
   const firstTabId =
@@ -318,6 +324,17 @@ export default function ViewInventory({
               }`}
             >
               <span>STOCK WRITE-OFF</span>
+              {pendingRequestsCount > 0 && (
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                    mainTab === "write-off"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-foreground"
+                  }`}
+                >
+                  {pendingRequestsCount}
+                </span>
+              )}
             </button>
           </div>
         </div>

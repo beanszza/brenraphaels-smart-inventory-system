@@ -31,6 +31,7 @@ import {
 } from "@/lib/files";
 import { writeOffPhotoTarget } from "@/lib/file-routes";
 import { filesGateway } from "@/lib/gateway/files";
+import { ensureStockWriteOffTables } from "@/lib/inventory/ensure-tables";
 import type {
   StockWriteOffDto,
   SwoStatus,
@@ -154,6 +155,7 @@ function mapWriteOff(row: RawWriteOff): StockWriteOffDto {
 
 export async function listWriteOffs() {
   const staff = await requireModule(MODULE);
+  await ensureStockWriteOffTables();
   return read(async () => {
     requireWriteOffViewer(staff);
     if (typeof (prisma as any)?.stockWriteOffs?.findMany !== "function") {
@@ -172,6 +174,7 @@ export async function listWriteOffs() {
 
 export async function getWriteOffFormData() {
   const staff = await requireModule(MODULE);
+  await ensureStockWriteOffTables();
   return read(async () => {
     requireWriteOffViewer(staff);
 
@@ -354,6 +357,7 @@ export async function getWriteOffFormData() {
 
 export async function createWriteOff(body: SwoCreateInput) {
   const staff = await requireModule(MODULE);
+  await ensureStockWriteOffTables();
   return mutate(
     staff,
     async (tx) => {

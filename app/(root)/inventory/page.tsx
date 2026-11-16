@@ -5,6 +5,7 @@ import { listInventory } from "@/app/actions/inventory/balances";
 import { listLots } from "@/app/actions/inventory/lots";
 import { listWriteOffs } from "@/app/actions/inventory/write-offs";
 import { migrateLegacySkusAndLots } from "@/lib/inventory/migrate-codes";
+import { ensureStockWriteOffTables } from "@/lib/inventory/ensure-tables";
 import { inventoryPages } from "@/lib/inventory/screen-data";
 import { prisma } from "@/lib/prisma";
 import { decodeCategoryDescription } from "@/lib/resources-suppliers/category-status";
@@ -15,6 +16,7 @@ import type { StockWriteOffDto } from "@/components/inventory/write-off/types";
 export default async function InventoryPage() {
   const staff = await requireModule("Inventory");
   await migrateLegacySkusAndLots();
+  await ensureStockWriteOffTables();
   const canViewWriteOff = isAdminStaff(staff) || isImsManager(staff);
 
   // Load categories, inventory, lots, and (for IMS Manager / Admin) stock write-offs in parallel
