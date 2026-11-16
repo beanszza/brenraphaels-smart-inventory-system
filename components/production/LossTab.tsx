@@ -197,12 +197,12 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
               : "No production losses recorded. All active batches have passed inspections."}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full min-w-[850px] text-left">
               <thead className="border-b border-border bg-muted/30">
                 <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                  <th className="px-4 py-4">Loss ID</th>
-                  <th className="px-4 py-4">Batch Number</th>
+                  <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[130px] w-36 whitespace-nowrap">Loss ID</th>
+                  <th className="sticky left-[130px] z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[170px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">Batch Number</th>
                   <th className="px-4 py-4">Product Name</th>
                   <th className="px-4 py-4">Variant</th>
                   <th className="px-4 py-4">Failure Stage</th>
@@ -216,12 +216,12 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
                   <tr
                     key={report.lossId}
                     onClick={() => setSelectedReport(report)}
-                    className="hover:bg-muted/30 transition-colors cursor-pointer"
+                    className="group hover:bg-muted/30 transition-colors cursor-pointer"
                   >
-                    <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
+                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[130px] w-36 transition-colors">
                       {report.lossId}
                     </td>
-                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="sticky left-[130px] z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm text-muted-foreground whitespace-nowrap min-w-[170px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
                       {report.batchNumber}
                     </td>
                     <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">

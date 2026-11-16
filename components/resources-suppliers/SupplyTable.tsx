@@ -26,12 +26,12 @@ export default function SupplyTable({
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+    <div className="overflow-x-auto custom-scrollbar rounded-xl border border-border bg-card shadow-sm">
       <table className="w-full min-w-[900px]">
         <thead className="border-b border-border bg-muted/30">
           <tr className="text-left text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">
-            <th className="px-4 py-3.5">No.</th>
-            <th className="px-4 py-3.5">Name</th>
+            <th className="sticky left-0 z-20 w-16 px-4 py-3.5 bg-muted/95 backdrop-blur-xs">No.</th>
+            <th className="sticky left-[64px] z-20 min-w-[200px] w-52 px-4 py-3.5 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-muted/95 backdrop-blur-xs">Name</th>
             <th className="px-4 py-3.5">Category</th>
             <th className="px-4 py-3.5">Unit</th>
             <th className="px-4 py-3.5">Min Stock</th>
@@ -49,11 +49,11 @@ export default function SupplyTable({
             </tr>
           ) : (
             items.map((item, index) => (
-              <tr key={item.itemId} className="hover:bg-card transition-colors">
-                <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+              <tr key={item.itemId} className="hover:bg-muted/20 transition-colors group">
+                <td className="sticky left-0 z-10 w-16 px-4 py-3 text-sm text-muted-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors">
                   {index + 1 + (currentPage - 1) * pageSize}
                 </td>
-                <td className="px-4 py-3 text-sm font-medium text-foreground">
+                <td className="sticky left-[64px] z-10 min-w-[200px] w-52 px-4 py-3 text-sm font-medium text-foreground border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-card group-hover:bg-muted/40 transition-colors">
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <span className="cursor-default whitespace-nowrap">

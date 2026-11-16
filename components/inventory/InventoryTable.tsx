@@ -108,15 +108,15 @@ export default function InventoryTable({
   };
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-card">
+    <div className="overflow-x-auto custom-scrollbar rounded-xl border border-border bg-card">
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border bg-muted/40 text-muted-foreground font-semibold">
-            <th className="w-8 px-2 py-3 text-center"></th>
-            <th className="px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap">
+            <th className="sticky left-0 z-20 w-8 px-2 py-3 text-center bg-muted/95 backdrop-blur-xs"></th>
+            <th className="sticky left-8 z-20 w-12 px-3 py-3 text-left font-bold tracking-wider whitespace-nowrap bg-muted/95 backdrop-blur-xs">
               No.
             </th>
-            <th className="px-3 py-3.5 text-left font-bold tracking-wider whitespace-nowrap">
+            <th className="sticky left-[80px] z-20 min-w-[200px] px-3 py-3.5 text-left font-bold tracking-wider whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-muted/95 backdrop-blur-xs">
               Item Name
             </th>
             {isFinishedGoods ? (
@@ -194,7 +194,7 @@ export default function InventoryTable({
                     onClick={() => toggleRow(item)}
                     className="hover:bg-muted/30 transition-colors cursor-pointer select-none group"
                   >
-                    <td className="px-2 py-3.5 text-center text-muted-foreground group-hover:text-foreground">
+                    <td className="sticky left-0 z-10 w-8 px-2 py-3.5 text-center text-muted-foreground group-hover:text-foreground bg-card group-hover:bg-muted/40 transition-colors">
                       <button
                         type="button"
                         aria-label={`Show lots for ${item.itemName}`}
@@ -211,10 +211,10 @@ export default function InventoryTable({
                         )}
                       </button>
                     </td>
-                    <td className="px-3 py-3.5 font-bold text-foreground whitespace-nowrap">
+                    <td className="sticky left-8 z-10 w-12 px-3 py-3.5 font-bold text-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors">
                       {(currentPage - 1) * pageSize + idx + 1}
                     </td>
-                    <td className="px-3 py-3.5 font-medium text-foreground">
+                    <td className="sticky left-[80px] z-10 min-w-[200px] px-3 py-3.5 font-medium text-foreground border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-card group-hover:bg-muted/40 transition-colors">
                       <span className="font-semibold text-foreground">
                         {item.itemName}
                       </span>

@@ -15,12 +15,12 @@ export default function LocationTable({ locations, onEdit, onView }: LocationTab
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+    <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-border bg-card">
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border bg-muted/30">
-            <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">LOCATION NAME</th>
-            <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">TYPE</th>
+            <th className="sticky left-0 z-20 min-w-[170px] w-48 px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap bg-muted/95 backdrop-blur-xs">LOCATION NAME</th>
+            <th className="sticky left-[170px] z-20 min-w-[130px] w-36 px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-muted/95 backdrop-blur-xs">TYPE</th>
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">ADDRESS</th>
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">STATUS</th>
             <th className="px-3 py-3 text-center font-bold text-muted-foreground tracking-wider whitespace-nowrap">ACTIONS</th>
@@ -35,9 +35,9 @@ export default function LocationTable({ locations, onEdit, onView }: LocationTab
             </tr>
           ) : (
             locations.map((loc) => (
-              <tr key={loc.id} className="hover:bg-muted/30 transition-colors">
-                <td className="px-3 py-3 font-semibold text-foreground whitespace-nowrap">{loc.name}</td>
-                <td className="px-3 py-3 text-muted-foreground whitespace-nowrap">{loc.type}</td>
+              <tr key={loc.id} className="hover:bg-muted/30 transition-colors group">
+                <td className="sticky left-0 z-10 min-w-[170px] w-48 px-3 py-3 font-semibold text-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors">{loc.name}</td>
+                <td className="sticky left-[170px] z-10 min-w-[130px] w-36 px-3 py-3 text-muted-foreground whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-card group-hover:bg-muted/40 transition-colors">{loc.type}</td>
                 <td className="px-3 py-3 text-muted-foreground">{loc.address}</td>
                 <td className="px-3 py-3">
                   <StatusBadge status={loc.status} />

@@ -338,18 +338,20 @@ export default function ProductionRequestsTab({
 
       {/* Requests Table */}
       <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead className="border-b border-border bg-muted/30">
               <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                <th className="px-4 py-4 whitespace-nowrap">
+                <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 whitespace-nowrap min-w-[190px] w-48">
                   {activeTab === "In Progress" || activeTab === "Completed"
                     ? "Batch Number"
                     : activeTab === "All"
                       ? "Request / Batch No."
                       : "Request Number"}
                 </th>
-                <th className="px-4 py-4 whitespace-nowrap">Product</th>
+                <th className="sticky left-[190px] z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 whitespace-nowrap min-w-[200px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                  Product
+                </th>
                 <th className="px-4 py-4 whitespace-nowrap">Variant</th>
                 <th className="px-4 py-4 text-right whitespace-nowrap">Target Output</th>
                 <th className="px-4 py-4 text-center whitespace-nowrap">Priority</th>
@@ -394,18 +396,18 @@ export default function ProductionRequestsTab({
                     <tr
                       key={req.prodReqId}
                       onClick={() => handleViewRequest(req)}
-                      className={`hover:bg-muted/30 transition-colors cursor-pointer ${isHigh ? "bg-muted/15 border-l-2 border-l-foreground" : ""
+                      className={`group hover:bg-muted/30 transition-colors cursor-pointer ${isHigh ? "bg-muted/15 border-l-2 border-l-foreground" : ""
                         }`}
                     >
                       {/* Request / Batch Number */}
-                      <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
+                      <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[190px] w-48 transition-colors">
                         {(isInProd || isCompleted) && req.batches?.[0]?.batchNumber
                           ? req.batches[0].batchNumber
                           : req.reqNumber}
                       </td>
 
                       {/* Product (Product name only) */}
-                      <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
+                      <td className="sticky left-[190px] z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm text-foreground whitespace-nowrap min-w-[200px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
                         {req.productName}
                       </td>
 

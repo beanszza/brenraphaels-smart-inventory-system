@@ -19,12 +19,12 @@ function formatDate(dateStr: string | null): string {
 
 export default function LotsTable({ items, currentPage, pageSize }: LotsTableProps) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+    <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-border bg-card">
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border bg-muted/30">
-            <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">LOT CODE</th>
-            <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">ITEM</th>
+            <th className="sticky left-0 z-20 min-w-[160px] w-44 px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap bg-muted/95 backdrop-blur-xs">LOT CODE</th>
+            <th className="sticky left-[160px] z-20 min-w-[180px] w-48 px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-muted/95 backdrop-blur-xs">ITEM</th>
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">LOCATION</th>
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">SUPPLIER</th>
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">RECEIVED</th>
@@ -57,11 +57,11 @@ export default function LotsTable({ items, currentPage, pageSize }: LotsTablePro
               }
 
               return (
-                <tr key={lot.lotId} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-3 py-3 font-bold text-foreground whitespace-nowrap font-mono">
+                <tr key={lot.lotId} className="hover:bg-muted/30 transition-colors group">
+                  <td className="sticky left-0 z-10 min-w-[160px] w-44 px-3 py-3 font-bold text-foreground whitespace-nowrap font-mono bg-card group-hover:bg-muted/40 transition-colors">
                     {lot.lotCode}
                   </td>
-                  <td className="px-3 py-3 font-medium text-foreground">
+                  <td className="sticky left-[160px] z-10 min-w-[180px] w-48 px-3 py-3 font-medium text-foreground border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-card group-hover:bg-muted/40 transition-colors">
                     <div className="font-semibold">{lot.itemName}</div>
                   </td>
                   <td className="px-3 py-3 text-muted-foreground">{lot.locationName}</td>

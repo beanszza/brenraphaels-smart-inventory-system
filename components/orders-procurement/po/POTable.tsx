@@ -41,12 +41,12 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onD
   }, [openDropdownId]);
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
+    <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-border bg-card shadow-sm">
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border bg-muted/40">
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">PURCHASE ORDER NUMBER</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">SUPPLIER</th>
+            <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap min-w-[170px] w-44">PURCHASE ORDER NUMBER</th>
+            <th className="sticky left-[170px] z-20 bg-muted/95 backdrop-blur-xs px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap min-w-[170px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">SUPPLIER</th>
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">ORDER DATE</th>
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">REQUESTED BY</th>
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">TOTAL AMOUNT</th>
@@ -109,11 +109,11 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onD
                 new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", minimumFractionDigits: 2 }).format(n);
 
               return (
-                <tr key={po.poId} className="hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => onView(po)}>
-                  <td className="px-4 py-3.5 font-mono text-foreground whitespace-nowrap font-medium">
+                <tr key={po.poId} className="group hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => onView(po)}>
+                  <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-3.5 font-mono text-foreground whitespace-nowrap font-medium min-w-[170px] w-44 transition-colors">
                     {po.poNumber}
                   </td>
-                  <td className="px-4 py-3.5 font-medium text-foreground whitespace-nowrap">
+                  <td className="sticky left-[170px] z-10 bg-card group-hover:bg-muted/40 px-4 py-3.5 font-medium text-foreground whitespace-nowrap min-w-[170px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
                     {po.supplierName || "—"}
                   </td>
                   <td className="px-4 py-3.5 text-muted-foreground whitespace-nowrap">

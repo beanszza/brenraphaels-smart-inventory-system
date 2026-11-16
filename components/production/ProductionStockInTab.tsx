@@ -329,7 +329,7 @@ export default function ProductionStockInTab({ initialRows, initialItems, curren
       </div>
 
       {/* ── Table (Matching SupplyTable layout: No QA Status, No Variant Under Name) ── */}
-      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+      <div className="overflow-x-auto custom-scrollbar rounded-xl border border-border bg-card shadow-sm">
         {loading ? (
           <ProductionSkeleton />
         ) : displayedBatches.length === 0 ? (
@@ -347,8 +347,8 @@ export default function ProductionStockInTab({ initialRows, initialItems, curren
           <table className="w-full min-w-[800px]">
             <thead className="border-b border-border bg-muted/30">
               <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                <th className="px-4 py-4">Finished Goods Lot</th>
-                <th className="px-4 py-4">Product Name</th>
+                <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[170px] w-44 whitespace-nowrap">Finished Goods Lot</th>
+                <th className="sticky left-[170px] z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[180px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">Product Name</th>
                 <th className="px-4 py-4">Batch Number</th>
                 <th className="px-4 py-4 text-right">Units to Stock</th>
                 <th className="px-4 py-4">Expiry Date</th>
@@ -357,11 +357,11 @@ export default function ProductionStockInTab({ initialRows, initialItems, curren
             </thead>
             <tbody className="divide-y divide-border">
               {displayedBatches.map((b) => (
-                <tr key={b.batchId} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
+                <tr key={b.batchId} className="group hover:bg-muted/30 transition-colors">
+                  <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[170px] w-44 transition-colors">
                     {(b.fgLotCode || "").replace(/^FG-/i, "") || "Pending Lot"}
                   </td>
-                  <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
+                  <td className="sticky left-[170px] z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm text-foreground whitespace-nowrap min-w-[180px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
                     {b.productName}
                   </td>
                   <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">

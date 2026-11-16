@@ -278,13 +278,13 @@ export default function ConfigurationTab({
           <ProductionSkeleton />
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+        <div className="overflow-x-auto custom-scrollbar rounded-xl border border-border bg-card shadow-sm">
           <table className="w-full min-w-[800px]">
             <thead className="border-b border-border bg-muted/30">
               <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                <th className="w-12 px-4 py-4 text-center">No.</th>
-                <th className="w-16 px-4 py-4 text-center">Photo</th>
-                <th className="px-4 py-4">Product Name</th>
+                <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs w-12 px-4 py-4 text-center whitespace-nowrap">No.</th>
+                <th className="sticky left-[48px] z-20 bg-muted/95 backdrop-blur-xs w-16 px-4 py-4 text-center whitespace-nowrap">Photo</th>
+                <th className="sticky left-[112px] z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[180px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">Product Name</th>
                 <th className="px-4 py-4">Variant</th>
                 <th className="px-4 py-4">Packaging</th>
                 <th className="px-4 py-4">Variant SKU</th>
@@ -309,15 +309,15 @@ export default function ConfigurationTab({
                   <tr
                     key={product.productId}
                     onClick={() => handleOpenEditProduct(product)}
-                    className="hover:bg-muted/30 transition-colors cursor-pointer"
+                    className="group hover:bg-muted/30 transition-colors cursor-pointer"
                   >
                     {/* No. */}
-                    <td className="w-12 px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
+                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 w-12 px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap transition-colors">
                       {index + 1 + (safeCurrentPage - 1) * pageSize}
                     </td>
 
                     {/* Photo */}
-                    <td className="w-16 px-4 py-4 text-center">
+                    <td className="sticky left-[48px] z-10 bg-card group-hover:bg-muted/40 w-16 px-4 py-4 text-center transition-colors">
                       <div className="w-9 h-9 rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center shrink-0 mx-auto">
                         {product.imageUrl ? (
                           <img
@@ -338,7 +338,7 @@ export default function ConfigurationTab({
                     </td>
 
                     {/* Product Name */}
-                    <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
+                    <td className="sticky left-[112px] z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[180px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
                       {product.itemName}
                     </td>
 

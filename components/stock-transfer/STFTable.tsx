@@ -34,13 +34,13 @@ export function STFTable({
 
   return (
     <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto custom-scrollbar">
         <table className="w-full text-left text-xs">
           <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
             <tr>
-              <th className="px-5 py-3.5">Transfer No.</th>
-              <th className="px-5 py-3.5">STR Ref</th>
-              <th className="px-5 py-3.5">Product & Variant</th>
+              <th className="sticky left-0 z-20 min-w-[160px] w-44 px-5 py-3.5 whitespace-nowrap bg-muted/95 backdrop-blur-xs">Transfer No.</th>
+              <th className="sticky left-[160px] z-20 min-w-[150px] w-40 px-5 py-3.5 whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-muted/95 backdrop-blur-xs">STR Ref</th>
+              <th className="px-5 py-3.5 whitespace-nowrap">Product &amp; Variant</th>
               <th className="px-5 py-3.5">Destination</th>
               <th className="px-5 py-3.5 text-right">Transfer Qty</th>
               <th className="px-5 py-3.5">Scheduled Date</th>
@@ -59,11 +59,11 @@ export function STFTable({
                   className="hover:bg-muted/20 transition-colors cursor-pointer group"
                   onClick={() => onView(st)}
                 >
-                  <td className="px-5 py-4 font-mono font-bold text-foreground">
+                  <td className="sticky left-0 z-10 min-w-[160px] w-44 px-5 py-4 font-mono font-bold text-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors">
                     <span className="hover:underline">{st.transferNumber}</span>
                   </td>
 
-                  <td className="px-5 py-4 font-mono text-muted-foreground">
+                  <td className="sticky left-[160px] z-10 min-w-[150px] w-40 px-5 py-4 font-mono text-muted-foreground whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-card group-hover:bg-muted/40 transition-colors">
                     {st.requestNumber || "—"}
                   </td>
 

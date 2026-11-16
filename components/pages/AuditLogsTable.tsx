@@ -95,12 +95,12 @@ export default function AuditLogsTable({
   return (
     <>
       <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left text-sm border-collapse">
             <thead className="bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
               <tr>
-                <th className="whitespace-nowrap px-4 py-3.5 text-center w-12">#</th>
-                <th className="whitespace-nowrap px-4 py-3.5">Action &amp; Event Activity</th>
+                <th className="sticky left-0 z-20 w-16 whitespace-nowrap px-4 py-3.5 text-center bg-muted/95 backdrop-blur-xs">#</th>
+                <th className="sticky left-[64px] z-20 min-w-[220px] w-64 whitespace-nowrap px-4 py-3.5 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-muted/95 backdrop-blur-xs">Action &amp; Event Activity</th>
                 <th className="whitespace-nowrap px-4 py-3.5">Target Entity &amp; Details</th>
                 <th className="whitespace-nowrap px-4 py-3.5">Date &amp; Exact Time</th>
                 <th className="whitespace-nowrap px-4 py-3.5">Performed By</th>
@@ -124,12 +124,12 @@ export default function AuditLogsTable({
                       className="hover:bg-muted/30 transition-colors group"
                     >
                       {/* Row Number (#) */}
-                      <td className="whitespace-nowrap px-4 py-3.5 text-center font-mono text-xs font-bold text-muted-foreground">
+                      <td className="sticky left-0 z-10 w-16 whitespace-nowrap px-4 py-3.5 text-center font-mono text-xs font-bold text-muted-foreground bg-card group-hover:bg-muted/40 transition-colors">
                         {startIdx + index + 1}
                       </td>
 
                       {/* Action & Event Activity - Clickable Summarized Monochromatic Pill */}
-                      <td className="whitespace-nowrap px-4 py-3.5">
+                      <td className="sticky left-[64px] z-10 min-w-[220px] w-64 whitespace-nowrap px-4 py-3.5 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-card group-hover:bg-muted/40 transition-colors">
                         <button
                           type="button"
                           onClick={() => setSelectedLog(log)}

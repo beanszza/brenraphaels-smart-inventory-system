@@ -28,12 +28,12 @@ export default function DiscrepancyTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+    <div className="overflow-x-auto custom-scrollbar rounded-xl border border-border bg-card shadow-sm">
       <table className="w-full">
         <thead className="border-b border-border bg-muted/30">
           <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-            <th className="px-4 py-4">Discrepancy No.</th>
-            <th className="px-4 py-4">Type</th>
+            <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[150px] w-40 whitespace-nowrap">Discrepancy No.</th>
+            <th className="sticky left-[150px] z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[130px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">Type</th>
             <th className="px-4 py-4">Item Name</th>
             <th className="px-4 py-4 text-right">Variance</th>
             <th className="px-4 py-4">Resolution</th>
@@ -58,12 +58,12 @@ export default function DiscrepancyTable({
                 <tr
                   key={d.discrepancyId}
                   onClick={() => onSelectDiscrepancy(d)}
-                  className="hover:bg-muted/30 transition-colors cursor-pointer"
+                  className="group hover:bg-muted/30 transition-colors cursor-pointer"
                 >
-                  <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
+                  <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[150px] w-40 transition-colors">
                     {d.discrepancyNumber}
                   </td>
-                  <td className="px-4 py-4 text-sm whitespace-nowrap">
+                  <td className="sticky left-[150px] z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm whitespace-nowrap min-w-[130px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
                     <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-muted border border-border text-foreground">
                       {isShort ? "Shortage" : isOver ? "Over Supply" : "Rejected"}
                     </span>
