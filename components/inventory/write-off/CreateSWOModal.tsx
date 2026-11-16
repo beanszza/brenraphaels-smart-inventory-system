@@ -116,6 +116,11 @@ function buildFallbackFormData(
     }
   }
 
+  const invByItemId = new Map<number, InventoryItem>();
+  for (const inv of initialInventories) {
+    invByItemId.set(inv.itemId, inv);
+  }
+
   const itemTypesMap = new Map<string, boolean>();
   for (const cat of initialCategories) {
     if (cat.categoryName.toLowerCase().includes("finished")) continue;
@@ -146,12 +151,13 @@ function buildFallbackFormData(
     const available = Number(Math.max(0, remaining - reserved - pending).toFixed(3));
     if (available <= 0) continue;
 
-    const rawCat = lot.categoryName || "Raw Materials";
+    const inv = invByItemId.get(lot.itemId);
+    const rawCat = inv?.categoryName || "Raw Materials";
     const isFinishedGood = rawCat.toLowerCase().includes("finished");
     const itemType = isFinishedGood ? "Finished Goods" : rawCat;
     const itemKey = `item:${lot.itemId}`;
-    const uomName = lot.uomAbbreviation || "Unit";
-    const itemCode = lot.itemCode || `SPL-${String(lot.itemId).padStart(4, "0")}`;
+    const uomName = lot.uomName || inv?.uomAbbreviation || inv?.uomName || "Unit";
+    const itemCode = inv?.itemCode || `SPL-${String(lot.itemId).padStart(4, "0")}`;
     const displayLabel = `${lot.itemName} (${itemCode})`;
     const expiryDate = lot.expiryDate || null;
     const isExpired = expiryDate ? new Date(expiryDate).getTime() < now.getTime() : false;
@@ -168,7 +174,7 @@ function buildFallbackFormData(
       pendingWriteOffQuantity: pending,
       availableQuantity: available,
       unitCost: Number(lot.unitCost || 0),
-      uomId: lot.uomId || 1,
+      uomId: 1,
       uomName,
       isExpired,
     };
@@ -186,7 +192,7 @@ function buildFallbackFormData(
         itemCode,
         variantName: "",
         displayLabel,
-        uomId: lot.uomId || 1,
+        uomId: 1,
         uomName,
         hasExpiry: Boolean(expiryDate),
         lots: [lotOpt],
@@ -1139,7 +1145,7 @@ export function CreateSWOModal({
                     })}
                   </div>
 
-                  {/* Supporting Evidence Photo Upload (Matches BatchProofField dashed dropzone UI) */}
+                  {/* Supporting Evidence Photo Upload (Matches CreateDeliveryModal dashed dropzone UI) */}
                   <div className="space-y-1.5 pt-2 border-t border-border">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-semibold text-foreground">
@@ -1153,47 +1159,61 @@ export function CreateSWOModal({
                       )}
                     </div>
 
-                    <div className="border-2 border-dashed border-border rounded-xl p-4 bg-muted/10 transition-colors space-y-3">
-                      {draftItem.photos.length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                          {draftItem.photos.map((p, pIdx) => (
-                            <div
-                              key={pIdx}
-                              className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card p-2"
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="rounded-xl border border-dashed border-border bg-card p-4 transition-colors">
+                      {draftItem.photos.length > 0 ? (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                            {draftItem.photos.map((p, pIdx) => (
+                              <div
+                                key={pIdx}
+                                className="relative flex flex-col items-center justify-center p-3 bg-muted/20 rounded-xl border border-border"
+                              >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                   src={p.previewUrl}
                                   alt={p.file.name}
-                                  className="w-11 h-11 rounded-lg object-cover border border-border shrink-0"
+                                  className="max-h-44 w-full rounded-lg object-contain border border-border shadow-xs bg-card"
                                 />
-                                <div className="min-w-0">
-                                  <div className="text-xs font-medium text-foreground truncate">
-                                    {p.file.name}
-                                  </div>
-                                  <div className="text-[10px] text-muted-foreground">
-                                    {Math.max(1, Math.round(p.file.size / 1024))} KB
-                                  </div>
+                                <p className="mt-2 text-[11px] text-muted-foreground truncate max-w-xs text-center">
+                                  {p.file.name}
+                                </p>
+                                <div className="mt-2 flex justify-end w-full">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemovePhoto(itemIdx, pIdx)}
+                                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-1.5 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    Remove
+                                  </button>
                                 </div>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => handleRemovePhoto(itemIdx, pIdx)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 text-xs font-semibold transition-colors cursor-pointer shrink-0"
-                                title="Remove photo"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                            ))}
+                          </div>
 
-                      {draftItem.photos.length < SWO_MAX_PHOTOS_PER_ITEM && (
+                          {draftItem.photos.length < SWO_MAX_PHOTOS_PER_ITEM && (
+                            <div className="flex justify-end pt-2 border-t border-border/50">
+                              <label className="cursor-pointer text-xs font-semibold px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors flex items-center gap-1.5">
+                                <Upload className="w-3.5 h-3.5" />
+                                Upload More Photos
+                                <input
+                                  type="file"
+                                  accept=".jpg,.jpeg,.png,.webp"
+                                  multiple
+                                  onChange={(e) => {
+                                    handlePhotoUploadChange(itemIdx, e.target.files);
+                                    e.target.value = "";
+                                  }}
+                                  className="hidden"
+                                />
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
                         <label className="flex flex-col items-center justify-center cursor-pointer py-4 hover:bg-muted/30 rounded-xl transition-colors">
-                          <Upload className="w-5 h-5 text-muted-foreground mb-1.5" />
-                          <span className="text-xs font-semibold text-foreground">
+                          <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                          <span className="text-xs font-medium text-foreground">
                             Click to upload item condition photo
                           </span>
                           <span className="text-[11px] text-muted-foreground mt-0.5">

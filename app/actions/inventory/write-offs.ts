@@ -196,14 +196,10 @@ export async function getWriteOffFormData() {
               Category: true,
               Uom: true,
               UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: true,
-            },
-          },
-          UnitOfMeasures: true,
-          ProductionBatches: {
-            include: {
               FinishedProducts: true,
             },
           },
+          UnitOfMeasures: true,
         },
         orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
       }),
@@ -266,9 +262,9 @@ export async function getWriteOffFormData() {
       if (available <= 0) continue;
 
       const rawCatName = item.Category?.CategoryName || "Uncategorized";
+      const fp = (item as any).FinishedProducts?.[0] ?? null;
       const isFinishedGood =
-        rawCatName.toLowerCase().includes("finished") ||
-        (lot.ProductionBatches && lot.ProductionBatches.length > 0);
+        rawCatName.toLowerCase().includes("finished") || Boolean(fp);
       const itemType = isFinishedGood ? "Finished Goods" : rawCatName;
       const hasExpiry = isFinishedGood
         ? true
@@ -278,7 +274,6 @@ export async function getWriteOffFormData() {
         itemTypesMap.set(itemType, hasExpiry);
       }
 
-      const fp = lot.ProductionBatches?.[0]?.FinishedProducts ?? null;
       const productId = fp?.ProductId ?? null;
       const variantName = fp?.Variant || "";
       const itemKey = isFinishedGood && productId ? `fg:${productId}` : `item:${item.ItemId}`;
@@ -381,12 +376,10 @@ export async function createWriteOff(body: SwoCreateInput) {
                 Category: true,
                 Uom: true,
                 UnitOfMeasures_Items_StockUomIdToUnitOfMeasures: true,
+                FinishedProducts: true,
               },
             },
             UnitOfMeasures: true,
-            ProductionBatches: {
-              include: { FinishedProducts: true },
-            },
           },
         }),
         (async () => {
@@ -427,7 +420,7 @@ export async function createWriteOff(body: SwoCreateInput) {
           lot.UnitOfMeasures ??
           lot.Items?.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures ??
           lot.Items?.Uom;
-        const fp = lot.ProductionBatches?.[0]?.FinishedProducts ?? null;
+        const fp = (lot.Items as any)?.FinishedProducts?.[0] ?? null;
 
         lotAvailability[lot.LotId] = {
           availableQuantity: available,
@@ -461,7 +454,7 @@ export async function createWriteOff(body: SwoCreateInput) {
       for (const itemInput of body.items) {
         const firstLot = dbLotById.get(Number(itemInput.lots[0].lotId))!;
         const dbItem = firstLot.Items;
-        const fp = firstLot.ProductionBatches?.[0]?.FinishedProducts ?? null;
+        const fp = (dbItem as any)?.FinishedProducts?.[0] ?? null;
         const isFinishedGood =
           itemInput.itemType.trim().toLowerCase() === "finished goods" || Boolean(fp);
         const hasExpiry = isFinishedGood
