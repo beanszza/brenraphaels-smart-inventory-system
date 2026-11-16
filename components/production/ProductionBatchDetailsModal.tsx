@@ -13,6 +13,8 @@ import {
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { ProductionRequest } from "./types";
+import { resolveProductionImage } from "@/lib/production/image-client";
+import { FILE_PLACEHOLDER } from "@/lib/files";
 
 interface ProductionBatchDetailsModalProps {
   open: boolean;
@@ -26,6 +28,41 @@ export default function ProductionBatchDetailsModal({
   batch,
 }: ProductionBatchDetailsModalProps) {
   const [previewImage, setPreviewImage] = React.useState<string | null>(null);
+  const [resolvedUrl, setResolvedUrl] = React.useState<string | null>(null);
+  const [imageError, setImageError] = React.useState(false);
+
+  React.useEffect(() => {
+    setImageError(false);
+    if (!batch?.batchId) {
+      setResolvedUrl(null);
+      return;
+    }
+    const raw = batch.imageUrl?.trim();
+    if (raw && (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("data:image/") || raw.startsWith("/"))) {
+      setResolvedUrl(raw);
+      return;
+    }
+    if (raw) {
+      let active = true;
+      resolveProductionImage("batch", batch.batchId, "large")
+        .then((url) => {
+          if (active && url && url !== FILE_PLACEHOLDER && !url.includes("file-placeholder")) {
+            setResolvedUrl(url);
+          } else if (active) {
+            setResolvedUrl(null);
+          }
+        })
+        .catch(() => {
+          if (active) setResolvedUrl(null);
+        });
+      return () => {
+        active = false;
+      };
+    } else {
+      setResolvedUrl(null);
+    }
+  }, [batch?.batchId, batch?.imageUrl]);
+
   if (!batch) return null;
 
   return (
@@ -159,16 +196,17 @@ export default function ProductionBatchDetailsModal({
           )}
 
           {/* Image preview if any */}
-          {batch.imageUrl && (
+          {resolvedUrl && !imageError && (
             <div className="p-3 rounded-xl border border-border bg-card">
               <span className="text-[10px] text-muted-foreground uppercase font-semibold block mb-2">
                 Production Batch Photo
               </span>
               <div className="max-h-48 rounded-lg overflow-hidden border border-border bg-muted/20 flex items-center justify-center">
                 <img
-                  src={batch.imageUrl}
+                  src={resolvedUrl}
                   alt={batch.batchNumber}
-                  onClick={() => setPreviewImage(batch.imageUrl || null)}
+                  onError={() => setImageError(true)}
+                  onClick={() => setPreviewImage(resolvedUrl)}
                   className="w-full h-full object-contain cursor-pointer hover:opacity-90 transition-opacity"
                 />
               </div>

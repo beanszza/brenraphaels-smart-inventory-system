@@ -23,6 +23,8 @@ import {
 } from "@/app/actions/production/batch-detail";
 import { actionResponse } from "@/lib/resources/action-response";
 import { downloadProductionBatchPdf } from "./downloadProductionBatchPdf";
+import { resolveProductionImage } from "@/lib/production/image-client";
+import { FILE_PLACEHOLDER } from "@/lib/files";
 import { toast } from "sonner";
 
 interface BatchLifecycleSummaryModalProps {
@@ -46,6 +48,42 @@ export default function BatchLifecycleSummaryModal({
   const [downloading, setDownloading] = useState(false);
   const [summary, setSummary] = useState<BatchLifecycleSummaryData | null>(null);
   const [previewImage, setPreviewImage] = useState<{ title: string; src: string } | null>(null);
+  const [resolvedPhotoUrl, setResolvedPhotoUrl] = useState<string | null>(null);
+  const [photoLoadError, setPhotoLoadError] = useState(false);
+
+  useEffect(() => {
+    setPhotoLoadError(false);
+    if (!summary?.batchId) {
+      setResolvedPhotoUrl(null);
+      return;
+    }
+
+    const raw = summary.packaging?.imageUrl?.trim();
+    if (raw && (raw.startsWith("data:image/") || raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("/"))) {
+      setResolvedPhotoUrl(raw);
+      return;
+    }
+
+    if (raw) {
+      let active = true;
+      resolveProductionImage("batch", summary.batchId, "large")
+        .then((url) => {
+          if (active && url && url !== FILE_PLACEHOLDER && !url.includes("file-placeholder")) {
+            setResolvedPhotoUrl(url);
+          } else if (active) {
+            setResolvedPhotoUrl(null);
+          }
+        })
+        .catch(() => {
+          if (active) setResolvedPhotoUrl(null);
+        });
+      return () => {
+        active = false;
+      };
+    } else {
+      setResolvedPhotoUrl(null);
+    }
+  }, [summary?.batchId, summary?.packaging?.imageUrl]);
 
   useEffect(() => {
     if (!open || !batchId) {
@@ -258,7 +296,7 @@ export default function BatchLifecycleSummaryModal({
                 </div>
               </div>
 
-              {summary.packaging.imageUrl && (
+              {resolvedPhotoUrl && !photoLoadError && (
                 <div className="pt-2 border-t border-border mt-1">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
                     Packaging Verification Photo
@@ -266,12 +304,13 @@ export default function BatchLifecycleSummaryModal({
                   <div className="flex items-center gap-3 p-2.5 rounded-xl border border-border bg-muted/20">
                     <div className="w-16 h-16 rounded-lg border border-border bg-background overflow-hidden flex items-center justify-center shrink-0">
                       <img
-                        src={summary.packaging.imageUrl}
+                        src={resolvedPhotoUrl}
                         alt="Packaging Proof"
+                        onError={() => setPhotoLoadError(true)}
                         onClick={() =>
                           setPreviewImage({
                             title: `${summary.batchNumber} — Packaging Verification Proof`,
-                            src: summary.packaging.imageUrl!,
+                            src: resolvedPhotoUrl,
                           })
                         }
                         className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
@@ -285,7 +324,7 @@ export default function BatchLifecycleSummaryModal({
                         onClick={() =>
                           setPreviewImage({
                             title: `${summary.batchNumber} — Packaging Verification Proof`,
-                            src: summary.packaging.imageUrl!,
+                            src: resolvedPhotoUrl,
                           })
                         }
                         className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"

@@ -2,7 +2,7 @@
 import { auditVersion } from "@/lib/audit";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- Preserve the existing production DTOs during the action migration. */
-import { unlinkFile } from "@/lib/files";
+import { unlinkFile, resolveFile, isFileId, FILE_PLACEHOLDER } from "@/lib/files";
 import { filesGateway } from "@/lib/gateway/files";
 import { batchImage } from "@/lib/file-routes";
 import { prisma } from "@/lib/prisma";
@@ -243,7 +243,7 @@ export interface BatchLifecycleSummaryData {
 }
 
 export async function getBatchLifecycleSummary(idInput: string | number) {
-    await requireModule("Production & Quality");
+    const staff = await requireModule("Production & Quality");
     return read(async () => {
         const id = positiveId(idInput);
         const batch = await prisma.productionBatches.findUnique({
@@ -351,6 +351,24 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
 
         const yieldUom = batch.Recipes?.UnitOfMeasures?.Abbreviation ?? "units";
         const productName = batch.FinishedProducts?.Items?.ItemName ?? "";
+
+        let resolvedBatchImageUrl: string | null = null;
+        if (batch.ImageUrl) {
+            const raw = batch.ImageUrl.trim();
+            if (raw.startsWith("data:image/") || raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("/")) {
+                resolvedBatchImageUrl = raw;
+            } else if (isFileId(raw)) {
+                try {
+                    const resolved = await resolveFile(filesGateway, staff, raw, "large");
+                    if (resolved && resolved.kind === "file" && resolved.url && resolved.url !== FILE_PLACEHOLDER) {
+                        resolvedBatchImageUrl = resolved.url;
+                    }
+                } catch (err) {
+                    console.warn("Could not resolve batch image file:", err);
+                }
+            }
+        }
+
         const data: BatchLifecycleSummaryData = {
             batchId: batch.BatchId,
             batchNumber: formatBatchNumber(batch.BatchNumber, productName),
@@ -406,7 +424,7 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
                 expiryDate: batch.ExpiryDate?.toISOString() ?? null,
                 fgLotCode: batch.InventoryLots?.LotCode ?? "—",
                 fgLotStatus: batch.InventoryLots?.Status ?? "—",
-                imageUrl: batch.ImageUrl ?? null,
+                imageUrl: resolvedBatchImageUrl,
             },
             qa: inspection
                 ? {
