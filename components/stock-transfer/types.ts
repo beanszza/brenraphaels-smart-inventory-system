@@ -45,6 +45,7 @@ export interface STRTransferRef {
   driverName?: string | null;
   vehiclePlate?: string | null;
   courierName?: string | null;
+  proofOfReceipt?: string | null;
   notes?: string | null;
 }
 

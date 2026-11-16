@@ -28,7 +28,7 @@ interface ProductionStockInTabProps {
   currentUser?: string;
 }
 
-export default function ProductionStockInTab({ initialRows, initialItems,  currentUser = "Inventory Manager" }: ProductionStockInTabProps) {
+export default function ProductionStockInTab({ initialRows, initialItems, currentUser = "Inventory Manager" }: ProductionStockInTabProps) {
   const isAdmin = useIsAdmin();
   const [mounted, setMounted] = useState<boolean>(false);
   const [batches, setBatches] = useState<any[]>(initialRows);
@@ -77,15 +77,15 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
       const batchList = Array.isArray(batchesRes.data)
         ? batchesRes.data
         : Array.isArray(batchesRes.data?.data)
-        ? batchesRes.data.data
-        : [];
+          ? batchesRes.data.data
+          : [];
       setBatches(batchList);
 
       const invList = Array.isArray(invRes.data?.data?.items)
         ? invRes.data.data.items
         : Array.isArray(invRes.data?.data)
-        ? invRes.data.data
-        : [];
+          ? invRes.data.data
+          : [];
       setInventoryItems(invList);
     } catch (err: any) {
       console.error(err);
@@ -279,17 +279,15 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
         <button
           type="button"
           onClick={() => setSubTab("all")}
-          className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-            subTab === "all"
+          className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${subTab === "all"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "border border-border/80 bg-card text-muted-foreground hover:bg-muted"
-          }`}
+            }`}
         >
           <span>All</span>
           <span
-            className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] ${
-              subTab === "all" ? "bg-background text-foreground font-bold" : "bg-muted text-muted-foreground"
-            }`}
+            className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] ${subTab === "all" ? "bg-background text-foreground font-bold" : "bg-muted text-muted-foreground"
+              }`}
           >
             {allBatches.length}
           </span>
@@ -298,17 +296,15 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
         <button
           type="button"
           onClick={() => setSubTab("pending")}
-          className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-            subTab === "pending"
+          className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${subTab === "pending"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "border border-border/80 bg-card text-muted-foreground hover:bg-muted"
-          }`}
+            }`}
         >
           <span>Ready for Stock-In</span>
           <span
-            className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] ${
-              subTab === "pending" ? "bg-background text-foreground font-bold" : "bg-muted text-muted-foreground"
-            }`}
+            className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] ${subTab === "pending" ? "bg-background text-foreground font-bold" : "bg-muted text-muted-foreground"
+              }`}
           >
             {pendingBatches.length}
           </span>
@@ -317,17 +313,15 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
         <button
           type="button"
           onClick={() => setSubTab("history")}
-          className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-            subTab === "history"
+          className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${subTab === "history"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "border border-border/80 bg-card text-muted-foreground hover:bg-muted"
-          }`}
+            }`}
         >
           <span>Stock-In History</span>
           <span
-            className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] ${
-              subTab === "history" ? "bg-background text-foreground font-bold" : "bg-muted text-muted-foreground"
-            }`}
+            className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] ${subTab === "history" ? "bg-background text-foreground font-bold" : "bg-muted text-muted-foreground"
+              }`}
           >
             {historyBatches.length}
           </span>
@@ -379,10 +373,10 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                   <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                     {b.expiryDate
                       ? new Date(b.expiryDate).toLocaleDateString("en-GB", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
                       : "—"}
                   </td>
                   <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
@@ -516,10 +510,10 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                           <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
                             {selectedBatchInModal.expiryDate
                               ? new Date(selectedBatchInModal.expiryDate).toLocaleDateString("en-GB", {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                })
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })
                               : "—"}
                           </td>
                         </tr>
@@ -563,8 +557,8 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                     {committing
                       ? "Committing..."
                       : selectedBatchInModal.status === "For Stock-in"
-                      ? "Commit to Inventory"
-                      : "Already Stocked In"}
+                        ? "Commit to Inventory"
+                        : "Already Stocked In"}
                   </Button>
                 )}
               </div>

@@ -43,6 +43,7 @@ export function DispatchTransferModal({
   const [actualDispatchDate, setActualDispatchDate] = useState<string>("");
   const [actualDispatchTime, setActualDispatchTime] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [proofBase64, setProofBase64] = useState<string>("");
   const [dispatchRemarks, setDispatchRemarks] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -71,6 +72,7 @@ export function DispatchTransferModal({
       setActualDispatchDate(currentToday);
       setActualDispatchTime(timeStr);
       setSelectedFile(null);
+      setProofBase64("");
       setDispatchRemarks("");
       setError(null);
       setShowConfirm(false);
@@ -147,6 +149,11 @@ export function DispatchTransferModal({
       return;
     }
     setSelectedFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProofBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
     setError(null);
   };
 
@@ -207,6 +214,7 @@ export function DispatchTransferModal({
         actualDispatchTime,
         releasedBy: currentStaffName,
         proofFileName: selectedFile?.name || null,
+        proofDataUrl: proofBase64 || null,
         remarks: dispatchRemarks.trim() || null,
       };
 
@@ -218,6 +226,7 @@ export function DispatchTransferModal({
           actualDispatchDate,
           actualDispatchTime,
           proofFileName: selectedFile?.name || "",
+          proofDataUrl: proofBase64 || null,
           notes: JSON.stringify(dispatchMetadata),
         })
       );
@@ -540,6 +549,7 @@ export function DispatchTransferModal({
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedFile(null);
+                    setProofBase64("");
                   }}
                   className="text-xs text-muted-foreground hover:text-destructive px-2 py-1 rounded-lg hover:bg-muted transition-colors cursor-pointer"
                 >

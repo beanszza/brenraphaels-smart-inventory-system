@@ -318,17 +318,15 @@ export default function ProductionRequestsTab({
                   setActiveTab(tab);
                   setCurrentPage(1);
                 }}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  isSelected
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${isSelected
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
+                  }`}
               >
                 <span>{tab}</span>
                 <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    isSelected ? "bg-background text-foreground" : "bg-muted text-muted-foreground"
-                  }`}
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isSelected ? "bg-background text-foreground" : "bg-muted text-muted-foreground"
+                    }`}
                 >
                   {count}
                 </span>
@@ -348,8 +346,8 @@ export default function ProductionRequestsTab({
                   {activeTab === "In Progress" || activeTab === "Completed"
                     ? "Batch Number"
                     : activeTab === "All"
-                    ? "Request / Batch No."
-                    : "Request Number"}
+                      ? "Request / Batch No."
+                      : "Request Number"}
                 </th>
                 <th className="px-4 py-4 whitespace-nowrap">Product</th>
                 <th className="px-4 py-4 whitespace-nowrap">Variant</th>
@@ -387,18 +385,17 @@ export default function ProductionRequestsTab({
                   const displayStatus = isReadyForProd
                     ? "Ready for Production"
                     : isInProd
-                    ? "In Progress"
-                    : isCompleted
-                    ? "Completed"
-                    : req.status;
+                      ? "In Progress"
+                      : isCompleted
+                        ? "Completed"
+                        : req.status;
 
                   return (
                     <tr
                       key={req.prodReqId}
                       onClick={() => handleViewRequest(req)}
-                      className={`hover:bg-muted/30 transition-colors cursor-pointer ${
-                        isHigh ? "bg-muted/15 border-l-2 border-l-foreground" : ""
-                      }`}
+                      className={`hover:bg-muted/30 transition-colors cursor-pointer ${isHigh ? "bg-muted/15 border-l-2 border-l-foreground" : ""
+                        }`}
                     >
                       {/* Request / Batch Number */}
                       <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
@@ -425,13 +422,12 @@ export default function ProductionRequestsTab({
                       {/* Priority (Monochromatic badge - No red) */}
                       <td className="px-4 py-4 text-center whitespace-nowrap">
                         <span
-                          className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
-                            isHigh
+                          className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${isHigh
                               ? "bg-primary text-primary-foreground border-primary"
                               : isLow
-                              ? "bg-muted/40 text-muted-foreground border-border/60"
-                              : "bg-muted text-foreground border-border"
-                          }`}
+                                ? "bg-muted/40 text-muted-foreground border-border/60"
+                                : "bg-muted text-foreground border-border"
+                            }`}
                         >
                           {displayPriority}
                         </span>

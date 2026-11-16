@@ -87,6 +87,7 @@ export function mapProductionRequest(r: any) {
       productionDate: b.ProductionDate ? b.ProductionDate.toISOString() : null,
       startedAt: b.StartedAt ? b.StartedAt.toISOString() : null,
       completedDate: b.CompletedDate ? b.CompletedDate.toISOString() : null,
+      imageUrl: b.ImageUrl ?? null,
     })),
   };
 }

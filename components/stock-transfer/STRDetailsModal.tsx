@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Calendar, MapPin, User, AlertCircle, CheckCircle, Package, Truck } from "lucide-react";
+import { X, Calendar, MapPin, User, AlertCircle, CheckCircle, Package, Truck, FileText, ExternalLink } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransferRequest } from "./types";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
@@ -34,6 +34,7 @@ export function STRDetailsModal({
   onDispatch,
 }: STRDetailsModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{ title: string; src: string } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -204,20 +205,34 @@ export function STRDetailsModal({
 
           {/* Scheduled Transportation Details Card */}
           {Boolean(
-            (request.status === "Scheduled" || request.status === "Dispatched" || hasScheduledTransfer) &&
+            (request.status === "Scheduled" || request.status === "Dispatched" || request.status === "Completed" || hasScheduledTransfer) &&
             request.transfers && request.transfers.length > 0
           ) && (() => {
             const scheduledTransfer =
-              request.transfers?.find((t) => t.status === "Scheduled" || t.status === "Dispatched") ||
+              request.transfers?.find((t) => t.status === "Completed" || t.status === "Dispatched" || t.status === "Scheduled") ||
               request.transfers?.[0];
             let schedMeta: any = {};
+            let dispatchMeta: any = {};
             if (scheduledTransfer?.notes) {
-              try {
-                schedMeta = JSON.parse(scheduledTransfer.notes);
-              } catch {
-                // not json
+              const notesParts = scheduledTransfer.notes.split(" | ");
+              for (const part of notesParts) {
+                try {
+                  const p = JSON.parse(part);
+                  if (p.transportProvider || p.plateNumber || p.driverName || p.attachmentData || p.attachmentName) {
+                    schedMeta = { ...schedMeta, ...p };
+                  }
+                  if (p.actualDispatchDate || p.proofDataUrl || p.proofFileName || p.releasedBy) {
+                    dispatchMeta = { ...dispatchMeta, ...p };
+                  }
+                } catch {
+                  // not json
+                }
               }
             }
+
+            const bookingProofSrc = scheduledTransfer?.proofOfReceipt || schedMeta.attachmentData || "";
+            const dispatchProofSrc = dispatchMeta.proofDataUrl || "";
+
             return (
               <div className="p-5 rounded-2xl bg-muted/20 border border-border space-y-3">
                 <div className="flex items-center justify-between">
@@ -263,6 +278,108 @@ export function STRDetailsModal({
                 {schedMeta.remarks && (
                   <div className="pt-2 border-t border-border/50 text-xs text-muted-foreground">
                     <strong className="text-foreground">Logistics Instructions:</strong> {schedMeta.remarks}
+                  </div>
+                )}
+
+                {/* Document Proofs & Attachments */}
+                {(bookingProofSrc || dispatchProofSrc) && (
+                  <div className="pt-3 border-t border-border/60 space-y-2.5">
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Document Proofs &amp; Attachments
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {bookingProofSrc && (
+                        <div className="rounded-xl border border-border bg-background/60 p-3 flex items-center gap-3">
+                          <div className="w-16 h-16 rounded-lg border border-border bg-card overflow-hidden flex items-center justify-center shrink-0">
+                            {bookingProofSrc.startsWith("data:image/") ||
+                            bookingProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ? (
+                              <img
+                                src={bookingProofSrc}
+                                alt="Booking Proof"
+                                onClick={() =>
+                                  setPreviewImage({
+                                    title: "Proof of Booking / Transaction Receipt",
+                                    src: bookingProofSrc,
+                                  })
+                                }
+                                className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                              />
+                            ) : (
+                              <FileText className="w-6 h-6 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <p className="text-xs font-semibold text-foreground truncate">
+                              Booking / Transaction Receipt
+                            </p>
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              {schedMeta.attachmentName || "Uploaded when scheduling transfer"}
+                            </p>
+                            {(bookingProofSrc.startsWith("data:image/") ||
+                              bookingProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i)) && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPreviewImage({
+                                    title: "Proof of Booking / Transaction Receipt",
+                                    src: bookingProofSrc,
+                                  })
+                                }
+                                className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                              >
+                                <ExternalLink className="w-3 h-3" /> View Full Image
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {dispatchProofSrc && (
+                        <div className="rounded-xl border border-border bg-background/60 p-3 flex items-center gap-3">
+                          <div className="w-16 h-16 rounded-lg border border-border bg-card overflow-hidden flex items-center justify-center shrink-0">
+                            {dispatchProofSrc.startsWith("data:image/") ||
+                            dispatchProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ? (
+                              <img
+                                src={dispatchProofSrc}
+                                alt="Dispatch Proof"
+                                onClick={() =>
+                                  setPreviewImage({
+                                    title: "Dispatch Proof Document / Photo",
+                                    src: dispatchProofSrc,
+                                  })
+                                }
+                                className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                              />
+                            ) : (
+                              <FileText className="w-6 h-6 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <p className="text-xs font-semibold text-foreground truncate">
+                              Dispatch Proof Photo
+                            </p>
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              {dispatchMeta.proofFileName || "Uploaded upon transfer departure"}
+                            </p>
+                            {(dispatchProofSrc.startsWith("data:image/") ||
+                              dispatchProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i)) && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPreviewImage({
+                                    title: "Dispatch Proof Document / Photo",
+                                    src: dispatchProofSrc,
+                                  })
+                                }
+                                className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                              >
+                                <ExternalLink className="w-3 h-3" /> View Full Image
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -448,6 +565,37 @@ export function STRDetailsModal({
           )}
         </div>
       </div>
+
+      {/* Full Image Lightbox Modal */}
+      {previewImage && (
+        <div
+          onClick={() => setPreviewImage(null)}
+          className="font-sans fixed inset-0 z-[300] bg-black/70 flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-card text-foreground rounded-2xl max-w-2xl w-full border border-border p-4 space-y-3 shadow-2xl animate-in fade-in zoom-in-95"
+          >
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <h5 className="text-xs font-bold text-foreground uppercase truncate pr-4">{previewImage.title}</h5>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="h-7 px-3 text-xs rounded-lg border border-border bg-card text-foreground hover:bg-muted font-semibold transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+            <div className="flex items-center justify-center bg-muted/20 rounded-xl p-2 max-h-[70vh] overflow-auto">
+              <img
+                src={previewImage.src}
+                alt={previewImage.title}
+                className="max-h-[65vh] max-w-full object-contain rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   );

@@ -225,21 +225,21 @@ export default function MaterialIssuanceTab({ initialRows, initialIssuanceId }: 
                         </DropdownMenu>
                       </div>
                     </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
 
-        {/* Pagination */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalCount={totalCount}
-          onPageChange={setCurrentPage}
-        />
+      {/* Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        onPageChange={setCurrentPage}
+      />
 
       {/* Material Issuance Modal */}
       <MaterialIssuanceModal

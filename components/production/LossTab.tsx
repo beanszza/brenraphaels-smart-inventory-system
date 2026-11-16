@@ -37,8 +37,8 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
       const batches = Array.isArray(batchesRes.data)
         ? batchesRes.data
         : Array.isArray(batchesRes.data?.data)
-        ? batchesRes.data.data
-        : [];
+          ? batchesRes.data.data
+          : [];
 
       setLossReports(lossReportsFromBatches(batches));
     } catch (err: any) {

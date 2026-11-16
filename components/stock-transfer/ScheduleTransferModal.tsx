@@ -78,6 +78,7 @@ export function ScheduleTransferModal({
 
   // Document attachment
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [attachmentBase64, setAttachmentBase64] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [schedulingRemarks, setSchedulingRemarks] = useState<string>("");
@@ -102,6 +103,7 @@ export function ScheduleTransferModal({
       setDriverContact("");
       setTransferFee("");
       setAttachmentFile(null);
+      setAttachmentBase64("");
       setSchedulingRemarks("");
       setFormError(null);
       setShowConfirm(false);
@@ -138,6 +140,11 @@ export function ScheduleTransferModal({
       return;
     }
     setAttachmentFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachmentBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
     setFormError(null);
   };
 
@@ -242,6 +249,7 @@ export function ScheduleTransferModal({
         driverContact: driverContact.trim(),
         transferFee: transferFee ? Number(transferFee) : null,
         attachmentName: attachmentFile?.name || null,
+        attachmentData: attachmentBase64 || null,
         remarks: schedulingRemarks.trim() || null,
       };
 
@@ -264,6 +272,7 @@ export function ScheduleTransferModal({
             courierName: transportProvider,
             driverName: fullDriverName,
             vehiclePlate: plateNumber.trim(),
+            proofOfReceipt: attachmentBase64 || null,
             notes: JSON.stringify(scheduleMetadata),
           })
         );
@@ -645,6 +654,7 @@ export function ScheduleTransferModal({
                   onClick={(e) => {
                     e.stopPropagation();
                     setAttachmentFile(null);
+                    setAttachmentBase64("");
                   }}
                   className="text-xs text-muted-foreground hover:text-destructive px-2 py-1 rounded-lg hover:bg-muted transition-colors cursor-pointer"
                 >

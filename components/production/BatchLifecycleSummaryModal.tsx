@@ -14,6 +14,8 @@ import {
   ShieldCheck,
   Warehouse,
   Loader2,
+  ExternalLink,
+  ImageIcon,
 } from "lucide-react";
 import {
   getBatchLifecycleSummary,
@@ -43,6 +45,7 @@ export default function BatchLifecycleSummaryModal({
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [summary, setSummary] = useState<BatchLifecycleSummaryData | null>(null);
+  const [previewImage, setPreviewImage] = useState<{ title: string; src: string } | null>(null);
 
   useEffect(() => {
     if (!open || !batchId) {
@@ -254,6 +257,45 @@ export default function BatchLifecycleSummaryModal({
                   <span className="text-sm font-semibold text-foreground">{fmtDate(summary.packaging.expiryDate)}</span>
                 </div>
               </div>
+
+              {summary.packaging.imageUrl && (
+                <div className="pt-2 border-t border-border mt-1">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
+                    Packaging Verification Photo
+                  </span>
+                  <div className="flex items-center gap-3 p-2.5 rounded-xl border border-border bg-muted/20">
+                    <div className="w-16 h-16 rounded-lg border border-border bg-background overflow-hidden flex items-center justify-center shrink-0">
+                      <img
+                        src={summary.packaging.imageUrl}
+                        alt="Packaging Proof"
+                        onClick={() =>
+                          setPreviewImage({
+                            title: `${summary.batchNumber} — Packaging Verification Proof`,
+                            src: summary.packaging.imageUrl!,
+                          })
+                        }
+                        className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <p className="text-xs font-semibold text-foreground">Packaging &amp; QC Photo</p>
+                      <p className="text-[11px] text-muted-foreground">Uploaded during packaging verification</p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPreviewImage({
+                            title: `${summary.batchNumber} — Packaging Verification Proof`,
+                            src: summary.packaging.imageUrl!,
+                          })
+                        }
+                        className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <ExternalLink className="w-3 h-3" /> View Full Image
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </section>
 
             <section className="rounded-xl border border-border p-4 space-y-2.5">
@@ -321,6 +363,39 @@ export default function BatchLifecycleSummaryModal({
             >
               Close
             </ModalCloseButton>
+          </div>
+        </div>
+      )}
+
+      {/* Full Image Lightbox Modal */}
+      {previewImage && (
+        <div
+          onClick={() => setPreviewImage(null)}
+          className="font-sans fixed inset-0 z-[300] bg-black/70 flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-card text-foreground rounded-2xl max-w-2xl w-full border border-border p-4 space-y-3 shadow-2xl animate-in fade-in zoom-in-95"
+          >
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <h5 className="text-xs font-bold text-foreground uppercase truncate pr-4">{previewImage.title}</h5>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setPreviewImage(null)}
+                className="h-7 px-3 text-xs rounded-lg cursor-pointer shrink-0"
+              >
+                Close
+              </Button>
+            </div>
+            <div className="flex items-center justify-center bg-muted/20 rounded-xl p-2 max-h-[70vh] overflow-auto">
+              <img
+                src={previewImage.src}
+                alt={previewImage.title}
+                className="max-h-[65vh] max-w-full object-contain rounded-lg"
+              />
+            </div>
           </div>
         </div>
       )}

@@ -67,7 +67,7 @@ export default function ConfigurationTab({
     const now = Date.now();
     if (!force && now - lastPosAutoSyncAt < 30_000) return;
     lastPosAutoSyncAt = now;
-    actionResponse(syncAllFinishedProductsToPos()).catch(() => {});
+    actionResponse(syncAllFinishedProductsToPos()).catch(() => { });
   };
 
   useEffect(() => {

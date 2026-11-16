@@ -25,6 +25,7 @@ export default function ProductionBatchDetailsModal({
   onClose,
   batch,
 }: ProductionBatchDetailsModalProps) {
+  const [previewImage, setPreviewImage] = React.useState<string | null>(null);
   if (!batch) return null;
 
   return (
@@ -167,12 +168,48 @@ export default function ProductionBatchDetailsModal({
                 <img
                   src={batch.imageUrl}
                   alt={batch.batchNumber}
-                  className="w-full h-full object-contain"
+                  onClick={() => setPreviewImage(batch.imageUrl || null)}
+                  className="w-full h-full object-contain cursor-pointer hover:opacity-90 transition-opacity"
                 />
               </div>
             </div>
           )}
         </div>
+
+        {/* Full Lightbox */}
+        {previewImage && (
+          <div
+            onClick={() => setPreviewImage(null)}
+            className="font-sans fixed inset-0 z-[300] bg-black/70 flex items-center justify-center p-4"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card text-foreground rounded-2xl max-w-2xl w-full border border-border p-4 space-y-3 shadow-2xl animate-in fade-in zoom-in-95"
+            >
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <h5 className="text-xs font-bold text-foreground uppercase truncate pr-4">
+                  {batch.batchNumber} — Photo
+                </h5>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPreviewImage(null)}
+                  className="h-7 px-3 text-xs rounded-lg cursor-pointer shrink-0"
+                >
+                  Close
+                </Button>
+              </div>
+              <div className="flex items-center justify-center bg-muted/20 rounded-xl p-2 max-h-[70vh] overflow-auto">
+                <img
+                  src={previewImage}
+                  alt={batch.batchNumber}
+                  className="max-h-[65vh] max-w-full object-contain rounded-lg"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="flex justify-end pt-3 border-t border-border">

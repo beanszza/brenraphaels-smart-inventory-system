@@ -67,6 +67,7 @@ export async function listRequests(query = "") {
               DriverName: true,
               VehiclePlate: true,
               CourierName: true,
+              ProofOfReceipt: true,
               Notes: true,
             },
           },
@@ -193,6 +194,7 @@ export async function listRequests(query = "") {
           driverName: st.DriverName || null,
           vehiclePlate: st.VehiclePlate || null,
           courierName: st.CourierName || null,
+          proofOfReceipt: (st as any).ProofOfReceipt || null,
           notes: st.Notes || null,
         })),
       };

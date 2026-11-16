@@ -145,6 +145,7 @@ export async function scheduleTransfer(body: any = {}) {
       driverName,
       vehiclePlate,
       courierName,
+      proofOfReceipt,
       notes,
     } = body;
 
@@ -164,8 +165,8 @@ export async function scheduleTransfer(body: any = {}) {
       }
     }
 
+    let parsedNotes: any = null;
     if (notes && typeof notes === "string") {
-      let parsedNotes: any = null;
       try {
         parsedNotes = JSON.parse(notes);
       } catch {
@@ -257,6 +258,7 @@ export async function scheduleTransfer(body: any = {}) {
         DriverName: driverName || null,
         VehiclePlate: vehiclePlate || null,
         CourierName: courierName || null,
+        ProofOfReceipt: proofOfReceipt || parsedNotes?.attachmentData || null,
         Priority: str.Priority,
         Notes: notes || null,
         CreatedBy: staff.username,

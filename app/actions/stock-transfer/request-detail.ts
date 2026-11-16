@@ -91,6 +91,8 @@ export async function getRequest(idInput: number) {
         courierName: st.CourierName || null,
         vehiclePlate: st.VehiclePlate || null,
         driverName: st.DriverName || null,
+        proofOfReceipt: (st as any).ProofOfReceipt || null,
+        notes: st.Notes || null,
       })),
     };
 

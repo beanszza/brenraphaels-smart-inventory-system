@@ -218,6 +218,7 @@ export interface BatchLifecycleSummaryData {
         expiryDate: string | null;
         fgLotCode: string;
         fgLotStatus: string;
+        imageUrl: string | null;
     };
     qa: {
         inspectionNumber: string;
@@ -405,6 +406,7 @@ export async function getBatchLifecycleSummary(idInput: string | number) {
                 expiryDate: batch.ExpiryDate?.toISOString() ?? null,
                 fgLotCode: batch.InventoryLots?.LotCode ?? "—",
                 fgLotStatus: batch.InventoryLots?.Status ?? "—",
+                imageUrl: batch.ImageUrl ?? null,
             },
             qa: inspection
                 ? {

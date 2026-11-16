@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Calendar, MapPin, Truck, Package, User } from "lucide-react";
+import { X, Calendar, MapPin, Truck, Package, User, FileText, ExternalLink } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransfer } from "./types";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
@@ -23,6 +23,7 @@ export function STFDetailsModal({
   onCancel,
 }: STFDetailsModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{ title: string; src: string } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -43,6 +44,28 @@ export function STFDetailsModal({
   if (!open || !mounted || !transfer) return null;
 
   const isScheduled = transfer.status === "Scheduled";
+
+  let schedMeta: any = {};
+  let dispatchMeta: any = {};
+  if (transfer.notes) {
+    const parts = transfer.notes.split(" | ");
+    for (const part of parts) {
+      try {
+        const p = JSON.parse(part);
+        if (p.transportProvider || p.plateNumber || p.driverName || p.attachmentData || p.attachmentName) {
+          schedMeta = { ...schedMeta, ...p };
+        }
+        if (p.actualDispatchDate || p.proofDataUrl || p.proofFileName || p.releasedBy) {
+          dispatchMeta = { ...dispatchMeta, ...p };
+        }
+      } catch {
+        // not json
+      }
+    }
+  }
+
+  const bookingProofSrc = transfer.proofOfReceipt || schedMeta.attachmentData || "";
+  const dispatchProofSrc = dispatchMeta.proofDataUrl || "";
 
   return createPortal(
     <div
@@ -194,6 +217,109 @@ export function STFDetailsModal({
             </div>
           </div>
 
+          {/* Document Proofs & Attachments */}
+          {(bookingProofSrc || dispatchProofSrc) && (
+            <div className="rounded-xl border border-border bg-card p-4 text-xs space-y-2.5">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <FileText className="w-4 h-4 text-muted-foreground" />
+                Document Proofs &amp; Photo Attachments
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {bookingProofSrc && (
+                  <div className="rounded-xl border border-border bg-muted/20 p-3 flex items-center gap-3">
+                    <div className="w-16 h-16 rounded-lg border border-border bg-background overflow-hidden flex items-center justify-center shrink-0">
+                      {bookingProofSrc.startsWith("data:image/") ||
+                      bookingProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ? (
+                        <img
+                          src={bookingProofSrc}
+                          alt="Booking Proof"
+                          onClick={() =>
+                            setPreviewImage({
+                              title: "Proof of Booking / Transaction Receipt",
+                              src: bookingProofSrc,
+                            })
+                          }
+                          className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                        />
+                      ) : (
+                        <FileText className="w-6 h-6 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <p className="text-xs font-semibold text-foreground truncate">
+                        Booking / Transaction Receipt
+                      </p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {schedMeta.attachmentName || "Uploaded when scheduling"}
+                      </p>
+                      {(bookingProofSrc.startsWith("data:image/") ||
+                        bookingProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i)) && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPreviewImage({
+                              title: "Proof of Booking / Transaction Receipt",
+                              src: bookingProofSrc,
+                            })
+                          }
+                          className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <ExternalLink className="w-3 h-3" /> View Full Image
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {dispatchProofSrc && (
+                  <div className="rounded-xl border border-border bg-muted/20 p-3 flex items-center gap-3">
+                    <div className="w-16 h-16 rounded-lg border border-border bg-background overflow-hidden flex items-center justify-center shrink-0">
+                      {dispatchProofSrc.startsWith("data:image/") ||
+                      dispatchProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ? (
+                        <img
+                          src={dispatchProofSrc}
+                          alt="Dispatch Proof"
+                          onClick={() =>
+                            setPreviewImage({
+                              title: "Dispatch Proof Document / Photo",
+                              src: dispatchProofSrc,
+                            })
+                          }
+                          className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                        />
+                      ) : (
+                        <FileText className="w-6 h-6 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <p className="text-xs font-semibold text-foreground truncate">
+                        Dispatch Proof Photo
+                      </p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {dispatchMeta.proofFileName || "Uploaded upon departure"}
+                      </p>
+                      {(dispatchProofSrc.startsWith("data:image/") ||
+                        dispatchProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i)) && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPreviewImage({
+                              title: "Dispatch Proof Document / Photo",
+                              src: dispatchProofSrc,
+                            })
+                          }
+                          className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <ExternalLink className="w-3 h-3" /> View Full Image
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Notes */}
           {transfer.notes && (
             <div className="rounded-xl border border-border bg-card p-4 text-xs space-y-1">
@@ -246,6 +372,37 @@ export function STFDetailsModal({
           )}
         </div>
       </div>
+
+      {/* Full Image Lightbox Modal */}
+      {previewImage && (
+        <div
+          onClick={() => setPreviewImage(null)}
+          className="font-sans fixed inset-0 z-[300] bg-black/70 flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-card text-foreground rounded-2xl max-w-2xl w-full border border-border p-4 space-y-3 shadow-2xl animate-in fade-in zoom-in-95"
+          >
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <h5 className="text-xs font-bold text-foreground uppercase truncate pr-4">{previewImage.title}</h5>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="h-7 px-3 text-xs rounded-lg border border-border bg-card text-foreground hover:bg-muted font-semibold transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+            <div className="flex items-center justify-center bg-muted/20 rounded-xl p-2 max-h-[70vh] overflow-auto">
+              <img
+                src={previewImage.src}
+                alt={previewImage.title}
+                className="max-h-[65vh] max-w-full object-contain rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   );

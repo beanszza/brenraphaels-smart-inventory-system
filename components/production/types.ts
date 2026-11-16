@@ -157,6 +157,7 @@ export interface ProductionRequestEntity {
     productionDate: string | null;
     startedAt: string | null;
     completedDate: string | null;
+    imageUrl?: string | null;
   }>;
 }
 
