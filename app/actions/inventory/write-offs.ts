@@ -195,7 +195,7 @@ export async function getWriteOffFormData() {
       }),
       prisma.inventoryLots.findMany({
         where: {
-          Status: { in: ["Available", "Active"] },
+          Status: { in: ["Available", "Active", "Expired"] },
           QuantityRemaining: { gt: 0 },
         },
         include: {
