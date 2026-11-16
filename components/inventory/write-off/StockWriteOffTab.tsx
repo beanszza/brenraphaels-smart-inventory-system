@@ -1,0 +1,377 @@
+"use client";
+
+import React, { useState, useMemo, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Plus, RefreshCw, Inbox } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/shared/SearchInput";
+import Pagination from "@/components/Pagination";
+import { useIsAdmin, useIsImsManager } from "@/context/StaffContext";
+import { inventory } from "@/lib/inventory/client";
+import { SWO_REASONS } from "@/lib/inventory/write-off-validation";
+import { SWOTable } from "./SWOTable";
+import { SWODetailsModal } from "./SWODetailsModal";
+import { SWOActionModal, type SWOActionType } from "./SWOActionModal";
+import { CreateSWOModal } from "./CreateSWOModal";
+import type { StockWriteOffDto, SwoStatus } from "./types";
+
+const STATUS_TABS: (SwoStatus | "All")[] = [
+  "All",
+  "Pending Approval",
+  "Approved",
+  "Removed",
+  "Rejected",
+  "Cancelled",
+];
+
+interface StockWriteOffTabProps {
+  initialWriteOffs: StockWriteOffDto[];
+}
+
+export function StockWriteOffTab({ initialWriteOffs }: StockWriteOffTabProps) {
+  const router = useRouter();
+  const isAdmin = useIsAdmin();
+  const isImsManager = useIsImsManager();
+
+  const [loading, startRefresh] = useTransition();
+  const [activeTab, setActiveTab] = useState<string>(isAdmin ? "Requests" : "All");
+  const [search, setSearch] = useState("");
+  const [reasonFilter, setReasonFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  // Modals state
+  const [selectedSWO, setSelectedSWO] = useState<StockWriteOffDto | null>(null);
+  const [actionModal, setActionModal] = useState<{
+    swo: StockWriteOffDto;
+    type: SWOActionType;
+  } | null>(null);
+  const [openCreateModal, setOpenCreateModal] = useState(false);
+
+  const refreshData = () => startRefresh(() => router.refresh());
+
+  // Counts per tab
+  const counts = useMemo(() => {
+    const map: Record<string, number> = {
+      All: initialWriteOffs.length,
+      Requests: 0,
+    };
+    STATUS_TABS.forEach((t) => {
+      if (t !== "All") map[t] = 0;
+    });
+    initialWriteOffs.forEach((swo) => {
+      if (map[swo.status] !== undefined) map[swo.status]++;
+      if (swo.status === "Pending Approval") map.Requests++;
+    });
+    return map;
+  }, [initialWriteOffs]);
+
+  // Filtered list
+  const filteredList = useMemo(() => {
+    return initialWriteOffs.filter((swo) => {
+      // Status / Requests tab filter
+      if (activeTab === "Requests") {
+        if (swo.status !== "Pending Approval") return false;
+      } else if (activeTab !== "All") {
+        if (swo.status !== activeTab) return false;
+      }
+
+      // Reason filter
+      if (reasonFilter) {
+        const hasReason = swo.items.some((it) =>
+          it.lines.some((l) => l.reason === reasonFilter)
+        );
+        if (!hasReason) return false;
+      }
+
+      // Search filter
+      if (search.trim()) {
+        const q = search.toLowerCase().trim();
+        const matchNumber = swo.swoNumber.toLowerCase().includes(q);
+        const matchRequester =
+          swo.requestedByName?.toLowerCase().includes(q) ||
+          swo.requestedBy?.toLowerCase().includes(q);
+        const matchItem = swo.items.some(
+          (it) =>
+            it.itemName.toLowerCase().includes(q) ||
+            it.itemCode.toLowerCase().includes(q) ||
+            it.variantName.toLowerCase().includes(q) ||
+            it.lines.some((l) => l.lotCode.toLowerCase().includes(q))
+        );
+        return matchNumber || matchRequester || matchItem;
+      }
+
+      return true;
+    });
+  }, [initialWriteOffs, activeTab, reasonFilter, search]);
+
+  const totalCount = filteredList.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const paginatedList = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredList.slice(start, start + pageSize);
+  }, [filteredList, page, pageSize]);
+
+  const handleConfirmAction = async (notes?: string) => {
+    if (!actionModal) return;
+    const { swo, type } = actionModal;
+    let res;
+    if (type === "approve") {
+      res = await inventory.approveWriteOff(swo.writeOffId, notes);
+    } else if (type === "reject") {
+      res = await inventory.rejectWriteOff(swo.writeOffId, notes || "");
+    } else if (type === "cancel") {
+      res = await inventory.cancelWriteOff(swo.writeOffId, notes || "");
+    } else if (type === "remove") {
+      res = await inventory.removeWriteOffFromInventory(swo.writeOffId);
+    }
+
+    if (!res?.data?.success) {
+      throw new Error(res?.data?.message || "Action failed.");
+    }
+
+    toast.success(res.data.message || "Action completed successfully.");
+    setSelectedSWO(null);
+    if (type === "remove") {
+      setActiveTab("Removed");
+      setPage(1);
+    }
+    refreshData();
+  };
+
+  return (
+    <div className="space-y-6 animate-page-in">
+      {/* Top Header */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Stock Write-Off</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Request, review, and remove expired, damaged, spoiled, or lost inventory items per batch / lot
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshData}
+            disabled={loading}
+            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </Button>
+
+          {isImsManager && (
+            <Button
+              type="button"
+              onClick={() => setOpenCreateModal(true)}
+              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Create Stock Write-Off
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Filters Bar */}
+      <div className="mb-6 rounded-xl border border-border bg-card p-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <SearchInput
+            containerClassName="flex-1"
+            placeholder="Search by SWO No. (e.g. SWO-2026-0001), Item Name, Batch/Lot, or Requester..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+
+          <div className="flex items-center gap-3">
+            <Select
+              value={reasonFilter === "" ? "all" : reasonFilter}
+              onValueChange={(val) => {
+                setReasonFilter(val === "all" ? "" : val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+                <SelectValue placeholder="All Write-Off Reasons" />
+              </SelectTrigger>
+              <SelectContent className="min-w-[210px]">
+                <SelectItem value="all">All Write-Off Reasons</SelectItem>
+                {SWO_REASONS.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Status Tabs Row (Matches PRTab pill tabs) */}
+      <div className="border-b border-border overflow-x-auto">
+        <div className="flex items-center gap-1.5 min-w-max pb-2">
+          {/* Requests Tab (Visible to Admin only) */}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("Requests");
+                setPage(1);
+              }}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "Requests"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              <span>Requests</span>
+              {counts.Requests > 0 && (
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                    activeTab === "Requests"
+                      ? "bg-background text-foreground"
+                      : "bg-foreground/20 text-foreground"
+                  }`}
+                >
+                  {counts.Requests}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* Standard Status Tabs: All, Pending Approval, Approved, Removed, Rejected, Cancelled */}
+          {STATUS_TABS.map((tab) => {
+            const count = counts[tab] || 0;
+            const isSelected = activeTab === tab;
+
+            return (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => {
+                  setActiveTab(tab);
+                  setPage(1);
+                }}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  isSelected
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+              >
+                <span>{tab}</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
+                    isSelected
+                      ? "bg-background text-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Active Tab Helper Banner */}
+      {isAdmin && activeTab === "Requests" && (
+        <div className="p-3 rounded-xl border border-border bg-muted/20 text-xs text-foreground flex items-center gap-2">
+          <Inbox className="w-4 h-4 text-foreground shrink-0" />
+          <span>
+            Showing all Stock Write-Off requests pending your review. Approve or Reject requests here. Rejected SWO numbers are permanently retired.
+          </span>
+        </div>
+      )}
+
+      {isAdmin && activeTab !== "Requests" && (
+        <div className="p-3 rounded-xl border border-border bg-muted/20 text-xs text-muted-foreground flex items-center gap-2">
+          <Inbox className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span>
+            Viewing mode only. Switch to the <strong className="text-foreground">Requests</strong> tab to approve or reject pending Stock Write-Off requests.
+          </span>
+        </div>
+      )}
+
+      {/* SWO Table */}
+      <SWOTable
+        writeOffs={paginatedList}
+        isAdmin={isAdmin}
+        isImsManager={isImsManager}
+        isRequestsTab={activeTab === "Requests"}
+        onView={(swo) => setSelectedSWO(swo)}
+        onApprove={(swo) => setActionModal({ swo, type: "approve" })}
+        onReject={(swo) => setActionModal({ swo, type: "reject" })}
+        onCancel={(swo) => setActionModal({ swo, type: "cancel" })}
+        onRemoveFromInventory={(swo) => setActionModal({ swo, type: "remove" })}
+      />
+
+      {/* Pagination */}
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        onPageChange={setPage}
+      />
+
+      {/* Details / Review Modal */}
+      <SWODetailsModal
+        swo={selectedSWO}
+        isAdmin={isAdmin}
+        isImsManager={isImsManager}
+        isRequestsTab={activeTab === "Requests"}
+        onClose={() => setSelectedSWO(null)}
+        onApprove={(swo) => {
+          setSelectedSWO(null);
+          setActionModal({ swo, type: "approve" });
+        }}
+        onReject={(swo) => {
+          setSelectedSWO(null);
+          setActionModal({ swo, type: "reject" });
+        }}
+        onCancel={(swo) => {
+          setSelectedSWO(null);
+          setActionModal({ swo, type: "cancel" });
+        }}
+        onRemoveFromInventory={(swo) => {
+          setSelectedSWO(null);
+          setActionModal({ swo, type: "remove" });
+        }}
+      />
+
+      {/* Confirmation Action Modal (Approve / Reject / Cancel / Remove Items in Inventory) */}
+      {actionModal && (
+        <SWOActionModal
+          actionType={actionModal.type}
+          writeOff={actionModal.swo}
+          onClose={() => setActionModal(null)}
+          onConfirm={handleConfirmAction}
+        />
+      )}
+
+      {/* Create Stock Write-Off Modal */}
+      {openCreateModal && (
+        <CreateSWOModal
+          open={openCreateModal}
+          onClose={() => setOpenCreateModal(false)}
+          onSuccess={(msg) => {
+            setOpenCreateModal(false);
+            toast.success(msg || "Stock Write-Off request submitted.");
+            refreshData();
+          }}
+        />
+      )}
+    </div>
+  );
+}

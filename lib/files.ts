@@ -14,6 +14,7 @@ export const FILE_KINDS = {
   "product-image": { visibility: "public", contentTypes: IMAGES },
   receipt: { visibility: "private", contentTypes: [...IMAGES, "application/pdf"] },
   "batch-image": { visibility: "private", contentTypes: IMAGES },
+  "write-off-photo": { visibility: "private", contentTypes: IMAGES },
 } as const satisfies Record<string, { visibility: Visibility; contentTypes: string[] }>;
 
 export type FileKind = keyof typeof FILE_KINDS;

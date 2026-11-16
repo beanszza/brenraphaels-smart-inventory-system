@@ -8,7 +8,7 @@ const STATUS_GROUPS = {
   warning: ["Pending", "Open", "QaPending", "Pending Approval", "Low Stock", "Quarantine", "Quarantined", "Overstock", "On Hold", "Partially Reserved", "For QA", "For Stock-in", "High"],
   destructive: ["Rejected", "Cancelled", "Canceled", "QaFailed", "Non-Conforming", "Out of Stock", "Expired", "Failed", "No", "Critical", "Shortage"],
   info: ["Submitted", "InReview", "Received", "PartiallyReceived", "In Production", "In Progress", "In Transit", "Arrived", "Pending Dispatch", "Dispatched"],
-  purple: ["Draft", "Closed", "Inactive", "Disabled", "Simulated", "Scheduled", "Consumed", "Disposed", "Reserved", "None", "Preferred"],
+  purple: ["Draft", "Closed", "Inactive", "Disabled", "Simulated", "Scheduled", "Consumed", "Disposed", "Removed", "Reserved", "None", "Preferred"],
   orange: ["Returned"],
   teal: ["Credited"],
   indigo: ["Converted", "Converted to PO"],

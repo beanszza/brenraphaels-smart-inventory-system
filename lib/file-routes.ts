@@ -65,6 +65,15 @@ export const batchImage: FileTarget = {
   save: async (id, fileId) => void (await prisma.productionBatches.update({ where: { BatchId: id }, data: { ImageUrl: fileId } })),
 };
 
+export const writeOffPhotoTarget: FileTarget = {
+  kind: "write-off-photo",
+  entityType: "stock-write-off-photo",
+  role: "evidence photo",
+  exists: async (id) => (await prisma.stockWriteOffPhotos.count({ where: { PhotoId: id } })) > 0,
+  current: async (id) => (await prisma.stockWriteOffPhotos.findUnique({ where: { PhotoId: id } }))?.FileId ?? null,
+  save: async (id, fileId) => void (await prisma.stockWriteOffPhotos.update({ where: { PhotoId: id }, data: { FileId: fileId } })),
+};
+
 function preferredVariant(value: string | null): ImageVariant | undefined {
   return value === "small" || value === "medium" || value === "large" ? value : undefined;
 }

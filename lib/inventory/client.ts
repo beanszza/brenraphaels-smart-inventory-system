@@ -11,6 +11,17 @@ import { getValuation } from "@/app/actions/inventory/valuation";
 import { createCycleCount } from "@/app/actions/inventory/cycle-counts";
 import { reconcileCycleCount } from "@/app/actions/inventory/cycle-counts";
 import { recallLot } from "@/app/actions/inventory/recall";
+import {
+  listWriteOffs,
+  getWriteOffFormData,
+  createWriteOff,
+  approveWriteOff,
+  rejectWriteOff,
+  cancelWriteOff,
+  removeWriteOffFromInventory,
+  uploadWriteOffPhotoDirect,
+  resolveWriteOffPhoto,
+} from "@/app/actions/inventory/write-offs";
 
 export const inventory = {
   listInventory: (...args: Parameters<typeof listInventory>) => actionResponse(listInventory(...args)),
@@ -25,4 +36,13 @@ export const inventory = {
   createCycleCount: (...args: Parameters<typeof createCycleCount>) => actionResponse(createCycleCount(...args)),
   reconcileCycleCount: (...args: Parameters<typeof reconcileCycleCount>) => actionResponse(reconcileCycleCount(...args)),
   recallLot: (...args: Parameters<typeof recallLot>) => actionResponse(recallLot(...args)),
+  listWriteOffs: (...args: Parameters<typeof listWriteOffs>) => actionResponse(listWriteOffs(...args)),
+  getWriteOffFormData: (...args: Parameters<typeof getWriteOffFormData>) => actionResponse(getWriteOffFormData(...args)),
+  createWriteOff: (...args: Parameters<typeof createWriteOff>) => actionResponse(createWriteOff(...args)),
+  approveWriteOff: (...args: Parameters<typeof approveWriteOff>) => actionResponse(approveWriteOff(...args)),
+  rejectWriteOff: (...args: Parameters<typeof rejectWriteOff>) => actionResponse(rejectWriteOff(...args)),
+  cancelWriteOff: (...args: Parameters<typeof cancelWriteOff>) => actionResponse(cancelWriteOff(...args)),
+  removeWriteOffFromInventory: (...args: Parameters<typeof removeWriteOffFromInventory>) => actionResponse(removeWriteOffFromInventory(...args)),
+  uploadWriteOffPhotoDirect: (...args: Parameters<typeof uploadWriteOffPhotoDirect>) => actionResponse(uploadWriteOffPhotoDirect(...args)),
+  resolveWriteOffPhoto: (...args: Parameters<typeof resolveWriteOffPhoto>) => actionResponse(resolveWriteOffPhoto(...args)),
 };

@@ -322,6 +322,7 @@ model FinishedProducts {
   StockTransfers     StockTransfers[]
   ProductionRequests ProductionRequests[]
   StockTransferRequestItems StockTransferRequestItems[]
+  StockWriteOffItems StockWriteOffItems[]
 
   @@index([ItemId], map: "IX_FinishedProducts_ItemId")
 }
@@ -458,6 +459,7 @@ model InventoryLots {
   StockLedgers           StockLedgers[]
   ProductionReqLotReservations ProductionReqLotReservations[]
   MaterialIssuanceScans        MaterialIssuanceScans[]
+  StockWriteOffLines           StockWriteOffLines[]
 
   @@unique([LotCode, LocationId], map: "IX_InventoryLots_LotCode_LocationId")
   @@index([ExpiryDate], map: "IX_InventoryLots_ExpiryDate")
@@ -524,6 +526,7 @@ model Items {
   SupplierItems                                   SupplierItems[]
   ProductionReqLotReservations                    ProductionReqLotReservations[]
   MaterialIssuanceScans                           MaterialIssuanceScans[]
+  StockWriteOffItems                              StockWriteOffItems[]
 
   @@index([CategoryId], map: "IX_Items_CategoryId")
   @@index([StockUomId], map: "IX_Items_StockUomId")
@@ -1004,6 +1007,7 @@ model StockLedgers {
   Locations          Locations      @relation(fields: [LocationId], references: [LocationId], onUpdate: NoAction, map: "FK_StockLedgers_Locations_LocationId")
   StockLedgers       StockLedgers?  @relation("StockLedgersToStockLedgers", fields: [ReversalOfLedgerId], references: [LedgerId], onDelete: Restrict, onUpdate: NoAction, map: "FK_StockLedgers_StockLedgers_ReversalOfLedgerId")
   other_StockLedgers StockLedgers[] @relation("StockLedgersToStockLedgers")
+  StockWriteOffLines StockWriteOffLines[]
 
   @@index([ItemId, LocationId, PostedAt], map: "IX_StockLedgers_ItemLocationPostedAt")
   @@index([LocationId], map: "IX_StockLedgers_LocationId")
@@ -1179,6 +1183,7 @@ model UnitOfMeasures {
   RecipeIngredients                      RecipeIngredients[]
   Recipes                                Recipes[]
   StockInLines                           StockInLines[]
+  StockWriteOffItems                     StockWriteOffItems[]
   SupplierItems                          SupplierItems[]
   UnitOfMeasures                         UnitOfMeasures?            @relation("UnitOfMeasuresToUnitOfMeasures", fields: [BaseUomId], references: [UomId], onDelete: Restrict, onUpdate: NoAction, map: "FK_UnitOfMeasures_UnitOfMeasures_BaseUomId")
   other_UnitOfMeasures                   UnitOfMeasures[]           @relation("UnitOfMeasuresToUnitOfMeasures")
@@ -1315,4 +1320,94 @@ model ShopStockLines {
 model ShopStockAuditOutbox {
   Key   String @id @db.VarChar(64)
   Event Json
+}
+
+model StockWriteOffs {
+  WriteOffId         Int                  @id @default(autoincrement())
+  SwoNumber          String               @unique @db.VarChar(32)
+  Status             String               @default("Pending Approval") @db.VarChar(32)
+  RequestedBy        String               @db.VarChar(128)
+  RequestedByName    String               @default("") @db.VarChar(256)
+  RequestedAt        DateTime             @default(now()) @db.Timestamptz(6)
+  GeneralRemarks     String?
+  ApprovedBy         String?              @db.VarChar(128)
+  ApprovedByName     String?              @db.VarChar(256)
+  ApprovedAt         DateTime?            @db.Timestamptz(6)
+  ApprovalNotes      String?
+  RejectedBy         String?              @db.VarChar(128)
+  RejectedByName     String?              @db.VarChar(256)
+  RejectedAt         DateTime?            @db.Timestamptz(6)
+  RejectionReason    String?
+  CancelledBy        String?              @db.VarChar(128)
+  CancelledByName    String?              @db.VarChar(256)
+  CancelledAt        DateTime?            @db.Timestamptz(6)
+  CancelReason       String?
+  RemovedBy          String?              @db.VarChar(128)
+  RemovedByName      String?              @db.VarChar(256)
+  RemovedAt          DateTime?            @db.Timestamptz(6)
+  TotalValue         Decimal              @default(0) @db.Decimal(18, 4)
+  UpdatedAt          DateTime             @default(now()) @db.Timestamptz(6)
+  StockWriteOffItems StockWriteOffItems[]
+
+  @@index([Status], map: "IX_StockWriteOffs_Status")
+  @@index([RequestedAt], map: "IX_StockWriteOffs_RequestedAt")
+}
+
+model StockWriteOffItems {
+  WriteOffItemId      Int                   @id @default(autoincrement())
+  WriteOffId          Int
+  ItemId              Int
+  ProductId           Int?
+  ItemType            String                @default("") @db.VarChar(128)
+  ItemName            String                @default("") @db.VarChar(256)
+  ItemCode            String                @default("") @db.VarChar(128)
+  VariantName         String                @default("") @db.VarChar(128)
+  UomId               Int
+  UomName             String                @default("Unit") @db.VarChar(64)
+  HasExpiry           Boolean               @default(true)
+  StockWriteOffs      StockWriteOffs        @relation(fields: [WriteOffId], references: [WriteOffId], onDelete: Cascade, onUpdate: NoAction)
+  Items               Items                 @relation(fields: [ItemId], references: [ItemId], onUpdate: NoAction)
+  FinishedProducts    FinishedProducts?     @relation(fields: [ProductId], references: [ProductId], onDelete: SetNull, onUpdate: NoAction)
+  UnitOfMeasures      UnitOfMeasures        @relation(fields: [UomId], references: [UomId], onUpdate: NoAction)
+  StockWriteOffLines  StockWriteOffLines[]
+  StockWriteOffPhotos StockWriteOffPhotos[]
+
+  @@index([WriteOffId], map: "IX_StockWriteOffItems_WriteOffId")
+  @@index([ItemId], map: "IX_StockWriteOffItems_ItemId")
+}
+
+model StockWriteOffLines {
+  LineId             Int                @id @default(autoincrement())
+  WriteOffItemId     Int
+  LotId              Int
+  LotCode            String             @default("") @db.VarChar(128)
+  ExpiryDate         DateTime?          @db.Date
+  AvailableBefore    Decimal            @default(0) @db.Decimal(18, 3)
+  Quantity           Decimal            @db.Decimal(18, 3)
+  UnitCost           Decimal            @default(0) @db.Decimal(18, 6)
+  Reason             String             @db.VarChar(128)
+  ReasonOther        String?            @db.VarChar(256)
+  Disposition        String             @db.VarChar(128)
+  DispositionOther   String?            @db.VarChar(256)
+  Remarks            String             @default("")
+  LedgerId           BigInt?
+  StockWriteOffItems StockWriteOffItems @relation(fields: [WriteOffItemId], references: [WriteOffItemId], onDelete: Cascade, onUpdate: NoAction)
+  InventoryLots      InventoryLots      @relation(fields: [LotId], references: [LotId], onUpdate: NoAction)
+  StockLedgers       StockLedgers?      @relation(fields: [LedgerId], references: [LedgerId], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([WriteOffItemId], map: "IX_StockWriteOffLines_WriteOffItemId")
+  @@index([LotId], map: "IX_StockWriteOffLines_LotId")
+}
+
+model StockWriteOffPhotos {
+  PhotoId            Int                @id @default(autoincrement())
+  WriteOffItemId     Int
+  FileId             String
+  FileName           String             @default("") @db.VarChar(256)
+  ContentType        String             @default("image/jpeg") @db.VarChar(128)
+  FileSize           Int                @default(0)
+  UploadedAt         DateTime           @default(now()) @db.Timestamptz(6)
+  StockWriteOffItems StockWriteOffItems @relation(fields: [WriteOffItemId], references: [WriteOffItemId], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([WriteOffItemId], map: "IX_StockWriteOffPhotos_WriteOffItemId")
 }

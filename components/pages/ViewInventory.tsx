@@ -22,7 +22,9 @@ import {
 import { CreatePRModal } from "@/components/orders-procurement/pr/CreatePRForm";
 import { PurchaseRequisition } from "@/components/orders-procurement/types";
 import ProductionRequestModal from "@/components/production/ProductionRequestModal";
-import { useIsAdmin, useIsHeadCook } from "@/context/StaffContext";
+import { useIsAdmin, useIsHeadCook, useIsImsManager } from "@/context/StaffContext";
+import { StockWriteOffTab } from "@/components/inventory/write-off/StockWriteOffTab";
+import type { StockWriteOffDto } from "@/components/inventory/write-off/types";
 
 function matchesCategory(itemCat: string, filter: string): boolean {
   if (!filter || filter === "All") return true;
@@ -59,18 +61,23 @@ export default function ViewInventory({
   initialLots,
   initialTotal,
   initialCategories = [],
+  initialWriteOffs = [],
   asOf,
 }: {
   initialInventories: InventoryItem[];
   initialLots: LotItem[];
   initialTotal: number;
   initialCategories?: { categoryId: number; categoryName: string }[];
+  initialWriteOffs?: StockWriteOffDto[];
   asOf: string;
 }) {
   const router = useRouter();
   const isAdmin = useIsAdmin();
   const isHeadCook = useIsHeadCook();
+  const isImsManager = useIsImsManager();
   const canPerformActions = !isAdmin && !isHeadCook;
+  const canAccessWriteOff = isAdmin || isImsManager;
+  const [mainTab, setMainTab] = useState<"inventory" | "write-off">("inventory");
   const allInventories = initialInventories;
   const [searchQuery, setSearchQuery] = useState("");
   const firstTabId =
@@ -285,118 +292,155 @@ export default function ViewInventory({
         description="Monitor real-time warehouse stocks, ingredients, raw materials, and finished goods"
       />
 
-      {/* 3 KPI Cards */}
-      <InventorySummaryCards
-        totalItems={totalItemsCount}
-        lowStockCount={lowStockCount}
-        expiringSoonCount={expiringSoonCount}
-        categoryCounts={categoryCounts}
-      />
-
-      {/* Dynamic Category Tabs */}
-      <div className="border-b border-border">
-        <div className="flex items-center gap-2 overflow-x-auto">
-          {categoryTabs.map((tab) => {
-            const isActive = categoryFilter === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => {
-                  setCategoryFilter(tab.id);
-                  setProductFilter("All");
-                  setPage(1);
-                }}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-                  isActive
-                    ? "border-foreground text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Search, Product Filter (Finished Goods only), and Category Filter Bar */}
-      <div className="rounded-xl border border-border bg-card p-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-sm">
-          <SearchInput
-            containerClassName="flex-1"
-            aria-label="Search inventory"
-            placeholder="Search by name or Supply No (e.g. SPL-0001)..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setPage(1);
-            }}
-          />
-          <div className="flex flex-wrap items-center gap-sm shrink-0">
-            {/* Product Filter Dropdown: Show strictly only when on Finished Goods */}
-            {categoryFilter === "Finished Goods" && availableFinishedProducts.length > 0 && (
-              <Select
-                value={productFilter}
-                onValueChange={(val) => {
-                  setProductFilter(val);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="h-10 min-w-[180px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
-                  <SelectValue placeholder="All Products" />
-                </SelectTrigger>
-                <SelectContent className="min-w-[180px]">
-                  <SelectItem value="All">All Products</SelectItem>
-                  {availableFinishedProducts.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            {/* Dynamic Category Selector */}
-            <Select
-              value={categoryFilter}
-              onValueChange={(val) => {
-                setCategoryFilter(val);
-                setProductFilter("All");
-                setPage(1);
-              }}
+      {/* Main Process Tabs (Only visible to IMS Manager & Admin; other accounts cannot see Stock Write-Off) */}
+      {canAccessWriteOff && (
+        <div className="border-b border-border">
+          <div className="flex items-center gap-2 overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setMainTab("inventory")}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                mainTab === "inventory"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
-                <SelectValue placeholder="Select Category" />
-              </SelectTrigger>
-              <SelectContent className="min-w-[210px]">
-                {categoryTabs.map((tab) => (
-                  <SelectItem key={tab.id} value={tab.id}>
-                    {tab.id === "Tools and Supplies" ? "Tools & Supplies" : tab.id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <span>INVENTORY</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMainTab("write-off")}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                mainTab === "write-off"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span>STOCK WRITE-OFF</span>
+            </button>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Table with progress bar & order now */}
-      <InventoryTable
-        items={paginatedInventories}
-        currentPage={page}
-        pageSize={pageSize}
-        onOrderNow={canPerformActions ? handleOrderNow : undefined}
-        isFinishedGoods={categoryFilter === "Finished Goods"}
-        showActions={canPerformActions}
-      />
+      {canAccessWriteOff && mainTab === "write-off" ? (
+        <StockWriteOffTab initialWriteOffs={initialWriteOffs} />
+      ) : (
+        <>
+          {/* 3 KPI Cards */}
+          <InventorySummaryCards
+            totalItems={totalItemsCount}
+            lowStockCount={lowStockCount}
+            expiringSoonCount={expiringSoonCount}
+            categoryCounts={categoryCounts}
+          />
 
-      <Pagination
-        currentPage={page}
-        totalPages={totalPages}
-        totalCount={totalCount}
-        onPageChange={setPage}
-      />
+          {/* Dynamic Category Tabs */}
+          <div className="border-b border-border">
+            <div className="flex items-center gap-2 overflow-x-auto">
+              {categoryTabs.map((tab) => {
+                const isActive = categoryFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => {
+                      setCategoryFilter(tab.id);
+                      setProductFilter("All");
+                      setPage(1);
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                      isActive
+                        ? "border-foreground text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Search, Product Filter (Finished Goods only), and Category Filter Bar */}
+          <div className="rounded-xl border border-border bg-card p-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-sm">
+              <SearchInput
+                containerClassName="flex-1"
+                aria-label="Search inventory"
+                placeholder="Search by name or Supply No (e.g. SPL-0001)..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setPage(1);
+                }}
+              />
+              <div className="flex flex-wrap items-center gap-sm shrink-0">
+                {/* Product Filter Dropdown: Show strictly only when on Finished Goods */}
+                {categoryFilter === "Finished Goods" && availableFinishedProducts.length > 0 && (
+                  <Select
+                    value={productFilter}
+                    onValueChange={(val) => {
+                      setProductFilter(val);
+                      setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="h-10 min-w-[180px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+                      <SelectValue placeholder="All Products" />
+                    </SelectTrigger>
+                    <SelectContent className="min-w-[180px]">
+                      <SelectItem value="All">All Products</SelectItem>
+                      {availableFinishedProducts.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {/* Dynamic Category Selector */}
+                <Select
+                  value={categoryFilter}
+                  onValueChange={(val) => {
+                    setCategoryFilter(val);
+                    setProductFilter("All");
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+                    <SelectValue placeholder="Select Category" />
+                  </SelectTrigger>
+                  <SelectContent className="min-w-[210px]">
+                    {categoryTabs.map((tab) => (
+                      <SelectItem key={tab.id} value={tab.id}>
+                        {tab.id === "Tools and Supplies" ? "Tools & Supplies" : tab.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Table with progress bar & order now */}
+          <InventoryTable
+            items={paginatedInventories}
+            currentPage={page}
+            pageSize={pageSize}
+            onOrderNow={canPerformActions ? handleOrderNow : undefined}
+            isFinishedGoods={categoryFilter === "Finished Goods"}
+            showActions={canPerformActions}
+          />
+
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            onPageChange={setPage}
+          />
+        </>
+      )}
 
       {/* Create PR Modal triggered by Order Now */}
       {isCreatePROpen && (
