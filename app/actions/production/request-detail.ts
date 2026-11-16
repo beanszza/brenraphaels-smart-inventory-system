@@ -242,6 +242,7 @@ export async function updateProductionRequest(idInput: string | number, body: an
                 });
                 if (recipe) {
                     const multiplier = Number(recipe.OutputQuantity) > 0 ? newQty / Number(recipe.OutputQuantity) : 1;
+                    const now = new Date();
                     for (const ing of recipe.RecipeIngredients) {
                         const requiredQty = Number(ing.StandardQuantity) * multiplier;
                         let stillNeeded = requiredQty;
@@ -250,12 +251,16 @@ export async function updateProductionRequest(idInput: string | number, body: an
                                 ItemId: ing.ItemId,
                                 Status: { in: ["Available", "Active"] },
                                 QuantityRemaining: { gt: 0 },
+                                OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: now } }],
                             },
                             orderBy: [{ ExpiryDate: "asc" }, { ReceivedDate: "asc" }],
                         });
                         for (const lot of lots) {
                             if (stillNeeded <= 0)
                                 break;
+                            if (lot.ExpiryDate && new Date(lot.ExpiryDate).getTime() <= now.getTime()) {
+                                continue;
+                            }
                             const availableInLot = Math.max(0, Number(lot.QuantityRemaining) - Number(lot.ReservedQuantity || 0));
                             if (availableInLot <= 0)
                                 continue;

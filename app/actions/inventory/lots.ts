@@ -93,6 +93,20 @@ export async function listLots(query = "") {
     ]);
 
     const now = new Date();
+
+    // Auto-flag any expired lots in the DB as Expired
+    if (typeof (prisma as any)?.inventoryLots?.updateMany === "function") {
+      await prisma.inventoryLots.updateMany({
+        where: {
+          ExpiryDate: { lt: now },
+          Status: { in: ["Available", "Active"] },
+        },
+        data: {
+          Status: "Expired",
+        },
+      }).catch(() => {});
+    }
+
     const data = lots.map((lot) => {
       const item = lot.Items;
       const uom = lot.UnitOfMeasures ?? item.UnitOfMeasures_Items_StockUomIdToUnitOfMeasures;
@@ -110,6 +124,8 @@ export async function listLots(query = "") {
         reservedQuantity: Number(r.ReservedQuantity),
         status: r.ProductionRequests?.Status || "",
       }));
+
+      const isExpired = daysToExpiry !== null && daysToExpiry < 0;
 
       return {
         lotId: lot.LotId,
@@ -132,7 +148,7 @@ export async function listLots(query = "") {
         uomId: uom?.UomId ?? null,
         uomAbbreviation: uom?.Abbreviation ?? "",
         unitCost: Number(lot.UnitCost),
-        status: lot.Status,
+        status: isExpired ? "Expired" : lot.Status,
         holdReason: lot.HoldReason ?? "",
         receivedDate: lot.ReceivedDate.toISOString(),
         manufactureDate: lot.ManufactureDate?.toISOString().split("T")[0] ?? null,
@@ -140,7 +156,7 @@ export async function listLots(query = "") {
         isExpiryEstimated: lot.IsExpiryEstimated,
         daysToExpiry,
         isExpiringSoon: daysToExpiry !== null && daysToExpiry <= 30 && daysToExpiry >= 0,
-        isExpired: daysToExpiry !== null && daysToExpiry < 0,
+        isExpired,
         isOpeningBalance: lot.IsOpeningBalance,
         grnLineId: lot.GrnLineId ?? null,
       };

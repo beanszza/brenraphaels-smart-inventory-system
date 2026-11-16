@@ -129,12 +129,14 @@ export async function createProductionRequest(body: any = {}) {
             for (const ing of recipe.RecipeIngredients) {
                 const requiredQty = Number(ing.StandardQuantity) * multiplier;
                 let stillNeeded = requiredQty;
-                // Query available lots
+                const now = new Date();
+                // Query available unexpired lots
                 const lots = await tx.inventoryLots.findMany({
                     where: {
                         ItemId: ing.ItemId,
                         Status: { in: ["Available", "Active"] },
                         QuantityRemaining: { gt: 0 },
+                        OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: now } }],
                     },
                     orderBy: [
                         { ExpiryDate: "asc" },
@@ -144,6 +146,9 @@ export async function createProductionRequest(body: any = {}) {
                 for (const lot of lots) {
                     if (stillNeeded <= 0)
                         break;
+                    if (lot.ExpiryDate && new Date(lot.ExpiryDate).getTime() <= now.getTime()) {
+                        continue;
+                    }
                     const availableInLot = Math.max(0, Number(lot.QuantityRemaining) - Number(lot.ReservedQuantity || 0));
                     if (availableInLot <= 0)
                         continue;

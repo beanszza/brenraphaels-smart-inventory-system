@@ -61,6 +61,21 @@ export async function suggestRequestLots(idInput: string | number, query = "") {
         if (!recipe) {
             return refuse("Recipe not found.");
         }
+        const now = new Date();
+
+        // Auto-flag any expired lots in the DB as Expired
+        if (typeof (prisma as any)?.inventoryLots?.updateMany === "function") {
+            await prisma.inventoryLots.updateMany({
+                where: {
+                    ExpiryDate: { lt: now },
+                    Status: { in: ["Available", "Active"] },
+                },
+                data: {
+                    Status: "Expired",
+                },
+            }).catch(() => {});
+        }
+
         const multiplier = Number(recipe.OutputQuantity) > 0 ? quantity / Number(recipe.OutputQuantity) : 1;
         const isExistingReq = Boolean(prodReq);
         const isReqReleased = prodReq?.Status === "Rejected" || prodReq?.Status === "Cancelled";
@@ -77,6 +92,9 @@ export async function suggestRequestLots(idInput: string | number, query = "") {
                 for (const res of myActiveReservations) {
                     const lot = res.InventoryLots;
                     if (!lot)
+                        continue;
+                    const isLotExpired = lot.ExpiryDate ? new Date(lot.ExpiryDate).getTime() <= now.getTime() : false;
+                    if (isLotExpired)
                         continue;
                     reservedLotIds.add(lot.LotId);
                     const remaining = Number(lot.QuantityRemaining);
@@ -102,7 +120,7 @@ export async function suggestRequestLots(idInput: string | number, query = "") {
                 }
             }
             // 2. Query available unreserved lots using FEFO/FIFO for remaining needed stock
-            // (For preview, this allocates all lots; for existing request, only if there was a shortfall)
+            // (Excludes expired lots and lots whose Status is not Available/Active)
             if (stillNeeded > 0) {
                 const otherLots = await prisma.inventoryLots.findMany({
                     where: {
@@ -110,6 +128,7 @@ export async function suggestRequestLots(idInput: string | number, query = "") {
                         LotId: reservedLotIds.size > 0 ? { notIn: Array.from(reservedLotIds) } : undefined,
                         Status: { in: ["Available", "Active"] },
                         QuantityRemaining: { gt: 0 },
+                        OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: now } }],
                     },
                     orderBy: [
                         { ExpiryDate: "asc" },
@@ -118,6 +137,9 @@ export async function suggestRequestLots(idInput: string | number, query = "") {
                     ],
                 });
                 for (const lot of otherLots) {
+                    if (lot.ExpiryDate && new Date(lot.ExpiryDate).getTime() <= now.getTime()) {
+                        continue;
+                    }
                     const remaining = Number(lot.QuantityRemaining);
                     const reserved = Number(lot.ReservedQuantity || 0);
                     const availableInLot = Math.max(0, remaining - reserved);

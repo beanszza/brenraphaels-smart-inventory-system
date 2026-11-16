@@ -10,9 +10,25 @@ export async function listItemLots(itemIdInput: number, productIdInput?: number)
     const itemId = positiveId(itemIdInput);
     const productId = productIdInput ? positiveId(productIdInput) : undefined;
 
+    const now = new Date();
+
+    // Auto-flag any expired lots in the DB as Expired
+    if (typeof (prisma as any)?.inventoryLots?.updateMany === "function") {
+      await prisma.inventoryLots.updateMany({
+        where: {
+          ItemId: itemId,
+          ExpiryDate: { lt: now },
+          Status: { in: ["Available", "Active"] },
+        },
+        data: {
+          Status: "Expired",
+        },
+      }).catch(() => {});
+    }
+
     const whereClause: any = {
       ItemId: itemId,
-      Status: { in: ["Available", "Active"] },
+      Status: { in: ["Available", "Active", "Expired"] },
       QuantityRemaining: { gt: 0 },
     };
 
@@ -55,7 +71,6 @@ export async function listItemLots(itemIdInput: number, productIdInput?: number)
       orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
     });
 
-    const now = new Date();
     const filteredLots = lots.filter(
       (lot) =>
         !lot.LotCode?.startsWith("LOT-UJH-2026-") &&
@@ -77,6 +92,8 @@ export async function listItemLots(itemIdInput: number, productIdInput?: number)
         status: r.ProductionRequests?.Status || "",
       }));
 
+      const isExpired = expiryDate ? new Date(expiryDate).getTime() < now.getTime() : false;
+
       return {
         lotId: lot.LotId,
         lotCode: lot.LotCode,
@@ -93,11 +110,12 @@ export async function listItemLots(itemIdInput: number, productIdInput?: number)
         reservations,
         uomAbbreviation: lot.UnitOfMeasures?.Abbreviation ?? "",
         unitCost: Number(lot.UnitCost),
-        status: lot.Status,
+        status: isExpired ? "Expired" : lot.Status,
         receivedDate: lot.ReceivedDate.toISOString(),
         expiryDate,
         daysToExpiry,
         isExpiringSoon: daysToExpiry !== null && daysToExpiry <= 30 && daysToExpiry >= 0,
+        isExpired,
       };
     });
 

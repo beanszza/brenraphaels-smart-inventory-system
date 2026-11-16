@@ -373,6 +373,9 @@ export async function createRequest(body: any = {}) {
 
         let remainingToAllocate = qty;
         for (const lot of lots) {
+          if (lot.ExpiryDate && new Date(lot.ExpiryDate).getTime() <= Date.now()) {
+            continue;
+          }
           const rem = Math.max(0, Number(lot.QuantityRemaining) - Number(lot.ReservedQuantity || 0));
           availableQty += rem;
 

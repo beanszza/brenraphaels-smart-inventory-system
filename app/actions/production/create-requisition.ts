@@ -77,15 +77,20 @@ export async function createShortfallRequisition(idInput: string | number) {
         let estimatedTotal = 0;
         for (const ing of recipe.RecipeIngredients) {
             const requiredQty = Number(ing.StandardQuantity) * multiplier;
-            // Available in lots
+            const now = new Date();
+            // Available in unexpired lots
             const lots = await tx.inventoryLots.findMany({
                 where: {
                     ItemId: ing.ItemId,
                     Status: { in: ["Available", "Active"] },
                     QuantityRemaining: { gt: 0 },
+                    OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: now } }],
                 },
             });
             const totalAvailable = lots.reduce((acc, lot) => {
+                if (lot.ExpiryDate && new Date(lot.ExpiryDate).getTime() <= now.getTime()) {
+                    return acc;
+                }
                 const available = Math.max(0, Number(lot.QuantityRemaining) - Number(lot.ReservedQuantity || 0));
                 return acc + available;
             }, 0);

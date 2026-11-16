@@ -48,7 +48,9 @@ export default function LotsTable({ items, currentPage, pageSize }: LotsTablePro
               const resQty = Number(lot.reservedQuantity || 0);
 
               let badgeLabel = lot.status;
-              if (resQty >= lot.quantityRemaining && lot.quantityRemaining > 0) {
+              if (lot.isExpired || lot.status === "Expired" || (lot.expiryDate && new Date(lot.expiryDate).getTime() < Date.now())) {
+                badgeLabel = "Expired";
+              } else if (resQty >= lot.quantityRemaining && lot.quantityRemaining > 0) {
                 badgeLabel = "Reserved";
               } else if (resQty > 0) {
                 badgeLabel = "Partially Reserved";

@@ -104,6 +104,21 @@ export async function listInventory(query = "") {
     ]);
 
     const itemIds = records.map((r) => r.ItemId);
+    const now = new Date();
+
+    // Auto-flag any expired lots in the DB as Expired
+    if (typeof (prisma as any)?.inventoryLots?.updateMany === "function") {
+      await prisma.inventoryLots.updateMany({
+        where: {
+          ItemId: { in: itemIds },
+          ExpiryDate: { lt: now },
+          Status: { in: ["Available", "Active"] },
+        },
+        data: {
+          Status: "Expired",
+        },
+      }).catch(() => {});
+    }
 
     const [lotAggregations, finishedProductRows] = await Promise.all([
       prisma.inventoryLots.groupBy({
