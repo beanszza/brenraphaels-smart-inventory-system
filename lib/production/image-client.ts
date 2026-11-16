@@ -11,16 +11,28 @@ export async function uploadProductionImage(kind: "product" | "batch", id: numbe
   const formData = new FormData();
   formData.append("file", file);
 
-  const res =
-    kind === "batch"
-      ? await uploadBatchImageDirect(id, formData)
-      : await uploadProductImageDirect(id, formData);
+  let lastError: Error | null = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res =
+        kind === "batch"
+          ? await uploadBatchImageDirect(id, formData)
+          : await uploadProductImageDirect(id, formData);
 
-  if (res.success && res.data?.fileId) {
-    return res.data.fileId;
+      if (res.success && res.data?.fileId) {
+        return res.data.fileId;
+      }
+      lastError = new Error(res.message || "Upload failed. Please try again.");
+    } catch (err: any) {
+      lastError = err instanceof Error ? err : new Error("Upload failed. Please try again.");
+    }
+
+    if (attempt < 2) {
+      await new Promise((r) => setTimeout(r, 600));
+    }
   }
 
-  throw new Error(res.message || "Upload failed. Please try again.");
+  throw lastError || new Error("Upload failed. Please try again.");
 }
 
 export async function resolveProductionImage(kind: "product" | "batch", id: number, variant?: ImageVariant) {

@@ -308,7 +308,8 @@ export default function ConfigurationTab({
                 paginatedProducts.map((product, index) => (
                   <tr
                     key={product.productId}
-                    className="hover:bg-muted/30 transition-colors"
+                    onClick={() => handleOpenEditProduct(product)}
+                    className="hover:bg-muted/30 transition-colors cursor-pointer"
                   >
                     {/* No. */}
                     <td className="w-12 px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
@@ -365,30 +366,31 @@ export default function ConfigurationTab({
                       />
                     </td>
 
-                    {/* Actions: Edit Product only (Delete removed per user requirement) */}
-                    <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none cursor-pointer"
-                            aria-label="Record actions"
-                          >
-                            <MoreHorizontal size={18} />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40 z-[200]">
-                          <DropdownMenuItem
-                            onClick={() => handleOpenEditProduct(product)}
-                            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer"
-                          >
-                            <Pencil className="w-3.5 h-3.5 text-foreground shrink-0" />
-                            <span className="truncate text-foreground font-medium">
-                              Edit Product
-                            </span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    {/* Actions: Edit Product */}
+                    <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none cursor-pointer"
+                              title="Actions"
+                              aria-label="Actions"
+                            >
+                              <MoreHorizontal size={18} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44 rounded-xl border border-border bg-card shadow-xl p-1.5 text-left z-[100]">
+                            <DropdownMenuItem
+                              onClick={() => handleOpenEditProduct(product)}
+                              className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none"
+                            >
+                              <Pencil size={14} className="shrink-0 text-muted-foreground" />
+                              <span>Edit Product</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </td>
                   </tr>
                 ))

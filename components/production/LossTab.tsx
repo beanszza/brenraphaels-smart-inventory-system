@@ -4,7 +4,13 @@ import { listBatches as productionListBatches } from "@/app/actions/production/b
 import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState } from "react";
-import { AlertOctagon, FileText, X, Eye, RefreshCw } from "lucide-react";
+import { AlertOctagon, FileText, X, Eye, RefreshCw, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { LossReport } from "./types";
@@ -202,12 +208,16 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
                   <th className="px-4 py-4">Failure Stage</th>
                   <th className="px-4 py-4">Date Logged</th>
                   <th className="px-4 py-4 text-right">Estimated Loss</th>
-                  <th className="px-4 py-4 text-center w-28">Actions</th>
+                  <th className="w-16 px-4 py-4 text-center whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredReports.map((report) => (
-                  <tr key={report.lossId} className="hover:bg-muted/30 transition-colors">
+                  <tr
+                    key={report.lossId}
+                    onClick={() => setSelectedReport(report)}
+                    className="hover:bg-muted/30 transition-colors cursor-pointer"
+                  >
                     <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
                       {report.lossId}
                     </td>
@@ -231,15 +241,30 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
                     <td className="px-4 py-4 text-sm font-semibold text-destructive text-right whitespace-nowrap">
                       ₱{report.totalEstimatedLoss.toLocaleString()}
                     </td>
-                    <td className="px-4 py-4 text-center whitespace-nowrap">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedReport(report)}
-                        className="h-8 px-3 text-xs font-semibold border-border hover:bg-muted cursor-pointer rounded-lg"
-                      >
-                        <Eye size={13} className="mr-1" /> View Breakdown
-                      </Button>
+                    <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors cursor-pointer focus:outline-none"
+                              title="Actions"
+                              aria-label="Actions"
+                            >
+                              <MoreHorizontal size={18} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl border border-border bg-card shadow-xl p-1.5 text-left z-[100]">
+                            <DropdownMenuItem
+                              onClick={() => setSelectedReport(report)}
+                              className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none"
+                            >
+                              <Eye size={14} className="shrink-0 text-muted-foreground" />
+                              <span>View Breakdown</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </td>
                   </tr>
                 ))}

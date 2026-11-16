@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { Plus, MoreHorizontal, FileText, Play } from "lucide-react";
+import { Plus, MoreHorizontal, FileText, Play, Eye, Layers, Activity, CheckCircle, XCircle } from "lucide-react";
 import { SearchInput } from "@/components/shared/SearchInput";
 import Pagination from "@/components/Pagination";
 import { toast } from "sonner";
@@ -460,41 +460,45 @@ export default function ProductionRequestsTab({
                                 <MoreHorizontal size={18} />
                               </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-44 rounded-xl border-border bg-card shadow-lg">
+                            <DropdownMenuContent align="end" className="w-48 rounded-xl border border-border bg-card shadow-xl p-1.5 text-left z-[100]">
                               <DropdownMenuItem
                                 onClick={() => {
                                   setSelectedRequest(req);
                                   setIsModalOpen(true);
                                 }}
-                                className="text-xs font-medium cursor-pointer"
+                                className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none"
                               >
-                                View Details
+                                <Eye size={14} className="shrink-0 text-muted-foreground" />
+                                <span>View Details</span>
                               </DropdownMenuItem>
 
                               {req.batches?.[0]?.batchId && (
                                 <DropdownMenuItem
                                   onClick={() => setSummaryBatchId(req.batches[0].batchId)}
-                                  className="text-xs font-medium cursor-pointer"
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none"
                                 >
-                                  Batch Summary &amp; PDF
+                                  <FileText size={14} className="shrink-0 text-muted-foreground" />
+                                  <span>Batch Summary &amp; PDF</span>
                                 </DropdownMenuItem>
                               )}
 
                               {isImsManager && req.status === "Approved" && onNavigateToIssuance && (
                                 <DropdownMenuItem
                                   onClick={() => onNavigateToIssuance(req.prodReqId)}
-                                  className="text-xs font-medium cursor-pointer"
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none"
                                 >
-                                  Issue Materials
+                                  <Layers size={14} className="shrink-0 text-muted-foreground" />
+                                  <span>Issue Materials</span>
                                 </DropdownMenuItem>
                               )}
 
                               {isHeadCook && isReadyForProd && (
                                 <DropdownMenuItem
                                   onClick={() => handleStartProduction(req)}
-                                  className="text-xs font-semibold cursor-pointer"
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none"
                                 >
-                                  Start Production
+                                  <Play size={14} className="shrink-0 text-muted-foreground" />
+                                  <span>Start Production</span>
                                 </DropdownMenuItem>
                               )}
 
@@ -502,15 +506,17 @@ export default function ProductionRequestsTab({
                                 <>
                                   <DropdownMenuItem
                                     onClick={() => setAdminActionModal({ open: true, type: "approve", request: req })}
-                                    className="text-xs font-medium cursor-pointer"
+                                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none"
                                   >
-                                    Approve
+                                    <CheckCircle size={14} className="shrink-0 text-emerald-600" />
+                                    <span>Approve</span>
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => setAdminActionModal({ open: true, type: "reject", request: req })}
-                                    className="text-xs font-medium cursor-pointer"
+                                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive cursor-pointer rounded-lg transition-colors outline-none"
                                   >
-                                    Reject
+                                    <XCircle size={14} className="shrink-0 text-destructive" />
+                                    <span>Reject</span>
                                   </DropdownMenuItem>
                                 </>
                               )}
@@ -518,9 +524,10 @@ export default function ProductionRequestsTab({
                               {isInProd && onStartBatchAndTrack && req.batches?.[0]?.batchId && (isHeadCook || isAdmin) && (
                                 <DropdownMenuItem
                                   onClick={() => onStartBatchAndTrack(req.batches[0].batchId)}
-                                  className="text-xs font-medium cursor-pointer"
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none"
                                 >
-                                  Track Batch
+                                  <Activity size={14} className="shrink-0 text-muted-foreground" />
+                                  <span>Track Batch</span>
                                 </DropdownMenuItem>
                               )}
                             </DropdownMenuContent>

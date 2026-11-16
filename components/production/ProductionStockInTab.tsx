@@ -12,6 +12,12 @@ import { listItems } from "@/app/actions/production/lookups";
 import { actionResponse } from "@/lib/resources/action-response";
 import { toast } from "sonner";
 import { Plus, MoreHorizontal, Eye, ArrowDownToLine, X, AlertTriangle } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { useIsAdmin } from "@/context/StaffContext";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
@@ -379,40 +385,39 @@ export default function ProductionStockInTab({ initialRows, initialItems,  curre
                         })
                       : "—"}
                   </td>
-                  <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap action-menu-container" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveDropdownId(activeDropdownId === b.batchId ? null : b.batchId)
-                      }
-                      className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors cursor-pointer focus:outline-none"
-                      title="Actions"
-                    >
-                      <MoreHorizontal size={18} />
-                    </button>
-
-                    {activeDropdownId === b.batchId && (
-                      <div className="absolute right-4 top-10 z-[100] w-40 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left animate-in fade-in">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenForBatch(b)}
-                          className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
-                        >
-                          <Eye size={14} className="shrink-0" />
-                          <span>View Details</span>
-                        </button>
-                        {!isAdmin && b.status === "For Stock-in" && (
+                  <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <button
                             type="button"
-                            onClick={() => handleOpenForBatch(b)}
-                            className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border/60"
+                            className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors cursor-pointer focus:outline-none"
+                            title="Actions"
+                            aria-label="Actions"
                           >
-                            <ArrowDownToLine size={14} className="shrink-0" />
-                            <span>Commit Stock-In</span>
+                            <MoreHorizontal size={18} />
                           </button>
-                        )}
-                      </div>
-                    )}
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 rounded-xl border border-border bg-card shadow-xl p-1.5 text-left z-[100]">
+                          <DropdownMenuItem
+                            onClick={() => handleOpenForBatch(b)}
+                            className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none"
+                          >
+                            <Eye size={14} className="shrink-0 text-muted-foreground" />
+                            <span>View Details</span>
+                          </DropdownMenuItem>
+                          {!isAdmin && b.status === "For Stock-in" && (
+                            <DropdownMenuItem
+                              onClick={() => handleOpenForBatch(b)}
+                              className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none border-t border-border/60"
+                            >
+                              <ArrowDownToLine size={14} className="shrink-0 text-muted-foreground" />
+                              <span>Commit Stock-In</span>
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </td>
                 </tr>
               ))}

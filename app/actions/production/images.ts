@@ -33,6 +33,7 @@ export async function resolveBatchImage(id: number, variant?: ImageVariant) {
 /**
  * Server Action for direct batch image upload:
  * Bypasses browser CORS restrictions by transmitting bytes straight to storage via the backend.
+ * Includes automatic retries for storage PUT and gateway confirmation to handle eventual consistency.
  */
 export async function uploadBatchImageDirect(id: number, formData: FormData) {
     const staff = await requireModule("Production & Quality");
@@ -41,13 +42,23 @@ export async function uploadBatchImageDirect(id: number, formData: FormData) {
         return { success: false, message: "No image file provided." };
     }
 
-    let contentType = file.type || "image/jpeg";
+    const filename = file.name || "packaging-proof.jpg";
+    let contentType = file.type || "";
     if (contentType === "image/jpg") contentType = "image/jpeg";
+    if (!contentType || contentType === "application/octet-stream") {
+        const lower = filename.toLowerCase();
+        if (lower.endsWith(".png")) contentType = "image/png";
+        else if (lower.endsWith(".webp")) contentType = "image/webp";
+        else contentType = "image/jpeg";
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
     const meta: UploadMetadata = {
-        filename: file.name || "packaging-proof.jpg",
+        filename,
         contentType,
-        size: file.size,
+        size: buffer.length,
     };
 
     try {
@@ -56,18 +67,58 @@ export async function uploadBatchImageDirect(id: number, formData: FormData) {
             throw new Error("Invalid upload address from gateway.");
         }
 
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const stored = await fetch(address.uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": contentType },
-            body: buffer,
-        });
+        // Retry storage upload if network glitches
+        let uploadOk = false;
+        let lastUploadError: any = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                const stored = await fetch(address.uploadUrl, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": contentType,
+                        "Content-Length": String(buffer.length),
+                    },
+                    body: buffer,
+                });
 
-        if (!stored.ok) {
-            throw new Error(`Storage upload failed with status ${stored.status}`);
+                if (stored.ok) {
+                    uploadOk = true;
+                    break;
+                } else {
+                    lastUploadError = new Error(`Storage upload failed with status ${stored.status}`);
+                }
+            } catch (err) {
+                lastUploadError = err;
+            }
+            if (attempt < 3) {
+                await new Promise((r) => setTimeout(r, attempt * 300));
+            }
         }
 
-        await confirmImage(staff, batchImage, id, address.fileId);
+        if (!uploadOk) {
+            throw lastUploadError || new Error("Failed to write image to storage.");
+        }
+
+        // Retry confirmation with exponential backoff to handle storage eventual consistency (e.g. 409 "The file is not ready")
+        let confirmOk = false;
+        let lastConfirmError: any = null;
+        for (let attempt = 1; attempt <= 5; attempt++) {
+            try {
+                if (attempt > 1) {
+                    await new Promise((r) => setTimeout(r, attempt * 400));
+                }
+                await confirmImage(staff, batchImage, id, address.fileId);
+                confirmOk = true;
+                break;
+            } catch (err: any) {
+                lastConfirmError = err;
+                console.warn(`Confirm batch image attempt ${attempt} failed:`, err?.message || err);
+            }
+        }
+
+        if (!confirmOk) {
+            throw lastConfirmError || new Error("Failed to confirm image with gateway.");
+        }
 
         return { success: true, data: { fileId: address.fileId } };
     } catch (error) {
@@ -79,6 +130,7 @@ export async function uploadBatchImageDirect(id: number, formData: FormData) {
 /**
  * Server Action for direct finished product image upload:
  * Bypasses browser CORS restrictions by transmitting bytes straight to storage via the backend.
+ * Includes automatic retries for storage PUT and gateway confirmation to handle eventual consistency.
  */
 export async function uploadProductImageDirect(id: number, formData: FormData) {
     const staff = await requireModule("Production & Quality");
@@ -87,13 +139,23 @@ export async function uploadProductImageDirect(id: number, formData: FormData) {
         return { success: false, message: "No image file provided." };
     }
 
-    let contentType = file.type || "image/jpeg";
+    const filename = file.name || "product.jpg";
+    let contentType = file.type || "";
     if (contentType === "image/jpg") contentType = "image/jpeg";
+    if (!contentType || contentType === "application/octet-stream") {
+        const lower = filename.toLowerCase();
+        if (lower.endsWith(".png")) contentType = "image/png";
+        else if (lower.endsWith(".webp")) contentType = "image/webp";
+        else contentType = "image/jpeg";
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
     const meta: UploadMetadata = {
-        filename: file.name || "product.jpg",
+        filename,
         contentType,
-        size: file.size,
+        size: buffer.length,
     };
 
     try {
@@ -102,18 +164,58 @@ export async function uploadProductImageDirect(id: number, formData: FormData) {
             throw new Error("Invalid upload address from gateway.");
         }
 
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const stored = await fetch(address.uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": contentType },
-            body: buffer,
-        });
+        // Retry storage upload if network glitches
+        let uploadOk = false;
+        let lastUploadError: any = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                const stored = await fetch(address.uploadUrl, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": contentType,
+                        "Content-Length": String(buffer.length),
+                    },
+                    body: buffer,
+                });
 
-        if (!stored.ok) {
-            throw new Error(`Storage upload failed with status ${stored.status}`);
+                if (stored.ok) {
+                    uploadOk = true;
+                    break;
+                } else {
+                    lastUploadError = new Error(`Storage upload failed with status ${stored.status}`);
+                }
+            } catch (err) {
+                lastUploadError = err;
+            }
+            if (attempt < 3) {
+                await new Promise((r) => setTimeout(r, attempt * 300));
+            }
         }
 
-        await confirmImage(staff, productImage, id, address.fileId);
+        if (!uploadOk) {
+            throw lastUploadError || new Error("Failed to write image to storage.");
+        }
+
+        // Retry confirmation with exponential backoff to handle storage eventual consistency (e.g. 409 "The file is not ready")
+        let confirmOk = false;
+        let lastConfirmError: any = null;
+        for (let attempt = 1; attempt <= 5; attempt++) {
+            try {
+                if (attempt > 1) {
+                    await new Promise((r) => setTimeout(r, attempt * 400));
+                }
+                await confirmImage(staff, productImage, id, address.fileId);
+                confirmOk = true;
+                break;
+            } catch (err: any) {
+                lastConfirmError = err;
+                console.warn(`Confirm product image attempt ${attempt} failed:`, err?.message || err);
+            }
+        }
+
+        if (!confirmOk) {
+            throw lastConfirmError || new Error("Failed to confirm image with gateway.");
+        }
 
         return { success: true, data: { fileId: address.fileId } };
     } catch (error) {

@@ -8,6 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Eye, QrCode, CheckCircle2, ArrowRight, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SearchInput } from "@/components/shared/SearchInput";
 import Pagination from "@/components/Pagination";
 import { toast } from "sonner";
@@ -186,42 +192,39 @@ export default function MaterialIssuanceTab({ initialRows, initialIssuanceId }: 
 
                     {/* Actions (Three Dots Menu) */}
                     <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <div className="relative inline-block text-left action-menu-container">
-                        <button
-                          type="button"
-                          onClick={() => setOpenDropdownId(isMenuOpen ? null : iss.issuanceId)}
-                          className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors cursor-pointer focus:outline-none"
-                          title="Actions"
-                        >
-                          <MoreHorizontal size={18} />
-                        </button>
-
-                          {isMenuOpen && (
-                            <div className="absolute right-0 mt-1 w-36 rounded-xl border border-border bg-card shadow-lg py-1 z-30 animate-in fade-in zoom-in-95">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setOpenDropdownId(null);
-                                  handleOpenScanner(iss.issuanceId);
-                                }}
-                                className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+                      <div className="flex items-center justify-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors cursor-pointer focus:outline-none"
+                              title="Actions"
+                              aria-label="Actions"
+                            >
+                              <MoreHorizontal size={18} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl border border-border bg-card shadow-xl p-1.5 text-left z-[100]">
+                            {!isDone && (
+                              <DropdownMenuItem
+                                onClick={() => handleOpenScanner(iss.issuanceId)}
+                                className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none"
                               >
-                                {!isDone ? "Scan" : "Open"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setOpenDropdownId(null);
-                                  handleOpenScanner(iss.issuanceId);
-                                }}
-                                className="w-full text-left px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer border-t border-border"
-                              >
-                                View Details
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </td>
+                                <QrCode size={14} className="shrink-0 text-muted-foreground" />
+                                <span>Scan Materials</span>
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => handleOpenScanner(iss.issuanceId)}
+                              className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none"
+                            >
+                              <Eye size={14} className="shrink-0 text-muted-foreground" />
+                              <span>View Details</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </td>
                     </tr>
                   );
                 })
