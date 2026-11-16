@@ -158,7 +158,7 @@ function buildFallbackFormData(
     const itemKey = `item:${lot.itemId}`;
     const uomName = lot.uomName || inv?.uomAbbreviation || inv?.uomName || "Unit";
     const itemCode = inv?.itemCode || `SPL-${String(lot.itemId).padStart(4, "0")}`;
-    const displayLabel = `${lot.itemName} (${itemCode})`;
+    const displayLabel = lot.itemName;
     const expiryDate = lot.expiryDate || null;
     const isExpired = expiryDate ? new Date(expiryDate).getTime() < now.getTime() : false;
 
@@ -413,26 +413,6 @@ export function CreateSWOModal({
     });
   };
 
-  const handleAddLot = (itemIdx: number) => {
-    setItems((prev) =>
-      prev.map((it, idx) =>
-        idx === itemIdx ? { ...it, lots: [...it.lots, createEmptyLot()] } : it
-      )
-    );
-  };
-
-  const handleRemoveLot = (itemIdx: number, lotIdx: number) => {
-    setItems((prev) =>
-      prev.map((it, idx) => {
-        if (idx !== itemIdx || it.lots.length <= 1) return it;
-        return {
-          ...it,
-          lots: it.lots.filter((_, lIdx) => lIdx !== lotIdx),
-        };
-      })
-    );
-  };
-
   const handleLotChange = (
     itemIdx: number,
     lotIdx: number,
@@ -682,14 +662,9 @@ export function CreateSWOModal({
                 >
                   {/* Item Card Header */}
                   <div className="flex items-center justify-between pb-3 border-b border-border">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md bg-primary text-primary-foreground text-xs font-bold">
-                        Item {itemIdx + 1}
-                      </span>
-                      <span className="text-[11px] font-medium text-muted-foreground">
-                        Required
-                      </span>
-                    </div>
+                    <span className="text-sm font-bold text-foreground">
+                      Item {itemIdx + 1}
+                    </span>
 
                     {items.length > 1 && (
                       <button
@@ -703,448 +678,402 @@ export function CreateSWOModal({
                     )}
                   </div>
 
-                  {/* Inventory Details Row: Item Type, Item Name, (UOM for non-finished goods) */}
-                  <div className="space-y-2">
-                    <div className="text-xs font-bold text-foreground uppercase tracking-wider">
-                      Inventory Details
-                    </div>
-                    <div
-                      className={`grid grid-cols-1 ${
-                        isFinishedGood ? "sm:grid-cols-2" : "sm:grid-cols-3"
-                      } gap-3.5`}
-                    >
-                      {/* Item Type */}
-                      <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                          Item Type <span className="text-destructive">*</span>
-                        </label>
-                        <select
-                          value={draftItem.itemType}
-                          onChange={(e) => handleItemTypeChange(itemIdx, e.target.value)}
-                          className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring cursor-pointer ${
-                            itemErr.itemType ? "border-destructive" : "border-border"
-                          }`}
-                        >
-                          <option value="">Select item type</option>
-                          {(formData?.itemTypes || []).map((t) => (
-                            <option key={t.name} value={t.name}>
-                              {t.name}
-                            </option>
-                          ))}
-                        </select>
-                        {itemErr.itemType && (
-                          <p className="mt-1 text-[11px] text-destructive font-medium">
-                            {itemErr.itemType}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Item Name */}
-                      <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                          Item Name <span className="text-destructive">*</span>
-                        </label>
-                        <select
-                          value={draftItem.itemKey}
-                          disabled={!draftItem.itemType}
-                          onChange={(e) => handleItemKeyChange(itemIdx, e.target.value)}
-                          className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer ${
-                            itemErr.itemId ? "border-destructive" : "border-border"
-                          }`}
-                        >
-                          <option value="">
-                            {!draftItem.itemType
-                              ? "Select item type first"
-                              : itemsForSelectedType.length === 0
-                              ? "No items with available stock"
-                              : "Select inventory item"}
+                  {/* Item Details Row: Item Type, Item Name, (UOM for non-finished goods) */}
+                  <div
+                    className={`grid grid-cols-1 ${
+                      isFinishedGood ? "sm:grid-cols-2" : "sm:grid-cols-3"
+                    } gap-3.5`}
+                  >
+                    {/* Item Type */}
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                        Item Type <span className="text-destructive">*</span>
+                      </label>
+                      <select
+                        value={draftItem.itemType}
+                        onChange={(e) => handleItemTypeChange(itemIdx, e.target.value)}
+                        className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring cursor-pointer ${
+                          itemErr.itemType ? "border-destructive" : "border-border"
+                        }`}
+                      >
+                        <option value="">Select item type</option>
+                        {(formData?.itemTypes || []).map((t) => (
+                          <option key={t.name} value={t.name}>
+                            {t.name}
                           </option>
-                          {itemsForSelectedType.map((opt) => (
-                            <option key={opt.key} value={opt.key}>
-                              {opt.displayLabel}
-                            </option>
-                          ))}
-                        </select>
-                        {itemErr.itemId && (
-                          <p className="mt-1 text-[11px] text-destructive font-medium">
-                            {itemErr.itemId}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Unit of Measurement (Shown only for non-finished goods) */}
-                      {!isFinishedGood && (
-                        <div>
-                          <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                            Unit of Measurement
-                          </label>
-                          <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-                            {selectedItemOpt?.uomName || "—"}
-                          </div>
-                        </div>
+                        ))}
+                      </select>
+                      {itemErr.itemType && (
+                        <p className="mt-1 text-[11px] text-destructive font-medium">
+                          {itemErr.itemType}
+                        </p>
                       )}
                     </div>
-                  </div>
 
-                  {/* Batch / Lot Sub-Cards for this Item */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs font-bold text-foreground uppercase tracking-wider">
-                        Batch / Lot & Write-Off Details ({draftItem.lots.length}{" "}
-                        {draftItem.lots.length === 1 ? "Lot" : "Lots"})
-                      </div>
-                      {selectedItemOpt &&
-                        draftItem.lots.length < selectedItemOpt.lots.length && (
-                          <button
-                            type="button"
-                            onClick={() => handleAddLot(itemIdx)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
-                          >
-                            <Plus className="w-3.5 h-3.5" /> Add Another Lot
-                          </button>
-                        )}
+                    {/* Item Name */}
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                        Item Name <span className="text-destructive">*</span>
+                      </label>
+                      <select
+                        value={draftItem.itemKey}
+                        disabled={!draftItem.itemType}
+                        onChange={(e) => handleItemKeyChange(itemIdx, e.target.value)}
+                        className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer ${
+                          itemErr.itemId ? "border-destructive" : "border-border"
+                        }`}
+                      >
+                        <option value="">
+                          {!draftItem.itemType
+                            ? "Select item type first"
+                            : itemsForSelectedType.length === 0
+                            ? "No items with available stock"
+                            : "Select inventory item"}
+                        </option>
+                        {itemsForSelectedType.map((opt) => (
+                          <option key={opt.key} value={opt.key}>
+                            {opt.displayLabel}
+                          </option>
+                        ))}
+                      </select>
+                      {itemErr.itemId && (
+                        <p className="mt-1 text-[11px] text-destructive font-medium">
+                          {itemErr.itemId}
+                        </p>
+                      )}
                     </div>
 
-                    {itemErr.lotsError && (
-                      <p className="text-[11px] text-destructive font-medium">
-                        {itemErr.lotsError}
-                      </p>
+                    {/* Unit of Measurement (Shown only for non-finished goods) */}
+                    {!isFinishedGood && (
+                      <div>
+                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                          Unit of Measurement
+                        </label>
+                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                          {selectedItemOpt?.uomName || "—"}
+                        </div>
+                      </div>
                     )}
+                  </div>
 
-                    {draftItem.lots.map((draftLot, lotIdx) => {
-                      const lotErr = itemErr.lots?.[lotIdx] || {};
-                      const lotOptions: WriteOffFormLotOption[] = selectedItemOpt?.lots || [];
-                      const selectedLotOpt = lotOptions.find(
-                        (l) => l.lotId === Number(draftLot.lotId)
-                      );
+                  {/* Lot & Write-Off Details (1 lot per item) */}
+                  {(() => {
+                    const draftLot = draftItem.lots[0] || createEmptyLot();
+                    const lotIdx = 0;
+                    const lotErr = itemErr.lots?.[0] || {};
+                    const lotOptions: WriteOffFormLotOption[] = selectedItemOpt?.lots || [];
+                    const selectedLotOpt = lotOptions.find(
+                      (l) => l.lotId === Number(draftLot.lotId)
+                    );
 
-                      const numericQty = Number(draftLot.quantity);
-                      const liveExceedsAvailable =
-                        selectedLotOpt &&
-                        draftLot.quantity.trim() !== "" &&
-                        Number.isFinite(numericQty) &&
-                        numericQty > selectedLotOpt.availableQuantity + 1e-9;
-                      const liveCountUomError =
-                        selectedLotOpt &&
-                        draftLot.quantity.trim() !== "" &&
-                        Number.isFinite(numericQty) &&
-                        isCountUom(selectedLotOpt.uomName) &&
-                        !Number.isInteger(numericQty);
+                    const numericQty = Number(draftLot.quantity);
+                    const liveExceedsAvailable =
+                      selectedLotOpt &&
+                      draftLot.quantity.trim() !== "" &&
+                      Number.isFinite(numericQty) &&
+                      numericQty > selectedLotOpt.availableQuantity + 1e-9;
+                    const liveCountUomError =
+                      selectedLotOpt &&
+                      draftLot.quantity.trim() !== "" &&
+                      Number.isFinite(numericQty) &&
+                      isCountUom(selectedLotOpt.uomName) &&
+                      !Number.isInteger(numericQty);
 
-                      const quantityErrorMsg = liveExceedsAvailable
-                        ? `Affected quantity (${numericQty}) cannot exceed available lot quantity (${selectedLotOpt.availableQuantity} ${selectedLotOpt.uomName}).`
-                        : liveCountUomError
-                        ? `Quantity for ${selectedLotOpt.uomName} must be a whole number.`
-                        : lotErr.quantity;
+                    const quantityErrorMsg = liveExceedsAvailable
+                      ? `Affected quantity (${numericQty}) cannot exceed available lot quantity (${selectedLotOpt.availableQuantity} ${selectedLotOpt.uomName}).`
+                      : liveCountUomError
+                      ? `Quantity for ${selectedLotOpt.uomName} must be a whole number.`
+                      : lotErr.quantity;
 
-                      const showExpiryField =
-                        hasExpiry && (!selectedLotOpt || Boolean(selectedLotOpt.expiryDate));
+                    const showExpiryField =
+                      hasExpiry && (!selectedLotOpt || Boolean(selectedLotOpt.expiryDate));
 
-                      return (
+                    return (
+                      <div className="space-y-3.5 pt-2 border-t border-border">
+                        {/* Row: Batch/Lot Number, Expiration Date, Available Quantity, Affected Quantity */}
                         <div
-                          key={lotIdx}
-                          className="rounded-xl border border-border bg-muted/15 p-3.5 space-y-3.5"
+                          className={`grid grid-cols-1 sm:grid-cols-2 ${
+                            showExpiryField ? "lg:grid-cols-4" : "lg:grid-cols-3"
+                          } gap-3`}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-foreground">
-                              Lot Entry #{lotIdx + 1}
-                            </span>
-                            {draftItem.lots.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveLot(itemIdx, lotIdx)}
-                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-destructive hover:underline cursor-pointer"
-                              >
-                                <Trash2 className="w-3 h-3" /> Remove Lot
-                              </button>
+                          {/* Batch / Lot Number */}
+                          <div>
+                            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                              Batch / Lot Number <span className="text-destructive">*</span>
+                            </label>
+                            <select
+                              value={draftLot.lotId || ""}
+                              disabled={!selectedItemOpt}
+                              onChange={(e) => {
+                                const newLotId = Number(e.target.value) || 0;
+                                const picked = lotOptions.find((l) => l.lotId === newLotId);
+                                handleLotChange(itemIdx, lotIdx, {
+                                  lotId: newLotId,
+                                  ...(picked?.isExpired && !draftLot.reason
+                                    ? { reason: "Expired" }
+                                    : {}),
+                                });
+                              }}
+                              className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer ${
+                                lotErr.lotId ? "border-destructive" : "border-border"
+                              }`}
+                            >
+                              <option value="">
+                                {!selectedItemOpt
+                                  ? "Select item first"
+                                  : "Select batch / lot number"}
+                              </option>
+                              {lotOptions.map((l) => {
+                                const usedElsewhere =
+                                  selectedLotIds.has(l.lotId) &&
+                                  Number(draftLot.lotId) !== l.lotId;
+                                return (
+                                  <option
+                                    key={l.lotId}
+                                    value={l.lotId}
+                                    disabled={usedElsewhere}
+                                  >
+                                    {l.lotCode}
+                                    {l.isExpired ? " (EXPIRED)" : ""}
+                                    {usedElsewhere ? " (already selected)" : ""}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                            {lotErr.lotId && (
+                              <p className="mt-1 text-[11px] text-destructive font-medium">
+                                {lotErr.lotId}
+                              </p>
                             )}
                           </div>
 
-                          {/* Row 1: Batch/Lot Number, Expiration Date (only if category HasExpiry & lot has expiry), Available Quantity, Affected Quantity */}
-                          <div
-                            className={`grid grid-cols-1 sm:grid-cols-2 ${
-                              showExpiryField ? "lg:grid-cols-4" : "lg:grid-cols-3"
-                            } gap-3`}
-                          >
-                            {/* Batch / Lot Number */}
+                          {/* Expiration Date */}
+                          {showExpiryField && (
                             <div>
                               <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                                Batch / Lot Number <span className="text-destructive">*</span>
-                              </label>
-                              <select
-                                value={draftLot.lotId || ""}
-                                disabled={!selectedItemOpt}
-                                onChange={(e) => {
-                                  const newLotId = Number(e.target.value) || 0;
-                                  const picked = lotOptions.find((l) => l.lotId === newLotId);
-                                  handleLotChange(itemIdx, lotIdx, {
-                                    lotId: newLotId,
-                                    ...(picked?.isExpired && !draftLot.reason
-                                      ? { reason: "Expired" }
-                                      : {}),
-                                  });
-                                }}
-                                className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer ${
-                                  lotErr.lotId ? "border-destructive" : "border-border"
-                                }`}
-                              >
-                                <option value="">
-                                  {!selectedItemOpt
-                                    ? "Select item first"
-                                    : "Select batch / lot number"}
-                                </option>
-                                {lotOptions.map((l) => {
-                                  const usedElsewhere =
-                                    selectedLotIds.has(l.lotId) &&
-                                    Number(draftLot.lotId) !== l.lotId;
-                                  return (
-                                    <option
-                                      key={l.lotId}
-                                      value={l.lotId}
-                                      disabled={usedElsewhere}
-                                    >
-                                      {l.lotCode} — Avail: {l.availableQuantity}{isFinishedGood ? "" : ` ${l.uomName}`}
-                                      {l.isExpired ? " (EXPIRED)" : ""}
-                                      {usedElsewhere ? " (already selected)" : ""}
-                                    </option>
-                                  );
-                                })}
-                              </select>
-                              {lotErr.lotId && (
-                                <p className="mt-1 text-[11px] text-destructive font-medium">
-                                  {lotErr.lotId}
-                                </p>
-                              )}
-                            </div>
-
-                            {/* Expiration Date */}
-                            {showExpiryField && (
-                              <div>
-                                <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                                  Expiration Date
-                                </label>
-                                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-                                  <span
-                                    className={
-                                      selectedLotOpt?.isExpired
-                                        ? "font-bold text-destructive"
-                                        : "text-muted-foreground"
-                                    }
-                                  >
-                                    {selectedLotOpt
-                                      ? fmtDate(selectedLotOpt.expiryDate)
-                                      : "—"}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Available Quantity (Unreserved) */}
-                            <div>
-                              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                                Available Quantity
+                                Expiration Date
                               </label>
                               <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-                                {selectedLotOpt
-                                  ? `${selectedLotOpt.availableQuantity.toLocaleString()}${isFinishedGood ? "" : ` ${selectedLotOpt.uomName}`}`
-                                  : "—"}
-                              </div>
-                              {selectedLotOpt && selectedLotOpt.reservedQuantity > 0 && (
-                                <p className="mt-1 text-[10px] text-muted-foreground">
-                                  ({selectedLotOpt.reservedQuantity}{isFinishedGood ? "" : ` ${selectedLotOpt.uomName}`} reserved excluded)
-                                </p>
-                              )}
-                            </div>
-
-                            {/* Affected Quantity */}
-                            <div>
-                              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                                Affected Quantity <span className="text-destructive">*</span>
-                              </label>
-                              <Input
-                                type="number"
-                                min={0}
-                                max={selectedLotOpt?.availableQuantity}
-                                step={
-                                  selectedLotOpt && isCountUom(selectedLotOpt.uomName)
-                                    ? "1"
-                                    : "any"
-                                }
-                                disabled={!selectedLotOpt}
-                                placeholder="Enter quantity"
-                                value={draftLot.quantity}
-                                onChange={(e) =>
-                                  handleLotChange(itemIdx, lotIdx, {
-                                    quantity: e.target.value,
-                                  })
-                                }
-                                className={`h-10 rounded-xl bg-card text-xs font-semibold ${
-                                  quantityErrorMsg
-                                    ? "border-destructive focus-visible:ring-destructive"
-                                    : "border-border"
-                                }`}
-                              />
-                              {quantityErrorMsg && (
-                                <p className="mt-1 text-[11px] text-destructive font-medium">
-                                  {quantityErrorMsg}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Row 2: Write-Off Reason & Disposition Method */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {/* Write-Off Reason */}
-                            <div className="space-y-2">
-                              <div>
-                                <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                                  Write-Off Reason <span className="text-destructive">*</span>
-                                </label>
-                                <select
-                                  value={draftLot.reason}
-                                  onChange={(e) =>
-                                    handleLotChange(itemIdx, lotIdx, {
-                                      reason: e.target.value,
-                                    })
+                                <span
+                                  className={
+                                    selectedLotOpt?.isExpired
+                                      ? "font-bold text-destructive"
+                                      : "text-muted-foreground"
                                   }
-                                  className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring cursor-pointer ${
-                                    lotErr.reason ? "border-destructive" : "border-border"
-                                  }`}
                                 >
-                                  <option value="">Select reason</option>
-                                  {SWO_REASONS.map((r) => (
-                                    <option key={r} value={r}>
-                                      {r}
-                                    </option>
-                                  ))}
-                                </select>
-                                {lotErr.reason && (
-                                  <p className="mt-1 text-[11px] text-destructive font-medium">
-                                    {lotErr.reason}
-                                  </p>
-                                )}
+                                  {selectedLotOpt
+                                    ? fmtDate(selectedLotOpt.expiryDate)
+                                    : "—"}
+                                </span>
                               </div>
-
-                              {draftLot.reason === "Other" && (
-                                <div>
-                                  <Input
-                                    type="text"
-                                    maxLength={SWO_OTHER_MAX}
-                                    placeholder="Specify other write-off reason..."
-                                    value={draftLot.reasonOther}
-                                    onChange={(e) =>
-                                      handleLotChange(itemIdx, lotIdx, {
-                                        reasonOther: e.target.value,
-                                      })
-                                    }
-                                    className={`h-10 rounded-xl bg-card text-xs ${
-                                      lotErr.reasonOther
-                                        ? "border-destructive"
-                                        : "border-border"
-                                    }`}
-                                  />
-                                  {lotErr.reasonOther && (
-                                    <p className="mt-1 text-[11px] text-destructive font-medium">
-                                      {lotErr.reasonOther}
-                                    </p>
-                                  )}
-                                </div>
-                              )}
                             </div>
+                          )}
 
-                            {/* Disposition Method */}
-                            <div className="space-y-2">
-                              <div>
-                                <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                                  Disposition Method <span className="text-destructive">*</span>
-                                </label>
-                                <select
-                                  value={draftLot.disposition}
-                                  onChange={(e) =>
-                                    handleLotChange(itemIdx, lotIdx, {
-                                      disposition: e.target.value,
-                                    })
-                                  }
-                                  className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring cursor-pointer ${
-                                    lotErr.disposition ? "border-destructive" : "border-border"
-                                  }`}
-                                >
-                                  <option value="">Select disposition method</option>
-                                  {SWO_DISPOSITIONS.map((d) => (
-                                    <option key={d} value={d}>
-                                      {d}
-                                    </option>
-                                  ))}
-                                </select>
-                                {lotErr.disposition && (
-                                  <p className="mt-1 text-[11px] text-destructive font-medium">
-                                    {lotErr.disposition}
-                                  </p>
-                                )}
-                              </div>
-
-                              {draftLot.disposition === "Other" && (
-                                <div>
-                                  <Input
-                                    type="text"
-                                    maxLength={SWO_OTHER_MAX}
-                                    placeholder="Specify other disposition method..."
-                                    value={draftLot.dispositionOther}
-                                    onChange={(e) =>
-                                      handleLotChange(itemIdx, lotIdx, {
-                                        dispositionOther: e.target.value,
-                                      })
-                                    }
-                                    className={`h-10 rounded-xl bg-card text-xs ${
-                                      lotErr.dispositionOther
-                                        ? "border-destructive"
-                                        : "border-border"
-                                    }`}
-                                  />
-                                  {lotErr.dispositionOther && (
-                                    <p className="mt-1 text-[11px] text-destructive font-medium">
-                                      {lotErr.dispositionOther}
-                                    </p>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Row 3: Item Remarks */}
+                          {/* Available Quantity (Unreserved) */}
                           <div>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <label className="text-xs font-semibold text-foreground">
-                                Item Remarks <span className="text-destructive">*</span>
-                              </label>
-                              <span className="text-[10px] text-muted-foreground">
-                                {draftLot.remarks.length}/{SWO_REMARKS_MAX}
-                              </span>
+                            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                              Available Quantity
+                            </label>
+                            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                              {selectedLotOpt
+                                ? `${selectedLotOpt.availableQuantity.toLocaleString()}${isFinishedGood ? "" : ` ${selectedLotOpt.uomName}`}`
+                                : "—"}
                             </div>
-                            <Textarea
-                              rows={2}
-                              maxLength={SWO_REMARKS_MAX}
-                              placeholder="Describe the condition of this inventory and explain why it needs to be written off..."
-                              value={draftLot.remarks}
+                            {selectedLotOpt && selectedLotOpt.reservedQuantity > 0 && (
+                              <p className="mt-1 text-[10px] text-muted-foreground">
+                                ({selectedLotOpt.reservedQuantity}{isFinishedGood ? "" : ` ${selectedLotOpt.uomName}`} reserved excluded)
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Affected Quantity */}
+                          <div>
+                            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                              Affected Quantity <span className="text-destructive">*</span>
+                            </label>
+                            <Input
+                              type="number"
+                              min={0}
+                              max={selectedLotOpt?.availableQuantity}
+                              step={
+                                selectedLotOpt && isCountUom(selectedLotOpt.uomName)
+                                  ? "1"
+                                  : "any"
+                              }
+                              disabled={!selectedLotOpt}
+                              placeholder="Enter quantity"
+                              value={draftLot.quantity}
                               onChange={(e) =>
                                 handleLotChange(itemIdx, lotIdx, {
-                                  remarks: e.target.value,
+                                  quantity: e.target.value,
                                 })
                               }
-                              className={`w-full rounded-xl bg-card px-3 py-2 text-xs text-foreground resize-none ${
-                                lotErr.remarks ? "border-destructive" : "border-border"
+                              className={`h-10 rounded-xl bg-card text-xs font-semibold ${
+                                quantityErrorMsg
+                                  ? "border-destructive focus-visible:ring-destructive"
+                                  : "border-border"
                               }`}
                             />
-                            {lotErr.remarks && (
+                            {quantityErrorMsg && (
                               <p className="mt-1 text-[11px] text-destructive font-medium">
-                                {lotErr.remarks}
+                                {quantityErrorMsg}
                               </p>
                             )}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+
+                        {/* Row: Write-Off Reason & Disposition Method */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Write-Off Reason */}
+                          <div className="space-y-2">
+                            <div>
+                              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                                Write-Off Reason <span className="text-destructive">*</span>
+                              </label>
+                              <select
+                                value={draftLot.reason}
+                                onChange={(e) =>
+                                  handleLotChange(itemIdx, lotIdx, {
+                                    reason: e.target.value,
+                                  })
+                                }
+                                className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring cursor-pointer ${
+                                  lotErr.reason ? "border-destructive" : "border-border"
+                                }`}
+                              >
+                                <option value="">Select reason</option>
+                                {SWO_REASONS.map((r) => (
+                                  <option key={r} value={r}>
+                                    {r}
+                                  </option>
+                                ))}
+                              </select>
+                              {lotErr.reason && (
+                                <p className="mt-1 text-[11px] text-destructive font-medium">
+                                  {lotErr.reason}
+                                </p>
+                              )}
+                            </div>
+
+                            {draftLot.reason === "Other" && (
+                              <div>
+                                <Input
+                                  type="text"
+                                  maxLength={SWO_OTHER_MAX}
+                                  placeholder="Specify other write-off reason..."
+                                  value={draftLot.reasonOther}
+                                  onChange={(e) =>
+                                    handleLotChange(itemIdx, lotIdx, {
+                                      reasonOther: e.target.value,
+                                    })
+                                  }
+                                  className={`h-10 rounded-xl bg-card text-xs ${
+                                    lotErr.reasonOther
+                                      ? "border-destructive"
+                                      : "border-border"
+                                  }`}
+                                />
+                                {lotErr.reasonOther && (
+                                  <p className="mt-1 text-[11px] text-destructive font-medium">
+                                    {lotErr.reasonOther}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Disposition Method */}
+                          <div className="space-y-2">
+                            <div>
+                              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                                Disposition Method <span className="text-destructive">*</span>
+                              </label>
+                              <select
+                                value={draftLot.disposition}
+                                onChange={(e) =>
+                                  handleLotChange(itemIdx, lotIdx, {
+                                    disposition: e.target.value,
+                                  })
+                                }
+                                className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring cursor-pointer ${
+                                  lotErr.disposition ? "border-destructive" : "border-border"
+                                }`}
+                              >
+                                <option value="">Select disposition method</option>
+                                {SWO_DISPOSITIONS.map((d) => (
+                                  <option key={d} value={d}>
+                                    {d}
+                                  </option>
+                                ))}
+                              </select>
+                              {lotErr.disposition && (
+                                <p className="mt-1 text-[11px] text-destructive font-medium">
+                                  {lotErr.disposition}
+                                </p>
+                              )}
+                            </div>
+
+                            {draftLot.disposition === "Other" && (
+                              <div>
+                                <Input
+                                  type="text"
+                                  maxLength={SWO_OTHER_MAX}
+                                  placeholder="Specify other disposition method..."
+                                  value={draftLot.dispositionOther}
+                                  onChange={(e) =>
+                                    handleLotChange(itemIdx, lotIdx, {
+                                      dispositionOther: e.target.value,
+                                    })
+                                  }
+                                  className={`h-10 rounded-xl bg-card text-xs ${
+                                    lotErr.dispositionOther
+                                      ? "border-destructive"
+                                      : "border-border"
+                                  }`}
+                                />
+                                {lotErr.dispositionOther && (
+                                  <p className="mt-1 text-[11px] text-destructive font-medium">
+                                    {lotErr.dispositionOther}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Row: Item Remarks */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="text-xs font-semibold text-foreground">
+                              Item Remarks <span className="text-destructive">*</span>
+                            </label>
+                            <span className="text-[10px] text-muted-foreground">
+                              {draftLot.remarks.length}/{SWO_REMARKS_MAX}
+                            </span>
+                          </div>
+                          <Textarea
+                            rows={2}
+                            maxLength={SWO_REMARKS_MAX}
+                            placeholder="Describe the condition of this inventory and explain why it needs to be written off..."
+                            value={draftLot.remarks}
+                            onChange={(e) =>
+                              handleLotChange(itemIdx, lotIdx, {
+                                remarks: e.target.value,
+                              })
+                            }
+                            className={`w-full rounded-xl bg-card px-3 py-2 text-xs text-foreground resize-none ${
+                              lotErr.remarks ? "border-destructive" : "border-border"
+                            }`}
+                          />
+                          {lotErr.remarks && (
+                            <p className="mt-1 text-[11px] text-destructive font-medium">
+                              {lotErr.remarks}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Supporting Evidence Photo Upload (Matches CreateDeliveryModal dashed dropzone UI) */}
                   <div className="space-y-1.5 pt-2 border-t border-border">

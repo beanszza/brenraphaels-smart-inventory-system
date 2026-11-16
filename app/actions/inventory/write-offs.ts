@@ -292,8 +292,8 @@ export async function getWriteOffFormData() {
           : item.ItemCode || `SPL-${String(item.ItemId).padStart(4, "0")}`;
       const displayLabel =
         isFinishedGood && variantName
-          ? `${item.ItemName} — ${variantName} (${itemCode})`
-          : `${item.ItemName} (${itemCode})`;
+          ? `${item.ItemName} — ${variantName}`
+          : item.ItemName;
 
       const expiryStr =
         hasExpiry && lot.ExpiryDate ? lot.ExpiryDate.toISOString().split("T")[0] : null;
