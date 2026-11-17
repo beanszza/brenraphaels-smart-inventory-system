@@ -6,6 +6,9 @@ import { X, Calendar, MapPin, Truck, Package, User, FileText, ExternalLink } fro
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransfer } from "./types";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
+import { isFileId } from "@/lib/files";
+import { resolveTransferAttachment } from "@/app/actions/stock-transfer/transfer-files";
+import { TransferProofThumbnail } from "./TransferProofThumbnail";
 
 interface STFDetailsModalProps {
   transfer: StockTransfer | null;
@@ -64,8 +67,49 @@ export function STFDetailsModal({
     }
   }
 
-  const bookingProofSrc = transfer.proofOfReceipt || schedMeta.attachmentData || "";
-  const dispatchProofSrc = dispatchMeta.proofDataUrl || "";
+  const rawBookingSrc = transfer.proofOfReceipt || schedMeta.attachmentFileId || schedMeta.attachmentData || "";
+  const rawDispatchSrc = dispatchMeta.proofFileId || dispatchMeta.proofDataUrl || "";
+
+  const [resolvedBookingUrl, setResolvedBookingUrl] = useState<string>("");
+  const [resolvedDispatchUrl, setResolvedDispatchUrl] = useState<string>("");
+
+  useEffect(() => {
+    let active = true;
+    if (rawBookingSrc) {
+      if (rawBookingSrc.startsWith("data:") || rawBookingSrc.startsWith("http")) {
+        setResolvedBookingUrl(rawBookingSrc);
+      } else if (isFileId(rawBookingSrc)) {
+        resolveTransferAttachment(rawBookingSrc)
+          .then((res) => {
+            if (active && res.data?.url) setResolvedBookingUrl(res.data.url);
+          })
+          .catch(() => {});
+      }
+    } else {
+      setResolvedBookingUrl("");
+    }
+
+    if (rawDispatchSrc) {
+      if (rawDispatchSrc.startsWith("data:") || rawDispatchSrc.startsWith("http")) {
+        setResolvedDispatchUrl(rawDispatchSrc);
+      } else if (isFileId(rawDispatchSrc)) {
+        resolveTransferAttachment(rawDispatchSrc)
+          .then((res) => {
+            if (active && res.data?.url) setResolvedDispatchUrl(res.data.url);
+          })
+          .catch(() => {});
+      }
+    } else {
+      setResolvedDispatchUrl("");
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [rawBookingSrc, rawDispatchSrc]);
+
+  const bookingProofSrc = resolvedBookingUrl || rawBookingSrc;
+  const dispatchProofSrc = resolvedDispatchUrl || rawDispatchSrc;
 
   return createPortal(
     <div
@@ -226,95 +270,23 @@ export function STFDetailsModal({
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 {bookingProofSrc && (
-                  <div className="rounded-xl border border-border bg-muted/20 p-3 flex items-center gap-3">
-                    <div className="w-16 h-16 rounded-lg border border-border bg-background overflow-hidden flex items-center justify-center shrink-0">
-                      {bookingProofSrc.startsWith("data:image/") ||
-                      bookingProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ? (
-                        <img
-                          src={bookingProofSrc}
-                          alt="Booking Proof"
-                          onClick={() =>
-                            setPreviewImage({
-                              title: "Proof of Booking / Transaction Receipt",
-                              src: bookingProofSrc,
-                            })
-                          }
-                          className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                        />
-                      ) : (
-                        <FileText className="w-6 h-6 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <p className="text-xs font-semibold text-foreground truncate">
-                        Booking / Transaction Receipt
-                      </p>
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {schedMeta.attachmentName || "Uploaded when scheduling"}
-                      </p>
-                      {(bookingProofSrc.startsWith("data:image/") ||
-                        bookingProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i)) && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setPreviewImage({
-                              title: "Proof of Booking / Transaction Receipt",
-                              src: bookingProofSrc,
-                            })
-                          }
-                          className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          <ExternalLink className="w-3 h-3" /> View Full Image
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <TransferProofThumbnail
+                    rawSrc={bookingProofSrc}
+                    title="Booking / Transaction Receipt"
+                    subtitle={schedMeta.attachmentName || "Uploaded when scheduling"}
+                    onPreview={setPreviewImage}
+                    size="small"
+                  />
                 )}
 
                 {dispatchProofSrc && (
-                  <div className="rounded-xl border border-border bg-muted/20 p-3 flex items-center gap-3">
-                    <div className="w-16 h-16 rounded-lg border border-border bg-background overflow-hidden flex items-center justify-center shrink-0">
-                      {dispatchProofSrc.startsWith("data:image/") ||
-                      dispatchProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ? (
-                        <img
-                          src={dispatchProofSrc}
-                          alt="Dispatch Proof"
-                          onClick={() =>
-                            setPreviewImage({
-                              title: "Dispatch Proof Document / Photo",
-                              src: dispatchProofSrc,
-                            })
-                          }
-                          className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                        />
-                      ) : (
-                        <FileText className="w-6 h-6 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <p className="text-xs font-semibold text-foreground truncate">
-                        Dispatch Proof Photo
-                      </p>
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {dispatchMeta.proofFileName || "Uploaded upon departure"}
-                      </p>
-                      {(dispatchProofSrc.startsWith("data:image/") ||
-                        dispatchProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i)) && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setPreviewImage({
-                              title: "Dispatch Proof Document / Photo",
-                              src: dispatchProofSrc,
-                            })
-                          }
-                          className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          <ExternalLink className="w-3 h-3" /> View Full Image
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <TransferProofThumbnail
+                    rawSrc={dispatchProofSrc}
+                    title="Dispatch Proof Photo"
+                    subtitle={dispatchMeta.proofFileName || "Uploaded upon departure"}
+                    onPreview={setPreviewImage}
+                    size="small"
+                  />
                 )}
               </div>
             </div>

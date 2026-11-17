@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransferRequest } from "./types";
 import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
 import { resolveStaffName } from "@/lib/orders/dto";
+import { TransferProofThumbnail } from "./TransferProofThumbnail";
 
 interface STRDetailsModalProps {
   request: StockTransferRequest | null;
@@ -289,95 +290,23 @@ export function STRDetailsModal({
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {bookingProofSrc && (
-                        <div className="rounded-xl border border-border bg-background/60 p-3 flex items-center gap-3">
-                          <div className="w-16 h-16 rounded-lg border border-border bg-card overflow-hidden flex items-center justify-center shrink-0">
-                            {bookingProofSrc.startsWith("data:image/") ||
-                            bookingProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ? (
-                              <img
-                                src={bookingProofSrc}
-                                alt="Booking Proof"
-                                onClick={() =>
-                                  setPreviewImage({
-                                    title: "Proof of Booking / Transaction Receipt",
-                                    src: bookingProofSrc,
-                                  })
-                                }
-                                className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                              />
-                            ) : (
-                              <FileText className="w-6 h-6 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1 space-y-1">
-                            <p className="text-xs font-semibold text-foreground truncate">
-                              Booking / Transaction Receipt
-                            </p>
-                            <p className="text-[11px] text-muted-foreground truncate">
-                              {schedMeta.attachmentName || "Uploaded when scheduling transfer"}
-                            </p>
-                            {(bookingProofSrc.startsWith("data:image/") ||
-                              bookingProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i)) && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setPreviewImage({
-                                    title: "Proof of Booking / Transaction Receipt",
-                                    src: bookingProofSrc,
-                                  })
-                                }
-                                className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
-                              >
-                                <ExternalLink className="w-3 h-3" /> View Full Image
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                        <TransferProofThumbnail
+                          rawSrc={bookingProofSrc}
+                          title="Booking / Transaction Receipt"
+                          subtitle={schedMeta.attachmentName || "Uploaded when scheduling transfer"}
+                          onPreview={setPreviewImage}
+                          size="small"
+                        />
                       )}
 
                       {dispatchProofSrc && (
-                        <div className="rounded-xl border border-border bg-background/60 p-3 flex items-center gap-3">
-                          <div className="w-16 h-16 rounded-lg border border-border bg-card overflow-hidden flex items-center justify-center shrink-0">
-                            {dispatchProofSrc.startsWith("data:image/") ||
-                            dispatchProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ? (
-                              <img
-                                src={dispatchProofSrc}
-                                alt="Dispatch Proof"
-                                onClick={() =>
-                                  setPreviewImage({
-                                    title: "Dispatch Proof Document / Photo",
-                                    src: dispatchProofSrc,
-                                  })
-                                }
-                                className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                              />
-                            ) : (
-                              <FileText className="w-6 h-6 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1 space-y-1">
-                            <p className="text-xs font-semibold text-foreground truncate">
-                              Dispatch Proof Photo
-                            </p>
-                            <p className="text-[11px] text-muted-foreground truncate">
-                              {dispatchMeta.proofFileName || "Uploaded upon transfer departure"}
-                            </p>
-                            {(dispatchProofSrc.startsWith("data:image/") ||
-                              dispatchProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i)) && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setPreviewImage({
-                                    title: "Dispatch Proof Document / Photo",
-                                    src: dispatchProofSrc,
-                                  })
-                                }
-                                className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
-                              >
-                                <ExternalLink className="w-3 h-3" /> View Full Image
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                        <TransferProofThumbnail
+                          rawSrc={dispatchProofSrc}
+                          title="Dispatch Proof Photo"
+                          subtitle={dispatchMeta.proofFileName || "Uploaded upon transfer departure"}
+                          onPreview={setPreviewImage}
+                          size="small"
+                        />
                       )}
                     </div>
                   </div>

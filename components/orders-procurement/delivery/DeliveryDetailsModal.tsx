@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AlertCircle, Check, FileText, Download, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
@@ -9,6 +9,8 @@ import { Delivery } from "../types";
 import CreateGrnModal from "@/components/receiving/CreateGrnModal";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { downloadDeliveryReportPdf } from "./downloadDeliveryReportPdf";
+import { isFileId } from "@/lib/files";
+import { resolveDeliveryAttachment } from "@/app/actions/orders/delivery-files";
 
 interface DeliveryDetailsModalProps {
   delivery: Delivery | null;
@@ -52,6 +54,47 @@ export function DeliveryDetailsModal({
 
   const receiptProofSrc = delivery.scheduledAttachment || delivery.attachmentUrl || "";
   const arrivalProofSrc = delivery.arrivalAttachment || "";
+
+  const [resolvedReceiptUrl, setResolvedReceiptUrl] = useState<string>("");
+  const [resolvedArrivalUrl, setResolvedArrivalUrl] = useState<string>("");
+
+  useEffect(() => {
+    let active = true;
+    if (receiptProofSrc) {
+      if (receiptProofSrc.startsWith("data:") || receiptProofSrc.startsWith("http")) {
+        setResolvedReceiptUrl(receiptProofSrc);
+      } else if (isFileId(receiptProofSrc)) {
+        resolveDeliveryAttachment(receiptProofSrc)
+          .then((res) => {
+            if (active && res.data?.url) setResolvedReceiptUrl(res.data.url);
+          })
+          .catch(() => {});
+      }
+    } else {
+      setResolvedReceiptUrl("");
+    }
+
+    if (arrivalProofSrc) {
+      if (arrivalProofSrc.startsWith("data:") || arrivalProofSrc.startsWith("http")) {
+        setResolvedArrivalUrl(arrivalProofSrc);
+      } else if (isFileId(arrivalProofSrc)) {
+        resolveDeliveryAttachment(arrivalProofSrc)
+          .then((res) => {
+            if (active && res.data?.url) setResolvedArrivalUrl(res.data.url);
+          })
+          .catch(() => {});
+      }
+    } else {
+      setResolvedArrivalUrl("");
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [receiptProofSrc, arrivalProofSrc]);
+
+  const displayReceiptSrc = resolvedReceiptUrl || receiptProofSrc;
+  const displayArrivalSrc = resolvedArrivalUrl || arrivalProofSrc;
 
   const handleDownloadReport = async () => {
     try {
@@ -227,21 +270,22 @@ export function DeliveryDetailsModal({
         </div>
 
         {/* Compact Side-by-Side Document Proofs & Attachments */}
-        {(receiptProofSrc || arrivalProofSrc) && (
+        {(displayReceiptSrc || displayArrivalSrc) && (
           <div className="rounded-2xl border border-border bg-card p-4 space-y-2.5">
             <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
               Document Proofs &amp; Attachments
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {receiptProofSrc && (
+              {displayReceiptSrc && (
                 <div className="rounded-xl border border-border bg-muted/10 p-3 flex items-center gap-3">
                   <div className="w-20 h-20 rounded-lg border border-border bg-background overflow-hidden flex items-center justify-center shrink-0">
-                    {receiptProofSrc.startsWith("data:image/") ||
-                    receiptProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ? (
+                    {displayReceiptSrc.startsWith("data:image/") ||
+                    displayReceiptSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ||
+                    displayReceiptSrc.includes("/files/") ? (
                       <img
-                        src={receiptProofSrc}
+                        src={displayReceiptSrc}
                         alt="Receipt Proof"
-                        onClick={() => setPreviewImage({ title: "Receipt Proof", src: receiptProofSrc })}
+                        onClick={() => setPreviewImage({ title: "Receipt Proof", src: displayReceiptSrc })}
                         className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                       />
                     ) : (
@@ -253,11 +297,12 @@ export function DeliveryDetailsModal({
                     <p className="text-[11px] text-muted-foreground">
                       Uploaded when scheduling delivery
                     </p>
-                    {(receiptProofSrc.startsWith("data:image/") ||
-                      receiptProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i)) && (
+                    {(displayReceiptSrc.startsWith("data:image/") ||
+                      displayReceiptSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ||
+                      displayReceiptSrc.includes("/files/")) && (
                       <button
                         type="button"
-                        onClick={() => setPreviewImage({ title: "Receipt Proof", src: receiptProofSrc })}
+                        onClick={() => setPreviewImage({ title: "Receipt Proof", src: displayReceiptSrc })}
                         className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
                       >
                         <ExternalLink className="w-3 h-3" /> View Full Image
@@ -267,15 +312,16 @@ export function DeliveryDetailsModal({
                 </div>
               )}
 
-              {arrivalProofSrc && (
+              {displayArrivalSrc && (
                 <div className="rounded-xl border border-border bg-muted/10 p-3 flex items-center gap-3">
                   <div className="w-20 h-20 rounded-lg border border-border bg-background overflow-hidden flex items-center justify-center shrink-0">
-                    {arrivalProofSrc.startsWith("data:image/") ||
-                    arrivalProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ? (
+                    {displayArrivalSrc.startsWith("data:image/") ||
+                    displayArrivalSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ||
+                    displayArrivalSrc.includes("/files/") ? (
                       <img
-                        src={arrivalProofSrc}
+                        src={displayArrivalSrc}
                         alt="Arrival Proof"
-                        onClick={() => setPreviewImage({ title: "Arrival Proof", src: arrivalProofSrc })}
+                        onClick={() => setPreviewImage({ title: "Arrival Proof", src: displayArrivalSrc })}
                         className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                       />
                     ) : (
@@ -287,11 +333,12 @@ export function DeliveryDetailsModal({
                     <p className="text-[11px] text-muted-foreground">
                       Uploaded upon delivery arrival
                     </p>
-                    {(arrivalProofSrc.startsWith("data:image/") ||
-                      arrivalProofSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i)) && (
+                    {(displayArrivalSrc.startsWith("data:image/") ||
+                      displayArrivalSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ||
+                      displayArrivalSrc.includes("/files/")) && (
                       <button
                         type="button"
-                        onClick={() => setPreviewImage({ title: "Arrival Proof", src: arrivalProofSrc })}
+                        onClick={() => setPreviewImage({ title: "Arrival Proof", src: displayArrivalSrc })}
                         className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
                       >
                         <ExternalLink className="w-3 h-3" /> View Full Image

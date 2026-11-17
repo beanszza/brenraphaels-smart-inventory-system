@@ -6,6 +6,7 @@ import { X, AlertCircle, Upload, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 import { actionResponse } from "@/lib/resources/action-response";
 import { scheduleTransfer } from "@/app/actions/stock-transfer/transfers";
+import { uploadTransferAttachmentDirect } from "@/app/actions/stock-transfer/transfer-files";
 import { StockTransferRequest } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -140,11 +141,7 @@ export function ScheduleTransferModal({
       return;
     }
     setAttachmentFile(file);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAttachmentBase64(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    setAttachmentBase64("");
     setFormError(null);
   };
 
@@ -237,6 +234,20 @@ export function ScheduleTransferModal({
         throw new Error("No products found in this request to schedule.");
       }
 
+      let uploadedFileId: string | null = null;
+      if (attachmentFile) {
+        const fd = new FormData();
+        fd.append("file", attachmentFile);
+        const upRes = await uploadTransferAttachmentDirect(fd);
+        if (!upRes.success || !upRes.data?.fileId) {
+          setFormError(upRes.message || "Failed to upload transfer attachment to file storage.");
+          setLoading(false);
+          setShowConfirm(false);
+          return;
+        }
+        uploadedFileId = upRes.data.fileId;
+      }
+
       const scheduleMetadata = {
         transportProvider,
         vehicleType,
@@ -249,7 +260,8 @@ export function ScheduleTransferModal({
         driverContact: driverContact.trim(),
         transferFee: transferFee ? Number(transferFee) : null,
         attachmentName: attachmentFile?.name || null,
-        attachmentData: attachmentBase64 || null,
+        attachmentFileId: uploadedFileId,
+        attachmentData: uploadedFileId,
         remarks: schedulingRemarks.trim() || null,
       };
 
@@ -272,7 +284,7 @@ export function ScheduleTransferModal({
             courierName: transportProvider,
             driverName: fullDriverName,
             vehiclePlate: plateNumber.trim(),
-            proofOfReceipt: attachmentBase64 || null,
+            proofOfReceipt: uploadedFileId,
             notes: JSON.stringify(scheduleMetadata),
           })
         );

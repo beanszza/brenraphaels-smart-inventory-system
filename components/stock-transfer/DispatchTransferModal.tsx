@@ -6,6 +6,7 @@ import { X, Calendar, Clock, Upload, AlertCircle, FileCheck } from "lucide-react
 import { toast } from "sonner";
 import { actionResponse } from "@/lib/resources/action-response";
 import { dispatchTransfer } from "@/app/actions/stock-transfer/dispatch";
+import { uploadTransferAttachmentDirect } from "@/app/actions/stock-transfer/transfer-files";
 import { StockTransfer, StockTransferRequest } from "./types";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -149,11 +150,7 @@ export function DispatchTransferModal({
       return;
     }
     setSelectedFile(file);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setProofBase64(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    setProofBase64("");
     setError(null);
   };
 
@@ -209,12 +206,27 @@ export function DispatchTransferModal({
     setLoading(true);
     setError(null);
     try {
+      let uploadedFileId: string | null = null;
+      if (selectedFile) {
+        const fd = new FormData();
+        fd.append("file", selectedFile);
+        const upRes = await uploadTransferAttachmentDirect(fd);
+        if (!upRes.success || !upRes.data?.fileId) {
+          setError(upRes.message || "Failed to upload dispatch proof to file storage.");
+          setLoading(false);
+          setShowConfirm(false);
+          return;
+        }
+        uploadedFileId = upRes.data.fileId;
+      }
+
       const dispatchMetadata = {
         actualDispatchDate,
         actualDispatchTime,
         releasedBy: currentStaffName,
         proofFileName: selectedFile?.name || null,
-        proofDataUrl: proofBase64 || null,
+        proofFileId: uploadedFileId,
+        proofDataUrl: uploadedFileId,
         remarks: dispatchRemarks.trim() || null,
       };
 
@@ -226,7 +238,7 @@ export function DispatchTransferModal({
           actualDispatchDate,
           actualDispatchTime,
           proofFileName: selectedFile?.name || "",
-          proofDataUrl: proofBase64 || null,
+          proofDataUrl: uploadedFileId,
           notes: JSON.stringify(dispatchMetadata),
         })
       );

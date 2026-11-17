@@ -5,6 +5,7 @@ import { allPages } from "@/lib/orders/screen-data";
 import { listOrders } from "@/app/actions/orders/orders";
 import { listDeliveries } from "@/app/actions/orders/deliveries";
 import { procurement } from "@/lib/orders/client";
+import { uploadDeliveryAttachmentDirect } from "@/app/actions/orders/delivery-files";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { AlertCircle, ArrowLeft, Calendar, Upload, Trash2, FileText } from "lucide-react";
@@ -66,7 +67,8 @@ export function CreateDeliveryModal({
     () => new Date().toISOString().slice(0, 10)
   );
 
-  const [scheduledAttachmentBase64, setScheduledAttachmentBase64] = useState("");
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState<string>("");
   const [attachmentFileName, setAttachmentFileName] = useState("");
 
   // Items
@@ -212,7 +214,8 @@ export function CreateDeliveryModal({
     } else {
       setSelectedPoId(null);
       setItems([]);
-      setScheduledAttachmentBase64("");
+      setAttachmentFile(null);
+      setAttachmentPreviewUrl("");
       setAttachmentFileName("");
       setPaymentType("Payable");
       setPlannedDispatchDate(new Date().toISOString().slice(0, 10));
@@ -364,22 +367,23 @@ export function CreateDeliveryModal({
     );
   };
 
-  // Handle File Upload to Base64
+  // Handle File Selection (uploaded directly to File Storage on submit)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 8 * 1024 * 1024) {
-      setError("File exceeds 8MB limit.");
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File exceeds 10MB limit.");
       return;
     }
 
+    setAttachmentFile(file);
     setAttachmentFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setScheduledAttachmentBase64(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    if (file.type.startsWith("image/")) {
+      setAttachmentPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setAttachmentPreviewUrl("");
+    }
   };
 
   // Validation
@@ -450,13 +454,26 @@ export function CreateDeliveryModal({
 
     try {
       setSubmitting(true);
+      let uploadedFileId: string | null = null;
+      if (attachmentFile) {
+        const fd = new FormData();
+        fd.append("file", attachmentFile);
+        const upRes = await uploadDeliveryAttachmentDirect(fd);
+        if (!upRes.success || !upRes.data?.fileId) {
+          setError(upRes.message || "Failed to upload attachment to file storage.");
+          setSubmitting(false);
+          return;
+        }
+        uploadedFileId = upRes.data.fileId;
+      }
+
       const payload = {
         poId: selectedPoId,
         paymentType,
         scheduledDate: plannedDispatchDate ? new Date(`${plannedDispatchDate}T12:00:00Z`).toISOString() : new Date().toISOString(),
         expectedArrivalDate: null,
-        scheduledAttachmentBase64: scheduledAttachmentBase64 || null,
-        attachmentUrl: scheduledAttachmentBase64 || null,
+        scheduledAttachmentBase64: uploadedFileId,
+        attachmentUrl: uploadedFileId,
         carrier: null,
         driverName: null,
         vehiclePlateNumber: null,
@@ -777,19 +794,19 @@ export function CreateDeliveryModal({
                   <span>
                     Proof of Receipt / Attachment <span className="text-destructive">*</span>
                   </span>
-                  {!scheduledAttachmentBase64 && (
+                  {!attachmentFile && (
                     <span className="text-[11px] text-destructive font-normal">
                       Required to schedule delivery
                     </span>
                   )}
                 </label>
                 <div className="rounded-xl border border-dashed border-border bg-card p-4 transition-colors">
-                  {scheduledAttachmentBase64 ? (
+                  {attachmentFile ? (
                     <div className="space-y-3">
                       <div className="relative flex flex-col items-center justify-center p-3 bg-muted/20 rounded-xl border border-border">
-                        {scheduledAttachmentBase64.startsWith("data:image/") ? (
+                        {attachmentPreviewUrl ? (
                           <img
-                            src={scheduledAttachmentBase64}
+                            src={attachmentPreviewUrl}
                             alt="Proof of receipt"
                             className="max-h-56 rounded-lg object-contain border border-border shadow-xs"
                           />
@@ -817,8 +834,10 @@ export function CreateDeliveryModal({
                         <button
                           type="button"
                           onClick={() => {
-                            setScheduledAttachmentBase64("");
+                            setAttachmentFile(null);
                             setAttachmentFileName("");
+                            if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
+                            setAttachmentPreviewUrl("");
                           }}
                           className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-1.5"
                         >
@@ -862,7 +881,7 @@ export function CreateDeliveryModal({
             </ModalCloseButton>
             <Button
               type="submit"
-              disabled={submitting || !selectedPoId || hasErrors || !hasAnyOrderQty || !scheduledAttachmentBase64.trim() || !plannedDispatchDate}
+              disabled={submitting || !selectedPoId || hasErrors || !hasAnyOrderQty || !attachmentFile || !plannedDispatchDate}
               className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {submitting ? "Scheduling..." : "Schedule Order"}

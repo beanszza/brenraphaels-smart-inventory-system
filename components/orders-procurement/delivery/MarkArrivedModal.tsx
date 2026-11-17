@@ -1,6 +1,7 @@
 "use client";
 
 import { procurement } from "@/lib/orders/client";
+import { uploadDeliveryAttachmentDirect } from "@/app/actions/orders/delivery-files";
 
 import React, { useState } from "react";
 import { AlertCircle, Upload, Trash2, Calendar, FileText } from "lucide-react";
@@ -33,7 +34,8 @@ export function MarkArrivedModal({
   const [actualArrivalDate, setActualArrivalDate] = useState(
     new Date().toISOString().slice(0, 10)
   );
-  const [arrivalAttachmentBase64, setArrivalAttachmentBase64] = useState("");
+  const [arrivalFile, setArrivalFile] = useState<File | null>(null);
+  const [arrivalPreviewUrl, setArrivalPreviewUrl] = useState<string>("");
   const [attachmentFileName, setAttachmentFileName] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
@@ -44,18 +46,19 @@ export function MarkArrivedModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 8 * 1024 * 1024) {
-      setError("File exceeds 8MB limit.");
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File exceeds 10MB limit.");
       return;
     }
 
+    setArrivalFile(file);
     setAttachmentFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setArrivalAttachmentBase64(reader.result as string);
-      setError(null);
-    };
-    reader.readAsDataURL(file);
+    if (file.type.startsWith("image/")) {
+      setArrivalPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setArrivalPreviewUrl("");
+    }
+    setError(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -72,7 +75,7 @@ export function MarkArrivedModal({
       return;
     }
 
-    if (!arrivalAttachmentBase64) {
+    if (!arrivalFile) {
       setError("Arrival proof photo is required before confirming arrival.");
       return;
     }
@@ -84,13 +87,26 @@ export function MarkArrivedModal({
     setConfirmOpen(false);
     try {
       setSubmitting(true);
+      let uploadedFileId: string | null = null;
+      if (arrivalFile) {
+        const fd = new FormData();
+        fd.append("file", arrivalFile);
+        const upRes = await uploadDeliveryAttachmentDirect(fd);
+        if (!upRes.success || !upRes.data?.fileId) {
+          setError(upRes.message || "Failed to upload arrival attachment to file storage.");
+          setSubmitting(false);
+          return;
+        }
+        uploadedFileId = upRes.data.fileId;
+      }
+
       const combinedDateTime = new Date(`${actualArrivalDate}T12:00:00Z`).toISOString();
 
       const payload = {
         actualArrivalDate: combinedDateTime,
         receivedBy: receiverAccountName,
-        arrivalAttachmentBase64: arrivalAttachmentBase64,
-        attachmentUrl: arrivalAttachmentBase64,
+        arrivalAttachmentBase64: uploadedFileId,
+        attachmentUrl: uploadedFileId,
       };
 
       const res = await procurement.arriveDelivery(delivery.deliveryId, payload);
@@ -103,7 +119,7 @@ export function MarkArrivedModal({
             status: "Arrived",
             actualArrivalDate: combinedDateTime,
             receivedBy: receiverAccountName,
-            arrivalAttachment: arrivalAttachmentBase64,
+            arrivalAttachment: uploadedFileId || arrivalPreviewUrl,
           });
         } catch (pdfErr) {
           console.error("Failed to auto-download delivery report PDF:", pdfErr);
@@ -126,7 +142,7 @@ export function MarkArrivedModal({
 
   const isFormValid = Boolean(
     actualArrivalDate &&
-    arrivalAttachmentBase64.trim()
+    arrivalFile
   );
 
   return (
@@ -234,19 +250,19 @@ export function MarkArrivedModal({
             <span>
               Arrival Proof / Photo <span className="text-destructive">*</span>
             </span>
-            {!arrivalAttachmentBase64 && (
+            {!arrivalFile && (
               <span className="text-[11px] text-destructive font-normal">
                 Required to confirm arrival
               </span>
             )}
           </label>
           <div className="rounded-xl border border-dashed border-border bg-card p-4 transition-colors">
-            {arrivalAttachmentBase64 ? (
+            {arrivalFile ? (
               <div className="space-y-3">
                 <div className="relative flex flex-col items-center justify-center p-3 bg-muted/20 rounded-xl border border-border">
-                  {arrivalAttachmentBase64.startsWith("data:image/") ? (
+                  {arrivalPreviewUrl ? (
                     <img
-                      src={arrivalAttachmentBase64}
+                      src={arrivalPreviewUrl}
                       alt="Arrival proof"
                       className="max-h-48 rounded-lg object-contain border border-border shadow-xs"
                     />
@@ -274,8 +290,10 @@ export function MarkArrivedModal({
                   <button
                     type="button"
                     onClick={() => {
-                      setArrivalAttachmentBase64("");
+                      setArrivalFile(null);
                       setAttachmentFileName("");
+                      if (arrivalPreviewUrl) URL.revokeObjectURL(arrivalPreviewUrl);
+                      setArrivalPreviewUrl("");
                     }}
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-1.5"
                   >
