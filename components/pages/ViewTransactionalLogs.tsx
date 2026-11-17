@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuditLogsFilterBar from "@/components/pages/AuditLogsFilterBar";
 import AuditLogsTable, { LogEntry } from "@/components/pages/AuditLogsTable";
+import { downloadAuditLogsPdf } from "@/components/pages/downloadAuditLogsPdf";
 
 const parseLogTime = (ts: string): number => {
   if (!ts) return 0;
@@ -45,6 +46,26 @@ export default function ViewTransactionalLogs({
   const [endDate, setEndDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  const subtitle = useMemo(() => {
+    switch (moduleTitle) {
+      case "Resources & Suppliers":
+        return "Audit trail for Categories, Suppliers, Supplies, and Recipe/BOM modifications";
+      case "Inventory":
+        return "Audit trail for Stock Adjustments, Cycle Counts, and Stock Write-Offs";
+      case "Goods Receiving":
+        return "Audit trail for Goods Receipt Notes, Stock-Ins, Discrepancies, Returns, and Loss Reports";
+      case "Stock Transfer":
+        return "Audit trail for Transfer Requests, Scheduling, Dispatches, and Locations";
+      case "Orders & Procurement":
+        return "Audit trail for Purchase Requisitions, Purchase Orders, and Delivery Orders";
+      case "Production & Quality":
+        return "Audit trail for Production Requests, Material Issuances, Batch Tracking, and QA Inspections";
+      default:
+        return "Chronological audit trail of transactional changes, approvals, and system events";
+    }
+  }, [moduleTitle]);
 
   const handleResetFilters = () => {
     setEntityFilter("All"); setFilterMode("all"); setSpecificDate(""); setStartDate(""); setEndDate(""); setSearchQuery(""); setCurrentPage(1);
@@ -138,6 +159,25 @@ export default function ViewTransactionalLogs({
     document.body.removeChild(link);
   };
 
+  const handleDownloadPdf = async () => {
+    try {
+      setDownloadingPdf(true);
+      await downloadAuditLogsPdf(filteredLogs, {
+        moduleTitle: moduleTitle || formattedType,
+        entityFilter,
+        filterMode,
+        specificDate,
+        startDate,
+        endDate,
+        searchQuery,
+      });
+    } catch (err) {
+      console.error("Failed to generate PDF report:", err);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-full overflow-x-hidden min-h-screen bg-background p-2 sm:p-4 transition-colors font-sans text-foreground">
       <div className="w-full max-w-full space-y-5">
@@ -148,7 +188,7 @@ export default function ViewTransactionalLogs({
               Back
             </Button>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{title}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Audit trail for Supply Add/Edit/Status, Recipe/BOM modifications, and Inventory movements</p>
+            <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
           </div>
         </div>
 
@@ -158,7 +198,7 @@ export default function ViewTransactionalLogs({
           setEntityFilter={(value) => { setEntityFilter(value); setCurrentPage(1); }}
           filterMode={filterMode} setFilterMode={(value) => { setFilterMode(value); setCurrentPage(1); }} specificDate={specificDate} setSpecificDate={(value) => { setSpecificDate(value); setCurrentPage(1); }}
           startDate={startDate} setStartDate={(value) => { setStartDate(value); setCurrentPage(1); }} endDate={endDate} setEndDate={(value) => { setEndDate(value); setCurrentPage(1); }}
-          searchQuery={searchQuery} setSearchQuery={(value) => { setSearchQuery(value); setCurrentPage(1); }} onResetFilters={handleResetFilters} onExportCSV={handleExportCSV}
+          searchQuery={searchQuery} setSearchQuery={(value) => { setSearchQuery(value); setCurrentPage(1); }} onResetFilters={handleResetFilters} onDownloadPdf={handleDownloadPdf} downloadingPdf={downloadingPdf}
         />
 
         <AuditLogsTable

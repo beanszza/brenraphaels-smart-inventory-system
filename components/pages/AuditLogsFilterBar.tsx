@@ -22,7 +22,8 @@ interface AuditLogsFilterBarProps {
   entityFilter?: string;
   setEntityFilter?: (entity: string) => void;
   onResetFilters: () => void;
-  onExportCSV: () => void;
+  onDownloadPdf: () => void;
+  downloadingPdf?: boolean;
 }
 
 export default function AuditLogsFilterBar({
@@ -39,48 +40,54 @@ export default function AuditLogsFilterBar({
   entityOptions,
   entityFilter,
   setEntityFilter,
-  onResetFilters,
-  onExportCSV,
+  onResetFilters: _onResetFilters,
+  onDownloadPdf,
+  downloadingPdf = false,
 }: AuditLogsFilterBarProps) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
+    <div className="space-y-4">
+      {/* 1. Entity Subtabs Row (standard module pill tabs styling) */}
       {entityOptions && entityOptions.length > 1 && setEntityFilter && (
-        <div className="flex flex-wrap items-center gap-3 pb-2 border-b border-border/50">
-          <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5 uppercase tracking-wider">
-            Filter View:
-          </span>
-          <div className="flex flex-wrap p-1 bg-muted rounded-xl border border-border text-xs font-semibold gap-1">
+        <div className="border-b border-border overflow-x-auto">
+          <div className="flex items-center gap-1.5 min-w-max pb-2">
             {entityOptions.map((opt) => (
               <button
                 key={opt}
                 type="button"
                 onClick={() => setEntityFilter(opt)}
-                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   entityFilter === opt
-                    ? "bg-primary text-primary-foreground shadow-sm font-bold"
-                    : "text-foreground hover:text-foreground hover:bg-card/60"
+                    ? "bg-primary text-primary-foreground shadow-xs font-bold"
+                    : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
-                {opt}
+                <span>{opt}</span>
               </button>
             ))}
           </div>
         </div>
       )}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-        {/* Filter Mode Selector */}
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5 uppercase tracking-wider">
-            Filter History:
-          </span>
-          <div className="flex p-1 bg-muted rounded-xl border border-border text-xs font-semibold">
+
+      {/* 2. Search & Controls Toolbar Card */}
+      <div className="rounded-xl border border-border bg-card p-3.5 shadow-xs space-y-3">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          {/* Search Input */}
+          <SearchInput
+            containerClassName="flex-1 min-w-[240px]"
+            placeholder="Search by ID, activity, items, staff..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+
+          {/* Date Range Selector Segmented Pills */}
+          <div className="flex items-center gap-1 p-1 bg-muted rounded-xl border border-border text-xs font-semibold shrink-0">
             <button
               type="button"
               onClick={() => setFilterMode("all")}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 filterMode === "all"
-                  ? "bg-primary text-primary-foreground shadow-sm font-bold"
-                  : "text-foreground hover:text-foreground hover:bg-card/60"
+                  ? "bg-primary text-primary-foreground shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/60"
               }`}
             >
               All History
@@ -90,8 +97,8 @@ export default function AuditLogsFilterBar({
               onClick={() => setFilterMode("specific")}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 filterMode === "specific"
-                  ? "bg-primary text-primary-foreground shadow-sm font-bold"
-                  : "text-foreground hover:text-foreground hover:bg-card/60"
+                  ? "bg-primary text-primary-foreground shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/60"
               }`}
             >
               Specific Date
@@ -101,95 +108,93 @@ export default function AuditLogsFilterBar({
               onClick={() => setFilterMode("range")}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 filterMode === "range"
-                  ? "bg-primary text-primary-foreground shadow-sm font-bold"
-                  : "text-foreground hover:text-foreground hover:bg-card/60"
+                  ? "bg-primary text-primary-foreground shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/60"
               }`}
             >
               Date Range
             </button>
           </div>
-        </div>
 
-        {/* Search Input Box & Export CSV Button */}
-        <div className="flex flex-wrap items-center gap-3">
-          <SearchInput
-            containerClassName="min-w-[240px]"
-            placeholder="Search by ID, activity, items, users..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          {/* Download Report Button (Generates Bren Raphael's Official PDF) */}
           <Button
-            onClick={onExportCSV}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 h-[38px] text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm whitespace-nowrap"
+            type="button"
+            onClick={onDownloadPdf}
+            disabled={downloadingPdf}
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 h-10 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors shadow-xs whitespace-nowrap cursor-pointer shrink-0"
           >
-            <Download size={14} /> Download Report
+            <Download size={14} />
+            {downloadingPdf ? "Generating PDF..." : "Download Report (PDF)"}
           </Button>
         </div>
+
+        {/* 3. Compact Date Picker Row (Appears neatly inline without stretching full width) */}
+        {filterMode === "specific" && (
+          <div className="pt-2.5 border-t border-border/50 flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground shadow-2xs">
+              <Calendar size={14} className="text-muted-foreground shrink-0" />
+              <span className="font-semibold text-muted-foreground shrink-0">Select Date:</span>
+              <Input
+                type="date"
+                max={getMaxFutureDateString()}
+                value={specificDate}
+                onChange={(e) => setSpecificDate(e.target.value)}
+                className="h-7 w-36 border-0 p-0 text-xs bg-transparent focus-visible:ring-0 focus:outline-none"
+              />
+            </div>
+            {specificDate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSpecificDate("")}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-semibold h-8 px-2 cursor-pointer"
+              >
+                <RotateCcw size={12} /> Clear Date
+              </Button>
+            )}
+          </div>
+        )}
+
+        {filterMode === "range" && (
+          <div className="pt-2.5 border-t border-border/50 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground shadow-2xs">
+              <Calendar size={14} className="text-muted-foreground shrink-0" />
+              <span className="font-semibold text-muted-foreground shrink-0">Start Date:</span>
+              <Input
+                type="date"
+                max={getMaxFutureDateString()}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-7 w-36 border-0 p-0 text-xs bg-transparent focus-visible:ring-0 focus:outline-none"
+              />
+            </div>
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground shadow-2xs">
+              <Calendar size={14} className="text-muted-foreground shrink-0" />
+              <span className="font-semibold text-muted-foreground shrink-0">End Date:</span>
+              <Input
+                type="date"
+                max={getMaxFutureDateString()}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-7 w-36 border-0 p-0 text-xs bg-transparent focus-visible:ring-0 focus:outline-none"
+              />
+            </div>
+            {(startDate || endDate) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                }}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-semibold h-8 px-2 cursor-pointer"
+              >
+                <RotateCcw size={12} /> Clear Range
+              </Button>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* Specific Date Picker */}
-      {filterMode === "specific" && (
-        <div className="pt-3 border-t border-border flex items-center gap-3">
-          <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-            <Calendar size={14} className="text-foreground" /> Select Date:
-          </label>
-          <Input
-            type="date"
-            max={getMaxFutureDateString()}
-            value={specificDate}
-            onChange={(e) => setSpecificDate(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-border rounded-xl bg-background text-foreground outline-none focus:ring-1 focus:ring-ring"
-          />
-          {specificDate && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onResetFilters}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-semibold h-8 px-2"
-            >
-              <RotateCcw size={12} /> Clear Date
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* Date Range Pickers */}
-      {filterMode === "range" && (
-        <div className="pt-3 border-t border-border flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-              <Calendar size={14} className="text-foreground" /> Start:
-            </label>
-            <Input
-              type="date"
-              max={getMaxFutureDateString()}
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="px-3 py-1.5 text-sm border border-border rounded-xl bg-background text-foreground outline-none focus:ring-1 focus:ring-ring"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-muted-foreground">End:</label>
-            <Input
-              type="date"
-              max={getMaxFutureDateString()}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="px-3 py-1.5 text-sm border border-border rounded-xl bg-background text-foreground outline-none focus:ring-1 focus:ring-ring"
-            />
-          </div>
-          {(startDate || endDate) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onResetFilters}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-semibold h-8 px-2"
-            >
-              <RotateCcw size={12} /> Clear Range
-            </Button>
-          )}
-        </div>
-      )}
     </div>
   );
 }
