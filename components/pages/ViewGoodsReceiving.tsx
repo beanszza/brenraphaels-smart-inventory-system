@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Toaster } from "@/components/ui/sonner";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 
@@ -68,7 +67,6 @@ export default function ViewGoodsReceiving({
         </div>
       </nav>
       {children}
-      <Toaster />
     </div>
   );
 }

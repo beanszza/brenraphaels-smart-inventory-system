@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { toast } from "sonner";
 import {
   saveSupply,
   saveSupplier,
@@ -41,8 +42,6 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
   // IMS Manager: cannot see or configure BOM, but can see & configure Categories, Suppliers, and Supply.
   const canConfigureCatalog = !isAdmin;
   const canSeeBom = !isImsManager;
-
-  const [message, setMessage] = useState("");
 
   // Process Tab Order: Categories -> Supplier List -> Supply List -> BOM
   const [activeTab, setActiveTab] = useState<"category" | "supplier" | "supply" | "recipe">("category");
@@ -138,7 +137,7 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
         )
       );
     }
-    setMessage(result.message);
+    toast.success(result.message);
     setOpenCategoryModal(false);
     setEditingCategory(null);
     setCategoryPage(1);
@@ -149,20 +148,20 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
     const nextActive = cat.isActive === false;
     const result = await toggleCategoryStatus(cat.categoryId, nextActive);
     if (!result.success) {
-      setMessage(result.message);
+      toast.error(result.message);
       return;
     }
     setCategoriesState((prev) =>
       prev.map((c) => (c.categoryId === cat.categoryId ? { ...c, isActive: nextActive } : c))
     );
-    setMessage(result.message);
+    toast.success(result.message);
     router.refresh();
   };
 
   const handleSaveSupply = async (input: SupplyInput) => {
     const result = await saveSupply(input, editingSupply?.itemId);
     if (!result.success) throw new Error(result.message);
-    setMessage(result.message);
+    toast.success(result.message);
     setOpenSupplyModal(false);
     setEditingSupply(null);
     setSupplyPage(1);
@@ -172,7 +171,7 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
   const handleSaveSupplier = async (input: SupplierInput) => {
     const result = await saveSupplier(input, editingSupplier?.supplierId);
     if (!result.success) throw new Error(result.message);
-    setMessage(result.message);
+    toast.success(result.message);
     setOpenSupplierModal(false);
     setEditingSupplier(null);
     setSupplierPage(1);
@@ -182,7 +181,7 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
   const handleSaveRecipe = async (input: RecipeInput) => {
     const result = await saveRecipe(input, editingRecipe?.recipeId);
     if (!result.success) throw new Error(result.message);
-    setMessage(result.message);
+    toast.success(result.message);
     setOpenRecipeModal(false);
     setEditingRecipe(null);
     setRecipePage(1);
@@ -206,12 +205,6 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
             : "Manage your foundation data - Categories, Suppliers, and Supply"
         }
       />
-
-      {message && (
-        <p role="status" className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm text-primary">
-          {message}
-        </p>
-      )}
 
       {/* Process Tabs in Uniform Order: Categories -> Supplier List -> Supply List -> BOM */}
       <div className="border-b border-border">

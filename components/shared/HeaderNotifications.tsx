@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, CheckCheck } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,6 +63,11 @@ function StaffNotifications() {
     const initialRefresh = window.setTimeout(() => { void request(); }, 0);
     const onEvent = (event: LiveEvent) => {
       if (!mounted.current) return;
+      if (event.type === "notification.created") {
+        toast.info(event.notification.title, {
+          description: event.notification.body,
+        });
+      }
       // A push received during REST may be newer than its response. Re-fetch after
       // that response instead of applying a push which the response could erase.
       if (busy.current || !confirmed.current) { void request(); return; }
@@ -105,7 +111,12 @@ function StaffNotifications() {
         <Button variant="ghost" size="sm" disabled={loading} onClick={() => void request()}>Retry</Button></div>}
       <div className="max-h-80 overflow-y-auto" aria-busy={loading}>
         {loading && !snapshot ? <><span role="status" className="sr-only">Loading notifications</span><NotificationSkeletons /></> :
-          snapshot?.notifications.length === 0 ? <div role="status"><NotificationSkeletons /><p className="px-sm pb-sm text-label-sm text-muted-foreground">You have no notifications.</p></div> :
+          snapshot?.notifications.length === 0 ? (
+            <div role="status" className="p-6 text-center text-muted-foreground space-y-1">
+              <Bell className="w-6 h-6 mx-auto opacity-30" />
+              <p className="text-label-sm font-medium">You have no notifications.</p>
+            </div>
+          ) :
           <ul className="divide-y divide-border">{snapshot?.notifications.map((n) => <li key={n.id}>
             <button type="button" disabled={loading || n.readAt !== null} onClick={() => void request({ type: "read", id: n.id })}
               aria-label={`${n.title}${n.readAt === null ? ", mark as read" : ", read"}`}

@@ -7,6 +7,7 @@ import { actionResponse } from "@/lib/resources/action-response";
 
 
 import React, { useState } from "react";
+import { toast } from "sonner";
 import {
   Calculator, Play, Plus, Trash2, Package, AlertCircle, ShoppingCart, Clock,
 } from "lucide-react";
@@ -62,7 +63,6 @@ function UrgencyBadge({ urgency }: { urgency: string }) {
 }
 
 export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }) {
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [horizon, setHorizon] = useState("30");
   const [plannedRuns, setPlannedRuns] = useState<PlannedRun[]>([]);
@@ -140,10 +140,10 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
         items: [{ itemId: selectedItem.itemId, requestedQuantity: selectedItem.netRequirement,
           purchaseUomId: supply.purchaseUomId }],
       });
-      setMessage("Draft requisition created. Review it in Orders & Procurement before submitting.");
+      toast.success("Draft requisition created. Review it in Orders & Procurement before submitting.");
       setShowPrModal(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "The requisition could not be created.");
+      toast.error(e instanceof Error ? e.message : "The requisition could not be created.");
     } finally {
       setPrSaving(false);
     }
@@ -160,7 +160,6 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
       />
 
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      {message && <p role="status" className="text-sm text-primary">{message}</p>}
       {/* Planning Inputs */}
       <Card className="border-border">
         <CardHeader className="pb-3 border-b border-border/60">

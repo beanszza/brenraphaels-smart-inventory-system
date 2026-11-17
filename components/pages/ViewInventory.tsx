@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
@@ -292,7 +291,6 @@ export default function ViewInventory({
 
   return (
     <div className="w-full min-w-0 min-h-full py-6 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
-      <Toaster />
       <PageHeader
         title="Inventory Management"
         description="Monitor real-time warehouse stocks, ingredients, raw materials, and finished goods"
