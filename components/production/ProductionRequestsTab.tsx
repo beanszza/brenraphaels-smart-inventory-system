@@ -342,14 +342,14 @@ export default function ProductionRequestsTab({
           <table className="w-full text-left border-collapse">
             <thead className="border-b border-border bg-muted/30">
               <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 whitespace-nowrap min-w-[190px] w-48">
+                <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 whitespace-nowrap min-w-[170px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                   {activeTab === "In Progress" || activeTab === "Completed"
                     ? "Batch Number"
                     : activeTab === "All"
                       ? "Request / Batch No."
                       : "Request Number"}
                 </th>
-                <th className="sticky left-[190px] z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 whitespace-nowrap min-w-[200px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                <th className="px-4 py-4 whitespace-nowrap min-w-[180px]">
                   Product
                 </th>
                 <th className="px-4 py-4 whitespace-nowrap">Variant</th>
@@ -400,14 +400,14 @@ export default function ProductionRequestsTab({
                         }`}
                     >
                       {/* Request / Batch Number */}
-                      <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[190px] w-48 transition-colors">
+                      <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[170px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
                         {(isInProd || isCompleted) && req.batches?.[0]?.batchNumber
                           ? req.batches[0].batchNumber
                           : req.reqNumber}
                       </td>
 
                       {/* Product (Product name only) */}
-                      <td className="sticky left-[190px] z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm text-foreground whitespace-nowrap min-w-[200px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
+                      <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap min-w-[180px]">
                         {req.productName}
                       </td>
 

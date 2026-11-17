@@ -128,8 +128,8 @@ export default function MaterialIssuanceTab({ initialRows, initialIssuanceId }: 
         <table className="w-full min-w-[900px]">
           <thead className="border-b border-border bg-muted/30">
             <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-              <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[170px] w-44 whitespace-nowrap">Issuance Number</th>
-              <th className="sticky left-[170px] z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[160px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">Request Number</th>
+              <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[160px] w-44 whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">Issuance Number</th>
+              <th className="px-4 py-4 whitespace-nowrap">Request Number</th>
               <th className="px-4 py-4">Product</th>
               <th className="px-4 py-4">Recipe</th>
               <th className="px-4 py-4 text-right">Target Output</th>
@@ -162,11 +162,11 @@ export default function MaterialIssuanceTab({ initialRows, initialIssuanceId }: 
                     onClick={() => handleOpenScanner(iss.issuanceId)}
                     className="group hover:bg-muted/30 transition-colors cursor-pointer"
                   >
-                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[170px] w-44 transition-colors">
+                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[160px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
                       {iss.issuanceNumber}
                     </td>
 
-                    <td className="sticky left-[170px] z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm text-muted-foreground whitespace-nowrap min-w-[160px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {iss.reqNumber}
                     </td>
 

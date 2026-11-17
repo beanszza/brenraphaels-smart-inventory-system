@@ -27,8 +27,8 @@ export default function CategoryTable({
       <table className="w-full min-w-[700px]">
         <thead className="border-b border-border bg-muted/30">
           <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-            <th className="sticky left-0 z-20 w-16 px-5 py-4 bg-muted/95 backdrop-blur-xs">No.</th>
-            <th className="sticky left-[64px] z-20 min-w-[180px] w-48 px-5 py-4 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-muted/95 backdrop-blur-xs">Category Name</th>
+            <th className="sticky left-0 z-20 w-16 px-5 py-4 bg-muted/95 backdrop-blur-xs border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">No.</th>
+            <th className="px-5 py-4 min-w-[180px]">Category Name</th>
             <th className="px-5 py-4">Description</th>
             <th className="px-5 py-4">Linked Items</th>
             <th className="px-5 py-4">Expiry</th>
@@ -49,10 +49,10 @@ export default function CategoryTable({
           ) : (
             items.map((item, index) => (
               <tr key={item.categoryId} className="hover:bg-muted/30 transition-colors group">
-                <td className="sticky left-0 z-10 w-16 px-5 py-4 text-sm text-muted-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors">
+                <td className="sticky left-0 z-10 w-16 px-5 py-4 text-sm text-muted-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                   {index + 1 + (currentPage - 1) * pageSize}
                 </td>
-                <td className="sticky left-[64px] z-10 min-w-[180px] w-48 px-5 py-4 text-sm font-medium text-foreground whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-card group-hover:bg-muted/40 transition-colors">
+                <td className="px-5 py-4 text-sm font-medium text-foreground whitespace-nowrap min-w-[180px]">
                   <span className="rounded-md bg-muted text-foreground border border-border px-2.5 py-1 text-xs font-semibold">
                     {item.categoryName}
                   </span>

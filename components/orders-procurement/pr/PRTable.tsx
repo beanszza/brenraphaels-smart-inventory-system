@@ -82,8 +82,8 @@ export function PRTable({
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border bg-muted/40">
-            <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap min-w-[170px] w-44">PURCHASE REQUISITION NUMBER</th>
-            <th className="sticky left-[170px] z-20 bg-muted/95 backdrop-blur-xs px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap min-w-[130px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">REQUEST DATE</th>
+            <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap min-w-[160px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">PURCHASE REQUISITION NUMBER</th>
+            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">REQUEST DATE</th>
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">REQUESTED BY</th>
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">DEPARTMENT</th>
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">REQUIRED DATE</th>
@@ -197,10 +197,10 @@ export function PRTable({
                   className="group hover:bg-muted/30 transition-colors cursor-pointer"
                   onClick={() => onView(pr)}
                 >
-                  <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-3.5 font-mono text-foreground whitespace-nowrap font-medium min-w-[170px] w-44 transition-colors">
+                  <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-3.5 font-mono text-foreground whitespace-nowrap font-medium min-w-[160px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
                     {pr.prNumber}
                   </td>
-                  <td className="sticky left-[170px] z-10 bg-card group-hover:bg-muted/40 px-4 py-3.5 text-muted-foreground whitespace-nowrap min-w-[130px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
+                  <td className="px-4 py-3.5 text-muted-foreground whitespace-nowrap">
                     {fmtDate(pr.requestDate)}
                   </td>
                   <td className="px-4 py-3.5 font-medium text-foreground whitespace-nowrap">

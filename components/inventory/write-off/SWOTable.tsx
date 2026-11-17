@@ -70,10 +70,10 @@ export function SWOTable({
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border bg-muted/40">
-            <th className="sticky left-0 z-20 min-w-[170px] w-44 px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap bg-muted/95 backdrop-blur-xs">
+            <th className="sticky left-0 z-20 min-w-[160px] w-44 px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap bg-muted/95 backdrop-blur-xs border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
               WRITE-OFF NUMBER
             </th>
-            <th className="sticky left-[170px] z-20 min-w-[130px] w-36 px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-muted/95 backdrop-blur-xs">
+            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">
               REQUEST DATE
             </th>
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">
@@ -182,7 +182,7 @@ export function SWOTable({
               return (
                 <tr key={swo.writeOffId} className="hover:bg-muted/20 transition-colors group">
                   {/* SWO Number */}
-                  <td className="sticky left-0 z-10 min-w-[170px] w-44 px-4 py-3 font-semibold text-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors">
+                  <td className="sticky left-0 z-10 min-w-[160px] w-44 px-4 py-3 font-semibold text-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     <button
                       type="button"
                       onClick={() => onView(swo)}
@@ -193,7 +193,7 @@ export function SWOTable({
                   </td>
 
                   {/* Request Date */}
-                  <td className="sticky left-[170px] z-10 min-w-[130px] w-36 px-4 py-3 text-muted-foreground whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-card group-hover:bg-muted/40 transition-colors">
+                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                     {fmtDate(swo.requestedAt)}
                   </td>
 

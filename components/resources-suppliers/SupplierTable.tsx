@@ -30,8 +30,8 @@ export default function SupplierTable({
       <table className="w-full">
         <thead className="border-b border-border bg-muted/30">
           <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-            <th className="sticky left-0 z-20 w-16 px-4 py-4 text-center bg-muted/95 backdrop-blur-xs">No.</th>
-            <th className="sticky left-[64px] z-20 min-w-[200px] w-52 px-4 py-4 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-muted/95 backdrop-blur-xs">Supplier Name</th>
+            <th className="sticky left-0 z-20 w-16 px-4 py-4 text-center bg-muted/95 backdrop-blur-xs border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">No.</th>
+            <th className="px-4 py-4 min-w-[200px]">Supplier Name</th>
             <th className="px-4 py-4">Contact Person</th>
             <th className="px-4 py-4">Email</th>
             <th className="px-4 py-4 whitespace-nowrap">Phone</th>
@@ -49,10 +49,10 @@ export default function SupplierTable({
           ) : (
             suppliers.map((supplier, index) => (
               <tr key={supplier.supplierId} className="hover:bg-muted/30 transition-colors group">
-                <td className="sticky left-0 z-10 w-16 px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors">
+                <td className="sticky left-0 z-10 w-16 px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                   {index + 1 + (currentPage - 1) * pageSize}
                 </td>
-                <td className="sticky left-[64px] z-10 min-w-[200px] w-52 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-card group-hover:bg-muted/40 transition-colors">
+                <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[200px]">
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <span className="cursor-default whitespace-nowrap">

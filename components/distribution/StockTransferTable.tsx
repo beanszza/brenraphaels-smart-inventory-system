@@ -32,8 +32,8 @@ export default function StockTransferTable({
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border bg-muted/30">
-            <th className="sticky left-0 z-20 min-w-[140px] w-36 px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap bg-muted/95 backdrop-blur-xs">TRANSFER ID</th>
-            <th className="sticky left-[140px] z-20 min-w-[180px] w-48 px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-muted/95 backdrop-blur-xs">PRODUCT</th>
+            <th className="sticky left-0 z-20 min-w-[130px] w-36 px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap bg-muted/95 backdrop-blur-xs border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">TRANSFER ID</th>
+            <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">PRODUCT</th>
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">SOURCE</th>
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">DESTINATION</th>
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">QTY</th>
@@ -52,8 +52,8 @@ export default function StockTransferTable({
           ) : (
             transfers.map((item) => (
               <tr key={item.id} className="hover:bg-muted/30 transition-colors group">
-                <td className="sticky left-0 z-10 min-w-[140px] w-36 px-3 py-3 font-bold text-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors">{item.id}</td>
-                <td className="sticky left-[140px] z-10 min-w-[180px] w-48 px-3 py-3 font-medium text-foreground whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-card group-hover:bg-muted/40 transition-colors">{item.product}</td>
+                <td className="sticky left-0 z-10 min-w-[130px] w-36 px-3 py-3 font-bold text-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">{item.id}</td>
+                <td className="px-3 py-3 font-medium text-foreground whitespace-nowrap">{item.product}</td>
                 <td className="px-3 py-3 text-muted-foreground whitespace-nowrap">{item.from}</td>
                 <td className="px-3 py-3 text-muted-foreground whitespace-nowrap">{item.to}</td>
                 <td className="px-3 py-3 text-muted-foreground whitespace-nowrap">{item.quantity}</td>

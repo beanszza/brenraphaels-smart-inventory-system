@@ -29,8 +29,8 @@ export default function QaTable({ inspections, loading, onSelectInspection, pend
       <table className="w-full">
         <thead className="border-b border-border bg-muted/30">
           <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-            <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[170px] w-48 whitespace-nowrap">{pendingView ? "Goods Receipt Note No." : "Inspection No."}</th>
-            <th className="sticky left-[170px] z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[170px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">{pendingView ? "Supplier" : "Goods Receipt Note No."}</th>
+            <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[160px] w-48 whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">{pendingView ? "Goods Receipt Note No." : "Inspection No."}</th>
+            <th className="px-4 py-4 whitespace-nowrap">{pendingView ? "Supplier" : "Goods Receipt Note No."}</th>
             {!pendingView && <th className="px-4 py-4">Supplier</th>}
             <th className="px-4 py-4">Date</th>
             {!pendingView && <>
@@ -63,10 +63,10 @@ export default function QaTable({ inspections, loading, onSelectInspection, pend
                 onClick={() => onSelectInspection(qc)}
                 className="group hover:bg-muted/30 transition-colors cursor-pointer"
               >
-                <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[170px] w-48 transition-colors">
+                <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[160px] w-48 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
                   {pendingView ? (qc.referenceNumber || qc.grnNumber) : qc.inspectionNumber}
                 </td>
-                <td className="sticky left-[170px] z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-medium text-foreground min-w-[170px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] truncate transition-colors" title={qc.supplierName}>
+                <td className="px-4 py-4 text-sm font-medium text-foreground truncate" title={qc.supplierName}>
                   {pendingView ? (qc.supplierName || "—") : (qc.referenceNumber || qc.grnNumber)}
                 </td>
                 {!pendingView && <td className="px-4 py-4 text-sm font-medium text-foreground max-w-[180px] truncate" title={qc.supplierName}>{qc.supplierName || "—"}</td>}

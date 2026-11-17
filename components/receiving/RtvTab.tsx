@@ -249,8 +249,8 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
           <table className="w-full">
             <thead className="border-b border-border bg-muted/30">
               <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[170px] w-44 whitespace-nowrap">Return to Vendor No.</th>
-                <th className="sticky left-[170px] z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[130px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">Date</th>
+                <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[160px] w-44 whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">Return to Vendor No.</th>
+                <th className="px-4 py-4 whitespace-nowrap">Date</th>
                 <th className="px-4 py-4">Supplier</th>
                 <th className="px-4 py-4">Item</th>
                 <th className="px-4 py-4 text-right">Return Qty</th>
@@ -273,10 +273,10 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
 
                 return (
                   <tr key={rtv.rtvId} className="group hover:bg-muted/30 transition-colors">
-                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[170px] w-44 transition-colors">
+                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[160px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
                       {rtv.rtvNumber}
                     </td>
-                    <td className="sticky left-[170px] z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm text-muted-foreground whitespace-nowrap min-w-[130px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {new Date(rtv.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-4 text-sm font-medium text-foreground max-w-[160px] truncate" title={rtv.supplierName}>

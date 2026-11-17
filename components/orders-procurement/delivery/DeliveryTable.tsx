@@ -59,8 +59,8 @@ export function DeliveryTable({
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border bg-muted/40">
-            <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap min-w-[170px] w-44">DELIVERY NO.</th>
-            <th className="sticky left-[170px] z-20 bg-muted/95 backdrop-blur-xs px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap min-w-[160px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">PURCHASE ORDER REF.</th>
+            <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap min-w-[160px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">DELIVERY NO.</th>
+            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">PURCHASE ORDER REF.</th>
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">SUPPLIER</th>
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">CARRIER</th>
             <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">EXPECTED DATE</th>
@@ -135,10 +135,10 @@ export function DeliveryTable({
                   className="group hover:bg-muted/30 transition-colors cursor-pointer"
                   onClick={() => onView(delivery)}
                 >
-                  <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-3.5 font-mono text-foreground whitespace-nowrap font-medium min-w-[170px] w-44 transition-colors">
+                  <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-3.5 font-mono text-foreground whitespace-nowrap font-medium min-w-[160px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
                     {delivery.deliveryNumber}
                   </td>
-                  <td className="sticky left-[170px] z-10 bg-card group-hover:bg-muted/40 px-4 py-3.5 font-mono text-muted-foreground whitespace-nowrap text-xs min-w-[160px] border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
+                  <td className="px-4 py-3.5 font-mono text-muted-foreground whitespace-nowrap text-xs">
                     {delivery.poNumber || "—"}
                   </td>
                   <td className="px-4 py-3.5 font-medium text-foreground whitespace-nowrap max-w-[200px] truncate" title={delivery.supplierName}>

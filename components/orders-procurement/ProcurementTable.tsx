@@ -32,8 +32,8 @@ export default function ProcurementTable({
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border bg-muted/30">
-            <th className="sticky left-0 z-20 min-w-[140px] w-36 px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap bg-muted/95 backdrop-blur-xs">ORDER NO.</th>
-            <th className="sticky left-[140px] z-20 min-w-[180px] w-48 px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-muted/95 backdrop-blur-xs">ITEM</th>
+            <th className="sticky left-0 z-20 min-w-[140px] w-36 px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap bg-muted/95 backdrop-blur-xs border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">ORDER NO.</th>
+            <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">ITEM</th>
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">SUPPLIER</th>
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">QUANTITY</th>
             <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">ORDER DATE</th>
@@ -52,8 +52,8 @@ export default function ProcurementTable({
           ) : (
             orders.map((order) => (
               <tr key={order.id} className="hover:bg-muted/30 transition-colors group">
-                <td className="sticky left-0 z-10 min-w-[140px] w-36 px-3 py-3 font-bold text-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors">{order.id}</td>
-                <td className="sticky left-[140px] z-10 min-w-[180px] w-48 px-3 py-3 font-medium text-foreground whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] bg-card group-hover:bg-muted/40 transition-colors">{order.item}</td>
+                <td className="sticky left-0 z-10 min-w-[140px] w-36 px-3 py-3 font-bold text-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">{order.id}</td>
+                <td className="px-3 py-3 font-medium text-foreground whitespace-nowrap">{order.item}</td>
                 <td className="px-3 py-3 text-muted-foreground whitespace-nowrap">{order.supplier}</td>
                 <td className="px-3 py-3 text-muted-foreground whitespace-nowrap">{order.quantity}</td>
                 <td className="px-3 py-3 text-muted-foreground whitespace-nowrap">{order.orderDate}</td>
