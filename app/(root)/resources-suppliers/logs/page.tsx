@@ -25,7 +25,7 @@ export default async function Page({ searchParams }: { searchParams?: Promise<{ 
   }
 
   const { type } = (await searchParams) ?? {};
-  const selectedModules = type && MODULES_BY_TYPE[type.toLowerCase()]
+  const selectedModules: Module[] = type && MODULES_BY_TYPE[type.toLowerCase()]
     ? MODULES_BY_TYPE[type.toLowerCase()]
     : ["Resources & Suppliers"];
 
