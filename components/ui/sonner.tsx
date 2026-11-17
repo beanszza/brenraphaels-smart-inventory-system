@@ -9,8 +9,6 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme="light"
       position="bottom-right"
-      richColors
-      closeButton
       className="toaster group"
       toastOptions={{
         classNames: {
