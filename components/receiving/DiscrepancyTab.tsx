@@ -1,6 +1,10 @@
 "use client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ReceivingSkeleton } from "./ReceivingSkeleton";
+import { History } from "lucide-react";
+import { useStaff } from "@/context/StaffContext";
+import { isAdminStaff } from "@/lib/auth-roles";
 
 
 
@@ -23,6 +27,8 @@ type DiscrepancySubTab = "short" | "rejected" | "over";
 
 export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscrepancies: Discrepancy[] }) {
   const router = useRouter();
+  const staff = useStaff();
+  const isAdmin = isAdminStaff(staff);
   const discrepancies = initialDiscrepancies;
   const [loading, startRefresh] = useTransition();
   const [search, setSearch] = useState("");
@@ -158,6 +164,18 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
           >
             Refresh
           </Button>
+          {isAdmin && (
+            <Button
+              asChild
+              variant="outline"
+              className="h-10 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer"
+            >
+              <Link href="/goods-receiving/logs">
+                <History className="w-4 h-4 mr-1.5" />
+                Transaction History
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 

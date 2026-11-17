@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useMemo, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Plus,
   RefreshCw,
+  History,
 } from "lucide-react";
 import {
   Select,
@@ -188,6 +190,19 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           >
             <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
+
+          {isAdmin && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+            >
+              <Link href="/orders-procurement/logs">
+                <History className="w-4 h-4" /> Transaction History
+              </Link>
+            </Button>
+          )}
 
           {!isAdmin && (
             <Button

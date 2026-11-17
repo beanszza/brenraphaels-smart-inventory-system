@@ -18,6 +18,9 @@ interface AuditLogsFilterBarProps {
   setEndDate: (d: string) => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
+  entityOptions?: string[];
+  entityFilter?: string;
+  setEntityFilter?: (entity: string) => void;
   onResetFilters: () => void;
   onExportCSV: () => void;
 }
@@ -33,11 +36,37 @@ export default function AuditLogsFilterBar({
   setEndDate,
   searchQuery,
   setSearchQuery,
+  entityOptions,
+  entityFilter,
+  setEntityFilter,
   onResetFilters,
   onExportCSV,
 }: AuditLogsFilterBarProps) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
+      {entityOptions && entityOptions.length > 1 && setEntityFilter && (
+        <div className="flex flex-wrap items-center gap-3 pb-2 border-b border-border/50">
+          <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5 uppercase tracking-wider">
+            Filter View:
+          </span>
+          <div className="flex flex-wrap p-1 bg-muted rounded-xl border border-border text-xs font-semibold gap-1">
+            {entityOptions.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => setEntityFilter(opt)}
+                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                  entityFilter === opt
+                    ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                    : "text-foreground hover:text-foreground hover:bg-card/60"
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         {/* Filter Mode Selector */}
         <div className="flex flex-wrap items-center gap-3">
@@ -93,7 +122,7 @@ export default function AuditLogsFilterBar({
             onClick={onExportCSV}
             className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 h-[38px] text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm whitespace-nowrap"
           >
-            <Download size={14} /> Export CSV
+            <Download size={14} /> Download Report
           </Button>
         </div>
       </div>

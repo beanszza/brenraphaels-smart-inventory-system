@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { OrdersSkeleton } from "@/components/orders-procurement/OrdersSkeleton";
 
 import { procurement } from "@/lib/orders/client";
@@ -9,6 +10,7 @@ import {
   Plus,
   RefreshCw,
   Inbox,
+  History,
 } from "lucide-react";
 import {
   Select,
@@ -175,6 +177,19 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
           >
             <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
+
+          {isAdmin && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+            >
+              <Link href="/orders-procurement/logs">
+                <History className="w-4 h-4" /> Transaction History
+              </Link>
+            </Button>
+          )}
 
           {!isAdmin && (
           <Button

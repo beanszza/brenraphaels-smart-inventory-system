@@ -1,15 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import type { TransferLocation } from "@/lib/stock-transfer/screen-data";
 import { TransferSkeleton } from "./TransferSkeleton";
-import { MapPin, Warehouse, Store, Building, CheckCircle, RefreshCw } from "lucide-react";
+import { MapPin, Warehouse, Store, Building, CheckCircle, RefreshCw, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/shared/SearchInput";
+import { useIsAdmin } from "@/context/StaffContext";
 
 export function LocationsTab({ locations, loading, onRefresh }: {
   locations: TransferLocation[]; loading: boolean; onRefresh: () => void;
 }) {
+  const isAdmin = useIsAdmin();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const locationTypes = ["All", "Branch", "Bazaar", "Warehouse", "Finished Goods", "Production"];
@@ -49,6 +52,19 @@ export function LocationsTab({ locations, loading, onRefresh }: {
         >
           <RefreshCw className="w-3.5 h-3.5" /> Refresh
         </Button>
+
+        {isAdmin && (
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 shrink-0"
+          >
+            <Link href="/stock-transfer/logs">
+              <History className="w-3.5 h-3.5" /> Transaction History
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Type Filter Pills */}

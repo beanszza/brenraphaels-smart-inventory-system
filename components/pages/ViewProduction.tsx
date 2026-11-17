@@ -4,12 +4,14 @@ import { createIssuance } from "@/app/actions/production/issuances";
 import React, { useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { History } from "lucide-react";
 import { toast } from "sonner";
 import type { ProductionTab } from "@/lib/production/screen-data";
 // The action boundary preserves the existing serializable production DTOs.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useStaff, useIsAdmin, useIsImsManager, useIsHeadCook, useIsQa } from "@/context/StaffContext";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { Button } from "@/components/ui/button";
 import ProductionRequestsTab from "@/components/production/ProductionRequestsTab";
 import MaterialIssuanceTab from "@/components/production/MaterialIssuanceTab";
 import ProductionTrackingTab from "@/components/production/ProductionTrackingTab";
@@ -100,8 +102,8 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
       />
 
       {/* Main Tab Bar matching Resources & Suppliers styling */}
-      <div className="border-b border-border">
-        <div className="flex items-center gap-2 overflow-x-auto">
+      <div className="flex items-center justify-between border-b border-border gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto min-w-0">
           {allowedTabs.map((tab) => {
             const isActive = activeTab === tab.key;
             return (
@@ -121,6 +123,20 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
             );
           })}
         </div>
+        {isAdmin && (
+          <div className="pb-1 shrink-0">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+            >
+              <Link href="/production-quality/logs">
+                <History className="w-3.5 h-3.5" /> Transaction History
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className={`transition-opacity duration-150 ${pending ? "opacity-60 pointer-events-none" : "opacity-100"}`}>

@@ -8,6 +8,7 @@ import { Plus, FileText, RefreshCw } from "lucide-react";
 import { SearchInput } from "@/components/shared/SearchInput";
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
+import { useIsAdmin } from "@/context/StaffContext";
 import { SupplyItem } from "./types";
 import SupplyTable from "./SupplyTable";
 import ResourceStatusTabs from "./ResourceStatusTabs";
@@ -48,6 +49,7 @@ export default function SupplyTab({
   onView,
 }: SupplyTabProps) {
   const router = useRouter();
+  const isAdmin = useIsAdmin();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const handleRefresh = () => {
@@ -99,14 +101,14 @@ export default function SupplyTab({
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
           </Button>
-          {isAuthorizedForReports && (
+          {isAdmin && (
             <Button
               variant="outline"
               size="sm"
               asChild
-              className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
+              className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
             >
-              <Link href="/resources-suppliers/logs?type=Supply">
+              <Link href="/resources-suppliers/logs">
                 <FileText className="w-4 h-4" /> Transaction History
               </Link>
             </Button>

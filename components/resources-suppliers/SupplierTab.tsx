@@ -1,9 +1,11 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, FileText } from "lucide-react";
+import { useIsAdmin } from "@/context/StaffContext";
 import { SearchInput } from "@/components/shared/SearchInput";
 import Pagination from "@/components/Pagination";
 import { Supplier } from "./types";
@@ -39,6 +41,7 @@ export default function SupplierTab({
   onView,
 }: SupplierTabProps) {
   const router = useRouter();
+  const isAdmin = useIsAdmin();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const handleRefresh = () => {
@@ -92,6 +95,18 @@ export default function SupplierTab({
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
           </Button>
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+            >
+              <Link href="/resources-suppliers/logs">
+                <FileText className="w-4 h-4" /> Transaction History
+              </Link>
+            </Button>
+          )}
           {canConfigure && (
             <Button
               type="button"

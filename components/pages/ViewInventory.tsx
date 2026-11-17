@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
+import { History } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
@@ -439,6 +441,19 @@ export default function ViewInventory({
                     ))}
                   </SelectContent>
                 </Select>
+
+                {isAdmin && (
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-10 rounded-xl border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer"
+                  >
+                    <Link href="/inventory/logs">
+                      <History className="w-4 h-4 mr-1.5" />
+                      Transaction History
+                    </Link>
+                  </Button>
+                )}
               </div>
             </div>
           </div>

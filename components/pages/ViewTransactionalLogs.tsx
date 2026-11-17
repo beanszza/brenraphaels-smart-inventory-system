@@ -20,14 +20,25 @@ const parseLogTime = (ts: string): number => {
   return 0;
 };
 
-export default function ViewTransactionalLogs({ initialLogs, unavailable = false }: { initialLogs: LogEntry[]; unavailable?: boolean }) {
+export default function ViewTransactionalLogs({
+  initialLogs,
+  unavailable = false,
+  entityOptions,
+  moduleTitle,
+}: {
+  initialLogs: LogEntry[];
+  unavailable?: boolean;
+  entityOptions?: string[];
+  moduleTitle?: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const typeParam = searchParams?.get("type") || "Supply";
   const logs = initialLogs;
   const formattedType = typeParam.charAt(0).toUpperCase() + typeParam.slice(1).toLowerCase();
-  const title = `${formattedType} Transactional Audit Logs`;
+  const title = moduleTitle ? `${moduleTitle} Transactional History` : `${formattedType} Transactional Audit Logs`;
 
+  const [entityFilter, setEntityFilter] = useState<string>("All");
   const [filterMode, setFilterMode] = useState<"all" | "specific" | "range">("all");
   const [specificDate, setSpecificDate] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -35,12 +46,35 @@ export default function ViewTransactionalLogs({ initialLogs, unavailable = false
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-
   const handleResetFilters = () => {
-    setFilterMode("all"); setSpecificDate(""); setStartDate(""); setEndDate(""); setSearchQuery(""); setCurrentPage(1);
+    setEntityFilter("All"); setFilterMode("all"); setSpecificDate(""); setStartDate(""); setEndDate(""); setSearchQuery(""); setCurrentPage(1);
   };
 
   const filteredLogs = logs.filter((log) => {
+    if (entityFilter && entityFilter !== "All") {
+      const lowerAct = log.activity.toLowerCase();
+      const lowerEnt = log.entityName.toLowerCase();
+      if (entityFilter === "Categories" && !(lowerAct.includes("categor") || lowerEnt.includes("categor"))) return false;
+      if (entityFilter === "Suppliers" && !(lowerAct.includes("supplier") || lowerEnt.includes("supplier"))) return false;
+      if (entityFilter === "Supply" && !(lowerAct.includes("item") || lowerAct.includes("supply") || lowerEnt.includes("item") || lowerEnt.includes("supply"))) return false;
+      if (entityFilter === "BOM / Recipes" && !(lowerAct.includes("recipe") || lowerAct.includes("bom") || lowerEnt.includes("recipe") || lowerEnt.includes("bom"))) return false;
+      if (entityFilter === "Stock Adjustments / Cycle Counts" && !(lowerAct.includes("cycle") || lowerAct.includes("adjust") || lowerAct.includes("count") || lowerEnt.includes("cycle") || lowerEnt.includes("count"))) return false;
+      if (entityFilter === "Stock Write-Offs" && !(lowerAct.includes("write-off") || lowerAct.includes("writeoff") || lowerEnt.includes("write-off") || lowerEnt.includes("writeoff") || lowerAct.includes("swo-") || lowerEnt.includes("swo-"))) return false;
+      if (entityFilter === "Receipts / GRN" && !(lowerAct.includes("receipt") || lowerAct.includes("grn") || lowerEnt.includes("grn"))) return false;
+      if (entityFilter === "Stock In" && !(lowerAct.includes("stock in") || lowerAct.includes("stock-in") || lowerEnt.includes("stock in") || lowerEnt.includes("stock-in"))) return false;
+      if (entityFilter === "Discrepancies" && !(lowerAct.includes("discrepan") || lowerEnt.includes("discrepan"))) return false;
+      if (entityFilter === "Returns" && !(lowerAct.includes("return") || lowerAct.includes("rtv") || lowerEnt.includes("rtv"))) return false;
+      if (entityFilter === "Loss Reports" && !(lowerAct.includes("loss") || lowerEnt.includes("loss"))) return false;
+      if (entityFilter === "Transfers" && !(lowerAct.includes("transfer") || lowerEnt.includes("transfer"))) return false;
+      if (entityFilter === "Requests" && !(lowerAct.includes("request") || lowerAct.includes("str-") || lowerEnt.includes("str-") || lowerAct.includes("prodreq-") || lowerEnt.includes("prodreq-"))) return false;
+      if (entityFilter === "Locations" && !(lowerAct.includes("location") || lowerEnt.includes("location") || lowerAct.includes("branch") || lowerEnt.includes("branch"))) return false;
+      if (entityFilter === "Batches" && !(lowerAct.includes("batch") || lowerEnt.includes("batch"))) return false;
+      if (entityFilter === "Material Issuances" && !(lowerAct.includes("issuance") || lowerAct.includes("material") || lowerEnt.includes("issuance"))) return false;
+      if (entityFilter === "Quality Assurance" && !(lowerAct.includes("qa") || lowerAct.includes("quality") || lowerEnt.includes("qa"))) return false;
+      if (entityFilter === "Purchase Orders" && !(lowerAct.includes("purchase order") || lowerAct.includes("po-") || lowerEnt.includes("po-"))) return false;
+      if (entityFilter === "Requisitions" && !(lowerAct.includes("requisition") || lowerAct.includes("pr-") || lowerEnt.includes("pr-"))) return false;
+      if (entityFilter === "Deliveries" && !(lowerAct.includes("deliver") || lowerEnt.includes("deliver"))) return false;
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       const matches =
@@ -97,7 +131,8 @@ export default function ViewTransactionalLogs({ initialLogs, unavailable = false
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `transaction_audit_logs_${new Date().toISOString().split("T")[0]}.csv`);
+    const safeTitle = (moduleTitle || formattedType).toLowerCase().replace(/[^a-z0-9]/g, "_");
+    link.setAttribute("download", `${safeTitle}_transaction_report_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -118,6 +153,9 @@ export default function ViewTransactionalLogs({ initialLogs, unavailable = false
         </div>
 
         <AuditLogsFilterBar
+          entityOptions={entityOptions}
+          entityFilter={entityFilter}
+          setEntityFilter={(value) => { setEntityFilter(value); setCurrentPage(1); }}
           filterMode={filterMode} setFilterMode={(value) => { setFilterMode(value); setCurrentPage(1); }} specificDate={specificDate} setSpecificDate={(value) => { setSpecificDate(value); setCurrentPage(1); }}
           startDate={startDate} setStartDate={(value) => { setStartDate(value); setCurrentPage(1); }} endDate={endDate} setEndDate={(value) => { setEndDate(value); setCurrentPage(1); }}
           searchQuery={searchQuery} setSearchQuery={(value) => { setSearchQuery(value); setCurrentPage(1); }} onResetFilters={handleResetFilters} onExportCSV={handleExportCSV}

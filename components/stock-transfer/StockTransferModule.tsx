@@ -6,11 +6,12 @@ import { cancelRequest } from "@/app/actions/stock-transfer/request-cancel";
 import { reviewRequest } from "@/app/actions/stock-transfer/request-status";
 
 import type { StockTransferScreen } from "@/lib/stock-transfer/screen-data";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import React, { useState, useTransition, useMemo } from "react";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -202,6 +203,19 @@ export default function StockTransferModule({ requests, metrics, locations, acti
             >
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </Button>
+
+            {isAdmin && (
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+              >
+                <Link href="/stock-transfer/logs">
+                  <History className="w-3.5 h-3.5" /> Transaction History
+                </Link>
+              </Button>
+            )}
 
             {canOperate && (
               <Button

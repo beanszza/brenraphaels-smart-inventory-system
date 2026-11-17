@@ -1,11 +1,12 @@
 "use client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 import { receiving } from "@/lib/receiving/client";
 
 import React, { useState, useMemo, useTransition } from "react";
-import { MoreHorizontal, Eye, Check } from "lucide-react";
+import { MoreHorizontal, Eye, Check, History } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -25,10 +26,14 @@ import Pagination from "@/components/Pagination";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
+import { useStaff } from "@/context/StaffContext";
+import { isAdminStaff } from "@/lib/auth-roles";
 import { LossReport } from "./types";
 
 export default function LossReportTab({ initialLossReports }: { initialLossReports: LossReport[] }) {
   const router = useRouter();
+  const staff = useStaff();
+  const isAdmin = isAdminStaff(staff);
   const lossReports = initialLossReports;
   const [loading, startRefresh] = useTransition();
   const [search, setSearch] = useState("");
@@ -131,6 +136,18 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
           >
             Refresh
           </Button>
+          {isAdmin && (
+            <Button
+              asChild
+              variant="outline"
+              className="h-10 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer"
+            >
+              <Link href="/goods-receiving/logs">
+                <History className="w-4 h-4 mr-1.5" />
+                Transaction History
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 

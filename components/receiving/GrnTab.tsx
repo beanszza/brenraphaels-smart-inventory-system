@@ -1,9 +1,10 @@
 "use client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
 import React, { useState, useMemo, useTransition } from "react";
-import { RefreshCw, Plus } from "lucide-react";
+import { RefreshCw, Plus, History } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -17,7 +18,7 @@ import GrnTable from "./GrnTable";
 import PendingReceivingTable from "./PendingReceivingTable";
 import Pagination from "@/components/Pagination";
 import { useStaff } from "@/context/StaffContext";
-import { isQaStaff } from "@/lib/auth-roles";
+import { isQaStaff, isAdminStaff } from "@/lib/auth-roles";
 import { GRN, ArrivedDelivery } from "./types";
 
 const CreateGrnModal = dynamic(() => import("./CreateGrnModal"), { ssr: false });
@@ -35,6 +36,7 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
   const router = useRouter();
   const staff = useStaff();
   const isQa = isQaStaff(staff);
+  const isAdmin = isAdminStaff(staff);
   const onPosted = () => {
     if (isQa) {
       setActiveSubTab("posted");
@@ -194,6 +196,19 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
           >
             <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
+
+          {isAdmin && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+            >
+              <Link href="/goods-receiving/logs">
+                <History className="w-4 h-4" /> Transaction History
+              </Link>
+            </Button>
+          )}
 
           <Button
             type="button"

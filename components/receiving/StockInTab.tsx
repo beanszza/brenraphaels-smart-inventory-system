@@ -1,10 +1,11 @@
 "use client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { ReceivingSkeleton } from "./ReceivingSkeleton";
 
 import React, { useState, useMemo, useTransition } from "react";
-import { MoreHorizontal, Eye, RefreshCw, Plus } from "lucide-react";
+import { MoreHorizontal, Eye, RefreshCw, Plus, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/shared/SearchInput";
 import {
@@ -22,6 +23,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useStaff } from "@/context/StaffContext";
+import { isAdminStaff } from "@/lib/auth-roles";
 import { StockIn } from "./types";
 
 const CreateStockInModal = dynamic(() => import("./CreateStockInModal"), { ssr: false });
@@ -29,6 +32,8 @@ const StockInDetailsModal = dynamic(() => import("./StockInDetailsModal"), { ssr
 
 export default function StockInTab({ initialStockIns }: { initialStockIns: StockIn[] }) {
   const router = useRouter();
+  const staff = useStaff();
+  const isAdmin = isAdminStaff(staff);
   const stockIns = initialStockIns;
   const [loading, startRefresh] = useTransition();
   const [search, setSearch] = useState("");
@@ -119,6 +124,18 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
             <RefreshCw className="w-4 h-4" />
             Refresh
           </Button>
+          {isAdmin && (
+            <Button
+              asChild
+              variant="outline"
+              className="h-10 px-4 text-sm font-semibold rounded-xl border border-border bg-card hover:bg-muted text-foreground flex items-center gap-2 cursor-pointer shadow-xs"
+            >
+              <Link href="/goods-receiving/logs">
+                <History className="w-4 h-4" />
+                Transaction History
+              </Link>
+            </Button>
+          )}
           <Button
             type="button"
             onClick={() => setCreateModalOpen(true)}
