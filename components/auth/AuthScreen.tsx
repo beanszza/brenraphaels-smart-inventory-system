@@ -28,7 +28,7 @@ export function AuthScreen({
 }
 
 const actionClass =
-  "inline-flex h-11 w-full items-center justify-center rounded-lg px-5 text-sm font-medium transition-colors sm:w-auto";
+"inline-flex h-10 w-full items-center justify-center gap-2 rounded-control px-4 type-label-button transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:pointer-events-none disabled:opacity-40 sm:w-auto";
 
-export const primaryActionClass = `${actionClass} bg-primary text-primary-foreground hover:bg-primary/90`;
-export const secondaryActionClass = `${actionClass} border border-border bg-background text-foreground hover:bg-accent`;
+export const primaryActionClass = `${actionClass} bg-primary text-primary-foreground hover:bg-primary-hover`;
+export const secondaryActionClass = `${actionClass} border border-input bg-surface text-ink hover:bg-subtle`;
