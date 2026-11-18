@@ -270,7 +270,7 @@ flowchart LR
 | :--- | :--- | :---: | :--- |
 | **0** | Playwright `toHaveScreenshot` baseline (`1440`, `768`, `375` widths) + checks | Test setup | **[COMPLETED]** No app change (84 snapshots recorded) |
 | **1** | Central `tokens.css` (additive only) | 3 | **[COMPLETED]** None — passed Playwright `toHaveScreenshot` as pixel-identical |
-| **2** | Point existing theme aliases at Figma values + `scripts/check-tokens.mjs` (WARNING mode) | 5 | **HIGH RISK** — changes colors across ~205 files at once; own commit + diff review |
+| **2** | Point existing theme aliases at Figma values + `scripts/check-tokens.mjs` (WARNING mode) | 5 | **[COMPLETED]** Colors & 8px narrower sidebar applied cleanly |
 | **3A–3G** | Shared components (buttons → tables) | ~33 | Yes, inside primitives (review Playwright diffs) |
 | **Exceptions** | 1) Remove `PRStatusBadge` icons (JSX change)<br>2) Remap `StatusBadge` colors (UX change) | 2 (1 per commit) | **Isolated commits** — reviewed separately from pure token swaps |
 | **4** | Layout shell (sidebar, header, page header, brand) | 11 | Yes (review Playwright diffs) |
