@@ -571,7 +571,7 @@ Each sub-stage covers **one module** and is its own commit and review: its route
 | **6.6c** | **Production · Issuance, stock-in, loss, QA** — **[COMPLETED]** | `components/production/{MaterialIssuanceModal,MaterialIssuanceTab,ProductionStockInTab,LossTab,ProductionQaTab}.tsx` *(5)* |
 | **6.7** | **Stock Transfer** — **[COMPLETED]** | `app/(root)/stock-transfer/{page,loading,error}.tsx`, `components/stock-transfer/{StockTransferModule,StockTransferSummaryCards,TransferSkeleton,STRTable,STRDetailsModal,STRActionModal,CreateSTRModal,STFTable,STFDetailsModal,STFActionModal,DispatchTransferModal,ScheduleTransferModal,StockTransferConfirmModal,LocationsTab,TransferProofThumbnail}.tsx` *(18)* |
 | **6.8** | **Distribution analytics** — **[COMPLETED]** | `app/(root)/distribution-analytics/{page,loading,error}.tsx`, `app/(root)/distribution/loading.tsx`, `components/pages/ViewDistribution.tsx`, `components/CreateTransferModal.tsx`, `components/StockTransferTable.tsx`, `components/distribution/{CreateTransferModal,DistributionSummaryCards,LocationDetailsModal,LocationModal,LocationTable,StockTransferTable}.tsx` *(14)* |
-| **6.9** | **MRP** | `app/(root)/mrp/{page,loading,error}.tsx`, `components/pages/ViewMrp.tsx` *(4)* |
+| **6.9** | **MRP** — **[COMPLETED]** | `app/(root)/mrp/{page,loading,error}.tsx`, `components/pages/ViewMrp.tsx` *(4)* |
 | **6.10** | **Audit logs (all `/logs` routes)** | `app/(root)/{inventory,goods-receiving,orders-procurement,production-quality,resources-suppliers,stock-transfer}/logs/page.tsx`, `app/(root)/resources-suppliers/logs/loading.tsx`, `components/pages/{ViewTransactionalLogs,AuditLogsTable,AuditLogsFilterBar,AuditLogDetailsModal}.tsx` *(11)* |
 
 > [!NOTE]
