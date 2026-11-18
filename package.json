@@ -8,6 +8,7 @@
     "build": "prisma generate --schema prisma/schema.prisma && next build",
     "start": "next start",
     "lint": "eslint",
+    "lint:tokens": "node scripts/check-tokens.mjs --warn",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "test": "vitest run",
     "test:watch": "vitest",
