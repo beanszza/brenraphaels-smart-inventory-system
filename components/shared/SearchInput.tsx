@@ -13,15 +13,15 @@ export function SearchInput({ containerClassName, className, ...props }: SearchI
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5 flex-1 h-10 px-3.5 rounded-xl border border-border bg-secondary/50 dark:bg-background/80 shadow-none transition-colors hover:border-primary/40 focus-within:bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15",
+        "flex items-center gap-2 flex-1 h-10 px-3 rounded-control border border-input bg-surface transition-colors focus-within:border-primary focus-within:shadow-focus",
         containerClassName
       )}
     >
-      <Search className="w-4 h-4 text-foreground/60 shrink-0" />
+      <Search className="size-4 text-ink-secondary shrink-0" />
       <Input
         type="text"
         className={cn(
-          "border-0 shadow-none focus-visible:ring-0 bg-transparent h-full p-0 text-sm flex-1 text-foreground placeholder:text-muted-foreground",
+          "border-0 shadow-none focus-visible:border-0 focus-visible:shadow-none bg-transparent h-full p-0 type-body flex-1 text-ink placeholder:text-ink-muted",
           className
         )}
         {...props}

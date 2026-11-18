@@ -72,8 +72,8 @@ describe("SearchInput visibility", () => {
       <SearchInput placeholder="Search supplies..." value="" onChange={() => { }} />
     );
 
-    expect(html).toContain("border-border");
-    expect(html).toContain("bg-secondary/50");
+    expect(html).toContain("border-input");
+    expect(html).toContain("bg-surface");
     expect(html).not.toContain("bg-muted/20");
     expect(html).not.toContain("shadow-sm");
     expect(html).toContain('placeholder="Search supplies..."');
@@ -149,7 +149,7 @@ describe("Modal layout, typography, and date bounds", () => {
       <CreatePOModal open onClose={() => { }} onSuccess={() => { }} />
     );
     expect(html).toContain('placeholder="Search requisitions..."');
-    expect(html).toContain("bg-secondary/50");
+    expect(html).toContain("bg-surface");
     expect(html).not.toContain("Back to Requisitions");
     expect(html).not.toContain(">ACTION<");
   });
