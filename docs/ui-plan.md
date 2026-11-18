@@ -454,7 +454,7 @@ Each sub-stage changes only class strings inside the listed files. Consumers pic
 ### 3C — Menus and popovers (19 dropdown consumers) — **[COMPLETED]**
 `components/ui/dropdown-menu.tsx`, `components/ui/popover.tsx`, `components/ui/hover-card.tsx`, `components/ui/tooltip.tsx`: `rounded-inner`, `shadow-modal`, `p-1.5`, items `h-9 rounded-sm type-body`, separators `bg-divider`.
 
-### 3D — Badges and status pills (styling only)
+### 3D — Badges and status pills (styling only) — **[COMPLETED]**
 | File | Change |
 | :--- | :--- |
 | `components/ui/badge.tsx` | `h-[22px] px-2.5 py-[3px] rounded-pill type-badge`. Add a `gray` variant. Point variants at `status-*` pairs. Remove the hover opacity (badges aren't interactive) |
