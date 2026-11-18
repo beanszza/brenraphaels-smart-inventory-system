@@ -49,7 +49,7 @@ export default function ModalWrapper({
     <>
       <Dialog.Root open={open} onOpenChange={(next) => { if (!next) handleRequestClose(); }}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-[200] bg-foreground/45" />
+          <Dialog.Overlay className="fixed inset-0 z-[200] bg-scrim" />
           <Dialog.Content
             aria-describedby={undefined}
             onPointerDownOutside={(e) => e.preventDefault()}
@@ -57,15 +57,15 @@ export default function ModalWrapper({
             onEscapeKeyDown={(e) => e.preventDefault()}
             onFocusOutside={(e) => { if (showCloseConfirm) e.preventDefault(); }}
             style={{ maxWidth: widths[size ?? ""] ?? 900, width: "100%" }}
-            className="font-sans fixed left-1/2 top-1/2 z-[201] flex max-h-[90dvh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl outline-none"
+            className="fixed left-1/2 top-1/2 z-[201] flex max-h-[90dvh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-modal border border-border bg-surface shadow-modal outline-none"
           >
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border-subtle px-6 py-5">
-              <Dialog.Title className="text-lg font-semibold text-foreground">{title}</Dialog.Title>
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-divider px-6 py-5">
+              <Dialog.Title className="type-modal-title text-ink">{title}</Dialog.Title>
               <button
                 type="button"
                 onClick={handleRequestClose}
                 aria-label="Close dialog"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring cursor-pointer"
+                className="flex size-8 shrink-0 items-center justify-center rounded-control hover:bg-subtle focus-visible:outline-2 focus-visible:outline-focus cursor-pointer"
               >
                 {/* Exact close asset from the reference dialog, at its native 18px size. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}

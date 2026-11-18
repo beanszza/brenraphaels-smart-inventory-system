@@ -61,7 +61,7 @@ export function ActionConfirmModal({
       }}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="pointer-events-auto font-sans fixed inset-0 z-[100050] bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" />
+        <Dialog.Overlay className="pointer-events-auto fixed inset-0 z-[100050] bg-scrim animate-in fade-in duration-150" />
         <Dialog.Content
           aria-describedby={undefined}
           onPointerDownOutside={(e) => {
@@ -74,36 +74,36 @@ export function ActionConfirmModal({
             if (!isBusy) handleClose();
           }}
           style={{ width: "100%", maxWidth: "440px" }}
-          className="pointer-events-auto font-sans fixed left-1/2 top-1/2 z-[100051] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0 outline-none animate-in fade-in zoom-in-95 duration-150"
+          className="pointer-events-auto fixed left-1/2 top-1/2 z-[100051] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 bg-surface rounded-modal shadow-modal border border-border overflow-hidden flex flex-col p-6 text-ink shrink-0 outline-none animate-in fade-in zoom-in-95 duration-150"
           onClick={(e) => e.stopPropagation()}
         >
           <Dialog.Title className="sr-only">{title}</Dialog.Title>
 
           {errorMessage && (
-            <p role="alert" className="mb-3 text-sm text-destructive text-center">
+            <p role="alert" className="mb-3 type-body text-semantic-danger text-center">
               {errorMessage}
             </p>
           )}
 
           <div className="flex flex-col items-center justify-center text-center">
             {/* Circular Alert Icon */}
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
-              <AlertTriangle className="w-6 h-6" />
+            <div className="size-12 rounded-pill bg-subtle flex items-center justify-center mb-4 text-ink">
+              <AlertTriangle className="size-6 text-status-amber-fg" />
             </div>
 
             {/* Title */}
-            <h2 className="text-xl font-bold text-foreground mb-1">{title}</h2>
+            <h2 className="type-modal-title text-ink mb-1">{title}</h2>
 
             {/* Reference Subtitle */}
             {subtitle && (
-              <p className="text-xs font-semibold text-muted-foreground mb-3">
+              <p className="type-caption font-semibold text-ink-muted mb-3">
                 {subtitle}
               </p>
             )}
 
             {/* Description */}
             <div
-              className={`text-sm text-muted-foreground leading-relaxed ${
+              className={`type-body text-ink-secondary leading-relaxed ${
                 children ? "mb-5" : "mb-6"
               }`}
             >
@@ -119,7 +119,7 @@ export function ActionConfirmModal({
                 type="button"
                 onClick={handleClose}
                 disabled={isBusy}
-                className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                className="flex-1 h-10 px-4 type-label-button text-ink border border-input bg-surface hover:bg-subtle rounded-control transition-colors cursor-pointer disabled:opacity-50"
               >
                 {resolvedCancelText}
               </button>
@@ -127,7 +127,7 @@ export function ActionConfirmModal({
                 type="button"
                 onClick={onConfirm}
                 disabled={isBusy || confirmDisabled}
-                className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                className="flex-1 h-10 px-4 type-label-button text-on-brand bg-primary hover:bg-primary-hover rounded-control transition-colors shadow-none cursor-pointer disabled:opacity-50"
               >
                 {isBusy ? loadingText : resolvedConfirmText}
               </button>
