@@ -18,7 +18,7 @@ import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ConfirmModal from "@/components/ConfirmModal";
 import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
-import { PurchaseOrderPO } from "../types";
+import { PurchaseOrderPO, Delivery } from "../types";
 
 interface CreateDeliveryModalProps {
   open: boolean;
@@ -74,11 +74,11 @@ export function CreateDeliveryModal({
   // Items
   const [items, setItems] = useState<ItemRow[]>([]);
 
-  const [existingDeliveries, setExistingDeliveries] = useState<any[]>([]);
+  const [existingDeliveries, setExistingDeliveries] = useState<Delivery[]>([]);
 
   // Helper to calculate total declared quantity across all active (non-cancelled) deliveries for a PO item
   const getActiveScheduledForPoItem = (
-    deliveriesList: any[],
+    deliveriesList: Delivery[],
     poId: number,
     poNumber?: string,
     poItemId?: number,
@@ -88,7 +88,7 @@ export function CreateDeliveryModal({
     deliveriesList.forEach((d) => {
       const matchPo = (d.poId && d.poId === poId) || (poNumber && d.poNumber === poNumber);
       if (matchPo && ["Scheduled", "Arrived"].includes(d.status)) {
-        (d.items || []).forEach((di: any) => {
+        (d.items || []).forEach((di) => {
           const matchItem =
             (poItemId && di.poItemId && di.poItemId === poItemId) ||
             (itemId && di.itemId && di.itemId === itemId);
@@ -500,35 +500,35 @@ export function CreateDeliveryModal({
         open={open}
         title="Create Delivery Order"
         onClose={onClose}
-        size="max-w-5xl"
+        size="max-w-[640px]"
       >
         <form onSubmit={(e) => { e.preventDefault(); setConfirmModal(true); }} className="space-y-4">
           {error && (
-            <div className="p-3.5 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs flex items-start gap-2.5">
+            <div className="p-3.5 rounded-card border border-status-red bg-status-red-bg text-status-red type-caption flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="flex-1 font-medium">{error}</div>
             </div>
           )}
 
           {/* Top Form Fields Card: Clean responsive grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider">
             {/* Delivery Number */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              <label className="mb-1.5 block type-label font-semibold text-text-primary">
                 Delivery Number
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-all">
+              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted select-all">
                 {deliveryNumber}
               </div>
             </div>
 
             {/* Purchase Order Selector */}
             <div>
-              <label className={`mb-1.5 block text-xs font-semibold ${fieldErrors.poId ? "text-destructive" : "text-foreground"}`}>
-                Purchase Order <span className="text-destructive">*</span>
+              <label className={`mb-1.5 block type-label font-semibold ${fieldErrors.poId ? "text-status-red" : "text-text-primary"}`}>
+                Purchase Order <span className="text-status-red">*</span>
               </label>
               {initialPo ? (
-                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground">
+                <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-primary">
                   {initialPo.poNumber}
                 </div>
               ) : (
@@ -539,9 +539,9 @@ export function CreateDeliveryModal({
                       handlePoSelectionChange(Number(e.target.value) || null)
                     }
                     disabled={loadingPOs}
-                    className={`w-full h-10 rounded-xl border ${
-                      fieldErrors.poId ? "!border-destructive focus:!ring-destructive" : "border-border"
-                    } bg-card px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring`}
+                    className={`w-full h-10 rounded-control border ${
+                      fieldErrors.poId ? "border-status-red focus:ring-status-red" : "border-divider"
+                    } bg-surface px-3 py-2 type-body text-text-primary focus:outline-none focus:ring-1 focus:ring-primary`}
                   >
                     <option value="">Select Purchase Order...</option>
                     {orderedPOs.map((p) => (
@@ -551,7 +551,7 @@ export function CreateDeliveryModal({
                     ))}
                   </select>
                   {fieldErrors.poId && (
-                    <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">
+                    <p className="mt-1 type-caption font-medium text-status-red animate-in fade-in-50">
                       {fieldErrors.poId}
                     </p>
                   )}
@@ -562,27 +562,27 @@ export function CreateDeliveryModal({
 
           {/* If NO PO is selected, show instructional prompt */}
           {!selectedPoId ? (
-            <div className="py-12 text-center text-xs text-muted-foreground border border-dashed border-border rounded-xl bg-card">
+            <div className="py-12 text-center type-body text-text-muted border border-dashed border-divider rounded-card bg-surface">
               Please select a Purchase Order above to view items and configure delivery order.
             </div>
           ) : (
             <>
               {/* PO Details Summary Card */}
               {currentPO && (
-                <div className="rounded-xl border border-border bg-muted/20 p-3.5 text-xs grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-card border border-divider bg-surface-muted p-3.5 type-caption grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <span className="text-muted-foreground block text-[11px]">Supplier:</span>
-                    <span className="font-semibold text-foreground">{currentPO.supplierName || "—"}</span>
+                    <span className="text-text-muted block type-caption">Supplier:</span>
+                    <span className="font-semibold text-text-primary type-body">{currentPO.supplierName || "—"}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block text-[11px]">Purchase Order Status / Date:</span>
-                    <span className="font-medium text-foreground">
+                    <span className="text-text-muted block type-caption">Purchase Order Status / Date:</span>
+                    <span className="font-medium text-text-primary type-body">
                       {currentPO.status} {currentPO.orderDate ? `• ${new Date(currentPO.orderDate).toLocaleDateString()}` : ""}
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block text-[11px]">Total Purchase Order Amount:</span>
-                    <span className="font-semibold text-foreground">
+                    <span className="text-text-muted block type-caption">Total Purchase Order Amount:</span>
+                    <span className="font-semibold text-text-primary type-body">
                       {currentPO.totalAmount ? `₱${Number(currentPO.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
                     </span>
                   </div>
@@ -592,48 +592,48 @@ export function CreateDeliveryModal({
               {/* Table 1: PO Items Reference (Read-Only Reference) */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-semibold text-foreground">
+                  <label className="block type-label font-semibold text-text-primary">
                     Purchase Order Items Reference
                   </label>
-                  <span className="text-[11px] text-muted-foreground">Read-only Purchase Order reference</span>
+                  <span className="type-caption text-text-muted">Read-only Purchase Order reference</span>
                 </div>
 
                 {loadingItems ? (
-                  <div className="py-6 text-center text-xs text-muted-foreground rounded-xl border border-border bg-card">
+                  <div className="py-6 text-center type-body text-text-muted rounded-card border border-divider bg-surface">
                     <Skeleton className="h-16 w-full" />
                   </div>
                 ) : items.length === 0 ? (
-                  <div className="py-6 text-center text-xs text-muted-foreground rounded-xl border border-border bg-card">
+                  <div className="py-6 text-center type-body text-text-muted rounded-card border border-divider bg-surface">
                     No items found for this purchase order.
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-border">
-                    <table className="w-full text-xs text-left">
+                  <div className="overflow-x-auto rounded-card border border-divider">
+                    <table className="w-full type-table-cell text-left">
                       <thead>
-                        <tr className="border-b border-border bg-muted/40 text-muted-foreground font-semibold text-xs">
-                          <th className="px-3 py-2.5 w-10 text-center">#</th>
-                          <th className="px-3 py-2.5">Supply</th>
-                          <th className="px-3 py-2.5">Supply No</th>
-                          <th className="px-3 py-2.5">Unit of Measure</th>
-                          <th className="px-3 py-2.5 text-right">Purchase Order Quantity</th>
-                          <th className="px-3 py-2.5 text-right">Previously Received</th>
-                          <th className="px-3 py-2.5 text-right">Already Scheduled</th>
-                          <th className="px-3 py-2.5 text-right font-semibold text-foreground">Available to Schedule</th>
+                        <tr className="border-b border-divider bg-surface-muted text-text-muted font-semibold type-table-header table-head-row">
+                          <th className="table-th px-3 py-2.5 w-10 text-center">#</th>
+                          <th className="table-th px-3 py-2.5">Supply</th>
+                          <th className="table-th px-3 py-2.5">Supply No</th>
+                          <th className="table-th px-3 py-2.5">Unit of Measure</th>
+                          <th className="table-th px-3 py-2.5 text-right">Purchase Order Quantity</th>
+                          <th className="table-th px-3 py-2.5 text-right">Previously Received</th>
+                          <th className="table-th px-3 py-2.5 text-right">Already Scheduled</th>
+                          <th className="table-th px-3 py-2.5 text-right font-semibold text-text-primary">Available to Schedule</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-border">
+                      <tbody className="divide-y divide-divider">
                         {items.map((item, idx) => (
-                          <tr key={`ref-${item.poItemId || idx}`} className="hover:bg-muted/20">
-                            <td className="px-3 py-2.5 text-center text-muted-foreground">{idx + 1}</td>
-                            <td className="px-3 py-2.5 font-medium text-foreground">{item.itemName}</td>
-                            <td className="px-3 py-2.5 text-[11px] font-semibold text-muted-foreground">
+                          <tr key={`ref-${item.poItemId || idx}`} className="hover:bg-surface-hover table-row">
+                            <td className="table-td px-3 py-2.5 text-center text-text-muted">{idx + 1}</td>
+                            <td className="table-td px-3 py-2.5 font-medium text-text-primary">{item.itemName}</td>
+                            <td className="table-td px-3 py-2.5 type-caption font-semibold text-text-muted">
                               {item.itemCode || `SPL-${String(item.itemId || idx + 1).padStart(4, "0")}`}
                             </td>
-                            <td className="px-3 py-2.5 text-muted-foreground">{item.purchaseUomName}</td>
-                            <td className="px-3 py-2.5 text-right text-muted-foreground">{item.poOrderedQuantity}</td>
-                            <td className="px-3 py-2.5 text-right text-muted-foreground">{item.poTotalReceivedQuantity}</td>
-                            <td className="px-3 py-2.5 text-right text-muted-foreground">{item.alreadyScheduledQuantity}</td>
-                            <td className="px-3 py-2.5 text-right font-semibold text-foreground">
+                            <td className="table-td px-3 py-2.5 text-text-muted">{item.purchaseUomName}</td>
+                            <td className="table-td px-3 py-2.5 text-right text-text-muted">{item.poOrderedQuantity}</td>
+                            <td className="table-td px-3 py-2.5 text-right text-text-muted">{item.poTotalReceivedQuantity}</td>
+                            <td className="table-td px-3 py-2.5 text-right text-text-muted">{item.alreadyScheduledQuantity}</td>
+                            <td className="table-td px-3 py-2.5 text-right font-semibold text-text-primary">
                               {item.availableToSchedule}
                             </td>
                           </tr>
@@ -648,10 +648,10 @@ export function CreateDeliveryModal({
               <div className="space-y-2">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <label className="block text-xs font-semibold text-foreground">
-                      Order Quantities <span className="text-destructive">*</span>
+                    <label className="block type-label font-semibold text-text-primary">
+                      Order Quantities <span className="text-status-red">*</span>
                     </label>
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="type-caption text-text-muted">
                       Specify quantity being ordered for this shipment
                     </span>
                   </div>
@@ -660,24 +660,24 @@ export function CreateDeliveryModal({
                     placeholder="Search items..."
                     value={itemSearch}
                     onChange={(e) => setItemSearch(e.target.value)}
-                    className="text-xs"
+                    className="type-body"
                   />
                 </div>
 
                 {items.length > 0 && (
-                  <div className="overflow-x-auto rounded-xl border border-border">
-                    <table className="w-full text-xs text-left">
+                  <div className="overflow-x-auto rounded-card border border-divider">
+                    <table className="w-full type-table-cell text-left">
                       <thead>
-                        <tr className="border-b border-border bg-muted/40 text-muted-foreground font-semibold text-xs">
-                          <th className="px-3.5 py-2.5">Ingredient / Supply</th>
-                          <th className="px-3.5 py-2.5">Supply No</th>
-                          <th className="px-3.5 py-2.5">Unit of Measure</th>
-                          <th className="px-3.5 py-2.5 text-right">Purchase Order Quantity</th>
-                          <th className="px-3.5 py-2.5 text-right font-medium">Left to Order</th>
-                          <th className="px-3.5 py-2.5 text-right w-44 font-semibold text-foreground">Quantity to Order</th>
+                        <tr className="border-b border-divider bg-surface-muted text-text-muted font-semibold type-table-header table-head-row">
+                          <th className="table-th px-3.5 py-2.5">Ingredient / Supply</th>
+                          <th className="table-th px-3.5 py-2.5">Supply No</th>
+                          <th className="table-th px-3.5 py-2.5">Unit of Measure</th>
+                          <th className="table-th px-3.5 py-2.5 text-right">Purchase Order Quantity</th>
+                          <th className="table-th px-3.5 py-2.5 text-right font-medium">Left to Order</th>
+                          <th className="table-th px-3.5 py-2.5 text-right w-44 font-semibold text-text-primary">Quantity to Order</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-border">
+                      <tbody className="divide-y divide-divider">
                         {items
                           .filter((item) =>
                             !itemSearch ||
@@ -691,28 +691,28 @@ export function CreateDeliveryModal({
                           return (
                             <tr
                               key={`order-${item.poItemId}`}
-                              className={`hover:bg-muted/20 transition-colors ${
-                                isExhausted ? "opacity-50 bg-muted/10" : ""
+                              className={`hover:bg-surface-hover transition-colors table-row ${
+                                isExhausted ? "opacity-50 bg-surface-muted/20" : ""
                               }`}
                             >
-                              <td className="px-3.5 py-2.5 font-medium text-foreground">
+                              <td className="table-td px-3.5 py-2.5 font-medium text-text-primary">
                                 {item.itemName}
                               </td>
-                              <td className="px-3.5 py-2.5 text-[11px] font-semibold text-muted-foreground">
+                              <td className="table-td px-3.5 py-2.5 type-caption font-semibold text-text-muted">
                                 {item.itemCode || `SPL-${String(item.itemId || 0).padStart(4, "0")}`}
                               </td>
-                              <td className="px-3.5 py-2.5 text-muted-foreground">
+                              <td className="table-td px-3.5 py-2.5 text-text-muted">
                                 {item.purchaseUomName}
                               </td>
-                              <td className="px-3.5 py-2.5 text-right text-muted-foreground">
+                              <td className="table-td px-3.5 py-2.5 text-right text-text-muted">
                                 {item.poOrderedQuantity}
                               </td>
-                              <td className="px-3.5 py-2.5 text-right font-medium text-foreground">
+                              <td className="table-td px-3.5 py-2.5 text-right font-medium text-text-primary">
                                 {item.availableToSchedule}
                               </td>
-                              <td className="px-3.5 py-2.5 text-right">
+                              <td className="table-td px-3.5 py-2.5 text-right">
                                 {isExhausted ? (
-                                  <span className="text-[11px] text-muted-foreground italic">
+                                  <span className="type-caption text-text-muted italic">
                                     Fully Scheduled
                                   </span>
                                 ) : (
@@ -727,18 +727,18 @@ export function CreateDeliveryModal({
                                         onChange={(e) =>
                                           handleQuantityChange(item.poItemId, e.target.value)
                                         }
-                                        className={`w-28 text-right text-xs rounded-lg h-8 px-2 bg-card ${
+                                        className={`w-28 text-right type-body rounded-control h-8 px-2 bg-surface text-text-primary ${
                                           err
-                                            ? "!border-destructive focus-visible:!ring-destructive"
-                                            : "border-border"
+                                            ? "border-status-red focus-visible:ring-status-red"
+                                            : "border-divider"
                                         }`}
                                       />
-                                      <span className="text-[11px] text-muted-foreground w-8 text-left truncate">
+                                      <span className="type-caption text-text-muted w-8 text-left truncate">
                                         {item.purchaseUomName}
                                       </span>
                                     </div>
                                     {err && (
-                                      <p className="text-[10px] text-destructive text-right font-medium animate-in fade-in-50">
+                                      <p className="type-caption text-status-red text-right font-medium animate-in fade-in-50">
                                         {err}
                                       </p>
                                     )}
@@ -755,15 +755,15 @@ export function CreateDeliveryModal({
               </div>
 
               {/* Payment Type & Planned Dispatch Date */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider">
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                    Payment Type <span className="text-destructive">*</span>
+                  <label className="mb-1.5 block type-label font-semibold text-text-primary">
+                    Payment Type <span className="text-status-red">*</span>
                   </label>
                   <select
                     value={paymentType}
                     onChange={(e) => setPaymentType(e.target.value)}
-                    className="w-full h-10 rounded-xl border border-border bg-card px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    className="w-full h-10 rounded-control border border-divider bg-surface px-3 py-2 type-body text-text-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     <option value="Payable">Payable</option>
                     <option value="Paid">Paid</option>
@@ -771,8 +771,8 @@ export function CreateDeliveryModal({
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                    Planned Dispatch Date <span className="text-destructive">*</span>
+                  <label className="mb-1.5 block type-label font-semibold text-text-primary">
+                    Planned Dispatch Date <span className="text-status-red">*</span>
                   </label>
                   <div className="relative">
                     <Input
@@ -781,47 +781,47 @@ export function CreateDeliveryModal({
                       max={getMaxFutureDateString()}
                       value={plannedDispatchDate}
                       onChange={(e) => setPlannedDispatchDate(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-border bg-card px-3.5 py-2 pr-10 text-xs text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                      className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 py-2 pr-10 type-body text-text-primary cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     />
-                    <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                    <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                   </div>
                 </div>
               </div>
 
               {/* Row 4: Proof of Receipt / Attachment (Required + Photo Preview) */}
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground flex items-center justify-between">
+                <label className="mb-1.5 block type-label font-semibold text-text-primary flex items-center justify-between">
                   <span>
-                    Proof of Receipt / Attachment <span className="text-destructive">*</span>
+                    Proof of Receipt / Attachment <span className="text-status-red">*</span>
                   </span>
                   {!attachmentFile && (
-                    <span className="text-[11px] text-destructive font-normal">
+                    <span className="type-caption text-status-red font-normal">
                       Required to schedule delivery
                     </span>
                   )}
                 </label>
-                <div className="rounded-xl border border-dashed border-border bg-card p-4 transition-colors">
+                <div className="rounded-card border border-dashed border-divider bg-surface p-4 transition-colors">
                   {attachmentFile ? (
                     <div className="space-y-3">
-                      <div className="relative flex flex-col items-center justify-center p-3 bg-muted/20 rounded-xl border border-border">
+                      <div className="relative flex flex-col items-center justify-center p-3 bg-surface-muted rounded-control border border-divider">
                         {attachmentPreviewUrl ? (
                           <img
                             src={attachmentPreviewUrl}
                             alt="Proof of receipt"
-                            className="max-h-56 rounded-lg object-contain border border-border shadow-xs"
+                            className="max-h-56 rounded-control object-contain border border-divider shadow-xs"
                           />
                         ) : (
-                          <div className="flex items-center gap-2.5 p-4 text-xs font-medium text-foreground">
-                            <FileText className="w-8 h-8 text-muted-foreground shrink-0" />
+                          <div className="flex items-center gap-2.5 p-4 type-body font-medium text-text-primary">
+                            <FileText className="w-8 h-8 text-text-muted shrink-0" />
                             <span className="truncate">{attachmentFileName || "Uploaded document"}</span>
                           </div>
                         )}
-                        <p className="mt-2 text-[11px] text-muted-foreground truncate max-w-xs text-center">
+                        <p className="mt-2 type-caption text-text-muted truncate max-w-xs text-center">
                           {attachmentFileName}
                         </p>
                       </div>
                       <div className="flex justify-end gap-2">
-                        <label className="cursor-pointer text-xs font-semibold px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors flex items-center gap-1.5">
+                        <label className="cursor-pointer type-caption font-semibold px-3 py-1.5 rounded-control border border-divider bg-surface hover:bg-surface-hover text-text-primary transition-colors flex items-center gap-1.5">
                           <Upload className="w-3.5 h-3.5" />
                           Change File
                           <input
@@ -839,7 +839,7 @@ export function CreateDeliveryModal({
                             if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
                             setAttachmentPreviewUrl("");
                           }}
-                          className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-1.5"
+                          className="type-caption font-semibold px-3 py-1.5 rounded-control border border-status-red text-status-red hover:bg-status-red-bg transition-colors flex items-center gap-1.5 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           Remove
@@ -847,12 +847,12 @@ export function CreateDeliveryModal({
                       </div>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center cursor-pointer py-4 hover:bg-muted/30 rounded-xl transition-colors">
-                      <Upload className="w-6 h-6 text-muted-foreground mb-2" />
-                      <span className="text-xs font-medium text-foreground">
-                        Click to upload receipt or proof photo <span className="text-destructive">*</span>
+                    <label className="flex flex-col items-center justify-center cursor-pointer py-4 hover:bg-surface-hover rounded-control transition-colors">
+                      <Upload className="w-6 h-6 text-text-muted mb-2" />
+                      <span className="type-body font-medium text-text-primary">
+                        Click to upload receipt or proof photo <span className="text-status-red">*</span>
                       </span>
-                      <span className="text-[11px] text-muted-foreground mt-0.5">
+                      <span className="type-caption text-text-muted mt-0.5">
                         JPG, PNG, PDF up to 8MB
                       </span>
                       <input
@@ -869,20 +869,20 @@ export function CreateDeliveryModal({
           )}
 
           {/* Footer Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
+          <div className="flex items-center justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
             <ModalCloseButton
               type="button"
               variant="outline"
               disabled={submitting}
               fallbackOnClose={onClose}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+              className="rounded-control border border-divider bg-surface px-5 py-2.5 h-auto type-label-button font-semibold text-text-primary hover:bg-surface-hover transition-colors disabled:opacity-50 cursor-pointer"
             >
               Close
             </ModalCloseButton>
             <Button
               type="submit"
               disabled={submitting || !selectedPoId || hasErrors || !hasAnyOrderQty || !attachmentFile || !plannedDispatchDate}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 h-auto type-label-button font-semibold hover:bg-button-primary-hover transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {submitting ? "Scheduling..." : "Schedule Order"}
             </Button>
@@ -901,55 +901,55 @@ export function CreateDeliveryModal({
 
       {/* Review Modal for Submission using Radix Dialog */}
       <Dialog open={confirmModal} onOpenChange={(open) => { if (!open) setConfirmModal(false); }} confirmOnClose={false}>
-        <DialogContent className="sm:max-w-2xl bg-card border-border p-6 shadow-2xl">
+        <DialogContent className="sm:max-w-[640px] bg-surface border-divider p-6 shadow-modal rounded-card">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-foreground">Review Delivery Schedule</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
+            <DialogTitle className="type-card-title font-bold text-text-primary">Review Delivery Schedule</DialogTitle>
+            <DialogDescription className="type-body text-text-muted">
               Please review the details below before scheduling this delivery.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 text-sm text-foreground mt-4">
-            <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
+          <div className="space-y-4 type-body text-text-primary mt-4">
+            <div className="grid grid-cols-2 gap-4 bg-surface-muted p-4 rounded-control border border-divider">
               <div>
-                <span className="text-muted-foreground block text-xs mb-1">Delivery No</span>
-                <span className="font-semibold">{deliveryNumber}</span>
+                <span className="text-text-muted block type-caption mb-1">Delivery No</span>
+                <span className="font-semibold type-body text-text-primary">{deliveryNumber}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs mb-1">Purchase Order</span>
-                <span className="font-semibold">{currentPO?.poNumber || "—"}</span>
+                <span className="text-text-muted block type-caption mb-1">Purchase Order</span>
+                <span className="font-semibold type-body text-text-primary">{currentPO?.poNumber || "—"}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs mb-1">Supplier</span>
-                <span className="font-semibold">{currentPO?.supplierName || "—"}</span>
+                <span className="text-text-muted block type-caption mb-1">Supplier</span>
+                <span className="font-semibold type-body text-text-primary">{currentPO?.supplierName || "—"}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs mb-1">Payment Type</span>
-                <span className="font-semibold">{paymentType || "—"}</span>
+                <span className="text-text-muted block type-caption mb-1">Payment Type</span>
+                <span className="font-semibold type-body text-text-primary">{paymentType || "—"}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs mb-1">Planned Dispatch Date</span>
-                <span className="font-semibold">{plannedDispatchDate || "—"}</span>
+                <span className="text-text-muted block type-caption mb-1">Planned Dispatch Date</span>
+                <span className="font-semibold type-body text-text-primary">{plannedDispatchDate || "—"}</span>
               </div>
             </div>
 
-            <div className="mt-4 border border-border rounded-xl overflow-hidden bg-card">
-              <table className="w-full text-xs">
-                <thead className="bg-muted/40 border-b border-border">
+            <div className="mt-4 border border-divider rounded-control overflow-hidden bg-surface">
+              <table className="w-full type-table-cell">
+                <thead className="bg-surface-muted border-b border-divider table-head-row">
                   <tr>
-                    <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">ITEM NAME</th>
-                    <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">SUPPLY NO</th>
-                    <th className="px-3 py-2.5 text-left font-bold text-muted-foreground">Unit of Measure</th>
-                    <th className="px-3 py-2.5 text-right font-bold text-muted-foreground">DELIVERY QTY</th>
+                    <th className="table-th px-3 py-2.5 text-left font-bold text-text-muted type-table-header">ITEM NAME</th>
+                    <th className="table-th px-3 py-2.5 text-left font-bold text-text-muted type-table-header">SUPPLY NO</th>
+                    <th className="table-th px-3 py-2.5 text-left font-bold text-text-muted type-table-header">Unit of Measure</th>
+                    <th className="table-th px-3 py-2.5 text-right font-bold text-text-muted type-table-header">DELIVERY QTY</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-divider">
                   {items.filter(item => item.orderQuantity > 0).map((item, idx) => (
-                    <tr key={idx} className="hover:bg-muted/10">
-                      <td className="px-3 py-2.5 font-medium">{item.itemName}</td>
-                      <td className="px-3 py-2.5 text-muted-foreground">{item.itemCode}</td>
-                      <td className="px-3 py-2.5 text-muted-foreground">{item.purchaseUomName || "Unit"}</td>
-                      <td className="px-3 py-2.5 text-right font-semibold">{item.orderQuantity}</td>
+                    <tr key={idx} className="hover:bg-surface-hover table-row">
+                      <td className="table-td px-3 py-2.5 font-medium text-text-primary">{item.itemName}</td>
+                      <td className="table-td px-3 py-2.5 text-text-muted">{item.itemCode}</td>
+                      <td className="table-td px-3 py-2.5 text-text-muted">{item.purchaseUomName || "Unit"}</td>
+                      <td className="table-td px-3 py-2.5 text-right font-semibold text-text-primary">{item.orderQuantity}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -957,13 +957,13 @@ export function CreateDeliveryModal({
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-border">
+          <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-divider">
             <Button
               type="button"
               variant="outline"
               onClick={() => setConfirmModal(false)}
               disabled={submitting}
-              className="rounded-xl px-5 py-2.5 h-auto text-sm font-semibold cursor-pointer"
+              className="rounded-control px-5 py-2.5 h-auto type-label-button font-semibold cursor-pointer border-divider bg-surface text-text-primary hover:bg-surface-hover"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Edit
@@ -972,7 +972,7 @@ export function CreateDeliveryModal({
               type="button"
               disabled={submitting}
               onClick={() => setFinalConfirmOpen(true)}
-              className="rounded-xl px-6 py-2.5 h-auto text-sm font-semibold shadow-sm bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer"
+              className="rounded-control px-6 py-2.5 h-auto type-label-button font-semibold shadow-sm bg-button-primary text-text-inverse hover:bg-button-primary-hover cursor-pointer"
             >
               {submitting ? "Scheduling..." : "Confirm & Schedule Delivery"}
             </Button>

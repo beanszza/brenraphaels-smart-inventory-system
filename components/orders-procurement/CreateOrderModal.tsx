@@ -183,17 +183,17 @@ export default function CreateOrderModal({
   const estTotal = selectedSupplierOption && numQty > 0 ? (selectedSupplierOption.unitPrice * numQty).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : null;
 
   return (
-    <ModalWrapper open={open} title={editingOrder ? "Edit Purchase Order" : "Create New Purchase Order"} onClose={onClose} size="max-w-xl">
+    <ModalWrapper open={open} title={editingOrder ? "Edit Purchase Order" : "Create New Purchase Order"} onClose={onClose} size="max-w-[560px]">
       <div className="space-y-4">
         {/* Item Selection First */}
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">
-            1. Select Product / Raw Material <span className="text-muted-foreground">*</span>
+          <label className="mb-1.5 block type-label font-semibold text-text-primary">
+            1. Select Product / Raw Material <span className="text-status-red">*</span>
           </label>
           <select
             value={itemId}
             onChange={(e) => handleItemChange(e.target.value)}
-            className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring"
+            className="w-full rounded-control border border-divider bg-surface px-3 py-2 type-body text-text-primary focus:ring-1 focus:ring-ring"
           >
             <option value="" disabled hidden>Choose item to order...</option>
             {itemsList.map((i) => (
@@ -202,22 +202,22 @@ export default function CreateOrderModal({
               </option>
             ))}
           </select>
-          {itemError && <p className="mt-1 text-xs text-red-500">{itemError}</p>}
+          {itemError && <p className="mt-1 type-caption text-status-red">{itemError}</p>}
         </div>
 
         {/* Supplier Dropdown - Filtered by Item */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-semibold text-foreground">
-              2. Vendor / Supplier <span className="text-muted-foreground">*</span>
+            <label className="type-label font-semibold text-text-primary">
+              2. Vendor / Supplier <span className="text-status-red">*</span>
             </label>
             {loadingSuppliers && (
-              <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+              <span className="type-caption text-text-muted flex items-center gap-1">
                 <Skeleton className="h-5 w-24" /> Finding approved vendors...
               </span>
             )}
             {itemSuppliers.length > 0 && !loadingSuppliers && (
-              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+              <span className="type-caption text-status-green font-medium">
                 {itemSuppliers.length} vendor(s) catalogued
               </span>
             )}
@@ -227,7 +227,7 @@ export default function CreateOrderModal({
             value={supplierId}
             onChange={(e) => handleSupplierChange(e.target.value)}
             disabled={loadingSuppliers || !itemId}
-            className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring disabled:opacity-50"
+            className="w-full rounded-control border border-divider bg-surface px-3 py-2 type-body text-text-primary focus:ring-1 focus:ring-ring disabled:opacity-50"
           >
             <option value="" disabled hidden>
               {!itemId ? "Select item first..." : itemSuppliers.length > 0 ? "Select from approved item suppliers..." : "Select supplier..."}
@@ -244,26 +244,26 @@ export default function CreateOrderModal({
                   </option>
                 ))}
           </select>
-          {supplierError && <p className="mt-1 text-xs text-red-500">{supplierError}</p>}
+          {supplierError && <p className="mt-1 type-caption text-status-red">{supplierError}</p>}
 
           {/* Supplier Catalog Info Card */}
           {selectedSupplierOption && (
-            <div className="mt-2 rounded-lg border border-border bg-muted/20 p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="mt-2 rounded-control border border-divider bg-surface-muted p-2.5 flex flex-wrap items-center justify-between gap-2 type-caption">
               <div className="flex items-center gap-3">
-                <span className="flex items-center gap-1 font-semibold text-foreground">
+                <span className="flex items-center gap-1 font-semibold text-text-primary">
                   <DollarSign size={13} className="text-primary" /> ₱{selectedSupplierOption.unitPrice.toFixed(2)} / {selectedSupplierOption.purchaseUomName}
                 </span>
-                <span className="flex items-center gap-1 text-muted-foreground">
+                <span className="flex items-center gap-1 text-text-muted">
                   <Clock size={13} /> {selectedSupplierOption.leadTimeDays} days lead time
                 </span>
                 {selectedSupplierOption.packSize > 1 && (
-                  <span className="flex items-center gap-1 text-muted-foreground">
+                  <span className="flex items-center gap-1 text-text-muted">
                     <Package size={13} /> Pack: {selectedSupplierOption.packSize} units
                   </span>
                 )}
               </div>
               {selectedSupplierOption.isPreferred && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-pill type-caption font-bold bg-primary/10 text-primary border border-primary/20">
                   <Sparkles size={10} /> Preferred Supplier
                 </span>
               )}
@@ -273,8 +273,8 @@ export default function CreateOrderModal({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              3. Order Quantity <span className="text-muted-foreground">*</span>
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
+              3. Order Quantity <span className="text-status-red">*</span>
             </label>
             <Input
               type="number"
@@ -283,18 +283,18 @@ export default function CreateOrderModal({
               value={quantity}
               onChange={(e) => { setQuantity(e.target.value); setQuantityError(""); }}
               placeholder="e.g. 50"
-              className="rounded-xl border border-border bg-card text-foreground text-sm"
+              className="rounded-control border border-divider bg-surface text-text-primary type-body"
             />
-            {quantityError && <p className="mt-1 text-xs text-red-500">{quantityError}</p>}
+            {quantityError && <p className="mt-1 type-caption text-status-red">{quantityError}</p>}
             {estTotal && (
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Est. Total: <span className="font-semibold text-foreground">₱{estTotal}</span>
+              <p className="mt-1 type-caption text-text-muted">
+                Est. Total: <span className="font-semibold text-text-primary">₱{estTotal}</span>
               </p>
             )}
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Expected Arrival (ETA) <span className="text-muted-foreground">*</span>
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
+              Expected Arrival (ETA) <span className="text-status-red">*</span>
             </label>
             <Input
               type="date"
@@ -302,37 +302,37 @@ export default function CreateOrderModal({
               max={getMaxFutureDateString()}
               value={eta}
               onChange={(e) => { setEta(e.target.value); setEtaError(""); }}
-              className="rounded-xl border border-border bg-card text-foreground text-sm"
+              className="rounded-control border border-divider bg-surface text-text-primary type-body"
             />
-            {etaError && <p className="mt-1 text-xs text-red-500">{etaError}</p>}
+            {etaError && <p className="mt-1 type-caption text-status-red">{etaError}</p>}
           </div>
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">Payment Type <span className="text-muted-foreground">*</span></label>
-          <select value={payment} onChange={(e) => setPayment(e.target.value as PaymentType)} className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring">
+          <label className="mb-1.5 block type-label font-semibold text-text-primary">Payment Type <span className="text-status-red">*</span></label>
+          <select value={payment} onChange={(e) => setPayment(e.target.value as PaymentType)} className="w-full rounded-control border border-divider bg-surface px-3 py-2 type-body text-text-primary focus:ring-1 focus:ring-ring">
             <option value="Payable">Payable</option>
             <option value="Paid">Paid</option>
           </select>
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">Receipt / Purchase Order Attachment {!editingOrder && "*"}</label>
-          <div className="border border-dashed border-border rounded-xl p-4 text-center hover:bg-muted/30 transition-colors relative">
+          <label className="mb-1.5 block type-label font-semibold text-text-primary">Receipt / Purchase Order Attachment {!editingOrder && "*"}</label>
+          <div className="border border-dashed border-divider rounded-control p-4 text-center hover:bg-surface-hover transition-colors relative">
             <Input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={(e) => { setReceiptFile(e.target.files?.[0] || null); setReceiptError(""); }} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
             <div className="flex flex-col items-center pointer-events-none">
-              <Upload className="w-6 h-6 text-muted-foreground mb-1" />
-              <span className="text-xs font-medium text-foreground">{receiptFile ? receiptFile.name : "Upload receipt / Purchase Order document"}</span>
+              <Upload className="w-6 h-6 text-text-muted mb-1" />
+              <span className="type-caption font-medium text-text-primary">{receiptFile ? receiptFile.name : "Upload receipt / Purchase Order document"}</span>
             </div>
           </div>
-          {receiptError && <p className="mt-1 text-xs text-red-500">{receiptError}</p>}
+          {receiptError && <p className="mt-1 type-caption text-status-red">{receiptError}</p>}
         </div>
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-border">
-          <ModalCloseButton type="button" variant="outline" fallbackOnClose={onClose} disabled={isSaving} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
+        <div className="flex justify-end gap-3 pt-3 border-t border-divider">
+          <ModalCloseButton type="button" variant="outline" fallbackOnClose={onClose} disabled={isSaving} className="rounded-control border border-divider bg-surface px-5 py-2.5 h-auto type-label-button font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer">
             Cancel
           </ModalCloseButton>
-          <Button type="button" onClick={handleSubmit} disabled={isSaving} className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity">
+          <Button type="button" onClick={handleSubmit} disabled={isSaving} className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 h-auto type-label-button font-semibold hover:bg-button-primary-hover transition-colors cursor-pointer">
             {isSaving ? <Skeleton className="h-5 w-24" /> : editingOrder ? "Save Changes" : "Create Order"}
           </Button>
         </div>

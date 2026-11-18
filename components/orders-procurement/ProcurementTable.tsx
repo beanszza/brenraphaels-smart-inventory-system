@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { MoreHorizontal, ClipboardCheck, Pencil, Truck, XCircle, Eye } from "lucide-react";
-import { Order, OrderStatus } from "./types";
+import { Order } from "./types";
 
 interface ProcurementTableProps {
   orders: Order[];
@@ -28,38 +28,38 @@ export default function ProcurementTable({
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
 
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-border bg-card">
-      <table className="w-full text-xs">
+    <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface">
+      <table className="w-full type-table-cell">
         <thead>
-          <tr className="border-b border-border bg-muted/30">
-            <th className="sticky left-0 z-20 min-w-[140px] w-36 px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap bg-muted/95 backdrop-blur-xs border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">ORDER NO.</th>
-            <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">ITEM</th>
-            <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">SUPPLIER</th>
-            <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">QUANTITY</th>
-            <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">ORDER DATE</th>
-            <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">ETA</th>
-            <th className="px-3 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">STATUS</th>
-            <th className="px-3 py-3 text-center font-bold text-muted-foreground tracking-wider whitespace-nowrap">ACTIONS</th>
+          <tr className="table-head-row border-b border-divider">
+            <th className="table-th sticky left-0 z-20 min-w-[140px] w-36 px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap bg-surface-muted backdrop-blur-xs border-r border-divider shadow-sticky">ORDER NO.</th>
+            <th className="table-th px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">ITEM</th>
+            <th className="table-th px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">SUPPLIER</th>
+            <th className="table-th px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">QUANTITY</th>
+            <th className="table-th px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">ORDER DATE</th>
+            <th className="table-th px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">ETA</th>
+            <th className="table-th px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">STATUS</th>
+            <th className="table-th px-3 py-3 text-center font-bold text-text-muted tracking-wider whitespace-nowrap">ACTIONS</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-divider">
           {orders.length === 0 ? (
             <tr>
-              <td colSpan={8} className="px-5 py-10 text-center text-sm font-semibold text-muted-foreground">
+              <td colSpan={8} className="px-5 py-10 text-center type-body font-semibold text-text-muted">
                 No Results Found
               </td>
             </tr>
           ) : (
             orders.map((order) => (
-              <tr key={order.id} className="hover:bg-muted/30 transition-colors group">
-                <td className="sticky left-0 z-10 min-w-[140px] w-36 px-3 py-3 font-bold text-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">{order.id}</td>
-                <td className="px-3 py-3 font-medium text-foreground whitespace-nowrap">{order.item}</td>
-                <td className="px-3 py-3 text-muted-foreground whitespace-nowrap">{order.supplier}</td>
-                <td className="px-3 py-3 text-muted-foreground whitespace-nowrap">{order.quantity}</td>
-                <td className="px-3 py-3 text-muted-foreground whitespace-nowrap">{order.orderDate}</td>
-                <td className="px-3 py-3 whitespace-nowrap text-muted-foreground">{order.eta}</td>
-                <td className="px-3 py-3"><StatusBadge status={order.status} /></td>
-                <td className="px-3 py-3 text-center relative">
+              <tr key={order.id} className="hover:bg-surface-hover transition-colors group table-row">
+                <td className="table-td sticky left-0 z-10 min-w-[140px] w-36 px-3 py-3 font-bold text-text-primary whitespace-nowrap bg-surface group-hover:bg-surface-hover transition-colors border-r border-divider shadow-sticky">{order.id}</td>
+                <td className="table-td px-3 py-3 font-medium text-text-primary whitespace-nowrap">{order.item}</td>
+                <td className="table-td px-3 py-3 text-text-muted whitespace-nowrap">{order.supplier}</td>
+                <td className="table-td px-3 py-3 text-text-muted whitespace-nowrap">{order.quantity}</td>
+                <td className="table-td px-3 py-3 text-text-muted whitespace-nowrap">{order.orderDate}</td>
+                <td className="table-td px-3 py-3 whitespace-nowrap text-text-muted">{order.eta}</td>
+                <td className="table-td px-3 py-3"><StatusBadge status={order.status} /></td>
+                <td className="table-td px-3 py-3 text-center relative">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -71,34 +71,34 @@ export default function ProcurementTable({
                         setActiveDropdownPoId(order.poId);
                       }
                     }}
-                    className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none"
+                    className="p-1.5 rounded-control text-text-primary hover:bg-surface-hover transition-colors focus:outline-none cursor-pointer"
                   >
                     <MoreHorizontal size={18} />
                   </button>
                   {activeDropdownPoId === order.poId && dropdownPosition && createPortal(
                     <>
                       <div className="fixed inset-0 z-[199]" onClick={(e) => { e.stopPropagation(); setActiveDropdownPoId(null); }} />
-                      <div style={{ top: `${dropdownPosition.top}px`, left: `${dropdownPosition.left}px` }} className="absolute w-44 rounded-xl border border-border bg-card shadow-xl z-[200] py-1.5 text-left">
+                      <div style={{ top: `${dropdownPosition.top}px`, left: `${dropdownPosition.left}px` }} className="absolute w-44 rounded-card border border-divider bg-surface shadow-modal z-[200] py-1.5 text-left">
                         {order.status === "Arrived" && (
-                          <button type="button" onClick={() => { onQAInspection(order); setActiveDropdownPoId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                          <button type="button" onClick={() => { onQAInspection(order); setActiveDropdownPoId(null); }} className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-hover transition-colors cursor-pointer">
                             <ClipboardCheck size={14} className="shrink-0" /> Quality Assurance Inspection
                           </button>
                         )}
                         {order.status === "Pending" && (
                           <>
-                            <button type="button" onClick={() => { onEdit(order); setActiveDropdownPoId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                            <button type="button" onClick={() => { onEdit(order); setActiveDropdownPoId(null); }} className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-hover transition-colors cursor-pointer">
                               <Pencil size={14} className="shrink-0" /> Edit Order
                             </button>
-                            <button type="button" onClick={() => { onMarkArrived(order); setActiveDropdownPoId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                            <button type="button" onClick={() => { onMarkArrived(order); setActiveDropdownPoId(null); }} className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-hover transition-colors cursor-pointer">
                               <Truck size={14} className="shrink-0" /> Mark Arrived
                             </button>
-                            <button type="button" onClick={() => { onCancel(order); setActiveDropdownPoId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                            <button type="button" onClick={() => { onCancel(order); setActiveDropdownPoId(null); }} className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-hover transition-colors cursor-pointer">
                               <XCircle size={14} className="shrink-0" /> Cancel Order
                             </button>
                           </>
                         )}
                         {(order.status === "Completed" || order.status === "Cancelled" || order.status === "Rejected") && (
-                          <button type="button" onClick={() => { onViewDetails(order); setActiveDropdownPoId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                          <button type="button" onClick={() => { onViewDetails(order); setActiveDropdownPoId(null); }} className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-hover transition-colors cursor-pointer">
                             <Eye size={14} className="shrink-0" /> View Details
                           </button>
                         )}

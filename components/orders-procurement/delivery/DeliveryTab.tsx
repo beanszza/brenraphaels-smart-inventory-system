@@ -1,10 +1,7 @@
 "use client";
+import React, { useState, useMemo, useTransition } from "react";
 import Link from "next/link";
 import { OrdersSkeleton } from "@/components/orders-procurement/OrdersSkeleton";
-
-import { procurement } from "@/lib/orders/client";
-
-import React, { useState, useMemo, useTransition } from "react";
 import { Plus, RefreshCw, History } from "lucide-react";
 import {
   Select,
@@ -117,12 +114,12 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
 
   return (
     <div className="space-y-6 animate-page-in">
-      {notice && <p role="status" className="rounded-lg bg-primary/10 p-3 text-sm text-primary">{notice}</p>}
+      {notice && <p role="status" className="rounded-control bg-primary/10 p-3 type-body text-primary">{notice}</p>}
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Delivery Shipments</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2 className="type-page-title text-text-primary">Delivery Shipments</h2>
+          <p className="mt-1 type-body text-text-muted">
             Track planned consignments, carrier dispatch, and warehouse arrival milestones
           </p>
         </div>
@@ -132,7 +129,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
             size="sm"
             onClick={fetchDeliveries}
             disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
+            className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-table-header text-text-primary hover:bg-surface-hover transition-colors h-10"
           >
             <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
@@ -142,7 +139,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
               asChild
               variant="outline"
               size="sm"
-              className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+              className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-table-header text-text-primary hover:bg-surface-hover transition-colors h-10 cursor-pointer"
             >
               <Link href="/orders-procurement/logs">
                 <History className="w-4 h-4" /> Transaction History
@@ -154,7 +151,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
           <Button
             type="button"
             onClick={() => setOpenCreateModal(true)}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+            className="flex items-center justify-center gap-2 rounded-control bg-button-primary px-5 py-2.5 type-label-button text-text-inverse hover:bg-button-primary-hover transition-colors shadow-sm h-10"
           >
             <Plus className="w-4 h-4" /> Create Delivery Order
           </Button>
@@ -163,7 +160,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
       </div>
 
       {/* Filters Bar */}
-      <div className="mb-6 rounded-xl border border-border bg-card p-3">
+      <div className="mb-6 rounded-card border border-divider bg-surface p-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <SearchInput
             containerClassName="flex-1"
@@ -184,10 +181,10 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+                <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-control border border-divider bg-surface px-3.5 type-body text-text-primary shadow-sm focus:ring-1 focus:ring-ring">
                   <SelectValue placeholder="All Suppliers" />
                 </SelectTrigger>
-                <SelectContent className="min-w-[210px]">
+                <SelectContent className="min-w-[210px] bg-surface border-divider">
                   <SelectItem value="all">All Suppliers</SelectItem>
                   {uniqueSuppliers.map((sup) => (
                     <SelectItem key={sup} value={sup}>
@@ -202,7 +199,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
       </div>
 
       {/* Status Tabs */}
-      <div className="border-b border-border overflow-x-auto">
+      <div className="border-b border-divider overflow-x-auto">
         <div className="flex items-center gap-1.5 min-w-max pb-2">
           {STATUS_TABS.map((tab) => {
             const count = counts[tab] || 0;
@@ -215,18 +212,18 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
                   setActiveTab(tab);
                   setPage(1);
                 }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-all ${
                   isSelected
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    ? "bg-button-primary text-text-inverse shadow-sm"
+                    : "text-text-muted hover:text-text-primary hover:bg-surface-hover"
                 }`}
               >
                 <span>{tab}</span>
                 <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-medium ${
+                  className={`px-1.5 py-0.5 rounded-pill text-[10px] font-mono font-medium ${
                     isSelected
-                      ? "bg-background text-foreground"
-                      : "bg-muted text-muted-foreground"
+                      ? "bg-surface text-text-primary"
+                      : "bg-surface-muted text-text-muted"
                   }`}
                 >
                   {count}
@@ -249,7 +246,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
+          <span className="type-caption text-text-muted">
             Showing {(page - 1) * pageSize + 1} to{" "}
             {Math.min(page * pageSize, totalCount)} of {totalCount} deliveries
           </span>

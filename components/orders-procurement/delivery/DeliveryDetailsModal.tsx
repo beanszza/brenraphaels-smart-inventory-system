@@ -110,16 +110,16 @@ export function DeliveryDetailsModal({
       open={!!delivery}
       title={`Delivery Order Details — ${delivery.deliveryNumber}`}
       onClose={onClose}
-      size="max-w-4xl"
+      size="max-w-[640px]"
     >
       <div className="space-y-4">
         {/* Compact Top Bar: Status, PO Reference, and Stepper */}
-        <div className="rounded-2xl border border-border bg-card p-4 space-y-3.5 shadow-2xs">
-          <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-border">
+        <div className="rounded-card border border-divider bg-surface p-4 space-y-3.5 shadow-card">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-divider">
             <StatusBadge status={delivery.status} />
-            <div className="text-xs text-muted-foreground">
+            <div className="type-caption text-text-muted">
               Purchase Order Reference:{" "}
-              <span className="font-bold text-foreground">
+              <span className="font-bold text-text-primary type-body">
                 {delivery.poNumber || "—"}
               </span>
             </div>
@@ -128,7 +128,7 @@ export function DeliveryDetailsModal({
           {!isCancelled && (
             <div className="px-2 pt-1">
               <div className="flex items-center justify-between relative">
-                <div className="absolute left-0 top-3.5 -translate-y-1/2 w-full h-1 bg-muted rounded-full overflow-hidden">
+                <div className="absolute left-0 top-3.5 -translate-y-1/2 w-full h-1 bg-surface-muted rounded-pill overflow-hidden">
                   <div
                     className="h-full bg-primary transition-all duration-500 ease-in-out"
                     style={{ width: `${(currentStepIdx / (steps.length - 1)) * 100}%` }}
@@ -138,19 +138,19 @@ export function DeliveryDetailsModal({
                   const isActive = i <= currentStepIdx;
                   const isLast = i === currentStepIdx;
                   return (
-                    <div key={s} className="relative flex flex-col items-center gap-1.5 bg-card px-2">
+                    <div key={s} className="relative flex flex-col items-center gap-1.5 bg-surface px-2">
                       <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center border-2 text-xs font-bold transition-all duration-300 z-10 ${
+                        className={`w-7 h-7 rounded-pill flex items-center justify-center border-2 type-caption font-bold transition-all duration-300 z-10 ${
                           isActive
-                            ? "bg-primary border-primary text-primary-foreground shadow-xs"
-                            : "bg-background border-muted text-muted-foreground"
+                            ? "bg-primary border-primary text-text-inverse shadow-xs"
+                            : "bg-surface border-divider text-text-muted"
                         }`}
                       >
                         {isActive && !isLast ? <Check className="w-3.5 h-3.5" /> : i + 1}
                       </div>
                       <span
-                        className={`text-[10px] uppercase tracking-wider font-bold ${
-                          isActive ? "text-foreground" : "text-muted-foreground"
+                        className={`type-caption uppercase tracking-wider font-bold ${
+                          isActive ? "text-text-primary" : "text-text-muted"
                         }`}
                       >
                         {s}
@@ -165,58 +165,58 @@ export function DeliveryDetailsModal({
 
         {/* Cancellation Notice */}
         {isCancelled && delivery.notes && (
-          <div className="p-3.5 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs flex items-start gap-2.5">
+          <div className="p-3.5 rounded-card border border-status-red bg-status-red-bg text-status-red type-caption flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <div>
               <span className="font-semibold block">Order Cancelled</span>
-              <span className="text-foreground text-[11px]">{delivery.notes}</span>
+              <span className="text-text-primary type-caption">{delivery.notes}</span>
             </div>
           </div>
         )}
 
         {/* Delivery Summary Card (2x4 organized grid) */}
-        <div className="rounded-2xl border border-border bg-muted/20 p-4 space-y-3">
-          <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+        <div className="rounded-card border border-divider bg-surface-muted p-4 space-y-3">
+          <h4 className="type-table-header font-bold text-text-primary uppercase tracking-wider">
             Delivery Summary
           </h4>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 type-caption">
             <div>
-              <span className="text-muted-foreground block text-[11px] mb-0.5">Purchase Order</span>
-              <span className="font-bold text-foreground">{delivery.poNumber || "—"}</span>
+              <span className="text-text-muted block type-caption mb-0.5">Purchase Order</span>
+              <span className="font-bold text-text-primary type-body">{delivery.poNumber || "—"}</span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] mb-0.5">Supplier</span>
-              <span className="font-semibold text-foreground truncate block">
+              <span className="text-text-muted block type-caption mb-0.5">Supplier</span>
+              <span className="font-semibold text-text-primary type-body truncate block">
                 {delivery.supplierName || "—"}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] mb-0.5">Payment Terms</span>
-              <span className="font-medium text-foreground">{delivery.paymentType || "Payable"}</span>
+              <span className="text-text-muted block type-caption mb-0.5">Payment Terms</span>
+              <span className="font-medium text-text-primary type-body">{delivery.paymentType || "Payable"}</span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] mb-0.5">Destination</span>
-              <span className="font-medium text-foreground">
+              <span className="text-text-muted block type-caption mb-0.5">Destination</span>
+              <span className="font-medium text-text-primary type-body">
                 {delivery.receivingLocationName || "Commissary (Receiving Bay)"}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] mb-0.5">Planned Dispatch Date</span>
-              <span className="font-medium text-foreground">{fmtDate(delivery.scheduledDate)}</span>
+              <span className="text-text-muted block type-caption mb-0.5">Planned Dispatch Date</span>
+              <span className="font-medium text-text-primary type-body">{fmtDate(delivery.scheduledDate)}</span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] mb-0.5">Actual Arrival Date</span>
-              <span className="font-medium text-foreground">{fmtDate(delivery.actualArrivalDate)}</span>
+              <span className="text-text-muted block type-caption mb-0.5">Actual Arrival Date</span>
+              <span className="font-medium text-text-primary type-body">{fmtDate(delivery.actualArrivalDate)}</span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] mb-0.5">Received By</span>
-              <span className="font-semibold text-foreground">
+              <span className="text-text-muted block type-caption mb-0.5">Received By</span>
+              <span className="font-semibold text-text-primary type-body">
                 {delivery.receivedBy || (isArrived ? "Vince Neil Madeja" : "Pending Arrival")}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] mb-0.5">Goods Receipt Note</span>
-              <span className="font-semibold text-foreground">
+              <span className="text-text-muted block type-caption mb-0.5">Goods Receipt Note</span>
+              <span className="font-semibold text-text-primary type-body">
                 {delivery.grnNumber || (isArrived ? "Ready for GRN" : "—")}
               </span>
             </div>
@@ -226,40 +226,40 @@ export function DeliveryDetailsModal({
         {/* Shipment Items Table (Placed directly after Summary so it is immediately visible) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+            <h4 className="type-table-header font-bold text-text-primary uppercase tracking-wider">
               Shipment Items ({delivery.items?.length || 0})
             </h4>
-            <span className="text-xs font-semibold text-muted-foreground">
+            <span className="type-caption font-semibold text-text-muted">
               Total Shipment Qty:{" "}
               {delivery.items?.reduce((sum, it) => sum + (Number(it.declaredQuantity) || 0), 0) || 0}
             </span>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-border bg-card">
-            <table className="w-full text-xs text-left">
+          <div className="overflow-x-auto rounded-card border border-divider bg-surface">
+            <table className="w-full type-table-cell text-left">
               <thead>
-                <tr className="border-b border-border bg-muted/40 text-muted-foreground font-semibold text-[11px] uppercase">
-                  <th className="px-3.5 py-2.5">Item Description</th>
-                  <th className="px-3.5 py-2.5">Supply No</th>
-                  <th className="px-3.5 py-2.5">Unit of Measure</th>
-                  <th className="px-3.5 py-2.5 text-right">Purchase Order Qty</th>
-                  <th className="px-3.5 py-2.5 text-right">Shipment Qty</th>
+                <tr className="border-b border-divider bg-surface-muted text-text-muted font-semibold type-table-header uppercase table-head-row">
+                  <th className="table-th px-3.5 py-2.5">Item Description</th>
+                  <th className="table-th px-3.5 py-2.5">Supply No</th>
+                  <th className="table-th px-3.5 py-2.5">Unit of Measure</th>
+                  <th className="table-th px-3.5 py-2.5 text-right">Purchase Order Qty</th>
+                  <th className="table-th px-3.5 py-2.5 text-right">Shipment Qty</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-divider">
                 {(delivery.items || []).map((item, idx) => (
-                  <tr key={idx} className="hover:bg-muted/10">
-                    <td className="px-3.5 py-2.5 font-semibold text-foreground">
+                  <tr key={idx} className="hover:bg-surface-hover table-row">
+                    <td className="table-td px-3.5 py-2.5 font-semibold text-text-primary">
                       {item.itemName}
                     </td>
-                    <td className="px-3.5 py-2.5 text-[11px] font-semibold text-muted-foreground">
+                    <td className="table-td px-3.5 py-2.5 type-caption font-semibold text-text-muted">
                       {item.itemCode || `SPL-${String(item.itemId || idx + 1).padStart(4, "0")}`}
                     </td>
-                    <td className="px-3.5 py-2.5 text-muted-foreground">{item.purchaseUomName}</td>
-                    <td className="px-3.5 py-2.5 text-right text-muted-foreground">
+                    <td className="table-td px-3.5 py-2.5 text-text-muted">{item.purchaseUomName}</td>
+                    <td className="table-td px-3.5 py-2.5 text-right text-text-muted">
                       {item.poOrderedQuantity || item.declaredQuantity}
                     </td>
-                    <td className="px-3.5 py-2.5 text-right font-bold text-foreground">
+                    <td className="table-td px-3.5 py-2.5 text-right font-bold text-text-primary">
                       {item.declaredQuantity}
                     </td>
                   </tr>
@@ -271,14 +271,14 @@ export function DeliveryDetailsModal({
 
         {/* Compact Side-by-Side Document Proofs & Attachments */}
         {(displayReceiptSrc || displayArrivalSrc) && (
-          <div className="rounded-2xl border border-border bg-card p-4 space-y-2.5">
-            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+          <div className="rounded-card border border-divider bg-surface p-4 space-y-2.5">
+            <h4 className="type-table-header font-bold text-text-primary uppercase tracking-wider">
               Document Proofs &amp; Attachments
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {displayReceiptSrc && (
-                <div className="rounded-xl border border-border bg-muted/10 p-3 flex items-center gap-3">
-                  <div className="w-20 h-20 rounded-lg border border-border bg-background overflow-hidden flex items-center justify-center shrink-0">
+                <div className="rounded-control border border-divider bg-surface-muted p-3 flex items-center gap-3">
+                  <div className="w-20 h-20 rounded-control border border-divider bg-surface overflow-hidden flex items-center justify-center shrink-0">
                     {displayReceiptSrc.startsWith("data:image/") ||
                     displayReceiptSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ||
                     displayReceiptSrc.includes("/files/") ? (
@@ -289,12 +289,12 @@ export function DeliveryDetailsModal({
                         className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                       />
                     ) : (
-                      <FileText className="w-6 h-6 text-muted-foreground" />
+                      <FileText className="w-6 h-6 text-text-muted" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1 space-y-1">
-                    <p className="text-xs font-semibold text-foreground">Schedule / Receipt Proof</p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="type-label font-semibold text-text-primary">Schedule / Receipt Proof</p>
+                    <p className="type-caption text-text-muted">
                       Uploaded when scheduling delivery
                     </p>
                     {(displayReceiptSrc.startsWith("data:image/") ||
@@ -303,7 +303,7 @@ export function DeliveryDetailsModal({
                       <button
                         type="button"
                         onClick={() => setPreviewImage({ title: "Receipt Proof", src: displayReceiptSrc })}
-                        className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        className="type-caption font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
                       >
                         <ExternalLink className="w-3 h-3" /> View Full Image
                       </button>
@@ -313,8 +313,8 @@ export function DeliveryDetailsModal({
               )}
 
               {displayArrivalSrc && (
-                <div className="rounded-xl border border-border bg-muted/10 p-3 flex items-center gap-3">
-                  <div className="w-20 h-20 rounded-lg border border-border bg-background overflow-hidden flex items-center justify-center shrink-0">
+                <div className="rounded-control border border-divider bg-surface-muted p-3 flex items-center gap-3">
+                  <div className="w-20 h-20 rounded-control border border-divider bg-surface overflow-hidden flex items-center justify-center shrink-0">
                     {displayArrivalSrc.startsWith("data:image/") ||
                     displayArrivalSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ||
                     displayArrivalSrc.includes("/files/") ? (
@@ -325,12 +325,12 @@ export function DeliveryDetailsModal({
                         className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                       />
                     ) : (
-                      <FileText className="w-6 h-6 text-muted-foreground" />
+                      <FileText className="w-6 h-6 text-text-muted" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1 space-y-1">
-                    <p className="text-xs font-semibold text-foreground">Arrival Proof Photo</p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="type-label font-semibold text-text-primary">Arrival Proof Photo</p>
+                    <p className="type-caption text-text-muted">
                       Uploaded upon delivery arrival
                     </p>
                     {(displayArrivalSrc.startsWith("data:image/") ||
@@ -339,7 +339,7 @@ export function DeliveryDetailsModal({
                       <button
                         type="button"
                         onClick={() => setPreviewImage({ title: "Arrival Proof", src: displayArrivalSrc })}
-                        className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        className="type-caption font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
                       >
                         <ExternalLink className="w-3 h-3" /> View Full Image
                       </button>
@@ -359,25 +359,25 @@ export function DeliveryDetailsModal({
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="bg-card border border-border rounded-2xl p-4 max-w-2xl w-full space-y-3 shadow-2xl"
+              className="bg-surface border border-divider rounded-card p-4 max-w-2xl w-full space-y-3 shadow-modal"
             >
-              <div className="flex items-center justify-between border-b border-border pb-2">
-                <h5 className="text-xs font-bold text-foreground uppercase">{previewImage.title}</h5>
+              <div className="flex items-center justify-between border-b border-divider pb-2">
+                <h5 className="type-label font-bold text-text-primary uppercase">{previewImage.title}</h5>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setPreviewImage(null)}
-                  className="h-7 px-3 text-xs rounded-lg cursor-pointer"
+                  className="h-7 px-3 type-caption rounded-control cursor-pointer border-divider bg-surface text-text-primary hover:bg-surface-hover"
                 >
                   Close Preview
                 </Button>
               </div>
-              <div className="flex items-center justify-center bg-muted/20 rounded-xl p-2 max-h-[70vh] overflow-auto">
+              <div className="flex items-center justify-center bg-surface-muted rounded-control p-2 max-h-[70vh] overflow-auto">
                 <img
                   src={previewImage.src}
                   alt={previewImage.title}
-                  className="max-h-[65vh] max-w-full object-contain rounded-lg"
+                  className="max-h-[65vh] max-w-full object-contain rounded-control"
                 />
               </div>
             </div>
@@ -385,14 +385,14 @@ export function DeliveryDetailsModal({
         )}
 
         {/* Footer Actions */}
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-4 pb-1 border-t border-border mt-4">
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-4 pb-1 border-t border-divider mt-4">
           {(isArrived || Boolean(delivery.grnNumber)) && (
             <Button
               type="button"
               variant="outline"
               disabled={downloadingReport}
               onClick={handleDownloadReport}
-              className="rounded-xl border border-border bg-card px-4 py-2.5 h-auto text-sm font-semibold text-foreground hover:bg-muted transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+              className="rounded-control border border-divider bg-surface px-4 py-2.5 h-auto type-label-button font-semibold text-text-primary hover:bg-surface-hover transition-colors inline-flex items-center gap-1.5 cursor-pointer"
             >
               <Download className="w-4 h-4 text-primary" />
               {downloadingReport ? "Downloading..." : "Download Delivery Report"}
@@ -407,7 +407,7 @@ export function DeliveryDetailsModal({
                 onClose();
                 onCancel(delivery);
               }}
-              className="rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 px-5 py-2.5 h-auto text-sm font-semibold transition-colors cursor-pointer"
+              className="rounded-control border border-status-red text-status-red hover:bg-status-red-bg px-5 py-2.5 h-auto type-label-button font-semibold transition-colors cursor-pointer"
             >
               Cancel Delivery
             </Button>
@@ -417,7 +417,7 @@ export function DeliveryDetailsModal({
             type="button"
             variant="outline"
             fallbackOnClose={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 h-auto text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+            className="rounded-control border border-divider bg-surface px-5 py-2.5 h-auto type-label-button font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
           >
             Close
           </ModalCloseButton>
@@ -429,7 +429,7 @@ export function DeliveryDetailsModal({
                 onClose();
                 onArrive(delivery);
               }}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+              className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 h-auto type-label-button font-semibold hover:bg-button-primary-hover transition-colors shadow-sm cursor-pointer"
             >
               Confirm Arrival
             </Button>
@@ -441,7 +441,7 @@ export function DeliveryDetailsModal({
               onClick={() => {
                 setShowCreateGrnModal(true);
               }}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+              className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 h-auto type-label-button font-semibold hover:bg-button-primary-hover transition-colors shadow-sm cursor-pointer"
             >
               Create Goods Receipt Note
             </Button>

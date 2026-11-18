@@ -27,7 +27,7 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
 
   return (
     <div className="w-full min-h-full py-7 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
-      {notice && <p role="status" className="text-sm text-primary">{notice}</p>}
+      {notice && <p role="status" className="type-body text-primary">{notice}</p>}
       {/* Page Header */}
       <PageHeader
         title="Orders & Procurement"
@@ -35,15 +35,15 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
       />
 
       {/* 3 Main Process Tabs */}
-      <div className="border-b border-border">
+      <div className="border-b border-divider">
         <div className="flex items-center gap-2 overflow-x-auto">
           <button
             type="button"
             onClick={() => setMainTab("pr")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 type-table-header font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               mainTab === "pr"
                 ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                : "border-transparent text-text-muted hover:text-text-primary"
             }`}
           >
             <span>PURCHASE REQUISITION</span>
@@ -52,10 +52,10 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
           <button
             type="button"
             onClick={() => setMainTab("po")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 type-table-header font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               mainTab === "po"
                 ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                : "border-transparent text-text-muted hover:text-text-primary"
             }`}
           >
             <span>PURCHASE ORDER</span>
@@ -64,10 +64,10 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
           <button
             type="button"
             onClick={() => setMainTab("delivery")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 type-table-header font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               mainTab === "delivery"
                 ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                : "border-transparent text-text-muted hover:text-text-primary"
             }`}
           >
             <span>DELIVERY</span>

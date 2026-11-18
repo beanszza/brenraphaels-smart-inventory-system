@@ -86,13 +86,13 @@ export default function ProcurementQAInspectionModal({
   };
 
   return (
-    <ModalWrapper open={!!order} title={`Quality Assurance Inspection - Order ${order.id}`} onClose={onClose} size="max-w-3xl">
+    <ModalWrapper open={!!order} title={`Quality Assurance Inspection - Order ${order.id}`} onClose={onClose} size="max-w-[560px]">
       <div className="space-y-4">
-        <div className="p-3 bg-muted/30 border border-border rounded-xl grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-          <div><span className="text-muted-foreground">Item:</span> <span className="font-bold text-foreground">{order.item}</span></div>
-          <div><span className="text-muted-foreground">Supplier:</span> <span className="font-medium text-foreground">{order.supplier}</span></div>
-          <div><span className="text-muted-foreground">Qty:</span> <span className="font-bold text-foreground">{order.quantity}</span></div>
-          <div><span className="text-muted-foreground">Status:</span> <span className="font-semibold text-foreground">{result}</span></div>
+        <div className="p-3 bg-surface-muted border border-divider rounded-card grid grid-cols-2 sm:grid-cols-4 gap-3 type-caption">
+          <div><span className="text-text-muted">Item:</span> <span className="font-bold text-text-primary">{order.item}</span></div>
+          <div><span className="text-text-muted">Supplier:</span> <span className="font-medium text-text-primary">{order.supplier}</span></div>
+          <div><span className="text-text-muted">Qty:</span> <span className="font-bold text-text-primary">{order.quantity}</span></div>
+          <div><span className="text-text-muted">Status:</span> <span className="font-semibold text-text-primary">{result}</span></div>
         </div>
 
         <div className="space-y-2">
@@ -107,16 +107,16 @@ export default function ProcurementQAInspectionModal({
               <div
                 key={item.key}
                 onClick={() => setChecklist((prev) => ({ ...prev, [item.key]: !isChecked }))}
-                className={`p-3 rounded-xl border transition-colors cursor-pointer flex items-start gap-3 select-none ${
-                  isChecked ? "border-foreground bg-muted/40" : "border-border bg-card hover:border-foreground/40"
+                className={`p-3 rounded-card border transition-colors cursor-pointer flex items-start gap-3 select-none ${
+                  isChecked ? "border-text-primary bg-surface-muted" : "border-divider bg-surface hover:border-text-primary/40"
                 }`}
               >
-                <div className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center border ${isChecked ? "bg-primary border-primary text-primary-foreground" : "border-border"}`}>
+                <div className={`w-4 h-4 rounded-xs mt-0.5 flex items-center justify-center border ${isChecked ? "bg-primary border-primary text-text-inverse" : "border-divider"}`}>
                   {isChecked && <Check size={12} strokeWidth={3} />}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-foreground">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  <p className="type-label font-bold text-text-primary">{item.label}</p>
+                  <p className="type-caption text-text-muted">{item.desc}</p>
                 </div>
               </div>
             );
@@ -125,42 +125,42 @@ export default function ProcurementQAInspectionModal({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Inspected By <span className="text-muted-foreground">*</span></label>
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">Inspected By <span className="text-status-red">*</span></label>
             <select
               value={inspectedBy}
               onChange={(e) => { setInspectedBy(e.target.value); setInspectedByError(""); }}
-              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+              className="w-full rounded-control border border-divider bg-surface px-3 py-2 type-body text-text-primary focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="" disabled>Select inspector...</option>
               {HR_EMPLOYEES.map((employee) => (
                 <option key={employee} value={employee}>{employee}</option>
               ))}
             </select>
-            {inspectedByError && <p className="mt-1 text-xs text-red-500">{inspectedByError}</p>}
+            {inspectedByError && <p className="mt-1 type-caption text-status-red">{inspectedByError}</p>}
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Inspection Photo / Proof <span className="text-muted-foreground">*</span></label>
-            <div className="border border-dashed border-border rounded-xl p-3 text-center hover:bg-muted/30 relative">
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">Inspection Photo / Proof <span className="text-status-red">*</span></label>
+            <div className="border border-dashed border-divider rounded-control p-3 text-center hover:bg-surface-hover relative">
               <Input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={(e) => { setPictureFile(e.target.files?.[0] || null); setPhotoError(""); }} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
-              <div className="flex items-center justify-center gap-2 pointer-events-none text-xs text-foreground">
-                <Upload className="w-4 h-4 text-muted-foreground" />
+              <div className="flex items-center justify-center gap-2 pointer-events-none type-caption text-text-primary">
+                <Upload className="w-4 h-4 text-text-muted" />
                 <span>{pictureFile ? pictureFile.name : "Upload photo"}</span>
               </div>
             </div>
-            {photoError && <p className="mt-1 text-xs text-red-500">{photoError}</p>}
+            {photoError && <p className="mt-1 type-caption text-status-red">{photoError}</p>}
           </div>
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">Notes (Optional)</label>
-          <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Inspection feedback or remarks..." rows={2} className="w-full rounded-xl border border-border bg-card p-3 text-xs text-foreground resize-none" />
+          <label className="mb-1.5 block type-label font-semibold text-text-primary">Notes (Optional)</label>
+          <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Inspection feedback or remarks..." rows={2} className="w-full rounded-control border border-divider bg-surface p-3 type-body text-text-primary placeholder:text-text-muted resize-none" />
         </div>
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-border">
-          <ModalCloseButton type="button" variant="outline" fallbackOnClose={onClose} disabled={isSaving} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
+        <div className="flex justify-end gap-3 pt-3 border-t border-divider">
+          <ModalCloseButton type="button" variant="outline" fallbackOnClose={onClose} disabled={isSaving} className="rounded-control border border-divider bg-surface px-5 py-2.5 h-auto type-label-button font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer">
             Cancel
           </ModalCloseButton>
-          <Button type="button" onClick={handleRequestComplete} disabled={isSaving} className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors flex items-center gap-2">
+          <Button type="button" onClick={handleRequestComplete} disabled={isSaving} className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 h-auto type-label-button font-semibold hover:bg-button-primary-hover transition-colors flex items-center gap-2 cursor-pointer">
             {isSaving && <Skeleton className="h-5 w-24" />}
             Submit Quality Assurance Inspection ({result})
           </Button>
