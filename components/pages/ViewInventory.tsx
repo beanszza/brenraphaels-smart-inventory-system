@@ -156,6 +156,7 @@ export default function ViewInventory({
   // Ensure categoryFilter is valid when tabs load
   useEffect(() => {
     if (categoryTabs.length > 0 && !categoryTabs.some((t) => t.id === categoryFilter)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCategoryFilter(categoryTabs[0].id);
     }
   }, [categoryTabs, categoryFilter]);
@@ -292,7 +293,7 @@ export default function ViewInventory({
   };
 
   return (
-    <div className="w-full min-w-0 min-h-full py-6 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="page-container space-y-6 animate-page-in">
       <PageHeader
         title="Inventory Management"
         description="Monitor real-time warehouse stocks, ingredients, raw materials, and finished goods"
@@ -300,15 +301,15 @@ export default function ViewInventory({
 
       {/* Main Process Tabs (Only visible to IMS Manager & Admin; other accounts cannot see Stock Write-Off) */}
       {canAccessWriteOff && (
-        <div className="border-b border-border">
+        <div className="border-b border-divider">
           <div className="flex items-center gap-2 overflow-x-auto">
             <button
               type="button"
               onClick={() => setMainTab("inventory")}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                 mainTab === "inventory"
                   ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  : "border-transparent text-ink-muted hover:text-ink"
               }`}
             >
               <span>INVENTORY</span>
@@ -317,19 +318,19 @@ export default function ViewInventory({
             <button
               type="button"
               onClick={() => setMainTab("write-off")}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                 mainTab === "write-off"
                   ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  : "border-transparent text-ink-muted hover:text-ink"
               }`}
             >
               <span>STOCK WRITE-OFF</span>
               {pendingRequestsCount > 0 && (
                 <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  className={`px-1.5 py-0.5 rounded-pill type-caption font-semibold ${
                     mainTab === "write-off"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-foreground"
+                      : "bg-subtle text-ink"
                   }`}
                 >
                   {pendingRequestsCount}
@@ -358,7 +359,7 @@ export default function ViewInventory({
           />
 
           {/* Dynamic Category Tabs */}
-          <div className="border-b border-border">
+          <div className="border-b border-divider">
             <div className="flex items-center gap-2 overflow-x-auto">
               {categoryTabs.map((tab) => {
                 const isActive = categoryFilter === tab.id;
@@ -371,10 +372,10 @@ export default function ViewInventory({
                       setProductFilter("All");
                       setPage(1);
                     }}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                       isActive
-                        ? "border-foreground text-foreground"
-                        : "border-transparent text-muted-foreground hover:text-foreground"
+                        ? "border-ink text-ink"
+                        : "border-transparent text-ink-muted hover:text-ink"
                     }`}
                   >
                     <span>{tab.label}</span>
@@ -385,7 +386,7 @@ export default function ViewInventory({
           </div>
 
           {/* Search, Product Filter (Finished Goods only), and Category Filter Bar */}
-          <div className="rounded-xl border border-border bg-card p-3">
+          <div className="rounded-card border border-border bg-surface p-3">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-sm">
               <SearchInput
                 containerClassName="flex-1"
@@ -407,7 +408,7 @@ export default function ViewInventory({
                       setPage(1);
                     }}
                   >
-                    <SelectTrigger className="h-10 min-w-[180px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+                    <SelectTrigger className="h-10 min-w-[180px] w-auto rounded-control border border-border bg-surface px-3.5 type-body font-medium text-ink shadow-xs focus:ring-1 focus:ring-ring">
                       <SelectValue placeholder="All Products" />
                     </SelectTrigger>
                     <SelectContent className="min-w-[180px]">
@@ -430,7 +431,7 @@ export default function ViewInventory({
                     setPage(1);
                   }}
                 >
-                  <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+                  <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-control border border-border bg-surface px-3.5 type-body font-medium text-ink shadow-xs focus:ring-1 focus:ring-ring">
                     <SelectValue placeholder="Select Category" />
                   </SelectTrigger>
                   <SelectContent className="min-w-[210px]">
@@ -446,7 +447,7 @@ export default function ViewInventory({
                   <Button
                     asChild
                     variant="outline"
-                    className="h-10 rounded-xl border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer"
+                    className="h-10 rounded-control border-border bg-surface px-4 py-2 type-label-button text-ink hover:bg-subtle cursor-pointer"
                   >
                     <Link href="/inventory/logs">
                       <History className="w-4 h-4 mr-1.5" />

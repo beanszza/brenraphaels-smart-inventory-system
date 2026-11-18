@@ -29,6 +29,7 @@ export function SWOActionModal({
   const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -89,52 +90,51 @@ export function SWOActionModal({
   if (!mounted) return null;
 
   return createPortal(
-    <div className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-scrim animate-in fade-in duration-150">
       <div
         role="dialog"
         aria-modal="true"
         aria-label={getTitle()}
-        style={{ width: "100%", maxWidth: "460px" }}
-        className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
+        className="w-full max-w-[480px] bg-surface rounded-modal shadow-modal border border-border overflow-hidden flex flex-col p-6 text-ink shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         {submitError && (
-          <p role="alert" className="mb-3 text-xs font-medium text-destructive text-center">
+          <p role="alert" className="mb-3 type-caption font-medium text-notice-danger text-center">
             {submitError}
           </p>
         )}
         <div className="flex flex-col items-center justify-center text-center">
           {/* Circular Alert Icon */}
-          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
-            <AlertTriangle className="w-6 h-6" />
+          <div className="size-12 rounded-pill bg-subtle flex items-center justify-center mb-4 text-ink">
+            <AlertTriangle className="size-6" />
           </div>
 
           {/* Title */}
-          <h2 className="text-xl font-bold text-foreground mb-1">{getTitle()}</h2>
+          <h2 className="type-modal-title text-ink mb-1">{getTitle()}</h2>
 
           {/* SWO Number Subtitle */}
-          <p className="text-xs font-semibold text-muted-foreground mb-3">
+          <p className="type-caption font-semibold text-ink-muted mb-3">
             Stock Write-Off No: {writeOff.swoNumber}
           </p>
 
           {/* Message / Description */}
-          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+          <p className="type-body text-ink-muted mb-5 leading-relaxed">
             {getDescription()}
           </p>
 
           {/* Summary Box when removing items from inventory */}
           {actionType === "remove" && (
-            <div className="w-full text-left rounded-xl border border-border bg-muted/30 p-3 mb-5 space-y-1.5 text-xs">
-              <div className="font-bold text-foreground mb-1">Items to Remove:</div>
+            <div className="w-full text-left rounded-inner border border-border bg-subtle p-3 mb-5 space-y-1.5 type-body">
+              <div className="font-semibold text-ink mb-1">Items to Remove:</div>
               {writeOff.items.map((item) => {
                 const totalItemQty = item.lines.reduce((s, l) => s + l.quantity, 0);
                 return (
-                  <div key={item.writeOffItemId} className="flex items-center justify-between gap-2 text-muted-foreground">
-                    <span className="truncate font-medium text-foreground">
+                  <div key={item.writeOffItemId} className="flex items-center justify-between gap-2 text-ink-muted">
+                    <span className="truncate font-medium text-ink">
                       {item.itemName}
                       {item.variantName ? ` (${item.variantName})` : ""}
                     </span>
-                    <span className="shrink-0 font-semibold text-foreground">
+                    <span className="shrink-0 font-semibold text-ink tabular-nums">
                       {totalItemQty.toLocaleString()} {item.uomName} ({item.lines.length}{" "}
                       {item.lines.length === 1 ? "lot" : "lots"})
                     </span>
@@ -148,15 +148,15 @@ export function SWOActionModal({
           {(requiresReason || allowsOptionalNotes) && (
             <div className="w-full text-left space-y-1.5 mb-5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-foreground flex items-center gap-1">
+                <label className="type-label text-ink flex items-center gap-1">
                   {actionType === "approve"
                     ? "Approval Notes (Optional)"
                     : actionType === "cancel"
                     ? "Cancellation Reason"
                     : "Rejection Reason"}
-                  {requiresReason && <span className="text-destructive">*</span>}
+                  {requiresReason && <span className="text-notice-danger">*</span>}
                 </label>
-                <span className="text-[10px] text-muted-foreground">
+                <span className="type-caption text-ink-muted">
                   {reason.length}/{SWO_ACTION_NOTE_MAX}
                 </span>
               </div>
@@ -175,12 +175,12 @@ export function SWOActionModal({
                   setReason(e.target.value);
                   if (e.target.value.trim()) setError(false);
                 }}
-                className={`text-xs resize-none bg-background rounded-xl p-3 ${
-                  error ? "border-destructive focus-visible:ring-destructive" : "border-border"
+                className={`type-body resize-none bg-surface rounded-control p-3 text-ink ${
+                  error ? "border-notice-danger focus-visible:ring-destructive" : "border-border"
                 }`}
               />
               {error && (
-                <p className="text-[11px] text-destructive flex items-center gap-1 mt-1 font-medium">
+                <p className="type-caption text-notice-danger flex items-center gap-1 mt-1 font-medium">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" /> Reason is required for this action.
                 </p>
               )}
@@ -193,7 +193,7 @@ export function SWOActionModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-5 py-2.5 type-label-button text-ink border border-border bg-surface hover:bg-subtle rounded-control transition-colors disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>
@@ -201,7 +201,7 @@ export function SWOActionModal({
               type="button"
               onClick={handleConfirm}
               disabled={loading}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-5 py-2.5 type-label-button text-primary-foreground bg-primary hover:bg-primary-hover rounded-control transition-colors disabled:opacity-50 cursor-pointer"
             >
               {loading ? "Processing..." : "Confirm"}
             </button>

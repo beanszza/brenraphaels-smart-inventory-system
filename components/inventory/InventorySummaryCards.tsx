@@ -17,13 +17,13 @@ export default function InventorySummaryCards({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Card 1: Total Inventory */}
-      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+      <div className="rounded-card border border-border bg-surface p-5 sm:p-6 flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+          <span className="type-nav-group text-ink-muted uppercase">
             Total Inventory
           </span>
           <svg
-            className="w-20 h-6 text-foreground"
+            className="w-20 h-6 text-ink"
             viewBox="0 0 80 24"
             fill="none"
           >
@@ -39,23 +39,23 @@ export default function InventorySummaryCards({
         </div>
 
         <div className="mt-4">
-          <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+          <div className="type-stat-value text-ink tabular-nums">
             {totalItems}
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="type-caption text-ink-muted mt-1">
             Active items across all categories
           </p>
         </div>
       </div>
 
       {/* Card 2: Low Stock */}
-      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+      <div className="rounded-card border border-border bg-surface p-5 sm:p-6 flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+          <span className="type-nav-group text-ink-muted uppercase">
             Low Stock
           </span>
           <svg
-            className="w-20 h-6 text-muted-foreground/70"
+            className="w-20 h-6 text-ink-muted"
             viewBox="0 0 80 24"
             fill="none"
           >
@@ -71,23 +71,23 @@ export default function InventorySummaryCards({
         </div>
 
         <div className="mt-4">
-          <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+          <div className="type-stat-value text-ink tabular-nums">
             {lowStockCount}
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="type-caption text-ink-muted mt-1">
             Items below minimum reorder point
           </p>
         </div>
       </div>
 
       {/* Card 3: Expiring Soon */}
-      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+      <div className="rounded-card border border-border bg-surface p-5 sm:p-6 flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+          <span className="type-nav-group text-ink-muted uppercase">
             Expiring Soon
           </span>
           <svg
-            className="w-20 h-6 text-muted-foreground/70"
+            className="w-20 h-6 text-ink-muted"
             viewBox="0 0 80 24"
             fill="none"
           >
@@ -103,10 +103,10 @@ export default function InventorySummaryCards({
         </div>
 
         <div className="mt-4">
-          <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+          <div className="type-stat-value text-ink tabular-nums">
             {expiringSoonCount}
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="type-caption text-ink-muted mt-1">
             Available lots expiring within 30 days
           </p>
         </div>

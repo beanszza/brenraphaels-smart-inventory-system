@@ -6,7 +6,7 @@ export function InventorySkeleton({ compact = false }: { compact?: boolean }) {
     {!compact && <><Skeleton className="h-9 w-56" />
       <div className="grid gap-4 md:grid-cols-3">{[0, 1, 2].map(i => <Skeleton key={i} className="h-36 w-full" />)}</div>
       <Skeleton className="h-10 w-full" /></>}
-    <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+    <div className="space-y-3 rounded-card border border-border bg-surface p-4">
       {Array.from({ length: compact ? 3 : 6 }, (_, i) => <Skeleton key={i} className="h-10 w-full" />)}
     </div>
   </div>;

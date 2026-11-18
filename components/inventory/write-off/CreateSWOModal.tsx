@@ -267,6 +267,7 @@ export function CreateSWOModal({
   useEffect(() => {
     if (!open) return;
     let active = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFormData(fallbackFormData);
     setItems([createEmptyItem()]);
     setGeneralRemarks("");
@@ -539,11 +540,11 @@ export function CreateSWOModal({
           ? `Stock Write-Off ${createdSwo.swoNumber} submitted for approval (${failedPhotos} photo(s) could not be uploaded).`
           : `Stock Write-Off ${createdSwo.swoNumber} submitted for approval.`;
       onSuccess(successMessage);
-    } catch (err: any) {
-      setSubmitBannerError(
-        err?.response?.data?.message ||
-          (err instanceof Error ? err.message : "Unable to submit Stock Write-Off request.")
-      );
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err instanceof Error ? err.message : "Unable to submit Stock Write-Off request.");
+      setSubmitBannerError(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -574,7 +575,7 @@ export function CreateSWOModal({
           {submitBannerError && (
             <div
               role="alert"
-              className="rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs font-medium text-destructive flex items-center justify-between gap-2"
+              className="rounded-control border border-notice-danger-border bg-notice-danger-bg p-3.5 type-body font-medium text-notice-danger flex items-center justify-between gap-2"
             >
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
@@ -583,7 +584,7 @@ export function CreateSWOModal({
               <button
                 type="button"
                 onClick={() => setSubmitBannerError("")}
-                className="font-bold underline shrink-0 cursor-pointer"
+                className="font-semibold underline shrink-0 cursor-pointer"
               >
                 Dismiss
               </button>
@@ -592,33 +593,33 @@ export function CreateSWOModal({
 
           {/* Section 1: Stock Write-Off Information (Matches CreatePRForm read-only fields) */}
           <div className="space-y-2.5">
-            <h3 className="text-sm font-bold text-foreground">
+            <h3 className="type-card-title text-ink">
               Stock Write-Off Information
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-4 rounded-inner bg-subtle border border-border">
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                <label className="mb-1.5 block type-label text-ink">
                   Write-Off Number
                 </label>
-                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-all">
+                <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-surface type-body text-ink-muted select-all">
                   {formData?.nextSwoNumberPreview || "SWO-2026-0001"}
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                <label className="mb-1.5 block type-label text-ink">
                   Request Date
                 </label>
-                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-surface type-body text-ink-muted">
                   {requestDateDisplay}
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                <label className="mb-1.5 block type-label text-ink">
                   Requested By
                 </label>
-                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-none">
+                <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-surface type-body text-ink-muted select-none">
                   {staff.name || staff.username}
                 </div>
               </div>
@@ -629,10 +630,10 @@ export function CreateSWOModal({
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
               <div>
-                <h3 className="text-sm font-bold text-foreground">
+                <h3 className="type-card-title text-ink">
                   Write-Off Items
                 </h3>
-                <p className="text-xs text-muted-foreground">
+                <p className="type-caption text-ink-muted">
                   Add the inventory items that need to be written off (up to {SWO_MAX_ITEMS} items per request). You can select one or more batches / lots per item.
                 </p>
               </div>
@@ -658,11 +659,11 @@ export function CreateSWOModal({
               return (
                 <div
                   key={itemIdx}
-                  className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4 shadow-xs"
+                  className="rounded-card border border-border bg-surface p-4 sm:p-5 space-y-4"
                 >
                   {/* Item Card Header */}
-                  <div className="flex items-center justify-between pb-3 border-b border-border">
-                    <span className="text-sm font-bold text-foreground">
+                  <div className="flex items-center justify-between pb-3 border-b border-divider">
+                    <span className="type-subsection font-semibold text-ink">
                       Item {itemIdx + 1}
                     </span>
 
@@ -670,7 +671,7 @@ export function CreateSWOModal({
                       <button
                         type="button"
                         onClick={() => handleRemoveItem(itemIdx)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-destructive/30 text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-control border border-status-red-border type-caption font-semibold text-status-red hover:bg-status-red-bg transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         Remove Item
@@ -686,14 +687,14 @@ export function CreateSWOModal({
                   >
                     {/* Item Type */}
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                        Item Type <span className="text-destructive">*</span>
+                      <label className="mb-1.5 block type-label text-ink">
+                        Item Type <span className="text-status-red">*</span>
                       </label>
                       <select
                         value={draftItem.itemType}
                         onChange={(e) => handleItemTypeChange(itemIdx, e.target.value)}
-                        className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring cursor-pointer ${
-                          itemErr.itemType ? "border-destructive" : "border-border"
+                        className={`w-full h-10 rounded-control border bg-surface px-3.5 type-body text-ink focus:ring-1 focus:ring-ring cursor-pointer ${
+                          itemErr.itemType ? "border-status-red" : "border-border"
                         }`}
                       >
                         <option value="">Select item type</option>
@@ -704,7 +705,7 @@ export function CreateSWOModal({
                         ))}
                       </select>
                       {itemErr.itemType && (
-                        <p className="mt-1 text-[11px] text-destructive font-medium">
+                        <p className="mt-1 type-caption text-status-red font-medium">
                           {itemErr.itemType}
                         </p>
                       )}
@@ -712,15 +713,15 @@ export function CreateSWOModal({
 
                     {/* Item Name */}
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                        Item Name <span className="text-destructive">*</span>
+                      <label className="mb-1.5 block type-label text-ink">
+                        Item Name <span className="text-status-red">*</span>
                       </label>
                       <select
                         value={draftItem.itemKey}
                         disabled={!draftItem.itemType}
                         onChange={(e) => handleItemKeyChange(itemIdx, e.target.value)}
-                        className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer ${
-                          itemErr.itemId ? "border-destructive" : "border-border"
+                        className={`w-full h-10 rounded-control border bg-surface px-3.5 type-body text-ink focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer ${
+                          itemErr.itemId ? "border-status-red" : "border-border"
                         }`}
                       >
                         <option value="">
@@ -737,7 +738,7 @@ export function CreateSWOModal({
                         ))}
                       </select>
                       {itemErr.itemId && (
-                        <p className="mt-1 text-[11px] text-destructive font-medium">
+                        <p className="mt-1 type-caption text-status-red font-medium">
                           {itemErr.itemId}
                         </p>
                       )}
@@ -746,10 +747,10 @@ export function CreateSWOModal({
                     {/* Unit of Measurement (Shown only for non-finished goods) */}
                     {!isFinishedGood && (
                       <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                        <label className="mb-1.5 block type-label text-ink">
                           Unit of Measurement
                         </label>
-                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                        <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body text-ink-muted">
                           {selectedItemOpt?.uomName || "—"}
                         </div>
                       </div>
@@ -789,7 +790,7 @@ export function CreateSWOModal({
                       hasExpiry && (!selectedLotOpt || Boolean(selectedLotOpt.expiryDate));
 
                     return (
-                      <div className="space-y-3.5 pt-2 border-t border-border">
+                      <div className="space-y-3.5 pt-2 border-t border-divider">
                         {/* Row: Batch/Lot Number, Expiration Date, Available Quantity, Affected Quantity */}
                         <div
                           className={`grid grid-cols-1 sm:grid-cols-2 ${
@@ -798,8 +799,8 @@ export function CreateSWOModal({
                         >
                           {/* Batch / Lot Number */}
                           <div>
-                            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                              Batch / Lot Number <span className="text-destructive">*</span>
+                            <label className="mb-1.5 block type-label text-ink">
+                              Batch / Lot Number <span className="text-status-red">*</span>
                             </label>
                             <select
                               value={draftLot.lotId || ""}
@@ -814,8 +815,8 @@ export function CreateSWOModal({
                                     : {}),
                                 });
                               }}
-                              className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer ${
-                                lotErr.lotId ? "border-destructive" : "border-border"
+                              className={`w-full h-10 rounded-control border bg-surface px-3.5 type-body text-ink focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer ${
+                                lotErr.lotId ? "border-status-red" : "border-border"
                               }`}
                             >
                               <option value="">
@@ -840,7 +841,7 @@ export function CreateSWOModal({
                               })}
                             </select>
                             {lotErr.lotId && (
-                              <p className="mt-1 text-[11px] text-destructive font-medium">
+                              <p className="mt-1 type-caption text-status-red font-medium">
                                 {lotErr.lotId}
                               </p>
                             )}
@@ -849,15 +850,15 @@ export function CreateSWOModal({
                           {/* Expiration Date */}
                           {showExpiryField && (
                             <div>
-                              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                              <label className="mb-1.5 block type-label text-ink">
                                 Expiration Date
                               </label>
-                              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                              <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body text-ink-muted">
                                 <span
                                   className={
                                     selectedLotOpt?.isExpired
-                                      ? "font-bold text-destructive"
-                                      : "text-muted-foreground"
+                                      ? "font-semibold text-status-red"
+                                      : "text-ink-muted"
                                   }
                                 >
                                   {selectedLotOpt
@@ -870,16 +871,16 @@ export function CreateSWOModal({
 
                           {/* Available Quantity (Unreserved) */}
                           <div>
-                            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                            <label className="mb-1.5 block type-label text-ink">
                               Available Quantity
                             </label>
-                            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                            <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body text-ink-muted">
                               {selectedLotOpt
                                 ? `${selectedLotOpt.availableQuantity.toLocaleString()}${isFinishedGood ? "" : ` ${selectedLotOpt.uomName}`}`
                                 : "—"}
                             </div>
                             {selectedLotOpt && selectedLotOpt.reservedQuantity > 0 && (
-                              <p className="mt-1 text-[10px] text-muted-foreground">
+                              <p className="mt-1 type-caption text-ink-muted">
                                 ({selectedLotOpt.reservedQuantity}{isFinishedGood ? "" : ` ${selectedLotOpt.uomName}`} reserved excluded)
                               </p>
                             )}
@@ -887,8 +888,8 @@ export function CreateSWOModal({
 
                           {/* Affected Quantity */}
                           <div>
-                            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                              Affected Quantity <span className="text-destructive">*</span>
+                            <label className="mb-1.5 block type-label text-ink">
+                              Affected Quantity <span className="text-status-red">*</span>
                             </label>
                             <Input
                               type="number"
@@ -907,14 +908,14 @@ export function CreateSWOModal({
                                   quantity: e.target.value,
                                 })
                               }
-                              className={`h-10 rounded-xl bg-card text-xs font-semibold ${
+                              className={`h-10 rounded-control bg-surface type-body font-semibold text-ink ${
                                 quantityErrorMsg
-                                  ? "border-destructive focus-visible:ring-destructive"
+                                  ? "border-status-red focus-visible:ring-destructive"
                                   : "border-border"
                               }`}
                             />
                             {quantityErrorMsg && (
-                              <p className="mt-1 text-[11px] text-destructive font-medium">
+                              <p className="mt-1 type-caption text-status-red font-medium">
                                 {quantityErrorMsg}
                               </p>
                             )}
@@ -926,8 +927,8 @@ export function CreateSWOModal({
                           {/* Write-Off Reason */}
                           <div className="space-y-2">
                             <div>
-                              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                                Write-Off Reason <span className="text-destructive">*</span>
+                              <label className="mb-1.5 block type-label text-ink">
+                                Write-Off Reason <span className="text-status-red">*</span>
                               </label>
                               <select
                                 value={draftLot.reason}
@@ -936,8 +937,8 @@ export function CreateSWOModal({
                                     reason: e.target.value,
                                   })
                                 }
-                                className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring cursor-pointer ${
-                                  lotErr.reason ? "border-destructive" : "border-border"
+                                className={`w-full h-10 rounded-control border bg-surface px-3.5 type-body text-ink focus:ring-1 focus:ring-ring cursor-pointer ${
+                                  lotErr.reason ? "border-status-red" : "border-border"
                                 }`}
                               >
                                 <option value="">Select reason</option>
@@ -948,7 +949,7 @@ export function CreateSWOModal({
                                 ))}
                               </select>
                               {lotErr.reason && (
-                                <p className="mt-1 text-[11px] text-destructive font-medium">
+                                <p className="mt-1 type-caption text-status-red font-medium">
                                   {lotErr.reason}
                                 </p>
                               )}
@@ -966,14 +967,14 @@ export function CreateSWOModal({
                                       reasonOther: e.target.value,
                                     })
                                   }
-                                  className={`h-10 rounded-xl bg-card text-xs ${
+                                  className={`h-10 rounded-control bg-surface type-body text-ink ${
                                     lotErr.reasonOther
-                                      ? "border-destructive"
+                                      ? "border-status-red"
                                       : "border-border"
                                   }`}
                                 />
                                 {lotErr.reasonOther && (
-                                  <p className="mt-1 text-[11px] text-destructive font-medium">
+                                  <p className="mt-1 type-caption text-status-red font-medium">
                                     {lotErr.reasonOther}
                                   </p>
                                 )}
@@ -984,8 +985,8 @@ export function CreateSWOModal({
                           {/* Disposition Method */}
                           <div className="space-y-2">
                             <div>
-                              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                                Disposition Method <span className="text-destructive">*</span>
+                              <label className="mb-1.5 block type-label text-ink">
+                                Disposition Method <span className="text-status-red">*</span>
                               </label>
                               <select
                                 value={draftLot.disposition}
@@ -994,8 +995,8 @@ export function CreateSWOModal({
                                     disposition: e.target.value,
                                   })
                                 }
-                                className={`w-full h-10 rounded-xl border bg-card px-3.5 text-xs text-foreground focus:ring-1 focus:ring-ring cursor-pointer ${
-                                  lotErr.disposition ? "border-destructive" : "border-border"
+                                className={`w-full h-10 rounded-control border bg-surface px-3.5 type-body text-ink focus:ring-1 focus:ring-ring cursor-pointer ${
+                                  lotErr.disposition ? "border-status-red" : "border-border"
                                 }`}
                               >
                                 <option value="">Select disposition method</option>
@@ -1006,7 +1007,7 @@ export function CreateSWOModal({
                                 ))}
                               </select>
                               {lotErr.disposition && (
-                                <p className="mt-1 text-[11px] text-destructive font-medium">
+                                <p className="mt-1 type-caption text-status-red font-medium">
                                   {lotErr.disposition}
                                 </p>
                               )}
@@ -1024,14 +1025,14 @@ export function CreateSWOModal({
                                       dispositionOther: e.target.value,
                                     })
                                   }
-                                  className={`h-10 rounded-xl bg-card text-xs ${
+                                  className={`h-10 rounded-control bg-surface type-body text-ink ${
                                     lotErr.dispositionOther
-                                      ? "border-destructive"
+                                      ? "border-status-red"
                                       : "border-border"
                                   }`}
                                 />
                                 {lotErr.dispositionOther && (
-                                  <p className="mt-1 text-[11px] text-destructive font-medium">
+                                  <p className="mt-1 type-caption text-status-red font-medium">
                                     {lotErr.dispositionOther}
                                   </p>
                                 )}
@@ -1043,10 +1044,10 @@ export function CreateSWOModal({
                         {/* Row: Item Remarks */}
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-xs font-semibold text-foreground">
-                              Item Remarks <span className="text-destructive">*</span>
+                            <label className="type-label text-ink">
+                              Item Remarks <span className="text-status-red">*</span>
                             </label>
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="type-caption text-ink-muted">
                               {draftLot.remarks.length}/{SWO_REMARKS_MAX}
                             </span>
                           </div>
@@ -1060,12 +1061,12 @@ export function CreateSWOModal({
                                 remarks: e.target.value,
                               })
                             }
-                            className={`w-full rounded-xl bg-card px-3 py-2 text-xs text-foreground resize-none ${
-                              lotErr.remarks ? "border-destructive" : "border-border"
+                            className={`w-full rounded-control bg-surface px-3 py-2 type-body text-ink resize-none ${
+                              lotErr.remarks ? "border-status-red" : "border-border"
                             }`}
                           />
                           {lotErr.remarks && (
-                            <p className="mt-1 text-[11px] text-destructive font-medium">
+                            <p className="mt-1 type-caption text-status-red font-medium">
                               {lotErr.remarks}
                             </p>
                           )}
@@ -1075,42 +1076,42 @@ export function CreateSWOModal({
                   })()}
 
                   {/* Supporting Evidence Photo Upload (Matches CreateDeliveryModal dashed dropzone UI) */}
-                  <div className="space-y-1.5 pt-2 border-t border-border">
+                  <div className="space-y-1.5 pt-2 border-t border-divider">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-semibold text-foreground">
+                      <label className="type-label text-ink">
                         Item Supporting Evidence{" "}
-                        <span className="text-muted-foreground font-normal">(Optional)</span>
+                        <span className="text-ink-muted font-normal">(Optional)</span>
                       </label>
                       {draftItem.photos.length > 0 && (
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="type-caption text-ink-muted">
                           {draftItem.photos.length}/{SWO_MAX_PHOTOS_PER_ITEM} photo(s)
                         </span>
                       )}
                     </div>
 
-                    <div className="rounded-xl border border-dashed border-border bg-card p-4 transition-colors">
+                    <div className="rounded-control border border-dashed border-border bg-surface p-4 transition-colors">
                       {draftItem.photos.length > 0 ? (
                         <div className="space-y-3">
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                             {draftItem.photos.map((p, pIdx) => (
                               <div
                                 key={pIdx}
-                                className="relative flex flex-col items-center justify-center p-3 bg-muted/20 rounded-xl border border-border"
+                                className="relative flex flex-col items-center justify-center p-3 bg-subtle rounded-control border border-border"
                               >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                   src={p.previewUrl}
                                   alt={p.file.name}
-                                  className="max-h-44 w-full rounded-lg object-contain border border-border shadow-xs bg-card"
+                                  className="max-h-44 w-full rounded-control object-contain border border-border bg-surface"
                                 />
-                                <p className="mt-2 text-[11px] text-muted-foreground truncate max-w-xs text-center">
+                                <p className="mt-2 type-caption text-ink-muted truncate max-w-xs text-center">
                                   {p.file.name}
                                 </p>
                                 <div className="mt-2 flex justify-end w-full">
                                   <button
                                     type="button"
                                     onClick={() => handleRemovePhoto(itemIdx, pIdx)}
-                                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-1.5 cursor-pointer"
+                                    className="type-caption font-semibold px-3 py-1.5 rounded-control border border-status-red-border text-status-red hover:bg-status-red-bg transition-colors flex items-center gap-1.5 cursor-pointer"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                     Remove
@@ -1121,12 +1122,12 @@ export function CreateSWOModal({
                           </div>
                         </div>
                       ) : (
-                        <label className="flex flex-col items-center justify-center cursor-pointer py-4 hover:bg-muted/30 rounded-xl transition-colors">
-                          <Upload className="w-6 h-6 text-muted-foreground mb-2" />
-                          <span className="text-xs font-medium text-foreground">
+                        <label className="flex flex-col items-center justify-center cursor-pointer py-4 hover:bg-subtle rounded-control transition-colors">
+                          <Upload className="w-6 h-6 text-ink-muted mb-2" />
+                          <span className="type-body font-medium text-ink">
                             Click to upload item condition photo
                           </span>
-                          <span className="text-[11px] text-muted-foreground mt-0.5">
+                          <span className="type-caption text-ink-muted mt-0.5">
                             JPG, PNG, WebP up to 10MB · Multiple photos allowed
                           </span>
                           <input
@@ -1144,7 +1145,7 @@ export function CreateSWOModal({
                     </div>
 
                     {draftItem.photoError && (
-                      <p className="text-[11px] text-destructive font-medium">
+                      <p className="type-caption text-status-red font-medium">
                         {draftItem.photoError}
                       </p>
                     )}
@@ -1158,20 +1159,20 @@ export function CreateSWOModal({
               type="button"
               onClick={handleAddItem}
               disabled={items.length >= SWO_MAX_ITEMS}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-foreground bg-card border border-border rounded-xl hover:bg-muted transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 type-label-button font-medium text-ink bg-surface border border-border rounded-control hover:bg-subtle transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus size={14} /> Add Another Item
             </button>
           </div>
 
           {/* Section 3: General Remarks (Matches CreatePRForm bottom left Notes section) */}
-          <div className="flex flex-col sm:flex-row justify-start pt-3 border-t border-border">
+          <div className="flex flex-col sm:flex-row justify-start pt-3 border-t border-divider">
             <div className="w-full sm:w-1/2 lg:w-5/12 space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-foreground">
-                  General Remarks <span className="text-muted-foreground font-normal">(Optional)</span>
+                <label className="type-label text-ink">
+                  General Remarks <span className="text-ink-muted font-normal">(Optional)</span>
                 </label>
-                <span className="text-[10px] text-muted-foreground">
+                <span className="type-caption text-ink-muted">
                   {generalRemarks.length}/{SWO_GENERAL_REMARKS_MAX}
                 </span>
               </div>
@@ -1181,10 +1182,10 @@ export function CreateSWOModal({
                 placeholder="Enter additional remarks (optional)..."
                 value={generalRemarks}
                 onChange={(e) => setGeneralRemarks(e.target.value)}
-                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-ring resize-none"
+                className="w-full rounded-control border border-border bg-surface px-3 py-2 type-body text-ink focus:ring-1 focus:ring-ring resize-none"
               />
               {errors.generalRemarks && (
-                <p className="text-[11px] text-destructive font-medium">
+                <p className="type-caption text-status-red font-medium">
                   {errors.generalRemarks}
                 </p>
               )}
@@ -1192,12 +1193,12 @@ export function CreateSWOModal({
           </div>
 
           {/* Modal Footer (Matches CreatePRForm footer) */}
-          <div className="flex flex-wrap justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
+          <div className="flex flex-wrap justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
             <ModalCloseButton
               type="button"
               variant="outline"
               fallbackOnClose={onClose}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors cursor-pointer"
             >
               Cancel
             </ModalCloseButton>
@@ -1209,7 +1210,7 @@ export function CreateSWOModal({
                   setConfirmSubmitOpen(true);
                 }
               }}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+              className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
             >
               Submit for Approval
             </Button>

@@ -133,13 +133,13 @@ export function SWODetailsModal({
         {/* Rejection / Cancellation / Approval Feedback Banner */}
         {(swo.rejectionReason || swo.cancelReason || swo.approvalNotes) && (
           <div
-            className={`p-4 rounded-xl border space-y-1.5 ${
+            className={`p-4 rounded-control border space-y-1.5 ${
               isRejected || isCancelled
-                ? "border-destructive/30 bg-destructive/5 text-destructive"
-                : "border-border bg-muted/40 text-foreground"
+                ? "border-status-red-border bg-status-red-bg text-status-red"
+                : "border-border bg-subtle text-ink"
             }`}
           >
-            <div className="flex items-center gap-2 text-xs font-bold">
+            <div className="flex items-center gap-2 type-caption font-semibold">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>
                 {isRejected
@@ -149,7 +149,7 @@ export function SWODetailsModal({
                   : `Approval Notes from ${swo.approvedByName || swo.approvedBy || "Admin"} (${fmtDateTime(swo.approvedAt)}):`}
               </span>
             </div>
-            <p className="text-xs pl-6 whitespace-pre-wrap leading-relaxed opacity-95">
+            <p className="type-caption pl-6 whitespace-pre-wrap leading-relaxed opacity-95">
               {swo.rejectionReason || swo.cancelReason || swo.approvalNotes}
             </p>
           </div>
@@ -157,43 +157,43 @@ export function SWODetailsModal({
 
         {/* Section 1: Stock Write-Off Information (Clean Grid Card matching CreateSWOModal) */}
         <div className="space-y-2.5">
-          <h3 className="text-sm font-bold text-foreground">
+          <h3 className="type-card-title text-ink">
             Stock Write-Off Information
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-4 rounded-inner bg-subtle border border-border">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              <label className="mb-1.5 block type-label text-ink">
                 Write-Off Number
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-semibold text-foreground select-all">
+              <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-surface type-body font-semibold text-ink select-all">
                 {swo.swoNumber}
               </div>
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              <label className="mb-1.5 block type-label text-ink">
                 Request Date
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+              <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-surface type-body text-ink-muted">
                 {fmtDate(swo.requestedAt)}
               </div>
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              <label className="mb-1.5 block type-label text-ink">
                 Requested By
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+              <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-surface type-body text-ink-muted">
                 {swo.requestedByName || swo.requestedBy}
               </div>
             </div>
 
             {(swo.approvedByName || swo.approvedBy) && (
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                <label className="mb-1.5 block type-label text-ink">
                   Approved By
                 </label>
-                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-surface type-body text-ink-muted">
                   {swo.approvedByName || swo.approvedBy} ({fmtDate(swo.approvedAt)})
                 </div>
               </div>
@@ -201,10 +201,10 @@ export function SWODetailsModal({
 
             {(swo.removedByName || swo.removedBy) && (
               <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                <label className="mb-1.5 block type-label text-ink">
                   Removed From Inventory By
                 </label>
-                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-surface type-body text-ink-muted">
                   {swo.removedByName || swo.removedBy} ({fmtDateTime(swo.removedAt)})
                 </div>
               </div>
@@ -215,7 +215,7 @@ export function SWODetailsModal({
         {/* Section 2: Write-Off Items (Clean Item Cards matching CreateSWOModal layout) */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-foreground">
+            <h3 className="type-card-title text-ink">
               Write-Off Items
             </h3>
           </div>
@@ -230,11 +230,11 @@ export function SWODetailsModal({
             return (
               <div
                 key={item.writeOffItemId}
-                className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xs"
+                className="rounded-card border border-border bg-surface p-5 space-y-4"
               >
                 {/* Item Card Header */}
-                <div className="flex items-center justify-between pb-3 border-b border-border">
-                  <h4 className="text-xs font-bold text-foreground">
+                <div className="flex items-center justify-between pb-3 border-b border-divider">
+                  <h4 className="type-subsection font-semibold text-ink">
                     Item {idx + 1}
                   </h4>
                 </div>
@@ -242,19 +242,19 @@ export function SWODetailsModal({
                 {/* Sub-section 1: Item Details */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                    <label className="mb-1.5 block type-label text-ink">
                       Item Type
                     </label>
-                    <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-medium text-foreground">
+                    <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body font-medium text-ink">
                       {item.itemType}
                     </div>
                   </div>
 
                   <div className={isFinishedGood ? "sm:col-span-2" : ""}>
-                    <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                    <label className="mb-1.5 block type-label text-ink">
                       Item Name
                     </label>
-                    <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-medium text-foreground">
+                    <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body font-medium text-ink">
                       {item.itemName}
                       {item.variantName ? ` — ${item.variantName}` : ""}
                     </div>
@@ -262,10 +262,10 @@ export function SWODetailsModal({
 
                   {!isFinishedGood && (
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                      <label className="mb-1.5 block type-label text-ink">
                         Unit of Measurement
                       </label>
-                      <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground">
+                      <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body text-ink">
                         {item.uomName || "—"}
                       </div>
                     </div>
@@ -277,39 +277,39 @@ export function SWODetailsModal({
                   <div className="space-y-3.5 pt-1">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                       <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                        <label className="mb-1.5 block type-label text-ink">
                           Batch / Lot Number
                         </label>
-                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-semibold text-foreground">
+                        <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body font-semibold text-ink">
                           {line.lotCode}
                         </div>
                       </div>
 
                       {item.hasExpiry && (
                         <div>
-                          <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                          <label className="mb-1.5 block type-label text-ink">
                             Expiration Date
                           </label>
-                          <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground">
+                          <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body text-ink">
                             {fmtDate(line.expiryDate)}
                           </div>
                         </div>
                       )}
 
                       <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                        <label className="mb-1.5 block type-label text-ink">
                           Available Quantity
                         </label>
-                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground">
+                        <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body text-ink tabular-nums">
                           {line.availableBefore} {item.uomName}
                         </div>
                       </div>
 
                       <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                        <label className="mb-1.5 block type-label text-ink">
                           Affected Quantity
                         </label>
-                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-bold text-foreground">
+                        <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body font-semibold text-ink tabular-nums">
                           {line.quantity} {item.uomName}
                         </div>
                       </div>
@@ -317,10 +317,10 @@ export function SWODetailsModal({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                        <label className="mb-1.5 block type-label text-ink">
                           Write-Off Reason
                         </label>
-                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground">
+                        <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body text-ink">
                           {line.reason === "Other" && line.reasonOther
                             ? `Other (${line.reasonOther})`
                             : line.reason}
@@ -328,10 +328,10 @@ export function SWODetailsModal({
                       </div>
 
                       <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                        <label className="mb-1.5 block type-label text-ink">
                           Disposition Method
                         </label>
-                        <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground">
+                        <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body text-ink">
                           {line.disposition === "Other" && line.dispositionOther
                             ? `Other (${line.dispositionOther})`
                             : line.disposition}
@@ -340,10 +340,10 @@ export function SWODetailsModal({
                     </div>
 
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                      <label className="mb-1.5 block type-label text-ink">
                         Item Remarks
                       </label>
-                      <div className="min-h-20 p-3 rounded-xl border border-border bg-muted/40 text-xs text-foreground whitespace-pre-wrap leading-relaxed">
+                      <div className="min-h-20 p-3 rounded-control border border-border bg-subtle/40 type-body text-ink whitespace-pre-wrap leading-relaxed">
                         {line.remarks || "—"}
                       </div>
                     </div>
@@ -351,8 +351,8 @@ export function SWODetailsModal({
                 )}
 
                 {/* Sub-section 3: Item Supporting Evidence (Photos) */}
-                <div className="space-y-2 pt-1 border-t border-border/50">
-                  <label className="block text-xs font-semibold text-foreground">
+                <div className="space-y-2 pt-1 border-t border-divider">
+                  <label className="block type-label text-ink">
                     Item Supporting Evidence
                   </label>
                   {item.photos && item.photos.length > 0 ? (
@@ -363,22 +363,22 @@ export function SWODetailsModal({
                           <div
                             key={p.photoId}
                             onClick={() => url && setPreviewUrl(url)}
-                            className="group relative rounded-xl border border-border overflow-hidden bg-muted/20 cursor-pointer hover:border-primary transition-all aspect-video flex flex-col items-center justify-center p-2"
+                            className="group relative rounded-control border border-border overflow-hidden bg-subtle cursor-pointer hover:border-ink transition-all aspect-video flex flex-col items-center justify-center p-2"
                           >
                             {url ? (
                               /* eslint-disable-next-line @next/next/no-img-element */
                               <img
                                 src={url}
                                 alt={p.fileName || "Evidence photo"}
-                                className="h-full w-full object-contain rounded-lg"
+                                className="h-full w-full object-contain rounded-control"
                               />
                             ) : (
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-2 type-caption text-ink-muted">
                                 <ImageIcon className="w-4 h-4" />
                                 <span>{p.fileName}</span>
                               </div>
                             )}
-                            <span className="absolute bottom-1 right-1 text-[10px] font-semibold bg-background/80 px-1.5 py-0.5 rounded text-foreground backdrop-blur-xs">
+                            <span className="absolute bottom-1 right-1 type-caption font-semibold bg-surface/80 px-1.5 py-0.5 rounded-pill text-ink backdrop-blur-xs">
                               Click to view
                             </span>
                           </div>
@@ -386,7 +386,7 @@ export function SWODetailsModal({
                       })}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground italic">
+                    <p className="type-caption text-ink-muted italic">
                       No supporting evidence photos attached for this item.
                     </p>
                   )}
@@ -397,8 +397,8 @@ export function SWODetailsModal({
         </div>
 
         {/* Bottom Actions Row */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
-          <div className="text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-divider">
+          <div className="type-caption text-ink-muted">
             Last updated: {fmtDateTime(swo.updatedAt)}
           </div>
 
@@ -407,7 +407,7 @@ export function SWODetailsModal({
               type="button"
               variant="outline"
               fallbackOnClose={onClose}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors cursor-pointer"
             >
               Close
             </ModalCloseButton>
@@ -419,7 +419,7 @@ export function SWODetailsModal({
                 variant="outline"
                 onClick={handleDownloadPdf}
                 disabled={downloadingPdf}
-                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors inline-flex items-center gap-2 cursor-pointer"
+                className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors inline-flex items-center gap-2 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 {downloadingPdf ? "Generating PDF..." : "Download SWO Report (PDF)"}
@@ -432,7 +432,7 @@ export function SWODetailsModal({
                 type="button"
                 variant="outline"
                 onClick={() => onCancel(swo)}
-                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                className="rounded-control border border-status-red-border bg-surface px-5 py-2.5 type-label-button text-status-red hover:bg-status-red-bg transition-colors cursor-pointer"
               >
                 Cancel Request
               </Button>
@@ -443,7 +443,7 @@ export function SWODetailsModal({
               <Button
                 type="button"
                 onClick={() => onRemoveFromInventory(swo)}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+                className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs cursor-pointer"
               >
                 Remove Items in Inventory
               </Button>
@@ -457,7 +457,7 @@ export function SWODetailsModal({
                     type="button"
                     variant="outline"
                     onClick={() => onReject(swo)}
-                    className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                    className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors cursor-pointer"
                   >
                     Reject
                   </Button>
@@ -466,7 +466,7 @@ export function SWODetailsModal({
                   <Button
                     type="button"
                     onClick={() => onApprove(swo)}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer"
+                    className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs cursor-pointer"
                   >
                     Approve
                   </Button>
@@ -481,13 +481,13 @@ export function SWODetailsModal({
       {previewUrl && (
         <div
           onClick={() => setPreviewUrl(null)}
-          className="fixed inset-0 z-[350] bg-black/75 flex items-center justify-center p-4 cursor-zoom-out"
+          className="fixed inset-0 z-[350] bg-scrim flex items-center justify-center p-4 cursor-zoom-out"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewUrl}
             alt="Evidence preview"
-            className="max-h-[85vh] max-w-[90vw] rounded-2xl border border-border shadow-2xl object-contain bg-card"
+            className="max-h-[85vh] max-w-[90vw] rounded-modal border border-border shadow-modal object-contain bg-surface"
           />
         </div>
       )}
