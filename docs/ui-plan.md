@@ -273,7 +273,7 @@ flowchart LR
 | **2** | Point existing theme aliases at Figma values + `scripts/check-tokens.mjs` (WARNING mode) | 5 | **[COMPLETED]** Colors & 8px narrower sidebar applied cleanly |
 | **3A–3G** | Shared components (buttons → tables) | ~33 | Yes, inside primitives (review Playwright diffs) |
 | **Exceptions** | 1) Remove `PRStatusBadge` icons (JSX change)<br>2) Remap `StatusBadge` colors (UX change) | 2 (1 per commit) | **[COMPLETED]** Both isolated badge commits completed & verified |
-| **4** | Layout shell (sidebar, header, page header, brand) | 11 | Yes (review Playwright diffs) |
+| **4** | Layout shell (sidebar, header, page header, brand) | 11 | **[COMPLETED]** Yes (review Playwright diffs) |
 | **5** | Auth and system screens | 8 | Yes (review Playwright diffs) |
 | **6.1–6.10** | Pages, one module per sub-stage | ~140 | Yes, one module at a time (review Playwright diffs) |
 | **7** | PDF and print exports | — | **Skipped for now** |
@@ -499,7 +499,7 @@ Each sub-stage changes only class strings inside the listed files. Consumers pic
 
 ---
 
-## Stage 4 — Layout shell (sidebar, header, page containers)
+## Stage 4 — Layout shell (sidebar, header, page containers) — **[COMPLETED]**
 
 | File | Change |
 | :--- | :--- |
