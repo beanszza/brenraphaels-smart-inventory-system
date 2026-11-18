@@ -473,7 +473,7 @@ Each sub-stage changes only class strings inside the listed files. Consumers pic
 | `components/ui/sonner.tsx` | Toast `bg-toast text-on-brand rounded-inner`, 360 wide, action `text-focus` |
 | `components/ConfirmModal.tsx`, `components/shared/ActionConfirmModal.tsx`, `components/resources-suppliers/ModalWrapper.tsx`, `components/receiving/NestedDialog.tsx` | Shared custom modal shells: `bg-black/60` → `bg-scrim`, radius, shadow, title, footer divider `border-divider` |
 
-### 3G — Tables and pagination
+### 3G — Tables and pagination — **[COMPLETED]**
 | File | Change |
 | :--- | :--- |
 | `components/ui/table.tsx` | Header row `bg-page`, `th` `px-4 py-2.5 type-table-header text-ink-muted`, row `border-t border-divider hover:bg-page data-[state=selected]:bg-tint-selected`, `td` `px-4 py-3 type-table-cell text-ink-strong` |
