@@ -216,21 +216,21 @@ export default function CreateTransferModal({
   if (mode === "view" && initialData) {
     return createPortal(
       <div
-        className="font-sans fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50"
+        className="font-sans fixed inset-0 z-[200] flex items-center justify-center p-4 bg-backdrop backdrop-blur-xs"
       >
         {confirmModal}
         <div
-          className="w-[90vw] max-w-[90vw] sm:max-w-[80vw] md:max-w-[700px] lg:max-w-[900px] max-h-[90vh] overflow-y-auto p-md sm:p-lg rounded-lg sm:rounded-xl border border-border bg-card flex flex-col shadow-2xl"
+          className="w-full max-w-[560px] max-h-[90vh] overflow-y-auto p-6 rounded-panel border border-divider bg-surface flex flex-col shadow-modal text-text-primary"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between border-b border-border pb-3 mb-4 flex-shrink-0">
-            <h2 className="text-xl font-bold text-foreground">
+          <div className="flex items-center justify-between border-b border-divider pb-3 mb-4 flex-shrink-0">
+            <h2 className="type-modal-title text-text-primary">
               Transfer Details - {initialData.id}
             </h2>
             <button
               type="button"
               onClick={requestClose}
-              className="text-foreground/60 hover:text-foreground transition-colors"
+              className="text-text-primary/60 hover:text-text-primary transition-colors"
             >
               <X size={22} />
             </button>
@@ -242,56 +242,56 @@ export default function CreateTransferModal({
 
           <div className="grid grid-cols-2 gap-y-5 gap-x-4 mb-6">
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Product</p>
-              <p className="text-base font-bold text-foreground">{initialData.product}</p>
+              <p className="text-xs text-text-muted mb-1">Product</p>
+              <p className="type-body font-semibold text-text-primary">{initialData.product}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Quantity</p>
-              <p className="text-base font-bold text-foreground">{initialData.quantity}</p>
+              <p className="text-xs text-text-muted mb-1">Quantity</p>
+              <p className="type-body font-semibold text-text-primary">{initialData.quantity}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">From Location</p>
-              <p className="text-base font-bold text-foreground">{initialData.from}</p>
+              <p className="text-xs text-text-muted mb-1">From Location</p>
+              <p className="type-body font-semibold text-text-primary">{initialData.from}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">To Location</p>
-              <p className="text-base font-bold text-foreground">{initialData.to}</p>
+              <p className="text-xs text-text-muted mb-1">To Location</p>
+              <p className="type-body font-semibold text-text-primary">{initialData.to}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Transfer Date</p>
-              <p className="text-base font-bold text-foreground">{initialData.date}</p>
+              <p className="text-xs text-text-muted mb-1">Transfer Date</p>
+              <p className="type-body font-semibold text-text-primary">{initialData.date}</p>
             </div>
           </div>
 
           {initialData.status === 'Completed' && (
-            <div className="bg-green-50/50 border border-green-200 rounded-2xl p-4 mb-4">
+            <div className="bg-surface-hover border border-divider rounded-panel p-4 mb-4">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-                <h3 className="text-sm font-bold text-green-700">Transfer Completed - Received</h3>
+                <div className="w-2.5 h-2.5 rounded-full bg-success"></div>
+                <h3 className="type-caption font-semibold text-success">Transfer Completed - Received</h3>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Delivery Status</p>
-                  <p className="text-sm font-bold text-foreground">Arrived & Verified</p>
+                  <p className="text-xs text-text-muted mb-1">Delivery Status</p>
+                  <p className="type-card-title text-text-primary">Arrived & Verified</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Destination</p>
-                  <p className="text-sm font-bold text-foreground">{initialData.to}</p>
+                  <p className="text-xs text-text-muted mb-1">Destination</p>
+                  <p className="type-card-title text-text-primary">{initialData.to}</p>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="border border-border rounded-2xl p-4">
-            <h3 className="text-sm font-bold text-foreground mb-3">Quantity Verification</h3>
+          <div className="border border-divider rounded-panel p-4">
+            <h3 className="type-card-title text-text-primary mb-3">Quantity Verification</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Dispatched</p>
-                <p className="text-xl font-bold text-foreground">{initialData.quantity}</p>
+                <p className="text-xs text-text-muted mb-1">Dispatched</p>
+                <p className="type-modal-title text-text-primary">{initialData.quantity}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Received</p>
-                <p className="text-xl font-bold text-foreground">
+                <p className="text-xs text-text-muted mb-1">Received</p>
+                <p className="type-modal-title text-text-primary">
                   {initialData.status === 'Completed' ? initialData.quantity : '-'}
                 </p>
               </div>
@@ -305,23 +305,23 @@ export default function CreateTransferModal({
 
   return createPortal(
     <div
-      className="font-sans fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50"
+      className="font-sans fixed inset-0 z-[200] flex items-center justify-center p-4 bg-backdrop backdrop-blur-xs"
     >
       {confirmModal}
       <div
-        className="w-[90vw] max-w-[90vw] sm:max-w-[80vw] md:max-w-[700px] lg:max-w-[900px] max-h-[90vh] overflow-y-auto p-md sm:p-lg rounded-lg sm:rounded-xl border border-border bg-card flex flex-col shadow-2xl"
+        className="w-full max-w-[560px] max-h-[90vh] overflow-y-auto p-6 rounded-panel border border-divider bg-surface flex flex-col shadow-modal text-text-primary"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-border pb-3 mb-4 flex-shrink-0">
+        <div className="flex items-center justify-between border-b border-divider pb-3 mb-4 flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-foreground">
+            <h2 className="type-modal-title text-text-primary">
               {mode === "create"
                 ? "Create Stock Transfer"
                 : mode === "edit"
                 ? "Edit Stock Transfer"
                 : "View Stock Transfer"}
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-xs text-text-muted mt-0.5">
               {mode === "view"
                 ? "Details of stock transfer"
                 : "Transfer finished stock goods across enterprise branches"}
@@ -330,7 +330,7 @@ export default function CreateTransferModal({
           <button
             type="button"
             onClick={requestClose}
-            className="text-foreground/60 hover:text-foreground transition-colors"
+            className="text-text-primary/60 hover:text-text-primary transition-colors"
           >
             <X size={22} />
           </button>
@@ -339,15 +339,15 @@ export default function CreateTransferModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Finished Product */}
           <div>
-            <label className="block text-xs font-semibold text-foreground mb-1.5">
-              Finished Product <span className="text-muted-foreground">*</span>
+            <label className="block text-xs font-semibold text-text-primary mb-1.5">
+              Finished Product <span className="text-text-muted">*</span>
             </label>
             <select
-              className={`w-full px-3 py-2 text-sm rounded-lg border ${
+              className={`w-full px-3 py-2 text-sm rounded-control border ${
                 productError
                   ? "!border-destructive focus:!border-destructive focus:ring-1 focus:!ring-destructive"
-                  : "border-border"
-              } bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-ring ${
+                  : "border-divider"
+              } bg-surface text-text-primary focus:outline-none focus:ring-1 focus:ring-ring ${
                 isReadOnly ? "opacity-60 cursor-not-allowed" : ""
               }`}
               value={product}
@@ -376,19 +376,19 @@ export default function CreateTransferModal({
 
           {/* Source info (read-only) */}
           {product && (
-            <div className="p-3 rounded-lg bg-muted/50 border border-border">
+            <div className="p-3 rounded-control bg-surface-hover border border-divider">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-foreground">From Location:</span>
-                <span className="font-medium text-foreground">
+                <span className="font-semibold text-text-primary">From Location:</span>
+                <span className="font-medium text-text-primary">
                   {selectedInventory ? sourceLocationName : "—"}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs mt-1">
-                <span className="font-semibold text-foreground">Available Stock:</span>
+                <span className="font-semibold text-text-primary">Available Stock:</span>
                 <span
-                  className={`font-bold ${
+                  className={`font-semibold ${
                     availableStock !== null && availableStock > 0
-                      ? "text-green-600"
+                      ? "text-success"
                       : "text-destructive"
                   }`}
                 >
@@ -400,15 +400,15 @@ export default function CreateTransferModal({
 
           {/* Destination */}
           <div>
-            <label className="block text-xs font-semibold text-foreground mb-1.5">
-              To Location <span className="text-muted-foreground">*</span>
+            <label className="block text-xs font-semibold text-text-primary mb-1.5">
+              To Location <span className="text-text-muted">*</span>
             </label>
             <select
-              className={`w-full px-3 py-2 text-sm rounded-lg border ${
+              className={`w-full px-3 py-2 text-sm rounded-control border ${
                 toError
                   ? "!border-destructive focus:!border-destructive focus:ring-1 focus:!ring-destructive"
-                  : "border-border"
-              } bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-ring ${
+                  : "border-divider"
+              } bg-surface text-text-primary focus:outline-none focus:ring-1 focus:ring-ring ${
                 isReadOnly ? "opacity-60 cursor-not-allowed" : ""
               }`}
               value={to}
@@ -433,8 +433,8 @@ export default function CreateTransferModal({
           {/* Quantity & Date */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1.5">
-                Quantity <span className="text-muted-foreground">*</span>
+              <label className="block text-xs font-semibold text-text-primary mb-1.5">
+                Quantity <span className="text-text-muted">*</span>
               </label>
               <input
                 type="number"
@@ -442,11 +442,11 @@ export default function CreateTransferModal({
                 step="0.001"
                 max={availableStock ?? undefined}
                 placeholder="e.g., 50"
-                className={`w-full px-3 py-2 text-sm rounded-lg border ${
+                className={`w-full px-3 py-2 text-sm rounded-control border ${
                   quantityError
                     ? "!border-destructive focus:!border-destructive focus:ring-1 focus:!ring-destructive"
-                    : "border-border"
-                } bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-70`}
+                    : "border-divider"
+                } bg-surface text-text-primary placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-70`}
                 value={quantity}
                 disabled={isReadOnly}
                 onKeyDown={(e) => {
@@ -468,18 +468,18 @@ export default function CreateTransferModal({
               {quantityError && <p className="mt-1 text-xs text-destructive">{quantityError}</p>}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1.5">
-                Transfer Date <span className="text-muted-foreground">*</span>
+              <label className="block text-xs font-semibold text-text-primary mb-1.5">
+                Transfer Date <span className="text-text-muted">*</span>
               </label>
               <input
                 type="date"
                 min={getTodayDateString()}
                 max={getMaxFutureDateString()}
-                className={`w-full px-3 py-2 text-sm rounded-lg border ${
+                className={`w-full px-3 py-2 text-sm rounded-control border ${
                   dateError
                     ? "!border-destructive focus:!border-destructive focus:ring-1 focus:!ring-destructive"
-                    : "border-border"
-                } bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-70`}
+                    : "border-divider"
+                } bg-surface text-text-primary placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-70`}
                 value={date}
                 disabled={isReadOnly}
                 onChange={(e) => {
@@ -494,17 +494,17 @@ export default function CreateTransferModal({
 
           {/* Backend error */}
           {submitError && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-              <p className="text-xs font-semibold text-red-600">⚠ {submitError}</p>
+            <div className="p-3 rounded-control bg-destructive/10 border border-destructive/30">
+              <p className="text-xs font-semibold text-destructive">⚠ {submitError}</p>
             </div>
           )}
 
-          <div className="flex justify-end space-x-3 pt-6 border-t border-border">
+          <div className="flex justify-end space-x-3 pt-6 border-t border-divider">
             {isReadOnly ? (
               <button
                 type="button"
                 onClick={requestClose}
-                className="px-4 py-2 text-xs font-semibold text-foreground border border-border bg-card hover:bg-primary hover:text-primary-foreground rounded-lg transition-colors"
+                className="px-4 py-2 text-xs font-semibold text-text-primary border border-divider bg-surface hover:bg-surface-hover rounded-control transition-colors"
               >
                 Close
               </button>
@@ -513,7 +513,7 @@ export default function CreateTransferModal({
                 <button
                   type="button"
                   onClick={requestClose}
-                  className="px-4 py-2 text-xs font-semibold text-foreground border border-border bg-card hover:bg-primary hover:text-primary-foreground rounded-lg transition-colors"
+                  className="px-4 py-2 text-xs font-semibold text-text-primary border border-divider bg-surface hover:bg-surface-hover rounded-control transition-colors"
                 >
                   Cancel
                 </button>
@@ -528,7 +528,7 @@ export default function CreateTransferModal({
                     !!dateError ||
                     (availableStock !== null && availableStock <= 0)
                   }
-                  className="px-4 py-2 text-xs font-semibold text-primary-foreground bg-primary rounded-lg hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-xs font-semibold text-primary-foreground bg-primary rounded-control hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {mode === "edit" ? "Save Changes" : "Create Transfer"}
                 </button>

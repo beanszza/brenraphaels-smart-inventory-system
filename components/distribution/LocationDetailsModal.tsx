@@ -20,29 +20,29 @@ export default function LocationDetailsModal({
   if (!location) return null;
 
   return (
-    <ModalWrapper open={!!location} title={`Location Details - ${location.name}`} onClose={onClose} size="max-w-xl">
+    <ModalWrapper open={!!location} title={`Location Details - ${location.name}`} onClose={onClose} size="max-w-[480px]">
       <div className="space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-border">
+        <div className="flex items-center justify-between pb-2 border-b border-divider">
           <StatusBadge status={location.status} />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-muted-foreground">Location Name</p>
-            <p className="text-sm font-semibold text-foreground mt-0.5">{location.name}</p>
+            <p className="type-caption text-text-muted">Location Name</p>
+            <p className="type-body font-semibold text-text-primary mt-0.5">{location.name}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Facility Type</p>
-            <p className="text-sm font-semibold text-foreground mt-0.5">{location.type}</p>
+            <p className="type-caption text-text-muted">Facility Type</p>
+            <p className="type-body font-semibold text-text-primary mt-0.5">{location.type}</p>
           </div>
           <div className="col-span-2">
-            <p className="text-xs text-muted-foreground">Address</p>
-            <p className="text-sm font-semibold text-foreground mt-0.5">{location.address || "N/A"}</p>
+            <p className="type-caption text-text-muted">Address</p>
+            <p className="type-body font-semibold text-text-primary mt-0.5">{location.address || "N/A"}</p>
           </div>
         </div>
 
-        <div className="flex justify-end pt-3 border-t border-border">
-          <ModalCloseButton variant="outline" fallbackOnClose={onClose} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
+        <div className="flex justify-end pt-3 border-t border-divider">
+          <ModalCloseButton variant="outline" fallbackOnClose={onClose} className="rounded-control border border-divider bg-surface px-5 py-2.5 type-button font-semibold text-text-primary hover:bg-surface-hover transition-colors">
             Close
           </ModalCloseButton>
         </div>

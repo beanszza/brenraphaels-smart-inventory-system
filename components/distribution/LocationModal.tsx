@@ -79,18 +79,18 @@ export default function LocationModal({
   };
 
   return (
-    <ModalWrapper open={open} title={editingLocation ? "Edit Location" : "Add New Location"} onClose={onClose} size="max-w-xl">
+    <ModalWrapper open={open} title={editingLocation ? "Edit Location" : "Add New Location"} onClose={onClose} size="max-w-[560px]">
       <div className="space-y-4">
-        {saveError && <p role="alert" className="text-sm text-destructive">{saveError}</p>}
+        {saveError && <p role="alert" className="type-body text-destructive">{saveError}</p>}
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">Location Name <span className="text-muted-foreground">*</span></label>
-          <Input type="text" value={name} onChange={(e) => { setName(e.target.value); setNameError(""); }} placeholder="e.g. Main Distribution Hub" className="rounded-xl border border-border bg-card text-foreground text-sm" />
-          {nameError && <p className="mt-1 text-xs text-red-500">{nameError}</p>}
+          <label className="mb-1.5 block type-caption font-semibold text-text-primary">Location Name <span className="text-text-muted">*</span></label>
+          <Input type="text" value={name} onChange={(e) => { setName(e.target.value); setNameError(""); }} placeholder="e.g. Main Distribution Hub" className="rounded-control border border-divider bg-surface text-text-primary type-input" />
+          {nameError && <p className="mt-1 type-caption text-destructive">{nameError}</p>}
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">Location Type</label>
-          <select value={type} onChange={(e) => setType(e.target.value)} className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring">
+          <label className="mb-1.5 block type-caption font-semibold text-text-primary">Location Type</label>
+          <select value={type} onChange={(e) => setType(e.target.value)} className="w-full rounded-control border border-divider bg-surface px-3 py-2 type-input text-text-primary focus:ring-1 focus:ring-ring">
             <option value="Warehouse">Warehouse</option>
             <option value="Store Branch">Store Branch</option>
             <option value="Distribution Center">Distribution Center</option>
@@ -99,7 +99,7 @@ export default function LocationModal({
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">Address</label>
+          <label className="mb-1.5 block type-caption font-semibold text-text-primary">Address</label>
           <AddressSelector
             streetNumber={streetNumber} setStreetNumber={setStreetNumber}
             barangay={barangay} setBarangay={setBarangay}
@@ -110,19 +110,19 @@ export default function LocationModal({
 
         {editingLocation && (
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Status</label>
-            <select value={isActive ? "true" : "false"} onChange={(e) => setIsActive(e.target.value === "true")} className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm">
+            <label className="mb-1.5 block type-caption font-semibold text-text-primary">Status</label>
+            <select value={isActive ? "true" : "false"} onChange={(e) => setIsActive(e.target.value === "true")} className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-input">
               <option value="true">Active</option>
               <option value="false">Inactive</option>
             </select>
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-border">
-          <ModalCloseButton type="button" variant="outline" fallbackOnClose={onClose} disabled={saving} className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
+        <div className="flex justify-end gap-3 pt-3 border-t border-divider">
+          <ModalCloseButton type="button" variant="outline" fallbackOnClose={onClose} disabled={saving} className="rounded-control border border-divider bg-surface px-5 py-2.5 type-button font-semibold text-text-primary hover:bg-surface-hover transition-colors">
             Cancel
           </ModalCloseButton>
-          <Button type="button" onClick={handleSave} disabled={saving} className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors">
+          <Button type="button" onClick={handleSave} disabled={saving} className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-button font-semibold hover:bg-primary-hover transition-colors shadow-sm">
             {editingLocation ? "Save Changes" : "Create Location"}
           </Button>
         </div>

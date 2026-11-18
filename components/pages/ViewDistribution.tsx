@@ -82,11 +82,11 @@ export default function DistributionPage({ transfers: initialTransfers, location
         description="Manage internal stock transfers, warehouse movements, and facility locations."
         actions={
           activeTab === "Stock Transfer" ? (
-            <Button size="sm" onClick={() => setShowCreateTransfer(true)} className="gap-1.5">
+            <Button size="sm" onClick={() => setShowCreateTransfer(true)} className="gap-1.5 type-button font-semibold rounded-control bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm">
               <Plus className="w-4 h-4" /> New Request
             </Button>
           ) : (
-            <Button size="sm" onClick={() => { setEditingLocation(null); setShowLocationModal(true); }} className="gap-1.5">
+            <Button size="sm" onClick={() => { setEditingLocation(null); setShowLocationModal(true); }} className="gap-1.5 type-button font-semibold rounded-control bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm">
               <Plus className="w-4 h-4" /> Add Location
             </Button>
           )
@@ -96,7 +96,7 @@ export default function DistributionPage({ transfers: initialTransfers, location
       {pending ? <TransferSkeleton /> : <DistributionSummaryCards stats={stats} />}
 
       {/* Process Tabs */}
-      <div className="border-b border-border">
+      <div className="border-b border-divider">
         <div className="flex items-center gap-2 overflow-x-auto">
           {[
             { id: "Stock Transfer", label: "STOCK TRANSFERS" },
@@ -108,10 +108,10 @@ export default function DistributionPage({ transfers: initialTransfers, location
                 key={tab.id}
                 type="button"
                 onClick={() => { setActiveTab(tab.id as "Stock Transfer" | "Locations"); setPage(1); }}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 type-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? "border-foreground text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    ? "border-primary text-text-primary"
+                    : "border-transparent text-text-muted hover:text-text-primary hover:border-divider"
                 }`}
               >
                 <span>{tab.label}</span>
@@ -123,20 +123,21 @@ export default function DistributionPage({ transfers: initialTransfers, location
 
       {activeTab === "Stock Transfer" && (
         <>
-          <div className="mb-6 rounded-xl border border-border bg-card p-3">
+          <div className="mb-6 rounded-control border border-divider bg-surface p-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-sm">
               <SearchInput
                 containerClassName="flex-1"
                 placeholder="Search by Transfer ID (e.g. TR-...), Item, or Location..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                className="type-input"
               />
               <div className="flex items-center gap-sm shrink-0">
                 <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setPage(1); }}>
-                  <SelectTrigger className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+                  <SelectTrigger className="h-10 w-[180px] rounded-control border border-divider bg-surface px-3 type-input font-medium text-text-primary shadow-xs">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-surface border-divider text-text-primary">
                     {["All", "Scheduled", "Dispatched", "Received", "Cancelled"].map((s) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}

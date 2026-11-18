@@ -34,32 +34,32 @@ export default function StockTransferTable({ transfers, onDispatchClick, onCompl
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
+    <div className="bg-surface border border-divider rounded-panel overflow-hidden">
       <div className="w-full overflow-x-auto">
-        <table className="w-full text-xs">
+        <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-border bg-muted/50">
+            <tr className="border-b border-divider bg-surface-hover text-text-muted type-table-header">
               {["TRANSFER NO.", "PRODUCT", "FROM", "TO", "QUANTITY", "TRANSFER DATE", "STATUS", "ACTIONS"].map(h => (
-                <th key={h} className={`px-4 py-3 ${h === "ACTIONS" ? "text-center" : "text-left"} font-bold text-muted-foreground tracking-wider whitespace-nowrap`}>{h}</th>
+                <th key={h} className={`px-4 py-3 ${h === "ACTIONS" ? "text-center" : "text-left"} font-semibold text-text-muted type-table-header tracking-wider whitespace-nowrap`}>{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-divider">
             {transfers.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-5 py-10 text-center text-sm font-semibold text-muted-foreground">
+                <td colSpan={8} className="px-5 py-10 text-center type-body font-semibold text-text-muted">
                   No Results Found
                 </td>
               </tr>
             ) : (
               transfers.map(t => (
-                <tr key={t.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                <td className="px-4 py-3 font-bold text-foreground">{t.displayId || t.id}</td>
-                <td className="px-4 py-3 text-foreground">{t.product}</td>
-                <td className="px-4 py-3 text-foreground">{t.from}</td>
-                <td className="px-4 py-3 text-foreground">{t.to}</td>
-                <td className="px-4 py-3 text-foreground">{t.quantity}</td>
-                <td className="px-4 py-3 text-foreground">{t.date}</td>
+                <tr key={t.id} className="border-b border-divider hover:bg-surface-hover/60 transition-colors">
+                <td className="px-4 py-3 font-semibold font-mono text-text-primary type-table-cell">{t.displayId || t.id}</td>
+                <td className="px-4 py-3 text-text-primary type-table-cell">{t.product}</td>
+                <td className="px-4 py-3 text-text-primary type-table-cell">{t.from}</td>
+                <td className="px-4 py-3 text-text-primary type-table-cell">{t.to}</td>
+                <td className="px-4 py-3 text-text-primary type-table-cell">{t.quantity}</td>
+                <td className="px-4 py-3 text-text-primary type-table-cell">{t.date}</td>
                 <td className="px-4 py-3">
                   <StatusBadge status={t.status} />
                 </td>
@@ -81,9 +81,9 @@ export default function StockTransferTable({ transfers, onDispatchClick, onCompl
                           setActiveDropdownId(t.id);
                         }
                       }}
-                      className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none"
+                      className="p-1.5 rounded-control text-text-primary hover:bg-surface-hover transition-colors focus:outline-none"
                     >
-                      <MoreHorizontal size={18} className="text-foreground" />
+                      <MoreHorizontal size={18} className="text-text-primary" />
                     </button>
 
                     {activeDropdownId === t.id && dropdownPosition && createPortal(
@@ -97,7 +97,7 @@ export default function StockTransferTable({ transfers, onDispatchClick, onCompl
                         />
                         <div
                           style={{ top: `${dropdownPosition.top}px`, left: `${dropdownPosition.left}px` }}
-                          className="absolute w-44 rounded-xl border border-border bg-card shadow-xl z-[200] py-1.5 focus:outline-none text-left"
+                          className="absolute w-44 rounded-control border border-divider bg-surface shadow-xl z-[200] py-1.5 focus:outline-none text-left"
                         >
                           <button
                             type="button"
@@ -105,9 +105,9 @@ export default function StockTransferTable({ transfers, onDispatchClick, onCompl
                               onViewClick?.(t);
                               setActiveDropdownId(null);
                             }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
+                            className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-hover transition-colors text-left"
                           >
-                            <Eye size={14} className="text-foreground shrink-0" />
+                            <Eye size={14} className="text-text-primary shrink-0" />
                             View
                           </button>
                           {t.status === "Pending" && (
@@ -117,9 +117,9 @@ export default function StockTransferTable({ transfers, onDispatchClick, onCompl
                                 onEditClick?.(t);
                                 setActiveDropdownId(null);
                               }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
+                              className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-hover transition-colors text-left"
                             >
-                              <Pencil size={14} className="text-foreground shrink-0" />
+                              <Pencil size={14} className="text-text-primary shrink-0" />
                               Edit
                             </button>
                           )}
@@ -130,9 +130,9 @@ export default function StockTransferTable({ transfers, onDispatchClick, onCompl
                                 onDispatchClick(t);
                                 setActiveDropdownId(null);
                               }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
+                              className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-hover transition-colors text-left"
                             >
-                              <Truck size={14} className="text-foreground shrink-0" />
+                              <Truck size={14} className="text-text-primary shrink-0" />
                               Dispatch
                             </button>
                           )}
@@ -143,9 +143,9 @@ export default function StockTransferTable({ transfers, onDispatchClick, onCompl
                                 onCompleteClick(t.id);
                                 setActiveDropdownId(null);
                               }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
+                              className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-hover transition-colors text-left"
                             >
-                              <CheckCircle size={14} className="text-foreground shrink-0" />
+                              <CheckCircle size={14} className="text-text-primary shrink-0" />
                               Complete
                             </button>
                           )}
@@ -156,9 +156,9 @@ export default function StockTransferTable({ transfers, onDispatchClick, onCompl
                                 onCancelClick?.(t);
                                 setActiveDropdownId(null);
                               }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors text-left"
+                              className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-hover transition-colors text-left"
                             >
-                              <XCircle size={14} className="text-foreground shrink-0" />
+                              <XCircle size={14} className="text-text-primary shrink-0" />
                               Cancel
                             </button>
                           )}
