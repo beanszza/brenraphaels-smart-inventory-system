@@ -42,41 +42,44 @@ const STATUS_TABS: (POStatus | "All")[] = [
   "Cancelled",
 ];
 
-function mapPO(o: any): PurchaseOrderPO {
+function mapPO(o: Record<string, unknown>): PurchaseOrderPO {
   return {
-    poId: o.poId,
-    poNumber: o.poNumber,
-    prId: o.prId ?? undefined,
-    prNumber: o.prNumber ?? undefined,
-    supplierId: o.supplierId,
-    supplierName: o.supplierName || "—",
-    supplierAddress: o.supplierAddress,
-    supplierEmail: o.supplierEmail,
-    supplierContactPerson: o.supplierContactPerson,
-    supplierPhone: o.supplierPhone,
-    supplierApprovedBy: o.supplierApprovedBy,
-    supplierApprovedDate: o.supplierApprovedDate,
-    requestedBy: o.requestedBy || "—",
-    orderDate: o.orderDate,
-    expectedArrivalDate: o.expectedArrivalDate,
+    poId: Number(o.poId),
+    poNumber: String(o.poNumber || ""),
+    prId: o.prId ? Number(o.prId) : undefined,
+    prNumber: o.prNumber ? String(o.prNumber) : undefined,
+    supplierId: Number(o.supplierId),
+    supplierName: String(o.supplierName || "—"),
+    supplierAddress: o.supplierAddress ? String(o.supplierAddress) : undefined,
+    supplierEmail: o.supplierEmail ? String(o.supplierEmail) : undefined,
+    supplierContactPerson: o.supplierContactPerson ? String(o.supplierContactPerson) : undefined,
+    supplierPhone: o.supplierPhone ? String(o.supplierPhone) : undefined,
+    supplierApprovedBy: o.supplierApprovedBy ? String(o.supplierApprovedBy) : undefined,
+    supplierApprovedDate: o.supplierApprovedDate ? String(o.supplierApprovedDate) : undefined,
+    requestedBy: String(o.requestedBy || "—"),
+    orderDate: String(o.orderDate || ""),
+    expectedArrivalDate: String(o.expectedArrivalDate || ""),
     status: (o.status === "PendingApproval" ? "Pending Approval" : o.status === "PartiallyDelivered" ? "Partially Delivered" : o.status) as POStatus,
-    paymentType: o.paymentType,
-    adminNotes: o.adminNotes ?? undefined,
-    totalAmount: o.totalAmount || 0,
-    hasRemainingToSchedule: o.hasRemainingToSchedule,
-    items: (o.items || []).map((i: any) => ({
-      poItemId: i.poItemId,
-      itemId: i.itemId,
-      itemCode: i.itemCode || `SPL-${String(i.itemId || 0).padStart(4, "0")}`,
-      itemName: i.itemName,
-      poItemQuantity: Number(i.poItemQuantity),
-      receivedQuantity: Number(i.receivedQuantity || 0),
-      unitPrice: Number(i.unitPrice ?? (Number(i.totalPrice) / Math.max(1, Number(i.poItemQuantity)))),
-      totalPrice: Number(i.totalPrice ?? i.lineTotal ?? (Number(i.poItemQuantity) * (i.unitPrice || 0))),
-      purchaseUomId: i.purchaseUomId,
-      purchaseUomName: i.purchaseUomName || "Unit",
-      lineTotal: Number(i.lineTotal ?? i.totalPrice ?? (Number(i.poItemQuantity) * (i.unitPrice || 0))),
-    })),
+    paymentType: String(o.paymentType || ""),
+    adminNotes: o.adminNotes ? String(o.adminNotes) : undefined,
+    totalAmount: Number(o.totalAmount || 0),
+    hasRemainingToSchedule: Boolean(o.hasRemainingToSchedule),
+    items: (Array.isArray(o.items) ? o.items : []).map((raw) => {
+      const i = raw as Record<string, unknown>;
+      return {
+        poItemId: Number(i.poItemId),
+        itemId: Number(i.itemId),
+        itemCode: String(i.itemCode || `SPL-${String(i.itemId || 0).padStart(4, "0")}`),
+        itemName: String(i.itemName || ""),
+        poItemQuantity: Number(i.poItemQuantity),
+        receivedQuantity: Number(i.receivedQuantity || 0),
+        unitPrice: Number(i.unitPrice ?? (Number(i.totalPrice) / Math.max(1, Number(i.poItemQuantity)))),
+        totalPrice: Number(i.totalPrice ?? i.lineTotal ?? (Number(i.poItemQuantity) * (Number(i.unitPrice) || 0))),
+        purchaseUomId: Number(i.purchaseUomId || 0),
+        purchaseUomName: i.purchaseUomName ? String(i.purchaseUomName) : "Unit",
+        lineTotal: Number(i.lineTotal ?? i.totalPrice ?? (Number(i.poItemQuantity) * (Number(i.unitPrice) || 0))),
+      };
+    }),
   };
 }
 
@@ -167,7 +170,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
   return (
     <div className="space-y-6 animate-page-in">
       {notice && (
-        <p role="status" className="rounded-xl bg-primary/10 p-3 text-xs text-primary font-medium">
+        <p role="status" className="rounded-control bg-surface-muted border border-divider p-3 type-body text-accent">
           {notice}
         </p>
       )}
@@ -175,8 +178,8 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Purchase Orders</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <h2 className="type-page-title text-text-primary">Purchase Orders</h2>
+          <p className="mt-1 type-body text-text-muted">
             Manage supplier purchase orders referencing approved purchase requisitions.
           </p>
         </div>
@@ -186,7 +189,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
             size="sm"
             onClick={fetchOrders}
             disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-label-button text-text-primary hover:bg-hover transition-colors h-10 cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
@@ -196,7 +199,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
               asChild
               variant="outline"
               size="sm"
-              className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+              className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-label-button text-text-primary hover:bg-hover transition-colors h-10 cursor-pointer"
             >
               <Link href="/orders-procurement/logs">
                 <History className="w-4 h-4" /> Transaction History
@@ -208,7 +211,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
             <Button
               type="button"
               onClick={() => setOpenCreateModal(true)}
-              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm h-10 cursor-pointer"
+              className="flex items-center justify-center gap-2 rounded-control bg-button-primary px-5 py-2.5 type-label-button text-button-primary-foreground hover:bg-button-primary-hover transition-colors shadow-sm h-10 cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Create Purchase Order
             </Button>
@@ -217,7 +220,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
       </div>
 
       {/* Filters Bar */}
-      <div className="mb-6 rounded-xl border border-border bg-card p-3">
+      <div className="mb-6 rounded-card border border-divider bg-surface p-3 shadow-card">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <SearchInput
             containerClassName="flex-1"
@@ -237,10 +240,10 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-9 min-w-[210px] w-auto rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground shadow-xs focus:ring-1 focus:ring-ring">
+              <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-control border border-divider bg-surface px-3.5 type-body text-text-primary shadow-sm focus:ring-1 focus:ring-accent">
                 <SelectValue placeholder="All Suppliers" />
               </SelectTrigger>
-              <SelectContent className="min-w-[210px]">
+              <SelectContent className="min-w-[210px] rounded-menu border border-divider bg-surface shadow-menu">
                 <SelectItem value="all">All Suppliers</SelectItem>
                 {uniqueSuppliers.map((sup) => (
                   <SelectItem key={sup} value={sup}>
@@ -254,7 +257,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
       </div>
 
       {/* Status Tabs */}
-      <div className="border-b border-border overflow-x-auto">
+      <div className="border-b border-divider overflow-x-auto">
         <div className="flex items-center gap-1.5 min-w-max pb-2">
           {STATUS_TABS.map((tab) => {
             const count = counts[tab] || 0;
@@ -267,16 +270,16 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
                   setActiveTab(tab);
                   setPage(1);
                 }}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-pill type-label-tab transition-all cursor-pointer ${
                   isSelected
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    ? "bg-button-primary text-button-primary-foreground shadow-sm"
+                    : "text-text-muted hover:text-text-primary hover:bg-hover"
                 }`}
               >
                 <span>{tab}</span>
                 <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-medium ${
-                    isSelected ? "bg-background text-foreground" : "bg-muted text-muted-foreground"
+                  className={`px-1.5 py-0.5 rounded-pill type-caption font-mono font-medium ${
+                    isSelected ? "bg-surface text-text-primary" : "bg-surface-muted text-text-muted"
                   }`}
                 >
                   {count}
@@ -453,8 +456,8 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
             setNotice(`${po.poNumber} was not sent. Draft discarded — you can create and send it again.`);
             setDiscardingPO(null);
             fetchOrders();
-          } catch (e: any) {
-            setNotice(e?.message || "Failed to discard draft purchase order.");
+          } catch (e: unknown) {
+            setNotice(e instanceof Error ? e.message : "Failed to discard draft purchase order.");
             setDiscardingPO(null);
           } finally {
             setDiscardSubmitting(false);

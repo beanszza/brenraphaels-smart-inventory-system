@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   ArrowLeft,
   ChevronRight,
-  ChevronLeft,
   ChevronDown,
   Users,
   Mail,
@@ -125,13 +124,20 @@ export function CreatePOModal({
             prId: initialPo.prId,
             prNumber: initialPo.prNumber || `PR-${initialPo.prId}`,
             requestedBy: initialPo.requestedBy,
+            department: "",
+            requestDate: initialPo.orderDate,
+            requiredDate: initialPo.expectedArrivalDate,
+            status: "Approved",
+            requestType: "",
+            priority: "",
+            purpose: "",
             items: [],
-          } as any);
+          });
         } else {
           setSelectedPR(null);
         }
         setItemRows(
-          (initialPo.items || []).map((it: any) => ({
+          (initialPo.items || []).map((it) => ({
             itemId: it.itemId,
             itemName: it.itemName,
             uomName: it.purchaseUomName || "Unit",
@@ -188,7 +194,7 @@ export function CreatePOModal({
               const ordRes = await procurement.orderedQuantities(pr.prId);
               const orderedMap: Record<number, number> = {};
               if (ordRes.data?.success && Array.isArray(ordRes.data.data)) {
-                ordRes.data.data.forEach((o: any) => {
+                (ordRes.data.data as { itemId: number; orderedQty?: number }[]).forEach((o) => {
                   orderedMap[o.itemId] = Number(o.orderedQty) || 0;
                 });
               }
@@ -234,7 +240,7 @@ export function CreatePOModal({
           try {
             const res = await actionResponse(supplierItemsByItem(itemId));
             if (res.data?.success) {
-              (res.data.data || []).forEach((s: any) => {
+              ((res.data.data || []) as { supplierId: number; supplierName: string; email?: string; contactPerson?: string; address?: string }[]).forEach((s) => {
                 if (!supplierMap.has(s.supplierId)) {
                   supplierMap.set(s.supplierId, {
                     supplierId: s.supplierId,
@@ -265,10 +271,11 @@ export function CreatePOModal({
         procurement.orderedQuantities(pr.prId),
       ]);
 
-      const catalog: any[] = catalogRes.data?.success ? catalogRes.data.data || [] : [];
+      const catalog: { itemId: number; purchaseUomName?: string; purchaseUomId?: number }[] =
+        catalogRes.data?.success && Array.isArray(catalogRes.data.data) ? catalogRes.data.data : [];
       const orderedMap: Record<number, number> = {};
       if (orderedRes.data?.success && Array.isArray(orderedRes.data.data)) {
-        orderedRes.data.data.forEach((o: any) => {
+        (orderedRes.data.data as { itemId: number; orderedQty?: number }[]).forEach((o) => {
           orderedMap[o.itemId] = Number(o.orderedQty) || 0;
         });
       }
@@ -450,9 +457,12 @@ export function CreatePOModal({
         if (gmailTab && !gmailTab.closed) gmailTab.close();
         setErrors((p) => ({ ...p, general: res.data?.message || "Failed to create Purchase Order." }));
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (gmailTab && !gmailTab.closed) gmailTab.close();
-      setErrors((p) => ({ ...p, general: e?.message || "Failed to create Purchase Order." }));
+      setErrors((p) => ({
+        ...p,
+        general: e instanceof Error ? e.message : "Failed to create Purchase Order.",
+      }));
     } finally {
       setSubmitting(false);
     }
@@ -468,8 +478,11 @@ export function CreatePOModal({
       onSuccess(updatedOrder);
       setCreatedOrder(null);
       onClose();
-    } catch (e: any) {
-      setErrors((p) => ({ ...p, general: e?.message || "Failed to mark Purchase Order as sent." }));
+    } catch (e: unknown) {
+      setErrors((p) => ({
+        ...p,
+        general: e instanceof Error ? e.message : "Failed to mark Purchase Order as sent.",
+      }));
     } finally {
       setSubmitting(false);
     }
@@ -524,11 +537,11 @@ export function CreatePOModal({
         setIsConfirmedSent(false);
         onClose();
       }}
-      size={createdOrder || isReviewing ? "max-w-3xl" : "max-w-5xl"}
+      size="max-w-[640px]"
     >
       <div className="w-full min-w-0 space-y-6">
         {errors.general && (
-          <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-center justify-between">
+          <div role="alert" className="rounded-card border border-status-red bg-status-red-bg p-3 type-caption text-status-red flex items-center justify-between">
             <span className="font-medium">{errors.general}</span>
             <button
               type="button"
@@ -549,55 +562,55 @@ export function CreatePOModal({
         {createdOrder ? (
           /* Waiting for Gmail Send Step (standardized Resources & Suppliers typography) */
           <div className="w-full space-y-5">
-            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-sm text-amber-900 dark:text-amber-300 flex items-start gap-2.5">
-              <Mail className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-card bg-status-amber-bg border border-status-amber type-body text-status-amber flex items-start gap-2.5">
+              <Mail className="w-4 h-4 text-status-amber shrink-0 mt-0.5" />
               <span>
                 Gmail draft opened in a new tab — <strong>not sent yet</strong>. Your PDF (<strong>{createdOrder.poNumber}.pdf</strong>) has been downloaded. This PO will only move to <strong>Pending Approval</strong> after you click <strong>Done</strong>. Closing rolls it back so you can try again.
               </span>
             </div>
 
             {/* Summary Card (2x2) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-card border border-border">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-card bg-surface border border-divider">
               <div>
-                <span className="text-muted-foreground block text-xs font-medium mb-1">Purchase Order Number</span>
-                <span className="font-semibold text-foreground text-sm">{createdOrder.poNumber}</span>
+                <span className="text-text-muted block type-caption font-medium mb-1">Purchase Order Number</span>
+                <span className="font-semibold text-text-primary type-body">{createdOrder.poNumber}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs font-medium mb-1">Supplier / Vendor</span>
-                <span className="font-semibold text-foreground text-sm">{selectedSupplier?.supplierName || initialPo?.supplierName || "—"}</span>
+                <span className="text-text-muted block type-caption font-medium mb-1">Supplier / Vendor</span>
+                <span className="font-semibold text-text-primary type-body">{selectedSupplier?.supplierName || initialPo?.supplierName || "—"}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs font-medium mb-1">Recipient Email</span>
-                <span className="font-semibold text-foreground text-sm break-all">
+                <span className="text-text-muted block type-caption font-medium mb-1">Recipient Email</span>
+                <span className="font-semibold text-text-primary type-body break-all">
                   {selectedSupplier?.email || "No email registered"}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs font-medium mb-1">Supplier Contact</span>
-                <span className="font-semibold text-foreground text-sm">
+                <span className="text-text-muted block type-caption font-medium mb-1">Supplier Contact</span>
+                <span className="font-semibold text-text-primary type-body">
                   {selectedSupplier?.contactPerson || selectedSupplier?.supplierName || "—"}
                 </span>
               </div>
             </div>
 
             {/* Items Table (same as Review screen) */}
-            <div className="border border-border rounded-xl overflow-hidden bg-card">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-xs">
+            <div className="border border-divider rounded-card overflow-hidden bg-surface">
+              <table className="w-full type-table-cell">
+                <thead className="bg-surface-muted border-b border-divider text-text-muted uppercase type-table-header table-head-row">
                   <tr>
-                    <th className="px-4 py-2.5 text-left font-semibold">Particulars</th>
-                    <th className="px-4 py-2.5 text-left font-semibold">Unit of Measure</th>
-                    <th className="px-4 py-2.5 text-right font-semibold">Order Quantity</th>
+                    <th className="table-th px-4 py-2.5 text-left font-semibold">Particulars</th>
+                    <th className="table-th px-4 py-2.5 text-left font-semibold">Unit of Measure</th>
+                    <th className="table-th px-4 py-2.5 text-right font-semibold">Order Quantity</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-divider">
                   {itemRows
                     .filter((row) => (parseFloat(row.orderQty) || 0) > 0)
                     .map((row, idx) => (
-                      <tr key={idx} className="hover:bg-muted/10">
-                        <td className="px-4 py-2.5 font-medium text-foreground">{row.itemName}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{row.uomName}</td>
-                        <td className="px-4 py-2.5 text-right font-semibold text-foreground">
+                      <tr key={idx} className="hover:bg-surface-hover table-row">
+                        <td className="table-td px-4 py-2.5 font-medium text-text-primary">{row.itemName}</td>
+                        <td className="table-td px-4 py-2.5 text-text-muted">{row.uomName}</td>
+                        <td className="table-td px-4 py-2.5 text-right font-semibold text-text-primary">
                           {row.orderQty}
                         </td>
                       </tr>
@@ -607,31 +620,31 @@ export function CreatePOModal({
             </div>
 
             {/* 3 Short Steps */}
-            <div className="p-4 rounded-xl bg-muted/30 border border-border text-sm space-y-2">
-              <span className="font-semibold text-foreground block">
+            <div className="p-4 rounded-card bg-surface-muted border border-divider type-body space-y-2">
+              <span className="font-semibold text-text-primary block">
                 Next Steps in Gmail
               </span>
-              <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+              <ol className="list-decimal list-inside space-y-1 text-text-muted">
                 <li>
-                  Attach the downloaded <strong className="text-foreground">{createdOrder.poNumber}.pdf</strong> in the opened Gmail tab.
+                  Attach the downloaded <strong className="text-text-primary">{createdOrder.poNumber}.pdf</strong> in the opened Gmail tab.
                 </li>
                 <li>
                   Review the formal email message and supplier questionnaire.
                 </li>
                 <li>
-                  Click <strong className="text-foreground">Send</strong> in Gmail, then click <strong className="text-foreground">Done</strong> below.
+                  Click <strong className="text-text-primary">Send</strong> in Gmail, then click <strong className="text-text-primary">Done</strong> below.
                 </li>
               </ol>
             </div>
 
             {/* Footer Action Buttons */}
-            <div className="flex flex-wrap items-center justify-end gap-3 pt-5 border-t border-border mt-4">
+            <div className="flex flex-wrap items-center justify-end gap-3 pt-5 border-t border-divider mt-4">
               <ModalCloseButton
                 type="button"
                 variant="outline"
                 disabled={submitting}
                 fallbackOnClose={handleCancelOrCloseWhileWaiting}
-                className="rounded-xl border border-border bg-card px-5 py-2.5 h-auto text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                className="rounded-control border border-divider bg-surface px-5 py-2.5 h-auto type-label-button font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
               >
                 Close
               </ModalCloseButton>
@@ -639,7 +652,7 @@ export function CreatePOModal({
                 href={gmailComposeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
               >
                 <Mail className="w-4 h-4 text-primary" />
                 Edit Gmail
@@ -648,7 +661,7 @@ export function CreatePOModal({
                 type="button"
                 disabled={submitting}
                 onClick={() => setConfirmDoneOpen(true)}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 h-auto type-label-button font-semibold hover:bg-button-primary-hover transition-colors shadow-sm cursor-pointer disabled:opacity-50"
               >
                 {submitting ? "Confirming..." : "Done"}
               </Button>
@@ -657,7 +670,7 @@ export function CreatePOModal({
         ) : isReviewing ? (
           /* In-Modal Review Step */
           <div className="space-y-5">
-            <div className="flex items-start gap-2.5 text-sm text-muted-foreground">
+            <div className="flex items-start gap-2.5 type-body text-text-muted">
               <Mail className="w-4 h-4 text-primary shrink-0 mt-1" />
               <p className="leading-relaxed">
                 Please review the particulars below. Confirming will open Gmail in a new tab with the formal email &amp; questionnaire prepared, and download your official PO PDF for you to attach.
@@ -665,34 +678,34 @@ export function CreatePOModal({
             </div>
 
             {/* Supplier & PO Information Card */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-card border border-border">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-card bg-surface border border-divider">
               <div>
-                <span className="text-muted-foreground block text-xs font-medium mb-1">Purchase Order Number</span>
-                <span className="font-semibold text-foreground text-sm">{nextPoNumber || "Auto-assigned"}</span>
+                <span className="text-text-muted block type-caption font-medium mb-1">Purchase Order Number</span>
+                <span className="font-semibold text-text-primary type-body">{nextPoNumber || "Auto-assigned"}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-xs font-medium mb-1">Supplier / Vendor</span>
-                <span className="font-semibold text-foreground text-sm">{selectedSupplier?.supplierName || initialPo?.supplierName || "—"}</span>
+                <span className="text-text-muted block type-caption font-medium mb-1">Supplier / Vendor</span>
+                <span className="font-semibold text-text-primary type-body">{selectedSupplier?.supplierName || initialPo?.supplierName || "—"}</span>
               </div>
             </div>
 
-            <div className="border border-border rounded-xl overflow-hidden bg-card">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-xs">
+            <div className="border border-divider rounded-card overflow-hidden bg-surface">
+              <table className="w-full type-table-cell">
+                <thead className="bg-surface-muted border-b border-divider text-text-muted uppercase type-table-header table-head-row">
                   <tr>
-                    <th className="px-4 py-2.5 text-left font-semibold">Particulars</th>
-                    <th className="px-4 py-2.5 text-left font-semibold">Unit of Measure</th>
-                    <th className="px-4 py-2.5 text-right font-semibold">Order Quantity</th>
+                    <th className="table-th px-4 py-2.5 text-left font-semibold">Particulars</th>
+                    <th className="table-th px-4 py-2.5 text-left font-semibold">Unit of Measure</th>
+                    <th className="table-th px-4 py-2.5 text-right font-semibold">Order Quantity</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-divider">
                   {itemRows
                     .filter((row) => (parseFloat(row.orderQty) || 0) > 0)
                     .map((row, idx) => (
-                      <tr key={idx} className="hover:bg-muted/10">
-                        <td className="px-4 py-2.5 font-medium text-foreground">{row.itemName}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">{row.uomName}</td>
-                        <td className="px-4 py-2.5 text-right font-semibold text-foreground">
+                      <tr key={idx} className="hover:bg-surface-hover table-row">
+                        <td className="table-td px-4 py-2.5 font-medium text-text-primary">{row.itemName}</td>
+                        <td className="table-td px-4 py-2.5 text-text-muted">{row.uomName}</td>
+                        <td className="table-td px-4 py-2.5 text-right font-semibold text-text-primary">
                           {row.orderQty}
                         </td>
                       </tr>
@@ -702,13 +715,13 @@ export function CreatePOModal({
             </div>
 
             {/* Review Footer */}
-            <div className="flex justify-end gap-3 pt-5 border-t border-border mt-4">
+            <div className="flex justify-end gap-3 pt-5 border-t border-divider mt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsReviewing(false)}
                 disabled={submitting}
-                className="rounded-xl border border-border bg-card px-5 py-2.5 h-auto text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                className="rounded-control border border-divider bg-surface px-5 py-2.5 h-auto type-label-button font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Edit
@@ -717,7 +730,7 @@ export function CreatePOModal({
                 type="button"
                 disabled={submitting}
                 onClick={() => setConfirmSendOpen(true)}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 h-auto type-label-button font-semibold hover:bg-button-primary-hover transition-colors shadow-sm cursor-pointer disabled:opacity-50"
               >
                 {submitting ? "Preparing Gmail Draft..." : "Confirm & Send to Supplier"}
               </Button>
@@ -731,12 +744,12 @@ export function CreatePOModal({
                 {[1, 2, 3].map((s) => (
                   <React.Fragment key={s}>
                     <div
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold ${
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold ${
                         step === s
-                          ? "bg-primary text-primary-foreground"
+                          ? "bg-button-primary text-text-inverse"
                           : step > s
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold"
-                          : "text-muted-foreground bg-muted/40"
+                          ? "bg-status-green-bg text-status-green font-bold"
+                          : "text-text-muted bg-surface-muted"
                       }`}
                     >
                       <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border border-current">
@@ -761,10 +774,10 @@ export function CreatePOModal({
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">
+                    <h3 className="type-section-title font-semibold text-text-primary">
                       Select an Approved Purchase Requisition
                     </h3>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="type-caption text-text-muted">
                       Expand a requisition row to preview its items and remaining quantities to order.
                     </p>
                   </div>
@@ -773,32 +786,32 @@ export function CreatePOModal({
                     placeholder="Search requisitions..."
                     value={prSearch}
                     onChange={(e) => setPrSearch(e.target.value)}
-                    className="text-xs"
+                    className="type-body"
                   />
                 </div>
 
-                <div className="border border-border rounded-xl overflow-hidden max-h-96 overflow-y-auto bg-card">
+                <div className="border border-divider rounded-card overflow-hidden max-h-96 overflow-y-auto bg-surface">
                   {loadingPRs ? (
-                    <div className="p-8 text-center text-xs text-muted-foreground">Loading requisitions...</div>
+                    <div className="p-8 text-center type-body text-text-muted">Loading requisitions...</div>
                   ) : filteredPRs.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-muted-foreground">
+                    <div className="p-8 text-center type-body text-text-muted">
                       No approved purchase requisitions available for ordering.
                     </div>
                   ) : (
-                    <table className="w-full text-xs">
-                      <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[11px] sticky top-0 z-10">
+                    <table className="w-full type-table-cell">
+                      <thead className="bg-surface-muted border-b border-divider text-text-muted uppercase type-table-header sticky top-0 z-10 table-head-row">
                         <tr>
-                          <th className="px-4 py-2.5 text-left font-bold">REQUISITION NO.</th>
-                          <th className="px-4 py-2.5 text-left font-bold">REQUESTED BY</th>
-                          <th className="px-4 py-2.5 text-left font-bold">DEPARTMENT</th>
-                          <th className="px-4 py-2.5 text-left font-bold">PURPOSE</th>
-                          <th className="px-3 py-2.5 text-center font-bold w-20">ITEMS</th>
-                          <th className="px-4 py-2.5 text-right w-24">
+                          <th className="table-th px-4 py-2.5 text-left font-bold">REQUISITION NO.</th>
+                          <th className="table-th px-4 py-2.5 text-left font-bold">REQUESTED BY</th>
+                          <th className="table-th px-4 py-2.5 text-left font-bold">DEPARTMENT</th>
+                          <th className="table-th px-4 py-2.5 text-left font-bold">PURPOSE</th>
+                          <th className="table-th px-3 py-2.5 text-center font-bold w-20">ITEMS</th>
+                          <th className="table-th px-4 py-2.5 text-right w-24">
                             <span className="sr-only">Select</span>
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-border">
+                      <tbody className="divide-y divide-divider">
                         {filteredPRs.map((pr) => {
                           const isExpanded = !!expandedPrIds[pr.prId];
                           const orderedMap = prOrderedMap[pr.prId] || {};
@@ -809,9 +822,9 @@ export function CreatePOModal({
                                 onClick={() =>
                                   setExpandedPrIds((prev) => ({ ...prev, [pr.prId]: !isExpanded }))
                                 }
-                                className="hover:bg-muted/20 transition-colors cursor-pointer"
+                                className="hover:bg-surface-hover transition-colors cursor-pointer table-row"
                               >
-                                <td className="px-4 py-3 font-bold text-foreground whitespace-nowrap">
+                                <td className="table-td px-4 py-3 font-bold text-text-primary whitespace-nowrap">
                                   <div className="flex items-center gap-2">
                                     <button
                                       type="button"
@@ -820,7 +833,7 @@ export function CreatePOModal({
                                         e.stopPropagation();
                                         setExpandedPrIds((prev) => ({ ...prev, [pr.prId]: !isExpanded }));
                                       }}
-                                      className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                                      className="p-0.5 rounded text-text-muted hover:text-text-primary hover:bg-surface-muted transition-colors cursor-pointer"
                                     >
                                       {isExpanded ? (
                                         <ChevronDown className="w-4 h-4 text-primary" />
@@ -831,15 +844,15 @@ export function CreatePOModal({
                                     <span>{pr.prNumber}</span>
                                   </div>
                                 </td>
-                                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{pr.requestedBy}</td>
-                                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{pr.department}</td>
-                                <td className="px-4 py-3 text-muted-foreground max-w-[200px]">
+                                <td className="table-td px-4 py-3 text-text-muted whitespace-nowrap">{pr.requestedBy}</td>
+                                <td className="table-td px-4 py-3 text-text-muted whitespace-nowrap">{pr.department}</td>
+                                <td className="table-td px-4 py-3 text-text-muted max-w-[200px]">
                                   <span className="line-clamp-1">{pr.purpose || pr.requestType}</span>
                                 </td>
-                                <td className="px-3 py-3 text-center font-semibold text-foreground w-20">
+                                <td className="table-td px-3 py-3 text-center font-semibold text-text-primary w-20">
                                   {prItems.length}
                                 </td>
-                                <td className="px-4 py-3 text-right w-24">
+                                <td className="table-td px-4 py-3 text-right w-24">
                                   <Button
                                     type="button"
                                     size="sm"
@@ -847,31 +860,31 @@ export function CreatePOModal({
                                       e.stopPropagation();
                                       handleSelectPR(pr);
                                     }}
-                                    className="h-7 px-3 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                                    className="h-7 px-3 type-caption rounded-control bg-button-primary text-text-inverse hover:bg-button-primary-hover cursor-pointer"
                                   >
                                     Select
                                   </Button>
                                 </td>
                               </tr>
                               {isExpanded && (
-                                <tr className="bg-muted/10">
-                                  <td colSpan={6} className="p-0 border-b border-border">
-                                    <div className="px-6 py-3.5 bg-muted/15 space-y-2.5">
-                                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                                <tr className="bg-surface-muted/30">
+                                  <td colSpan={6} className="p-0 border-b border-divider">
+                                    <div className="px-6 py-3.5 bg-surface-muted/50 space-y-2.5">
+                                      <div className="flex flex-wrap items-center justify-between gap-2 type-caption text-text-muted">
                                         <span>
-                                          <strong className="text-foreground">Items Summary</strong> ({prItems.length}{" "}
+                                          <strong className="text-text-primary">Items Summary</strong> ({prItems.length}{" "}
                                           {prItems.length === 1 ? "item" : "items"})
                                         </span>
                                         <div className="flex flex-wrap items-center gap-3">
                                           {pr.priority && (
                                             <span>
-                                              Priority: <strong className="text-foreground">{pr.priority}</strong>
+                                              Priority: <strong className="text-text-primary">{pr.priority}</strong>
                                             </span>
                                           )}
                                           {pr.requiredDate && (
                                             <span>
                                               Required:{" "}
-                                              <strong className="text-foreground">
+                                              <strong className="text-text-primary">
                                                 {new Date(pr.requiredDate).toLocaleDateString("en-PH", {
                                                   year: "numeric",
                                                   month: "short",
@@ -884,45 +897,45 @@ export function CreatePOModal({
                                       </div>
 
                                       {prItems.length === 0 ? (
-                                        <p className="text-xs text-muted-foreground py-2">
+                                        <p className="type-body text-text-muted py-2">
                                           No item details available.
                                         </p>
                                       ) : (
-                                        <div className="overflow-x-auto rounded-lg border border-border bg-card">
-                                          <table className="w-full text-xs">
+                                        <div className="overflow-x-auto rounded-card border border-divider bg-surface">
+                                          <table className="w-full type-table-cell">
                                             <thead>
-                                              <tr className="border-b border-border bg-muted/30 text-[10px] uppercase text-muted-foreground font-bold">
-                                                <th className="px-3 py-2 text-left">Item / Supply</th>
-                                                <th className="px-3 py-2 text-left">Unit</th>
-                                                <th className="px-3 py-2 text-right">Requested</th>
-                                                <th className="px-3 py-2 text-right">Already Ordered</th>
-                                                <th className="px-3 py-2 text-right">Left to Order</th>
+                                              <tr className="border-b border-divider bg-surface-muted type-table-header uppercase text-text-muted font-bold table-head-row">
+                                                <th className="table-th px-3 py-2 text-left">Item / Supply</th>
+                                                <th className="table-th px-3 py-2 text-left">Unit</th>
+                                                <th className="table-th px-3 py-2 text-right">Requested</th>
+                                                <th className="table-th px-3 py-2 text-right">Already Ordered</th>
+                                                <th className="table-th px-3 py-2 text-right">Left to Order</th>
                                               </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-border/60">
+                                            <tbody className="divide-y divide-divider">
                                               {prItems.map((item, idx) => {
                                                 const requested = Number(item.requestedQuantity) || 0;
                                                 const ordered = orderedMap[item.itemId] || 0;
                                                 const leftToOrder = Math.max(0, requested - ordered);
                                                 return (
-                                                  <tr key={`${pr.prId}-item-${item.itemId}-${idx}`} className="hover:bg-muted/20">
-                                                    <td className="px-3 py-2 font-medium text-foreground">
+                                                  <tr key={`${pr.prId}-item-${item.itemId}-${idx}`} className="hover:bg-surface-hover table-row">
+                                                    <td className="table-td px-3 py-2 font-medium text-text-primary">
                                                       {item.itemName || `Item #${item.itemId}`}
                                                     </td>
-                                                    <td className="px-3 py-2 text-muted-foreground">
+                                                    <td className="table-td px-3 py-2 text-text-muted">
                                                       {item.uomName || "Unit"}
                                                     </td>
-                                                    <td className="px-3 py-2 text-right text-muted-foreground">
+                                                    <td className="table-td px-3 py-2 text-right text-text-muted">
                                                       {requested.toLocaleString()}
                                                     </td>
-                                                    <td className="px-3 py-2 text-right text-muted-foreground">
+                                                    <td className="table-td px-3 py-2 text-right text-text-muted">
                                                       {ordered.toLocaleString()}
                                                     </td>
                                                     <td
-                                                      className={`px-3 py-2 text-right font-semibold ${
+                                                      className={`table-td px-3 py-2 text-right font-semibold ${
                                                         leftToOrder > 0
-                                                          ? "text-emerald-600 dark:text-emerald-400"
-                                                          : "text-muted-foreground"
+                                                          ? "text-status-green"
+                                                          : "text-text-muted"
                                                       }`}
                                                     >
                                                       {leftToOrder.toLocaleString()}
@@ -958,16 +971,16 @@ export function CreatePOModal({
                       variant="outline"
                       size="sm"
                       onClick={() => setStep(1)}
-                      className="flex items-center gap-1.5 text-xs rounded-xl cursor-pointer"
+                      className="flex items-center gap-1.5 type-caption rounded-control cursor-pointer border-divider bg-surface text-text-primary hover:bg-surface-hover"
                     >
                       <ArrowLeft className="w-3.5 h-3.5" /> Back
                     </Button>
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">
+                    <h3 className="type-section-title font-semibold text-text-primary">
                       Select Supplier for {selectedPR?.prNumber}
                     </h3>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="type-caption text-text-muted">
                       Choose the vendor or supplier to send this Purchase Order to.
                     </p>
                   </div>
@@ -975,11 +988,11 @@ export function CreatePOModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 max-h-96 overflow-y-auto p-1">
                   {loadingSuppliers ? (
-                    <div className="col-span-full p-8 text-center text-xs text-muted-foreground">
+                    <div className="col-span-full p-8 text-center type-body text-text-muted">
                       Loading suppliers...
                     </div>
                   ) : eligibleSuppliers.length === 0 ? (
-                    <div className="col-span-full p-8 text-center text-xs text-muted-foreground">
+                    <div className="col-span-full p-8 text-center type-body text-text-muted">
                       No active suppliers found.
                     </div>
                   ) : (
@@ -987,35 +1000,35 @@ export function CreatePOModal({
                       <div
                         key={sup.supplierId}
                         onClick={() => handleSelectSupplier(sup.supplierId)}
-                        className={`p-4 rounded-xl border transition-all cursor-pointer hover:border-primary/50 hover:bg-muted/30 ${
+                        className={`p-4 rounded-card border transition-all cursor-pointer hover:border-primary/50 hover:bg-surface-hover ${
                           selectedSupplierId === sup.supplierId
                             ? "border-primary bg-primary/5 shadow-xs"
-                            : "border-border bg-card"
+                            : "border-divider bg-surface"
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-bold text-xs text-foreground uppercase">{sup.supplierName}</h4>
-                          <Users className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <h4 className="font-bold type-body text-text-primary uppercase">{sup.supplierName}</h4>
+                          <Users className="w-4 h-4 text-text-muted shrink-0" />
                         </div>
                         {sup.contactPerson && (
-                          <p className="text-[11px] text-muted-foreground mt-1.5">
-                            Contact: <span className="text-foreground font-medium">{sup.contactPerson}</span>
+                          <p className="type-caption text-text-muted mt-1.5">
+                            Contact: <span className="text-text-primary font-medium">{sup.contactPerson}</span>
                           </p>
                         )}
                         {sup.email && (
-                          <p className="text-[11px] text-muted-foreground">
-                            Email: <span className="text-foreground">{sup.email}</span>
+                          <p className="type-caption text-text-muted">
+                            Email: <span className="text-text-primary">{sup.email}</span>
                           </p>
                         )}
                         {sup.address && (
-                          <p className="text-[10px] text-muted-foreground/80 mt-1 truncate">
+                          <p className="type-caption text-text-muted/80 mt-1 truncate">
                             {sup.address}
                           </p>
                         )}
                         <Button
                           type="button"
                           size="sm"
-                          className="w-full mt-3 h-7 text-xs rounded-lg cursor-pointer"
+                          className="w-full mt-3 h-7 type-caption rounded-control bg-button-primary text-text-inverse hover:bg-button-primary-hover cursor-pointer"
                         >
                           Select Supplier
                         </Button>
@@ -1037,71 +1050,71 @@ export function CreatePOModal({
                         variant="outline"
                         size="sm"
                         onClick={() => setStep(2)}
-                        className="flex items-center gap-1.5 text-xs rounded-xl cursor-pointer"
+                        className="flex items-center gap-1.5 type-caption rounded-control cursor-pointer border-divider bg-surface text-text-primary hover:bg-surface-hover"
                       >
                         <ArrowLeft className="w-3.5 h-3.5" /> Back
                       </Button>
                     </div>
                   )}
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">
+                    <h3 className="type-section-title font-semibold text-text-primary">
                       Specify Order Quantities
                     </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Supplier: <strong className="text-foreground">{selectedSupplier?.supplierName}</strong> &bull; Purchase Requisition: <strong className="text-foreground">{selectedPR?.prNumber || initialPo?.prNumber}</strong>
+                    <p className="type-caption text-text-muted">
+                      Supplier: <strong className="text-text-primary">{selectedSupplier?.supplierName}</strong> &bull; Purchase Requisition: <strong className="text-text-primary">{selectedPR?.prNumber || initialPo?.prNumber}</strong>
                     </p>
                   </div>
                 </div>
 
                 {errors.items && (
-                  <div className="p-2.5 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive">
+                  <div className="p-2.5 rounded-card bg-status-red-bg border border-status-red type-caption text-status-red">
                     {errors.items}
                   </div>
                 )}
 
-                <div className="border border-border rounded-xl overflow-x-auto bg-card">
+                <div className="border border-divider rounded-card overflow-x-auto bg-surface">
                   {loadingItems ? (
-                    <div className="p-8 text-center text-xs text-muted-foreground">Loading items...</div>
+                    <div className="p-8 text-center type-body text-text-muted">Loading items...</div>
                   ) : itemRows.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-muted-foreground">
+                    <div className="p-8 text-center type-body text-text-muted">
                       No items available from this supplier for the selected requisition.
                     </div>
                   ) : (
-                    <table className="w-full text-xs">
-                      <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[11px]">
+                    <table className="w-full type-table-cell">
+                      <thead className="bg-surface-muted border-b border-divider text-text-muted uppercase type-table-header table-head-row">
                         <tr>
-                          <th className="px-4 py-2.5 text-left font-bold">PARTICULARS</th>
-                          <th className="px-4 py-2.5 text-left font-bold">Unit of Measure</th>
-                          <th className="px-4 py-2.5 text-center font-bold">REQUESTED</th>
-                          <th className="px-4 py-2.5 text-center font-bold">ALREADY ORDERED</th>
-                          <th className="px-4 py-2.5 text-center font-bold">REMAINING</th>
-                          <th className="px-4 py-2.5 text-right font-bold w-36">ORDER QUANTITY *</th>
+                          <th className="table-th px-4 py-2.5 text-left font-bold">PARTICULARS</th>
+                          <th className="table-th px-4 py-2.5 text-left font-bold">Unit of Measure</th>
+                          <th className="table-th px-4 py-2.5 text-center font-bold">REQUESTED</th>
+                          <th className="table-th px-4 py-2.5 text-center font-bold">ALREADY ORDERED</th>
+                          <th className="table-th px-4 py-2.5 text-center font-bold">REMAINING</th>
+                          <th className="table-th px-4 py-2.5 text-right font-bold w-36">ORDER QUANTITY *</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-border">
+                      <tbody className="divide-y divide-divider">
                         {itemRows.map((row, idx) => {
                           const isFullyOrdered = row.remaining <= 0;
                           return (
                             <tr
                               key={idx}
-                              className={`transition-colors ${
-                                isFullyOrdered ? "opacity-50 bg-muted/10" : "hover:bg-muted/10"
+                              className={`transition-colors table-row ${
+                                isFullyOrdered ? "opacity-50 bg-surface-muted/30" : "hover:bg-surface-hover"
                               }`}
                             >
-                              <td className="px-4 py-3 font-semibold text-foreground uppercase">
+                              <td className="table-td px-4 py-3 font-semibold text-text-primary uppercase">
                                 {row.itemName}
                               </td>
-                              <td className="px-4 py-3 text-muted-foreground">{row.uomName}</td>
-                              <td className="px-4 py-3 text-center text-muted-foreground">
+                              <td className="table-td px-4 py-3 text-text-muted">{row.uomName}</td>
+                              <td className="table-td px-4 py-3 text-center text-text-muted">
                                 {row.requestedQty}
                               </td>
-                              <td className="px-4 py-3 text-center text-muted-foreground">
+                              <td className="table-td px-4 py-3 text-center text-text-muted">
                                 {row.alreadyOrdered}
                               </td>
-                              <td className="px-4 py-3 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                              <td className="table-td px-4 py-3 text-center font-bold text-status-green">
                                 {row.remaining}
                               </td>
-                              <td className="px-4 py-2.5 text-right">
+                              <td className="table-td px-4 py-2.5 text-right">
                                 <Input
                                   type="number"
                                   min={0}
@@ -1110,12 +1123,12 @@ export function CreatePOModal({
                                   value={row.orderQty}
                                   disabled={isFullyOrdered}
                                   onChange={(e) => updateRow(idx, e.target.value)}
-                                  className={`h-8 w-28 ml-auto text-right font-bold text-xs bg-card ${
-                                    errors[`qty_${idx}`] ? "border-destructive" : "border-border"
+                                  className={`h-8 w-28 ml-auto text-right font-bold type-body bg-surface rounded-control text-text-primary ${
+                                    errors[`qty_${idx}`] ? "border-status-red" : "border-divider"
                                   }`}
                                 />
                                 {errors[`qty_${idx}`] && (
-                                  <p className="text-[10px] text-destructive mt-0.5">
+                                  <p className="type-caption text-status-red mt-0.5">
                                     {errors[`qty_${idx}`]}
                                   </p>
                                 )}
@@ -1129,12 +1142,12 @@ export function CreatePOModal({
                 </div>
 
                 {/* Step 3 Footer Action Buttons */}
-                <div className="flex justify-end gap-3 pt-5 border-t border-border mt-6">
+                <div className="flex justify-end gap-3 pt-5 border-t border-divider mt-6">
                   <ModalCloseButton
                     type="button"
                     variant="outline"
                     fallbackOnClose={onClose}
-                    className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                    className="rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
                   >
                     Cancel
                   </ModalCloseButton>
@@ -1146,7 +1159,7 @@ export function CreatePOModal({
                         setIsReviewing(true);
                       }
                     }}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 h-auto text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                    className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 h-auto type-label-button font-semibold hover:bg-button-primary-hover transition-colors shadow-sm cursor-pointer disabled:opacity-50"
                   >
                     Review Purchase Order
                   </Button>

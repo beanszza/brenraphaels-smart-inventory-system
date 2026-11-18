@@ -20,11 +20,9 @@ interface POApprovalModalProps {
 }
 
 export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps) {
-  if (!po) return null;
-
   // Initialize lines state with existing items (using Total Price directly)
   const [items, setItems] = useState(() =>
-    po.items.map((item) => ({
+    (po?.items || []).map((item) => ({
       itemId: item.itemId,
       itemName: item.itemName,
       purchaseUomName: item.purchaseUomName || "Unit",
@@ -37,14 +35,14 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
   );
 
   const [supplierApprovedBy, setSupplierApprovedBy] = useState(
-    po.supplierApprovedBy || po.supplierContactPerson || ""
+    po?.supplierApprovedBy || po?.supplierContactPerson || ""
   );
   const [supplierApprovedDate, setSupplierApprovedDate] = useState(
-    po.supplierApprovedDate
+    po?.supplierApprovedDate
       ? new Date(po.supplierApprovedDate).toISOString().split("T")[0]
       : new Date().toISOString().split("T")[0]
   );
-  const [notes, setNotes] = useState(po.adminNotes || "");
+  const [notes, setNotes] = useState(po?.adminNotes || "");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -128,7 +126,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
   };
 
   const handleConfirmApproval = async () => {
-    if (!validate()) return;
+    if (!po || !validate()) return;
 
     try {
       setSubmitting(true);
@@ -153,52 +151,60 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
           submit: res.data?.message || "Failed to approve purchase order.",
         }));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to approve purchase order:", err);
+      const message =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message || "An unexpected error occurred during approval."
+          : err instanceof Error
+          ? err.message
+          : "An unexpected error occurred during approval.";
       setErrors((prev) => ({
         ...prev,
-        submit: err?.response?.data?.message || "An unexpected error occurred during approval.",
+        submit: message,
       }));
     } finally {
       setSubmitting(false);
     }
   };
 
+  if (!po) return null;
+
   return (
     <ModalWrapper
       open={true}
       title={`Confirm Supplier Approval — ${po.poNumber}`}
       onClose={onClose}
-      size="max-w-4xl"
+      size="max-w-[640px]"
     >
       <div className="space-y-5">
         {/* Helper Banner */}
-        <div className="p-3.5 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="p-3.5 rounded-card bg-surface-muted border border-divider type-caption text-text-muted flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-status-green shrink-0" />
           <span>
             Enter the confirmed accommodated quantities, total prices, and authorized supplier representative details from the supplier&apos;s reply.
           </span>
         </div>
 
         {errors.submit && (
-          <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-xs text-destructive font-medium">
+          <div className="p-3 rounded-card bg-status-red-bg border border-status-red type-caption text-status-red font-medium">
             {errors.submit}
           </div>
         )}
 
         {/* Purchase Order Summary Header */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-4 rounded-xl bg-muted/20 border border-border text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider type-caption">
           <div>
-            <span className="text-muted-foreground block text-[11px] mb-1">Supplier / Vendor</span>
-            <span className="font-bold text-foreground text-xs">{po.supplierName}</span>
+            <span className="text-text-muted block type-caption mb-1">Supplier / Vendor</span>
+            <span className="font-bold text-text-primary type-body">{po.supplierName}</span>
           </div>
           <div>
-            <span className="text-muted-foreground block text-[11px] mb-1">Purchase Requisition Reference</span>
-            <span className="font-semibold text-foreground text-xs">{po.prNumber || "—"}</span>
+            <span className="text-text-muted block type-caption mb-1">Purchase Requisition Reference</span>
+            <span className="font-semibold text-text-primary type-body">{po.prNumber || "—"}</span>
           </div>
           <div>
-            <span className="text-muted-foreground block text-[11px] mb-1">Original Order Date</span>
-            <span className="font-semibold text-foreground text-xs">
+            <span className="text-text-muted block type-caption mb-1">Original Order Date</span>
+            <span className="font-semibold text-text-primary type-body">
               {new Date(po.orderDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
             </span>
           </div>
@@ -207,54 +213,54 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
         {/* Confirmed Particulars Table */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-foreground uppercase tracking-wider">
+            <label className="type-table-header font-bold text-text-primary uppercase tracking-wider">
               Confirmed Particulars &amp; Total Pricing
             </label>
-            <span className="text-[11px] text-muted-foreground">
+            <span className="type-caption text-text-muted">
               {items.length} item(s)
             </span>
           </div>
 
-          <div className="border border-border rounded-xl overflow-x-auto bg-card">
-            <table className="w-full text-xs">
-              <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[11px]">
+          <div className="border border-divider rounded-card overflow-x-auto bg-surface">
+            <table className="w-full type-table-cell">
+              <thead className="table-head-row border-b border-divider text-text-muted uppercase type-table-header">
                 <tr>
-                  <th className="px-3.5 py-2.5 text-left font-bold">PARTICULARS</th>
-                  <th className="px-3 py-2.5 text-center font-bold">SENT QTY</th>
-                  <th className="px-3 py-2.5 text-center font-bold w-36">CONFIRMED QTY *</th>
-                  <th className="px-3.5 py-2.5 text-right font-bold w-40">TOTAL PRICE (₱) *</th>
+                  <th className="table-th px-3.5 py-2.5 text-left font-bold">PARTICULARS</th>
+                  <th className="table-th px-3 py-2.5 text-center font-bold">SENT QTY</th>
+                  <th className="table-th px-3 py-2.5 text-center font-bold w-36">CONFIRMED QTY *</th>
+                  <th className="table-th px-3.5 py-2.5 text-right font-bold w-40">TOTAL PRICE (₱) *</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-divider">
                 {items.map((item, idx) => {
                   const isReduced = item.confirmedQuantity < item.sentQuantity;
                   return (
-                    <tr key={idx} className="hover:bg-muted/10 transition-colors">
-                      <td className="px-3.5 py-2.5 font-semibold text-foreground">
+                    <tr key={idx} className="hover:bg-surface-hover transition-colors table-row">
+                      <td className="table-td px-3.5 py-2.5 font-semibold text-text-primary">
                         {item.itemName}
-                        <span className="block text-[11px] font-normal text-muted-foreground">
+                        <span className="block type-caption font-normal text-text-muted">
                           Unit of Measure: {item.purchaseUomName}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 text-center text-muted-foreground">
+                      <td className="table-td px-3 py-2.5 text-center text-text-muted">
                         {item.sentQuantity}
                       </td>
-                      <td className="px-3 py-2.5 text-center">
+                      <td className="table-td px-3 py-2.5 text-center">
                         <Input
                           type="number"
                           min={1}
                           step="any"
                           value={item.confirmedQuantity || ""}
                           onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                          className={`h-8 w-24 mx-auto text-center font-bold text-xs bg-card ${
-                            errors[`qty_${idx}`] ? "border-destructive" : "border-border"
-                          } ${isReduced ? "text-amber-600 dark:text-amber-400" : ""}`}
+                          className={`h-8 w-24 mx-auto text-center font-bold type-body bg-surface rounded-control ${
+                            errors[`qty_${idx}`] ? "border-status-red" : "border-divider"
+                          } ${isReduced ? "text-status-amber" : "text-text-primary"}`}
                         />
                         {errors[`qty_${idx}`] && (
-                          <p className="text-[10px] text-destructive mt-0.5">{errors[`qty_${idx}`]}</p>
+                          <p className="type-caption text-status-red mt-0.5">{errors[`qty_${idx}`]}</p>
                         )}
                       </td>
-                      <td className="px-3.5 py-2.5 text-right">
+                      <td className="table-td px-3.5 py-2.5 text-right">
                         <Input
                           type="number"
                           min={0.01}
@@ -262,12 +268,12 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
                           placeholder="0.00"
                           value={item.totalPrice || ""}
                           onChange={(e) => handleTotalPriceChange(idx, e.target.value)}
-                          className={`h-8 w-32 ml-auto text-right font-bold text-xs bg-card ${
-                            errors[`price_${idx}`] ? "border-destructive" : "border-border"
+                          className={`h-8 w-32 ml-auto text-right font-bold type-body bg-surface rounded-control text-text-primary ${
+                            errors[`price_${idx}`] ? "border-status-red" : "border-divider"
                           }`}
                         />
                         {errors[`price_${idx}`] && (
-                          <p className="text-[10px] text-destructive mt-0.5">{errors[`price_${idx}`]}</p>
+                          <p className="type-caption text-status-red mt-0.5">{errors[`price_${idx}`]}</p>
                         )}
                       </td>
                     </tr>
@@ -279,7 +285,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
 
           {/* Partial Fulfillment Notification */}
           {hasPartialFulfillment && (
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs">
+            <div className="flex items-start gap-2 p-3 rounded-card bg-status-amber-bg border border-status-amber text-status-amber type-caption">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>
                 <strong>Partial Accommodation Notice:</strong> One or more items were accommodated with a lower quantity than requested. The remaining balance will stay available on Purchase Requisition <strong>{po.prNumber}</strong> so you can create another Purchase Order for the remaining quantity.
@@ -289,40 +295,40 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
         </div>
 
         {/* Total Summary Row */}
-        <div className="flex justify-between items-center p-4 rounded-xl bg-muted/40 border border-border">
-          <span className="text-xs font-black uppercase tracking-wider text-foreground">
+        <div className="flex justify-between items-center p-4 rounded-card bg-surface-muted border border-divider">
+          <span className="type-table-header font-black uppercase tracking-wider text-text-primary">
             TOTAL AMOUNT DUE
           </span>
-          <span className="text-xl font-black text-foreground">
+          <span className="type-stat-value font-black text-text-primary">
             ₱{calculatedGrandTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
 
         {/* Supplier Approval Meta Inputs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider type-caption">
           {/* Supplier Approver Name */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Supplier Representative <span className="text-destructive">*</span>
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
+              Supplier Representative <span className="text-status-red">*</span>
             </label>
             <Input
               type="text"
               placeholder="e.g. Maria Santos (Sales Mgr)"
               value={supplierApprovedBy}
               onChange={(e) => setSupplierApprovedBy(e.target.value)}
-              className={`h-10 text-xs bg-card ${
-                errors.supplierApprovedBy ? "border-destructive" : "border-border"
+              className={`h-10 type-body bg-surface rounded-control text-text-primary placeholder:text-text-muted ${
+                errors.supplierApprovedBy ? "border-status-red" : "border-divider"
               }`}
             />
             {errors.supplierApprovedBy && (
-              <p className="text-[10px] text-destructive mt-1">{errors.supplierApprovedBy}</p>
+              <p className="type-caption text-status-red mt-1">{errors.supplierApprovedBy}</p>
             )}
           </div>
 
           {/* Approval Date */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Date Approved by Supplier <span className="text-destructive">*</span>
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
+              Date Approved by Supplier <span className="text-status-red">*</span>
             </label>
             <div className="relative">
               <Input
@@ -330,21 +336,21 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
                 max={getTodayDateString()}
                 value={supplierApprovedDate}
                 onChange={(e) => setSupplierApprovedDate(e.target.value)}
-                className={`h-10 text-xs bg-card pr-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer ${
-                  errors.supplierApprovedDate ? "border-destructive" : "border-border"
+                className={`h-10 type-body bg-surface rounded-control pr-10 cursor-pointer text-text-primary [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer ${
+                  errors.supplierApprovedDate ? "border-status-red" : "border-divider"
                 }`}
               />
-              <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
             </div>
             {errors.supplierApprovedDate && (
-              <p className="text-[10px] text-destructive mt-1">{errors.supplierApprovedDate}</p>
+              <p className="type-caption text-status-red mt-1">{errors.supplierApprovedDate}</p>
             )}
           </div>
         </div>
 
         {/* Notes (Optional) */}
         <div>
-          <label className="mb-1 block text-xs font-semibold text-foreground">
+          <label className="mb-1 block type-label font-semibold text-text-primary">
             Supplier Confirmation Notes (Optional)
           </label>
           <Textarea
@@ -352,14 +358,14 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
             placeholder="Enter any notes from supplier's reply (e.g., delivery batching, payment terms, or terms agreed)..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full rounded-xl border border-border bg-card px-3 py-2 text-xs text-foreground resize-none"
+            className="w-full rounded-control border border-divider bg-surface px-3 py-2 type-body text-text-primary placeholder:text-text-muted resize-none"
           />
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between gap-3 pt-4 border-t border-border flex-wrap">
+        <div className="flex items-center justify-between gap-3 pt-4 border-t border-divider flex-wrap">
           {hasMissingPriceOrQty ? (
-            <span className="text-xs text-destructive font-medium">
+            <span className="type-caption text-status-red font-medium">
               Enter a confirmed quantity and total price greater than ₱0.00 for every item to confirm.
             </span>
           ) : (
@@ -371,7 +377,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
               variant="outline"
               fallbackOnClose={onClose}
               disabled={submitting}
-              className="rounded-xl px-5 py-2.5 h-auto text-sm font-semibold border-border bg-card hover:bg-muted text-foreground cursor-pointer"
+              className="rounded-control px-5 py-2.5 h-auto type-label-button font-semibold border-divider bg-surface hover:bg-surface-hover text-text-primary cursor-pointer"
             >
               Close
             </ModalCloseButton>
@@ -383,7 +389,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
                 }
               }}
               disabled={submitting || hasMissingPriceOrQty}
-              className="rounded-xl px-6 py-2.5 h-auto text-sm font-semibold shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-control px-6 py-2.5 h-auto type-label-button font-semibold shadow-sm bg-button-primary text-text-inverse hover:bg-button-primary-hover cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Approving..." : "Confirm & Approve Order"}
             </Button>

@@ -41,23 +41,23 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onD
   }, [openDropdownId]);
 
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-border bg-card shadow-sm">
-      <table className="w-full text-xs">
-        <thead>
-          <tr className="border-b border-border bg-muted/40">
-            <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap min-w-[160px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">PURCHASE ORDER NUMBER</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">SUPPLIER</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">ORDER DATE</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">REQUESTED BY</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">TOTAL AMOUNT</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">STATUS</th>
-            <th className="px-4 py-3 text-center font-bold text-muted-foreground tracking-wider whitespace-nowrap w-24">ACTIONS</th>
+    <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
+      <table className="w-full">
+        <thead className="border-b border-divider bg-surface-muted table-head-row">
+          <tr className="border-b border-divider bg-surface-muted table-head-row uppercase text-text-muted type-table-header">
+            <th className="sticky left-0 z-20 bg-surface-muted px-4 py-3 text-left type-table-header text-text-muted tracking-wider whitespace-nowrap min-w-[160px] w-44 border-r border-divider shadow-sticky-col table-th">PURCHASE ORDER NUMBER</th>
+            <th className="px-4 py-3 text-left type-table-header text-text-muted tracking-wider whitespace-nowrap table-th">SUPPLIER</th>
+            <th className="px-4 py-3 text-left type-table-header text-text-muted tracking-wider whitespace-nowrap table-th">ORDER DATE</th>
+            <th className="px-4 py-3 text-left type-table-header text-text-muted tracking-wider whitespace-nowrap table-th">REQUESTED BY</th>
+            <th className="px-4 py-3 text-left type-table-header text-text-muted tracking-wider whitespace-nowrap table-th">TOTAL AMOUNT</th>
+            <th className="px-4 py-3 text-left type-table-header text-text-muted tracking-wider whitespace-nowrap table-th">STATUS</th>
+            <th className="px-4 py-3 text-center type-table-header text-text-muted tracking-wider whitespace-nowrap w-24 table-th">ACTIONS</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-divider">
           {orders.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-5 py-8 text-center text-xs font-medium text-muted-foreground">
+              <td colSpan={7} className="px-5 py-8 text-center type-body text-text-muted">
                 No purchase orders found.
               </td>
             </tr>
@@ -70,7 +70,7 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onD
               const actions: ActionItem[] = [
                 {
                   label: "View Details",
-                  icon: <Eye className="w-4 h-4 text-foreground" />,
+                  icon: <Eye className="w-4 h-4 text-text-primary" />,
                   onClick: () => { setOpenDropdownId(null); onView(po); },
                 },
               ];
@@ -80,27 +80,25 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onD
                 if ((isDraft || isReturned) && onEdit) {
                   actions.push({
                     label: isReturned ? "Edit & Re-Submit" : "Resend via Gmail",
-                    icon: <Pencil className="w-4 h-4 text-foreground" />,
+                    icon: <Pencil className="w-4 h-4 text-text-primary" />,
                     onClick: () => { setOpenDropdownId(null); onEdit(po); },
                   });
                 }
                 if (isDraft && onDiscardDraft) {
                   actions.push({
                     label: "Discard Draft",
-                    icon: <Trash2 className="w-4 h-4 text-destructive" />,
+                    icon: <Trash2 className="w-4 h-4 text-status-red" />,
                     onClick: () => { setOpenDropdownId(null); onDiscardDraft(po); },
                   });
                 }
                 if (!isDraft && isCancellable && onCancel) {
                   actions.push({
                     label: "Cancel Purchase Order",
-                    icon: <Ban className="w-4 h-4 text-foreground" />,
+                    icon: <Ban className="w-4 h-4 text-text-primary" />,
                     onClick: () => { setOpenDropdownId(null); onCancel(po); },
                   });
                 }
               }
-
-              const isOpen = openDropdownId === po.poId;
 
               const fmtDate = (d: string) =>
                 d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
@@ -109,45 +107,45 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onD
                 new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", minimumFractionDigits: 2 }).format(n);
 
               return (
-                <tr key={po.poId} className="group hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => onView(po)}>
-                  <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-3.5 font-mono text-foreground whitespace-nowrap font-medium min-w-[160px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
+                <tr key={po.poId} className="group hover:bg-hover transition-colors cursor-pointer table-row" onClick={() => onView(po)}>
+                  <td className="sticky left-0 z-10 bg-surface group-hover:bg-hover px-4 py-3.5 font-mono text-text-primary whitespace-nowrap font-medium min-w-[160px] w-44 border-r border-divider shadow-sticky-col transition-colors table-td">
                     {po.poNumber}
                   </td>
-                  <td className="px-4 py-3.5 font-medium text-foreground whitespace-nowrap">
+                  <td className="px-4 py-3.5 font-medium text-text-primary whitespace-nowrap table-td">
                     {po.supplierName || "—"}
                   </td>
-                  <td className="px-4 py-3.5 text-muted-foreground whitespace-nowrap">
+                  <td className="px-4 py-3.5 text-text-muted whitespace-nowrap table-td">
                     {fmtDate(po.orderDate)}
                   </td>
-                  <td className="px-4 py-3.5 text-muted-foreground whitespace-nowrap">
+                  <td className="px-4 py-3.5 text-text-muted whitespace-nowrap table-td">
                     {po.requestedBy || "—"}
                   </td>
-                  <td className="px-4 py-3.5 font-mono font-semibold text-foreground whitespace-nowrap">
+                  <td className="px-4 py-3.5 font-mono font-semibold text-text-primary whitespace-nowrap table-td">
                     {fmtCurrency(po.totalAmount || 0)}
                   </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap">
+                  <td className="px-4 py-3.5 whitespace-nowrap table-td">
                     <StatusBadge status={po.status} />
                   </td>
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-4 py-3.5 text-center whitespace-nowrap table-td" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          className="p-1.5 rounded-lg border border-transparent text-foreground hover:bg-muted/80 transition-all data-[state=open]:bg-muted data-[state=open]:border-border data-[state=open]:shadow-sm"
+                          className="p-1.5 rounded-control border border-transparent text-text-primary hover:bg-hover transition-all data-[state=open]:bg-surface-muted data-[state=open]:border-divider data-[state=open]:shadow-sm"
                           aria-label="Actions menu"
                         >
-                          <MoreHorizontal className="w-4 h-4 text-foreground" />
+                          <MoreHorizontal className="w-4 h-4 text-text-primary" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 z-[200]">
+                      <DropdownMenuContent align="end" className="w-48 z-[200] rounded-menu border border-divider bg-surface shadow-menu">
                         {actions.map((action, idx) => (
                           <DropdownMenuItem
                             key={action.label + idx}
                             onClick={action.onClick}
-                            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer"
+                            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer type-caption text-text-primary hover:bg-hover"
                           >
-                            <span className="shrink-0 text-foreground">{action.icon}</span>
-                            <span className="truncate text-foreground">{action.label}</span>
+                            <span className="shrink-0 text-text-primary">{action.icon}</span>
+                            <span className="truncate text-text-primary">{action.label}</span>
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>
