@@ -15,7 +15,7 @@ export default async function AnalyticsDashboardPage() {
     analytics.procurementRecommendations || analytics.inventoryForecasts;
 
   return (
-    <div className="w-full min-h-full py-7 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="page-container w-full min-h-full space-y-6 animate-page-in">
       <PageHeader
         title="Dashboard"
         description="Overview of inventory, procurement, production, and distribution metrics."

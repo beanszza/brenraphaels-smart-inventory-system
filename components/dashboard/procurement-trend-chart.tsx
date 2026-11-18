@@ -23,21 +23,21 @@ function CustomTooltip({
 }) {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card border border-border rounded-xl px-3 py-2.5 shadow-md min-w-[150px]">
-        <p className="text-xs font-bold text-foreground mb-1.5">
+      <div className="bg-surface border border-border rounded-inner px-3 py-2.5 shadow-modal min-w-[150px]">
+        <p className="type-caption font-semibold text-ink mb-1.5">
           {label}
         </p>
         <div className="space-y-1">
           {payload.map((p, i) => (
             <div key={i} className="flex items-center justify-between gap-4">
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5 type-caption text-ink-muted">
                 <span
                   className="w-2 h-2 rounded-full"
                   style={{ background: p.color }}
                 />
                 {p.name}
               </span>
-              <span className="text-xs font-bold tabular-nums text-foreground">
+              <span className="type-caption font-semibold tabular-nums text-ink">
                 {p.name === "Order Value (₱K)" ? `₱${p.value}K` : p.value}
               </span>
             </div>
@@ -60,13 +60,13 @@ export default function ProcurementTrendChart({
   const rangeText = firstMonth && lastMonth ? `${firstMonth} – ${lastMonth}` : "Last 6 months";
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+    <div className="rounded-card border border-border bg-surface p-5 sm:p-6 flex flex-col justify-between">
       <div className="flex items-start justify-between gap-2 mb-4">
         <div>
-          <h3 className="text-base font-bold text-foreground">
+          <h3 className="type-card-title text-ink">
             Procurement Trend
           </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="type-caption text-ink-muted mt-0.5">
             {totalOrders.toLocaleString()} purchase orders over 6 months ({rangeText})
           </p>
         </div>
@@ -109,7 +109,7 @@ export default function ProcurementTrendChart({
               iconSize={8}
               wrapperStyle={{ paddingTop: "8px" }}
               formatter={(value) => (
-                <span className="text-xs font-medium text-foreground pl-1">
+                <span className="type-caption font-medium text-ink pl-1">
                   {value}
                 </span>
               )}
@@ -121,7 +121,7 @@ export default function ProcurementTrendChart({
               name="Purchase Orders"
               stroke="var(--primary)"
               strokeWidth={2.5}
-              dot={{ fill: "var(--primary)", r: 4, strokeWidth: 2, stroke: "var(--card)" }}
+              dot={{ fill: "var(--primary)", r: 4, strokeWidth: 2, stroke: "var(--surface)" }}
               activeDot={{ r: 6 }}
             />
             <Line
@@ -129,10 +129,10 @@ export default function ProcurementTrendChart({
               type="monotone"
               dataKey="valueK"
               name="Order Value (₱K)"
-              stroke="#16a34a"
+              stroke="var(--color-success)"
               strokeWidth={2.5}
               strokeDasharray="5 3"
-              dot={{ fill: "#16a34a", r: 4, strokeWidth: 2, stroke: "var(--card)" }}
+              dot={{ fill: "var(--color-success)", r: 4, strokeWidth: 2, stroke: "var(--surface)" }}
               activeDot={{ r: 6 }}
             />
           </LineChart>

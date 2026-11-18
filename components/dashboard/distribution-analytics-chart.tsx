@@ -28,19 +28,19 @@ function CustomTooltip({
 }) {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card border border-border rounded-xl px-3.5 py-2.5 shadow-md min-w-[180px]">
-        <p className="text-xs font-bold text-foreground mb-1.5">{label}</p>
+      <div className="bg-surface border border-border rounded-inner px-3.5 py-2.5 shadow-modal min-w-[180px]">
+        <p className="type-caption font-semibold text-ink mb-1.5">{label}</p>
         <div className="space-y-1">
           {payload.map((p, i) => (
             <div key={i} className="flex items-center justify-between gap-4">
-              <span className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-2 type-caption text-ink-muted">
                 <span
                   className="w-2 h-2 rounded-full"
                   style={{ background: p.color }}
                 />
                 {p.name}
               </span>
-              <span className="text-xs font-bold tabular-nums text-foreground">
+              <span className="type-caption font-semibold tabular-nums text-ink">
                 {p.value.toLocaleString()}
               </span>
             </div>
@@ -75,51 +75,51 @@ export default function DistributionAnalyticsChart({ data }: { data: BranchFlow[
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs">
+    <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
       <div className="flex items-center justify-between gap-2 mb-4">
         <div>
-          <h3 className="text-base font-bold text-foreground">
+          <h3 className="type-card-title text-ink">
             Distribution Analytics
           </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="type-caption text-ink-muted mt-0.5">
             Transfers received and dispatched across branch locations
           </p>
         </div>
       </div>
 
       {/* Top receiver callout */}
-      <div className="mb-5 p-4 rounded-xl border border-border bg-muted/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mb-5 p-4 rounded-inner border border-border bg-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
           <Badge variant="purple">Top Receiver</Badge>
-          <h4 className="text-sm font-bold text-foreground mt-1.5 truncate">
+          <h4 className="type-body font-semibold text-ink mt-1.5 truncate">
             {topBranch.branch}
           </h4>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2 min-w-[110px]">
-            <div className="p-1.5 rounded-lg bg-muted text-foreground">
-              <Package className="w-4 h-4" />
+          <div className="flex items-center gap-2.5 rounded-inner border border-border bg-surface px-3 py-2 min-w-[110px]">
+            <div className="p-1.5 rounded-sm bg-subtle text-ink">
+              <Package className="size-4" />
             </div>
             <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <p className="type-nav-group text-ink-muted">
                 Received
               </p>
-              <p className="text-sm font-bold tabular-nums text-foreground">
+              <p className="type-body font-semibold tabular-nums text-ink">
                 {topBranch.received}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2 min-w-[110px]">
-            <div className="p-1.5 rounded-lg bg-muted text-foreground">
-              <ArrowRightLeft className="w-4 h-4" />
+          <div className="flex items-center gap-2.5 rounded-inner border border-border bg-surface px-3 py-2 min-w-[110px]">
+            <div className="p-1.5 rounded-sm bg-subtle text-ink">
+              <ArrowRightLeft className="size-4" />
             </div>
             <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <p className="type-nav-group text-ink-muted">
                 Transfers
               </p>
-              <p className="text-sm font-bold tabular-nums text-foreground">
+              <p className="type-body font-semibold tabular-nums text-ink">
                 {topBranch.transfers}
               </p>
             </div>
@@ -159,7 +159,7 @@ export default function DistributionAnalyticsChart({ data }: { data: BranchFlow[
             <Tooltip
               content={<CustomTooltip />}
               cursor={{
-                fill: isDarkMode ? "#2a2236" : "#f7f5fa",
+                fill: isDarkMode ? "var(--color-surface)" : "var(--color-page)",
                 opacity: 0.5,
               }}
             />
@@ -168,7 +168,7 @@ export default function DistributionAnalyticsChart({ data }: { data: BranchFlow[
               iconSize={8}
               wrapperStyle={{ paddingTop: "12px" }}
               formatter={(value) => (
-                <span className="text-xs font-medium text-foreground pl-1">
+                <span className="type-caption font-medium text-ink pl-1">
                   {value}
                 </span>
               )}
@@ -193,7 +193,7 @@ export default function DistributionAnalyticsChart({ data }: { data: BranchFlow[
             <Bar
               dataKey="transfers"
               name="Transfers"
-              fill="#16a34a"
+              fill="var(--color-success)"
               radius={[0, 4, 4, 0]}
             >
               <LabelList

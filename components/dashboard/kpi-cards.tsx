@@ -24,29 +24,29 @@ function KpiCard({ title, value, subtitle, trend, icon }: KpiCardProps) {
   const TrendIcon = isPositive ? TrendingUp : TrendingDown;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+    <div className="rounded-card border border-border bg-surface p-5 sm:p-6 flex flex-col justify-between">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+        <span className="type-nav-group text-ink-muted">
           {title}
         </span>
         <div className="flex items-center gap-2">
           {trend !== null && (
             <Badge variant={isPositive ? "success" : "destructive"} className="gap-1">
-              <TrendIcon className="w-3 h-3" />
+              <TrendIcon className="size-3" />
               {Math.abs(trend)}%
             </Badge>
           )}
-          <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-foreground shrink-0">
+          <div className="size-9 rounded-control bg-subtle flex items-center justify-center text-ink shrink-0">
             {icon}
           </div>
         </div>
       </div>
 
       <div className="mt-4">
-        <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground tabular-nums">
+        <div className="type-stat-value text-ink tabular-nums">
           {value.toLocaleString()}
         </div>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="type-caption text-ink-muted mt-1">
           {subtitle}
         </p>
       </div>
@@ -63,7 +63,7 @@ export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
           value={kpiData.activeInventory.value}
           subtitle="Active items across all categories"
           trend={kpiData.activeInventory.trend}
-          icon={<Package className="w-4 h-4 text-primary" />}
+          icon={<Package className="size-4 text-primary" />}
         />
       )}
       {kpiData.lowStockAlerts && (
@@ -72,7 +72,7 @@ export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
           value={kpiData.lowStockAlerts.value}
           subtitle="Items at or below minimum stock level"
           trend={kpiData.lowStockAlerts.trend}
-          icon={<AlertTriangle className="w-4 h-4 text-destructive" />}
+          icon={<AlertTriangle className="size-4 text-destructive" />}
         />
       )}
       {kpiData.productionBatches && (
@@ -81,7 +81,7 @@ export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
           value={kpiData.productionBatches.value}
           subtitle="Batches scheduled or completed this month"
           trend={kpiData.productionBatches.trend}
-          icon={<Factory className="w-4 h-4 text-primary" />}
+          icon={<Factory className="size-4 text-primary" />}
         />
       )}
       {kpiData.activeSuppliers && (
@@ -90,7 +90,7 @@ export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
           value={kpiData.activeSuppliers.value}
           subtitle="Registered and active vendor partners"
           trend={kpiData.activeSuppliers.trend}
-          icon={<Handshake className="w-4 h-4 text-primary" />}
+          icon={<Handshake className="size-4 text-primary" />}
         />
       )}
     </div>

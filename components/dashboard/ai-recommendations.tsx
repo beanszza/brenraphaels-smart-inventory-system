@@ -34,62 +34,62 @@ function ProcurementRecommendationCard({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col">
+    <div className="rounded-card border border-border bg-surface p-5 sm:p-6 flex flex-col">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-foreground">
+        <h3 className="type-card-title text-ink">
           Procurement Recommendations
         </h3>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="type-caption text-ink-muted mt-0.5">
           {procurementRecommendations.length} reorder suggestions based on stock levels, open orders, and usage
         </p>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border">
-        <table className="w-full text-xs text-left">
+      <div className="overflow-x-auto rounded-inner border border-border">
+        <table className="w-full text-left">
           <thead>
-            <tr className="border-b border-border bg-muted/40">
-              <th className="px-3.5 py-2.5 font-bold text-muted-foreground uppercase tracking-wider">
+            <tr className="table-head-row">
+              <th className="table-th px-3.5 py-2.5">
                 Item &amp; Basis
               </th>
-              <th className="px-3.5 py-2.5 font-bold text-muted-foreground uppercase tracking-wider">
+              <th className="table-th px-3.5 py-2.5">
                 Preferred Supplier
               </th>
-              <th className="px-3.5 py-2.5 font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap text-right">
+              <th className="table-th px-3.5 py-2.5 whitespace-nowrap text-right">
                 Order Qty
               </th>
-              <th className="px-3.5 py-2.5 font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap text-center">
+              <th className="table-th px-3.5 py-2.5 whitespace-nowrap text-center">
                 Urgency
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-divider">
             {procurementRecommendations.map((rec) => (
-              <tr key={rec.id} className="hover:bg-muted/30 transition-colors">
-                <td className="px-3.5 py-3 align-top">
+              <tr key={rec.id} className="table-row">
+                <td className="table-td px-3.5 py-3 align-top">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-foreground">
+                    <span className="type-body font-semibold text-ink">
                       {rec.item}
                     </span>
-                    <span className="text-[11px] font-mono text-muted-foreground">
+                    <span className="type-caption tabular-nums text-ink-muted">
                       {rec.id}
                     </span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                  <p className="type-caption text-ink-muted mt-0.5 leading-relaxed">
                     {rec.reason}
                   </p>
                 </td>
-                <td className="px-3.5 py-3 align-top text-muted-foreground max-w-[180px]">
+                <td className="table-td px-3.5 py-3 align-top text-ink-muted max-w-[180px]">
                   <span className="block truncate" title={rec.supplier}>
                     {rec.supplier}
                   </span>
                 </td>
-                <td className="px-3.5 py-3 align-top text-right font-bold tabular-nums text-foreground whitespace-nowrap">
+                <td className="table-td px-3.5 py-3 align-top text-right type-table-cell font-semibold tabular-nums text-ink whitespace-nowrap">
                   {rec.recommendedQty.toLocaleString()}{" "}
-                  <span className="font-normal text-muted-foreground">
+                  <span className="font-normal text-ink-muted">
                     {rec.unit}
                   </span>
                 </td>
-                <td className="px-3.5 py-3 align-top text-center whitespace-nowrap">
+                <td className="table-td px-3.5 py-3 align-top text-center whitespace-nowrap">
                   <UrgencyBadge level={rec.urgency} />
                 </td>
               </tr>
@@ -121,12 +121,12 @@ function InventoryForecastCard({
   );
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col">
+    <div className="rounded-card border border-border bg-surface p-5 sm:p-6 flex flex-col">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-foreground">
+        <h3 className="type-card-title text-ink">
           Inventory Demand Forecast
         </h3>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="type-caption text-ink-muted mt-0.5">
           30-day projection from production consumption · sorted by days remaining
         </p>
       </div>
@@ -149,32 +149,32 @@ function InventoryForecastCard({
           return (
             <div
               key={fc.sku}
-              className="rounded-xl border border-border bg-muted/20 p-3.5 hover:bg-muted/40 transition-colors"
+              className="rounded-inner border border-border bg-subtle p-3.5 hover:bg-switcher transition-colors"
             >
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-foreground truncate">
+                    <span className="type-caption font-semibold text-ink truncate">
                       {fc.item}
                     </span>
-                    <span className="text-[11px] font-mono text-muted-foreground shrink-0">
+                    <span className="type-caption tabular-nums text-ink-muted shrink-0">
                       {fc.sku}
                     </span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                  <p className="type-caption text-ink-muted mt-0.5">
                     {fillPct}% of 30-day projected demand covered
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2.5 shrink-0">
                   <div className="text-right">
-                    <p className="text-xs font-bold tabular-nums text-foreground">
+                    <p className="type-caption font-semibold tabular-nums text-ink">
                       {fc.currentStock.toLocaleString()}{" "}
-                      <span className="font-normal text-muted-foreground">
+                      <span className="font-normal text-ink-muted">
                         / {fc.forecastedDemand.toLocaleString()} {fc.unit}
                       </span>
                     </p>
-                    <p className="text-[11px] font-medium tabular-nums text-muted-foreground">
+                    <p className="type-caption font-medium tabular-nums text-ink-muted">
                       ~{fc.daysRemaining}d remaining
                     </p>
                   </div>
@@ -182,9 +182,9 @@ function InventoryForecastCard({
                 </div>
               </div>
 
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div className="h-2 bg-subtle rounded-pill overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-300 ${barClass}`}
+                  className={`h-full rounded-pill transition-all duration-300 ${barClass}`}
                   style={{ width: `${Math.max(fillPct > 0 ? 4 : 0, fillPct)}%` }}
                 />
               </div>

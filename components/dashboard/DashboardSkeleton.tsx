@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function DashboardSkeleton() {
   return (
-    <div role="status" aria-label="Loading Dashboard" className="min-w-0 w-full space-y-5 p-4 sm:px-8 sm:py-7">
+    <div role="status" aria-label="Loading Dashboard" className="page-container min-w-0 w-full space-y-5">
       <span className="sr-only">Loading Dashboard...</span>
       <div aria-hidden="true" className="space-y-2">
         <Skeleton className="h-8 w-36" />

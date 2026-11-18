@@ -20,17 +20,17 @@ function CustomTooltip({
   if (active && payload && payload.length) {
     const item = payload[0];
     return (
-      <div className="bg-card border border-border rounded-xl px-3 py-2 shadow-md">
+      <div className="bg-surface border border-border rounded-inner px-3 py-2 shadow-modal">
         <div className="flex items-center gap-2">
           <span
             className="w-2.5 h-2.5 rounded-full"
             style={{ background: item.payload.color }}
           />
-          <span className="text-xs font-semibold text-foreground">
+          <span className="type-caption font-semibold text-ink">
             {item.name}
           </span>
         </div>
-        <p className="text-xs font-bold text-foreground mt-1">
+        <p className="type-caption font-semibold text-ink mt-1">
           {item.value.toLocaleString()} items
         </p>
       </div>
@@ -48,12 +48,12 @@ export default function InventoryDistributionChart({
   if (!total) return <EmptyChart title="Inventory Distribution" subtitle="Active items grouped by category" />;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+    <div className="rounded-card border border-border bg-surface p-5 sm:p-6 flex flex-col justify-between">
       <div>
-        <h3 className="text-base font-bold text-foreground">
+        <h3 className="type-card-title text-ink">
           Inventory Distribution
         </h3>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="type-caption text-ink-muted mt-0.5">
           {total.toLocaleString()} active items across {inventoryDistribution.length} categories
         </p>
       </div>
@@ -71,7 +71,7 @@ export default function InventoryDistributionChart({
                 paddingAngle={3}
                 dataKey="value"
                 strokeWidth={2}
-                stroke="var(--card)"
+                stroke="var(--surface)"
               >
                 {inventoryDistribution.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -85,7 +85,7 @@ export default function InventoryDistributionChart({
                 dominantBaseline="central"
                 fontSize={24}
                 fontWeight={700}
-                fill="var(--foreground)"
+                fill="var(--ink)"
               >
                 {total}
               </text>
@@ -96,7 +96,7 @@ export default function InventoryDistributionChart({
                 dominantBaseline="central"
                 fontSize={11}
                 fontWeight={500}
-                fill="var(--muted-foreground)"
+                fill="var(--ink-muted)"
               >
                 Items
               </text>
@@ -110,22 +110,22 @@ export default function InventoryDistributionChart({
             return (
               <div
                 key={entry.name}
-                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-3.5 py-2.5"
+                className="flex items-center justify-between gap-3 rounded-inner border border-border bg-subtle px-3.5 py-2.5"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <span
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ background: entry.color }}
                   />
-                  <span className="text-xs font-semibold text-foreground truncate">
+                  <span className="type-caption font-semibold text-ink truncate">
                     {entry.name}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs font-bold tabular-nums text-foreground">
+                  <span className="type-caption font-semibold tabular-nums text-ink">
                     {entry.value}
                   </span>
-                  <span className="text-[11px] font-medium tabular-nums text-muted-foreground w-9 text-right">
+                  <span className="type-caption font-medium tabular-nums text-ink-muted w-9 text-right">
                     ({pct}%)
                   </span>
                 </div>
