@@ -96,7 +96,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
       const draftedLines: StockInLineDraft[] = (fullGrn.items || [])
         .filter((item) => Number(item.deliveredQuantity) > 0)
         .map((item) => {
-          const invMatch = invList.find((i: any) => i.itemId === item.itemId);
+          const invMatch = invList.find((i: { itemId: number }) => i.itemId === item.itemId);
           const currentStock = Number(invMatch?.currentStock ?? invMatch?.quantityOnHand ?? 0);
           const categoryName = invMatch?.categoryName || item.categoryName || "Raw Material";
           const generatedLot = formatLotCode(categoryName, item.itemName, now, seq);
@@ -201,10 +201,11 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
       setConfirmOpen(false);
       onSuccess(data.data);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
       setError(
-        err.response?.data?.message ||
-          err.message ||
+        e.response?.data?.message ||
+          e.message ||
           "An unexpected error occurred while committing Stock-In."
       );
       setConfirmOpen(false);
@@ -218,9 +219,9 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
       open={open}
       title="Create & Commit Stock-In"
       onClose={onClose}
-      size="max-w-5xl"
+      size="max-w-[640px]"
     >
-      <div className="space-y-5 text-foreground">
+      <div className="space-y-5 text-text-primary">
         {/* Hidden QR Code SVGs for printable label generation */}
         <div className="hidden" aria-hidden="true">
           {lines.map((line, idx) => {
@@ -247,12 +248,12 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
         </div>
 
         {error && (
-          <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-xs text-destructive flex items-center justify-between">
+          <div className="rounded-control border border-badge-danger-border bg-badge-danger-bg px-4 py-3 type-caption text-badge-danger-text flex items-center justify-between">
             <span>{error}</span>
             <button
               type="button"
               onClick={() => setError(null)}
-              className="text-foreground font-bold text-xs hover:underline ml-2"
+              className="text-text-primary font-bold type-caption hover:underline ml-2"
             >
               Dismiss
             </button>
@@ -261,7 +262,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
 
         {/* GRN Selection */}
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-foreground">
+          <label className="block type-caption font-semibold text-text-primary">
             Select Goods Receipt Note
           </label>
           <div>
@@ -271,7 +272,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
                 const id = Number(e.target.value);
                 if (id) handleSelectGrn(id);
               }}
-              className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+              className="w-full rounded-control border border-divider bg-surface px-3.5 py-2.5 type-body font-medium text-text-primary focus:outline-none focus:border-border-focus"
             >
               <option value="" disabled>
                 Select Goods Receipt Note
@@ -291,57 +292,57 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
         {selectedGrn && !loading && lines.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <span className="type-overline uppercase text-text-muted">
                 Items to Commit to Inventory ({lines.length})
               </span>
               <button
                 type="button"
                 onClick={handleDownloadAllLabels}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1.5 rounded-control border border-divider bg-surface px-3 py-1.5 type-caption font-semibold text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer shadow-card"
               >
-                <Download className="w-3.5 h-3.5 text-primary" />
+                <Download className="w-3.5 h-3.5 text-brand" />
                 <span>Download All QR Labels</span>
               </button>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-              <table className="w-full">
-                <thead className="border-b border-border bg-muted/30">
-                  <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                    <th className="px-4 py-4">Supply Name</th>
-                    <th className="px-4 py-4 text-center">Unit of Measure</th>
-                    <th className="px-4 py-4 text-right">Stock to Put In</th>
-                    <th className="px-4 py-4 text-right">Current Stock</th>
-                    <th className="px-4 py-4">Lot No.</th>
+            <div className="overflow-x-auto rounded-card border border-divider bg-surface shadow-card">
+              <table className="w-full border-collapse">
+                <thead className="border-b border-divider bg-surface-secondary">
+                  <tr className="table-head-row text-left whitespace-nowrap">
+                    <th className="table-th px-4 py-3">Supply Name</th>
+                    <th className="table-th px-4 py-3 text-center">Unit of Measure</th>
+                    <th className="table-th px-4 py-3 text-right">Stock to Put In</th>
+                    <th className="table-th px-4 py-3 text-right">Current Stock</th>
+                    <th className="table-th px-4 py-3">Lot No.</th>
                     {lines.some((l) => Boolean(l.expiryDate)) && (
-                      <th className="px-4 py-4 text-center">Expiry Date</th>
+                      <th className="table-th px-4 py-3 text-center">Expiry Date</th>
                     )}
-                    <th className="px-4 py-4 text-center">QR Label</th>
+                    <th className="table-th px-4 py-3 text-center">QR Label</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-divider">
                   {lines.map((line, lineIndex) => (
                     <tr
                       key={`${line.grnItemId || line.itemId}-${lineIndex}`}
-                      className="hover:bg-muted/30 transition-colors"
+                      className="table-row hover:bg-surface-secondary/50 transition-colors"
                     >
-                      <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
+                      <td className="px-4 py-3 table-td font-semibold text-text-primary whitespace-nowrap">
                         {line.itemName}
                       </td>
-                      <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
+                      <td className="px-4 py-3 table-td text-center text-text-muted whitespace-nowrap">
                         {line.purchaseUomName}
                       </td>
-                      <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
+                      <td className="px-4 py-3 table-td text-right font-semibold text-text-primary whitespace-nowrap">
                         {line.quantityToStock}
                       </td>
-                      <td className="px-4 py-4 text-sm text-right text-muted-foreground whitespace-nowrap">
+                      <td className="px-4 py-3 table-td text-right text-text-muted whitespace-nowrap">
                         {line.currentStock}
                       </td>
-                      <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
+                      <td className="px-4 py-3 table-td text-text-primary whitespace-nowrap">
                         {line.lotCode}
                       </td>
                       {lines.some((l) => Boolean(l.expiryDate)) && (
-                        <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
+                        <td className="px-4 py-3 table-td text-center text-text-muted whitespace-nowrap">
                           {line.expiryDate
                             ? new Date(line.expiryDate).toLocaleDateString("en-US", {
                                 year: "numeric",
@@ -351,14 +352,14 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
                             : "No Expiry"}
                         </td>
                       )}
-                      <td className="px-4 py-4 text-center whitespace-nowrap">
+                      <td className="px-4 py-3 table-td text-center whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => handleDownloadLabel(line, lineIndex)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 rounded-control border border-divider bg-surface px-3 py-1.5 type-caption font-semibold text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer"
                           title="Download printable QR label"
                         >
-                          <Download className="w-3.5 h-3.5 text-muted-foreground" />
+                          <Download className="w-3.5 h-3.5 text-text-muted" />
                           <span>Download</span>
                         </button>
                       </td>
@@ -370,7 +371,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
 
             {/* General Notes */}
             <div className="space-y-1.5 pt-2">
-              <label className="block text-xs font-semibold text-foreground">
+              <label className="block type-caption font-semibold text-text-primary">
                 Stock-In Notes / Storage Instructions
               </label>
               <textarea
@@ -378,18 +379,18 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
                 placeholder="Specify designated warehouse aisle, refrigeration, or special storage notes..."
-                className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                className="w-full rounded-control border border-divider bg-surface px-3.5 py-2.5 type-body text-text-primary placeholder:text-text-muted focus:outline-none focus:border-border-focus"
               />
             </div>
           </div>
         )}
 
         {/* Footer Actions */}
-        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-divider pt-4">
           <ModalNativeCloseButton
             fallbackOnClose={onClose}
             disabled={submitting}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="rounded-control border border-divider bg-surface px-5 py-2.5 type-body font-semibold text-text-primary hover:bg-surface-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Cancel
           </ModalNativeCloseButton>
@@ -397,7 +398,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
             type="button"
             disabled={lines.length === 0 || submitting}
             onClick={handleTryCommit}
-            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+            className="rounded-control bg-button-primary px-5 py-2.5 type-body font-semibold text-text-inverse hover:bg-button-primary/85 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-card cursor-pointer"
           >
             {submitting ? "Committing…" : "Commit to Inventory"}
           </button>
@@ -409,22 +410,22 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
         open={confirmOpen}
         title="Commit Stock-In to Inventory"
         onClose={() => setConfirmOpen(false)}
-        maxWidth={440}
+        maxWidth={480}
       >
         <div className="flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+          <div className="w-12 h-12 rounded-full bg-surface-secondary flex items-center justify-center mb-4 text-text-primary">
             <AlertTriangle className="w-6 h-6" />
           </div>
 
-          <h2 className="text-xl font-bold text-foreground mb-1">
+          <h2 className="type-section-title font-bold text-text-primary mb-1">
             Commit Stock-In to Inventory
           </h2>
 
-          <p className="text-xs font-semibold text-muted-foreground mb-3">
+          <p className="type-caption font-semibold text-text-muted mb-3">
             GRN Reference: {grns.find((g) => g.grnId === Number(selectedGrnId))?.grnNumber || "N/A"}
           </p>
 
-          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+          <p className="type-body text-text-muted mb-6 leading-relaxed">
             Are you sure you want to commit this Stock-In with {lines.length} item{lines.length === 1 ? "" : "s"} directly to commissary inventory? Stock balances and traceability lots will be updated immediately, and QR labels will be ready for download.
           </p>
 
@@ -433,7 +434,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
               type="button"
               onClick={() => setConfirmOpen(false)}
               disabled={submitting}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-5 py-2.5 type-body font-semibold text-text-primary border border-divider bg-surface hover:bg-surface-secondary rounded-control transition-colors disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>
@@ -441,7 +442,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
               type="button"
               disabled={submitting}
               onClick={executeCommit}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/85 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-5 py-2.5 type-body font-semibold bg-button-primary text-text-inverse hover:bg-button-primary/85 rounded-control transition-colors shadow-card disabled:opacity-50 cursor-pointer"
             >
               {submitting ? "Committing…" : "Confirm & Commit"}
             </button>

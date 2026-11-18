@@ -52,9 +52,9 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
       open={open}
       title={`Stock-In Details — ${stockIn.stockInNumber}`}
       onClose={onClose}
-      size="max-w-5xl"
+      size="max-w-[640px]"
     >
-      <div className="space-y-5 text-foreground">
+      <div className="space-y-5 text-text-primary">
         {/* Hidden QR Code SVGs for download extraction */}
         <div className="hidden" aria-hidden="true">
           {stockIn.lines.map((line) => {
@@ -82,16 +82,16 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
         </div>
 
         {/* Header Summary */}
-        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-4">
-          <div className="flex items-center justify-between border-b border-border/60 pb-3">
+        <div className="rounded-control border border-divider bg-surface-secondary/40 p-4 space-y-4">
+          <div className="flex items-center justify-between border-b border-divider/60 pb-3">
             <StatusBadge status={stockIn.status} />
             {stockIn.lines.length > 0 && (
               <button
                 type="button"
                 onClick={handleDownloadAllLabels}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1.5 rounded-control border border-divider bg-surface px-3 py-1.5 type-caption font-semibold text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer shadow-card"
               >
-                <Download className="w-3.5 h-3.5 text-primary" />
+                <Download className="w-3.5 h-3.5 text-brand" />
                 <span>Download All QR Labels</span>
               </button>
             )}
@@ -99,24 +99,24 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
-              <span className="block text-xs font-medium text-muted-foreground">GRN Reference</span>
-              <span className="mt-0.5 block text-sm font-semibold text-foreground">{stockIn.grnNumber}</span>
+              <span className="block type-caption font-medium text-text-muted">GRN Reference</span>
+              <span className="mt-0.5 block type-body font-semibold text-text-primary">{stockIn.grnNumber}</span>
             </div>
             <div>
-              <span className="block text-xs font-medium text-muted-foreground">Supplier</span>
-              <span className="mt-0.5 block text-sm font-semibold text-foreground truncate" title={stockIn.supplierName || "—"}>
+              <span className="block type-caption font-medium text-text-muted">Supplier</span>
+              <span className="mt-0.5 block type-body font-semibold text-text-primary truncate" title={stockIn.supplierName || "—"}>
                 {stockIn.supplierName || "—"}
               </span>
             </div>
             <div>
-              <span className="block text-xs font-medium text-muted-foreground">Committed By</span>
-              <span className="mt-0.5 block text-sm font-semibold text-foreground">
+              <span className="block type-caption font-medium text-text-muted">Committed By</span>
+              <span className="mt-0.5 block type-body font-semibold text-text-primary">
                 {stockIn.committedBy || stockIn.createdBy || "—"}
               </span>
             </div>
             <div>
-              <span className="block text-xs font-medium text-muted-foreground">Committed On</span>
-              <span className="mt-0.5 block text-sm font-semibold text-foreground">
+              <span className="block type-caption font-medium text-text-muted">Committed On</span>
+              <span className="mt-0.5 block type-body font-semibold text-text-primary">
                 {new Date(stockIn.committedAt || stockIn.createdAt).toLocaleDateString()}
               </span>
             </div>
@@ -125,56 +125,56 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
 
         {/* Lines Table */}
         <div className="space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+          <span className="type-overline uppercase text-text-muted block">
             Items &amp; Traceability Lots
           </span>
 
-          <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-            <table className="w-full">
-              <thead className="border-b border-border bg-muted/30">
-                <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                  <th className="px-4 py-4">Supply Name</th>
-                  <th className="px-4 py-4 text-center">Unit of Measure</th>
-                  <th className="px-4 py-4 text-right">Stock Put In</th>
-                  <th className="px-4 py-4 text-right">Previous Stock</th>
-                  <th className="px-4 py-4">Lot No.</th>
+          <div className="overflow-x-auto rounded-card border border-divider bg-surface shadow-card">
+            <table className="w-full border-collapse">
+              <thead className="border-b border-divider bg-surface-secondary">
+                <tr className="table-head-row text-left whitespace-nowrap">
+                  <th className="table-th px-4 py-3">Supply Name</th>
+                  <th className="table-th px-4 py-3 text-center">Unit of Measure</th>
+                  <th className="table-th px-4 py-3 text-right">Stock Put In</th>
+                  <th className="table-th px-4 py-3 text-right">Previous Stock</th>
+                  <th className="table-th px-4 py-3">Lot No.</th>
                   {stockIn.lines.some((l) => Boolean(l.expiryDate)) && (
-                    <th className="px-4 py-4 text-center">Expiry Date</th>
+                    <th className="table-th px-4 py-3 text-center">Expiry Date</th>
                   )}
-                  <th className="px-4 py-4 text-center">Printable Tag</th>
+                  <th className="table-th px-4 py-3 text-center">Printable Tag</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-divider">
                 {stockIn.lines.map((line) => (
-                  <tr key={line.stockInLineId} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
+                  <tr key={line.stockInLineId} className="table-row hover:bg-surface-secondary/50 transition-colors">
+                    <td className="px-4 py-3 table-td font-semibold text-text-primary whitespace-nowrap">
                       {line.itemName}
                     </td>
-                    <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-center text-text-muted whitespace-nowrap">
                       {line.purchaseUomName}
                     </td>
-                    <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-right font-semibold text-text-primary whitespace-nowrap">
                       {line.quantityToStock}
                     </td>
-                    <td className="px-4 py-4 text-sm text-right text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-right text-text-muted whitespace-nowrap">
                       {line.currentStockBeforeCommit}
                     </td>
-                    <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-text-primary whitespace-nowrap">
                       {line.lotCode}
                     </td>
                     {stockIn.lines.some((l) => Boolean(l.expiryDate)) && (
-                      <td className="px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap">
+                      <td className="px-4 py-3 table-td text-center text-text-muted whitespace-nowrap">
                         {line.expiryDate ? new Date(line.expiryDate).toLocaleDateString() : "No Expiry"}
                       </td>
                     )}
-                    <td className="px-4 py-4 text-center whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-center whitespace-nowrap">
                       <button
                         type="button"
                         title="Download Printable Tag"
                         onClick={() => handleDownloadLabel(line)}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 rounded-control border border-divider bg-surface px-3 py-1.5 type-caption font-semibold text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer shadow-card"
                       >
-                        <Download className="w-3.5 h-3.5 text-muted-foreground" />
+                        <Download className="w-3.5 h-3.5 text-text-muted" />
                         <span>Download</span>
                       </button>
                     </td>
@@ -186,10 +186,10 @@ export default function StockInDetailsModal({ stockIn, open, onClose }: Props) {
         </div>
 
         {/* Footer Actions */}
-        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-divider pt-4">
           <ModalNativeCloseButton
             fallbackOnClose={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+            className="rounded-control border border-divider bg-surface px-5 py-2 type-body font-semibold text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer"
           >
             Close
           </ModalNativeCloseButton>

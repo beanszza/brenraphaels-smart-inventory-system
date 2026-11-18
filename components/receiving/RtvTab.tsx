@@ -69,8 +69,9 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
       } else {
         setActionError(res.data?.message || "Failed to approve return request.");
       }
-    } catch (err: any) {
-      setActionError(err.response?.data?.message || err.message || "Failed to approve return request.");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      setActionError(e.response?.data?.message || e.message || "Failed to approve return request.");
     } finally {
       setActionLoading(false);
     }
@@ -98,8 +99,9 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
       } else {
         setActionError(res.data?.message || "Failed to reject return request.");
       }
-    } catch (err: any) {
-      setActionError(err.response?.data?.message || err.message || "Failed to reject return request.");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      setActionError(e.response?.data?.message || e.message || "Failed to reject return request.");
     } finally {
       setActionLoading(false);
     }
@@ -121,8 +123,9 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
       } else {
         setActionError(res.data?.message || "Failed to dispatch return shipment.");
       }
-    } catch (err: any) {
-      setActionError(err.response?.data?.message || err.message || "Failed to dispatch return shipment.");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      setActionError(e.response?.data?.message || e.message || "Failed to dispatch return shipment.");
     } finally {
       setActionLoading(false);
     }
@@ -157,7 +160,6 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
           r.supplierName?.toLowerCase().includes(s) ||
           r.itemName?.toLowerCase().includes(s) ||
           r.returnReason?.toLowerCase().includes(s) ||
-          (r as any).reason?.toLowerCase().includes(s) ||
           r.status?.toLowerCase().includes(s)
         );
       });
@@ -177,7 +179,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
     <div className="space-y-4">
       {/* Top action row */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+        <div className="type-overline uppercase text-text-muted">
           Return to Vendor Records ({rtvs.length})
         </div>
         <div className="flex items-center gap-2">
@@ -186,7 +188,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
             variant="outline"
             onClick={fetchRtvs}
             disabled={loading}
-            className="h-10 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer"
+            className="h-10 rounded-control border border-divider bg-surface px-4 py-2 type-body font-semibold text-text-primary hover:bg-surface-secondary cursor-pointer shadow-card"
           >
             Refresh
           </Button>
@@ -194,7 +196,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
             <Button
               asChild
               variant="outline"
-              className="h-10 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer"
+              className="h-10 rounded-control border border-divider bg-surface px-4 py-2 type-body font-semibold text-text-primary hover:bg-surface-secondary cursor-pointer shadow-card"
             >
               <Link href="/goods-receiving/logs">
                 <History className="w-4 h-4 mr-1.5" />
@@ -206,7 +208,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
       </div>
 
       {/* Search & Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-xl border border-border bg-card p-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-card border border-divider bg-surface p-3">
         <div className="flex flex-1 items-center gap-2">
           <SearchInput
             aria-label="Search records"
@@ -225,7 +227,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                 setSearch("");
                 setPage(1);
               }}
-              className="text-xs text-muted-foreground hover:text-foreground font-medium px-2"
+              className="type-caption text-text-muted hover:text-text-primary font-medium px-2"
             >
               Clear
             </button>
@@ -242,10 +244,10 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                 setPage(1);
               }}
             >
-              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-control border border-divider bg-surface px-3 type-body font-medium text-text-primary shadow-card focus:border-border-focus">
                 <SelectValue placeholder="All Suppliers" />
               </SelectTrigger>
-              <SelectContent align="end" className="text-xs z-[9999]">
+              <SelectContent align="end" className="type-caption z-[9999]">
                 <SelectItem value="All">All Suppliers</SelectItem>
                 {uniqueSuppliers.map((supp) => (
                   <SelectItem key={supp} value={supp}>
@@ -262,24 +264,24 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
       {loading ? (
         <ReceivingSkeleton />
       ) : (
-        <div className="overflow-x-auto custom-scrollbar rounded-xl border border-border bg-card shadow-sm">
-          <table className="w-full">
-            <thead className="border-b border-border bg-muted/30">
-              <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[160px] w-44 whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">Return to Vendor No.</th>
-                <th className="px-4 py-4 whitespace-nowrap">Date</th>
-                <th className="px-4 py-4">Supplier</th>
-                <th className="px-4 py-4">Item</th>
-                <th className="px-4 py-4 text-right">Return Qty</th>
-                <th className="px-4 py-4">Reason</th>
-                <th className="px-4 py-4 text-center">Status</th>
-                <th className="w-16 px-4 py-4 text-center">Actions</th>
+        <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
+          <table className="w-full border-collapse">
+            <thead className="border-b border-divider bg-surface-secondary">
+              <tr className="table-head-row text-left whitespace-nowrap">
+                <th className="sticky left-0 z-20 bg-surface-secondary table-th px-4 py-3 min-w-[160px] w-44 whitespace-nowrap border-r border-divider shadow-sticky">Return to Vendor No.</th>
+                <th className="table-th px-4 py-3 whitespace-nowrap">Date</th>
+                <th className="table-th px-4 py-3">Supplier</th>
+                <th className="table-th px-4 py-3">Item</th>
+                <th className="table-th px-4 py-3 text-right">Return Qty</th>
+                <th className="table-th px-4 py-3">Reason</th>
+                <th className="table-th px-4 py-3 text-center">Status</th>
+                <th className="table-th w-16 px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-divider">
               {paginatedList.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
+                  <td colSpan={8} className="px-4 py-12 text-center type-body text-text-muted">
                     No supplier returns found
                   </td>
                 </tr>
@@ -289,35 +291,35 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                 const isPendingDispatch = rtv.status === "PendingDispatch" || rtv.status === "Pending Dispatch";
 
                 return (
-                  <tr key={rtv.rtvId} className="group hover:bg-muted/30 transition-colors">
-                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[160px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
+                  <tr key={rtv.rtvId} className="table-row group hover:bg-surface-secondary/50 transition-colors">
+                    <td className="sticky left-0 z-10 bg-surface group-hover:bg-surface-secondary/50 px-4 py-3 table-td font-semibold text-text-primary whitespace-nowrap min-w-[160px] w-44 border-r border-divider shadow-sticky transition-colors">
                       {rtv.rtvNumber}
                     </td>
-                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-text-muted whitespace-nowrap">
                       {new Date(rtv.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-4 text-sm font-medium text-foreground max-w-[160px] truncate" title={rtv.supplierName}>
+                    <td className="px-4 py-3 table-td font-medium text-text-primary max-w-[160px] truncate" title={rtv.supplierName}>
                       {rtv.supplierName || `Supplier #${rtv.supplierId}`}
                     </td>
-                    <td className="px-4 py-4 text-sm font-medium text-foreground max-w-[160px] truncate" title={rtv.itemName}>
+                    <td className="px-4 py-3 table-td font-medium text-text-primary max-w-[160px] truncate" title={rtv.itemName}>
                       {rtv.itemName || `Item #${rtv.itemId}`}
                     </td>
-                    <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-right font-semibold text-text-primary whitespace-nowrap">
                       {(rtv.returnedQuantity ?? rtv.quantityReturned ?? 0).toLocaleString()} {rtv.uomName || "Units"}
                     </td>
-                    <td className="px-4 py-4 text-sm text-muted-foreground max-w-[180px] truncate" title={rtv.returnReason || (rtv as any).reason}>
-                      {rtv.returnReason || (rtv as any).reason || "Defective stock"}
+                    <td className="px-4 py-3 table-td text-text-muted max-w-[180px] truncate" title={rtv.returnReason || (rtv as { reason?: string }).reason}>
+                      {rtv.returnReason || (rtv as { reason?: string }).reason || "Defective stock"}
                     </td>
-                    <td className="px-4 py-4 text-center whitespace-nowrap">
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       <StatusBadge status={rtv.status} />
                     </td>
-                    <td className="w-16 px-4 py-4 text-center whitespace-nowrap relative">
+                    <td className="w-16 px-4 py-3 text-center whitespace-nowrap relative">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
                             type="button"
                             aria-label="Record actions"
-                            className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none cursor-pointer"
+                            className="p-1.5 rounded-control text-text-primary hover:bg-surface-secondary transition-colors focus:outline-none cursor-pointer"
                             title="Actions"
                           >
                             <MoreHorizontal size={18} />
@@ -325,11 +327,11 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="end"
-                          className="w-40 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left"
+                          className="w-40 rounded-control border border-divider bg-surface shadow-modal py-1.5 text-left"
                         >
                           <DropdownMenuItem
                             onSelect={() => setSelectedRtv(rtv)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer"
+                            className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary cursor-pointer"
                           >
                             <Eye size={14} className="shrink-0" /> View Details
                           </DropdownMenuItem>
@@ -341,7 +343,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                                   setActionError(null);
                                 }}
                                 disabled={actionLoading}
-                                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer disabled:opacity-50"
+                                className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary cursor-pointer disabled:opacity-50"
                               >
                                 <Check size={14} className="shrink-0" /> Approve
                               </DropdownMenuItem>
@@ -353,7 +355,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                                   setActionError(null);
                                 }}
                                 disabled={actionLoading}
-                                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 focus:bg-destructive/10 cursor-pointer disabled:opacity-50"
+                                className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-badge-danger-text hover:bg-badge-danger-bg focus:bg-badge-danger-bg cursor-pointer disabled:opacity-50"
                               >
                                 <XCircle size={14} className="shrink-0" /> Reject
                               </DropdownMenuItem>
@@ -367,7 +369,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                                 setActionError(null);
                               }}
                               disabled={actionLoading}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer disabled:opacity-50"
+                              className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary cursor-pointer disabled:opacity-50"
                             >
                               <Truck size={14} className="shrink-0" /> Dispatch
                             </DropdownMenuItem>
@@ -385,7 +387,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t border-divider">
           <Pagination
             currentPage={page}
             totalPages={totalPages}
@@ -401,16 +403,16 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
           open={!!selectedRtv}
           title={`Supplier Return Details — ${selectedRtv.rtvNumber}`}
           onClose={() => setSelectedRtv(null)}
-          size="max-w-2xl"
+          size="max-w-[640px]"
         >
-          <div className="space-y-5 text-foreground text-sm">
+          <div className="space-y-5 text-text-primary type-body">
             {/* Status Summary Banner */}
-            <div className="bg-muted/20 border border-border rounded-xl p-4 flex items-center justify-between">
+            <div className="bg-surface-secondary/40 border border-divider rounded-control p-4 flex items-center justify-between">
               <div>
-                <div className="font-semibold text-base text-foreground">
+                <div className="font-semibold type-section-title text-text-primary">
                   Return to Vendor
                 </div>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <p className="text-text-muted mt-0.5 type-caption">
                   Physical return documentation and quarantine disposition record.
                 </p>
               </div>
@@ -418,56 +420,56 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
             </div>
 
             {/* Traceability Grid */}
-            <div className="bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-surface-secondary/40 border border-divider rounded-control p-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Return to Vendor No.</div>
-                <div className="text-sm font-semibold text-foreground mt-0.5">{selectedRtv.rtvNumber}</div>
+                <div className="type-caption font-medium text-text-muted">Return to Vendor No.</div>
+                <div className="type-body font-semibold text-text-primary mt-0.5">{selectedRtv.rtvNumber}</div>
               </div>
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Source Discrepancy</div>
-                <div className="text-sm font-semibold text-foreground mt-0.5">{selectedRtv.discrepancyNumber || "Direct"}</div>
+                <div className="type-caption font-medium text-text-muted">Source Discrepancy</div>
+                <div className="type-body font-semibold text-text-primary mt-0.5">{selectedRtv.discrepancyNumber || "Direct"}</div>
               </div>
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Source Goods Receipt Note</div>
-                <div className="text-sm font-semibold text-foreground mt-0.5">{selectedRtv.grnNumber || "—"}</div>
+                <div className="type-caption font-medium text-text-muted">Source Goods Receipt Note</div>
+                <div className="type-body font-semibold text-text-primary mt-0.5">{selectedRtv.grnNumber || "—"}</div>
               </div>
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Purchase Order</div>
-                <div className="text-sm font-semibold text-foreground mt-0.5">{selectedRtv.poNumber || "—"}</div>
+                <div className="type-caption font-medium text-text-muted">Purchase Order</div>
+                <div className="type-body font-semibold text-text-primary mt-0.5">{selectedRtv.poNumber || "—"}</div>
               </div>
             </div>
 
             {/* Item & Return Details */}
-            <div className="border border-border rounded-xl p-4 space-y-3">
+            <div className="border border-divider rounded-control p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground">Item Description</div>
-                  <div className="font-semibold text-sm text-foreground mt-0.5">{selectedRtv.itemName || `Item #${selectedRtv.itemId}`}</div>
+                  <div className="type-caption font-medium text-text-muted">Item Description</div>
+                  <div className="font-semibold type-body text-text-primary mt-0.5">{selectedRtv.itemName || `Item #${selectedRtv.itemId}`}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-medium text-muted-foreground">Quantity to Return</div>
-                  <div className="font-semibold text-sm text-foreground mt-0.5">
+                  <div className="type-caption font-medium text-text-muted">Quantity to Return</div>
+                  <div className="font-semibold type-body text-text-primary mt-0.5">
                     {(selectedRtv.returnedQuantity ?? selectedRtv.quantityReturned ?? 0).toLocaleString()} {selectedRtv.uomName || "Units"}
                   </div>
                 </div>
               </div>
 
-              <div className="border-t border-border pt-3">
-                <div className="text-xs font-medium text-muted-foreground mb-1">Supplier</div>
-                <div className="text-sm font-semibold text-foreground">{selectedRtv.supplierName || `Supplier #${selectedRtv.supplierId}`}</div>
+              <div className="border-t border-divider pt-3">
+                <div className="type-caption font-medium text-text-muted mb-1">Supplier</div>
+                <div className="type-body font-semibold text-text-primary">{selectedRtv.supplierName || `Supplier #${selectedRtv.supplierId}`}</div>
               </div>
 
-              <div className="border-t border-border pt-3">
-                <div className="text-xs font-medium text-muted-foreground mb-1">Reason for Return</div>
-                <div className="bg-card p-3 rounded-xl border border-border text-sm text-foreground">
-                  {selectedRtv.returnReason || (selectedRtv as any).reason || "Defective stock"}
+              <div className="border-t border-divider pt-3">
+                <div className="type-caption font-medium text-text-muted mb-1">Reason for Return</div>
+                <div className="bg-surface p-3 rounded-control border border-divider type-body text-text-primary">
+                  {selectedRtv.returnReason || (selectedRtv as { reason?: string }).reason || "Defective stock"}
                 </div>
               </div>
 
               {selectedRtv.creditNoteNumber && (
-                <div className="border-t border-border pt-3">
-                  <div className="text-xs font-medium text-muted-foreground mb-1">Supplier Credit Note</div>
-                  <div className="bg-muted/40 p-2.5 rounded-xl text-sm text-foreground">
+                <div className="border-t border-divider pt-3">
+                  <div className="type-caption font-medium text-text-muted mb-1">Supplier Credit Note</div>
+                  <div className="bg-surface-secondary/40 p-2.5 rounded-control type-body text-text-primary">
                     {selectedRtv.creditNoteNumber}
                   </div>
                 </div>
@@ -475,10 +477,10 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
             </div>
 
             {/* Modal Footer - Lower right corner */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-4">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-divider mt-4">
               <ModalNativeCloseButton
                 fallbackOnClose={() => setSelectedRtv(null)}
-                className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors shadow-sm cursor-pointer"
+                className="rounded-control border border-divider bg-surface text-text-primary px-5 py-2.5 type-body font-semibold hover:bg-surface-secondary transition-colors shadow-card cursor-pointer"
               >
                 Close
               </ModalNativeCloseButton>
@@ -494,7 +496,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                       setActionError(null);
                     }}
                     disabled={actionLoading}
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
+                    className="rounded-control border border-divider bg-surface text-text-primary px-5 py-2.5 type-body font-semibold hover:bg-surface-secondary transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     Reject
                   </button>
@@ -505,7 +507,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                       setActionError(null);
                     }}
                     disabled={actionLoading}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 type-body font-semibold hover:bg-button-primary/85 transition-colors shadow-card disabled:opacity-50 cursor-pointer"
                   >
                     Approve Return
                   </button>
@@ -521,7 +523,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
                     setActionError(null);
                   }}
                   disabled={actionLoading}
-                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                  className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 type-body font-semibold hover:bg-button-primary/85 transition-colors shadow-card disabled:opacity-50 cursor-pointer"
                 >
                   Dispatch Shipment
                 </button>
@@ -531,7 +533,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
         </ModalWrapper>
       )}
 
-      {/* APPROVE RTV MODAL (440px PO / PR Format) */}
+      {/* APPROVE RTV MODAL */}
       <ActionConfirmModal
         open={Boolean(approvingRtv)}
         title="Approve Return Request"
@@ -554,7 +556,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
         }}
       />
 
-      {/* REJECT RTV MODAL (440px PO / PR Format) */}
+      {/* REJECT RTV MODAL */}
       <ActionConfirmModal
         open={Boolean(rejectingRtv)}
         title="Reject Return Request"
@@ -577,8 +579,8 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
         }}
       >
         <div>
-          <label className="text-xs font-semibold text-foreground block mb-1.5">
-            Rejection Reason <span className="text-destructive">*</span>
+          <label className="type-caption font-semibold text-text-primary block mb-1.5">
+            Rejection Reason <span className="text-badge-danger-text">*</span>
           </label>
           <textarea
             rows={3}
@@ -588,19 +590,19 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
               setRejectionReason(e.target.value);
               if (rejectionError) setRejectionError(null);
             }}
-            className={`w-full bg-background border ${
-              rejectionError ? "!border-destructive focus:!ring-destructive" : "border-border"
-            } rounded-xl p-3 text-xs text-foreground resize-none focus:ring-1 focus:outline-none`}
+            className={`w-full bg-surface border ${
+              rejectionError ? "!border-badge-danger-border focus:!border-badge-danger-border" : "border-divider"
+            } rounded-control p-3 type-caption text-text-primary resize-none focus:outline-none focus:border-border-focus`}
           />
           {rejectionError && (
-            <p className="mt-1.5 text-xs font-medium text-destructive">
+            <p className="mt-1.5 type-caption font-medium text-badge-danger-text">
               {rejectionError}
             </p>
           )}
         </div>
       </ActionConfirmModal>
 
-      {/* DISPATCH RTV MODAL (440px PO / PR Format) */}
+      {/* DISPATCH RTV MODAL */}
       <ActionConfirmModal
         open={Boolean(dispatchingRtv)}
         title="Dispatch Return Shipment"
@@ -622,7 +624,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
         }}
       >
         <div>
-          <label className="text-xs font-semibold text-foreground block mb-1.5">
+          <label className="type-caption font-semibold text-text-primary block mb-1.5">
             Supplier Credit Note / Settlement Ref (Optional)
           </label>
           <input
@@ -630,7 +632,7 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
             placeholder="e.g. CN-2026-9901"
             value={creditNoteNumber}
             onChange={(e) => setCreditNoteNumber(e.target.value)}
-            className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-foreground focus:outline-none"
+            className="w-full bg-surface border border-divider rounded-control px-3 py-2 type-caption text-text-primary focus:outline-none focus:border-border-focus"
           />
         </div>
       </ActionConfirmModal>

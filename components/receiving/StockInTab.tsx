@@ -103,10 +103,10 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
           <button
             type="button"
             onClick={() => setPage(1)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer bg-primary text-primary-foreground shadow-sm"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer bg-button-primary text-text-inverse shadow-card"
           >
             <span>Committed</span>
-            <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-background text-foreground">
+            <span className="px-1.5 py-0.5 rounded-pill type-caption font-medium bg-surface text-text-primary">
               {committedStockIns.length}
             </span>
           </button>
@@ -119,7 +119,7 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
             variant="outline"
             onClick={fetchStockIns}
             disabled={loading}
-            className="h-10 px-4 text-sm font-semibold rounded-xl border border-border bg-card hover:bg-muted text-foreground flex items-center gap-2 cursor-pointer shadow-xs"
+            className="h-10 px-4 type-body font-semibold rounded-control border border-divider bg-surface hover:bg-surface-secondary text-text-primary flex items-center gap-2 cursor-pointer shadow-card"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -128,7 +128,7 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
             <Button
               asChild
               variant="outline"
-              className="h-10 px-4 text-sm font-semibold rounded-xl border border-border bg-card hover:bg-muted text-foreground flex items-center gap-2 cursor-pointer shadow-xs"
+              className="h-10 px-4 type-body font-semibold rounded-control border border-divider bg-surface hover:bg-surface-secondary text-text-primary flex items-center gap-2 cursor-pointer shadow-card"
             >
               <Link href="/goods-receiving/logs">
                 <History className="w-4 h-4" />
@@ -139,7 +139,7 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
           <Button
             type="button"
             onClick={() => setCreateModalOpen(true)}
-            className="h-10 px-5 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/85 flex items-center gap-2 cursor-pointer shadow-sm"
+            className="h-10 px-5 type-body font-semibold rounded-control bg-button-primary text-text-inverse hover:bg-button-primary/85 flex items-center gap-2 cursor-pointer shadow-card"
           >
             <Plus className="w-4 h-4" />
             Create Stock-In
@@ -148,7 +148,7 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
       </div>
 
       {/* Search & Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-xl border border-border bg-card p-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-card border border-divider bg-surface p-3">
         <SearchInput
           aria-label="Search records"
           containerClassName="flex-1"
@@ -170,10 +170,10 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
                 setPage(1);
               }}
             >
-              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-control border border-divider bg-surface px-3 type-body font-medium text-text-primary shadow-card focus:border-border-focus">
                 <SelectValue placeholder="All Suppliers" />
               </SelectTrigger>
-              <SelectContent align="end" className="text-xs z-[9999]">
+              <SelectContent align="end" className="type-caption z-[9999]">
                 <SelectItem value="All">All Suppliers</SelectItem>
                 {uniqueSuppliers.map((supp) => (
                   <SelectItem key={supp} value={supp}>
@@ -190,23 +190,23 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
       {loading ? (
         <ReceivingSkeleton />
       ) : (
-        <div className="overflow-x-auto custom-scrollbar rounded-xl border border-border bg-card shadow-sm">
-          <table className="w-full">
-            <thead className="border-b border-border bg-muted/30">
-              <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[150px] w-40 whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">Stock-In No.</th>
-                <th className="px-4 py-4 whitespace-nowrap">Goods Receipt Note No.</th>
-                <th className="px-4 py-4">Supplier</th>
-                <th className="px-4 py-4">Date</th>
-                <th className="px-4 py-4 text-center">Items</th>
-                <th className="px-4 py-4 text-center">Status</th>
-                <th className="w-16 px-4 py-4 text-center">Actions</th>
+        <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
+          <table className="w-full border-collapse">
+            <thead className="border-b border-divider bg-surface-secondary">
+              <tr className="table-head-row text-left whitespace-nowrap">
+                <th className="sticky left-0 z-20 bg-surface-secondary table-th px-4 py-3 min-w-[150px] w-40 whitespace-nowrap border-r border-divider shadow-sticky">Stock-In No.</th>
+                <th className="table-th px-4 py-3 whitespace-nowrap">Goods Receipt Note No.</th>
+                <th className="table-th px-4 py-3">Supplier</th>
+                <th className="table-th px-4 py-3">Date</th>
+                <th className="table-th px-4 py-3 text-center">Items</th>
+                <th className="table-th px-4 py-3 text-center">Status</th>
+                <th className="table-th w-16 px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-divider">
               {paginatedList.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
+                  <td colSpan={7} className="px-4 py-12 text-center type-body text-text-muted">
                     No committed stock-in records found
                   </td>
                 </tr>
@@ -218,28 +218,28 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
                       setSelectedStockIn(s);
                       setDetailsModalOpen(true);
                     }}
-                    className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                    className="table-row group hover:bg-surface-secondary/50 transition-colors cursor-pointer"
                   >
-                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[150px] w-40 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
+                    <td className="sticky left-0 z-10 bg-surface group-hover:bg-surface-secondary/50 px-4 py-3 table-td font-semibold text-text-primary whitespace-nowrap min-w-[150px] w-40 border-r border-divider shadow-sticky transition-colors">
                       {s.stockInNumber}
                     </td>
-                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-text-muted whitespace-nowrap">
                       {s.grnNumber}
                     </td>
-                    <td className="px-4 py-4 text-sm font-medium text-foreground max-w-[200px] truncate" title={s.supplierName}>
+                    <td className="px-4 py-3 table-td font-medium text-text-primary max-w-[200px] truncate" title={s.supplierName}>
                       {s.supplierName}
                     </td>
-                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-text-muted whitespace-nowrap">
                       {new Date(s.committedAt || s.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-4 text-sm text-center font-semibold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-center font-semibold text-text-primary whitespace-nowrap">
                       {s.lines.length}
                     </td>
-                    <td className="px-4 py-4 text-center whitespace-nowrap">
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       <StatusBadge status={s.status} />
                     </td>
                     <td
-                      className="w-16 px-4 py-4 text-center relative whitespace-nowrap"
+                      className="w-16 px-4 py-3 text-center relative whitespace-nowrap"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <DropdownMenu>
@@ -248,7 +248,7 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
                             type="button"
                             aria-label="Record actions"
                             onClick={(e) => e.stopPropagation()}
-                            className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none cursor-pointer"
+                            className="p-1.5 rounded-control text-text-primary hover:bg-surface-secondary transition-colors focus:outline-none cursor-pointer"
                           >
                             <MoreHorizontal size={18} />
                           </button>
@@ -256,14 +256,14 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
                         <DropdownMenuContent
                           align="end"
                           onClick={(e) => e.stopPropagation()}
-                          className="w-40 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left"
+                          className="w-40 rounded-control border border-divider bg-surface shadow-modal py-1.5 text-left"
                         >
                           <DropdownMenuItem
                             onSelect={() => {
                               setSelectedStockIn(s);
                               setDetailsModalOpen(true);
                             }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer"
+                            className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary cursor-pointer"
                           >
                             <Eye size={14} className="shrink-0" /> View &amp; QR Tags
                           </DropdownMenuItem>
@@ -277,7 +277,7 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
           </table>
 
           {totalPages > 1 && (
-            <div className="p-4 border-t border-border">
+            <div className="p-4 border-t border-divider">
               <Pagination currentPage={page} totalPages={totalPages} totalCount={totalCount} onPageChange={setPage} />
             </div>
           )}

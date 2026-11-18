@@ -62,8 +62,9 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
       } else {
         setError(res.data?.message || "Failed to acknowledge loss report.");
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to acknowledge loss report.");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(e.response?.data?.message || e.message || "Failed to acknowledge loss report.");
     } finally {
       setActionLoadingId(null);
     }
@@ -123,7 +124,7 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
     <div className="space-y-4">
       {/* Top action row */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+        <div className="type-overline uppercase text-text-muted">
           Loss & Disposal Reports ({lossReports.length})
         </div>
         <div className="flex items-center gap-2">
@@ -132,7 +133,7 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
             variant="outline"
             onClick={fetchLossReports}
             disabled={loading}
-            className="h-10 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer"
+            className="h-10 rounded-control border border-divider bg-surface px-4 py-2 type-body font-semibold text-text-primary hover:bg-surface-secondary cursor-pointer shadow-card"
           >
             Refresh
           </Button>
@@ -140,7 +141,7 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
             <Button
               asChild
               variant="outline"
-              className="h-10 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer"
+              className="h-10 rounded-control border border-divider bg-surface px-4 py-2 type-body font-semibold text-text-primary hover:bg-surface-secondary cursor-pointer shadow-card"
             >
               <Link href="/goods-receiving/logs">
                 <History className="w-4 h-4 mr-1.5" />
@@ -152,7 +153,7 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
       </div>
 
       {/* Search & Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-xl border border-border bg-card p-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-card border border-divider bg-surface p-3">
         <div className="flex flex-1 items-center gap-2">
           <SearchInput
             aria-label="Search records"
@@ -171,7 +172,7 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
                 setSearch("");
                 setPage(1);
               }}
-              className="text-xs text-muted-foreground hover:text-foreground font-medium px-2"
+              className="type-caption text-text-muted hover:text-text-primary font-medium px-2"
             >
               Clear
             </button>
@@ -188,10 +189,10 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
                 setPage(1);
               }}
             >
-              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-control border border-divider bg-surface px-3 type-body font-medium text-text-primary shadow-card focus:border-border-focus">
                 <SelectValue placeholder="All Suppliers" />
               </SelectTrigger>
-              <SelectContent align="end" className="text-xs z-[9999]">
+              <SelectContent align="end" className="type-caption z-[9999]">
                 <SelectItem value="All">All Suppliers</SelectItem>
                 {uniqueSuppliers.map((supp) => (
                   <SelectItem key={supp} value={supp}>
@@ -208,23 +209,23 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
       {loading ? (
         <ReceivingSkeleton />
       ) : (
-        <div className="overflow-x-auto custom-scrollbar rounded-xl border border-border bg-card shadow-sm">
-          <table className="w-full">
-            <thead className="border-b border-border bg-muted/30">
-              <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[150px] w-44 whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">Report No.</th>
-                <th className="px-4 py-4 whitespace-nowrap">Date</th>
-                <th className="px-4 py-4">Item Name</th>
-                <th className="px-4 py-4 text-right">Lost Qty</th>
-                <th className="px-4 py-4">Reason</th>
-                <th className="px-4 py-4 text-center">Status</th>
-                <th className="w-16 px-4 py-4 text-center">Actions</th>
+        <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
+          <table className="w-full border-collapse">
+            <thead className="border-b border-divider bg-surface-secondary">
+              <tr className="table-head-row text-left whitespace-nowrap">
+                <th className="sticky left-0 z-20 bg-surface-secondary table-th px-4 py-3 min-w-[150px] w-44 whitespace-nowrap border-r border-divider shadow-sticky">Report No.</th>
+                <th className="table-th px-4 py-3 whitespace-nowrap">Date</th>
+                <th className="table-th px-4 py-3">Item Name</th>
+                <th className="table-th px-4 py-3 text-right">Lost Qty</th>
+                <th className="table-th px-4 py-3">Reason</th>
+                <th className="table-th px-4 py-3 text-center">Status</th>
+                <th className="table-th w-16 px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-divider">
               {paginatedList.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
+                  <td colSpan={7} className="px-4 py-12 text-center type-body text-text-muted">
                     No loss reports found
                   </td>
                 </tr>
@@ -232,40 +233,40 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
                 paginatedList.map((r) => {
                 const isAck = !!r.isAcknowledged;
                 return (
-                  <tr key={r.lossReportId} className="group hover:bg-muted/30 transition-colors">
-                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[150px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
+                  <tr key={r.lossReportId} className="table-row group hover:bg-surface-secondary/50 transition-colors">
+                    <td className="sticky left-0 z-10 bg-surface group-hover:bg-surface-secondary/50 px-4 py-3 table-td font-semibold text-text-primary whitespace-nowrap min-w-[150px] w-44 border-r border-divider shadow-sticky transition-colors">
                       {r.lossReportNumber}
                     </td>
-                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-text-muted whitespace-nowrap">
                       {new Date(r.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-4 text-sm font-medium text-foreground max-w-[200px] truncate" title={r.itemName}>
+                    <td className="px-4 py-3 table-td font-medium text-text-primary max-w-[200px] truncate" title={r.itemName}>
                       {r.itemName}
                     </td>
-                    <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-right font-semibold text-text-primary whitespace-nowrap">
                       {r.lostQuantity.toLocaleString()} {r.uomName || "Units"}
                     </td>
-                    <td className="px-4 py-4 text-sm text-muted-foreground max-w-[220px] truncate" title={r.reason}>
+                    <td className="px-4 py-3 table-td text-text-muted max-w-[220px] truncate" title={r.reason}>
                       {r.reason}
                     </td>
-                    <td className="px-4 py-4 text-center whitespace-nowrap">
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       {isAck ? (
-                        <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-md bg-muted border border-border text-foreground">
+                        <span className="inline-flex items-center type-caption font-semibold px-2.5 py-0.5 rounded-control bg-badge-success-bg border border-badge-success-border text-badge-success-text">
                           Acknowledged
                         </span>
                       ) : (
-                        <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-md bg-muted/50 border border-border text-muted-foreground">
+                        <span className="inline-flex items-center type-caption font-semibold px-2.5 py-0.5 rounded-control bg-surface-secondary border border-divider text-text-muted">
                           Awaiting Ack
                         </span>
                       )}
                     </td>
-                    <td className="w-16 px-4 py-4 text-center whitespace-nowrap relative">
+                    <td className="w-16 px-4 py-3 text-center whitespace-nowrap relative">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
                             type="button"
                             aria-label="Record actions"
-                            className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none cursor-pointer"
+                            className="p-1.5 rounded-control text-text-primary hover:bg-surface-secondary transition-colors focus:outline-none cursor-pointer"
                             title="Actions"
                           >
                             <MoreHorizontal size={18} />
@@ -273,11 +274,11 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="end"
-                          className="w-40 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left"
+                          className="w-40 rounded-control border border-divider bg-surface shadow-modal py-1.5 text-left"
                         >
                           <DropdownMenuItem
                             onSelect={() => handleSelectReport(r)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer"
+                            className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary cursor-pointer"
                           >
                             <Eye size={14} className="shrink-0" /> View Details
                           </DropdownMenuItem>
@@ -285,7 +286,7 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
                             <DropdownMenuItem
                               onSelect={() => setConfirmAckReport(r)}
                               disabled={actionLoadingId !== null}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer disabled:opacity-50"
+                              className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary cursor-pointer disabled:opacity-50"
                             >
                               <Check size={14} className="shrink-0" /> Acknowledge
                             </DropdownMenuItem>
@@ -303,7 +304,7 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t border-divider">
           <Pagination
             currentPage={page}
             totalPages={totalPages}
@@ -319,16 +320,16 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
           open={modalOpen}
           title={`Loss & Disposal Report — ${selectedReport.lossReportNumber}`}
           onClose={() => setModalOpen(false)}
-          size="max-w-2xl"
+          size="max-w-[640px]"
         >
-          <div className="space-y-5 text-foreground text-sm">
+          <div className="space-y-5 text-text-primary type-body">
             {error && (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive flex items-center justify-between">
+              <div className="rounded-control border border-badge-danger-border bg-badge-danger-bg p-3 type-body text-badge-danger-text flex items-center justify-between">
                 <span className="font-medium">{error}</span>
                 <button
                   type="button"
                   onClick={() => setError(null)}
-                  className="font-semibold underline ml-2 shrink-0 cursor-pointer text-xs"
+                  className="font-semibold underline ml-2 shrink-0 cursor-pointer type-caption"
                 >
                   Dismiss
                 </button>
@@ -336,79 +337,79 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
             )}
 
             {/* Status Summary Banner */}
-            <div className="bg-muted/20 border border-border rounded-xl p-4 flex items-center justify-between">
+            <div className="bg-surface-secondary/40 border border-divider rounded-control p-4 flex items-center justify-between">
               <div>
-                <div className="font-semibold text-base text-foreground">
+                <div className="font-semibold type-section-title text-text-primary">
                   Authorized Stock Write-Off
                 </div>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <p className="text-text-muted mt-0.5 type-caption">
                   Certifies physical loss, damage, or rejection write-off and adjusts ledger balance.
                 </p>
               </div>
               {selectedReport.isAcknowledged ? (
-                <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-md bg-muted border border-border text-foreground">
+                <span className="inline-flex items-center type-caption font-semibold px-2.5 py-0.5 rounded-control bg-badge-success-bg border border-badge-success-border text-badge-success-text">
                   Acknowledged
                 </span>
               ) : (
-                <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-md bg-muted/50 border border-border text-muted-foreground">
+                <span className="inline-flex items-center type-caption font-semibold px-2.5 py-0.5 rounded-control bg-surface-secondary border border-divider text-text-muted">
                   Pending Admin Acknowledgement
                 </span>
               )}
             </div>
 
             {/* Traceability Grid */}
-            <div className="bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-surface-secondary/40 border border-divider rounded-control p-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Report No.</div>
-                <div className="text-sm font-semibold text-foreground mt-0.5">{selectedReport.lossReportNumber}</div>
+                <div className="type-caption font-medium text-text-muted">Report No.</div>
+                <div className="type-body font-semibold text-text-primary mt-0.5">{selectedReport.lossReportNumber}</div>
               </div>
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Source Discrepancy</div>
-                <div className="text-sm font-semibold text-foreground mt-0.5">{selectedReport.discrepancyNumber || "Direct"}</div>
+                <div className="type-caption font-medium text-text-muted">Source Discrepancy</div>
+                <div className="type-body font-semibold text-text-primary mt-0.5">{selectedReport.discrepancyNumber || "Direct"}</div>
               </div>
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Source Goods Receipt Note</div>
-                <div className="text-sm font-semibold text-foreground mt-0.5">{selectedReport.grnNumber || "—"}</div>
+                <div className="type-caption font-medium text-text-muted">Source Goods Receipt Note</div>
+                <div className="type-body font-semibold text-text-primary mt-0.5">{selectedReport.grnNumber || "—"}</div>
               </div>
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Purchase Order</div>
-                <div className="text-sm font-semibold text-foreground mt-0.5">{selectedReport.poNumber || "—"}</div>
+                <div className="type-caption font-medium text-text-muted">Purchase Order</div>
+                <div className="type-body font-semibold text-text-primary mt-0.5">{selectedReport.poNumber || "—"}</div>
               </div>
             </div>
 
             {/* Item & Loss Detail */}
-            <div className="border border-border rounded-xl p-4 space-y-3">
+            <div className="border border-divider rounded-control p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground">Item Description</div>
-                  <div className="font-semibold text-sm text-foreground mt-0.5">{selectedReport.itemName}</div>
+                  <div className="type-caption font-medium text-text-muted">Item Description</div>
+                  <div className="font-semibold type-body text-text-primary mt-0.5">{selectedReport.itemName}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-medium text-muted-foreground">Quantity Written Off</div>
-                  <div className="font-semibold text-sm text-foreground mt-0.5">
+                  <div className="type-caption font-medium text-text-muted">Quantity Written Off</div>
+                  <div className="font-semibold type-body text-text-primary mt-0.5">
                     {selectedReport.lostQuantity.toLocaleString()} {selectedReport.uomName || "Units"}
                   </div>
                 </div>
               </div>
 
               {selectedReport.supplierName && selectedReport.supplierName !== "—" && (
-                <div className="border-t border-border pt-3">
-                  <div className="text-xs font-medium text-muted-foreground mb-1">Supplier</div>
-                  <div className="text-sm font-semibold text-foreground">{selectedReport.supplierName}</div>
+                <div className="border-t border-divider pt-3">
+                  <div className="type-caption font-medium text-text-muted mb-1">Supplier</div>
+                  <div className="type-body font-semibold text-text-primary">{selectedReport.supplierName}</div>
                 </div>
               )}
 
-              <div className="border-t border-border pt-3">
-                <div className="text-xs font-medium text-muted-foreground mb-1">Reason for Loss / Disposal</div>
-                <div className="bg-card p-3 rounded-xl border border-border text-sm text-foreground">
+              <div className="border-t border-divider pt-3">
+                <div className="type-caption font-medium text-text-muted mb-1">Reason for Loss / Disposal</div>
+                <div className="bg-surface p-3 rounded-control border border-divider type-body text-text-primary">
                   {selectedReport.reason}
                 </div>
               </div>
 
               {selectedReport.notes && (
-                <div className="border-t border-border pt-3">
-                  <div className="text-xs font-medium text-muted-foreground mb-1">Audit Notes</div>
-                  <div className="bg-muted/40 p-2.5 rounded-xl text-muted-foreground text-xs">
+                <div className="border-t border-divider pt-3">
+                  <div className="type-caption font-medium text-text-muted mb-1">Audit Notes</div>
+                  <div className="bg-surface-secondary/40 p-2.5 rounded-control text-text-muted type-caption">
                     {selectedReport.notes}
                   </div>
                 </div>
@@ -416,28 +417,28 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
             </div>
 
             {/* Acknowledgement Info Box */}
-            <div className="border border-border rounded-xl p-3.5 bg-muted/10 space-y-1">
-              <div className="text-xs text-muted-foreground">
-                Authorised by: <strong className="text-foreground">{selectedReport.authorisedBy || "System Admin"}</strong>
+            <div className="border border-divider rounded-control p-3.5 bg-surface-secondary/30 space-y-1">
+              <div className="type-caption text-text-muted">
+                Authorised by: <strong className="text-text-primary">{selectedReport.authorisedBy || "System Admin"}</strong>
               </div>
               {selectedReport.acknowledgedBy ? (
-                <div className="text-xs text-muted-foreground">
-                  Acknowledged by: <strong className="text-foreground">{selectedReport.acknowledgedBy}</strong>
+                <div className="type-caption text-text-muted">
+                  Acknowledged by: <strong className="text-text-primary">{selectedReport.acknowledgedBy}</strong>
                   {selectedReport.acknowledgedAt && ` on ${new Date(selectedReport.acknowledgedAt).toLocaleString()}`}
                 </div>
               ) : (
-                <div className="text-xs text-muted-foreground italic">
+                <div className="type-caption text-text-muted italic">
                   Not yet acknowledged by Inventory Admin.
                 </div>
               )}
             </div>
 
             {/* Modal Footer - Lower right corner */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-4">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-divider mt-4">
               <ModalNativeCloseButton
                 fallbackOnClose={() => setModalOpen(false)}
                 disabled={actionLoadingId !== null}
-                className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
+                className="rounded-control border border-divider bg-surface text-text-primary px-5 py-2.5 type-body font-semibold hover:bg-surface-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-card cursor-pointer"
               >
                 Close
               </ModalNativeCloseButton>
@@ -446,7 +447,7 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
                   type="button"
                   onClick={() => setConfirmAckReport(selectedReport)}
                   disabled={actionLoadingId !== null}
-                  className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
+                  className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 type-body font-semibold hover:bg-button-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-card cursor-pointer"
                 >
                   {actionLoadingId === selectedReport.lossReportId ? "Acknowledging..." : "Acknowledge This Report"}
                 </button>
@@ -456,7 +457,7 @@ export default function LossReportTab({ initialLossReports }: { initialLossRepor
         </ModalWrapper>
       )}
 
-      {/* Acknowledge Loss Report Confirmation Modal (440px PO / PR Format) */}
+      {/* Acknowledge Loss Report Confirmation Modal */}
       <ActionConfirmModal
         open={Boolean(confirmAckReport)}
         title="Acknowledge Loss Report"
