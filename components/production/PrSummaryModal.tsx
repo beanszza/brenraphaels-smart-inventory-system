@@ -46,7 +46,7 @@ export default function PrSummaryModal({ open, onClose, prData }: PrSummaryModal
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 rounded-control border border-divider bg-surface">
           <div>
             <span className="type-caption text-text-muted block font-medium">Requisition No.</span>
-            <span className="type-body font-bold text-text-primary">{prData.prNumber}</span>
+            <span className="type-body font-semibold text-text-primary">{prData.prNumber}</span>
           </div>
           <div>
             <span className="type-caption text-text-muted block font-medium">Department</span>
@@ -54,14 +54,14 @@ export default function PrSummaryModal({ open, onClose, prData }: PrSummaryModal
           </div>
           <div>
             <span className="type-caption text-text-muted block font-medium">Estimated Total</span>
-            <span className="type-body font-bold text-text-primary">
+            <span className="type-body font-semibold text-text-primary">
               PHP {prData.estimatedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         </div>
 
         <div>
-          <h4 className="type-overline uppercase font-bold text-text-muted tracking-wider mb-2">
+          <h4 className="type-overline uppercase font-semibold text-text-muted tracking-wider mb-2">
             Requisitioned Shortfall Items ({prData.items.length})
           </h4>
           <div className="border border-divider rounded-control overflow-hidden">
@@ -86,7 +86,7 @@ export default function PrSummaryModal({ open, onClose, prData }: PrSummaryModal
                       <td className="py-3 px-4 table-td text-right text-text-muted">
                         PHP {item.estimatedUnitPrice.toFixed(2)}
                       </td>
-                      <td className="py-3 px-4 table-td text-right font-bold text-text-primary">
+                      <td className="py-3 px-4 table-td text-right font-semibold text-text-primary">
                         PHP {subtotal.toFixed(2)}
                       </td>
                     </tr>

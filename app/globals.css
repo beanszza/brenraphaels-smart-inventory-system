@@ -38,12 +38,8 @@
   --badge-info-foreground: var(--status-blue-fg);
   --badge-purple: var(--status-purple-bg);
   --badge-purple-foreground: var(--status-purple-fg);
-  --badge-indigo: var(--status-blue-bg);
-  --badge-indigo-foreground: var(--status-blue-fg);
   --badge-teal: var(--status-teal-bg);
   --badge-teal-foreground: var(--status-teal-fg);
-  --badge-orange: var(--status-amber-bg);
-  --badge-orange-foreground: var(--status-amber-fg);
   --badge-notification: var(--semantic-danger);
   --badge-notification-foreground: var(--on-brand);
   --badge-neutral: var(--status-gray-bg);
@@ -105,12 +101,8 @@
   --badge-info-foreground: var(--status-blue-fg);
   --badge-purple: var(--status-purple-bg);
   --badge-purple-foreground: var(--status-purple-fg);
-  --badge-indigo: var(--status-blue-bg);
-  --badge-indigo-foreground: var(--status-blue-fg);
   --badge-teal: var(--status-teal-bg);
   --badge-teal-foreground: var(--status-teal-fg);
-  --badge-orange: var(--status-amber-bg);
-  --badge-orange-foreground: var(--status-amber-fg);
   --badge-neutral: var(--status-gray-bg);
   --badge-neutral-foreground: var(--status-gray-fg);
   --border: var(--border-card);
@@ -160,12 +152,8 @@
   --color-badge-info-foreground: var(--badge-info-foreground);
   --color-badge-purple: var(--badge-purple);
   --color-badge-purple-foreground: var(--badge-purple-foreground);
-  --color-badge-indigo: var(--badge-indigo);
-  --color-badge-indigo-foreground: var(--badge-indigo-foreground);
   --color-badge-teal: var(--badge-teal);
   --color-badge-teal-foreground: var(--badge-teal-foreground);
-  --color-badge-orange: var(--badge-orange);
-  --color-badge-orange-foreground: var(--badge-orange-foreground);
   --color-badge-neutral: var(--badge-neutral);
   --color-badge-neutral-foreground: var(--badge-neutral-foreground);
   --color-badge-notification: var(--badge-notification);
@@ -188,20 +176,7 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  /* Spacing */
-  --spacing-base: 4px;
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
-  --spacing-2xl: 48px;
-  --spacing-3xl: 64px;
-  --spacing-gutter: 24px;
-  --spacing-margin-mobile: 16px;
-  --spacing-margin-desktop: 48px;
-
-  /* Standard container max-widths so --spacing-* does not collapse max-w-* utilities */
+  /* Standard container max-widths */
   --max-width-xs: 20rem;
   --max-width-sm: 24rem;
   --max-width-md: 28rem;
@@ -357,42 +332,6 @@ nav::-webkit-scrollbar { display: none; }
 }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgba(255, 255, 255, 0.35);
-}
-
-/* ─── Typography Scale ─── */
-@utility text-display-lg {
-  font-size: 3rem; font-weight: 800;
-  line-height: 1; letter-spacing: -0.03em;
-}
-@utility text-display-sm {
-  font-size: 2.25rem; font-weight: 700;
-  line-height: 2.5rem; letter-spacing: -0.025em;
-}
-@utility text-headline-lg {
-  font-size: 1.875rem; font-weight: 600;
-  line-height: 2.25rem; letter-spacing: -0.02em;
-}
-@utility text-headline-md {
-  font-size: 1.5rem; font-weight: 600;
-  line-height: 2rem; letter-spacing: -0.02em;
-}
-@utility text-title-lg {
-  font-size: 1.25rem; font-weight: 600; line-height: 1.75rem;
-}
-@utility text-body-lg {
-  font-size: 1.125rem; font-weight: 400; line-height: 1.75rem;
-}
-@utility text-body-md {
-  font-size: 1rem; font-weight: 400; line-height: 1.5rem;
-}
-@utility text-body-sm {
-  font-size: 0.875rem; font-weight: 400; line-height: 1.25rem;
-}
-@utility text-label-md {
-  font-size: 0.875rem; font-weight: 500; line-height: 1.25rem;
-}
-@utility text-label-sm {
-  font-size: 0.75rem; font-weight: 500; line-height: 1rem;
 }
 
 /* ─── Utility ─── */

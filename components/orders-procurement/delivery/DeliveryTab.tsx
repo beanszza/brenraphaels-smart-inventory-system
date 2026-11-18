@@ -220,7 +220,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
               >
                 <span>{tab}</span>
                 <span
-                  className={`px-1.5 py-0.5 rounded-pill text-[10px] font-mono font-medium ${
+                  className={`px-1.5 py-0.5 rounded-pill type-caption font-mono font-medium ${
                     isSelected
                       ? "bg-surface text-text-primary"
                       : "bg-surface-muted text-text-muted"

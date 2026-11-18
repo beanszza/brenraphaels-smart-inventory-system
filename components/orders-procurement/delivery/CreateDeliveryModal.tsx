@@ -903,7 +903,7 @@ export function CreateDeliveryModal({
       <Dialog open={confirmModal} onOpenChange={(open) => { if (!open) setConfirmModal(false); }} confirmOnClose={false}>
         <DialogContent className="sm:max-w-[640px] bg-surface border-divider p-6 shadow-modal rounded-card">
           <DialogHeader>
-            <DialogTitle className="type-card-title font-bold text-text-primary">Review Delivery Schedule</DialogTitle>
+            <DialogTitle className="type-card-title font-semibold text-text-primary">Review Delivery Schedule</DialogTitle>
             <DialogDescription className="type-body text-text-muted">
               Please review the details below before scheduling this delivery.
             </DialogDescription>
@@ -937,10 +937,10 @@ export function CreateDeliveryModal({
               <table className="w-full type-table-cell">
                 <thead className="bg-surface-muted border-b border-divider table-head-row">
                   <tr>
-                    <th className="table-th px-3 py-2.5 text-left font-bold text-text-muted type-table-header">ITEM NAME</th>
-                    <th className="table-th px-3 py-2.5 text-left font-bold text-text-muted type-table-header">SUPPLY NO</th>
-                    <th className="table-th px-3 py-2.5 text-left font-bold text-text-muted type-table-header">Unit of Measure</th>
-                    <th className="table-th px-3 py-2.5 text-right font-bold text-text-muted type-table-header">DELIVERY QTY</th>
+                    <th className="table-th px-3 py-2.5 text-left font-semibold text-text-muted type-table-header">ITEM NAME</th>
+                    <th className="table-th px-3 py-2.5 text-left font-semibold text-text-muted type-table-header">SUPPLY NO</th>
+                    <th className="table-th px-3 py-2.5 text-left font-semibold text-text-muted type-table-header">Unit of Measure</th>
+                    <th className="table-th px-3 py-2.5 text-right font-semibold text-text-muted type-table-header">DELIVERY QTY</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-divider">

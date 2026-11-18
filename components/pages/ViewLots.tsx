@@ -54,7 +54,7 @@ export default function ViewLots() {
     <div className="w-full min-h-full py-xl px-lg md:px-xl space-y-2xl animate-page-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Lot Tracking</h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">Lot Tracking</h1>
           <p className="mt-1 text-sm text-muted-foreground">Traceable batches, expiry monitoring, and lot-level inventory</p>
         </div>
         <div className="flex items-center gap-3">
@@ -68,23 +68,23 @@ export default function ViewLots() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="text-sm text-muted-foreground">Total Lots</div>
-          <div className="text-2xl font-bold text-foreground mt-1">{totalCount}</div>
+          <div className="text-2xl font-semibold text-foreground mt-1">{totalCount}</div>
         </div>
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="text-sm text-muted-foreground">Available</div>
-          <div className="text-2xl font-bold text-foreground mt-1">
+          <div className="text-2xl font-semibold text-foreground mt-1">
             {lots.filter(l => l.status === "Available" && !(l.reservedQuantity && l.reservedQuantity >= l.quantityRemaining)).length}
           </div>
         </div>
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="text-sm text-muted-foreground">Reserved</div>
-          <div className="text-2xl font-bold text-foreground mt-1">
+          <div className="text-2xl font-semibold text-foreground mt-1">
             {lots.filter(l => Boolean(l.reservedQuantity && l.reservedQuantity > 0)).length}
           </div>
         </div>
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="text-sm text-muted-foreground">In Quarantine</div>
-          <div className="text-2xl font-bold text-foreground mt-1">
+          <div className="text-2xl font-semibold text-foreground mt-1">
             {lots.filter(l => l.status === "Quarantine").length}
           </div>
         </div>
@@ -92,7 +92,7 @@ export default function ViewLots() {
           <div className="text-sm text-muted-foreground flex items-center gap-1">
             <AlertTriangle size={14} /> Expired
           </div>
-          <div className="text-2xl font-bold text-foreground mt-1">
+          <div className="text-2xl font-semibold text-foreground mt-1">
             {lots.filter(l => l.isExpired).length}
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function ViewLots() {
                 key={tab.id}
                 type="button"
                 onClick={() => { setActiveTab(tab.id); setPage(1); }}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                   isActive
                     ? "border-foreground text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground"

@@ -552,7 +552,7 @@ export function CreatePOModal({
                   return c;
                 })
               }
-              className="font-bold underline ml-2 shrink-0 cursor-pointer"
+              className="font-semibold underline ml-2 shrink-0 cursor-pointer"
             >
               Dismiss
             </button>
@@ -748,11 +748,11 @@ export function CreatePOModal({
                         step === s
                           ? "bg-button-primary text-text-inverse"
                           : step > s
-                          ? "bg-status-green-bg text-status-green font-bold"
+                          ? "bg-status-green-bg text-status-green font-semibold"
                           : "text-text-muted bg-surface-muted"
                       }`}
                     >
-                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border border-current">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center type-caption font-semibold border border-current">
                         {step > s ? "✓" : s}
                       </span>
                       <span>
@@ -801,11 +801,11 @@ export function CreatePOModal({
                     <table className="w-full type-table-cell">
                       <thead className="bg-surface-muted border-b border-divider text-text-muted uppercase type-table-header sticky top-0 z-10 table-head-row">
                         <tr>
-                          <th className="table-th px-4 py-2.5 text-left font-bold">REQUISITION NO.</th>
-                          <th className="table-th px-4 py-2.5 text-left font-bold">REQUESTED BY</th>
-                          <th className="table-th px-4 py-2.5 text-left font-bold">DEPARTMENT</th>
-                          <th className="table-th px-4 py-2.5 text-left font-bold">PURPOSE</th>
-                          <th className="table-th px-3 py-2.5 text-center font-bold w-20">ITEMS</th>
+                          <th className="table-th px-4 py-2.5 text-left font-semibold">REQUISITION NO.</th>
+                          <th className="table-th px-4 py-2.5 text-left font-semibold">REQUESTED BY</th>
+                          <th className="table-th px-4 py-2.5 text-left font-semibold">DEPARTMENT</th>
+                          <th className="table-th px-4 py-2.5 text-left font-semibold">PURPOSE</th>
+                          <th className="table-th px-3 py-2.5 text-center font-semibold w-20">ITEMS</th>
                           <th className="table-th px-4 py-2.5 text-right w-24">
                             <span className="sr-only">Select</span>
                           </th>
@@ -824,7 +824,7 @@ export function CreatePOModal({
                                 }
                                 className="hover:bg-surface-hover transition-colors cursor-pointer table-row"
                               >
-                                <td className="table-td px-4 py-3 font-bold text-text-primary whitespace-nowrap">
+                                <td className="table-td px-4 py-3 font-semibold text-text-primary whitespace-nowrap">
                                   <div className="flex items-center gap-2">
                                     <button
                                       type="button"
@@ -904,7 +904,7 @@ export function CreatePOModal({
                                         <div className="overflow-x-auto rounded-card border border-divider bg-surface">
                                           <table className="w-full type-table-cell">
                                             <thead>
-                                              <tr className="border-b border-divider bg-surface-muted type-table-header uppercase text-text-muted font-bold table-head-row">
+                                              <tr className="border-b border-divider bg-surface-muted type-table-header uppercase text-text-muted font-semibold table-head-row">
                                                 <th className="table-th px-3 py-2 text-left">Item / Supply</th>
                                                 <th className="table-th px-3 py-2 text-left">Unit</th>
                                                 <th className="table-th px-3 py-2 text-right">Requested</th>
@@ -1007,7 +1007,7 @@ export function CreatePOModal({
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-bold type-body text-text-primary uppercase">{sup.supplierName}</h4>
+                          <h4 className="font-semibold type-body text-text-primary uppercase">{sup.supplierName}</h4>
                           <Users className="w-4 h-4 text-text-muted shrink-0" />
                         </div>
                         {sup.contactPerson && (
@@ -1083,12 +1083,12 @@ export function CreatePOModal({
                     <table className="w-full type-table-cell">
                       <thead className="bg-surface-muted border-b border-divider text-text-muted uppercase type-table-header table-head-row">
                         <tr>
-                          <th className="table-th px-4 py-2.5 text-left font-bold">PARTICULARS</th>
-                          <th className="table-th px-4 py-2.5 text-left font-bold">Unit of Measure</th>
-                          <th className="table-th px-4 py-2.5 text-center font-bold">REQUESTED</th>
-                          <th className="table-th px-4 py-2.5 text-center font-bold">ALREADY ORDERED</th>
-                          <th className="table-th px-4 py-2.5 text-center font-bold">REMAINING</th>
-                          <th className="table-th px-4 py-2.5 text-right font-bold w-36">ORDER QUANTITY *</th>
+                          <th className="table-th px-4 py-2.5 text-left font-semibold">PARTICULARS</th>
+                          <th className="table-th px-4 py-2.5 text-left font-semibold">Unit of Measure</th>
+                          <th className="table-th px-4 py-2.5 text-center font-semibold">REQUESTED</th>
+                          <th className="table-th px-4 py-2.5 text-center font-semibold">ALREADY ORDERED</th>
+                          <th className="table-th px-4 py-2.5 text-center font-semibold">REMAINING</th>
+                          <th className="table-th px-4 py-2.5 text-right font-semibold w-36">ORDER QUANTITY *</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-divider">
@@ -1111,7 +1111,7 @@ export function CreatePOModal({
                               <td className="table-td px-4 py-3 text-center text-text-muted">
                                 {row.alreadyOrdered}
                               </td>
-                              <td className="table-td px-4 py-3 text-center font-bold text-status-green">
+                              <td className="table-td px-4 py-3 text-center font-semibold text-status-green">
                                 {row.remaining}
                               </td>
                               <td className="table-td px-4 py-2.5 text-right">
@@ -1123,7 +1123,7 @@ export function CreatePOModal({
                                   value={row.orderQty}
                                   disabled={isFullyOrdered}
                                   onChange={(e) => updateRow(idx, e.target.value)}
-                                  className={`h-8 w-28 ml-auto text-right font-bold type-body bg-surface rounded-control text-text-primary ${
+                                  className={`h-8 w-28 ml-auto text-right font-semibold type-body bg-surface rounded-control text-text-primary ${
                                     errors[`qty_${idx}`] ? "border-status-red" : "border-divider"
                                   }`}
                                 />

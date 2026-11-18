@@ -22,7 +22,7 @@ export default function ErrorModal({ message, onClose }: ErrorModalProps) {
           <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4 text-red-600">
             <XCircle className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-bold text-foreground mb-2">Error</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Error</h2>
           <p className="text-sm text-muted-foreground mb-6">{message}</p>
           <div className="flex justify-center w-full">
             <button onClick={onClose} className="w-full px-5 py-2.5 text-sm font-semibold text-white bg-red-600 hover:opacity-85 transition-opacity rounded-xl shadow-sm">OK</button>

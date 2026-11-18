@@ -53,14 +53,14 @@ function getExpiryDisplay(lot: LotItem) {
   if (diffDays < 0) {
     return (
       <span className="font-semibold text-foreground">
-        {formattedDate} <span className="text-[10px] text-muted-foreground">(Expired)</span>
+        {formattedDate} <span className="type-caption text-muted-foreground">(Expired)</span>
       </span>
     );
   }
   if (diffDays <= 30) {
     return (
       <span className="font-medium text-foreground">
-        {formattedDate} <span className="text-[10px] text-muted-foreground">({diffDays}d left)</span>
+        {formattedDate} <span className="type-caption text-muted-foreground">({diffDays}d left)</span>
       </span>
     );
   }

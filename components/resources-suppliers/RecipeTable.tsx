@@ -54,7 +54,7 @@ export default function RecipeTable({ recipes, currentPage, pageSize, onEdit }: 
                     </HoverCardTrigger>
                     <HoverCardContent className="w-72">
                       <div className="space-y-1.5">
-                        <p className="type-caption font-bold text-text-primary">{recipe.recipeName}</p>
+                        <p className="type-caption font-semibold text-text-primary">{recipe.recipeName}</p>
                         {recipe.recipeCode && (
                           <p className="type-caption font-mono text-text-muted">No: {recipe.recipeCode}</p>
                         )}

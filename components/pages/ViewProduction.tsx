@@ -112,7 +112,7 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
                 href={`/production-quality?tab=${tab.key}`}
                 prefetch={true}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-2 px-4 py-2.5 type-caption font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 type-caption font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                   isActive
                     ? "border-text-primary text-text-primary"
                     : "border-transparent text-text-muted hover:text-text-primary"

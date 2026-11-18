@@ -100,7 +100,7 @@ export function PODetailsModal({
               ? "border-status-red bg-status-red-bg text-status-red"
               : "border-divider bg-surface-muted text-text-primary"
           }`}>
-            <div className="flex items-center gap-2 type-label font-bold">
+            <div className="flex items-center gap-2 type-label font-semibold">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>
                 {po.status === "Cancelled" ? "Cancellation Reason:" : "Notes / Remarks:"}
@@ -189,13 +189,13 @@ export function PODetailsModal({
             <table className="w-full type-table-cell">
               <thead className="border-b border-divider bg-surface-muted uppercase text-text-muted table-head-row type-table-header">
                 <tr>
-                  <th className="table-th px-4 py-2.5 text-left font-bold">PARTICULARS</th>
-                  <th className="table-th px-4 py-2.5 text-left font-bold">Unit of Measure</th>
-                  <th className="table-th px-4 py-2.5 text-right font-bold">ORDER QUANTITY</th>
+                  <th className="table-th px-4 py-2.5 text-left font-semibold">PARTICULARS</th>
+                  <th className="table-th px-4 py-2.5 text-left font-semibold">Unit of Measure</th>
+                  <th className="table-th px-4 py-2.5 text-right font-semibold">ORDER QUANTITY</th>
                   {!isPending && (
                     <>
-                      <th className="table-th px-4 py-2.5 text-right font-bold">UNIT PRICE</th>
-                      <th className="table-th px-4 py-2.5 text-right font-bold">TOTAL AMOUNT</th>
+                      <th className="table-th px-4 py-2.5 text-right font-semibold">UNIT PRICE</th>
+                      <th className="table-th px-4 py-2.5 text-right font-semibold">TOTAL AMOUNT</th>
                     </>
                   )}
                 </tr>
@@ -212,7 +212,7 @@ export function PODetailsModal({
                         <td className="table-td px-4 py-3 text-text-muted">
                           {item.purchaseUomName || "Unit"}
                         </td>
-                        <td className="table-td px-4 py-3 text-right font-bold text-text-primary">
+                        <td className="table-td px-4 py-3 text-right font-semibold text-text-primary">
                           {Number(item.poItemQuantity).toLocaleString()}
                         </td>
                         {!isPending && (
@@ -220,7 +220,7 @@ export function PODetailsModal({
                             <td className="table-td px-4 py-3 text-right text-text-muted">
                               {unitPrice > 0 ? fmtCurrency(unitPrice) : "Pending Confirmation"}
                             </td>
-                            <td className="table-td px-4 py-3 text-right font-bold text-text-primary">
+                            <td className="table-td px-4 py-3 text-right font-semibold text-text-primary">
                               {item.totalPrice > 0 ? fmtCurrency(Number(item.totalPrice)) : "—"}
                             </td>
                           </>
@@ -244,7 +244,7 @@ export function PODetailsModal({
             <div className="flex items-center justify-end">
               <div className="rounded-card border border-divider bg-surface-muted px-5 py-3 text-right min-w-[220px]">
                 <p className="type-caption text-text-muted mb-1">TOTAL AMOUNT DUE</p>
-                <p className="type-section-title font-bold text-text-primary">
+                <p className="type-section-title font-semibold text-text-primary">
                   {po.totalAmount > 0 ? fmtCurrency(po.totalAmount) : (isApproved ? "₱0.00" : "Pending Confirmation")}
                 </p>
               </div>

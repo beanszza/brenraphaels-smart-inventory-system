@@ -875,7 +875,7 @@ export default function ProductionRequestModal({
               {isViewMode ? (
                 <div className="h-10 px-3 rounded-control border border-divider bg-surface type-body font-medium text-text-primary flex items-center justify-between">
                   <span>{formatTimeTo12Hour(initialRequest?.requiredTime || requiredTime)}</span>
-                  <span className="type-caption px-2 py-0.5 rounded-pill bg-surface-secondary text-text-muted font-bold uppercase">
+                  <span className="type-caption px-2 py-0.5 rounded-pill bg-surface-secondary text-text-muted font-semibold uppercase">
                     {parse24HTo12H(initialRequest?.requiredTime || requiredTime).period}
                   </span>
                 </div>
@@ -1017,7 +1017,7 @@ export default function ProductionRequestModal({
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-4 h-4 text-text-primary shrink-0 mt-0.5" />
               <div>
-                <h4 className="type-caption font-bold text-text-primary">
+                <h4 className="type-caption font-semibold text-text-primary">
                   Material Shortfall Detected
                 </h4>
                 <p className="type-caption text-text-muted mt-0.5">
@@ -1039,7 +1039,7 @@ export default function ProductionRequestModal({
 
             {isViewMode && initialRequest?.linkedPrId && (
               <div className="flex items-center gap-2">
-                <span className="type-caption font-bold text-text-primary">
+                <span className="type-caption font-semibold text-text-primary">
                   PR: {initialRequest.linkedPrNumber}
                 </span>
                 <Button
@@ -1059,7 +1059,7 @@ export default function ProductionRequestModal({
         {/* Bill of Materials Table */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h4 className="type-overline font-bold text-text-primary uppercase tracking-wider">
+            <h4 className="type-overline font-semibold text-text-primary uppercase tracking-wider">
               Bill of Materials
             </h4>
             {loadingSuggestions && (

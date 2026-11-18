@@ -119,7 +119,7 @@ export function DeliveryDetailsModal({
             <StatusBadge status={delivery.status} />
             <div className="type-caption text-text-muted">
               Purchase Order Reference:{" "}
-              <span className="font-bold text-text-primary type-body">
+              <span className="font-semibold text-text-primary type-body">
                 {delivery.poNumber || "—"}
               </span>
             </div>
@@ -140,7 +140,7 @@ export function DeliveryDetailsModal({
                   return (
                     <div key={s} className="relative flex flex-col items-center gap-1.5 bg-surface px-2">
                       <div
-                        className={`w-7 h-7 rounded-pill flex items-center justify-center border-2 type-caption font-bold transition-all duration-300 z-10 ${
+                        className={`w-7 h-7 rounded-pill flex items-center justify-center border-2 type-caption font-semibold transition-all duration-300 z-10 ${
                           isActive
                             ? "bg-primary border-primary text-text-inverse shadow-xs"
                             : "bg-surface border-divider text-text-muted"
@@ -149,7 +149,7 @@ export function DeliveryDetailsModal({
                         {isActive && !isLast ? <Check className="w-3.5 h-3.5" /> : i + 1}
                       </div>
                       <span
-                        className={`type-caption uppercase tracking-wider font-bold ${
+                        className={`type-caption uppercase tracking-wider font-semibold ${
                           isActive ? "text-text-primary" : "text-text-muted"
                         }`}
                       >
@@ -176,13 +176,13 @@ export function DeliveryDetailsModal({
 
         {/* Delivery Summary Card (2x4 organized grid) */}
         <div className="rounded-card border border-divider bg-surface-muted p-4 space-y-3">
-          <h4 className="type-table-header font-bold text-text-primary uppercase tracking-wider">
+          <h4 className="type-table-header font-semibold text-text-primary uppercase tracking-wider">
             Delivery Summary
           </h4>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 type-caption">
             <div>
               <span className="text-text-muted block type-caption mb-0.5">Purchase Order</span>
-              <span className="font-bold text-text-primary type-body">{delivery.poNumber || "—"}</span>
+              <span className="font-semibold text-text-primary type-body">{delivery.poNumber || "—"}</span>
             </div>
             <div>
               <span className="text-text-muted block type-caption mb-0.5">Supplier</span>
@@ -226,7 +226,7 @@ export function DeliveryDetailsModal({
         {/* Shipment Items Table (Placed directly after Summary so it is immediately visible) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h4 className="type-table-header font-bold text-text-primary uppercase tracking-wider">
+            <h4 className="type-table-header font-semibold text-text-primary uppercase tracking-wider">
               Shipment Items ({delivery.items?.length || 0})
             </h4>
             <span className="type-caption font-semibold text-text-muted">
@@ -259,7 +259,7 @@ export function DeliveryDetailsModal({
                     <td className="table-td px-3.5 py-2.5 text-right text-text-muted">
                       {item.poOrderedQuantity || item.declaredQuantity}
                     </td>
-                    <td className="table-td px-3.5 py-2.5 text-right font-bold text-text-primary">
+                    <td className="table-td px-3.5 py-2.5 text-right font-semibold text-text-primary">
                       {item.declaredQuantity}
                     </td>
                   </tr>
@@ -272,7 +272,7 @@ export function DeliveryDetailsModal({
         {/* Compact Side-by-Side Document Proofs & Attachments */}
         {(displayReceiptSrc || displayArrivalSrc) && (
           <div className="rounded-card border border-divider bg-surface p-4 space-y-2.5">
-            <h4 className="type-table-header font-bold text-text-primary uppercase tracking-wider">
+            <h4 className="type-table-header font-semibold text-text-primary uppercase tracking-wider">
               Document Proofs &amp; Attachments
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -362,7 +362,7 @@ export function DeliveryDetailsModal({
               className="bg-surface border border-divider rounded-card p-4 max-w-2xl w-full space-y-3 shadow-modal"
             >
               <div className="flex items-center justify-between border-b border-divider pb-2">
-                <h5 className="type-label font-bold text-text-primary uppercase">{previewImage.title}</h5>
+                <h5 className="type-label font-semibold text-text-primary uppercase">{previewImage.title}</h5>
                 <Button
                   type="button"
                   variant="outline"

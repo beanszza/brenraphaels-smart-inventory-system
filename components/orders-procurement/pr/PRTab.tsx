@@ -262,7 +262,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
             >
               <span>Requests</span>
               {counts.Requests > 0 && (
-                <span className={`px-1.5 py-0.2 rounded-pill type-caption font-bold ${
+                <span className={`px-1.5 py-0.2 rounded-pill type-caption font-semibold ${
                   activeTab === "Requests" ? "bg-surface text-text-primary" : "bg-text-primary/20 text-text-primary"
                 }`}>
                   {counts.Requests}

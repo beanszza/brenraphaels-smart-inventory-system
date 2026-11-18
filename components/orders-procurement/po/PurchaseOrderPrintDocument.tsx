@@ -53,7 +53,7 @@ export function PurchaseOrderPrintDocument({ po, onClose }: PurchaseOrderPrintDo
         {/* Top Control Bar (Hidden during print) */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/40 print:hidden">
           <div>
-            <h2 className="text-base font-bold text-foreground">
+            <h2 className="text-base font-semibold text-foreground">
               Purchase Order Document Preview
             </h2>
             <p className="text-xs text-muted-foreground">
@@ -90,43 +90,43 @@ export function PurchaseOrderPrintDocument({ po, onClose }: PurchaseOrderPrintDo
             {/* Header: Company Name Left, Document Number Right */}
             <div className="flex flex-col sm:flex-row justify-between items-start border-b border-neutral-900 pb-4 mb-4 gap-4">
               <div>
-                <h1 className="text-lg md:text-xl font-black uppercase tracking-wide text-neutral-900">
+                <h1 className="text-lg md:text-xl font-semibold uppercase tracking-wide text-neutral-900">
                   Bren Raphael&apos;s Ube Jam &amp; Halaya
                 </h1>
-                <p className="text-[11px] text-neutral-700 mt-1 leading-snug">
+                <p className="text-xs text-neutral-700 mt-1 leading-snug">
                   Block 14 Lot1A, Marigman St., San Roque,<br />
                   Antipolo, 1870 Rizal<br />
                   Contact: (02) 8650-1234 | info@brenraphaels.com
                 </p>
               </div>
               <div className="text-left sm:text-right shrink-0">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-neutral-600">
+                <div className="text-xs font-semibold uppercase tracking-wider text-neutral-600">
                   DOCUMENT NO.
                 </div>
-                <div className="text-base md:text-lg font-mono font-black text-neutral-900 mt-0.5">
+                <div className="text-base md:text-lg font-mono font-semibold text-neutral-900 mt-0.5">
                   {po.poNumber}
                 </div>
-                <div className="inline-block mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase border border-neutral-400 bg-neutral-100 text-neutral-800">
+                <div className="inline-block mt-1 px-2.5 py-0.5 rounded text-xs font-semibold uppercase border border-neutral-400 bg-neutral-100 text-neutral-800">
                   STATUS: {po.status}
                 </div>
               </div>
             </div>
 
             {/* Vendor / Supplier & Order Info Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-neutral-900 mb-5 text-[11px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-neutral-900 mb-5 text-xs">
               {/* Left Column: Supplier Info */}
               <div className="space-y-1">
                 <div>
-                  <span className="font-bold text-neutral-600 uppercase tracking-wider text-[10px] block">
+                  <span className="font-semibold text-neutral-600 uppercase tracking-wider text-xs block">
                     VENDOR / SUPPLIER
                   </span>
-                  <span className="font-black text-neutral-900 text-xs uppercase">
+                  <span className="font-semibold text-neutral-900 text-xs uppercase">
                     {po.supplierName || "—"}
                   </span>
                 </div>
                 {po.supplierAddress && (
                   <div>
-                    <span className="font-bold text-neutral-600 uppercase tracking-wider text-[10px] block">
+                    <span className="font-semibold text-neutral-600 uppercase tracking-wider text-xs block">
                       ADDRESS
                     </span>
                     <span className="text-neutral-800">
@@ -136,7 +136,7 @@ export function PurchaseOrderPrintDocument({ po, onClose }: PurchaseOrderPrintDo
                 )}
                 {(po.supplierContactPerson || po.supplierEmail) && (
                   <div>
-                    <span className="font-bold text-neutral-600 uppercase tracking-wider text-[10px] block">
+                    <span className="font-semibold text-neutral-600 uppercase tracking-wider text-xs block">
                       ATTENTION / CONTACT
                     </span>
                     <span className="text-neutral-800">
@@ -150,7 +150,7 @@ export function PurchaseOrderPrintDocument({ po, onClose }: PurchaseOrderPrintDo
               {/* Right Column: Date, Time & Requisition Reference */}
               <div className="space-y-1 sm:text-right">
                 <div>
-                  <span className="font-bold text-neutral-600 uppercase tracking-wider text-[10px] block">
+                  <span className="font-semibold text-neutral-600 uppercase tracking-wider text-xs block">
                     DATE / TIME
                   </span>
                   <span className="font-medium text-neutral-900">
@@ -159,17 +159,17 @@ export function PurchaseOrderPrintDocument({ po, onClose }: PurchaseOrderPrintDo
                 </div>
                 {po.prNumber && (
                   <div>
-                    <span className="font-bold text-neutral-600 uppercase tracking-wider text-[10px] block">
+                    <span className="font-semibold text-neutral-600 uppercase tracking-wider text-xs block">
                       PURCHASE REQUISITION REFERENCE
                     </span>
-                    <span className="font-mono font-bold text-neutral-900 text-xs">
+                    <span className="font-mono font-semibold text-neutral-900 text-xs">
                       {po.prNumber}
                     </span>
                   </div>
                 )}
                 {po.expectedArrivalDate && (
                   <div>
-                    <span className="font-bold text-neutral-600 uppercase tracking-wider text-[10px] block">
+                    <span className="font-semibold text-neutral-600 uppercase tracking-wider text-xs block">
                       EXPECTED ARRIVAL DATE
                     </span>
                     <span className="font-medium text-neutral-800">
@@ -186,9 +186,9 @@ export function PurchaseOrderPrintDocument({ po, onClose }: PurchaseOrderPrintDo
 
             {/* Table of Particulars (Matching Brigino Hospital format) */}
             <div className="mb-6">
-              <table className="w-full text-left text-[11px] border-collapse">
+              <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b-2 border-neutral-900 text-[10px] font-black uppercase tracking-wider text-neutral-900">
+                  <tr className="border-b-2 border-neutral-900 text-xs font-semibold uppercase tracking-wider text-neutral-900">
                     <th className="py-2.5 pr-4 text-left">PARTICULARS</th>
                     <th className="py-2.5 px-3 text-center">QUANTITY</th>
                     <th className="py-2.5 px-3 text-right">UNIT PRICE</th>
@@ -204,17 +204,17 @@ export function PurchaseOrderPrintDocument({ po, onClose }: PurchaseOrderPrintDo
                         <tr key={idx} className="align-top">
                           <td className="py-3 pr-4 font-semibold text-neutral-900 uppercase">
                             {item.itemName}
-                            <span className="block text-[10px] font-normal text-neutral-500 normal-case">
+                            <span className="block text-xs font-normal text-neutral-500 normal-case">
                               Unit of Measure: {item.purchaseUomName || "Unit"}
                             </span>
                           </td>
-                          <td className="py-3 px-3 text-center font-mono font-bold text-neutral-900">
+                          <td className="py-3 px-3 text-center font-mono font-semibold text-neutral-900">
                             {Number(item.poItemQuantity).toLocaleString()} {item.purchaseUomName || ""}
                           </td>
                           <td className="py-3 px-3 text-right font-mono text-neutral-800">
                             {hasPrice ? `₱${unitPrice.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "Pending Confirmation"}
                           </td>
-                          <td className="py-3 pl-3 text-right font-mono font-bold text-neutral-900">
+                          <td className="py-3 pl-3 text-right font-mono font-semibold text-neutral-900">
                             {item.totalPrice > 0 ? `₱${Number(item.totalPrice).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                           </td>
                         </tr>
@@ -233,10 +233,10 @@ export function PurchaseOrderPrintDocument({ po, onClose }: PurchaseOrderPrintDo
 
             {/* Total Amount Due (Solid horizontal bar) */}
             <div className="border-t-2 border-b-2 border-neutral-900 py-3 mb-8 flex justify-between items-center">
-              <span className="text-xs md:text-sm font-black uppercase tracking-wider text-neutral-900">
+              <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-neutral-900">
                 TOTAL AMOUNT DUE
               </span>
-              <span className="text-base md:text-xl font-mono font-black text-neutral-900">
+              <span className="text-base md:text-xl font-mono font-semibold text-neutral-900">
                 {po.totalAmount > 0
                   ? `₱${Number(po.totalAmount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                   : (isApproved ? "₱0.00" : "Pending Confirmation")}
@@ -244,27 +244,27 @@ export function PurchaseOrderPrintDocument({ po, onClose }: PurchaseOrderPrintDo
             </div>
 
             {/* Signatures & Approvals Section */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2 text-[11px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2 text-xs">
               <div>
-                <span className="font-bold text-neutral-500 uppercase tracking-wider text-[10px] block mb-1">
+                <span className="font-semibold text-neutral-500 uppercase tracking-wider text-xs block mb-1">
                   PREPARED BY (INVENTORY MANAGEMENT)
                 </span>
-                <div className="font-black text-neutral-900 uppercase pt-2 border-t border-neutral-400">
+                <div className="font-semibold text-neutral-900 uppercase pt-2 border-t border-neutral-400">
                   {po.requestedBy || "Vince Neil Madeja"}
                 </div>
-                <div className="text-[10px] text-neutral-500">
+                <div className="text-xs text-neutral-500">
                   Inventory Manager &bull; Bren Raphael&apos;s Ube Jam &amp; Halaya
                 </div>
               </div>
 
               <div>
-                <span className="font-bold text-neutral-500 uppercase tracking-wider text-[10px] block mb-1">
+                <span className="font-semibold text-neutral-500 uppercase tracking-wider text-xs block mb-1">
                   APPROVED BY (AUTHORIZED SUPPLIER REPRESENTATIVE)
                 </span>
-                <div className="font-black text-neutral-900 uppercase pt-2 border-t border-neutral-400">
+                <div className="font-semibold text-neutral-900 uppercase pt-2 border-t border-neutral-400">
                   {po.supplierApprovedBy || "______________________________________"}
                 </div>
-                <div className="text-[10px] text-neutral-500 flex justify-between">
+                <div className="text-xs text-neutral-500 flex justify-between">
                   <span>Authorized Representative</span>
                   <span>
                     Date: {po.supplierApprovedDate ? new Date(po.supplierApprovedDate).toLocaleDateString("en-US") : "_______________"}
@@ -274,7 +274,7 @@ export function PurchaseOrderPrintDocument({ po, onClose }: PurchaseOrderPrintDo
             </div>
 
             {/* Document Footer Note */}
-            <div className="mt-8 pt-4 border-t border-dashed border-neutral-300 text-[10px] text-neutral-400 text-center uppercase tracking-wider">
+            <div className="mt-8 pt-4 border-t border-dashed border-neutral-300 text-xs text-neutral-400 text-center uppercase tracking-wider">
               This is an official procurement document generated by Bren Raphael&apos;s Inventory Management System.
             </div>
           </div>

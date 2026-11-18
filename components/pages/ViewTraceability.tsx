@@ -307,19 +307,19 @@ export default function ViewTraceability() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 bg-muted rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1">Affected Lots</p>
-                  <p className="text-2xl font-bold">{recallData.affectedLots.length}</p>
+                  <p className="text-2xl font-semibold">{recallData.affectedLots.length}</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1">Affected Branches</p>
-                  <p className="text-2xl font-bold">{recallData.affectedBranches.length}</p>
+                  <p className="text-2xl font-semibold">{recallData.affectedBranches.length}</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1">Affected Quantity</p>
-                  <p className="text-2xl font-bold">{recallData.affectedQty.toLocaleString()}</p>
+                  <p className="text-2xl font-semibold">{recallData.affectedQty.toLocaleString()}</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1">Est. ₱ Loss</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-2xl font-semibold">
                     ₱{recallData.estimatedLoss.toLocaleString("en-PH", { maximumFractionDigits: 0 })}
                   </p>
                 </div>

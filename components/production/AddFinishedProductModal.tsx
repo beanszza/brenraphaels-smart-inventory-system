@@ -629,7 +629,7 @@ export default function AddFinishedProductModal({
                 >
                   <div className="flex items-center justify-between">
                     <span className="type-table-header text-text-primary flex items-center gap-1.5">
-                      <span className="w-5 h-5 rounded-full bg-brand-light text-brand flex items-center justify-center type-caption font-bold">
+                      <span className="w-5 h-5 rounded-full bg-brand-light text-brand flex items-center justify-center type-caption font-semibold">
                         {index + 1}
                       </span>
                       Variant {index + 1}

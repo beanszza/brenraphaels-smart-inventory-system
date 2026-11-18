@@ -13,7 +13,7 @@ export default function RecipeCard() {
         <div>
           <div className="flex items-center gap-3">
 
-            <h2 className="text-2xl font-bold text-foreground">
+            <h2 className="text-2xl font-semibold text-foreground">
               Ube Halaya (500g Jar)
             </h2>
 
@@ -73,7 +73,7 @@ export default function RecipeCard() {
                   </p>
                 </div>
 
-                <span className="text-sm font-bold text-foreground">
+                <span className="text-sm font-semibold text-foreground">
                   {item.qty}
                 </span>
               </div>

@@ -253,7 +253,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
             <button
               type="button"
               onClick={() => setError(null)}
-              className="text-text-primary font-bold type-caption hover:underline ml-2"
+              className="text-text-primary font-semibold type-caption hover:underline ml-2"
             >
               Dismiss
             </button>
@@ -417,7 +417,7 @@ export default function CreateStockInModal({ open, onClose, onSuccess }: Props) 
             <AlertTriangle className="w-6 h-6" />
           </div>
 
-          <h2 className="type-section-title font-bold text-text-primary mb-1">
+          <h2 className="type-section-title font-semibold text-text-primary mb-1">
             Commit Stock-In to Inventory
           </h2>
 

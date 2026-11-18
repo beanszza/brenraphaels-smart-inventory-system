@@ -168,7 +168,7 @@ export function MarkArrivedModal({
         <div className="rounded-card border border-divider bg-surface-muted p-4 type-caption grid grid-cols-2 sm:grid-cols-4 gap-3 items-center">
           <div>
             <span className="text-text-muted block type-caption mb-0.5">Delivery No</span>
-            <span className="font-bold text-text-primary type-body">{delivery.deliveryNumber}</span>
+            <span className="font-semibold text-text-primary type-body">{delivery.deliveryNumber}</span>
           </div>
           <div>
             <span className="text-text-muted block type-caption mb-0.5">Purchase Order Ref</span>
@@ -208,7 +208,7 @@ export function MarkArrivedModal({
                         {item.itemCode || `SPL-${String(item.itemId || idx + 1).padStart(4, "0")}`}
                       </td>
                       <td className="table-td px-3.5 py-2 text-text-muted">{item.purchaseUomName}</td>
-                      <td className="table-td px-3.5 py-2 text-right font-bold text-text-primary">
+                      <td className="table-td px-3.5 py-2 text-right font-semibold text-text-primary">
                         {item.declaredQuantity}
                       </td>
                     </tr>

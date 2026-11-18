@@ -142,7 +142,7 @@ function SupplyDetailsModalContent({
 
         {/* Specifications */}
         <div className="space-y-2">
-          <h4 className="type-label font-bold uppercase tracking-wider text-text-muted">
+          <h4 className="type-label font-semibold uppercase tracking-wider text-text-muted">
             Item Specifications
           </h4>
           <div className="rounded-card border border-divider bg-surface divide-y divide-divider overflow-hidden">
@@ -170,7 +170,7 @@ function SupplyDetailsModalContent({
         {/* Linked Suppliers */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h4 className="type-label font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
+            <h4 className="type-label font-semibold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
               <Truck size={14} /> Linked Suppliers
             </h4>
             <span className="type-caption font-medium text-text-muted">
@@ -215,7 +215,7 @@ function SupplyDetailsModalContent({
         {/* Recent Orders */}
         <div className="space-y-2">
           <div className="flex items-center gap-1.5">
-            <h4 className="type-label font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
+            <h4 className="type-label font-semibold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
               <ShoppingCart size={14} /> Recent Orders
             </h4>
           </div>

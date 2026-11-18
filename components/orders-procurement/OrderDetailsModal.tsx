@@ -50,7 +50,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
 
         {order.status === "Completed" && (
           <div className="rounded-card border border-divider bg-surface-muted p-4 space-y-3">
-            <p className="type-label font-bold text-text-primary">Quality Assurance Inspection Record</p>
+            <p className="type-label font-semibold text-text-primary">Quality Assurance Inspection Record</p>
             <div className="grid grid-cols-2 gap-2 type-caption">
               <div><span className="text-text-muted">Arrival Date:</span> <span className="font-semibold text-text-primary">{order.arrivalDate || "N/A"}</span></div>
               <div><span className="text-text-muted">Inspected By:</span> <span className="font-semibold text-text-primary">{order.inspectedBy || "N/A"}</span></div>

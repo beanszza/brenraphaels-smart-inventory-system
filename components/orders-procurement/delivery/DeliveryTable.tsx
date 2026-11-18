@@ -59,14 +59,14 @@ export function DeliveryTable({
       <table className="w-full type-table-cell">
         <thead>
           <tr className="border-b border-divider bg-surface-muted table-head-row type-table-header">
-            <th className="table-th sticky left-0 z-20 bg-surface-muted backdrop-blur-xs px-4 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap min-w-[160px] w-44 border-r border-divider shadow-sticky">DELIVERY NO.</th>
-            <th className="table-th px-4 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">PURCHASE ORDER REF.</th>
-            <th className="table-th px-4 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">SUPPLIER</th>
-            <th className="table-th px-4 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">CARRIER</th>
-            <th className="table-th px-4 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">EXPECTED DATE</th>
-            <th className="table-th px-4 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">ITEMS</th>
-            <th className="table-th px-4 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">STATUS</th>
-            <th className="table-th px-4 py-3 text-center font-bold text-text-muted tracking-wider whitespace-nowrap w-24">ACTIONS</th>
+            <th className="table-th sticky left-0 z-20 bg-surface-muted backdrop-blur-xs px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap min-w-[160px] w-44 border-r border-divider shadow-sticky">DELIVERY NO.</th>
+            <th className="table-th px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">PURCHASE ORDER REF.</th>
+            <th className="table-th px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">SUPPLIER</th>
+            <th className="table-th px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">CARRIER</th>
+            <th className="table-th px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">EXPECTED DATE</th>
+            <th className="table-th px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">ITEMS</th>
+            <th className="table-th px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">STATUS</th>
+            <th className="table-th px-4 py-3 text-center font-semibold text-text-muted tracking-wider whitespace-nowrap w-24">ACTIONS</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-divider">

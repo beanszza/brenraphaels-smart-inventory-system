@@ -120,7 +120,7 @@ export function SWODetailsModal({
           <div className="flex items-center gap-3">
             <SWOStatusBadge status={swo.status} />
             {(isRejected || isCancelled) && (
-              <span className="text-[11px] font-semibold text-destructive">
+              <span className="type-caption font-semibold text-destructive">
                 SWO No. {swo.swoNumber} is permanently retired and cannot be reused.
               </span>
             )}

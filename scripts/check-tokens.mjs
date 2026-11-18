@@ -6,8 +6,8 @@
  * and raw Tailwind palette colors (e.g. text-emerald-600, bg-amber-500).
  *
  * Mode:
- *   --warn : prints warnings and summary, exits 0 (Stage 2 through Stage 7)
- *   default: exits 1 if issues are found (Stage 8)
+ *   FAIL mode (default): exits 1 if issues are found (Stage 8 enforcement)
+ *   --warn : optional override to print warnings and exit 0
  */
 
 import { readdirSync, statSync, readFileSync } from "node:fs";
@@ -124,14 +124,23 @@ for (const [id, count] of Object.entries(countsByCheck)) {
   console.log(`  - ${id}: ${count} occurrences`);
 }
 
+// Group by file
+const fileMap = {};
+for (const item of report) {
+  fileMap[item.file] = fileMap[item.file] || [];
+  fileMap[item.file].push(item);
+}
+
 if (totalViolations > 0) {
-  console.log("\nFirst 15 occurrences:");
-  report.slice(0, 15).forEach((item) => {
-    console.log(`  ${item.file}:${item.line} [${item.checkId}] -> ${item.matched}`);
-  });
-  if (report.length > 15) {
-    console.log(`  ... and ${report.length - 15} more.`);
-  }
+  console.log("\nViolations by file:");
+  Object.entries(fileMap)
+    .sort((a, b) => b[1].length - a[1].length)
+    .forEach(([file, items]) => {
+      console.log(`  ${file}: ${items.length} violation(s)`);
+      items.forEach((item) => {
+        console.log(`    L${item.line} [${item.checkId}] ${item.matched}`);
+      });
+    });
 }
 
 console.log("=======================================================\n");

@@ -140,7 +140,7 @@ export default function DispatchModal({ transfer, onClose, onConfirm }: Dispatch
 
         <div className="flex items-center justify-between border-b border-border pb-3 mb-4 flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-foreground">Dispatch Transfer</h2>
+            <h2 className="text-xl font-semibold text-foreground">Dispatch Transfer</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Assign vehicle and driver details to initiate stock transit</p>
           </div>
           <button type="button" onClick={requestClose} className="text-foreground/60 hover:text-foreground transition-colors">
@@ -150,11 +150,11 @@ export default function DispatchModal({ transfer, onClose, onConfirm }: Dispatch
 
         {/* Info card layout block */}
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs p-4 bg-muted border border-border rounded-xl mb-4">
-          <div><p className="text-[10px] text-muted-foreground font-medium">Product</p><p className="font-semibold text-foreground">{transfer.product}</p></div>
-          <div><p className="text-[10px] text-muted-foreground font-medium">Quantity</p><p className="font-semibold text-foreground">{transfer.quantity}</p></div>
-          <div><p className="text-[10px] text-muted-foreground font-medium">From</p><p className="font-semibold text-foreground">{transfer.from}</p></div>
-          <div><p className="text-[10px] text-muted-foreground font-medium">To</p><p className="font-semibold text-foreground">{transfer.to}</p></div>
-          <div className="col-span-2 border-t border-border pt-2"><p className="text-[10px] text-muted-foreground font-medium">Transfer Date</p><p className="font-semibold text-foreground">{transfer.date}</p></div>
+          <div><p className="text-xs text-muted-foreground font-medium">Product</p><p className="font-semibold text-foreground">{transfer.product}</p></div>
+          <div><p className="text-xs text-muted-foreground font-medium">Quantity</p><p className="font-semibold text-foreground">{transfer.quantity}</p></div>
+          <div><p className="text-xs text-muted-foreground font-medium">From</p><p className="font-semibold text-foreground">{transfer.from}</p></div>
+          <div><p className="text-xs text-muted-foreground font-medium">To</p><p className="font-semibold text-foreground">{transfer.to}</p></div>
+          <div className="col-span-2 border-t border-border pt-2"><p className="text-xs text-muted-foreground font-medium">Transfer Date</p><p className="font-semibold text-foreground">{transfer.date}</p></div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>

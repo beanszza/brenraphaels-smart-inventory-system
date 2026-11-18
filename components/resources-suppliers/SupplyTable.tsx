@@ -62,7 +62,7 @@ export default function SupplyTable({
                     </HoverCardTrigger>
                     <HoverCardContent className="w-72">
                       <div className="space-y-1.5">
-                        <p className="type-caption font-bold text-text-primary">{item.itemName}</p>
+                        <p className="type-caption font-semibold text-text-primary">{item.itemName}</p>
                         {item.itemCode && (
                           <p className="type-caption font-mono text-text-muted">No: {item.itemCode}</p>
                         )}

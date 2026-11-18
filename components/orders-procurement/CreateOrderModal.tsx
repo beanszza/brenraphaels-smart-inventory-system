@@ -263,7 +263,7 @@ export default function CreateOrderModal({
                 )}
               </div>
               {selectedSupplierOption.isPreferred && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-pill type-caption font-bold bg-primary/10 text-primary border border-primary/20">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-pill type-caption font-semibold bg-primary/10 text-primary border border-primary/20">
                   <Sparkles size={10} /> Preferred Supplier
                 </span>
               )}

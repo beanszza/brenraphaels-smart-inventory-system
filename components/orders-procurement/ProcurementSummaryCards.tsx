@@ -27,7 +27,7 @@ export default function ProcurementSummaryCards({ orders }: { orders: Order[] })
               <Icon className={`w-4 h-4 ${i === 0 ? "text-background" : "text-muted-foreground"}`} />
             </div>
             <div>
-              <p className={`type-stat-value font-bold ${i === 0 ? "text-background" : "text-foreground"}`}>{value}</p>
+              <p className={`type-stat-value ${i === 0 ? "text-background" : "text-foreground"}`}>{value}</p>
               <p className={`type-caption ${i === 0 ? "text-background/70" : "text-muted-foreground"}`}>{label}</p>
             </div>
           </CardContent>

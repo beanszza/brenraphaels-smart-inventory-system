@@ -59,7 +59,7 @@ function CategoryAccordion({ group }: { group: CategoryGroup }) {
           <span className="text-sm font-semibold text-foreground">{group.category}</span>
           <Badge variant="outline" className="text-xs font-mono">{group.itemCount} items</Badge>
         </div>
-        <span className="text-sm font-bold tabular-nums">
+        <span className="text-sm font-semibold tabular-nums">
           ₱{group.totalValue.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
       </button>
@@ -179,7 +179,7 @@ export default function ViewValuation() {
             </div>
             <div>
               {loading ? <Skeleton className="h-7 w-28 mb-1" /> : (
-                <p className="text-2xl font-bold tabular-nums">
+                <p className="text-2xl font-semibold tabular-nums">
                   ₱{totalPortfolioValue.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               )}
@@ -194,7 +194,7 @@ export default function ViewValuation() {
             </div>
             <div>
               {loading ? <Skeleton className="h-7 w-16 mb-1" /> : (
-                <p className="text-2xl font-bold">{totalItems}</p>
+                <p className="text-2xl font-semibold">{totalItems}</p>
               )}
               <p className="text-xs text-muted-foreground">Valued Items</p>
             </div>
@@ -207,7 +207,7 @@ export default function ViewValuation() {
             </div>
             <div>
               {loading ? <Skeleton className="h-7 w-24 mb-1" /> : (
-                <p className="text-2xl font-bold tabular-nums">
+                <p className="text-2xl font-semibold tabular-nums">
                   ₱{avgMAC.toLocaleString("en-PH", { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
                 </p>
               )}

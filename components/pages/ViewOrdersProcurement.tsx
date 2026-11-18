@@ -40,7 +40,7 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
           <button
             type="button"
             onClick={() => setMainTab("pr")}
-            className={`flex items-center gap-2 px-4 py-2.5 type-table-header font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 type-table-header font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               mainTab === "pr"
                 ? "border-primary text-primary"
                 : "border-transparent text-text-muted hover:text-text-primary"
@@ -52,7 +52,7 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
           <button
             type="button"
             onClick={() => setMainTab("po")}
-            className={`flex items-center gap-2 px-4 py-2.5 type-table-header font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 type-table-header font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               mainTab === "po"
                 ? "border-primary text-primary"
                 : "border-transparent text-text-muted hover:text-text-primary"
@@ -64,7 +64,7 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
           <button
             type="button"
             onClick={() => setMainTab("delivery")}
-            className={`flex items-center gap-2 px-4 py-2.5 type-table-header font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 type-table-header font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               mainTab === "delivery"
                 ? "border-primary text-primary"
                 : "border-transparent text-text-muted hover:text-text-primary"

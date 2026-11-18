@@ -109,7 +109,7 @@ export function PRDetailsModal({
               ? "border-status-amber/30 bg-status-amber/5 text-status-amber"
               : "border-divider bg-surface-muted text-text-primary"
           }`}>
-            <div className="flex items-center gap-2 type-caption font-bold">
+            <div className="flex items-center gap-2 type-caption font-semibold">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>
                 {pr.status === "Cancelled"
@@ -125,7 +125,7 @@ export function PRDetailsModal({
           </div>
         ) : (pr.status === "Cancelled" || pr.status === "Rejected") ? (
           <div className="p-4 rounded-card border border-status-red/20 bg-status-red/5 space-y-1.5 text-status-red">
-            <div className="flex items-center gap-2 type-caption font-bold">
+            <div className="flex items-center gap-2 type-caption font-semibold">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{pr.status === "Cancelled" ? "Cancellation Reason:" : "Rejection Reason:"}</span>
             </div>
@@ -255,7 +255,7 @@ export function PRDetailsModal({
                       <td className="table-td px-4 py-3 text-right text-text-muted">
                         {Number(item.actualInventory || 0).toLocaleString()}
                       </td>
-                      <td className="table-td px-4 py-3 text-right font-bold text-text-primary">
+                      <td className="table-td px-4 py-3 text-right font-semibold text-text-primary">
                         {Number(item.requestedQuantity || 0).toLocaleString()}
                       </td>
                     </tr>

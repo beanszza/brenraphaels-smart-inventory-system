@@ -25,7 +25,7 @@ export default function LocationManagement({ locations, onView, onEdit }: { loca
           <thead>
             <tr className="border-b border-border bg-muted/50">
               {["LOCATION NO.", "NAME", "TYPE", "ADDRESS", "STATUS", "ACTIONS"].map(h => (
-                <th key={h} className={`px-4 py-3 font-bold text-muted-foreground tracking-wider whitespace-nowrap ${h === 'ACTIONS' ? 'text-center' : 'text-left'}`}>{h}</th>
+                <th key={h} className={`px-4 py-3 font-semibold text-muted-foreground tracking-wider whitespace-nowrap ${h === 'ACTIONS' ? 'text-center' : 'text-left'}`}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -39,10 +39,10 @@ export default function LocationManagement({ locations, onView, onEdit }: { loca
             ) : (
               locations.map(l => (
                 <tr key={l.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors relative">
-                  <td className="px-4 py-3 font-bold text-foreground">{l.id}</td>
+                  <td className="px-4 py-3 font-semibold text-foreground">{l.id}</td>
                   <td className="px-4 py-3 text-foreground font-medium">{l.name}</td>
                   <td className="px-4 py-3">
-                    <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-muted text-foreground">
+                    <span className="px-2 py-0.5 text-xs font-medium rounded bg-muted text-foreground">
                       {l.type}
                     </span>
                   </td>

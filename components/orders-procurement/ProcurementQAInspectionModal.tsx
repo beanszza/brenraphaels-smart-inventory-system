@@ -89,9 +89,9 @@ export default function ProcurementQAInspectionModal({
     <ModalWrapper open={!!order} title={`Quality Assurance Inspection - Order ${order.id}`} onClose={onClose} size="max-w-[560px]">
       <div className="space-y-4">
         <div className="p-3 bg-surface-muted border border-divider rounded-card grid grid-cols-2 sm:grid-cols-4 gap-3 type-caption">
-          <div><span className="text-text-muted">Item:</span> <span className="font-bold text-text-primary">{order.item}</span></div>
+          <div><span className="text-text-muted">Item:</span> <span className="font-semibold text-text-primary">{order.item}</span></div>
           <div><span className="text-text-muted">Supplier:</span> <span className="font-medium text-text-primary">{order.supplier}</span></div>
-          <div><span className="text-text-muted">Qty:</span> <span className="font-bold text-text-primary">{order.quantity}</span></div>
+          <div><span className="text-text-muted">Qty:</span> <span className="font-semibold text-text-primary">{order.quantity}</span></div>
           <div><span className="text-text-muted">Status:</span> <span className="font-semibold text-text-primary">{result}</span></div>
         </div>
 
@@ -115,7 +115,7 @@ export default function ProcurementQAInspectionModal({
                   {isChecked && <Check size={12} strokeWidth={3} />}
                 </div>
                 <div>
-                  <p className="type-label font-bold text-text-primary">{item.label}</p>
+                  <p className="type-label font-semibold text-text-primary">{item.label}</p>
                   <p className="type-caption text-text-muted">{item.desc}</p>
                 </div>
               </div>

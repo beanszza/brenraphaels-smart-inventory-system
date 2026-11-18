@@ -32,14 +32,14 @@ export default function ProcurementTable({
       <table className="w-full type-table-cell">
         <thead>
           <tr className="table-head-row border-b border-divider">
-            <th className="table-th sticky left-0 z-20 min-w-[140px] w-36 px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap bg-surface-muted backdrop-blur-xs border-r border-divider shadow-sticky">ORDER NO.</th>
-            <th className="table-th px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">ITEM</th>
-            <th className="table-th px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">SUPPLIER</th>
-            <th className="table-th px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">QUANTITY</th>
-            <th className="table-th px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">ORDER DATE</th>
-            <th className="table-th px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">ETA</th>
-            <th className="table-th px-3 py-3 text-left font-bold text-text-muted tracking-wider whitespace-nowrap">STATUS</th>
-            <th className="table-th px-3 py-3 text-center font-bold text-text-muted tracking-wider whitespace-nowrap">ACTIONS</th>
+            <th className="table-th sticky left-0 z-20 min-w-[140px] w-36 px-3 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap bg-surface-muted backdrop-blur-xs border-r border-divider shadow-sticky">ORDER NO.</th>
+            <th className="table-th px-3 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">ITEM</th>
+            <th className="table-th px-3 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">SUPPLIER</th>
+            <th className="table-th px-3 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">QUANTITY</th>
+            <th className="table-th px-3 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">ORDER DATE</th>
+            <th className="table-th px-3 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">ETA</th>
+            <th className="table-th px-3 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">STATUS</th>
+            <th className="table-th px-3 py-3 text-center font-semibold text-text-muted tracking-wider whitespace-nowrap">ACTIONS</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-divider">
@@ -52,7 +52,7 @@ export default function ProcurementTable({
           ) : (
             orders.map((order) => (
               <tr key={order.id} className="hover:bg-surface-hover transition-colors group table-row">
-                <td className="table-td sticky left-0 z-10 min-w-[140px] w-36 px-3 py-3 font-bold text-text-primary whitespace-nowrap bg-surface group-hover:bg-surface-hover transition-colors border-r border-divider shadow-sticky">{order.id}</td>
+                <td className="table-td sticky left-0 z-10 min-w-[140px] w-36 px-3 py-3 font-semibold text-text-primary whitespace-nowrap bg-surface group-hover:bg-surface-hover transition-colors border-r border-divider shadow-sticky">{order.id}</td>
                 <td className="table-td px-3 py-3 font-medium text-text-primary whitespace-nowrap">{order.item}</td>
                 <td className="table-td px-3 py-3 text-text-muted whitespace-nowrap">{order.supplier}</td>
                 <td className="table-td px-3 py-3 text-text-muted whitespace-nowrap">{order.quantity}</td>

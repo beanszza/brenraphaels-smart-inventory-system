@@ -196,7 +196,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider type-caption">
           <div>
             <span className="text-text-muted block type-caption mb-1">Supplier / Vendor</span>
-            <span className="font-bold text-text-primary type-body">{po.supplierName}</span>
+            <span className="font-semibold text-text-primary type-body">{po.supplierName}</span>
           </div>
           <div>
             <span className="text-text-muted block type-caption mb-1">Purchase Requisition Reference</span>
@@ -213,7 +213,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
         {/* Confirmed Particulars Table */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="type-table-header font-bold text-text-primary uppercase tracking-wider">
+            <label className="type-table-header font-semibold text-text-primary uppercase tracking-wider">
               Confirmed Particulars &amp; Total Pricing
             </label>
             <span className="type-caption text-text-muted">
@@ -225,10 +225,10 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
             <table className="w-full type-table-cell">
               <thead className="table-head-row border-b border-divider text-text-muted uppercase type-table-header">
                 <tr>
-                  <th className="table-th px-3.5 py-2.5 text-left font-bold">PARTICULARS</th>
-                  <th className="table-th px-3 py-2.5 text-center font-bold">SENT QTY</th>
-                  <th className="table-th px-3 py-2.5 text-center font-bold w-36">CONFIRMED QTY *</th>
-                  <th className="table-th px-3.5 py-2.5 text-right font-bold w-40">TOTAL PRICE (₱) *</th>
+                  <th className="table-th px-3.5 py-2.5 text-left font-semibold">PARTICULARS</th>
+                  <th className="table-th px-3 py-2.5 text-center font-semibold">SENT QTY</th>
+                  <th className="table-th px-3 py-2.5 text-center font-semibold w-36">CONFIRMED QTY *</th>
+                  <th className="table-th px-3.5 py-2.5 text-right font-semibold w-40">TOTAL PRICE (₱) *</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-divider">
@@ -252,7 +252,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
                           step="any"
                           value={item.confirmedQuantity || ""}
                           onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                          className={`h-8 w-24 mx-auto text-center font-bold type-body bg-surface rounded-control ${
+                          className={`h-8 w-24 mx-auto text-center font-semibold type-body bg-surface rounded-control ${
                             errors[`qty_${idx}`] ? "border-status-red" : "border-divider"
                           } ${isReduced ? "text-status-amber" : "text-text-primary"}`}
                         />
@@ -268,7 +268,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
                           placeholder="0.00"
                           value={item.totalPrice || ""}
                           onChange={(e) => handleTotalPriceChange(idx, e.target.value)}
-                          className={`h-8 w-32 ml-auto text-right font-bold type-body bg-surface rounded-control text-text-primary ${
+                          className={`h-8 w-32 ml-auto text-right font-semibold type-body bg-surface rounded-control text-text-primary ${
                             errors[`price_${idx}`] ? "border-status-red" : "border-divider"
                           }`}
                         />
@@ -296,10 +296,10 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
 
         {/* Total Summary Row */}
         <div className="flex justify-between items-center p-4 rounded-card bg-surface-muted border border-divider">
-          <span className="type-table-header font-black uppercase tracking-wider text-text-primary">
+          <span className="type-table-header font-semibold uppercase tracking-wider text-text-primary">
             TOTAL AMOUNT DUE
           </span>
-          <span className="type-stat-value font-black text-text-primary">
+          <span className="type-stat-value font-semibold text-text-primary">
             ₱{calculatedGrandTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>

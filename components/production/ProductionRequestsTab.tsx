@@ -323,7 +323,7 @@ export default function ProductionRequestsTab({
               >
                 <span>{tab}</span>
                 <span
-                  className={`px-1.5 py-0.5 rounded-pill type-caption font-bold ${isSelected ? "bg-surface text-text-primary" : "bg-surface-secondary text-text-muted"
+                  className={`px-1.5 py-0.5 rounded-pill type-caption font-semibold ${isSelected ? "bg-surface text-text-primary" : "bg-surface-secondary text-text-muted"
                     }`}
                 >
                   {count}

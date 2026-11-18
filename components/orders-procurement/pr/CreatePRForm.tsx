@@ -465,9 +465,9 @@ export function CreatePRModal({
               <table className="w-full">
                 <thead className="bg-surface-muted border-b border-divider text-text-muted uppercase table-head-row type-table-header">
                   <tr>
-                    <th className="table-th px-4 py-2.5 text-left font-bold">ITEM NAME</th>
-                    <th className="table-th px-4 py-2.5 text-left font-bold">Unit of Measure</th>
-                    <th className="table-th px-4 py-2.5 text-right font-bold">QUANTITY</th>
+                    <th className="table-th px-4 py-2.5 text-left font-semibold">ITEM NAME</th>
+                    <th className="table-th px-4 py-2.5 text-left font-semibold">Unit of Measure</th>
+                    <th className="table-th px-4 py-2.5 text-right font-semibold">QUANTITY</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-divider">
@@ -481,7 +481,7 @@ export function CreatePRModal({
                         <td className="table-td px-4 py-2.5 text-text-muted">
                           {item.uomName || sup?.uomName || "Unit"}
                         </td>
-                        <td className="table-td px-4 py-2.5 text-right font-bold text-text-primary">
+                        <td className="table-td px-4 py-2.5 text-right font-semibold text-text-primary">
                           {item.requestedQuantity}
                         </td>
                       </tr>
@@ -528,7 +528,7 @@ export function CreatePRModal({
                       return c;
                     })
                   }
-                  className="font-bold underline ml-2 shrink-0 cursor-pointer"
+                  className="font-semibold underline ml-2 shrink-0 cursor-pointer"
                 >
                   Dismiss
                 </button>
@@ -791,7 +791,7 @@ export function CreatePRModal({
                                 step="any"
                                 value={item.requestedQuantity || ""}
                                 onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                                className="h-8 w-28 text-right type-body font-bold border-divider bg-surface text-text-primary ml-auto rounded-control"
+                                className="h-8 w-28 text-right type-body font-semibold border-divider bg-surface text-text-primary ml-auto rounded-control"
                               />
                             </td>
 

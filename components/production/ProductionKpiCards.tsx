@@ -38,7 +38,7 @@ export default function ProductionKpiCards({
         </div>
 
         <div className="mt-4">
-          <div className="type-kpi font-extrabold tracking-tight text-text-primary">
+          <div className="type-kpi font-semibold tracking-tight text-text-primary">
             {totalRequests}
           </div>
           <p className="type-caption text-text-muted mt-1">
@@ -70,7 +70,7 @@ export default function ProductionKpiCards({
         </div>
 
         <div className="mt-4">
-          <div className="type-kpi font-extrabold tracking-tight text-text-primary">
+          <div className="type-kpi font-semibold tracking-tight text-text-primary">
             {pendingApprovalCount}
           </div>
           <p className="type-caption text-text-muted mt-1">
@@ -102,7 +102,7 @@ export default function ProductionKpiCards({
         </div>
 
         <div className="mt-4">
-          <div className="type-kpi font-extrabold tracking-tight text-text-primary">
+          <div className="type-kpi font-semibold tracking-tight text-text-primary">
             {activeBatchesCount}
           </div>
           <p className="type-caption text-text-muted mt-1">
