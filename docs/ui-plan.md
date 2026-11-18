@@ -268,7 +268,7 @@ flowchart LR
 
 | Stage | What | Files | Risk / Visible Change? |
 | :--- | :--- | :---: | :--- |
-| **0** | Playwright `toHaveScreenshot` baseline (`1440`, `768`, `375` widths) + checks | Test setup | No app change |
+| **0** | Playwright `toHaveScreenshot` baseline (`1440`, `768`, `375` widths) + checks | Test setup | **[COMPLETED]** No app change (84 snapshots recorded) |
 | **1** | Central `tokens.css` (additive only) | 3 | **None — must pass Playwright `toHaveScreenshot` as pixel-identical** |
 | **2** | Point existing theme aliases at Figma values + `scripts/check-tokens.mjs` (WARNING mode) | 5 | **HIGH RISK** — changes colors across ~205 files at once; own commit + diff review |
 | **3A–3G** | Shared components (buttons → tables) | ~33 | Yes, inside primitives (review Playwright diffs) |
