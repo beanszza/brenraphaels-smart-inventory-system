@@ -157,21 +157,21 @@ function CategoryModalForm({
       open={open}
       title={editingCategory ? "Edit Category" : "Add New Category"}
       onClose={onClose}
-      size="max-w-md"
+      size="max-w-[480px]"
     >
       <div className="space-y-4">
         {saveError && (
-          <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="rounded-control border border-status-red-border bg-status-red-bg p-3 type-body text-status-red">
             {saveError}
           </div>
         )}
         {/* Category Name */}
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <label className="block text-xs font-semibold text-foreground">
-              Category Name <span className="text-destructive">*</span>
+            <label className="block type-label text-ink">
+              Category Name <span className="text-status-red">*</span>
             </label>
-            <span className={`text-[11px] ${categoryName.length >= CATEGORY_NAME_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+            <span className={`type-caption ${categoryName.length >= CATEGORY_NAME_MAX ? "font-medium text-status-amber" : "text-ink-muted"}`}>
               {categoryName.length}/{CATEGORY_NAME_MAX}
             </span>
           </div>
@@ -181,25 +181,25 @@ function CategoryModalForm({
             onChange={handleNameChange}
             aria-invalid={!!nameError}
             placeholder="e.g. Packaging Materials"
-            style={nameError ? { borderColor: "var(--destructive)" } : undefined}
-            className={`w-full rounded-xl border ${
-              nameError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-            } bg-card text-foreground px-4 py-2.5 text-sm transition-colors`}
+            style={nameError ? { borderColor: "var(--color-status-red-border)" } : undefined}
+            className={`w-full rounded-control border ${
+              nameError ? "!border-status-red-border focus-visible:!ring-destructive" : "border-border"
+            } bg-surface text-ink px-4 py-2.5 type-body transition-colors`}
           />
           {nameError ? (
-            <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{nameError}</p>
+            <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">{nameError}</p>
           ) : nameWarning ? (
-            <p className="mt-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">{nameWarning}</p>
+            <p className="mt-1.5 type-caption font-medium text-status-amber animate-in fade-in-50">{nameWarning}</p>
           ) : null}
         </div>
 
         {/* Description */}
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <label className="block text-xs font-semibold text-foreground">
+            <label className="block type-label text-ink">
               Description
             </label>
-            <span className={`text-[11px] ${description.length >= CATEGORY_DESC_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+            <span className={`type-caption ${description.length >= CATEGORY_DESC_MAX ? "font-medium text-status-amber" : "text-ink-muted"}`}>
               {description.length}/{CATEGORY_DESC_MAX}
             </span>
           </div>
@@ -209,19 +209,19 @@ function CategoryModalForm({
             onChange={handleDescriptionChange}
             aria-invalid={!!descError}
             placeholder="Optional description of this category..."
-            className={`w-full rounded-xl border ${
-              descError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-            } bg-card text-foreground p-3 text-sm focus:ring-1 focus:ring-ring outline-none`}
+            className={`w-full rounded-control border ${
+              descError ? "!border-status-red-border focus-visible:!ring-destructive" : "border-border"
+            } bg-surface text-ink p-3 type-body focus:ring-1 focus:ring-ring outline-none`}
           />
           {descError ? (
-            <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{descError}</p>
+            <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">{descError}</p>
           ) : descWarning ? (
-            <p className="mt-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">{descWarning}</p>
+            <p className="mt-1.5 type-caption font-medium text-status-amber animate-in fade-in-50">{descWarning}</p>
           ) : null}
         </div>
 
         {/* Expiry Tracking Option */}
-        <div className="rounded-xl border border-border bg-muted/20 p-3.5">
+        <div className="rounded-control border border-border bg-subtle p-3.5">
           <label
             htmlFor="category-has-expiry"
             className="flex items-start gap-2.5 cursor-pointer select-none"
@@ -231,13 +231,13 @@ function CategoryModalForm({
               type="checkbox"
               checked={hasExpiry}
               onChange={(e) => setHasExpiry(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-border accent-primary cursor-pointer"
+              className="mt-0.5 size-4 rounded-sm border-border accent-primary cursor-pointer"
             />
             <span className="space-y-0.5">
-              <span className="block text-xs font-semibold text-foreground">
+              <span className="block type-label text-ink">
                 This category has an expiry date
               </span>
-              <span className="block text-[11px] text-muted-foreground leading-relaxed">
+              <span className="block type-caption text-ink-muted leading-relaxed">
                 Changes only affect new Goods Receipts. Existing receipts and lots keep their recorded expiry.
               </span>
             </span>
@@ -247,28 +247,28 @@ function CategoryModalForm({
         {/* Status (Edit only) */}
         {editingCategory && (
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Status</label>
+            <label className="mb-1.5 block type-label text-ink">Status</label>
             <select
               value={isActive ? "true" : "false"}
               onChange={(e) => setIsActive(e.target.value === "true")}
-              className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm focus:ring-1 focus:ring-ring"
+              className="w-full rounded-control border border-border bg-surface text-ink px-3 py-2 type-body focus:ring-1 focus:ring-ring"
             >
               <option value="true">Active</option>
               <option value="false">Inactive</option>
             </select>
-            <p className="mt-1 text-[11px] text-muted-foreground">
+            <p className="mt-1 type-caption text-ink-muted">
               Inactive categories are hidden from Inventory and new Supply creation.
             </p>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
+        <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
           <ModalCloseButton
             type="button"
             variant="outline"
             fallbackOnClose={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors"
+            className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors"
           >
             Cancel
           </ModalCloseButton>
@@ -276,7 +276,7 @@ function CategoryModalForm({
             type="button"
             disabled={hasErrors || isSaving}
             onClick={handleRequestSave}
-            className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? "Saving..." : editingCategory ? "Save Changes" : "Create Category"}
           </Button>

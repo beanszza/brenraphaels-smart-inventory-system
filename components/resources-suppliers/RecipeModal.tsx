@@ -152,7 +152,7 @@ function RecipeModalForm({
         notes: editingRecipe?.notes ?? "",
         isActive: recipeActive,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       setSaveError(error instanceof Error ? error.message : "Unable to save. Please try again.");
     } finally {
       setSaving(false);
@@ -182,7 +182,7 @@ function RecipeModalForm({
       onClose={() => {
         if (!saving) onClose();
       }}
-      size="max-w-4xl"
+      size="max-w-[640px]"
     >
       <form
         onSubmit={(event) => {
@@ -191,15 +191,15 @@ function RecipeModalForm({
         }}
       >
         {saveError && (
-          <p role="alert" className="mb-3 text-sm text-destructive font-medium animate-in fade-in-50">
+          <p role="alert" className="mb-3 type-body text-status-red font-medium animate-in fade-in-50">
             {saveError}
           </p>
         )}
         <fieldset disabled={saving} className="space-y-4">
           {/* Recipe Name */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Recipe Name <span className="text-destructive">*</span>
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
+              Recipe Name <span className="text-status-red">*</span>
             </label>
             <Input
               type="text"
@@ -213,13 +213,13 @@ function RecipeModalForm({
               }}
               placeholder="e.g. Ube Halaya Standard Batch"
               aria-invalid={!!recipeNameError}
-              style={recipeNameError ? { borderColor: "var(--destructive)" } : undefined}
-              className={`w-full h-10 rounded-xl border ${
-                recipeNameError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-              } bg-card px-3.5 text-sm text-foreground transition-colors focus:ring-1 focus:ring-ring focus:outline-none`}
+              style={recipeNameError ? { borderColor: "var(--status-red)" } : undefined}
+              className={`w-full h-10 rounded-control border ${
+                recipeNameError ? "!border-status-red focus-visible:!ring-status-red" : "border-divider"
+              } bg-surface px-3.5 type-body text-text-primary transition-colors focus:ring-1 focus:ring-accent focus:outline-none`}
             />
             {recipeNameError && (
-              <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">
+              <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">
                 {recipeNameError}
               </p>
             )}
@@ -229,13 +229,13 @@ function RecipeModalForm({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
             {/* Product Selector */}
             <div className="sm:col-span-5">
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Product <span className="text-destructive">*</span>
+              <label className="mb-1.5 block type-label font-semibold text-text-primary">
+                Product <span className="text-status-red">*</span>
               </label>
               <select
                 value={selectedProductName}
                 onChange={(e) => handleProductChange(e.target.value)}
-                className="w-full h-10 rounded-xl border border-border bg-card px-3.5 text-sm text-foreground focus:ring-1 focus:ring-ring focus:outline-none transition-colors"
+                className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 type-body text-text-primary focus:ring-1 focus:ring-accent focus:outline-none transition-colors"
               >
                 {distinctProductNames.length === 0 ? (
                   <option value="">No products found (configure in Production)</option>
@@ -251,13 +251,13 @@ function RecipeModalForm({
 
             {/* Variant Selector */}
             <div className="sm:col-span-3">
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Variant <span className="text-destructive">*</span>
+              <label className="mb-1.5 block type-label font-semibold text-text-primary">
+                Variant <span className="text-status-red">*</span>
               </label>
               <select
                 value={productId}
                 onChange={(e) => setProductId(Number(e.target.value))}
-                className="w-full h-10 rounded-xl border border-border bg-card px-3.5 text-sm text-foreground focus:ring-1 focus:ring-ring focus:outline-none transition-colors"
+                className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 type-body text-text-primary focus:ring-1 focus:ring-accent focus:outline-none transition-colors"
               >
                 {availableVariants.length === 0 ? (
                   <option value={0}>No variant configured</option>
@@ -273,8 +273,8 @@ function RecipeModalForm({
 
             {/* Target Output Quantity (pcs) */}
             <div className="sm:col-span-4">
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Target Output Quantity (pcs) <span className="text-destructive">*</span>
+              <label className="mb-1.5 block type-label font-semibold text-text-primary">
+                Target Output Quantity (pcs) <span className="text-status-red">*</span>
               </label>
               <Input
                 type="number"
@@ -297,13 +297,13 @@ function RecipeModalForm({
                 }}
                 placeholder="e.g. 100"
                 aria-invalid={!!batchSizeError}
-                style={batchSizeError ? { borderColor: "var(--destructive)" } : undefined}
-                className={`w-full h-10 rounded-xl border ${
-                  batchSizeError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                } bg-card px-3.5 text-sm text-foreground transition-colors focus:ring-1 focus:ring-ring focus:outline-none`}
+                style={batchSizeError ? { borderColor: "var(--status-red)" } : undefined}
+                className={`w-full h-10 rounded-control border ${
+                  batchSizeError ? "!border-status-red focus-visible:!ring-status-red" : "border-divider"
+                } bg-surface px-3.5 type-body text-text-primary transition-colors focus:ring-1 focus:ring-accent focus:outline-none`}
               />
               {batchSizeError && (
-                <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">
+                <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">
                   {batchSizeError}
                 </p>
               )}
@@ -311,13 +311,13 @@ function RecipeModalForm({
           </div>
 
           {/* Bill of Materials Section */}
-          <div className="pt-2 border-t border-border space-y-3">
+          <div className="pt-2 border-t border-divider space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                <h3 className="type-label font-semibold text-text-primary uppercase tracking-wider">
                   Bill of Materials
                 </h3>
-                <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                <span className="inline-flex items-center rounded-pill bg-surface-muted px-2 py-0.5 type-caption font-medium text-text-muted">
                   {ingredients.length} {ingredients.length === 1 ? "item" : "items"}
                 </span>
               </div>
@@ -390,7 +390,7 @@ function RecipeModalForm({
                   },
                 ])
               }
-              className="w-full h-10 rounded-xl border border-dashed border-border bg-card/60 text-xs font-semibold text-foreground hover:bg-muted/70 hover:border-foreground/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full h-10 rounded-control border border-dashed border-divider bg-surface/60 type-caption font-semibold text-text-primary hover:bg-hover hover:border-divider-strong transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               <span>Add Item</span>
@@ -400,11 +400,11 @@ function RecipeModalForm({
           {/* Status (when editing) */}
           {editingRecipe && (
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">Status</label>
+              <label className="mb-1.5 block type-label font-semibold text-text-primary">Status</label>
               <select
                 value={recipeActive ? "true" : "false"}
                 onChange={(e) => setRecipeActive(e.target.value === "true")}
-                className="w-full h-10 rounded-xl border border-border bg-card text-foreground px-3.5 text-sm focus:ring-1 focus:ring-ring focus:outline-none"
+                className="w-full h-10 rounded-control border border-divider bg-surface text-text-primary px-3.5 type-body focus:ring-1 focus:ring-accent focus:outline-none"
               >
                 <option value="true">Active</option>
                 <option value="false">Inactive</option>
@@ -413,20 +413,20 @@ function RecipeModalForm({
           )}
 
           {/* Modal Actions */}
-          <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
+          <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
             <ModalCloseButton
               type="button"
               variant="outline"
               disabled={saving}
               fallbackOnClose={onClose}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-foreground hover:text-background transition-colors"
+              className="rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button text-text-primary hover:bg-hover transition-colors"
             >
               Cancel
             </ModalCloseButton>
             <Button
               type="submit"
               disabled={isFormInvalid || saving}
-              className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-control bg-button-primary text-button-primary-foreground px-5 py-2.5 type-label-button hover:bg-button-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? "Saving..." : editingRecipe ? "Save Changes" : "Create Recipe"}
             </Button>

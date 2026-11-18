@@ -48,12 +48,12 @@ export default function RecipeIngredientItem({
   }, [availableSupplies]);
 
   return (
-    <div className="rounded-xl border border-border p-3.5 bg-card/60 transition-colors">
+    <div className="rounded-card border border-divider p-3.5 bg-surface/60 transition-colors">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 items-end">
         {/* Item Selector */}
         <div className="sm:col-span-4">
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">
-            Item <span className="text-destructive">*</span>
+          <label className="mb-1.5 block type-label font-semibold text-text-primary">
+            Item <span className="text-status-red">*</span>
           </label>
           <select
             value={ingredient.itemId || ""}
@@ -62,7 +62,7 @@ export default function RecipeIngredientItem({
               const supply = baseSupplies.find((s) => s.itemId === newId);
               onItemChange(ingredient.id, newId, supply?.uomId || 0);
             }}
-            className="w-full h-10 rounded-xl border border-border bg-card px-3.5 text-sm text-foreground focus:ring-1 focus:ring-ring focus:outline-none transition-colors"
+            className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 type-body text-text-primary focus:ring-1 focus:ring-accent focus:outline-none transition-colors"
           >
             <option value="" disabled>
               Select item
@@ -81,20 +81,20 @@ export default function RecipeIngredientItem({
 
         {/* Category (Separated per Item) */}
         <div className="sm:col-span-3">
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">Category</label>
+          <label className="mb-1.5 block type-label font-semibold text-text-primary">Category</label>
           <input
             type="text"
             readOnly
             disabled
             value={categoryDisplay}
-            className="w-full h-10 rounded-xl border border-border bg-muted/40 px-3.5 text-sm text-muted-foreground cursor-not-allowed select-none truncate"
+            className="w-full h-10 rounded-control border border-divider bg-surface-muted px-3.5 type-body text-text-muted cursor-not-allowed select-none truncate"
           />
         </div>
 
         {/* Quantity Input */}
         <div className="sm:col-span-2">
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">
-            Quantity <span className="text-destructive">*</span>
+          <label className="mb-1.5 block type-label font-semibold text-text-primary">
+            Quantity <span className="text-status-red">*</span>
           </label>
           <Input
             type="number"
@@ -103,7 +103,7 @@ export default function RecipeIngredientItem({
             placeholder="e.g. 5"
             value={ingredient.quantity}
             aria-invalid={!!error}
-            style={error ? { borderColor: "var(--destructive)" } : undefined}
+            style={error ? { borderColor: "var(--status-red)" } : undefined}
             onKeyDown={(e) => {
               if (["-", "+", "e", "E"].includes(e.key)) {
                 e.preventDefault();
@@ -115,21 +115,21 @@ export default function RecipeIngredientItem({
                 onQuantityChange(ingredient.id, val);
               }
             }}
-            className={`w-full h-10 rounded-xl border ${
-              error ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-            } bg-card px-3.5 text-sm text-foreground transition-colors focus:ring-1 focus:ring-ring focus:outline-none`}
+            className={`w-full h-10 rounded-control border ${
+              error ? "!border-status-red focus-visible:!ring-status-red" : "border-divider"
+            } bg-surface px-3.5 type-body text-text-primary transition-colors focus:ring-1 focus:ring-accent focus:outline-none`}
           />
         </div>
 
         {/* Read-Only Unit */}
         <div className="sm:col-span-2">
-          <label className="mb-1.5 block text-xs font-semibold text-foreground">Unit</label>
+          <label className="mb-1.5 block type-label font-semibold text-text-primary">Unit</label>
           <input
             type="text"
             readOnly
             disabled
             value={uomDisplay}
-            className="w-full h-10 rounded-xl border border-border bg-muted/40 px-3 text-sm text-center text-muted-foreground cursor-not-allowed select-none"
+            className="w-full h-10 rounded-control border border-divider bg-surface-muted px-3 type-body text-center text-text-muted cursor-not-allowed select-none"
           />
         </div>
 
@@ -139,7 +139,7 @@ export default function RecipeIngredientItem({
             <button
               type="button"
               onClick={() => onRemove(ingredient.id)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-destructive hover:border-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+              className="flex h-10 w-10 items-center justify-center rounded-control border border-divider text-text-muted hover:text-status-red hover:border-status-red hover:bg-status-red/10 transition-colors cursor-pointer"
               title="Remove item"
               aria-label="Remove item"
             >
@@ -151,7 +151,7 @@ export default function RecipeIngredientItem({
         </div>
       </div>
       {error && (
-        <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{error}</p>
+        <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">{error}</p>
       )}
     </div>
   );

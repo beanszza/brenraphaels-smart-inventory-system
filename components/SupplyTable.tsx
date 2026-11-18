@@ -56,11 +56,11 @@ export default function SupplyTable() {
       {/* TOP */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">
+          <h2 className="type-page-title text-text-primary">
             Supply List
           </h2>
 
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="type-body text-text-muted mt-1">
             Raw materials and tools inventory
           </p>
         </div>
@@ -68,11 +68,11 @@ export default function SupplyTable() {
         <button
           className="
             flex items-center gap-2
-            bg-primary hover:bg-primary/90
-            text-white
+            bg-button-primary hover:bg-button-primary-hover
+            text-button-primary-foreground
             px-4 py-3
-            rounded-xl
-            text-sm font-semibold
+            rounded-control
+            type-label-button
           "
         >
           <Plus size={18} />
@@ -83,52 +83,52 @@ export default function SupplyTable() {
       {/* STATS */}
       <div className="grid grid-cols-3 gap-4">
 
-        <div className="bg-card border border-border rounded-xl p-5">
-          <p className="text-sm text-muted-foreground">
+        <div className="bg-surface border border-divider rounded-card p-5 shadow-card">
+          <p className="type-caption text-text-muted">
             Total Items
           </p>
 
-          <h3 className="text-4xl font-bold text-foreground mt-2">
+          <h3 className="type-stat-value text-text-primary mt-2">
             14
           </h3>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-5">
-          <p className="text-sm text-muted-foreground">
+        <div className="bg-surface border border-divider rounded-card p-5 shadow-card">
+          <p className="type-caption text-text-muted">
             Raw Materials
           </p>
 
-          <h3 className="text-4xl font-bold text-foreground mt-2">
+          <h3 className="type-stat-value text-text-primary mt-2">
             9
           </h3>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-5">
-          <p className="text-sm text-muted-foreground">
+        <div className="bg-surface border border-divider rounded-card p-5 shadow-card">
+          <p className="type-caption text-text-muted">
             Tools
           </p>
 
-          <h3 className="text-4xl font-bold text-foreground mt-2">
+          <h3 className="type-stat-value text-text-primary mt-2">
             5
           </h3>
         </div>
       </div>
 
       {/* TABLE */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="bg-surface border border-divider rounded-card overflow-hidden shadow-card">
 
         {/* FILTER */}
-        <div className="p-5 border-b border-border flex items-center gap-3">
+        <div className="p-5 border-b border-divider flex items-center gap-3">
 
-          <button className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium">
+          <button className="bg-button-primary text-button-primary-foreground px-4 py-2 rounded-control type-label-button">
             All
           </button>
 
-          <button className="border border-border text-foreground px-4 py-2 rounded-lg text-sm font-medium">
+          <button className="border border-divider text-text-primary hover:bg-hover px-4 py-2 rounded-control type-label-button">
             Raw Materials
           </button>
 
-          <button className="border border-border text-foreground px-4 py-2 rounded-lg text-sm font-medium">
+          <button className="border border-divider text-text-primary hover:bg-hover px-4 py-2 rounded-control type-label-button">
             Tools
           </button>
 
@@ -142,65 +142,65 @@ export default function SupplyTable() {
         <div className="overflow-x-auto">
           <table className="w-full">
 
-            <thead>
-              <tr className="border-b border-border">
+            <thead className="border-b border-divider bg-surface-muted table-head-row">
+              <tr>
 
-                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+                <th className="text-left px-6 py-4 table-th text-text-muted uppercase">
                   ITEM NO.
                 </th>
 
-                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+                <th className="text-left px-6 py-4 table-th text-text-muted uppercase">
                   NAME
                 </th>
 
-                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+                <th className="text-left px-6 py-4 table-th text-text-muted uppercase">
                   CATEGORY
                 </th>
 
-                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+                <th className="text-left px-6 py-4 table-th text-text-muted uppercase">
                   UNIT
                 </th>
 
-                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+                <th className="text-left px-6 py-4 table-th text-text-muted uppercase">
                   MIN STOCK
                 </th>
 
-                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+                <th className="text-left px-6 py-4 table-th text-text-muted uppercase">
                   ACTIONS
                 </th>
               </tr>
             </thead>
 
-            <tbody>
+            <tbody className="divide-y divide-divider">
               {supplies.map((item, idx) => (
                 <tr
                   key={item.id}
-                  className="border-b border-border"
+                  className="table-row hover:bg-hover transition-colors"
                 >
-                  <td className="px-6 py-5 text-sm text-foreground">
+                  <td className="px-6 py-5 table-td text-text-primary">
                     {idx + 1}
                   </td>
 
-                  <td className="px-6 py-5 text-sm font-medium text-foreground">
+                  <td className="px-6 py-5 table-td font-medium text-text-primary">
                     {item.name}
                   </td>
 
-                  <td className="px-6 py-5">
-                    <span className="bg-blue-100 text-foreground px-3 py-1 rounded-lg text-xs font-semibold">
+                  <td className="px-6 py-5 table-td">
+                    <span className="bg-surface-muted text-text-primary border border-divider px-3 py-1 rounded-pill type-caption font-semibold">
                       {item.category}
                     </span>
                   </td>
 
-                  <td className="px-6 py-5 text-sm text-foreground">
+                  <td className="px-6 py-5 table-td text-text-primary">
                     {item.unit}
                   </td>
 
-                  <td className="px-6 py-5 text-sm text-foreground">
+                  <td className="px-6 py-5 table-td text-text-primary">
                     {item.minStock}
                   </td>
 
-                  <td className="px-6 py-5">
-                    <button className="flex items-center gap-2 text-foreground font-medium text-sm">
+                  <td className="px-6 py-5 table-td">
+                    <button className="flex items-center gap-2 text-text-primary hover:text-accent font-medium type-body">
                       <Pencil size={16} />
                       Edit
                     </button>

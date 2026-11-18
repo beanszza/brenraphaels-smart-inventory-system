@@ -31,21 +31,21 @@ const suppliers = [
 
 export default function SupplierTable() {
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
+    <div className="bg-surface border border-border rounded-card overflow-hidden">
 
-      <div className="p-6 flex items-center justify-between border-b border-border">
+      <div className="p-6 flex items-center justify-between border-b border-divider">
 
         <div>
-          <h2 className="text-2xl font-bold text-foreground">
+          <h2 className="type-page-title text-ink">
             Supplier Management
           </h2>
 
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="type-body text-ink-muted mt-1">
             Manage supplier relationships
           </p>
         </div>
 
-        <button className="bg-primary hover:bg-primary/90 text-white px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
+        <button className="bg-primary hover:bg-primary-hover text-primary-foreground px-4 py-2.5 rounded-control type-label-button flex items-center gap-2 cursor-pointer shadow-xs">
           <Plus size={18} />
           Add Supplier
         </button>
@@ -55,93 +55,93 @@ export default function SupplierTable() {
         <table className="w-full">
 
           <thead>
-            <tr className="border-b border-border">
+            <tr className="table-head-row">
 
-              <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+              <th className="table-th text-left px-6 py-2.5">
                 SUPPLIER NAME
               </th>
 
-              <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+              <th className="table-th text-left px-6 py-2.5">
                 CONTACT PERSON
               </th>
 
-              <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+              <th className="table-th text-left px-6 py-2.5">
                 CONTACT DETAILS
               </th>
 
-              <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+              <th className="table-th text-left px-6 py-2.5">
                 RATING
               </th>
 
-              <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+              <th className="table-th text-left px-6 py-2.5">
                 ON-TIME RATE
               </th>
 
-              <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+              <th className="table-th text-left px-6 py-2.5">
                 AVG LEAD TIME
               </th>
 
-              <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+              <th className="table-th text-left px-6 py-2.5">
                 STATUS
               </th>
 
-              <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground">
+              <th className="table-th text-left px-6 py-2.5">
                 ACTIONS
               </th>
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="divide-y divide-border">
             {suppliers.map((supplier) => (
               <tr
                 key={supplier.id}
-                className="border-b border-border"
+                className="table-row"
               >
-                <td className="px-6 py-5 text-sm font-semibold text-foreground">
+                <td className="table-td px-6 py-3 font-semibold text-ink">
                   {supplier.name}
                 </td>
 
-                <td className="px-6 py-5 text-sm text-foreground">
+                <td className="table-td px-6 py-3 text-ink">
                   {supplier.contact}
                 </td>
 
-                <td className="px-6 py-5">
-                  <div className="text-sm text-foreground">
+                <td className="table-td px-6 py-3">
+                  <div className="type-body text-ink">
                     {supplier.email}
                   </div>
 
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="type-caption text-ink-muted mt-1">
                     {supplier.phone}
                   </div>
                 </td>
 
-                <td className="px-6 py-5">
+                <td className="table-td px-6 py-3">
                   <div className="flex items-center gap-2">
                     <Star
                       size={15}
-                      className="text-foreground fill-foreground"
+                      className="text-ink fill-ink"
                     />
 
-                    <span className="text-sm text-foreground">
+                    <span className="type-body text-ink">
                       {supplier.rating}
                     </span>
                   </div>
                 </td>
 
-                <td className="px-6 py-5 text-sm font-semibold text-foreground">
+                <td className="table-td px-6 py-3 font-semibold text-ink tabular-nums">
                   {supplier.onTime}
                 </td>
 
-                <td className="px-6 py-5 text-sm text-foreground">
+                <td className="table-td px-6 py-3 text-ink">
                   {supplier.leadTime}
                 </td>
 
-                <td className="px-6 py-5">
+                <td className="table-td px-6 py-3">
                   <StatusBadge status={supplier.status} />
                 </td>
 
-                <td className="px-6 py-5">
-                  <button className="text-foreground">
+                <td className="table-td px-6 py-3">
+                  <button className="text-ink hover:text-ink-muted cursor-pointer">
                     <Pencil size={17} />
                   </button>
                 </td>

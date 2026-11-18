@@ -66,10 +66,10 @@ function SupplyDetailsModalContent({
   const isOverStock = item.maxStockLevel > 0 && currentStock > item.maxStockLevel;
 
   const stockIcon = isLowStock
-    ? <TrendingDown size={12} className="text-foreground" />
+    ? <TrendingDown size={12} className="text-text-primary" />
     : isOverStock
-    ? <TrendingUp size={12} className="text-foreground" />
-    : <Minus size={12} className="text-foreground" />;
+    ? <TrendingUp size={12} className="text-text-primary" />
+    : <Minus size={12} className="text-text-primary" />;
 
   const stockLabel = isLowStock ? "Low Stock" : isOverStock ? "Overstock" : "Normal";
 
@@ -79,29 +79,29 @@ function SupplyDetailsModalContent({
       open={!!item}
       title="Supply Item Details"
       onClose={onClose}
-      size="max-w-2xl"
+      size="max-w-[640px]"
     >
       <div className="space-y-6">
-        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        {error && <p role="alert" className="type-body text-status-red">{error}</p>}
         {/* Header Summary Banner */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-muted/40 border border-border">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-card bg-surface-muted border border-divider">
           <div className="flex items-center gap-3.5">
-            <div className="h-12 w-12 rounded-xl bg-foreground/5 border border-border flex items-center justify-center shrink-0">
-              <Package className="h-6 w-6 text-foreground" />
+            <div className="h-12 w-12 rounded-control bg-surface border border-divider flex items-center justify-center shrink-0">
+              <Package className="h-6 w-6 text-text-primary" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-foreground">{item.itemName}</h3>
+                <h3 className="type-card-title text-text-primary">{item.itemName}</h3>
                 <StatusBadge status={item.isActive !== false ? "Active" : "Inactive"} />
               </div>
-              <p className="text-xs font-medium text-muted-foreground mt-0.5">
+              <p className="type-caption font-medium text-text-muted mt-0.5">
                 {item.itemCode || `ITEM-${item.itemId}`}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="rounded-lg bg-muted text-foreground border border-border px-3 py-1 text-xs font-semibold">
+            <span className="rounded-pill bg-surface text-text-primary border border-divider px-3 py-1 type-caption font-semibold">
               {item.categoryName || "Raw Materials"}
             </span>
           </div>
@@ -109,58 +109,58 @@ function SupplyDetailsModalContent({
 
         {/* Stock Status Cards — monochromatic */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="p-4 rounded-xl border border-border bg-card space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Current Stock</span>
+          <div className="p-4 rounded-card border border-divider bg-surface space-y-1 shadow-card">
+            <span className="type-caption font-medium text-text-muted">Current Stock</span>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-foreground">{currentStock}</span>
-              <span className="text-xs text-muted-foreground font-semibold">{item.uomName}</span>
+              <span className="type-stat-value text-text-primary">{currentStock}</span>
+              <span className="type-caption text-text-muted font-semibold">{item.uomName}</span>
             </div>
-            <div className="flex items-center gap-1 pt-1 text-[11px] text-muted-foreground font-medium">
+            <div className="flex items-center gap-1 pt-1 type-caption text-text-muted font-medium">
               {stockIcon}
               <span>{stockLabel}</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-border bg-card space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Min Stock Threshold</span>
+          <div className="p-4 rounded-card border border-divider bg-surface space-y-1 shadow-card">
+            <span className="type-caption font-medium text-text-muted">Min Stock Threshold</span>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-foreground">{item.minStockLevel}</span>
-              <span className="text-xs text-muted-foreground font-semibold">{item.uomName}</span>
+              <span className="type-stat-value text-text-primary">{item.minStockLevel}</span>
+              <span className="type-caption text-text-muted font-semibold">{item.uomName}</span>
             </div>
-            <p className="text-[11px] text-muted-foreground pt-1">Reorder trigger point</p>
+            <p className="type-caption text-text-muted pt-1">Reorder trigger point</p>
           </div>
 
-          <div className="p-4 rounded-xl border border-border bg-card space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Max Stock Capacity</span>
+          <div className="p-4 rounded-card border border-divider bg-surface space-y-1 shadow-card">
+            <span className="type-caption font-medium text-text-muted">Max Stock Capacity</span>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-foreground">{item.maxStockLevel}</span>
-              <span className="text-xs text-muted-foreground font-semibold">{item.uomName}</span>
+              <span className="type-stat-value text-text-primary">{item.maxStockLevel}</span>
+              <span className="type-caption text-text-muted font-semibold">{item.uomName}</span>
             </div>
-            <p className="text-[11px] text-muted-foreground pt-1">Maximum stock holding</p>
+            <p className="type-caption text-text-muted pt-1">Maximum stock holding</p>
           </div>
         </div>
 
         {/* Specifications */}
         <div className="space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <h4 className="type-label font-bold uppercase tracking-wider text-text-muted">
             Item Specifications
           </h4>
-          <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2.5 text-xs">
-              <span className="text-muted-foreground font-medium">Supply No</span>
-              <span className="font-semibold text-foreground">{item.itemCode || "-"}</span>
+          <div className="rounded-card border border-divider bg-surface divide-y divide-divider overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2.5 type-caption">
+              <span className="text-text-muted font-medium">Supply No</span>
+              <span className="font-semibold text-text-primary">{item.itemCode || "-"}</span>
             </div>
-            <div className="flex items-center justify-between px-4 py-2.5 text-xs">
-              <span className="text-muted-foreground font-medium">Category</span>
-              <span className="font-semibold text-foreground">{item.categoryName}</span>
+            <div className="flex items-center justify-between px-4 py-2.5 type-caption">
+              <span className="text-text-muted font-medium">Category</span>
+              <span className="font-semibold text-text-primary">{item.categoryName}</span>
             </div>
-            <div className="flex items-center justify-between px-4 py-2.5 text-xs">
-              <span className="text-muted-foreground font-medium">Unit of Measure (UOM)</span>
-              <span className="font-semibold text-foreground">{item.uomName}</span>
+            <div className="flex items-center justify-between px-4 py-2.5 type-caption">
+              <span className="text-text-muted font-medium">Unit of Measure (UOM)</span>
+              <span className="font-semibold text-text-primary">{item.uomName}</span>
             </div>
-            <div className="flex items-center justify-between px-4 py-2.5 text-xs">
-              <span className="text-muted-foreground font-medium">Status</span>
-              <span className="font-semibold text-foreground">
+            <div className="flex items-center justify-between px-4 py-2.5 type-caption">
+              <span className="text-text-muted font-medium">Status</span>
+              <span className="font-semibold text-text-primary">
                 {item.isActive !== false ? "Active (In Circulation)" : "Inactive (Archived)"}
               </span>
             </div>
@@ -170,37 +170,37 @@ function SupplyDetailsModalContent({
         {/* Linked Suppliers */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <h4 className="type-label font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
               <Truck size={14} /> Linked Suppliers
             </h4>
-            <span className="text-[11px] font-medium text-muted-foreground">
+            <span className="type-caption font-medium text-text-muted">
               {linkedSuppliers.length} supplier{linkedSuppliers.length === 1 ? "" : "s"}
             </span>
           </div>
 
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="rounded-card border border-divider bg-surface overflow-hidden">
             {loading ? (
               <Skeleton aria-label="Loading details" className="m-4 h-16" />
             ) : linkedSuppliers.length === 0 ? (
               <div className="p-6 text-center space-y-1">
-                <p className="text-xs font-semibold text-foreground">No suppliers linked yet</p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="type-caption font-semibold text-text-primary">No suppliers linked yet</p>
+                <p className="type-caption text-text-muted">
                   Suppliers mapped to this item will automatically appear here.
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-divider">
                 {linkedSuppliers.map((s) => (
-                  <div key={s.supplierId} className="flex items-center justify-between p-3 text-xs">
+                  <div key={s.supplierId} className="flex items-center justify-between p-3 type-caption">
                     <div className="space-y-0.5">
-                      <p className="font-semibold text-foreground">{s.supplierName}</p>
+                      <p className="font-semibold text-text-primary">{s.supplierName}</p>
                       {s.supplierCode && (
-                        <p className="text-[10px] text-muted-foreground">{s.supplierCode}</p>
+                        <p className="type-caption text-text-muted">{s.supplierCode}</p>
                       )}
                     </div>
                     <div className="text-right space-y-0.5">
                       {s.leadTimeDays != null && (
-                        <p className="text-[10px] text-muted-foreground">
+                        <p className="type-caption text-text-muted">
                           {s.leadTimeDays} days lead time
                         </p>
                       )}
@@ -215,45 +215,45 @@ function SupplyDetailsModalContent({
         {/* Recent Orders */}
         <div className="space-y-2">
           <div className="flex items-center gap-1.5">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <h4 className="type-label font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
               <ShoppingCart size={14} /> Recent Orders
             </h4>
           </div>
 
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="rounded-card border border-divider bg-surface overflow-hidden">
             {loading ? (
               <Skeleton aria-label="Loading details" className="m-4 h-16" />
             ) : recentOrders.length === 0 ? (
               <div className="p-6 text-center space-y-1">
-                <p className="text-xs font-semibold text-foreground">No orders found</p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="type-caption font-semibold text-text-primary">No orders found</p>
+                <p className="type-caption text-text-muted">
                   Purchase orders for this item will appear here.
                 </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-border text-muted-foreground text-[11px]">
-                      <th className="px-3 py-2 text-left">PURCHASE ORDER NUMBER</th>
-                      <th className="px-3 py-2 text-left">DATE</th>
-                      <th className="px-3 py-2 text-left">STATUS</th>
-                      <th className="px-3 py-2 text-right">QTY</th>
+                <table className="w-full">
+                  <thead className="border-b border-divider bg-surface-muted table-head-row text-text-muted type-table-header uppercase">
+                    <tr>
+                      <th className="table-th px-3 py-2 text-left">PURCHASE ORDER NUMBER</th>
+                      <th className="table-th px-3 py-2 text-left">DATE</th>
+                      <th className="table-th px-3 py-2 text-left">STATUS</th>
+                      <th className="table-th px-3 py-2 text-right">QTY</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/60">
+                  <tbody className="divide-y divide-divider">
                     {recentOrders.map((order, i) => (
-                      <tr key={`${order.poId}-${i}`} className="hover:bg-muted/20">
-                        <td className="px-3 py-2.5 font-semibold text-foreground">{order.poNumber}</td>
-                        <td className="px-3 py-2.5 text-muted-foreground">
+                      <tr key={`${order.poId}-${i}`} className="table-row hover:bg-hover transition-colors">
+                        <td className="table-td px-3 py-2.5 font-semibold text-text-primary">{order.poNumber}</td>
+                        <td className="table-td px-3 py-2.5 text-text-muted">
                           {new Date(order.orderDate).toLocaleDateString("en-PH", {
                             year: "numeric", month: "short", day: "numeric",
                           })}
                         </td>
-                        <td className="px-3 py-2.5">
+                        <td className="table-td px-3 py-2.5">
                           <StatusBadge status={order.status} />
                         </td>
-                        <td className="px-3 py-2.5 text-right font-semibold text-foreground">
+                        <td className="table-td px-3 py-2.5 text-right font-semibold text-text-primary">
                           {order.quantity} {order.uomName}
                         </td>
                       </tr>
@@ -266,10 +266,10 @@ function SupplyDetailsModalContent({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex justify-end gap-3 pt-3 border-t border-border">
+        <div className="flex justify-end gap-3 pt-3 border-t border-divider">
           <ModalNativeCloseButton
             fallbackOnClose={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+            className="rounded-control border border-divider bg-surface px-5 py-2 type-label-button text-text-primary hover:bg-hover transition-colors"
           >
             Close
           </ModalNativeCloseButton>
@@ -280,7 +280,7 @@ function SupplyDetailsModalContent({
                 onClose();
                 onEdit(item);
               }}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/85 transition-colors"
+              className="rounded-control bg-button-primary text-button-primary-foreground px-5 py-2 type-label-button hover:bg-button-primary-hover transition-colors"
             >
               Edit Item
             </button>

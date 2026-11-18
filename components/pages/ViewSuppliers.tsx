@@ -196,7 +196,7 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
   ];
 
   return (
-    <div className="w-full min-h-full py-7 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="page-container space-y-6 animate-page-in">
       <PageHeader
         title="Resources & Suppliers"
         description={
@@ -207,7 +207,7 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
       />
 
       {/* Process Tabs in Uniform Order: Categories -> Supplier List -> Supply List -> BOM */}
-      <div className="border-b border-border">
+      <div className="border-b border-divider">
         <div className="flex items-center gap-2 overflow-x-auto">
           {visibleTabs.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -216,10 +216,10 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ${
+                className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ${
                   isActive
                     ? "border-primary text-primary -mb-px"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    : "border-transparent text-ink-muted hover:text-ink"
                 }`}
               >
                 <span>{tab.label}</span>

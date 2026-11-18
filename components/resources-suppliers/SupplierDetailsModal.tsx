@@ -77,78 +77,78 @@ function SupplierDetailsModalContent({
       open={!!supplier}
       title={`Supplier Profile - ${supplier.companyName}`}
       onClose={onClose}
-      size="max-w-3xl"
+      size="max-w-[640px]"
     >
       <div className="space-y-6">
-        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        {error && <p role="alert" className="type-body text-status-red">{error}</p>}
         {/* Header */}
         {supplier.supplierCode && (
-          <div className="flex items-center justify-end pb-3 border-b border-border">
-            <span className="text-xs text-muted-foreground bg-muted/40 border border-border px-3 py-1 rounded-full">
+          <div className="flex items-center justify-end pb-3 border-b border-divider">
+            <span className="type-caption text-ink-muted bg-subtle border border-border px-3 py-1 rounded-pill">
               Supplier No: {supplier.supplierCode}
             </span>
           </div>
         )}
 
         {/* Contact Information */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-xl border border-border bg-card p-4 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-inner border border-border bg-surface p-4 type-body">
           <div>
-            <p className="font-semibold text-muted-foreground">Contact Person</p>
-            <p className="text-sm font-semibold text-foreground mt-0.5">{supplier.contactPerson}</p>
+            <p className="type-label text-ink-muted">Contact Person</p>
+            <p className="type-body font-semibold text-ink mt-0.5">{supplier.contactPerson}</p>
           </div>
           <div>
-            <p className="font-semibold text-muted-foreground">Email Address</p>
-            <p className="text-sm font-semibold text-foreground mt-0.5">{supplier.email}</p>
+            <p className="type-label text-ink-muted">Email Address</p>
+            <p className="type-body font-semibold text-ink mt-0.5">{supplier.email}</p>
           </div>
           <div>
-            <p className="font-semibold text-muted-foreground">Phone Number</p>
-            <p className="text-sm font-semibold text-foreground mt-0.5">{supplier.phone}</p>
+            <p className="type-label text-ink-muted">Phone Number</p>
+            <p className="type-body font-semibold text-ink mt-0.5">{supplier.phone}</p>
           </div>
           <div>
-            <p className="font-semibold text-muted-foreground">Physical Address</p>
-            <p className="text-sm font-semibold text-foreground mt-0.5">{supplier.address}</p>
+            <p className="type-label text-ink-muted">Physical Address</p>
+            <p className="type-body font-semibold text-ink mt-0.5">{supplier.address}</p>
           </div>
         </div>
 
         {/* Supplied Items (no prices) */}
-        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-          <div className="flex items-center gap-2 border-b border-border pb-2">
-            <Package size={16} className="text-foreground" />
-            <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
+        <div className="rounded-card border border-border bg-surface p-4 space-y-3">
+          <div className="flex items-center gap-2 border-b border-divider pb-2">
+            <Package size={16} className="text-ink" />
+            <h3 className="type-subsection font-semibold text-ink uppercase tracking-wider">
               Linked Supplies
             </h3>
           </div>
 
           {loading ? (
-            <Skeleton aria-label="Loading details" className="m-4 h-16" />
+            <Skeleton aria-label="Loading details" className="m-4 h-16 rounded-control" />
           ) : catalog.length === 0 ? (
-            <div className="py-6 text-center text-xs text-muted-foreground">
+            <div className="py-6 text-center type-caption text-ink-muted">
               No items linked to this supplier.
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border text-muted-foreground text-[11px]">
-                    <th className="px-2.5 py-2 text-left">ITEM NAME</th>
-                    <th className="px-2.5 py-2 text-left">VENDOR SKU</th>
-                    <th className="px-2.5 py-2 text-left">PACK SIZE</th>
-                    <th className="px-2.5 py-2 text-left">LEAD TIME</th>
-                    <th className="px-2.5 py-2 text-left">STATUS</th>
+                  <tr className="table-head-row">
+                    <th className="px-2.5 py-2 text-left table-th">ITEM NAME</th>
+                    <th className="px-2.5 py-2 text-left table-th">VENDOR SKU</th>
+                    <th className="px-2.5 py-2 text-left table-th">PACK SIZE</th>
+                    <th className="px-2.5 py-2 text-left table-th">LEAD TIME</th>
+                    <th className="px-2.5 py-2 text-left table-th">STATUS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/60">
+                <tbody className="divide-y divide-border">
                   {catalog.map((ci) => (
-                    <tr key={ci.itemId} className="hover:bg-muted/20">
-                      <td className="px-2.5 py-2.5 font-semibold text-foreground">{ci.itemName}</td>
-                      <td className="px-2.5 py-2.5 text-muted-foreground">{ci.supplierSku || "-"}</td>
-                      <td className="px-2.5 py-2.5 text-muted-foreground">
+                    <tr key={ci.itemId} className="table-row">
+                      <td className="px-2.5 py-2.5 table-td font-semibold text-ink">{ci.itemName}</td>
+                      <td className="px-2.5 py-2.5 table-td text-ink-muted">{ci.supplierSku || "-"}</td>
+                      <td className="px-2.5 py-2.5 table-td text-ink-muted">
                         {ci.packSize > 1 ? `${ci.packSize} units/pack` : "Standard"}
                       </td>
-                      <td className="px-2.5 py-2.5 text-muted-foreground flex items-center gap-1 mt-2">
+                      <td className="px-2.5 py-2.5 table-td text-ink-muted flex items-center gap-1 mt-2">
                         <Clock size={11} /> {ci.leadTimeDays} days
                       </td>
-                      <td className="px-2.5 py-2.5">
+                      <td className="px-2.5 py-2.5 table-td">
                         {ci.isPreferred && (
                           <StatusBadge status="Preferred" />
                         )}
@@ -162,44 +162,44 @@ function SupplierDetailsModalContent({
         </div>
 
         {/* Recent Orders */}
-        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-          <div className="flex items-center gap-2 border-b border-border pb-2">
-            <ShoppingCart size={16} className="text-foreground" />
-            <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
+        <div className="rounded-card border border-border bg-surface p-4 space-y-3">
+          <div className="flex items-center gap-2 border-b border-divider pb-2">
+            <ShoppingCart size={16} className="text-ink" />
+            <h3 className="type-subsection font-semibold text-ink uppercase tracking-wider">
               Recent Orders
             </h3>
           </div>
 
           {loading ? (
-            <Skeleton aria-label="Loading details" className="m-4 h-16" />
+            <Skeleton aria-label="Loading details" className="m-4 h-16 rounded-control" />
           ) : recentOrders.length === 0 ? (
-            <div className="py-6 text-center text-xs text-muted-foreground">
+            <div className="py-6 text-center type-caption text-ink-muted">
               No purchase orders found for this supplier.
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border text-muted-foreground text-[11px]">
-                    <th className="px-2.5 py-2 text-left">PURCHASE ORDER NUMBER</th>
-                    <th className="px-2.5 py-2 text-left">DATE</th>
-                    <th className="px-2.5 py-2 text-left">STATUS</th>
-                    <th className="px-2.5 py-2 text-right">QUANTITY</th>
-                    <th className="px-2.5 py-2 text-right">TOTAL AMOUNT</th>
+                  <tr className="table-head-row">
+                    <th className="px-2.5 py-2 text-left table-th">PURCHASE ORDER NUMBER</th>
+                    <th className="px-2.5 py-2 text-left table-th">DATE</th>
+                    <th className="px-2.5 py-2 text-left table-th">STATUS</th>
+                    <th className="px-2.5 py-2 text-right table-th">QUANTITY</th>
+                    <th className="px-2.5 py-2 text-right table-th">TOTAL AMOUNT</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/60">
+                <tbody className="divide-y divide-border">
                   {recentOrders.map((order) => (
-                    <tr key={order.poId} className="hover:bg-muted/20">
-                      <td className="px-2.5 py-2.5 font-semibold text-foreground">{order.poNumber}</td>
-                      <td className="px-2.5 py-2.5 text-muted-foreground">{formatDate(order.orderDate)}</td>
-                      <td className="px-2.5 py-2.5">
+                    <tr key={order.poId} className="table-row">
+                      <td className="px-2.5 py-2.5 table-td font-semibold text-ink">{order.poNumber}</td>
+                      <td className="px-2.5 py-2.5 table-td text-ink-muted">{formatDate(order.orderDate)}</td>
+                      <td className="px-2.5 py-2.5 table-td">
                         <StatusBadge status={order.status} />
                       </td>
-                      <td className="px-2.5 py-2.5 text-right text-muted-foreground">
+                      <td className="px-2.5 py-2.5 table-td text-right text-ink-muted tabular-nums">
                         {order.itemCount} item{order.itemCount !== 1 ? "s" : ""}
                       </td>
-                      <td className="px-2.5 py-2.5 text-right font-bold text-foreground">
+                      <td className="px-2.5 py-2.5 table-td text-right font-semibold text-ink tabular-nums">
                         ₱{Number(order.totalAmount).toLocaleString("en-PH", { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
@@ -210,11 +210,11 @@ function SupplierDetailsModalContent({
           )}
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-border">
+        <div className="flex justify-end pt-4 border-t border-divider">
           <ModalCloseButton
             variant="outline"
             fallbackOnClose={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+            className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors cursor-pointer"
           >
             Close
           </ModalCloseButton>

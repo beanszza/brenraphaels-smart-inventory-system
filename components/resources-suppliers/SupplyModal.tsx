@@ -355,19 +355,19 @@ function SupplyModalForm({
       open={open}
       title={editingItem ? "Edit Supply Item" : "Add New Supply Item"}
       onClose={() => { if (!saving) onClose(); }}
-      size="max-w-xl"
+      size="max-w-[560px]"
     >
       <form onSubmit={(event) => { event.preventDefault(); handleRequestSave(); }}>
-      {saveError && <p role="alert" className="mb-3 text-sm text-destructive">{saveError}</p>}
-      {saving && <p role="status" className="mb-3 text-sm text-muted-foreground">Saving...</p>}
+      {saveError && <p role="alert" className="mb-3 type-body text-status-red">{saveError}</p>}
+      {saving && <p role="status" className="mb-3 type-body text-text-muted">Saving...</p>}
       <fieldset disabled={saving} className="space-y-4">
         {/* Supply Name */}
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <label className="block text-xs font-semibold text-foreground">
-              Supply Name <span className="text-destructive">*</span>
+            <label className="block type-label font-semibold text-text-primary">
+              Supply Name <span className="text-status-red">*</span>
             </label>
-            <span className={`text-[11px] ${itemName.length >= SUPPLY_NAME_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+            <span className={`type-caption ${itemName.length >= SUPPLY_NAME_MAX ? "font-medium text-status-amber" : "text-text-muted"}`}>
               {itemName.length}/{SUPPLY_NAME_MAX}
             </span>
           </div>
@@ -377,26 +377,26 @@ function SupplyModalForm({
             onChange={handleNameChange}
             aria-invalid={!!itemNameError}
             placeholder="e.g. White Sugar"
-            style={itemNameError ? { borderColor: "var(--destructive)" } : undefined}
-            className={`w-full rounded-xl border ${
-              itemNameError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-            } bg-card text-foreground px-4 py-2.5 text-sm transition-colors`}
+            style={itemNameError ? { borderColor: "var(--status-red)" } : undefined}
+            className={`w-full rounded-control border ${
+              itemNameError ? "!border-status-red focus-visible:!ring-status-red" : "border-divider"
+            } bg-surface text-text-primary px-4 py-2.5 type-body transition-colors`}
           />
           {itemNameError ? (
-            <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{itemNameError}</p>
+            <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">{itemNameError}</p>
           ) : itemNameWarning ? (
-            <p className="mt-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">{itemNameWarning}</p>
+            <p className="mt-1.5 type-caption font-medium text-status-amber animate-in fade-in-50">{itemNameWarning}</p>
           ) : null}
         </div>
 
         {/* Category & UOM */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Category</label>
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">Category</label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(Number(e.target.value))}
-              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring focus:outline-none"
+              className="w-full rounded-control border border-divider bg-surface px-3 py-2 type-body text-text-primary focus:ring-1 focus:ring-accent focus:outline-none"
             >
               {availableCategories.map((category) => (
                 <option key={category.categoryId} value={category.categoryId}>
@@ -406,14 +406,14 @@ function SupplyModalForm({
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Unit of Measurement</label>
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">Unit of Measurement</label>
             <select
               value={uomId}
               onChange={(e) => {
                 setUomManuallySelected(true);
                 setUomId(Number(e.target.value));
               }}
-              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring focus:outline-none"
+              className="w-full rounded-control border border-divider bg-surface px-3 py-2 type-body text-text-primary focus:ring-1 focus:ring-accent focus:outline-none"
             >
               {recommendedUoms.length > 0 ? (
                 <>
@@ -446,8 +446,8 @@ function SupplyModalForm({
         {/* Min & Max Stock */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Min Stock Level <span className="text-destructive">*</span>
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
+              Min Stock Level <span className="text-status-red">*</span>
             </label>
             <Input
               type="number"
@@ -459,18 +459,18 @@ function SupplyModalForm({
               onChange={handleMinStockChange}
               aria-invalid={!!minStockError}
               placeholder="e.g. 10"
-              style={minStockError ? { borderColor: "var(--destructive)" } : undefined}
-              className={`w-full rounded-xl border ${
-                minStockError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-              } bg-card px-4 py-2.5 text-sm transition-colors`}
+              style={minStockError ? { borderColor: "var(--status-red)" } : undefined}
+              className={`w-full rounded-control border ${
+                minStockError ? "!border-status-red focus-visible:!ring-status-red" : "border-divider"
+              } bg-surface px-4 py-2.5 type-body transition-colors`}
             />
             {minStockError && (
-              <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{minStockError}</p>
+              <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">{minStockError}</p>
             )}
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Max Stock Level <span className="text-destructive">*</span>
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
+              Max Stock Level <span className="text-status-red">*</span>
             </label>
             <Input
               type="number"
@@ -482,13 +482,13 @@ function SupplyModalForm({
               onChange={handleMaxStockChange}
               aria-invalid={!!maxStockError}
               placeholder="e.g. 100"
-              style={maxStockError ? { borderColor: "var(--destructive)" } : undefined}
-              className={`w-full rounded-xl border ${
-                maxStockError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-              } bg-card px-4 py-2.5 text-sm transition-colors`}
+              style={maxStockError ? { borderColor: "var(--status-red)" } : undefined}
+              className={`w-full rounded-control border ${
+                maxStockError ? "!border-status-red focus-visible:!ring-status-red" : "border-divider"
+              } bg-surface px-4 py-2.5 type-body transition-colors`}
             />
             {maxStockError && (
-              <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{maxStockError}</p>
+              <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">{maxStockError}</p>
             )}
           </div>
         </div>
@@ -496,10 +496,10 @@ function SupplyModalForm({
         {/* Linked Suppliers */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-foreground">
-              Linked Suppliers <span className="text-destructive">*</span>
+            <label className="type-label font-semibold text-text-primary">
+              Linked Suppliers <span className="text-status-red">*</span>
             </label>
-            <span className="text-[11px] text-muted-foreground">{suppliers.length} available</span>
+            <span className="type-caption text-text-muted">{suppliers.length} available</span>
           </div>
           <Popover
             open={openCombobox}
@@ -518,9 +518,9 @@ function SupplyModalForm({
                 role="combobox"
                 aria-expanded={openCombobox}
                 aria-invalid={!!supplierError}
-                style={supplierError ? { borderColor: "var(--destructive)" } : undefined}
-                className={`w-full justify-between rounded-xl border bg-card text-foreground font-normal hover:bg-muted text-sm ${
-                  supplierError ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
+                style={supplierError ? { borderColor: "var(--status-red)" } : undefined}
+                className={`w-full justify-between rounded-control border bg-surface text-text-primary font-normal hover:bg-hover type-body ${
+                  supplierError ? "!border-status-red focus-visible:!ring-status-red" : "border-divider"
                 }`}
               >
                 {selectedSupplierIds.length === 0
@@ -569,7 +569,7 @@ function SupplyModalForm({
             </PopoverContent>
           </Popover>
           {supplierError && (
-            <p className="mt-1 text-xs font-medium text-destructive animate-in fade-in-50">{supplierError}</p>
+            <p className="mt-1 type-caption font-medium text-status-red animate-in fade-in-50">{supplierError}</p>
           )}
           {selectedSupplierIds.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-1">
@@ -579,11 +579,11 @@ function SupplyModalForm({
                   <Badge
                     key={id}
                     variant="secondary"
-                    className="rounded-md px-2 py-1 flex items-center gap-1 bg-muted border border-border text-foreground"
+                    className="rounded-pill px-2 py-1 flex items-center gap-1 bg-surface-muted border border-divider text-text-primary type-caption"
                   >
                     {sup?.companyName}
                     <X
-                      className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors"
+                      className="h-3 w-3 cursor-pointer hover:text-status-red transition-colors"
                       onClick={() => {
                         setSelectedSupplierIds((prev) => {
                           const next = prev.filter((prevId) => prevId !== id);
@@ -602,11 +602,11 @@ function SupplyModalForm({
         {/* Status (edit only) */}
         {editingItem && (
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Status</label>
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">Status</label>
             <select
               value={supplyActive ? "true" : "false"}
               onChange={(e) => setSupplyActive(e.target.value === "true")}
-              className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
+              className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-body"
             >
               <option value="true">Active</option>
               <option value="false">Inactive</option>
@@ -614,12 +614,12 @@ function SupplyModalForm({
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
+        <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
           <ModalCloseButton
             type="button"
             variant="outline"
             fallbackOnClose={onClose}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+            className="rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button text-text-primary hover:bg-hover transition-colors"
           >
             Cancel
           </ModalCloseButton>
@@ -627,7 +627,7 @@ function SupplyModalForm({
             type="submit"
             disabled={hasErrors}
 
-            className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-control bg-button-primary text-button-primary-foreground px-5 py-2.5 type-label-button hover:bg-button-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {editingItem ? "Save Changes" : "Create Supply"}
           </Button>

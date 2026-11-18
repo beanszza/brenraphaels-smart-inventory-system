@@ -18,7 +18,7 @@ const statuses = [
 
 export default function ResourceStatusTabs({ value, onChange, counts }: ResourceStatusTabsProps) {
   return (
-    <div className="border-b border-border overflow-x-auto mb-6">
+    <div className="border-b border-divider overflow-x-auto mb-6">
       <div className="flex items-center gap-1.5 min-w-max pb-2">
         {statuses.map((status) => {
           const isSelected = value === status.value;
@@ -30,18 +30,18 @@ export default function ResourceStatusTabs({ value, onChange, counts }: Resource
               type="button"
               onClick={() => onChange(status.value)}
               aria-pressed={isSelected}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-pill type-label-tab font-semibold transition-all cursor-pointer ${
                 isSelected
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-ink-muted hover:text-ink hover:bg-subtle"
               }`}
             >
               <span>{status.label}</span>
               <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
+                className={`px-1.5 py-0.5 rounded-pill type-caption font-mono font-medium ${
                   isSelected
-                    ? "bg-background text-foreground"
-                    : "bg-muted text-muted-foreground"
+                    ? "bg-surface text-ink"
+                    : "bg-subtle text-ink-muted"
                 }`}
               >
                 {count}

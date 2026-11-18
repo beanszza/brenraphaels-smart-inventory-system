@@ -78,8 +78,8 @@ export default function RecipeTab({
     <div className="space-y-6 animate-page-in">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Bill of Materials</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Production recipes, batch yields, and ingredient breakdown</p>
+          <h2 className="type-page-title text-text-primary">Bill of Materials</h2>
+          <p className="mt-1 type-body text-text-muted">Production recipes, batch yields, and ingredient breakdown</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Button
@@ -87,7 +87,7 @@ export default function RecipeTab({
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
+            className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-label-button text-text-primary hover:bg-hover transition-colors h-10"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
           </Button>
@@ -96,7 +96,7 @@ export default function RecipeTab({
               variant="outline"
               size="sm"
               asChild
-              className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+              className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-label-button text-text-primary hover:bg-hover transition-colors h-10 cursor-pointer"
             >
               <Link href="/resources-suppliers/logs">
                 <FileText className="w-4 h-4" /> Transaction History
@@ -106,14 +106,14 @@ export default function RecipeTab({
           <Button
             type="button"
             onClick={onAddNew}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+            className="flex items-center justify-center gap-2 rounded-control bg-button-primary px-5 py-2.5 type-label-button text-button-primary-foreground hover:bg-button-primary-hover transition-colors shadow-sm h-10"
           >
             <Plus className="w-4 h-4" /> Create Bill of Materials
           </Button>
         </div>
       </div>
 
-      <div className="mb-6 rounded-xl border border-border bg-card p-3">
+      <div className="mb-6 rounded-card border border-divider bg-surface p-3 shadow-card">
         <SearchInput
           placeholder="Search by Recipe No, recipe, or product name..."
           value={searchQuery}

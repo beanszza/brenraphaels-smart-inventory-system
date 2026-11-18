@@ -33,6 +33,7 @@ export default function ModalWrapper({
 
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowCloseConfirm(false);
     }
   }, [open]);

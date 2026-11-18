@@ -296,10 +296,10 @@ function SupplierModalForm({
     !email.trim() || !phone.trim() || !fullAddress.trim();
 
   const fieldClass = (err: string) =>
-    `w-full rounded-xl border ${err ? "!border-destructive focus-visible:!ring-destructive" : "border-border"} bg-card text-foreground px-4 py-2.5 text-sm transition-colors`;
+    `w-full rounded-control border ${err ? "!border-status-red-border focus-visible:!ring-destructive" : "border-border"} bg-surface text-ink px-4 py-2.5 type-body transition-colors`;
 
   const fieldStyle = (err: string) =>
-    err ? { borderColor: "var(--destructive)" } : undefined;
+    err ? { borderColor: "var(--color-status-red-border)" } : undefined;
 
   const contactPersonDisplay = editingSupplier?.contactPerson || (lastName ? `${lastName}, ${firstName}` : firstName);
 
@@ -308,19 +308,19 @@ function SupplierModalForm({
       open={open}
       title={editingSupplier ? "Edit Supplier" : "Add New Supplier"}
       onClose={() => { if (!saving) onClose(); }}
-      size="max-w-xl"
+      size="max-w-[560px]"
     >
       <form onSubmit={(event) => { event.preventDefault(); handleRequestSave(); }}>
-        {saveError && <p role="alert" className="mb-3 text-sm text-destructive">{saveError}</p>}
-        {saving && <p role="status" className="mb-3 text-sm text-muted-foreground">Saving...</p>}
+        {saveError && <p role="alert" className="mb-3 type-body text-status-red">{saveError}</p>}
+        {saving && <p role="status" className="mb-3 type-body text-ink-muted">Saving...</p>}
         <fieldset disabled={saving} className="space-y-4">
           {/* Supplier Name */}
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <label htmlFor="supplier-name" className="block text-xs font-semibold text-foreground">
-                Supplier Name <span className="text-destructive">*</span>
+              <label htmlFor="supplier-name" className="block type-label text-ink">
+                Supplier Name <span className="text-status-red">*</span>
               </label>
-              <span className={`text-[11px] ${companyName.length >= SUPPLIER_NAME_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+              <span className={`type-caption ${companyName.length >= SUPPLIER_NAME_MAX ? "font-medium text-status-amber" : "text-ink-muted"}`}>
                 {companyName.length}/{SUPPLIER_NAME_MAX}
               </span>
             </div>
@@ -335,25 +335,25 @@ function SupplierModalForm({
               className={fieldClass(companyNameError)}
             />
             {companyNameError ? (
-              <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{companyNameError}</p>
+              <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">{companyNameError}</p>
             ) : companyNameWarning ? (
-              <p className="mt-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">{companyNameWarning}</p>
+              <p className="mt-1.5 type-caption font-medium text-status-amber animate-in fade-in-50">{companyNameWarning}</p>
             ) : null}
           </div>
 
           {/* Contact Person (First, Middle, Last) */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Contact Person <span className="text-destructive">*</span>
+            <label className="mb-1.5 block type-label text-ink">
+              Contact Person <span className="text-status-red">*</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* First Name */}
               <div>
                 <div className="mb-1 flex items-center justify-between">
-                  <label className="block text-[11px] font-medium text-foreground">
-                    First Name <span className="text-destructive">*</span>
+                  <label className="block type-caption font-medium text-ink">
+                    First Name <span className="text-status-red">*</span>
                   </label>
-                  <span className={`text-[10px] ${firstName.length >= CONTACT_PART_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+                  <span className={`type-caption ${firstName.length >= CONTACT_PART_MAX ? "font-medium text-status-amber" : "text-ink-muted"}`}>
                     {firstName.length}/{CONTACT_PART_MAX}
                   </span>
                 </div>
@@ -367,11 +367,11 @@ function SupplierModalForm({
                   className={fieldClass(firstNameError)}
                 />
                 {firstNameError ? (
-                  <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">
+                  <p className="mt-1 type-caption font-medium text-status-red animate-in fade-in-50">
                     {firstNameError}
                   </p>
                 ) : firstNameWarning ? (
-                  <p className="mt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">
+                  <p className="mt-1 type-caption font-medium text-status-amber animate-in fade-in-50">
                     {firstNameWarning}
                   </p>
                 ) : null}
@@ -379,9 +379,9 @@ function SupplierModalForm({
 
               {/* Middle Name (Optional) */}
               <div>
-                <label className="mb-1 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+                <label className="mb-1 flex items-center justify-between type-caption font-medium text-ink-muted">
                   <span>Middle Name</span>
-                  <span className={`text-[10px] font-normal ${middleName.length >= CONTACT_PART_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground/70"}`}>
+                  <span className={`type-caption font-normal ${middleName.length >= CONTACT_PART_MAX ? "font-medium text-status-amber" : "text-ink-muted/70"}`}>
                     {middleName ? `${middleName.length}/${CONTACT_PART_MAX}` : "Optional"}
                   </span>
                 </label>
@@ -395,11 +395,11 @@ function SupplierModalForm({
                   className={fieldClass(middleNameError)}
                 />
                 {middleNameError ? (
-                  <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">
+                  <p className="mt-1 type-caption font-medium text-status-red animate-in fade-in-50">
                     {middleNameError}
                   </p>
                 ) : middleNameWarning ? (
-                  <p className="mt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">
+                  <p className="mt-1 type-caption font-medium text-status-amber animate-in fade-in-50">
                     {middleNameWarning}
                   </p>
                 ) : null}
@@ -408,10 +408,10 @@ function SupplierModalForm({
               {/* Last Name */}
               <div>
                 <div className="mb-1 flex items-center justify-between">
-                  <label className="block text-[11px] font-medium text-foreground">
-                    Last Name <span className="text-destructive">*</span>
+                  <label className="block type-caption font-medium text-ink">
+                    Last Name <span className="text-status-red">*</span>
                   </label>
-                  <span className={`text-[10px] ${lastName.length >= CONTACT_PART_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+                  <span className={`type-caption ${lastName.length >= CONTACT_PART_MAX ? "font-medium text-status-amber" : "text-ink-muted"}`}>
                     {lastName.length}/{CONTACT_PART_MAX}
                   </span>
                 </div>
@@ -425,11 +425,11 @@ function SupplierModalForm({
                   className={fieldClass(lastNameError)}
                 />
                 {lastNameError ? (
-                  <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">
+                  <p className="mt-1 type-caption font-medium text-status-red animate-in fade-in-50">
                     {lastNameError}
                   </p>
                 ) : lastNameWarning ? (
-                  <p className="mt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">
+                  <p className="mt-1 type-caption font-medium text-status-amber animate-in fade-in-50">
                     {lastNameWarning}
                   </p>
                 ) : null}
@@ -447,8 +447,8 @@ function SupplierModalForm({
           {/* Email & Phone */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="supplier-email" className="mb-1.5 block text-xs font-semibold text-foreground">
-                Email <span className="text-destructive">*</span>
+              <label htmlFor="supplier-email" className="mb-1.5 block type-label text-ink">
+                Email <span className="text-status-red">*</span>
               </label>
               <Input
                 type="email"
@@ -461,17 +461,17 @@ function SupplierModalForm({
                 placeholder="e.g. contact@supplier.com"
                 className={fieldClass(emailError)}
               />
-              {emailError && <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{emailError}</p>}
+              {emailError && <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">{emailError}</p>}
             </div>
             <div>
-              <label htmlFor="supplier-phone" className="mb-1.5 block text-xs font-semibold text-foreground">
-                Phone No. <span className="text-destructive">*</span>
+              <label htmlFor="supplier-phone" className="mb-1.5 block type-label text-ink">
+                Phone No. <span className="text-status-red">*</span>
               </label>
               <div
                 style={fieldStyle(phoneError)}
-                className={`flex rounded-xl border ${phoneError ? "!border-destructive" : "border-border"} bg-card overflow-hidden transition-colors`}
+                className={`flex rounded-control border ${phoneError ? "!border-status-red-border" : "border-border"} bg-surface overflow-hidden transition-colors`}
               >
-                <div className="flex items-center justify-center bg-muted/60 px-3.5 border-r border-border text-xs font-semibold text-muted-foreground select-none">
+                <div className="flex items-center justify-center bg-subtle px-3.5 border-r border-border type-caption font-semibold text-ink-muted select-none">
                   +63
                 </div>
                 <Input
@@ -481,17 +481,17 @@ function SupplierModalForm({
                   value={phone}
                   onChange={handlePhoneChange}
                   placeholder="917 123 4567"
-                  className="w-full rounded-none border-0 bg-transparent text-foreground px-3.5 py-2.5 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="w-full rounded-none border-0 bg-transparent text-ink px-3.5 py-2.5 type-body shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </div>
-              {phoneError && <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{phoneError}</p>}
+              {phoneError && <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">{phoneError}</p>}
             </div>
           </div>
 
           {/* Address with Philippines Dropdowns */}
           <div>
-            <label htmlFor="supplier-address" className="mb-1.5 block text-xs font-semibold text-foreground">
-              Address <span className="text-destructive">*</span>
+            <label htmlFor="supplier-address" className="mb-1.5 block type-label text-ink">
+              Address <span className="text-status-red">*</span>
             </label>
             <AddressSelector
               streetNumber={streetNumber}
@@ -529,7 +529,7 @@ function SupplierModalForm({
               </span>
             )}
             {addressError && (
-              <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">
+              <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">
                 {addressError}
               </p>
             )}
@@ -537,7 +537,7 @@ function SupplierModalForm({
 
           {/* Website */}
           <div>
-            <label htmlFor="supplier-website" className="mb-1.5 block text-xs font-semibold text-foreground">
+            <label htmlFor="supplier-website" className="mb-1.5 block type-label text-ink">
               Website (Optional)
             </label>
             <Input
@@ -551,20 +551,20 @@ function SupplierModalForm({
               placeholder="e.g. www.acme.com"
               className={fieldClass(websiteError)}
             />
-            {websiteError && <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">{websiteError}</p>}
+            {websiteError && <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">{websiteError}</p>}
           </div>
 
           {/* Status (edit only) */}
           {editingSupplier && (
             <div>
-              <label htmlFor="supplier-status" className="mb-1.5 block text-xs font-semibold text-foreground">
+              <label htmlFor="supplier-status" className="mb-1.5 block type-label text-ink">
                 Status
               </label>
               <select
                 id="supplier-status"
                 value={supplierActive ? "true" : "false"}
                 onChange={(e) => setSupplierActive(e.target.value === "true")}
-                className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
+                className="w-full rounded-control border border-border bg-surface text-ink px-3 py-2 type-body"
               >
                 <option value="true">Active</option>
                 <option value="false">Inactive</option>
@@ -573,20 +573,20 @@ function SupplierModalForm({
           )}
 
           {/* Footer */}
-          <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
+          <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
             <ModalCloseButton
               type="button"
               variant="outline"
               disabled={saving}
               fallbackOnClose={onClose}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
+              className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors h-10"
             >
               Cancel
             </ModalCloseButton>
             <Button
               type="submit"
               disabled={hasErrors || saving}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors disabled:opacity-50 disabled:cursor-not-allowed h-10"
+              className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed h-10"
             >
               {saving ? "Saving..." : editingSupplier ? "Save Changes" : "Create Supplier"}
             </Button>

@@ -10,9 +10,9 @@ export default function ResourcesError({
   reset: () => void;
 }) {
   return (
-    <div role="alert" className="space-y-4 p-6 sm:p-8">
-      <h1 className="text-xl font-semibold">Unable to load Resources & Suppliers</h1>
-      <p className="text-muted-foreground">{error?.message || "Please try again."}</p>
+    <div role="alert" className="page-container space-y-4">
+      <h1 className="type-card-title text-ink">Unable to load Resources & Suppliers</h1>
+      <p className="type-body text-ink-muted">{error?.message || "Please try again."}</p>
       <Button onClick={reset}>Try again</Button>
     </div>
   );

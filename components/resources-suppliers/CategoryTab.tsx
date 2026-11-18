@@ -79,8 +79,8 @@ export default function CategoryTab({
     <div className="space-y-6 animate-page-in">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Supply Categories</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2 className="type-page-title text-ink">Supply Categories</h2>
+          <p className="mt-1 type-body text-ink-muted">
             Manage classification categories for supplies and inventory tracking
           </p>
         </div>
@@ -90,7 +90,7 @@ export default function CategoryTab({
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
+            className="flex items-center justify-center gap-2 rounded-control bg-surface border border-border px-4 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-10"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
           </Button>
@@ -99,7 +99,7 @@ export default function CategoryTab({
               variant="outline"
               size="sm"
               asChild
-              className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+              className="flex items-center justify-center gap-2 rounded-control bg-surface border border-border px-4 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-10 cursor-pointer"
             >
               <Link href="/resources-suppliers/logs">
                 <FileText className="w-4 h-4" /> Transaction History
@@ -110,7 +110,7 @@ export default function CategoryTab({
             <Button
               type="button"
               onClick={onAddNew}
-              className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+              className="flex items-center justify-center gap-2 rounded-control bg-primary px-5 py-2.5 type-label-button text-primary-foreground hover:bg-primary-hover transition-colors shadow-xs h-10"
             >
               <Plus className="w-4 h-4" /> Add New Category
             </Button>
@@ -118,7 +118,7 @@ export default function CategoryTab({
         </div>
       </div>
 
-      <div className="mb-6 rounded-xl border border-border bg-card p-3">
+      <div className="mb-6 rounded-card border border-border bg-surface p-3">
         <SearchInput
           placeholder="Search category name or description..."
           value={searchQuery}

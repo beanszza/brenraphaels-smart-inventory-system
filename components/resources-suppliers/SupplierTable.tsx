@@ -26,33 +26,33 @@ export default function SupplierTable({
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
 
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-xl border border-border bg-card shadow-sm">
+    <div className="overflow-x-auto custom-scrollbar rounded-card border border-border bg-surface">
       <table className="w-full">
-        <thead className="border-b border-border bg-muted/30">
-          <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-            <th className="sticky left-0 z-20 w-16 px-4 py-4 text-center bg-muted/95 backdrop-blur-xs border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">No.</th>
-            <th className="px-4 py-4 min-w-[200px]">Supplier Name</th>
-            <th className="px-4 py-4">Contact Person</th>
-            <th className="px-4 py-4">Email</th>
-            <th className="px-4 py-4 whitespace-nowrap">Phone</th>
-            <th className="px-4 py-4 text-center whitespace-nowrap">Status</th>
-            <th className="w-16 px-4 py-4 text-center whitespace-nowrap">Actions</th>
+        <thead>
+          <tr className="table-head-row">
+            <th className="sticky left-0 z-20 w-16 px-4 py-2.5 text-center bg-subtle table-th border-r border-border shadow-sticky-col">No.</th>
+            <th className="px-4 py-2.5 table-th min-w-[200px]">Supplier Name</th>
+            <th className="px-4 py-2.5 table-th">Contact Person</th>
+            <th className="px-4 py-2.5 table-th">Email</th>
+            <th className="px-4 py-2.5 table-th whitespace-nowrap">Phone</th>
+            <th className="px-4 py-2.5 text-center table-th whitespace-nowrap">Status</th>
+            <th className="w-16 px-4 py-2.5 text-center table-th whitespace-nowrap">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
           {suppliers.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
+              <td colSpan={7} className="px-4 py-12 text-center type-body font-normal text-ink-muted">
                 No suppliers found.
               </td>
             </tr>
           ) : (
             suppliers.map((supplier, index) => (
-              <tr key={supplier.supplierId} className="hover:bg-muted/30 transition-colors group">
-                <td className="sticky left-0 z-10 w-16 px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+              <tr key={supplier.supplierId} className="table-row group">
+                <td className="sticky left-0 z-10 w-16 px-4 py-3 table-td text-center text-ink-muted whitespace-nowrap bg-surface group-hover:bg-subtle transition-colors border-r border-border shadow-sticky-col tabular-nums">
                   {index + 1 + (currentPage - 1) * pageSize}
                 </td>
-                <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[200px]">
+                <td className="table-td font-semibold text-ink whitespace-nowrap min-w-[200px]">
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <span className="cursor-default whitespace-nowrap">
@@ -61,12 +61,12 @@ export default function SupplierTable({
                     </HoverCardTrigger>
                     <HoverCardContent className="w-72">
                       <div className="space-y-1.5">
-                        <p className="text-xs font-bold text-foreground">{supplier.companyName}</p>
+                        <p className="type-caption font-semibold text-ink">{supplier.companyName}</p>
                         {supplier.supplierCode && (
-                          <p className="text-xs font-mono text-muted-foreground">No: {supplier.supplierCode}</p>
+                          <p className="type-caption font-mono text-ink-muted">No: {supplier.supplierCode}</p>
                         )}
-                        <p className="text-xs text-muted-foreground">Contact: {supplier.contactPerson}</p>
-                        <p className="text-xs text-muted-foreground">Email: {supplier.email}</p>
+                        <p className="type-caption text-ink-muted">Contact: {supplier.contactPerson}</p>
+                        <p className="type-caption text-ink-muted">Email: {supplier.email}</p>
                         <div className="pt-1">
                           <StatusBadge status={supplier.isActive ? "Active" : "Inactive"} />
                         </div>
@@ -74,38 +74,38 @@ export default function SupplierTable({
                     </HoverCardContent>
                   </HoverCard>
                 </td>
-                <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                <td className="table-td text-ink-muted whitespace-nowrap">
                   {supplier.contactPerson}
                 </td>
-                <td className="px-4 py-4 text-sm text-muted-foreground">
+                <td className="table-td text-ink-muted">
                   {supplier.email}
                 </td>
-                <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                <td className="table-td text-ink-muted whitespace-nowrap">
                   {supplier.phone}
                 </td>
-                <td className="px-4 py-4 text-center whitespace-nowrap">
+                <td className="table-td text-center whitespace-nowrap">
                   <StatusBadge status={supplier.isActive ? "Active" : "Inactive"} />
                 </td>
-                <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap">
+                <td className="w-16 table-td text-center relative whitespace-nowrap">
                   <button
                     type="button"
                     onClick={() =>
                       setActiveDropdownId(activeDropdownId === supplier.supplierId ? null : supplier.supplierId)
                     }
                     aria-label="Record actions"
-                    className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none"
+                    className="p-1.5 rounded-control text-ink hover:bg-subtle transition-colors focus:outline-none cursor-pointer"
                   >
                     <MoreHorizontal size={18} />
                   </button>
                   {activeDropdownId === supplier.supplierId && (
-                    <div className="absolute right-10 top-2 z-[100] w-36 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left">
+                    <div className="absolute right-10 top-2 z-[100] w-36 rounded-inner border border-border bg-surface shadow-modal py-1.5 text-left">
                       <button
                         type="button"
                         onClick={() => {
                           onView(supplier);
                           setActiveDropdownId(null);
                         }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                        className="flex w-full items-center gap-2 px-3 py-2 type-body text-ink hover:bg-subtle transition-colors cursor-pointer"
                       >
                         <Eye size={14} className="shrink-0" /> View Details
                       </button>
@@ -116,7 +116,7 @@ export default function SupplierTable({
                             onEdit(supplier);
                             setActiveDropdownId(null);
                           }}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                          className="flex w-full items-center gap-2 px-3 py-2 type-body text-ink hover:bg-subtle transition-colors cursor-pointer"
                         >
                           <Pencil size={14} className="shrink-0" /> Edit Supplier
                         </button>
