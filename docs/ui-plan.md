@@ -277,7 +277,7 @@ flowchart LR
 | **5** | Auth and system screens | 8 | **[COMPLETED]** Yes (review Playwright diffs) |
 | **6.1–6.10** | Pages, one module per sub-stage | ~140 | Yes, one module at a time (review Playwright diffs) |
 | **7** | PDF and print exports | — | **Skipped for now** |
-| **8** | Remove legacy tokens, switch `scripts/check-tokens.mjs` to **FAIL** mode | 3 | No visual change |
+| **8** | Remove legacy tokens, switch `scripts/check-tokens.mjs` to **FAIL** mode | 3 | **[COMPLETED]** Legacy tokens removed, all violations resolved (0 occurrences), FAIL mode active |
 
 ---
 
@@ -586,7 +586,7 @@ Each sub-stage covers **one module** and is its own commit and review: its route
 
 ---
 
-## Stage 8 — Cleanup and FAIL guard
+## Stage 8 — Cleanup and FAIL guard — **[COMPLETED]**
 
 | File | Change |
 | :--- | :--- |
