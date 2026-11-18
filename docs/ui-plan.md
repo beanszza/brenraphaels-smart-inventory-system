@@ -272,7 +272,7 @@ flowchart LR
 | **1** | Central `tokens.css` (additive only) | 3 | **[COMPLETED]** None — passed Playwright `toHaveScreenshot` as pixel-identical |
 | **2** | Point existing theme aliases at Figma values + `scripts/check-tokens.mjs` (WARNING mode) | 5 | **[COMPLETED]** Colors & 8px narrower sidebar applied cleanly |
 | **3A–3G** | Shared components (buttons → tables) | ~33 | Yes, inside primitives (review Playwright diffs) |
-| **Exceptions** | 1) Remove `PRStatusBadge` icons (JSX change)<br>2) Remap `StatusBadge` colors (UX change) | 2 (1 per commit) | **Isolated commits** — reviewed separately from pure token swaps |
+| **Exceptions** | 1) Remove `PRStatusBadge` icons (JSX change)<br>2) Remap `StatusBadge` colors (UX change) | 2 (1 per commit) | **[COMPLETED]** Both isolated badge commits completed & verified |
 | **4** | Layout shell (sidebar, header, page header, brand) | 11 | Yes (review Playwright diffs) |
 | **5** | Auth and system screens | 8 | Yes (review Playwright diffs) |
 | **6.1–6.10** | Pages, one module per sub-stage | ~140 | Yes, one module at a time (review Playwright diffs) |
@@ -492,7 +492,7 @@ Each sub-stage changes only class strings inside the listed files. Consumers pic
 * **File:** `components/orders-procurement/pr/PRStatusBadge.tsx`
 * **Why It Is an Exception:** Figma (`05 · Components` `#840:151`) specifies that status badges are **text-only pills** (`no dot`, no icon). Removing `<FileEdit />`, `<Clock />`, `<RotateCcw />`, `<CheckCircle2 />`, `<XCircle />`, `<ArrowRightCircle />`, `<Ban />`, and `<Lock />` changes the rendered JSX children inside `PRStatusBadge`.
 
-### Exception 2 — Remap Status Colors in `StatusBadge.tsx` (Changes User-Visible Status Colors)
+### Exception 2 — Remap Status Colors in `StatusBadge.tsx` (Changes User-Visible Status Colors) — **[COMPLETED]**
 * **Commit Label:** `refactor(ui-exception): align StatusBadge status-to-color mapping with Figma spec`
 * **File:** `components/shared/StatusBadge.tsx`
 * **Why It Is an Exception:** Re-buckets statuses in `STATUS_GROUPS` to match the Figma `02 · Color` status table (e.g., `Draft` and `Closed` move from `purple` to `gray`; `Open` moves from `warning` to `destructive`/red; `Pending` moves to `gray`/`amber` per context; non-Figma `indigo`/`orange` buckets are mapped to standard Figma status colors). While status label strings remain unchanged, this changes the pill color users see for existing statuses.
