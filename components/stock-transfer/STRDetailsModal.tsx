@@ -61,18 +61,18 @@ export function STRDetailsModal({
 
   return createPortal(
     <div
-      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
+      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-backdrop p-4 sm:p-6 animate-in fade-in duration-150"
     >
       {confirmModal}
       <div
         style={{ width: "100%", maxWidth: "1000px" }}
-        className="w-full max-h-[92vh] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
+        className="w-full max-h-[92vh] bg-surface rounded-panel shadow-2xl border border-divider overflow-hidden flex flex-col text-text-primary shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-5">
+        <div className="flex items-center justify-between border-b border-divider px-6 py-5">
           <div className="flex items-center gap-2.5">
-            <h2 className="text-xl font-bold text-foreground">
+            <h2 className="type-modal-title text-text-primary">
               Stock Transfer Request Details
             </h2>
             <StatusBadge status={hasScheduledTransfer && request.status === "Approved" ? "Scheduled" : request.status} />
@@ -80,7 +80,7 @@ export function STRDetailsModal({
           <button
             type="button"
             onClick={requestClose}
-            className="rounded-xl p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+            className="rounded-control p-2 text-text-muted hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -90,17 +90,17 @@ export function STRDetailsModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Review Status Banner (Approved / Reviewed / Rejected) */}
           {request.reviewedBy ? (
-            <div className="p-4 rounded-2xl border border-border bg-muted/20 space-y-1">
+            <div className="p-4 rounded-panel border border-divider bg-muted/20 space-y-1">
               <div className="flex items-center justify-between text-xs flex-wrap gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-foreground">
+                  <span className="font-semibold text-text-primary">
                     {request.status === "Approved" ? "Approved by" : "Reviewed by"}:
                   </span>
-                  <span className="text-foreground font-semibold">
+                  <span className="text-text-primary font-semibold">
                     {resolveStaffName(request.reviewedBy) || request.reviewedBy}
                   </span>
                   {request.reviewedAt && (
-                    <span className="text-muted-foreground">
+                    <span className="text-text-muted">
                       on {new Date(request.reviewedAt).toLocaleDateString()}
                     </span>
                   )}
@@ -108,86 +108,86 @@ export function STRDetailsModal({
                 <StatusBadge status={request.status} />
               </div>
               {request.adminNotes && (
-                <p className="text-xs text-muted-foreground pt-1 italic">
+                <p className="text-xs text-text-muted pt-1 italic">
                   "{request.adminNotes}"
                 </p>
               )}
             </div>
           ) : (request.status === "Cancelled" || request.status === "Rejected") ? (
-            <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 space-y-1.5 text-destructive">
-              <div className="flex items-center gap-2 text-xs font-bold">
+            <div className="p-4 rounded-control border border-destructive/20 bg-destructive/5 space-y-1.5 text-destructive">
+              <div className="flex items-center gap-2 type-caption font-semibold">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{request.status === "Cancelled" ? "Cancellation Reason:" : "Rejection Reason:"}</span>
               </div>
-              <p className="text-xs pl-6 text-muted-foreground italic">
+              <p className="text-xs pl-6 text-text-muted italic">
                 {request.adminNotes || "No rejection or cancellation reason recorded."}
               </p>
             </div>
           ) : null}
 
           {/* Structured Read-only Form matching PR & PO Details Modals */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-panel bg-muted/20 border border-divider">
             {/* Request Number */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
                 Request Number
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-all font-mono font-medium">
+              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-muted select-all font-mono font-medium">
                 {request.requestNumber}
               </div>
             </div>
 
             {/* Destination Branch */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
                 Destination Branch
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground font-semibold">
-                <MapPin className="w-3.5 h-3.5 mr-2 text-muted-foreground shrink-0" />
+              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-primary font-semibold">
+                <MapPin className="w-3.5 h-3.5 mr-2 text-text-muted shrink-0" />
                 <span className="truncate">{request.toLocationName}</span>
               </div>
             </div>
 
             {/* Requested By (Actual Full Name) */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
                 Requested By
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground font-semibold">
-                <User className="w-3.5 h-3.5 mr-2 text-muted-foreground shrink-0" />
+              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-primary font-semibold">
+                <User className="w-3.5 h-3.5 mr-2 text-text-muted shrink-0" />
                 <span>{resolveStaffName(request.requestedBy) || request.requestedBy}</span>
               </div>
             </div>
 
             {/* Request Date */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
                 Request Date
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-                <Calendar className="w-3.5 h-3.5 mr-2 text-muted-foreground shrink-0" />
+              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-muted">
+                <Calendar className="w-3.5 h-3.5 mr-2 text-text-muted shrink-0" />
                 <span>{new Date(request.requestDate).toLocaleDateString()}</span>
               </div>
             </div>
 
             {/* Required Date */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
                 Required Date
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-                <Calendar className="w-3.5 h-3.5 mr-2 text-muted-foreground shrink-0" />
+              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-muted">
+                <Calendar className="w-3.5 h-3.5 mr-2 text-text-muted shrink-0" />
                 <span>{new Date(request.requiredDate).toLocaleDateString()}</span>
               </div>
             </div>
 
             {/* Priority */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
                 Priority
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground font-semibold">
-                <span className="px-2 py-0.5 rounded-md bg-card text-[11px] font-bold border border-border">
+              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-primary font-semibold">
+                <span className="px-2 py-0.5 rounded-control bg-surface type-caption font-semibold border border-divider">
                   {request.priority}
                 </span>
               </div>
@@ -195,10 +195,10 @@ export function STRDetailsModal({
 
             {/* Reason / Purpose (Full Width) */}
             <div className="col-span-full">
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
                 Reason / Purpose
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-foreground font-medium">
+              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-primary font-medium">
                 {request.reason || "Branch Replenishment"}
               </div>
             </div>
@@ -235,57 +235,57 @@ export function STRDetailsModal({
             const dispatchProofSrc = dispatchMeta.proofDataUrl || "";
 
             return (
-              <div className="p-5 rounded-2xl bg-muted/20 border border-border space-y-3">
+              <div className="p-5 rounded-panel bg-muted/20 border border-divider space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Truck className="w-4 h-4 text-foreground" />
-                    <h3 className="text-sm font-bold text-foreground">
+                    <Truck className="w-4 h-4 text-text-primary" />
+                    <h3 className="type-card-title text-text-primary">
                       Scheduled Transportation & Driver Details
                     </h3>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+                  <span className="type-overline font-semibold uppercase tracking-wider text-text-muted bg-surface-hover px-2.5 py-1 rounded-full">
                     {scheduledTransfer?.status.toUpperCase() || "SCHEDULED"}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transport Provider</span>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">{schedMeta.transportProvider || scheduledTransfer?.courierName || "—"}</p>
+                    <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Transport Provider</span>
+                    <p className="text-sm font-semibold text-text-primary mt-0.5">{schedMeta.transportProvider || scheduledTransfer?.courierName || "—"}</p>
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Vehicle Type & Plate</span>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">
+                    <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Vehicle Type & Plate</span>
+                    <p className="text-sm font-semibold text-text-primary mt-0.5">
                       {schedMeta.vehicleType ? `${schedMeta.vehicleType} • ` : ""}
                       {schedMeta.plateNumber || scheduledTransfer?.vehiclePlate || "—"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Driver Name</span>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">{schedMeta.driverName || scheduledTransfer?.driverName || "—"}</p>
+                    <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Driver Name</span>
+                    <p className="text-sm font-semibold text-text-primary mt-0.5">{schedMeta.driverName || scheduledTransfer?.driverName || "—"}</p>
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Driver Contact</span>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">{schedMeta.driverContact || "—"}</p>
+                    <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Driver Contact</span>
+                    <p className="text-sm font-semibold text-text-primary mt-0.5">{schedMeta.driverContact || "—"}</p>
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Booking Reference / Fee</span>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">
+                    <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Booking Reference / Fee</span>
+                    <p className="text-sm font-semibold text-text-primary mt-0.5">
                       {schedMeta.bookingReference ? `Ref: ${schedMeta.bookingReference}` : ""}
                       {schedMeta.transferFee ? ` (₱${Number(schedMeta.transferFee).toLocaleString()})` : (!schedMeta.bookingReference ? "—" : "")}
                     </p>
                   </div>
                 </div>
                 {schedMeta.remarks && (
-                  <div className="pt-2 border-t border-border/50 text-xs text-muted-foreground">
-                    <strong className="text-foreground">Logistics Instructions:</strong> {schedMeta.remarks}
+                  <div className="pt-2 border-t border-divider/50 text-xs text-text-muted">
+                    <strong className="text-text-primary">Logistics Instructions:</strong> {schedMeta.remarks}
                   </div>
                 )}
 
                 {/* Document Proofs & Attachments */}
                 {(bookingProofSrc || dispatchProofSrc) && (
-                  <div className="pt-3 border-t border-border/60 space-y-2.5">
-                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <div className="pt-3 border-t border-divider/60 space-y-2.5">
+                    <h4 className="type-overline font-semibold uppercase tracking-wider text-text-muted">
                       Document Proofs &amp; Attachments
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -318,16 +318,16 @@ export function STRDetailsModal({
           {/* Items Table */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                <Package className="w-4 h-4 text-muted-foreground" />
+              <h3 className="type-card-title text-text-primary flex items-center gap-2">
+                <Package className="w-4 h-4 text-text-muted" />
                 Requested Finished Products ({request.items?.length || 0})
               </h3>
             </div>
 
-            <div className="border border-border rounded-2xl overflow-hidden bg-card shadow-xs">
+            <div className="border border-divider rounded-panel overflow-hidden bg-surface shadow-xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
+                  <thead className="bg-surface-hover text-text-muted font-semibold border-b border-divider">
                     <tr>
                       <th className="px-5 py-3.5">Product Name</th>
                       <th className="px-5 py-3.5 whitespace-nowrap">SKU</th>
@@ -342,20 +342,20 @@ export function STRDetailsModal({
                     {request.items?.map((item, idx) => {
                       const firstLot = item.suggestedLots?.[0];
                       return (
-                        <tr key={idx} className="hover:bg-muted/20 transition-colors">
-                          <td className="px-5 py-4 font-bold text-foreground">
+                        <tr key={idx} className="hover:bg-surface-hover/20 transition-colors">
+                          <td className="px-5 py-4 font-semibold text-text-primary">
                             {item.productName}
                           </td>
-                          <td className="px-5 py-4 text-muted-foreground whitespace-nowrap">
+                          <td className="px-5 py-4 text-text-muted whitespace-nowrap">
                             {item.sku || "—"}
                           </td>
-                          <td className="px-5 py-4 text-foreground font-medium whitespace-nowrap">
+                          <td className="px-5 py-4 text-text-primary font-medium whitespace-nowrap">
                             {item.variant || "Standard"}
                           </td>
-                          <td className="px-5 py-4 text-right font-extrabold text-foreground text-sm">
+                          <td className="px-5 py-4 text-right font-semibold text-text-primary type-table-cell">
                             {item.requestedQuantity}
                           </td>
-                          <td className="px-5 py-4 text-right font-medium text-foreground">
+                          <td className="px-5 py-4 text-right font-medium text-text-primary">
                             {item.availableQuantity}
                           </td>
                           <td className="px-5 py-4">
@@ -364,14 +364,14 @@ export function STRDetailsModal({
                                 {item.suggestedLots.map((sl, slIdx) => (
                                   <div key={slIdx} className="space-y-0.5">
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                      <span className="font-semibold text-foreground text-xs">
+                                      <span className="font-semibold text-text-primary text-xs">
                                         {sl.expiryDate
                                           ? new Date(sl.expiryDate).toLocaleDateString()
                                           : "No Expiry"}
                                       </span>
                                     </div>
                                     {sl.lotCode && (
-                                      <div className="text-[10px] text-muted-foreground font-mono">
+                                      <div className="type-caption text-text-muted font-mono">
                                         Lot: {sl.lotCode.replace(/^FG-/i, "")}
                                       </div>
                                     )}
@@ -379,7 +379,7 @@ export function STRDetailsModal({
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-muted-foreground text-xs">—</span>
+                              <span className="text-text-muted text-xs">—</span>
                             )}
                           </td>
                           <td className="px-5 py-4 whitespace-nowrap">
@@ -404,13 +404,13 @@ export function STRDetailsModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4.5 bg-muted/10">
+        <div className="flex items-center justify-end gap-3 border-t border-divider px-6 py-4.5 bg-muted/10">
           {isAdmin ? (
             <>
               <button
                 type="button"
                 onClick={requestClose}
-                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                className="rounded-control border border-divider bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -421,7 +421,7 @@ export function STRDetailsModal({
                     onClose();
                     onReject(request);
                   }}
-                  className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  className="rounded-control border border-divider bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
                 >
                   Reject Request
                 </button>
@@ -433,7 +433,7 @@ export function STRDetailsModal({
                     onClose();
                     onApprove(request);
                   }}
-                  className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+                  className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm cursor-pointer"
                 >
                   Approve Request
                 </button>
@@ -444,7 +444,7 @@ export function STRDetailsModal({
               <button
                 type="button"
                 onClick={requestClose}
-                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                className="rounded-control border border-divider bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -459,7 +459,7 @@ export function STRDetailsModal({
                       onClose();
                       onCancel(request);
                     }}
-                    className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                    className="rounded-control border border-divider bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
                   >
                     Cancel Request
                   </button>
@@ -472,7 +472,7 @@ export function STRDetailsModal({
                     onClose();
                     onDispatch(request);
                   }}
-                  className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+                  className="rounded-control bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm cursor-pointer"
                 >
                   Dispatch Transfer
                 </button>
@@ -485,7 +485,7 @@ export function STRDetailsModal({
                     onClose();
                     onSchedule(request);
                   }}
-                  className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+                  className="rounded-control bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm cursor-pointer"
                 >
                   Schedule Transfer
                 </button>
@@ -503,19 +503,19 @@ export function STRDetailsModal({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-card text-foreground rounded-2xl max-w-2xl w-full border border-border p-4 space-y-3 shadow-2xl animate-in fade-in zoom-in-95"
+            className="bg-surface text-text-primary rounded-panel max-w-2xl w-full border border-divider p-4 space-y-3 shadow-2xl animate-in fade-in zoom-in-95"
           >
-            <div className="flex items-center justify-between border-b border-border pb-2">
-              <h5 className="text-xs font-bold text-foreground uppercase truncate pr-4">{previewImage.title}</h5>
+            <div className="flex items-center justify-between border-b border-divider pb-2">
+              <h5 className="type-caption font-semibold text-text-primary uppercase truncate pr-4">{previewImage.title}</h5>
               <button
                 type="button"
                 onClick={() => setPreviewImage(null)}
-                className="h-7 px-3 text-xs rounded-lg border border-border bg-card text-foreground hover:bg-muted font-semibold transition-colors cursor-pointer"
+                className="h-7 px-3 text-xs rounded-lg border border-divider bg-surface text-text-primary hover:bg-surface-hover font-semibold transition-colors cursor-pointer"
               >
                 Close
               </button>
             </div>
-            <div className="flex items-center justify-center bg-muted/20 rounded-xl p-2 max-h-[70vh] overflow-auto">
+            <div className="flex items-center justify-center bg-muted/20 rounded-control p-2 max-h-[70vh] overflow-auto">
               <img
                 src={previewImage.src}
                 alt={previewImage.title}

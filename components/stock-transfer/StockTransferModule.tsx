@@ -199,7 +199,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
               size="sm"
               onClick={refreshAll}
               disabled={loading}
-              className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+              className="flex items-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-button font-semibold text-text-primary hover:bg-surface-hover transition-colors h-10 cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </Button>
@@ -209,7 +209,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
                 asChild
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+                className="flex items-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-button font-semibold text-text-primary hover:bg-surface-hover transition-colors h-10 cursor-pointer"
               >
                 <Link href="/stock-transfer/logs">
                   <History className="w-3.5 h-3.5" /> Transaction History
@@ -221,7 +221,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
               <Button
                 type="button"
                 onClick={() => setOpenCreateSTR(true)}
-                className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10 cursor-pointer"
+                className="flex items-center gap-2 rounded-control bg-primary px-5 py-2.5 type-button font-semibold text-primary-foreground hover:bg-primary-hover transition-colors shadow-sm h-10 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Create Transfer Request
               </Button>
@@ -234,20 +234,20 @@ export default function StockTransferModule({ requests, metrics, locations, acti
       <StockTransferSummaryCards metrics={metrics} />
 
       {/* Primary Section Tabs (Stock Transfers vs Locations) */}
-      <div className="border-b border-border">
+      <div className="border-b border-divider">
         <div className="flex items-center gap-2 overflow-x-auto">
           <button
             type="button"
             onClick={() => startTransition(() => router.push("/stock-transfer"))}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 type-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               activeMainTab === "transfers"
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                ? "border-primary text-text-primary"
+                : "border-transparent text-text-muted hover:text-text-primary hover:border-divider"
             }`}
           >
             <span>STOCK TRANSFERS</span>
             {statusCounts.All > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-muted text-foreground">
+              <span className="px-1.5 py-0.5 rounded-full type-caption font-semibold bg-surface-hover text-text-primary border border-divider">
                 {statusCounts.All}
               </span>
             )}
@@ -256,10 +256,10 @@ export default function StockTransferModule({ requests, metrics, locations, acti
           <button
             type="button"
             onClick={() => startTransition(() => router.push("/stock-transfer?tab=locations"))}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 type-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               activeMainTab === "locations"
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                ? "border-primary text-text-primary"
+                : "border-transparent text-text-muted hover:text-text-primary hover:border-divider"
             }`}
           >
             <span>LOCATIONS</span>
@@ -273,7 +273,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
       ) : (
         <div className="space-y-5">
           {/* Search Filter Bar */}
-          <div className="rounded-xl border border-border bg-card p-3">
+          <div className="rounded-control border border-divider bg-surface p-3">
             <SearchInput
               placeholder="Search by Request No., Transfer No., Destination Branch, Product, or Courier..."
               value={search}
@@ -281,12 +281,12 @@ export default function StockTransferModule({ requests, metrics, locations, acti
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="text-xs"
+              className="type-input"
             />
           </div>
 
           {/* Sub-status Tabs Row (Admin Requests tab + Status Tabs) */}
-          <div className="border-b border-border overflow-x-auto pb-2">
+          <div className="border-b border-divider overflow-x-auto pb-2">
             <div className="flex items-center gap-1.5 min-w-max">
               {/* Admin Requests Tab (Visible ONLY to Admin) */}
               {isAdmin && (
@@ -296,19 +296,19 @@ export default function StockTransferModule({ requests, metrics, locations, acti
                     setActiveStatusTab("Requests");
                     setPage(1);
                   }}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
                     activeStatusTab === "Requests"
                       ? "bg-primary text-primary-foreground shadow-xs"
-                      : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                      : "bg-surface-hover text-text-muted hover:text-text-primary hover:bg-surface-hover"
                   }`}
                 >
                   <span>Requests</span>
                   {statusCounts.Requests > 0 && (
                     <span
-                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      className={`px-1.5 py-0.5 rounded-full type-caption font-semibold ${
                         activeStatusTab === "Requests"
-                          ? "bg-background text-foreground"
-                          : "bg-foreground/20 text-foreground"
+                          ? "bg-surface text-text-primary"
+                          : "bg-surface-hover text-text-primary border border-divider"
                       }`}
                     >
                       {statusCounts.Requests}
@@ -330,19 +330,19 @@ export default function StockTransferModule({ requests, metrics, locations, acti
                       setActiveStatusTab(tab);
                       setPage(1);
                     }}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
                       isSelected
                         ? "bg-primary text-primary-foreground shadow-xs"
-                        : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                        : "bg-surface-hover text-text-muted hover:text-text-primary hover:bg-surface-hover"
                     }`}
                   >
                     <span>{tab}</span>
                     {count > 0 && tab !== "All" && (
                       <span
-                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                        className={`px-1.5 py-0.5 rounded-full type-caption font-semibold ${
                           isSelected
-                            ? "bg-background text-foreground"
-                            : "bg-foreground/10 text-foreground"
+                            ? "bg-surface text-text-primary"
+                            : "bg-surface-hover text-text-primary border border-divider"
                         }`}
                       >
                         {count}

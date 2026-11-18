@@ -276,25 +276,25 @@ export function DispatchTransferModal({
         ];
 
   return createPortal(
-    <div className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150">
+    <div className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-backdrop p-4 sm:p-6 animate-in fade-in duration-150">
       {confirmModal}
       <div
         style={{ width: "100%", maxWidth: "960px" }}
-        className="w-full max-h-[92vh] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0 relative"
+        className="w-full max-h-[92vh] bg-surface rounded-panel shadow-2xl border border-divider overflow-hidden flex flex-col text-text-primary shrink-0 relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-5">
+        <div className="flex items-center justify-between border-b border-divider px-6 py-5">
           <div>
-            <h2 className="text-xl font-bold text-foreground">Dispatch Stock Transfer</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <h2 className="type-modal-title text-text-primary">Dispatch Stock Transfer</h2>
+            <p className="text-xs text-text-muted mt-0.5">
               Confirm the actual release of products from the commissary. Review the original stock transfer request and scheduled transportation details before recording the dispatch.
             </p>
           </div>
           <button
             type="button"
             onClick={requestClose}
-            className="rounded-xl p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+            className="rounded-control p-2 text-text-muted hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -303,48 +303,48 @@ export function DispatchTransferModal({
         {/* Content Body */}
         <form onSubmit={handlePreSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
           {error && (
-            <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3.5 text-xs text-destructive flex items-center gap-2">
+            <div className="rounded-control border border-destructive/40 bg-destructive/10 p-3.5 text-xs text-destructive flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Stock Transfer Information */}
-          <div className="rounded-2xl border border-border bg-muted/20 p-5 space-y-3">
+          <div className="rounded-panel border border-divider bg-muted/20 p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">Stock Transfer Information</h3>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+              <h3 className="type-card-title text-text-primary">Stock Transfer Information</h3>
+              <span className="type-overline font-semibold uppercase tracking-wider text-text-muted bg-surface-hover px-2.5 py-1 rounded-full">
                 REQUEST INFORMATION · READ-ONLY
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Request Number</span>
-                <p className="text-sm font-semibold text-foreground mt-0.5">
+                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Request Number</span>
+                <p className="text-sm font-semibold text-text-primary mt-0.5">
                   {request?.requestNumber || transfer.requestNumber || transfer.transferNumber}
                 </p>
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Destination Branch</span>
-                <p className="text-sm font-semibold text-foreground mt-0.5">
+                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Destination Branch</span>
+                <p className="text-sm font-semibold text-text-primary mt-0.5">
                   {request?.toLocationName || transfer.destLocationName || "—"}
                 </p>
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Required Date</span>
-                <p className="text-sm font-semibold text-foreground mt-0.5">
+                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Required Date</span>
+                <p className="text-sm font-semibold text-text-primary mt-0.5">
                   {formatDateDisplay(request?.requiredDate || transfer.scheduledDate || transfer.transferDate)}
                 </p>
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Priority</span>
-                <p className="text-sm font-semibold text-foreground mt-0.5">
+                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Priority</span>
+                <p className="text-sm font-semibold text-text-primary mt-0.5">
                   {request?.priority || transfer.priority || "Medium"}
                 </p>
               </div>
               <div className="sm:col-span-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Reason / Purpose</span>
-                <p className="text-sm font-semibold text-foreground mt-0.5">
+                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Reason / Purpose</span>
+                <p className="text-sm font-semibold text-text-primary mt-0.5">
                   {request?.reason || "Branch Replenishment"}
                 </p>
               </div>
@@ -352,17 +352,17 @@ export function DispatchTransferModal({
           </div>
 
           {/* Finished Products to Transfer */}
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+          <div className="rounded-panel border border-divider bg-surface p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">Finished Products to Transfer</h3>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+              <h3 className="type-card-title text-text-primary">Finished Products to Transfer</h3>
+              <span className="type-overline font-semibold uppercase tracking-wider text-text-muted bg-surface-hover px-2.5 py-1 rounded-full">
                 PRODUCT DETAILS · READ-ONLY
               </span>
             </div>
-            <div className="overflow-x-auto rounded-xl border border-border">
+            <div className="overflow-x-auto rounded-control border border-divider">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-muted/40 border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <tr className="bg-surface-hover border-b border-divider type-table-header font-semibold text-text-muted uppercase tracking-wider">
                     <th className="py-2.5 px-4">Product & Variant</th>
                     <th className="py-2.5 px-3">SKU</th>
                     <th className="py-2.5 px-3">Commissary Stock</th>
@@ -372,31 +372,31 @@ export function DispatchTransferModal({
                 </thead>
                 <tbody className="divide-y divide-border">
                   {displayItems.map((item, idx) => (
-                    <tr key={item.requestItemId || idx} className="hover:bg-muted/10 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-foreground">
+                    <tr key={item.requestItemId || idx} className="hover:bg-surface-hover/10 transition-colors">
+                      <td className="py-3 px-4 font-semibold text-text-primary">
                         {item.productName}
-                        {item.variant ? <span className="block text-[11px] font-normal text-muted-foreground">{item.variant}</span> : null}
+                        {item.variant ? <span className="block type-caption font-normal text-text-muted">{item.variant}</span> : null}
                       </td>
-                      <td className="py-3 px-3 font-mono text-[11px] text-muted-foreground">{item.sku || "—"}</td>
-                      <td className="py-3 px-3 font-medium text-foreground">
+                      <td className="py-3 px-3 font-mono type-caption text-text-muted">{item.sku || "—"}</td>
+                      <td className="py-3 px-3 font-medium text-text-primary">
                         {item.availableQuantity ?? "—"}{" "}
-                        <span className="text-[10px] text-muted-foreground font-normal">(In Stock)</span>
+                        <span className="type-caption text-text-muted font-normal">(In Stock)</span>
                       </td>
                       <td className="py-3 px-3">
                         {item.suggestedLots && item.suggestedLots.length > 0 ? (
                           <div className="space-y-1">
                             {item.suggestedLots.map((lot, lIdx) => (
-                              <div key={lIdx} className="text-[11px]">
-                                <span className="font-semibold text-foreground">{formatDateDisplay(lot.expiryDate)}</span>
-                                <span className="block text-[10px] text-muted-foreground font-mono">Lot: {lot.lotCode}</span>
+                              <div key={lIdx} className="type-caption">
+                                <span className="font-semibold text-text-primary">{formatDateDisplay(lot.expiryDate)}</span>
+                                <span className="block type-caption text-text-muted font-mono">Lot: {lot.lotCode}</span>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span className="text-text-muted">—</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-right font-bold text-foreground text-sm">{item.requestedQuantity}</td>
+                      <td className="py-3 px-4 text-right font-semibold text-text-primary type-table-cell">{item.requestedQuantity}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -405,64 +405,64 @@ export function DispatchTransferModal({
           </div>
 
           {/* Transportation Details */}
-          <div className="rounded-2xl border border-border bg-muted/20 p-5 space-y-3">
+          <div className="rounded-panel border border-divider bg-muted/20 p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">Transportation Details</h3>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+              <h3 className="type-card-title text-text-primary">Transportation Details</h3>
+              <span className="type-overline font-semibold uppercase tracking-wider text-text-muted bg-surface-hover px-2.5 py-1 rounded-full">
                 SCHEDULED INFORMATION · READ-ONLY
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transport Provider</span>
-                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.transportProvider}</p>
+                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Transport Provider</span>
+                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.transportProvider}</p>
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Vehicle Type</span>
-                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.vehicleType}</p>
+                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Vehicle Type</span>
+                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.vehicleType}</p>
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Plate Number</span>
-                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.plateNumber}</p>
+                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Plate Number</span>
+                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.plateNumber}</p>
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Booking Reference</span>
-                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.bookingReference}</p>
+                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Booking Reference</span>
+                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.bookingReference}</p>
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transfer Fee</span>
-                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.transferFee}</p>
+                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Transfer Fee</span>
+                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.transferFee}</p>
               </div>
             </div>
           </div>
 
           {/* Driver Information */}
-          <div className="rounded-2xl border border-border bg-muted/20 p-5 space-y-3">
+          <div className="rounded-panel border border-divider bg-muted/20 p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">Driver Information</h3>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+              <h3 className="type-card-title text-text-primary">Driver Information</h3>
+              <span className="type-overline font-semibold uppercase tracking-wider text-text-muted bg-surface-hover px-2.5 py-1 rounded-full">
                 SCHEDULED INFORMATION · READ-ONLY
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Driver Name</span>
-                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.driverName}</p>
+                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Driver Name</span>
+                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.driverName}</p>
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Driver Contact Number</span>
-                <p className="text-sm font-semibold text-foreground mt-0.5">{scheduledInfo.driverContact}</p>
+                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Driver Contact Number</span>
+                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.driverContact}</p>
               </div>
             </div>
           </div>
 
           {/* Dispatch Details */}
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-            <h3 className="text-sm font-bold text-foreground">Dispatch Details</h3>
+          <div className="rounded-panel border border-divider bg-surface p-5 space-y-4">
+            <h3 className="type-card-title text-text-primary">Dispatch Details</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Actual Dispatch Date */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
+                <label className="text-xs font-semibold text-text-primary">
                   Actual Dispatch Date <span className="text-destructive">*</span>
                 </label>
                 <div className="relative">
@@ -472,15 +472,15 @@ export function DispatchTransferModal({
                     max={maxDateStr}
                     value={actualDispatchDate}
                     onChange={(e) => handleDateChange(e.target.value)}
-                    className="w-full h-10 rounded-xl border border-border bg-card px-3.5 pr-10 text-xs text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 pr-10 text-xs text-text-primary cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   />
-                  <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                 </div>
               </div>
 
               {/* Actual Dispatch Time */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
+                <label className="text-xs font-semibold text-text-primary">
                   Actual Dispatch Time <span className="text-destructive">*</span>
                 </label>
                 <div className="relative">
@@ -491,35 +491,35 @@ export function DispatchTransferModal({
                       setActualDispatchTime(e.target.value);
                       setError(null);
                     }}
-                    className="w-full h-10 rounded-xl border border-border bg-card px-3.5 pr-10 text-xs text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 pr-10 text-xs text-text-primary cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   />
-                  <Clock className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Clock className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                 </div>
               </div>
 
               {/* Released By (Locked to Current Account User) */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
+                <label className="text-xs font-semibold text-text-primary">
                   Released By <span className="text-destructive">*</span>
                 </label>
                 <Input
                   readOnly
                   disabled
                   value={currentStaffName}
-                  className="h-10 rounded-xl bg-muted/40 border-border text-foreground font-medium text-xs cursor-not-allowed select-none disabled:opacity-100"
+                  className="h-10 rounded-control bg-surface-hover border-divider text-text-primary font-medium text-xs cursor-not-allowed select-none disabled:opacity-100"
                 />
               </div>
             </div>
           </div>
 
           {/* Dispatch Documents */}
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+          <div className="rounded-panel border border-divider bg-surface p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">
+              <h3 className="type-card-title text-text-primary">
                 Dispatch Documents <span className="text-destructive">*</span>
               </h3>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-text-muted">
               Upload delivery receipts, loading photos, or signed dispatch documents.
             </p>
             <input
@@ -531,27 +531,27 @@ export function DispatchTransferModal({
             />
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-border hover:border-foreground/40 rounded-2xl p-7 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-muted/20 transition-all group"
+              className="border-2 border-dashed border-divider hover:border-foreground/40 rounded-panel p-7 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-hover/20 transition-all group"
             >
-              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2.5 text-muted-foreground group-hover:text-foreground group-hover:scale-105 transition-all">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2.5 text-text-muted group-hover:text-text-primary group-hover:scale-105 transition-all">
                 <Upload className="w-5 h-5" />
               </div>
-              <p className="text-xs font-semibold text-foreground">
+              <p className="text-xs font-semibold text-text-primary">
                 Click to upload dispatch documents or proof photo
               </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="type-caption text-text-muted mt-0.5">
                 JPG, PNG, PDF up to 8MB
               </p>
             </div>
             {selectedFile && (
-              <div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-card">
+              <div className="flex items-center justify-between p-3.5 rounded-control border border-divider bg-surface">
                 <div className="flex items-center gap-2.5">
-                  <FileCheck className="w-5 h-5 text-emerald-500" />
+                  <FileCheck className="w-5 h-5 text-success" />
                   <div>
-                    <p className="text-xs font-semibold text-foreground truncate max-w-[280px]">
+                    <p className="text-xs font-semibold text-text-primary truncate max-w-[280px]">
                       {selectedFile.name}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="type-caption text-text-muted">
                       {(selectedFile.size / 1024).toFixed(1)} KB
                     </p>
                   </div>
@@ -563,7 +563,7 @@ export function DispatchTransferModal({
                     setSelectedFile(null);
                     setProofBase64("");
                   }}
-                  className="text-xs text-muted-foreground hover:text-destructive px-2 py-1 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                  className="text-xs text-text-muted hover:text-destructive px-2 py-1 rounded-lg hover:bg-surface-hover transition-colors cursor-pointer"
                 >
                   Remove
                 </button>
@@ -572,32 +572,32 @@ export function DispatchTransferModal({
           </div>
 
           {/* Dispatch Remarks */}
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-2">
-            <h3 className="text-sm font-bold text-foreground">Dispatch Remarks</h3>
+          <div className="rounded-panel border border-divider bg-surface p-5 space-y-2">
+            <h3 className="type-card-title text-text-primary">Dispatch Remarks</h3>
             <Textarea
               value={dispatchRemarks}
               onChange={(e) => setDispatchRemarks(e.target.value)}
               placeholder="Enter additional dispatch instructions or remarks (Optional)..."
               maxLength={250}
               rows={3}
-              className="rounded-xl bg-card border-border text-foreground text-xs"
+              className="rounded-control bg-surface border-divider text-text-primary text-xs"
             />
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-divider">
             <button
               type="button"
               onClick={requestClose}
               disabled={loading}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="rounded-control border border-divider bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
             >
               Close
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-control bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Confirm Dispatch
             </button>

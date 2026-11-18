@@ -26,19 +26,19 @@ export function STFTable({
 
   if (transfers.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-12 text-center text-sm text-muted-foreground">
+      <div className="rounded-panel border border-divider bg-surface p-12 text-center type-body text-text-muted">
         No formal stock transfers found matching your filter criteria.
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
+    <div className="rounded-panel border border-divider bg-surface overflow-hidden shadow-xs">
       <div className="overflow-x-auto custom-scrollbar">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
+        <table className="w-full border-collapse text-left">
+          <thead className="bg-surface-hover text-text-muted type-table-header border-b border-divider">
             <tr>
-              <th className="sticky left-0 z-20 min-w-[150px] w-44 px-5 py-3.5 whitespace-nowrap bg-muted/95 backdrop-blur-xs border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">Transfer No.</th>
+              <th className="sticky left-0 z-20 min-w-[150px] w-44 px-5 py-3.5 whitespace-nowrap bg-surface-hover backdrop-blur-xs border-r border-divider shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">Transfer No.</th>
               <th className="px-5 py-3.5 whitespace-nowrap">STR Ref</th>
               <th className="px-5 py-3.5 whitespace-nowrap">Product &amp; Variant</th>
               <th className="px-5 py-3.5">Destination</th>
@@ -49,47 +49,47 @@ export function STFTable({
               <th className="px-5 py-3.5 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-divider">
             {transfers.map((st) => {
               const isScheduled = st.status === "Scheduled";
 
               return (
                 <tr
                   key={st.transferId}
-                  className="hover:bg-muted/20 transition-colors cursor-pointer group"
+                  className="hover:bg-surface-hover/60 transition-colors cursor-pointer group"
                   onClick={() => onView(st)}
                 >
-                  <td className="sticky left-0 z-10 min-w-[150px] w-44 px-5 py-4 font-mono font-bold text-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                  <td className="sticky left-0 z-10 min-w-[150px] w-44 px-5 py-4 font-mono font-semibold type-table-cell text-text-primary whitespace-nowrap bg-surface group-hover:bg-surface-hover transition-colors border-r border-divider shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     <span className="hover:underline">{st.transferNumber}</span>
                   </td>
 
-                  <td className="px-5 py-4 font-mono text-muted-foreground whitespace-nowrap">
+                  <td className="px-5 py-4 font-mono type-table-cell text-text-muted whitespace-nowrap">
                     {st.requestNumber || "—"}
                   </td>
 
-                  <td className="px-5 py-4 font-semibold text-foreground">
+                  <td className="px-5 py-4 font-semibold type-table-cell text-text-primary">
                     <div>{st.productName}</div>
-                    <span className="text-[11px] text-muted-foreground font-normal">
+                    <span className="type-caption text-text-muted font-normal">
                       {st.variant || "Standard"}
                     </span>
                   </td>
 
-                  <td className="px-5 py-4 text-foreground">
+                  <td className="px-5 py-4 type-table-cell text-text-primary">
                     {st.destLocationName}
                   </td>
 
-                  <td className="px-5 py-4 text-right font-extrabold text-foreground">
+                  <td className="px-5 py-4 text-right font-semibold text-text-primary type-table-cell">
                     {st.transferQuantity}
                   </td>
 
-                  <td className="px-5 py-4 text-muted-foreground">
+                  <td className="px-5 py-4 type-table-cell text-text-muted">
                     {st.scheduledDate ? new Date(st.scheduledDate).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" }) : "—"}
                   </td>
 
-                  <td className="px-5 py-4 text-muted-foreground">
+                  <td className="px-5 py-4 type-table-cell text-text-muted">
                     <div>{st.driverName || "—"}</div>
                     {st.vehiclePlate && (
-                      <span className="text-[10px] font-mono text-muted-foreground">
+                      <span className="type-caption font-mono text-text-muted">
                         [{st.vehiclePlate}]
                       </span>
                     )}
@@ -112,7 +112,7 @@ export function STFTable({
                               type="button"
                               onClick={() => onDispatch(st)}
                               title="Dispatch Transfer"
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-foreground text-background text-xs font-semibold hover:bg-foreground/85 transition-colors shadow-xs cursor-pointer"
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-control bg-primary text-primary-foreground type-button font-semibold hover:bg-primary-hover transition-colors shadow-xs cursor-pointer"
                             >
                               <Truck className="w-3.5 h-3.5" />
                               <span>Dispatch</span>
@@ -123,7 +123,7 @@ export function STFTable({
                               type="button"
                               onClick={() => onCancel(st)}
                               title="Cancel Transfer"
-                              className="p-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                              className="p-1.5 rounded-control border border-divider bg-surface text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -136,7 +136,7 @@ export function STFTable({
                         type="button"
                         onClick={() => onView(st)}
                         title="View Details"
-                        className="p-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        className="p-1.5 rounded-control border border-divider bg-surface text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
                       >
                         <Eye className="w-4 h-4" />
                       </button>

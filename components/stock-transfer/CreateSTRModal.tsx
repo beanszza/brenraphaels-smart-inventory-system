@@ -359,28 +359,27 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
 
   return createPortal(
     <div
-      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
+      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-backdrop backdrop-blur-xs p-4 sm:p-6 animate-in fade-in duration-150"
     >
       {confirmModal}
       <div
-        style={{ width: "100%", maxWidth: "1050px" }}
-        className="w-full max-h-[92vh] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
+        className="w-full max-w-[640px] max-h-[92vh] bg-surface rounded-panel shadow-modal border border-divider overflow-hidden flex flex-col text-text-primary shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-5">
+        <div className="flex items-center justify-between border-b border-divider px-6 py-5">
           <div>
-            <h2 className="text-xl font-bold text-foreground">
+            <h2 className="type-modal-title text-text-primary">
               Create Stock Transfer Request
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="type-caption text-text-muted mt-0.5">
               Submit a transfer request to distribute finished goods to a branch
             </p>
           </div>
           <button
             type="button"
             onClick={requestClose}
-            className="rounded-xl p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+            className="rounded-control p-2 text-text-muted hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -389,11 +388,11 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           {prerequisitesLoading && <div role="status" aria-label="Loading products and destinations" className="space-y-3">
-            <Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full rounded-control" /><Skeleton className="h-10 w-full rounded-control" />
           </div>}
-          {!prerequisitesLoading && !prerequisitesReady && <button type="button" onClick={fetchPrerequisites} className="text-sm underline">Retry loading products and destinations</button>}
+          {!prerequisitesLoading && !prerequisitesReady && <button type="button" onClick={fetchPrerequisites} className="type-caption underline text-text-primary">Retry loading products and destinations</button>}
           {formError && (
-            <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3.5 text-xs text-destructive flex items-center gap-2">
+            <div className="rounded-control border border-destructive/40 bg-destructive/10 p-3.5 type-caption text-destructive flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span role="alert">{formError}</span>
             </div>
@@ -403,24 +402,24 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             {/* Request Number (Auto-assigned, visible immediately) */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
+              <label className="type-caption font-semibold text-text-primary">
                 Request Number
               </label>
-              <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs font-mono font-bold text-foreground select-all">
+              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover type-caption font-mono font-semibold text-text-primary select-all">
                 {requestNumber || "Generating..."}
               </div>
             </div>
 
             {/* Destination Branch */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
+              <label className="type-caption font-semibold text-text-primary">
                 Destination Branch <span className="text-destructive">*</span>
               </label>
               <Select value={toLocationId} onValueChange={setToLocationId}>
-                <SelectTrigger className="h-10 rounded-xl border border-border bg-card text-xs font-medium text-foreground">
+                <SelectTrigger className="h-10 rounded-control border border-divider bg-surface type-input font-medium text-text-primary">
                   <SelectValue placeholder="Select Destination Branch" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-surface border-divider text-text-primary">
                   {locations.map((loc) => (
                     <SelectItem key={loc.locationId} value={String(loc.locationId)}>
                       {loc.locationName} ({loc.locationType})
@@ -432,7 +431,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
 
             {/* Required Fulfillment Date with far-right calendar icon */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
+              <label className="type-caption font-semibold text-text-primary">
                 Required Date <span className="text-destructive">*</span>
               </label>
               <div className="relative">
@@ -442,19 +441,19 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                   max={getMaxFutureDateString()}
                   value={requiredDate}
                   onChange={(e) => setRequiredDate(e.target.value)}
-                  className="w-full h-10 rounded-xl border border-border bg-card px-3.5 pr-10 text-xs text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 pr-10 type-input text-text-primary cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 />
-                <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
               </div>
             </div>
 
             {/* Priority */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
+              <label className="text-xs font-semibold text-text-primary">
                 Priority
               </label>
               <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger className="h-10 rounded-xl border border-border bg-card text-xs font-medium text-foreground">
+                <SelectTrigger className="h-10 rounded-control border border-divider bg-surface text-xs font-medium text-text-primary">
                   <SelectValue placeholder="Select Priority" />
                 </SelectTrigger>
                 <SelectContent>
@@ -467,7 +466,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
 
             {/* Reason / Purpose Dropdown matching Destination Branch column width */}
             <div className="space-y-1.5 sm:col-span-1">
-              <label className="text-xs font-semibold text-foreground">
+              <label className="text-xs font-semibold text-text-primary">
                 Reason / Purpose <span className="text-destructive">*</span>
               </label>
               <Select
@@ -477,7 +476,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                   setFormError(null);
                 }}
               >
-                <SelectTrigger className="h-10 rounded-xl border border-border bg-card text-xs font-medium text-foreground">
+                <SelectTrigger className="h-10 rounded-control border border-divider bg-surface text-xs font-medium text-text-primary">
                   <SelectValue placeholder="Select Reason" />
                 </SelectTrigger>
                 <SelectContent>
@@ -493,7 +492,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
             {/* If 'Other' chosen: Specify Reason field */}
             {reasonChoice === "Other" && (
               <div className="space-y-1.5 sm:col-span-3">
-                <label className="text-xs font-semibold text-foreground">
+                <label className="text-xs font-semibold text-text-primary">
                   Specify Reason <span className="text-destructive">*</span>
                 </label>
                 <Input
@@ -501,7 +500,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                   placeholder="Please specify reason for stock transfer..."
                   value={customReason}
                   onChange={(e) => setCustomReason(e.target.value)}
-                  className="h-10 rounded-xl border border-border bg-card text-xs text-foreground"
+                  className="h-10 rounded-control border border-divider bg-surface text-xs text-text-primary"
                   maxLength={100}
                 />
               </div>
@@ -511,24 +510,24 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
           {/* Dynamic Items Table */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                <Package className="w-4 h-4 text-muted-foreground" />
+              <h3 className="type-card-title text-text-primary flex items-center gap-2">
+                <Package className="w-4 h-4 text-text-muted" />
                 Finished Products to Transfer ({items.length})
               </h3>
               <button
                 type="button"
                 onClick={addItemRow}
                 disabled={products.length > 0 && items.length >= products.length}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-control border border-divider bg-surface text-xs font-semibold text-text-primary hover:bg-surface-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Product
               </button>
             </div>
 
-            <div className="border border-border rounded-xl overflow-hidden bg-card shadow-xs">
+            <div className="border border-divider rounded-control overflow-hidden bg-surface shadow-xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
+                  <thead className="bg-surface-hover text-text-muted font-semibold border-b border-divider">
                     <tr>
                       <th className="px-4 py-3 min-w-[240px]">Product & Variant</th>
                       <th className="px-4 py-3 min-w-[130px] whitespace-nowrap">SKU</th>
@@ -547,13 +546,13 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                         row.requestedQuantity > row.availableQuantity;
 
                       return (
-                        <tr key={idx} className="hover:bg-muted/20 transition-colors">
+                        <tr key={idx} className="hover:bg-surface-hover/20 transition-colors">
                           <td className="px-4 py-3">
                             <Select
                               value={row.productId ? String(row.productId) : ""}
                               onValueChange={(val) => handleProductChange(idx, val)}
                             >
-                              <SelectTrigger className="h-9 rounded-xl border border-border bg-card text-xs font-medium text-foreground w-full">
+                              <SelectTrigger className="h-9 rounded-control border border-divider bg-surface text-xs font-medium text-text-primary w-full">
                                 <SelectValue placeholder="Select Finished Product" />
                               </SelectTrigger>
                               <SelectContent className="max-h-60">
@@ -572,32 +571,32 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                             </Select>
                           </td>
 
-                          <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                          <td className="px-4 py-3 text-text-muted whitespace-nowrap">
                             {row.sku || "—"}
                           </td>
 
                           <td className="px-4 py-3 font-medium whitespace-nowrap">
                             {row.productId ? (
                               <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-foreground">
+                                <span className="font-semibold text-text-primary">
                                   {row.availableQuantity}
                                 </span>
                                 {isInsufficient ? (
-                                  <span className="text-[10px] text-destructive font-semibold">
+                                  <span className="type-caption text-destructive font-semibold">
                                     (Shortage)
                                   </span>
                                 ) : (
-                                  <span className="text-[10px] text-foreground font-semibold">
+                                  <span className="type-caption text-text-primary font-semibold">
                                     (In Stock)
                                   </span>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-text-muted">—</span>
                             )}
                           </td>
 
-                          <td className="px-4 py-3 text-muted-foreground">
+                          <td className="px-4 py-3 text-text-muted">
                             {row.productId ? (
                               row.isChecking ? (
                                 <Skeleton aria-label="Checking stock" className="h-4 w-16" />
@@ -606,7 +605,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                                   {row.allocatedLots.map((al, aIdx) => (
                                     <div key={aIdx} className="space-y-0.5">
                                       <div className="flex items-center gap-1.5 flex-wrap">
-                                        <span className="font-semibold text-foreground text-xs">
+                                        <span className="font-semibold text-text-primary text-xs">
                                           {al.expiryDate && al.expiryDate !== "No Expiry" && al.expiryDate !== "N/A"
                                             ? (() => {
                                                 try {
@@ -619,17 +618,17 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                                             : "No Expiry"}
                                         </span>
                                       </div>
-                                      <div className="text-[10px] text-muted-foreground font-mono">
+                                      <div className="type-caption text-text-muted font-mono">
                                         Lot: {al.lotCode}
                                       </div>
                                     </div>
                                   ))}
                                 </div>
                               ) : (
-                                <span className="text-muted-foreground text-xs">No lot</span>
+                                <span className="text-text-muted text-xs">No lot</span>
                               )
                             ) : (
-                              <span className="text-muted-foreground text-xs">—</span>
+                              <span className="text-text-muted text-xs">—</span>
                             )}
                           </td>
 
@@ -641,12 +640,12 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                               step="1"
                               value={row.requestedQuantity}
                               onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                              className={`h-9 rounded-xl border bg-card text-xs text-foreground font-semibold w-24 ${
-                                isInsufficient ? "border-destructive text-destructive focus-visible:ring-destructive" : "border-border"
+                              className={`h-9 rounded-control border bg-surface text-xs text-text-primary font-semibold w-24 ${
+                                isInsufficient ? "border-destructive text-destructive focus-visible:ring-destructive" : "border-divider"
                               }`}
                             />
                             {isInsufficient && (
-                              <p className="text-[10px] text-destructive font-semibold mt-1">
+                              <p className="type-caption text-destructive font-semibold mt-1">
                                 Exceeds stock ({row.availableQuantity})
                               </p>
                             )}
@@ -657,7 +656,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                               type="button"
                               onClick={() => removeItemRow(idx)}
                               disabled={items.length <= 1}
-                              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover disabled:opacity-30 transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -672,12 +671,12 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
           </div>
 
           {/* Form Actions Footer */}
-          <div className="flex items-center justify-end gap-3 border-t border-border pt-5">
+          <div className="flex items-center justify-end gap-3 border-t border-divider pt-5">
             <button
               type="button"
               onClick={requestClose}
               disabled={loading}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="rounded-control border border-divider bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
             >
               Close
             </button>
@@ -696,7 +695,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                     row.requestedQuantity > row.availableQuantity
                 )
               }
-              className="flex items-center gap-2 rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="flex items-center gap-2 rounded-control bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? "Submitting..." : "Submit Request"}
             </button>

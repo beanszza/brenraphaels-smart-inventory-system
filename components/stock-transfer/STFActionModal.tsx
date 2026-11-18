@@ -38,32 +38,31 @@ export function STFActionModal({
 
   return createPortal(
     <div
-      className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-backdrop backdrop-blur-xs animate-in fade-in duration-150"
     >
       <div
-        style={{ width: "100%", maxWidth: "440px" }}
-        className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
+        className="w-full max-w-[480px] bg-surface rounded-panel shadow-modal border border-divider overflow-hidden flex flex-col p-6 text-text-primary shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
-            <AlertTriangle className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-full bg-surface-hover flex items-center justify-center mb-4 text-text-primary">
+            <AlertTriangle className="w-6 h-6 text-warning" />
           </div>
 
-          <h2 className="text-xl font-bold text-foreground mb-1">
+          <h2 className="type-modal-title text-text-primary mb-1">
             Cancel Stock Transfer
           </h2>
 
-          <p className="text-xs font-semibold text-muted-foreground mb-3">
+          <p className="type-caption font-semibold text-text-muted mb-3">
             Transfer No: {transferNumber}
           </p>
 
-          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+          <p className="type-body text-text-muted mb-5 leading-relaxed">
             Are you sure you want to cancel this scheduled stock transfer? This action cannot be undone.
           </p>
 
           <div className="w-full text-left space-y-1.5 mb-5">
-            <label className="text-xs font-semibold text-foreground">
+            <label className="type-caption font-semibold text-text-primary">
               Cancellation Reason (Optional)
             </label>
             <Textarea
@@ -71,7 +70,7 @@ export function STFActionModal({
               placeholder="State reason for cancellation..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="text-xs resize-none bg-background rounded-xl p-3 border-border"
+              className="type-input resize-none bg-surface rounded-control p-3 border-divider text-text-primary"
             />
           </div>
 
@@ -80,7 +79,7 @@ export function STFActionModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-5 py-2.5 type-button font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer disabled:opacity-50"
             >
               <ArrowLeft className="w-4 h-4" />
               Back
@@ -89,7 +88,7 @@ export function STFActionModal({
               type="button"
               onClick={handleConfirm}
               disabled={loading}
-              className="flex-1 rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="flex-1 rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-button font-semibold hover:bg-primary-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? "Cancelling..." : "Confirm Cancel"}
             </button>

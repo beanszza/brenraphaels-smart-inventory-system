@@ -113,24 +113,24 @@ export function STFDetailsModal({
 
   return createPortal(
     <div
-      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 sm:p-6 animate-in fade-in duration-150"
+      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-backdrop p-4 sm:p-6 animate-in fade-in duration-150"
     >
       {confirmModal}
       <div
         style={{ width: "100%", maxWidth: "720px" }}
-        className="w-full max-h-[90vh] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col text-foreground shrink-0"
+        className="w-full max-h-[90vh] bg-surface rounded-panel shadow-2xl border border-divider overflow-hidden flex flex-col text-text-primary shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <div className="flex items-center justify-between border-b border-divider px-6 py-4">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-foreground">
+              <h2 className="type-modal-title text-text-primary">
                 Stock Transfer Details
               </h2>
               <StatusBadge status={transfer.status} />
             </div>
-            <p className="text-xs font-semibold text-muted-foreground mt-0.5">
+            <p className="text-xs font-semibold text-text-muted mt-0.5">
               {transfer.transferNumber}{" "}
               {transfer.requestNumber && `(Ref: ${transfer.requestNumber})`}
             </p>
@@ -138,7 +138,7 @@ export function STFDetailsModal({
           <button
             type="button"
             onClick={requestClose}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            className="rounded-lg p-1.5 text-text-muted hover:bg-surface-hover hover:text-text-primary transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -147,33 +147,33 @@ export function STFDetailsModal({
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Metadata Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border border-border bg-muted/20 p-4 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-control border border-divider bg-muted/20 p-4 text-xs">
             <div className="space-y-1">
-              <span className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">
+              <span className="type-overline font-semibold text-text-muted uppercase tracking-wider">
                 Origin Location
               </span>
-              <div className="flex items-center gap-1.5 font-medium text-foreground">
-                <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <div className="flex items-center gap-1.5 font-medium text-text-primary">
+                <MapPin className="w-3.5 h-3.5 text-text-muted shrink-0" />
                 <span>{transfer.sourceLocationName || "Commissary (Central Kitchen)"}</span>
               </div>
             </div>
 
             <div className="space-y-1">
-              <span className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">
+              <span className="type-overline font-semibold text-text-muted uppercase tracking-wider">
                 Destination Branch
               </span>
-              <div className="flex items-center gap-1.5 font-medium text-foreground">
-                <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <div className="flex items-center gap-1.5 font-medium text-text-primary">
+                <MapPin className="w-3.5 h-3.5 text-text-muted shrink-0" />
                 <span>{transfer.destLocationName}</span>
               </div>
             </div>
 
             <div className="space-y-1">
-              <span className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">
+              <span className="type-overline font-semibold text-text-muted uppercase tracking-wider">
                 Scheduled Date
               </span>
-              <div className="flex items-center gap-1.5 font-medium text-foreground">
-                <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <div className="flex items-center gap-1.5 font-medium text-text-primary">
+                <Calendar className="w-3.5 h-3.5 text-text-muted shrink-0" />
                 <span>
                   {transfer.scheduledDate
                     ? new Date(transfer.scheduledDate).toLocaleDateString()
@@ -183,11 +183,11 @@ export function STFDetailsModal({
             </div>
 
             <div className="space-y-1">
-              <span className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">
+              <span className="type-overline font-semibold text-text-muted uppercase tracking-wider">
                 Dispatched Date
               </span>
-              <div className="flex items-center gap-1.5 font-medium text-foreground">
-                <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <div className="flex items-center gap-1.5 font-medium text-text-primary">
+                <Calendar className="w-3.5 h-3.5 text-text-muted shrink-0" />
                 <span>
                   {transfer.dispatchedDate
                     ? new Date(transfer.dispatchedDate).toLocaleString()
@@ -198,35 +198,35 @@ export function STFDetailsModal({
           </div>
 
           {/* Product & Quantity Card */}
-          <div className="rounded-xl border border-border bg-card p-4 text-xs space-y-3">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Package className="w-4 h-4 text-muted-foreground" />
+          <div className="rounded-control border border-divider bg-surface p-4 text-xs space-y-3">
+            <h3 className="type-card-title text-text-primary flex items-center gap-2">
+              <Package className="w-4 h-4 text-text-muted" />
               Transfer Item Information
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
               <div>
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">
+                <span className="type-overline text-text-muted uppercase font-semibold">
                   Product
                 </span>
-                <p className="font-bold text-foreground mt-0.5">{transfer.productName}</p>
+                <p className="font-semibold text-text-primary mt-0.5">{transfer.productName}</p>
               </div>
               <div>
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">
+                <span className="type-overline text-text-muted uppercase font-semibold">
                   Variant
                 </span>
-                <p className="text-foreground mt-0.5">{transfer.variant || "Standard"}</p>
+                <p className="text-text-primary mt-0.5">{transfer.variant || "Standard"}</p>
               </div>
               <div>
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">
+                <span className="type-overline text-text-muted uppercase font-semibold">
                   SKU
                 </span>
-                <p className="text-muted-foreground mt-0.5">{transfer.sku || "—"}</p>
+                <p className="text-text-muted mt-0.5">{transfer.sku || "—"}</p>
               </div>
               <div>
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">
+                <span className="type-overline text-text-muted uppercase font-semibold">
                   Transfer Qty
                 </span>
-                <p className="text-base font-extrabold text-foreground mt-0.5">
+                <p className="type-card-title font-semibold text-text-primary mt-0.5">
                   {transfer.transferQuantity}
                 </p>
               </div>
@@ -234,38 +234,38 @@ export function STFDetailsModal({
           </div>
 
           {/* Logistics Details */}
-          <div className="rounded-xl border border-border bg-muted/20 p-4 text-xs space-y-3">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Truck className="w-4 h-4 text-muted-foreground" />
+          <div className="rounded-control border border-divider bg-muted/20 p-4 text-xs space-y-3">
+            <h3 className="type-card-title text-text-primary flex items-center gap-2">
+              <Truck className="w-4 h-4 text-text-muted" />
               Logistics & Courier Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
               <div>
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">
+                <span className="type-overline text-text-muted uppercase font-semibold">
                   Driver Name
                 </span>
-                <p className="font-medium text-foreground mt-0.5">{transfer.driverName || "—"}</p>
+                <p className="font-medium text-text-primary mt-0.5">{transfer.driverName || "—"}</p>
               </div>
               <div>
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">
+                <span className="type-overline text-text-muted uppercase font-semibold">
                   Vehicle Plate
                 </span>
-                <p className="text-foreground mt-0.5">{transfer.vehiclePlate || "—"}</p>
+                <p className="text-text-primary mt-0.5">{transfer.vehiclePlate || "—"}</p>
               </div>
               <div>
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">
+                <span className="type-overline text-text-muted uppercase font-semibold">
                   Courier Company
                 </span>
-                <p className="font-medium text-foreground mt-0.5">{transfer.courierName || "In-House"}</p>
+                <p className="font-medium text-text-primary mt-0.5">{transfer.courierName || "In-House"}</p>
               </div>
             </div>
           </div>
 
           {/* Document Proofs & Attachments */}
           {(bookingProofSrc || dispatchProofSrc) && (
-            <div className="rounded-xl border border-border bg-card p-4 text-xs space-y-2.5">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                <FileText className="w-4 h-4 text-muted-foreground" />
+            <div className="rounded-control border border-divider bg-surface p-4 text-xs space-y-2.5">
+              <h3 className="type-card-title text-text-primary flex items-center gap-2">
+                <FileText className="w-4 h-4 text-text-muted" />
                 Document Proofs &amp; Photo Attachments
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -294,21 +294,21 @@ export function STFDetailsModal({
 
           {/* Notes */}
           {transfer.notes && (
-            <div className="rounded-xl border border-border bg-card p-4 text-xs space-y-1">
-              <span className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">
+            <div className="rounded-control border border-divider bg-surface p-4 text-xs space-y-1">
+              <span className="type-overline font-semibold text-text-muted uppercase tracking-wider">
                 Notes & Instructions
               </span>
-              <p className="text-foreground leading-relaxed">{transfer.notes}</p>
+              <p className="text-text-primary leading-relaxed">{transfer.notes}</p>
             </div>
           )}
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between border-t border-border px-6 py-4 bg-muted/10">
+        <div className="flex items-center justify-between border-t border-divider px-6 py-4 bg-muted/10">
           <button
             type="button"
             onClick={requestClose}
-            className="rounded-xl bg-card border border-border px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+            className="rounded-control bg-surface border border-divider px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
           >
             Close
           </button>
@@ -323,7 +323,7 @@ export function STFDetailsModal({
                     onClose();
                     onCancel(transfer);
                   }}
-                  className="rounded-xl bg-card border border-border px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  className="rounded-control bg-surface border border-divider px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
                 >
                   Cancel Transfer
                 </button>
@@ -335,7 +335,7 @@ export function STFDetailsModal({
                     onClose();
                     onDispatch(transfer);
                   }}
-                  className="rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-semibold hover:bg-foreground/85 transition-colors shadow-sm cursor-pointer"
+                  className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm cursor-pointer"
                 >
                   Dispatch Transfer
                 </button>
@@ -353,19 +353,19 @@ export function STFDetailsModal({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-card text-foreground rounded-2xl max-w-2xl w-full border border-border p-4 space-y-3 shadow-2xl animate-in fade-in zoom-in-95"
+            className="bg-surface text-text-primary rounded-panel max-w-2xl w-full border border-divider p-4 space-y-3 shadow-2xl animate-in fade-in zoom-in-95"
           >
-            <div className="flex items-center justify-between border-b border-border pb-2">
-              <h5 className="text-xs font-bold text-foreground uppercase truncate pr-4">{previewImage.title}</h5>
+            <div className="flex items-center justify-between border-b border-divider pb-2">
+              <h5 className="text-xs font-semibold text-text-primary uppercase truncate pr-4">{previewImage.title}</h5>
               <button
                 type="button"
                 onClick={() => setPreviewImage(null)}
-                className="h-7 px-3 text-xs rounded-lg border border-border bg-card text-foreground hover:bg-muted font-semibold transition-colors cursor-pointer"
+                className="h-7 px-3 text-xs rounded-lg border border-divider bg-surface text-text-primary hover:bg-surface-hover font-semibold transition-colors cursor-pointer"
               >
                 Close
               </button>
             </div>
-            <div className="flex items-center justify-center bg-muted/20 rounded-xl p-2 max-h-[70vh] overflow-auto">
+            <div className="flex items-center justify-center bg-muted/20 rounded-control p-2 max-h-[70vh] overflow-auto">
               <img
                 src={previewImage.src}
                 alt={previewImage.title}

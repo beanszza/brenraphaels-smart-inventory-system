@@ -40,7 +40,7 @@ export function LocationsTab({ locations, loading, onRefresh }: {
           placeholder="Search by location name, branch, or address..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="text-xs"
+          className="type-input"
         />
 
         <Button
@@ -48,7 +48,7 @@ export function LocationsTab({ locations, loading, onRefresh }: {
           size="sm"
           onClick={onRefresh}
           disabled={loading}
-          className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 shrink-0"
+          className="flex items-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-button font-semibold text-text-primary hover:bg-surface-hover transition-colors h-10 shrink-0"
         >
           <RefreshCw className="w-3.5 h-3.5" /> Refresh
         </Button>
@@ -58,7 +58,7 @@ export function LocationsTab({ locations, loading, onRefresh }: {
             asChild
             variant="outline"
             size="sm"
-            className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 shrink-0"
+            className="flex items-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-button font-semibold text-text-primary hover:bg-surface-hover transition-colors h-10 shrink-0"
           >
             <Link href="/stock-transfer/logs">
               <History className="w-3.5 h-3.5" /> Transaction History
@@ -68,7 +68,7 @@ export function LocationsTab({ locations, loading, onRefresh }: {
       </div>
 
       {/* Type Filter Pills */}
-      <div className="border-b border-border pb-2 overflow-x-auto">
+      <div className="border-b border-divider pb-2 overflow-x-auto">
         <div className="flex items-center gap-1.5 min-w-max">
           {locationTypes.map((t) => {
             const isSelected = typeFilter === t;
@@ -77,10 +77,10 @@ export function LocationsTab({ locations, loading, onRefresh }: {
                 key={t}
                 type="button"
                 onClick={() => setTypeFilter(t)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
                   isSelected
                     ? "bg-primary text-primary-foreground shadow-xs"
-                    : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                    : "bg-surface-hover text-text-muted hover:text-text-primary hover:bg-surface-hover"
                 }`}
               >
                 {t}
@@ -94,7 +94,7 @@ export function LocationsTab({ locations, loading, onRefresh }: {
       {loading ? (
         <TransferSkeleton />
       ) : filteredLocations.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-card p-12 text-center text-xs text-muted-foreground">
+        <div className="rounded-panel border border-divider bg-surface p-12 text-center type-body text-text-muted">
           No distribution locations found.
         </div>
       ) : (
@@ -104,12 +104,12 @@ export function LocationsTab({ locations, loading, onRefresh }: {
             return (
               <div
                 key={loc.locationId}
-                className="rounded-2xl border border-border bg-card p-5 space-y-3.5 shadow-xs hover:border-foreground/30 transition-all flex flex-col justify-between"
+                className="rounded-panel border border-divider bg-surface p-5 space-y-3.5 shadow-xs hover:border-divider-strong transition-all flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <div className="p-2 rounded-xl bg-muted/60 text-foreground">
+                      <div className="p-2 rounded-control bg-surface-hover text-text-primary">
                         {isCommissary ? (
                           <Warehouse className="w-4 h-4" />
                         ) : loc.locationType === "Branch" ? (
@@ -119,36 +119,36 @@ export function LocationsTab({ locations, loading, onRefresh }: {
                         )}
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-foreground leading-tight">
+                        <h4 className="type-card-title text-text-primary leading-tight">
                           {loc.locationName}
                         </h4>
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        <span className="type-overline font-semibold text-text-muted uppercase tracking-wider">
                           ID: #{loc.locationId}
                         </span>
                       </div>
                     </div>
 
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border border-border bg-muted/50 text-foreground">
+                    <span className="px-2 py-0.5 rounded-control type-caption font-semibold border border-divider bg-surface-hover text-text-primary">
                       {loc.locationType}
                     </span>
                   </div>
 
                   {loc.address && (
-                    <div className="flex items-start gap-1.5 text-xs text-muted-foreground mt-3">
+                    <div className="flex items-start gap-1.5 type-caption text-text-muted mt-3">
                       <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                       <span>{loc.address}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between border-t border-border pt-3 text-[11px]">
-                  <span className="inline-flex items-center gap-1 font-semibold text-foreground">
-                    <CheckCircle className="w-3.5 h-3.5 text-foreground" />
+                <div className="flex items-center justify-between border-t border-divider pt-3 type-caption">
+                  <span className="inline-flex items-center gap-1 font-semibold text-text-primary">
+                    <CheckCircle className="w-3.5 h-3.5 text-text-primary" />
                     {loc.status || "Active"}
                   </span>
 
                   {isCommissary && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-foreground/10 text-foreground">
+                    <span className="px-2 py-0.5 rounded-full type-caption font-semibold bg-surface-hover text-text-primary border border-divider">
                       Central Hub
                     </span>
                   )}

@@ -39,19 +39,19 @@ export function STRTable({
 
   if (requests.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-12 text-center text-sm text-muted-foreground">
+      <div className="rounded-panel border border-divider bg-surface p-12 text-center type-body text-text-muted">
         No stock transfers found matching your filter criteria.
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
+    <div className="rounded-panel border border-divider bg-surface overflow-hidden shadow-xs">
       <div className="overflow-x-auto custom-scrollbar">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
+        <table className="w-full border-collapse text-left">
+          <thead className="bg-surface-hover text-text-muted type-table-header border-b border-divider">
             <tr>
-              <th className="sticky left-0 z-20 min-w-[150px] w-44 px-5 py-3.5 whitespace-nowrap bg-muted/95 backdrop-blur-xs border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">REQUEST NO.</th>
+              <th className="sticky left-0 z-20 min-w-[150px] w-44 px-5 py-3.5 whitespace-nowrap bg-surface-hover backdrop-blur-xs border-r border-divider shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">REQUEST NO.</th>
               <th className="px-5 py-3.5 whitespace-nowrap">DESTINATION</th>
               <th className="px-5 py-3.5 whitespace-nowrap">PRODUCT</th>
               <th className="px-5 py-3.5 whitespace-nowrap">VARIANT</th>
@@ -63,7 +63,7 @@ export function STRTable({
               <th className="px-5 py-3.5 text-center whitespace-nowrap w-16">ACTIONS</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-divider">
             {requests.map((req) => {
               const hasScheduledTransfer = req.transfers?.some((t) => t.status === "Scheduled") ?? false;
 
@@ -81,57 +81,57 @@ export function STRTable({
               return (
                 <tr
                   key={req.requestId}
-                  className="hover:bg-muted/20 transition-colors cursor-pointer group"
+                  className="hover:bg-surface-hover/60 transition-colors cursor-pointer group"
                   onClick={() => onView(req)}
                 >
                   {/* Request No */}
-                  <td className="sticky left-0 z-10 min-w-[150px] w-44 px-5 py-4 font-mono font-bold text-foreground whitespace-nowrap bg-card group-hover:bg-muted/40 transition-colors border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                  <td className="sticky left-0 z-10 min-w-[150px] w-44 px-5 py-4 font-mono font-semibold type-table-cell text-text-primary whitespace-nowrap bg-surface group-hover:bg-surface-hover transition-colors border-r border-divider shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     <span className="hover:underline">{req.requestNumber}</span>
                   </td>
 
                   {/* Destination */}
-                  <td className="px-5 py-4 font-semibold text-foreground whitespace-nowrap">
+                  <td className="px-5 py-4 font-semibold type-table-cell text-text-primary whitespace-nowrap">
                     {req.toLocationName}
                   </td>
 
                   {/* Product */}
-                  <td className="px-5 py-4 font-semibold text-foreground whitespace-nowrap">
+                  <td className="px-5 py-4 font-semibold type-table-cell text-text-primary whitespace-nowrap">
                     {firstItem ? (
                       <div>
                         <span>{firstItem.productName}</span>
                         {req.items && req.items.length > 1 && (
-                          <span className="ml-1 text-[10px] text-muted-foreground font-normal">
+                          <span className="ml-1 type-caption text-text-muted font-normal">
                             (+{req.items.length - 1} more)
                           </span>
                         )}
                       </div>
                     ) : (
-                      <span className="text-muted-foreground font-mono">—</span>
+                      <span className="text-text-muted font-mono">—</span>
                     )}
                   </td>
 
                   {/* Variant */}
                   <td className="px-5 py-4 whitespace-nowrap">
                     {firstItem?.variant ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-muted border border-border text-foreground">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-control type-caption font-semibold bg-surface-hover border border-divider text-text-primary">
                         {firstItem.variant}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground font-mono">—</span>
+                      <span className="text-text-muted font-mono">—</span>
                     )}
                   </td>
 
                   {/* Qty */}
-                  <td className="px-5 py-4 text-right font-extrabold text-foreground text-sm whitespace-nowrap">
+                  <td className="px-5 py-4 text-right font-semibold text-text-primary type-table-cell whitespace-nowrap">
                     {totalQty}
                   </td>
 
                   {/* Courier / Driver */}
                   {showCourier && (
-                    <td className="px-5 py-4 text-muted-foreground whitespace-nowrap">
+                    <td className="px-5 py-4 text-text-muted type-table-cell whitespace-nowrap">
                       <div>{courierDriver}</div>
                       {transferRef?.vehiclePlate && (
-                        <span className="text-[10px] font-mono text-muted-foreground">
+                        <span className="type-caption font-mono text-text-muted">
                           [{transferRef.vehiclePlate}]
                         </span>
                       )}
@@ -152,18 +152,18 @@ export function STRTable({
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          className="p-1.5 rounded-lg border border-transparent text-foreground hover:bg-muted transition-all cursor-pointer"
+                          className="p-1.5 rounded-control border border-transparent text-text-primary hover:bg-surface-hover transition-all cursor-pointer"
                           aria-label="Actions menu"
                         >
-                          <MoreHorizontal className="w-4 h-4 text-foreground" />
+                          <MoreHorizontal className="w-4 h-4 text-text-primary" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 z-[200]">
+                      <DropdownMenuContent align="end" className="w-48 z-[200] bg-surface border-divider text-text-primary">
                         <DropdownMenuItem
                           onClick={() => onView(req)}
-                          className="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs font-medium"
+                          className="flex items-center gap-2 px-3 py-2 cursor-pointer type-caption font-medium hover:bg-surface-hover"
                         >
-                          <Eye className="w-4 h-4 text-muted-foreground" />
+                          <Eye className="w-4 h-4 text-text-muted" />
                           <span>View Details</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>

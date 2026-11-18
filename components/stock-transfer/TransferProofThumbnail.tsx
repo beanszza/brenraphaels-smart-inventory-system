@@ -58,9 +58,9 @@ export function TransferProofThumbnail({
   const boxSize = size === "small" ? "w-16 h-16" : "w-20 h-20";
 
   return (
-    <div className="rounded-xl border border-border bg-card/60 p-3 flex items-center gap-3">
+    <div className="rounded-panel border border-divider bg-surface p-3 flex items-center gap-3">
       <div
-        className={`${boxSize} rounded-lg border border-border bg-muted/20 overflow-hidden flex items-center justify-center shrink-0`}
+        className={`${boxSize} rounded-control border border-divider bg-surface-hover overflow-hidden flex items-center justify-center shrink-0`}
       >
         {isImage ? (
           <img
@@ -70,19 +70,19 @@ export function TransferProofThumbnail({
             className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
           />
         ) : (
-          <FileText className="w-6 h-6 text-muted-foreground" />
+          <FileText className="w-6 h-6 text-text-muted" />
         )}
       </div>
       <div className="min-w-0 flex-1 space-y-1">
-        <p className="text-xs font-semibold text-foreground truncate">{title}</p>
+        <p className="type-caption font-semibold text-text-primary truncate">{title}</p>
         {subtitle && (
-          <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>
+          <p className="type-caption text-text-muted truncate">{subtitle}</p>
         )}
         {isImage && onPreview && (
           <button
             type="button"
             onClick={() => onPreview({ title, src: displaySrc })}
-            className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+            className="type-caption font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
           >
             <ExternalLink className="w-3 h-3" /> View Full Image
           </button>

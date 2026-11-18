@@ -13,13 +13,13 @@ export default function StockTransferSummaryCards({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Card 1: Total Requests */}
-      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+      <div className="rounded-panel border border-divider bg-surface p-5 sm:p-6 shadow-xs flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+          <span className="type-overline font-semibold uppercase text-text-muted">
             Total Requests
           </span>
           <svg
-            className="w-20 h-6 text-foreground"
+            className="w-20 h-6 text-text-primary"
             viewBox="0 0 80 24"
             fill="none"
           >
@@ -35,23 +35,23 @@ export default function StockTransferSummaryCards({
         </div>
 
         <div className="mt-4">
-          <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+          <div className="type-kpi font-semibold text-text-primary">
             {metrics.totalRequests}
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="type-caption text-text-muted mt-1">
             All stock transfer requests submitted
           </p>
         </div>
       </div>
 
       {/* Card 2: Pending Approval */}
-      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+      <div className="rounded-panel border border-divider bg-surface p-5 sm:p-6 shadow-xs flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+          <span className="type-overline font-semibold uppercase text-text-muted">
             Pending Approval
           </span>
           <svg
-            className="w-20 h-6 text-muted-foreground/70"
+            className="w-20 h-6 text-text-muted/70"
             viewBox="0 0 80 24"
             fill="none"
           >
@@ -67,23 +67,23 @@ export default function StockTransferSummaryCards({
         </div>
 
         <div className="mt-4">
-          <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+          <div className="type-kpi font-semibold text-text-primary">
             {metrics.pendingApproval}
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="type-caption text-text-muted mt-1">
             Requests awaiting Admin review
           </p>
         </div>
       </div>
 
       {/* Card 3: Dispatched Transfers */}
-      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+      <div className="rounded-panel border border-divider bg-surface p-5 sm:p-6 shadow-xs flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+          <span className="type-overline font-semibold uppercase text-text-muted">
             Dispatched Transfers
           </span>
           <svg
-            className="w-20 h-6 text-foreground"
+            className="w-20 h-6 text-text-primary"
             viewBox="0 0 80 24"
             fill="none"
           >
@@ -99,10 +99,10 @@ export default function StockTransferSummaryCards({
         </div>
 
         <div className="mt-4">
-          <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+          <div className="type-kpi font-semibold text-text-primary">
             {metrics.dispatchedTransfers}
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="type-caption text-text-muted mt-1">
             Transfers en route or received at branches
           </p>
         </div>
