@@ -465,7 +465,7 @@ Each sub-stage changes only class strings inside the listed files. Consumers pic
 ### 3E — Cards, skeletons and empty state — **[COMPLETED]**
 `components/ui/card.tsx` (`rounded-card border-border bg-surface`, **remove `shadow`**, `p-5`, `CardTitle → type-card-title`), `components/ui/skeleton.tsx` (`bg-subtle rounded-sm`), `components/ui/separator.tsx` (`bg-divider`), `components/ui/avatar.tsx`, `components/shared/EmptyState.tsx` (64px circle `bg-subtle`, 32px icon, `type-card-title`, `type-body-secondary`), `components/loading/page-loading.tsx`, `components/loading/audit-logs-skeleton.tsx`.
 
-### 3F — Modals and overlays
+### 3F — Modals and overlays — **[COMPLETED]**
 | File | Change |
 | :--- | :--- |
 | `components/ui/dialog.tsx`, `components/ui/alert-dialog.tsx` | Overlay `bg-black/80` → `bg-scrim`, content `rounded-modal shadow-modal p-6 bg-surface`, title `type-modal-title`, description `type-body text-ink-secondary`. **Keep the existing default max-width** here; set per-modal widths (`480` / `560` / `640 px`) in Stage 6 |
