@@ -75,17 +75,17 @@ export default function ProductionBatchDetailsModal({
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto bg-card border-border p-6 shadow-2xl">
-        <DialogHeader className="border-b border-border pb-3">
+      <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-y-auto bg-surface border-divider p-6 shadow-modal rounded-card">
+        <DialogHeader className="border-b border-divider pb-3">
           <div className="flex items-center gap-2.5 text-left">
-            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-control bg-brand text-text-inverse flex items-center justify-center shrink-0">
               <Package size={16} />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-foreground">
+              <DialogTitle className="type-section-title text-text-primary">
                 Batch Details: {batch.batchNumber}
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              <DialogDescription className="type-caption text-text-muted mt-0.5">
                 {batch.productName} &bull; {batch.variant || "Standard"}
               </DialogDescription>
             </div>
@@ -93,10 +93,10 @@ export default function ProductionBatchDetailsModal({
         </DialogHeader>
 
         {/* Content Body */}
-        <div className="space-y-4 pt-2 text-xs">
-          <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-muted/10">
+        <div className="space-y-4 pt-2 type-body">
+          <div className="flex items-center justify-between p-3 rounded-control border border-divider bg-surface-secondary/40">
             <div>
-              <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
+              <span className="type-overline uppercase tracking-wider text-text-muted block">
                 Current Status
               </span>
               <div className="mt-1">
@@ -105,31 +105,31 @@ export default function ProductionBatchDetailsModal({
             </div>
 
             <div>
-              <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
+              <span className="type-overline uppercase tracking-wider text-text-muted block">
                 Production Stage
               </span>
-              <span className="font-semibold text-foreground mt-1 block">
+              <span className="type-body font-semibold text-text-primary mt-1 block">
                 {batch.stage || "Preparation"}
               </span>
             </div>
 
             <div>
-              <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
+              <span className="type-overline uppercase tracking-wider text-text-muted block">
                 Target Output
               </span>
-              <span className="font-bold text-foreground mt-1 block">
+              <span className="type-body font-semibold text-text-primary mt-1 block">
                 {batch.targetYield} {batch.yieldUnit || "PCS"}
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-border bg-card">
+          <div className="grid grid-cols-2 gap-3 p-3 rounded-control border border-divider bg-surface shadow-card">
             <div>
-              <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
+              <span className="type-overline uppercase tracking-wider text-text-muted block">
                 Scheduled Date
               </span>
-              <span className="font-medium text-foreground mt-0.5 block flex items-center gap-1.5">
-                <Calendar size={13} className="text-muted-foreground" />
+              <span className="type-body font-semibold text-text-primary mt-0.5 block flex items-center gap-1.5">
+                <Calendar size={13} className="text-text-muted" />
                 {batch.scheduleDate
                   ? new Date(batch.scheduleDate).toLocaleDateString()
                   : "—"}
@@ -137,21 +137,21 @@ export default function ProductionBatchDetailsModal({
             </div>
 
             <div>
-              <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
+              <span className="type-overline uppercase tracking-wider text-text-muted block">
                 Assigned Cook / In-Charge
               </span>
-              <span className="font-medium text-foreground mt-0.5 block flex items-center gap-1.5">
-                <User size={13} className="text-muted-foreground" />
+              <span className="type-body font-semibold text-text-primary mt-0.5 block flex items-center gap-1.5">
+                <User size={13} className="text-text-muted" />
                 {batch.assignedCook || "Unassigned"}
               </span>
             </div>
 
             {batch.recipeName && (
               <div className="col-span-2">
-                <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
+                <span className="type-overline uppercase tracking-wider text-text-muted block">
                   Recipe / BOM Used
                 </span>
-                <span className="font-medium text-foreground mt-0.5 block">
+                <span className="type-body font-semibold text-text-primary mt-0.5 block">
                   {batch.recipeName}{" "}
                   {batch.batchMultiplier
                     ? `(${batch.batchMultiplier}x multiplier)`
@@ -162,10 +162,10 @@ export default function ProductionBatchDetailsModal({
 
             {batch.actualQuantity !== undefined && batch.actualQuantity > 0 && (
               <div>
-                <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
+                <span className="type-overline uppercase tracking-wider text-text-muted block">
                   Actual Good Output
                 </span>
-                <span className="font-bold text-foreground mt-0.5 block">
+                <span className="type-body font-semibold text-text-primary mt-0.5 block">
                   {batch.actualQuantity} PCS
                 </span>
               </div>
@@ -173,10 +173,10 @@ export default function ProductionBatchDetailsModal({
 
             {batch.scrapQuantity !== undefined && batch.scrapQuantity > 0 && (
               <div>
-                <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
+                <span className="type-overline uppercase tracking-wider text-text-muted block">
                   Scrap / Waste
                 </span>
-                <span className="font-bold text-foreground mt-0.5 block">
+                <span className="type-body font-semibold text-text-primary mt-0.5 block">
                   {batch.scrapQuantity} PCS
                 </span>
               </div>
@@ -185,31 +185,31 @@ export default function ProductionBatchDetailsModal({
 
           {/* Purpose / Notes */}
           {batch.purpose && (
-            <div className="p-3 rounded-xl border border-border bg-card">
-              <span className="text-[10px] text-muted-foreground uppercase font-semibold block mb-1 flex items-center gap-1.5">
+            <div className="p-3 rounded-control border border-divider bg-surface shadow-card">
+              <span className="type-overline uppercase tracking-wider text-text-muted block mb-1 flex items-center gap-1.5">
                 <FileText size={12} /> Purpose &amp; Notes
               </span>
-              <p className="text-foreground whitespace-pre-wrap">{batch.purpose}</p>
+              <p className="type-body text-text-primary whitespace-pre-wrap">{batch.purpose}</p>
             </div>
           )}
 
           {/* Rejection reason if rejected */}
           {batch.status === "Rejected" && batch.rejectionReason && (
-            <div className="p-3 rounded-xl border border-destructive/20 bg-destructive/5 text-destructive">
-              <span className="text-[10px] uppercase font-bold block mb-1 flex items-center gap-1.5">
+            <div className="p-3 rounded-control border border-status-danger/30 bg-status-danger/10 text-status-danger">
+              <span className="type-overline uppercase tracking-wider font-semibold block mb-1 flex items-center gap-1.5">
                 <AlertTriangle size={13} /> Rejection Reason
               </span>
-              <p className="font-medium">{batch.rejectionReason}</p>
+              <p className="type-body font-medium">{batch.rejectionReason}</p>
             </div>
           )}
 
           {/* Image preview if any */}
           {resolvedUrl && !imageError && (
-            <div className="p-3 rounded-xl border border-border bg-card">
-              <span className="text-[10px] text-muted-foreground uppercase font-semibold block mb-2">
+            <div className="p-3 rounded-control border border-divider bg-surface shadow-card">
+              <span className="type-overline uppercase tracking-wider text-text-muted block mb-2">
                 Production Batch Photo
               </span>
-              <div className="max-h-48 rounded-lg overflow-hidden border border-border bg-muted/20 flex items-center justify-center">
+              <div className="max-h-48 rounded-control overflow-hidden border border-divider bg-surface-secondary/40 flex items-center justify-center">
                 <img
                   src={resolvedUrl}
                   alt={batch.batchNumber}
@@ -236,10 +236,10 @@ export default function ProductionBatchDetailsModal({
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="bg-card text-foreground rounded-2xl max-w-2xl w-full border border-border p-4 space-y-3 shadow-2xl animate-in fade-in zoom-in-95"
+              className="bg-surface text-text-primary rounded-card max-w-[640px] w-full border border-divider p-4 space-y-3 shadow-modal animate-in fade-in zoom-in-95"
             >
-              <div className="flex items-center justify-between border-b border-border pb-2">
-                <h5 className="text-xs font-bold text-foreground uppercase truncate pr-4">
+              <div className="flex items-center justify-between border-b border-divider pb-2">
+                <h5 className="type-table-header uppercase text-text-primary truncate pr-4">
                   {batch.batchNumber} — Photo
                 </h5>
                 <Button
@@ -250,17 +250,17 @@ export default function ProductionBatchDetailsModal({
                     setPreviewImage(null);
                     setLightboxError(false);
                   }}
-                  className="h-7 px-3 text-xs rounded-lg cursor-pointer shrink-0"
+                  className="h-7 px-3 type-caption font-semibold rounded-control border border-divider bg-surface hover:bg-surface-hover text-text-primary cursor-pointer shrink-0"
                 >
                   Close
                 </Button>
               </div>
-              <div className="flex items-center justify-center bg-muted/20 rounded-xl p-4 min-h-[220px] max-h-[70vh] overflow-auto">
+              <div className="flex items-center justify-center bg-surface-secondary/40 rounded-control p-4 min-h-[220px] max-h-[70vh] overflow-auto">
                 {lightboxError ? (
                   <div className="flex flex-col items-center justify-center py-6 text-center space-y-2">
-                    <ImageIcon className="w-10 h-10 text-muted-foreground/50" />
-                    <p className="text-sm font-semibold text-foreground">Photo Unavailable</p>
-                    <p className="text-xs text-muted-foreground max-w-xs">
+                    <ImageIcon className="w-10 h-10 text-text-muted/50" />
+                    <p className="type-body font-semibold text-text-primary">Photo Unavailable</p>
+                    <p className="type-caption text-text-muted max-w-xs">
                       The image could not be loaded or the storage preview has expired.
                     </p>
                   </div>
@@ -272,7 +272,7 @@ export default function ProductionBatchDetailsModal({
                       setImageError(true);
                       setLightboxError(true);
                     }}
-                    className="max-h-[65vh] max-w-full object-contain rounded-lg"
+                    className="max-h-[65vh] max-w-full object-contain rounded-control"
                   />
                 )}
               </div>
@@ -281,11 +281,10 @@ export default function ProductionBatchDetailsModal({
         )}
 
         {/* Footer */}
-        <div className="flex justify-end pt-3 border-t border-border">
+        <div className="flex justify-end pt-3 border-t border-divider">
           <ModalCloseButton
-            size="sm"
             fallbackOnClose={onClose}
-            className="h-8 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+            className="rounded-control bg-button-primary text-text-inverse px-5 py-2 type-caption font-semibold hover:bg-button-primary-hover shadow-card transition-colors cursor-pointer"
           >
             Close
           </ModalCloseButton>

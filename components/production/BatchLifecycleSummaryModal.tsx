@@ -138,93 +138,93 @@ export default function BatchLifecycleSummaryModal({
       open={open}
       title={summary ? summary.batchNumber : "Batch Production"}
       onClose={onClose}
-      size="max-w-4xl"
+      size="max-w-[640px]"
     >
       {loading ? (
-        <div className="py-12 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="w-4 h-4 animate-spin" />
+        <div className="py-12 flex items-center justify-center gap-2 type-body text-text-muted">
+          <Loader2 className="w-4 h-4 animate-spin text-brand" />
           <span>Loading full production lifecycle...</span>
         </div>
       ) : !summary ? (
-        <div className="py-10 text-center text-sm text-muted-foreground">
+        <div className="py-10 text-center type-body text-text-muted">
           No batch summary available.
         </div>
       ) : (
-        <div className="space-y-4 text-sm">
+        <div className="space-y-4 type-body">
           {/* Product & Status Summary Strip (no duplicate batch number header) */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3">
-            <p className="text-sm font-medium text-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-divider bg-surface-secondary/40 px-4 py-3">
+            <p className="type-body font-medium text-text-primary">
               {summary.productName} ({summary.variant}) &bull;{" "}
-              <span className="text-muted-foreground">Recipe: {summary.recipeName}</span>
+              <span className="text-text-muted">Recipe: {summary.recipeName}</span>
             </p>
             <StatusBadge status={summary.status} />
           </div>
 
           {/* 1. Production Request */}
-          <section className="rounded-xl border border-border p-4 space-y-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <FileText className="w-4 h-4 text-muted-foreground" />
+          <section className="rounded-control border border-divider p-4 space-y-3">
+            <div className="flex items-center gap-2 type-body font-semibold text-text-primary">
+              <FileText className="w-4 h-4 text-text-muted" />
               <span>1. Production Request ({summary.request.reqNumber})</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <span className="text-xs font-semibold text-muted-foreground block">Requested By</span>
-                <span className="text-sm font-semibold text-foreground">{summary.request.requestedBy}</span>
+                <span className="type-caption font-semibold text-text-muted block">Requested By</span>
+                <span className="type-body font-semibold text-text-primary">{summary.request.requestedBy}</span>
               </div>
               <div>
-                <span className="text-xs font-semibold text-muted-foreground block">Approved By</span>
-                <span className="text-sm font-semibold text-foreground">{summary.request.approvedBy || "—"}</span>
+                <span className="type-caption font-semibold text-text-muted block">Approved By</span>
+                <span className="type-body font-semibold text-text-primary">{summary.request.approvedBy || "—"}</span>
               </div>
               <div>
-                <span className="text-xs font-semibold text-muted-foreground block">Target Output</span>
-                <span className="text-sm font-semibold text-foreground">
+                <span className="type-caption font-semibold text-text-muted block">Target Output</span>
+                <span className="type-body font-semibold text-text-primary">
                   {summary.request.targetQuantity} {summary.yieldUom}
                 </span>
               </div>
               <div>
-                <span className="text-xs font-semibold text-muted-foreground block">Required Date</span>
-                <span className="text-sm font-semibold text-foreground">{fmtDate(summary.request.requiredDate)}</span>
+                <span className="type-caption font-semibold text-text-muted block">Required Date</span>
+                <span className="type-body font-semibold text-text-primary">{fmtDate(summary.request.requiredDate)}</span>
               </div>
             </div>
           </section>
 
           {/* 2. Material Issuance */}
-          <section className="rounded-xl border border-border p-4 space-y-3">
+          <section className="rounded-control border border-divider p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <ClipboardCheck className="w-4 h-4 text-muted-foreground" />
+              <div className="flex items-center gap-2 type-body font-semibold text-text-primary">
+                <ClipboardCheck className="w-4 h-4 text-text-muted" />
                 <span>2. Material Issuance ({summary.issuance.issuanceNumber})</span>
               </div>
-              <span className="text-xs text-muted-foreground">
-                Issued by <strong className="text-foreground">{summary.issuance.issuedBy}</strong> &bull; {fmtDateTime(summary.issuance.issuedAt)}
+              <span className="type-caption text-text-muted">
+                Issued by <strong className="text-text-primary">{summary.issuance.issuedBy}</strong> &bull; {fmtDateTime(summary.issuance.issuedAt)}
               </span>
             </div>
-            <div className="border border-border rounded-lg overflow-hidden">
-              <table className="w-full text-left border-collapse text-sm">
-                <thead className="bg-muted/40 border-b border-border text-xs">
-                  <tr>
-                    <th className="py-2 px-3 font-semibold text-muted-foreground">Ingredient</th>
-                    <th className="py-2 px-3 font-semibold text-muted-foreground">Lot Code</th>
-                    <th className="py-2 px-3 font-semibold text-muted-foreground text-right">Qty Used</th>
-                    <th className="py-2 px-3 font-semibold text-muted-foreground text-center">QR Scan</th>
+            <div className="border border-divider rounded-control overflow-hidden">
+              <table className="w-full text-left border-collapse type-body">
+                <thead className="bg-surface-secondary border-b border-divider type-caption">
+                  <tr className="table-head-row text-left whitespace-nowrap">
+                    <th className="table-th py-2 px-3 text-text-muted">Ingredient</th>
+                    <th className="table-th py-2 px-3 text-text-muted">Lot Code</th>
+                    <th className="table-th py-2 px-3 text-text-muted text-right">Qty Used</th>
+                    <th className="table-th py-2 px-3 text-text-muted text-center">QR Scan</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-divider">
                   {summary.issuance.materials.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-3 px-3 text-center text-sm text-muted-foreground">
+                      <td colSpan={4} className="py-3 px-3 text-center type-caption text-text-muted">
                         No material consumption records.
                       </td>
                     </tr>
                   ) : (
                     summary.issuance.materials.map((m, i) => (
-                      <tr key={i}>
-                        <td className="py-2 px-3 font-medium text-foreground">{m.itemName}</td>
-                        <td className="py-2 px-3 text-foreground">{m.lotCode}</td>
-                        <td className="py-2 px-3 text-right font-semibold text-foreground">
+                      <tr key={i} className="table-row">
+                        <td className="table-td py-2 px-3 font-medium text-text-primary">{m.itemName}</td>
+                        <td className="table-td py-2 px-3 text-text-primary">{m.lotCode}</td>
+                        <td className="table-td py-2 px-3 text-right font-semibold text-text-primary">
                           {m.quantityUsed} {m.uomAbbr}
                         </td>
-                        <td className="py-2 px-3 text-center text-muted-foreground">
+                        <td className="table-td py-2 px-3 text-center text-text-muted">
                           {m.verifiedByScan ? "Verified" : "Manual"}
                         </td>
                       </tr>
@@ -236,81 +236,81 @@ export default function BatchLifecycleSummaryModal({
           </section>
 
           {/* 3. Production Tracking */}
-          <section className="rounded-xl border border-border p-4 space-y-3">
+          <section className="rounded-control border border-divider p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Flame className="w-4 h-4 text-muted-foreground" />
+              <div className="flex items-center gap-2 type-body font-semibold text-text-primary">
+                <Flame className="w-4 h-4 text-text-muted" />
                 <span>3. Production Tracking</span>
               </div>
-              <span className="text-xs text-muted-foreground">
-                Cook: <strong className="text-foreground">{summary.production.assignedCook}</strong> &bull; Started: {fmtDateTime(summary.production.startedAt)}
+              <span className="type-caption text-text-muted">
+                Cook: <strong className="text-text-primary">{summary.production.assignedCook}</strong> &bull; Started: {fmtDateTime(summary.production.startedAt)}
               </span>
             </div>
             {summary.production.stages.length > 0 ? (
-              <div className="border border-border rounded-lg overflow-hidden">
-                <table className="w-full text-left border-collapse text-sm">
-                  <thead className="bg-muted/40 border-b border-border text-xs">
-                    <tr>
-                      <th className="py-2 px-3 font-semibold text-muted-foreground">Stage</th>
-                      <th className="py-2 px-3 font-semibold text-muted-foreground">Completed At</th>
-                      <th className="py-2 px-3 font-semibold text-muted-foreground">Completed By</th>
-                      <th className="py-2 px-3 font-semibold text-muted-foreground">Notes</th>
+              <div className="border border-divider rounded-control overflow-hidden">
+                <table className="w-full text-left border-collapse type-body">
+                  <thead className="bg-surface-secondary border-b border-divider type-caption">
+                    <tr className="table-head-row text-left whitespace-nowrap">
+                      <th className="table-th py-2 px-3 text-text-muted">Stage</th>
+                      <th className="table-th py-2 px-3 text-text-muted">Completed At</th>
+                      <th className="table-th py-2 px-3 text-text-muted">Completed By</th>
+                      <th className="table-th py-2 px-3 text-text-muted">Notes</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-divider">
                     {summary.production.stages.map((s, idx) => (
-                      <tr key={idx}>
-                        <td className="py-2 px-3 font-semibold text-foreground">{s.stage}</td>
-                        <td className="py-2 px-3 text-muted-foreground">{s.endTime}</td>
-                        <td className="py-2 px-3 text-foreground">{s.completedBy}</td>
-                        <td className="py-2 px-3 text-muted-foreground">{s.notes || "—"}</td>
+                      <tr key={idx} className="table-row">
+                        <td className="table-td py-2 px-3 font-semibold text-text-primary">{s.stage}</td>
+                        <td className="table-td py-2 px-3 text-text-muted">{s.endTime}</td>
+                        <td className="table-td py-2 px-3 text-text-primary">{s.completedBy}</td>
+                        <td className="table-td py-2 px-3 text-text-muted">{s.notes || "—"}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                Current Stage: <strong className="text-foreground">{summary.currentStage}</strong>
+              <p className="type-body text-text-muted">
+                Current Stage: <strong className="text-text-primary">{summary.currentStage}</strong>
               </p>
             )}
           </section>
 
           {/* 4. Packaging & 5. QA + Stock-In */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <section className="rounded-xl border border-border p-4 space-y-2.5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <PackageCheck className="w-4 h-4 text-muted-foreground" />
+            <section className="rounded-control border border-divider p-4 space-y-2.5">
+              <div className="flex items-center gap-2 type-body font-semibold text-text-primary">
+                <PackageCheck className="w-4 h-4 text-text-muted" />
                 <span>4. Packaging</span>
               </div>
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <span className="text-xs font-semibold text-muted-foreground block">FG Lot Code</span>
-                  <span className="text-sm font-semibold text-foreground">{(summary.packaging.fgLotCode || "").replace(/^FG-/i, "") || "—"}</span>
+                  <span className="type-caption font-semibold text-text-muted block">FG Lot Code</span>
+                  <span className="type-body font-semibold text-text-primary">{(summary.packaging.fgLotCode || "").replace(/^FG-/i, "") || "—"}</span>
                 </div>
                 <div>
-                  <span className="text-xs font-semibold text-muted-foreground block">Packed Qty (Yield)</span>
-                  <span className="text-sm font-semibold text-foreground">
+                  <span className="type-caption font-semibold text-text-muted block">Packed Qty (Yield)</span>
+                  <span className="type-body font-semibold text-text-primary">
                     {summary.packaging.finalQuantity} {summary.yieldUom} ({summary.packaging.yieldPercentage.toFixed(1)}%)
                   </span>
                 </div>
                 <div>
-                  <span className="text-xs font-semibold text-muted-foreground block">Packaged By</span>
-                  <span className="text-sm font-semibold text-foreground">{summary.packaging.packagedBy}</span>
+                  <span className="type-caption font-semibold text-text-muted block">Packaged By</span>
+                  <span className="type-body font-semibold text-text-primary">{summary.packaging.packagedBy}</span>
                 </div>
                 <div>
-                  <span className="text-xs font-semibold text-muted-foreground block">Expiry Date</span>
-                  <span className="text-sm font-semibold text-foreground">{fmtDate(summary.packaging.expiryDate)}</span>
+                  <span className="type-caption font-semibold text-text-muted block">Expiry Date</span>
+                  <span className="type-body font-semibold text-text-primary">{fmtDate(summary.packaging.expiryDate)}</span>
                 </div>
               </div>
 
               {resolvedPhotoUrl && !photoLoadError && (
-                <div className="pt-2 border-t border-border mt-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
+                <div className="pt-2 border-t border-divider mt-1">
+                  <span className="type-overline uppercase tracking-wider text-text-muted block mb-2">
                     Packaging Verification Photo
                   </span>
-                  <div className="flex items-center gap-3 p-2.5 rounded-xl border border-border bg-muted/20">
-                    <div className="w-16 h-16 rounded-lg border border-border bg-background overflow-hidden flex items-center justify-center shrink-0">
+                  <div className="flex items-center gap-3 p-2.5 rounded-control border border-divider bg-surface-secondary/40">
+                    <div className="w-16 h-16 rounded-control border border-divider bg-surface overflow-hidden flex items-center justify-center shrink-0">
                       <img
                         src={resolvedPhotoUrl}
                         alt="Packaging Proof"
@@ -326,8 +326,8 @@ export default function BatchLifecycleSummaryModal({
                       />
                     </div>
                     <div className="min-w-0 flex-1 space-y-1">
-                      <p className="text-xs font-semibold text-foreground">Packaging &amp; QC Photo</p>
-                      <p className="text-[11px] text-muted-foreground">Uploaded during packaging verification</p>
+                      <p className="type-caption font-semibold text-text-primary">Packaging &amp; QC Photo</p>
+                      <p className="type-caption text-text-muted">Uploaded during packaging verification</p>
                       <button
                         type="button"
                         onClick={() => {
@@ -337,7 +337,7 @@ export default function BatchLifecycleSummaryModal({
                             src: resolvedPhotoUrl,
                           });
                         }}
-                        className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        className="type-caption font-semibold text-brand hover:underline inline-flex items-center gap-1 cursor-pointer"
                       >
                         <ExternalLink className="w-3 h-3" /> View Full Image
                       </button>
@@ -347,43 +347,43 @@ export default function BatchLifecycleSummaryModal({
               )}
             </section>
 
-            <section className="rounded-xl border border-border p-4 space-y-2.5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <ShieldCheck className="w-4 h-4 text-muted-foreground" />
+            <section className="rounded-control border border-divider p-4 space-y-2.5">
+              <div className="flex items-center gap-2 type-body font-semibold text-text-primary">
+                <ShieldCheck className="w-4 h-4 text-text-muted" />
                 <span>5. QA &amp; Stock-In</span>
               </div>
               {summary.qa ? (
                 <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <span className="text-xs font-semibold text-muted-foreground block">QA Inspection</span>
-                    <span className="text-sm font-semibold text-foreground">
+                    <span className="type-caption font-semibold text-text-muted block">QA Inspection</span>
+                    <span className="type-body font-semibold text-text-primary">
                       {summary.qa.inspectionNumber} ({summary.qa.status})
                     </span>
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-muted-foreground block">Inspector</span>
-                    <span className="text-sm font-semibold text-foreground">{summary.qa.inspectorName}</span>
+                    <span className="type-caption font-semibold text-text-muted block">Inspector</span>
+                    <span className="type-body font-semibold text-text-primary">{summary.qa.inspectorName}</span>
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-muted-foreground block">Accepted / Rejected</span>
-                    <span className="text-sm font-semibold text-foreground">
+                    <span className="type-caption font-semibold text-text-muted block">Accepted / Rejected</span>
+                    <span className="type-body font-semibold text-text-primary">
                       {summary.qa.totalAcceptedQuantity} / {summary.qa.totalRejectedQuantity} {summary.yieldUom}
                     </span>
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-muted-foreground block">Loss Report</span>
-                    <span className="text-sm font-semibold text-foreground">
+                    <span className="type-caption font-semibold text-text-muted block">Loss Report</span>
+                    <span className="type-body font-semibold text-text-primary">
                       {summary.qa.lossReportNumber || "None"}
                     </span>
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Pending QA Inspection</p>
+                <p className="type-body text-text-muted">Pending QA Inspection</p>
               )}
 
               {summary.stockIn && (
-                <div className="pt-2 border-t border-border flex items-center gap-2 text-sm text-foreground">
-                  <Warehouse className="w-4 h-4 text-muted-foreground shrink-0" />
+                <div className="pt-2 border-t border-divider flex items-center gap-2 type-body text-text-primary">
+                  <Warehouse className="w-4 h-4 text-text-muted shrink-0" />
                   <span>
                     Stocked in <strong>{summary.stockIn.quantity} {summary.yieldUom}</strong> to{" "}
                     <strong>{summary.stockIn.locationName}</strong> ({fmtDateTime(summary.stockIn.postedAt)})
@@ -394,12 +394,12 @@ export default function BatchLifecycleSummaryModal({
           </div>
 
           {/* Footer: Download PDF before Close */}
-          <div className="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-border">
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-divider">
             <Button
               type="button"
               onClick={handleDownloadPdf}
               disabled={downloading}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 type-body font-semibold hover:bg-button-primary-hover shadow-card transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Download className="w-4 h-4" />
               <span>{downloading ? "Generating..." : "Download PDF"}</span>
@@ -408,7 +408,7 @@ export default function BatchLifecycleSummaryModal({
               type="button"
               variant="outline"
               fallbackOnClose={onClose}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="rounded-control border border-divider bg-surface px-5 py-2.5 type-body font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
             >
               Close
             </ModalCloseButton>
@@ -427,10 +427,10 @@ export default function BatchLifecycleSummaryModal({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-card text-foreground rounded-2xl max-w-2xl w-full border border-border p-4 space-y-3 shadow-2xl animate-in fade-in zoom-in-95"
+            className="bg-surface text-text-primary rounded-card max-w-[640px] w-full border border-divider p-4 space-y-3 shadow-modal animate-in fade-in zoom-in-95"
           >
-            <div className="flex items-center justify-between border-b border-border pb-2">
-              <h5 className="text-xs font-bold text-foreground uppercase truncate pr-4">{previewImage.title}</h5>
+            <div className="flex items-center justify-between border-b border-divider pb-2">
+              <h5 className="type-table-header uppercase text-text-primary truncate pr-4">{previewImage.title}</h5>
               <Button
                 type="button"
                 variant="outline"
@@ -439,17 +439,17 @@ export default function BatchLifecycleSummaryModal({
                   setPreviewImage(null);
                   setLightboxError(false);
                 }}
-                className="h-7 px-3 text-xs rounded-lg cursor-pointer shrink-0"
+                className="h-7 px-3 type-caption font-semibold rounded-control border border-divider bg-surface hover:bg-surface-hover text-text-primary cursor-pointer shrink-0"
               >
                 Close
               </Button>
             </div>
-            <div className="flex items-center justify-center bg-muted/20 rounded-xl p-4 min-h-[220px] max-h-[70vh] overflow-auto">
+            <div className="flex items-center justify-center bg-surface-secondary/40 rounded-control p-4 min-h-[220px] max-h-[70vh] overflow-auto">
               {lightboxError ? (
                 <div className="flex flex-col items-center justify-center py-6 text-center space-y-2">
-                  <ImageIcon className="w-10 h-10 text-muted-foreground/50" />
-                  <p className="text-sm font-semibold text-foreground">Photo Unavailable</p>
-                  <p className="text-xs text-muted-foreground max-w-xs">
+                  <ImageIcon className="w-10 h-10 text-text-muted/50" />
+                  <p className="type-body font-semibold text-text-primary">Photo Unavailable</p>
+                  <p className="type-caption text-text-muted max-w-xs">
                     The image could not be loaded or the storage preview has expired.
                   </p>
                 </div>
@@ -461,7 +461,7 @@ export default function BatchLifecycleSummaryModal({
                     setLightboxError(true);
                     setPhotoLoadError(true);
                   }}
-                  className="max-h-[65vh] max-w-full object-contain rounded-lg"
+                  className="max-h-[65vh] max-w-full object-contain rounded-control"
                 />
               )}
             </div>

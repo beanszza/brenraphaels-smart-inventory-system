@@ -100,17 +100,17 @@ export default function BatchCompletionModal({
       open={open}
       title={`Complete Batch: ${batch.batchNumber}`}
       onClose={onClose}
-      size="max-w-2xl"
+      size="max-w-[560px]"
     >
       <form onSubmit={handlePromptSubmit} className="space-y-6">
         {/* Banner summary */}
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/40 border border-border">
-          <PackageCheck className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
-          <div className="flex-1 text-xs">
-            <h4 className="font-semibold text-foreground text-sm">Packaging & Finished Goods Stock-In</h4>
-            <p className="text-muted-foreground mt-0.5">
+        <div className="flex items-start gap-3 p-4 rounded-control bg-surface-secondary/40 border border-divider">
+          <PackageCheck className="w-5 h-5 text-text-primary shrink-0 mt-0.5" />
+          <div className="flex-1 type-caption">
+            <h4 className="type-body font-semibold text-text-primary">Packaging &amp; Finished Goods Stock-In</h4>
+            <p className="text-text-muted mt-0.5">
               Finalizing will record the output volume, automatically create Finished Goods Lot{" "}
-              <span className="font-bold text-foreground">{fgLotCode}</span>, and credit the Main Finished Goods inventory.
+              <span className="font-semibold text-text-primary">{fgLotCode}</span>, and credit the Main Finished Goods inventory.
             </p>
           </div>
         </div>
@@ -118,7 +118,7 @@ export default function BatchCompletionModal({
         {/* Inputs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">Actual Packaged Quantity</label>
+            <label className="type-table-header text-text-primary">Actual Packaged Quantity</label>
             <Input
               type="number"
               min="0.1"
@@ -126,15 +126,15 @@ export default function BatchCompletionModal({
               value={actualQuantity}
               onChange={(e) => setActualQuantity(Number(e.target.value))}
               required
-              className="h-10 text-xs font-bold rounded-xl border-border bg-card"
+              className="h-10 type-body font-semibold rounded-control border-divider bg-surface text-text-primary"
             />
-            <span className="text-[11px] text-muted-foreground">
+            <span className="type-caption text-text-muted">
               Estimated: {batch.estimatedQuantity} {batch.yieldUom}
             </span>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">Finished Goods Expiry Date</label>
+            <label className="type-table-header text-text-primary">Finished Goods Expiry Date</label>
             <Input
               type="date"
               min={getTodayDateString()}
@@ -142,23 +142,23 @@ export default function BatchCompletionModal({
               value={expiryDate}
               onChange={(e) => setExpiryDate(e.target.value)}
               required
-              className="h-10 text-xs rounded-xl border-border bg-card"
+              className="h-10 type-body rounded-control border-divider bg-surface text-text-primary"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">Packaged By</label>
+            <label className="type-table-header text-text-primary">Packaged By</label>
             <Input
               type="text"
               value={packagedBy}
               onChange={(e) => setPackagedBy(e.target.value)}
               required
-              className="h-10 text-xs rounded-xl border-border bg-card"
+              className="h-10 type-body rounded-control border-divider bg-surface text-text-primary"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">Scrap / Trim Quantity (Optional)</label>
+            <label className="type-table-header text-text-primary">Scrap / Trim Quantity (Optional)</label>
             <Input
               type="number"
               min="0"
@@ -166,66 +166,66 @@ export default function BatchCompletionModal({
               value={scrapQuantity || ""}
               onChange={(e) => setScrapQuantity(Number(e.target.value))}
               placeholder="0"
-              className="h-10 text-xs rounded-xl border-border bg-card"
+              className="h-10 type-body rounded-control border-divider bg-surface text-text-primary"
             />
           </div>
         </div>
 
         {scrapQuantity > 0 && (
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">Scrap Reason</label>
+            <label className="type-table-header text-text-primary">Scrap Reason</label>
             <Input
               type="text"
               value={scrapReason}
               onChange={(e) => setScrapReason(e.target.value)}
               placeholder="e.g. Cooking trim, container residue"
-              className="h-10 text-xs rounded-xl border-border bg-card"
+              className="h-10 type-body rounded-control border-divider bg-surface text-text-primary"
             />
           </div>
         )}
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-foreground">Batch Completion Notes</label>
+          <label className="type-table-header text-text-primary">Batch Completion Notes</label>
           <Input
             type="text"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g. Standard consistency and aroma verified"
-            className="h-10 text-xs rounded-xl border-border bg-card"
+            className="h-10 type-body rounded-control border-divider bg-surface text-text-primary"
           />
         </div>
 
         {/* Calculated metrics */}
-        <div className="grid grid-cols-3 gap-3 p-4 rounded-xl border border-border bg-card text-center">
+        <div className="grid grid-cols-3 gap-3 p-4 rounded-control border border-divider bg-surface text-center shadow-card">
           <div>
-            <span className="text-[11px] text-muted-foreground block">Yield Efficiency</span>
+            <span className="type-caption text-text-muted block">Yield Efficiency</span>
             <span
-              className={`text-sm font-bold ${
-                yieldPercentage >= 95 ? "text-emerald-500" : yieldPercentage < 80 ? "text-amber-500" : "text-foreground"
+              className={`type-body font-semibold ${
+                yieldPercentage >= 95 ? "text-badge-success-text" : yieldPercentage < 80 ? "text-badge-warning-text" : "text-text-primary"
               }`}
             >
               {yieldPercentage.toFixed(1)}%
             </span>
           </div>
           <div>
-            <span className="text-[11px] text-muted-foreground block">FG Lot Code</span>
-            <span className="text-xs font-bold text-foreground truncate block">
+            <span className="type-caption text-text-muted block">FG Lot Code</span>
+            <span className="type-caption font-semibold text-text-primary truncate block">
               {fgLotCode}
             </span>
           </div>
           <div>
-            <span className="text-[11px] text-muted-foreground block">Target Location</span>
-            <span className="text-xs font-semibold text-foreground">Finished Goods</span>
+            <span className="type-caption text-text-muted block">Target Location</span>
+            <span className="type-caption font-semibold text-text-primary">Finished Goods</span>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-border">
+        <div className="flex items-center justify-between pt-4 border-t border-divider">
           <ModalCloseButton
             type="button"
             variant="outline"
             fallbackOnClose={onClose}
-            className="text-sm font-semibold px-5 py-2.5 rounded-xl border-border hover:bg-muted cursor-pointer"
+            className="type-body font-semibold px-5 py-2.5 rounded-control border border-divider bg-surface hover:bg-surface-hover text-text-primary cursor-pointer"
           >
             Cancel
           </ModalCloseButton>
@@ -233,7 +233,7 @@ export default function BatchCompletionModal({
           <Button
             type="submit"
             disabled={submitting}
-            className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
+            className="bg-button-primary text-text-inverse font-semibold type-body px-5 py-2.5 rounded-control hover:bg-button-primary-hover transition-colors shadow-card cursor-pointer"
           >
             {submitting ? "Finalizing..." : "Complete Batch & Stock In FG"}
           </Button>

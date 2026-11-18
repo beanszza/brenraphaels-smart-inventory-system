@@ -309,30 +309,30 @@ export default function QrScannerModal({
       <canvas ref={canvasRef} className="hidden" />
 
       <div
-        className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        className="bg-surface border border-divider rounded-card w-full max-w-[480px] shadow-modal overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border bg-muted/30">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-divider bg-surface-secondary/40">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shrink-0">
+            <div className="w-8 h-8 rounded-control bg-brand text-text-inverse flex items-center justify-center font-semibold type-caption shrink-0">
               <Camera size={16} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground">Scan Ingredient QR Code</h3>
-              <p className="text-xs text-muted-foreground truncate max-w-[210px] sm:max-w-[260px]">{itemName}</p>
+              <h3 className="type-body font-semibold text-text-primary">Scan Ingredient QR Code</h3>
+              <p className="type-caption text-text-muted truncate max-w-[210px] sm:max-w-[260px]">{itemName}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {!isTimedOut && scanStatus !== "success" && (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-border bg-card text-foreground">
+              <span className="type-caption font-semibold px-2 py-0.5 rounded-full border border-divider bg-surface text-text-primary">
                 0:{String(timeLeft).padStart(2, "0")}
               </span>
             )}
             <button
               type="button"
               onClick={requestClose}
-              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="p-1 rounded-control text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
@@ -341,16 +341,16 @@ export default function QrScannerModal({
 
         {/* Camera / Viewfinder Body */}
         <div className="p-4 sm:p-5 space-y-4">
-          <div className="relative w-full aspect-4/3 bg-black rounded-xl overflow-hidden flex items-center justify-center border border-border">
+          <div className="relative w-full aspect-4/3 bg-black rounded-control overflow-hidden flex items-center justify-center border border-divider">
             {/* 1. Timed Out State (Auto-closed camera after 1 minute) */}
             {isTimedOut ? (
-              <div className="flex flex-col items-center justify-center text-center p-6 text-muted-foreground gap-3.5 z-10 w-full h-full bg-black/90">
-                <div className="w-12 h-12 rounded-full bg-muted/20 border border-border flex items-center justify-center text-foreground">
-                  <AlertCircle className="w-6 h-6 text-foreground" />
+              <div className="flex flex-col items-center justify-center text-center p-6 text-text-muted gap-3.5 z-10 w-full h-full bg-black/90">
+                <div className="w-12 h-12 rounded-full bg-surface-secondary/20 border border-divider flex items-center justify-center text-text-primary">
+                  <AlertCircle className="w-6 h-6 text-text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-foreground">Camera Session Timed Out</p>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-[260px]">
+                  <p className="type-body font-semibold text-text-primary">Camera Session Timed Out</p>
+                  <p className="type-caption text-text-muted mt-1 max-w-[260px]">
                     The camera was automatically closed after 1 minute of inactivity.
                   </p>
                 </div>
@@ -361,13 +361,13 @@ export default function QrScannerModal({
                     type="button"
                     variant="outline"
                     onClick={requestClose}
-                    className="border-border bg-card text-foreground hover:bg-muted font-semibold text-xs px-4 py-2 rounded-xl transition-colors cursor-pointer"
+                    className="border-divider bg-surface text-text-primary hover:bg-surface-hover font-semibold type-caption px-4 py-2 rounded-control transition-colors cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5 mr-1.5" /> Close
                   </Button>
                   <Button
                     onClick={handleRescan}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs px-5 py-2 rounded-xl transition-colors shadow-sm cursor-pointer"
+                    className="bg-button-primary text-text-inverse hover:bg-button-primary-hover font-semibold type-caption px-5 py-2 rounded-control transition-colors shadow-card cursor-pointer"
                   >
                     <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Rescan
                   </Button>
@@ -386,25 +386,25 @@ export default function QrScannerModal({
 
             {/* 3. Fallback when camera is loading or not available */}
             {!isTimedOut && !hasCamera && (
-              <div className="flex flex-col items-center justify-center text-center p-6 text-muted-foreground gap-2">
+              <div className="flex flex-col items-center justify-center text-center p-6 text-text-muted gap-2">
                 {cameraLoading ? (
                   <>
                     <ProductionSkeleton />
-                    <p className="text-xs font-semibold text-foreground">Opening Camera...</p>
-                    <p className="text-[11px] text-muted-foreground">Requesting video stream</p>
+                    <p className="type-caption font-semibold text-text-primary">Opening Camera...</p>
+                    <p className="type-caption text-text-muted">Requesting video stream</p>
                   </>
                 ) : (
                   <>
-                    <Barcode className="w-12 h-12 text-muted-foreground/40 mb-2 animate-pulse" />
-                    <p className="text-xs font-semibold text-foreground">Camera Scanner Inactive</p>
-                    <p className="text-[11px] text-muted-foreground max-w-[240px]">
+                    <Barcode className="w-12 h-12 text-text-muted/40 mb-2 animate-pulse" />
+                    <p className="type-caption font-semibold text-text-primary">Camera Scanner Inactive</p>
+                    <p className="type-caption text-text-muted max-w-[240px]">
                       {errorMessage || "Camera could not be accessed. You can scan using manual barcode entry below."}
                     </p>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={startCamera}
-                      className="mt-2 text-xs border-border hover:bg-muted cursor-pointer"
+                      className="mt-2 type-caption border border-divider bg-surface hover:bg-surface-hover text-text-primary rounded-control cursor-pointer"
                     >
                       <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Retry Camera
                     </Button>
@@ -415,51 +415,51 @@ export default function QrScannerModal({
 
             {/* 4. Active Reticle and Scanner Laser Line */}
             {!isTimedOut && hasCamera && scanStatus !== "success" && (
-              <div className="absolute inset-6 sm:inset-8 border-2 border-foreground/40 rounded-xl pointer-events-none flex flex-col justify-between p-2">
+              <div className="absolute inset-6 sm:inset-8 border-2 border-text-primary/40 rounded-control pointer-events-none flex flex-col justify-between p-2">
                 {/* Laser animation */}
-                <div className="absolute inset-x-2 top-0 h-0.5 bg-foreground/80 shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse" />
+                <div className="absolute inset-x-2 top-0 h-0.5 bg-text-primary/80 shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse" />
 
                 <div className="flex justify-between">
-                  <div className="w-4 h-4 border-t-2 border-l-2 border-foreground" />
-                  <div className="w-4 h-4 border-t-2 border-r-2 border-foreground" />
+                  <div className="w-4 h-4 border-t-2 border-l-2 border-text-primary" />
+                  <div className="w-4 h-4 border-t-2 border-r-2 border-text-primary" />
                 </div>
                 <div className="text-center">
-                  <span className="text-[10px] uppercase tracking-wider bg-black/75 text-white px-2 py-0.5 rounded border border-white/20">
+                  <span className="type-overline uppercase tracking-wider bg-black/75 text-white px-2 py-0.5 rounded-control border border-white/20">
                     Target: {targetLot}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <div className="w-4 h-4 border-b-2 border-l-2 border-foreground" />
-                  <div className="w-4 h-4 border-b-2 border-r-2 border-foreground" />
+                  <div className="w-4 h-4 border-b-2 border-l-2 border-text-primary" />
+                  <div className="w-4 h-4 border-b-2 border-r-2 border-text-primary" />
                 </div>
               </div>
             )}
 
             {/* 5. Success Overlay */}
             {scanStatus === "success" && (
-              <div className="absolute inset-0 bg-background/95 backdrop-blur-xs flex flex-col items-center justify-center gap-2 animate-in fade-in z-20">
-                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+              <div className="absolute inset-0 bg-surface/95 backdrop-blur-xs flex flex-col items-center justify-center gap-2 animate-in fade-in z-20">
+                <div className="w-12 h-12 rounded-full bg-badge-success-bg text-badge-success-text flex items-center justify-center">
                   <CheckCircle2 className="w-7 h-7" />
                 </div>
-                <p className="text-sm font-bold text-foreground">Lot Verified Successfully!</p>
-                <p className="text-xs text-muted-foreground">{targetLot}</p>
+                <p className="type-body font-semibold text-text-primary">Lot Verified Successfully!</p>
+                <p className="type-caption text-text-muted">{targetLot}</p>
               </div>
             )}
           </div>
 
           {/* Error Message */}
           {scanStatus === "error" && (
-            <div className="flex items-start gap-2 p-3 rounded-xl border border-border bg-muted/40 text-foreground text-xs animate-shake">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-foreground" />
+            <div className="flex items-start gap-2 p-3 rounded-control border border-status-danger/30 bg-status-danger/10 text-status-danger type-caption animate-shake">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-status-danger" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           {/* Lot Verification & Manual Simulator */}
-          <div className="space-y-2 pt-2 border-t border-border">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="space-y-2 pt-2 border-t border-divider">
+            <div className="flex items-center justify-between type-caption text-text-muted">
               <span>Required Lot:</span>
-              <span className="font-bold text-foreground">{targetLot}</span>
+              <span className="font-semibold text-text-primary">{targetLot}</span>
             </div>
 
             <div className="flex gap-2">
@@ -470,11 +470,11 @@ export default function QrScannerModal({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") verifyLot(manualCode);
                 }}
-                className="h-9 text-xs"
+                className="h-9 type-caption rounded-control border-divider bg-surface text-text-primary"
               />
               <Button
                 onClick={() => verifyLot(manualCode)}
-                className="h-9 px-4 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 cursor-pointer"
+                className="h-9 px-4 type-caption font-semibold bg-button-primary text-text-inverse hover:bg-button-primary-hover rounded-control shrink-0 cursor-pointer shadow-card"
               >
                 Verify
               </Button>
@@ -485,7 +485,7 @@ export default function QrScannerModal({
                 variant="outline"
                 size="sm"
                 onClick={() => verifyLot(targetLot)}
-                className="w-full text-xs font-medium border-border hover:bg-muted cursor-pointer"
+                className="w-full type-caption font-medium rounded-control border border-divider bg-surface hover:bg-surface-hover text-text-primary cursor-pointer"
               >
                 <ScanLine className="w-3.5 h-3.5 mr-1.5" /> Simulate Scan ({targetLot})
               </Button>
@@ -494,12 +494,12 @@ export default function QrScannerModal({
         </div>
 
         {/* Modal Bottom Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-border bg-muted/20">
-          <div className="text-[11px] text-muted-foreground">
+        <div className="flex items-center justify-between p-4 border-t border-divider bg-surface-secondary/40">
+          <div className="type-caption text-text-muted">
             {!isTimedOut ? (
               <span>Session active (1 min auto-close)</span>
             ) : (
-              <span className="font-medium text-foreground">Camera closed</span>
+              <span className="font-medium text-text-primary">Camera closed</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -507,7 +507,7 @@ export default function QrScannerModal({
               <Button
                 size="sm"
                 onClick={handleRescan}
-                className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                className="type-caption font-semibold bg-button-primary text-text-inverse hover:bg-button-primary-hover rounded-control cursor-pointer shadow-card"
               >
                 <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Rescan
               </Button>
@@ -517,7 +517,7 @@ export default function QrScannerModal({
               variant="outline"
               size="sm"
               onClick={requestClose}
-              className="text-xs font-semibold border-border hover:bg-muted cursor-pointer"
+              className="type-caption font-semibold rounded-control border border-divider bg-surface hover:bg-surface-hover text-text-primary cursor-pointer"
             >
               Close
             </Button>
