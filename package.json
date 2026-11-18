@@ -57,6 +57,7 @@
     "webcharts": "^1.11.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@prisma/client": "^5.22.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.2",
