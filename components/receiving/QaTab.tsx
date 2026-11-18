@@ -44,7 +44,7 @@ export default function QaTab() {
       if (res.data?.success) {
         setInspections(res.data.data || []);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching QA inspections:", err);
     } finally {
       setLoading(false);
@@ -148,8 +148,8 @@ export default function QaTab() {
       {/* Top Header Controls */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Incoming Quality Assurance</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2 className="type-page-title text-text-primary">Incoming Quality Assurance</h2>
+          <p className="mt-1 type-body text-text-muted">
             Evaluate delivered materials against specifications, record lot dispositions, and trigger automated quarantine or put-away
           </p>
         </div>
@@ -159,7 +159,7 @@ export default function QaTab() {
             size="sm"
             onClick={fetchInspections}
             disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
+            className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-table-header text-text-primary hover:bg-surface-hover transition-colors h-10"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
           </Button>
@@ -167,7 +167,7 @@ export default function QaTab() {
           <Button
             type="button"
             onClick={() => setAddQaOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+            className="flex items-center justify-center gap-2 rounded-control bg-button-primary px-5 py-2.5 type-label-button text-text-inverse hover:bg-button-primary-hover transition-colors shadow-sm h-10"
           >
             <Plus className="w-4 h-4" /> Add Quality Assurance
           </Button>
@@ -175,7 +175,7 @@ export default function QaTab() {
       </div>
 
       {/* Search & Filters */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center rounded-xl border border-border bg-card p-3">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center rounded-card border border-divider bg-surface p-3">
         <div className="flex flex-1 items-center gap-2">
           <SearchInput
             containerClassName="flex-1"
@@ -193,7 +193,7 @@ export default function QaTab() {
                 setSearch("");
                 setPage(1);
               }}
-              className="text-xs text-muted-foreground hover:text-foreground font-medium px-2"
+              className="type-caption text-text-muted hover:text-text-primary font-medium px-2"
             >
               Clear
             </button>
@@ -210,10 +210,10 @@ export default function QaTab() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+              <SelectTrigger className="h-10 w-[180px] rounded-control border border-divider bg-surface px-3 type-body text-text-primary shadow-sm focus:ring-1 focus:ring-ring">
                 <SelectValue placeholder="All Suppliers" />
               </SelectTrigger>
-              <SelectContent align="end" className="text-xs z-[9999]">
+              <SelectContent align="end" className="type-body bg-surface border-divider z-[9999]">
                 <SelectItem value="All">All Suppliers</SelectItem>
                 {uniqueSuppliers.map((supp) => (
                   <SelectItem key={supp} value={supp}>
@@ -227,7 +227,7 @@ export default function QaTab() {
       </div>
 
       {/* Subtab Pill Navigation: All, Ready to Quality Assurance, Completed Quality Assurance */}
-      <div className="border-b border-border overflow-x-auto">
+      <div className="border-b border-divider overflow-x-auto">
         <div className="flex items-center gap-1.5 min-w-max pb-2">
           {tabs.map((t) => {
             const isActive = activeSubTab === t.id;
@@ -239,17 +239,17 @@ export default function QaTab() {
                   setActiveSubTab(t.id);
                   setPage(1);
                 }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    ? "bg-button-primary text-text-inverse shadow-sm"
+                    : "text-text-muted hover:text-text-primary hover:bg-surface-hover"
                 }`}
               >
                 <span>{t.label}</span>
                 {t.count > 0 && (
                   <span
-                    className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
-                      isActive ? "bg-background text-foreground" : "bg-muted text-muted-foreground"
+                    className={`px-1.5 py-0.5 rounded-pill type-caption font-mono font-medium ${
+                      isActive ? "bg-surface text-text-primary" : "bg-surface-muted text-text-muted"
                     }`}
                   >
                     {t.count}

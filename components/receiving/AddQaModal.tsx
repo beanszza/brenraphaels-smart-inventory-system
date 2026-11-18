@@ -66,28 +66,31 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
 
       onStartInspection(match);
       onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to find Quality Assurance inspection.");
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "response" in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : err instanceof Error ? err.message : "Failed to find Quality Assurance inspection.";
+      setError(msg || "Failed to find Quality Assurance inspection.");
     } finally {
       setSearching(false);
     }
   };
 
   return (
-    <ModalWrapper open={open} title="Add Quality Assurance Inspection" onClose={onClose} size="max-w-2xl">
-      <div className="space-y-6 text-foreground">
+    <ModalWrapper open={open} title="Add Quality Assurance Inspection" onClose={onClose} size="max-w-[560px]">
+      <div className="space-y-6 text-text-primary">
         {error && (
-          <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+          <div role="alert" className="rounded-control border border-status-red/30 bg-status-red/10 p-3 type-caption text-status-red">
             {error}
           </div>
         )}
 
         {/* Instructions */}
-        <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-4">
-          <Plus className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 rounded-control border border-divider bg-surface-muted/30 p-4">
+          <Plus className="w-5 h-5 text-text-muted shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-foreground">Select a Posted Goods Receipt Note to Inspect</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="type-body font-semibold text-text-primary">Select a Posted Goods Receipt Note to Inspect</p>
+            <p className="type-caption text-text-muted mt-0.5">
               Only Goods Receipt Notes with status <strong>Received</strong> (posted, pending Quality Assurance) are shown below. Select the Goods Receipt Note you want to inspect.
             </p>
           </div>
@@ -97,16 +100,16 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
         {loading ? (
           <ReceivingSkeleton />
         ) : grns.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-2xl bg-muted/10">
-            <Package className="w-10 h-10 text-muted-foreground/40 mb-3" />
-            <p className="text-sm font-semibold text-muted-foreground">No Goods Receipt Notes awaiting Quality Assurance</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">
+          <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-divider rounded-card bg-surface-muted/10">
+            <Package className="w-10 h-10 text-text-muted/40 mb-3" />
+            <p className="type-body font-semibold text-text-muted">No Goods Receipt Notes awaiting Quality Assurance</p>
+            <p className="type-caption text-text-muted/70 mt-1">
               Create and post a Goods Receipt Note first. Once posted, it will appear here for Quality Assurance inspection.
             </p>
           </div>
         ) : (
           <div className="space-y-2">
-            <label className="text-xs font-semibold block">Goods Receipt Note Number *</label>
+            <label className="type-label font-semibold text-text-primary block">Goods Receipt Note Number <span className="text-status-red">*</span></label>
             <select
               value={selected?.grnId || ""}
               onChange={(e) => {
@@ -114,7 +117,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
                 setSelected(grn || null);
                 setError(null);
               }}
-              className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm"
+              className="w-full rounded-control border border-divider bg-surface px-3 py-2.5 type-body text-text-primary focus:outline-none focus:ring-1 focus:ring-ring"
               disabled={searching}
             >
               <option value="">Select a Goods Receipt Note to inspect</option>
@@ -127,32 +130,32 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
 
             {/* Selected GRN preview */}
             {selected && (
-              <div className="mt-3 bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <div className="mt-3 bg-surface-muted/30 border border-divider rounded-control p-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground">Goods Receipt Note No.</div>
-                  <div className="text-sm font-semibold text-foreground mt-0.5">{selected.grnNumber}</div>
+                  <div className="type-caption text-text-muted">Goods Receipt Note No.</div>
+                  <div className="type-body font-semibold text-text-primary mt-0.5">{selected.grnNumber}</div>
                 </div>
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground">Purchase Order</div>
-                  <div className="text-sm font-semibold text-foreground mt-0.5">{selected.poNumber}</div>
+                  <div className="type-caption text-text-muted">Purchase Order</div>
+                  <div className="type-body font-semibold text-text-primary mt-0.5">{selected.poNumber}</div>
                 </div>
                 {selected.deliveryNumber && selected.deliveryNumber !== "—" && (
                   <div>
-                    <div className="text-xs font-medium text-muted-foreground">Delivery No.</div>
-                    <div className="text-sm font-semibold text-foreground mt-0.5">{selected.deliveryNumber}</div>
+                    <div className="type-caption text-text-muted">Delivery No.</div>
+                    <div className="type-body font-semibold text-text-primary mt-0.5">{selected.deliveryNumber}</div>
                   </div>
                 )}
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground">Supplier</div>
-                  <div className="text-sm font-semibold text-foreground mt-0.5">{selected.supplierName}</div>
+                  <div className="type-caption text-text-muted">Supplier</div>
+                  <div className="type-body font-semibold text-text-primary mt-0.5">{selected.supplierName}</div>
                 </div>
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground">Received Date</div>
-                  <div className="text-sm font-semibold text-foreground mt-0.5">{new Date(selected.receivedDate).toLocaleDateString()}</div>
+                  <div className="type-caption text-text-muted">Received Date</div>
+                  <div className="type-body font-semibold text-text-primary mt-0.5">{new Date(selected.receivedDate).toLocaleDateString()}</div>
                 </div>
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground">Items</div>
-                  <div className="text-sm font-semibold text-foreground mt-0.5">{selected.items?.length ?? "—"} line items</div>
+                  <div className="type-caption text-text-muted">Items</div>
+                  <div className="type-body font-semibold text-text-primary mt-0.5">{selected.items?.length ?? "—"} line items</div>
                 </div>
               </div>
             )}
@@ -160,11 +163,11 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
         )}
 
         {/* Footer */}
-        <div className="flex justify-end items-center gap-3 pt-4 border-t border-border">
+        <div className="flex justify-end items-center gap-3 pt-4 border-t border-divider">
           <ModalNativeCloseButton
             fallbackOnClose={onClose}
             disabled={searching}
-            className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="rounded-control border border-divider bg-surface px-5 py-2 type-label-button text-text-primary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             Cancel
           </ModalNativeCloseButton>
@@ -172,7 +175,7 @@ export default function AddQaModal({ open, onClose, onStartInspection }: AddQaMo
             type="button"
             onClick={handleStartInspection}
             disabled={!selected || searching}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-control bg-button-primary px-5 py-2 type-label-button text-text-inverse hover:bg-button-primary-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {searching ? "Finding Inspection…" : "Start Quality Assurance Inspection"}
           </button>

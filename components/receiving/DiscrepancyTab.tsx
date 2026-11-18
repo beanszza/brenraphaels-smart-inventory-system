@@ -6,8 +6,6 @@ import { History } from "lucide-react";
 import { useStaff } from "@/context/StaffContext";
 import { isAdminStaff } from "@/lib/auth-roles";
 
-
-
 import React, { useState, useMemo, useTransition } from "react";
 import {
   Select,
@@ -135,16 +133,16 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
                   setActiveSubTab(t.id);
                   setPage(1);
                 }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    ? "bg-button-primary text-text-inverse shadow-card"
+                    : "text-text-muted hover:text-text-primary hover:bg-surface-secondary/50"
                 }`}
               >
                 <span>{t.label}</span>
                 <span
-                  className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
-                    isActive ? "bg-background text-foreground" : "bg-muted text-muted-foreground"
+                  className={`px-1.5 py-0.5 rounded-pill type-caption font-medium ${
+                    isActive ? "bg-surface text-text-primary" : "bg-surface-secondary text-text-muted"
                   }`}
                 >
                   {t.count}
@@ -160,7 +158,7 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
             variant="outline"
             onClick={fetchDiscrepancies}
             disabled={loading}
-            className="h-10 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer"
+            className="h-10 rounded-control border border-divider bg-surface px-4 py-2 type-body font-semibold text-text-primary hover:bg-surface-secondary cursor-pointer"
           >
             Refresh
           </Button>
@@ -168,7 +166,7 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
             <Button
               asChild
               variant="outline"
-              className="h-10 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer"
+              className="h-10 rounded-control border border-divider bg-surface px-4 py-2 type-body font-semibold text-text-primary hover:bg-surface-secondary cursor-pointer"
             >
               <Link href="/goods-receiving/logs">
                 <History className="w-4 h-4 mr-1.5" />
@@ -180,7 +178,7 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
       </div>
 
       {/* Search & Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-xl border border-border bg-card p-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-card border border-divider bg-surface p-3">
         <div className="flex flex-1 items-center gap-2">
           <SearchInput
             aria-label="Search records"
@@ -199,7 +197,7 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
                 setSearch("");
                 setPage(1);
               }}
-              className="text-xs text-muted-foreground hover:text-foreground font-medium px-2"
+              className="type-caption text-text-muted hover:text-text-primary font-medium px-2"
             >
               Clear
             </button>
@@ -216,10 +214,10 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
                 setPage(1);
               }}
             >
-              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-control border border-divider bg-surface px-3 type-body font-medium text-text-primary shadow-card focus:border-border-focus">
                 <SelectValue placeholder="All Suppliers" />
               </SelectTrigger>
-              <SelectContent align="end" className="text-xs z-[9999]">
+              <SelectContent align="end" className="type-caption z-[9999]">
                 <SelectItem value="All">All Suppliers</SelectItem>
                 {uniqueSuppliers.map((supp) => (
                   <SelectItem key={supp} value={supp}>
@@ -241,7 +239,7 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t border-divider">
           <Pagination
             currentPage={page}
             totalPages={totalPages}

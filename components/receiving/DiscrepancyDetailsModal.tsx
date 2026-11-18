@@ -24,7 +24,6 @@ export default function DiscrepancyDetailsModal({
   onResolved,
 }: DiscrepancyDetailsModalProps) {
   const [activeForm, setActiveForm] = useState<"none" | "loss" | "rtv" | "resolve">("none");
-  const [resolutionType, setResolutionType] = useState("");
   const [resolutionNotes, setResolutionNotes] = useState("");
 
   // Loss Report form state
@@ -66,8 +65,9 @@ export default function DiscrepancyDetailsModal({
       } else {
         setError(res.data?.message || "Failed to resolve discrepancy.");
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to resolve discrepancy.");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(e.response?.data?.message || e.message || "Failed to resolve discrepancy.");
     } finally {
       setSubmitting(false);
     }
@@ -91,8 +91,9 @@ export default function DiscrepancyDetailsModal({
       } else {
         setError(res.data?.message || "Failed to create Loss Report.");
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to create Loss Report.");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(e.response?.data?.message || e.message || "Failed to create Loss Report.");
     } finally {
       setSubmitting(false);
     }
@@ -113,8 +114,9 @@ export default function DiscrepancyDetailsModal({
       } else {
         setError(res.data?.message || "Failed to create Return to Supplier.");
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to create Return to Supplier.");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(e.response?.data?.message || e.message || "Failed to create Return to Supplier.");
     } finally {
       setSubmitting(false);
     }
@@ -125,20 +127,20 @@ export default function DiscrepancyDetailsModal({
       open={open}
       title={`Discrepancy Report - ${discrepancy.discrepancyNumber}`}
       onClose={onClose}
-      size="max-w-4xl"
+      size="max-w-[640px]"
     >
-      <div className="space-y-6 text-foreground">
+      <div className="space-y-6 text-text-primary">
         {error && (
-          <div role="alert" className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl p-3">
+          <div role="alert" className="bg-badge-danger-bg border border-badge-danger-border text-badge-danger-text type-caption rounded-control p-3">
             {error}
           </div>
         )}
 
         {/* TRACEABILITY BANNER */}
-        <div className="bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+        <div className="bg-surface-secondary/40 border border-divider rounded-control p-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
           <div>
-            <div className="text-xs font-medium text-muted-foreground">Type</div>
-            <div className="text-sm font-semibold text-foreground mt-0.5">
+            <div className="type-caption font-medium text-text-muted">Type</div>
+            <div className="type-body font-semibold text-text-primary mt-0.5">
               {discrepancy.discrepancyType === "PartialShort"
                 ? "Partial / Short Delivery"
                 : discrepancy.discrepancyType === "OverSupply"
@@ -147,27 +149,27 @@ export default function DiscrepancyDetailsModal({
             </div>
           </div>
           <div>
-            <div className="text-xs font-medium text-muted-foreground">Source Goods Receipt Note</div>
-            <div className="text-sm font-semibold text-foreground mt-0.5">{discrepancy.grnNumber}</div>
+            <div className="type-caption font-medium text-text-muted">Source Goods Receipt Note</div>
+            <div className="type-body font-semibold text-text-primary mt-0.5">{discrepancy.grnNumber}</div>
           </div>
           <div>
-            <div className="text-xs font-medium text-muted-foreground">Purchase Order</div>
-            <div className="text-sm font-semibold text-foreground mt-0.5">{discrepancy.poNumber}</div>
+            <div className="type-caption font-medium text-text-muted">Purchase Order</div>
+            <div className="type-body font-semibold text-text-primary mt-0.5">{discrepancy.poNumber}</div>
           </div>
           {discrepancy.prNumber && discrepancy.prNumber !== "—" && (
             <div>
-              <div className="text-xs font-medium text-muted-foreground">Product Requisition</div>
-              <div className="text-sm font-semibold text-foreground mt-0.5">{discrepancy.prNumber}</div>
+              <div className="type-caption font-medium text-text-muted">Product Requisition</div>
+              <div className="type-body font-semibold text-text-primary mt-0.5">{discrepancy.prNumber}</div>
             </div>
           )}
           {discrepancy.supplierName && discrepancy.supplierName !== "—" && (
             <div>
-              <div className="text-xs font-medium text-muted-foreground">Supplier</div>
-              <div className="text-sm font-semibold text-foreground mt-0.5 truncate" title={discrepancy.supplierName}>{discrepancy.supplierName}</div>
+              <div className="type-caption font-medium text-text-muted">Supplier</div>
+              <div className="type-body font-semibold text-text-primary mt-0.5 truncate" title={discrepancy.supplierName}>{discrepancy.supplierName}</div>
             </div>
           )}
           <div>
-            <div className="text-xs font-medium text-muted-foreground">Status</div>
+            <div className="type-caption font-medium text-text-muted">Status</div>
             <div className="mt-1">
               <StatusBadge status={discrepancy.status} />
             </div>
@@ -175,22 +177,22 @@ export default function DiscrepancyDetailsModal({
         </div>
 
         {/* QUANTITY & ITEM BREAKDOWN */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-card border border-border rounded-xl p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-surface border border-divider rounded-control p-4">
           <div>
-            <div className="text-xs font-medium text-muted-foreground">Item Name</div>
-            <div className="text-sm font-semibold text-foreground mt-0.5">{discrepancy.itemName}</div>
+            <div className="type-caption font-medium text-text-muted">Item Name</div>
+            <div className="type-body font-semibold text-text-primary mt-0.5">{discrepancy.itemName}</div>
           </div>
           <div>
-            <div className="text-xs font-medium text-muted-foreground">Purchase Order Quantity</div>
-            <div className="text-sm font-semibold text-foreground mt-0.5">{discrepancy.orderedQuantity.toLocaleString()}</div>
+            <div className="type-caption font-medium text-text-muted">Purchase Order Quantity</div>
+            <div className="type-body font-semibold text-text-primary mt-0.5">{discrepancy.orderedQuantity.toLocaleString()}</div>
           </div>
           <div>
-            <div className="text-xs font-medium text-muted-foreground">Actual Received Qty</div>
-            <div className="text-sm font-semibold text-foreground mt-0.5">{discrepancy.currentReceivedQty.toLocaleString()}</div>
+            <div className="type-caption font-medium text-text-muted">Actual Received Qty</div>
+            <div className="type-body font-semibold text-text-primary mt-0.5">{discrepancy.currentReceivedQty.toLocaleString()}</div>
           </div>
           <div>
-            <div className="text-xs font-medium text-muted-foreground">Discrepancy Quantity</div>
-            <div className="text-sm font-semibold text-foreground mt-0.5">
+            <div className="type-caption font-medium text-text-muted">Discrepancy Quantity</div>
+            <div className="type-body font-semibold text-text-primary mt-0.5">
               {discrepancy.discrepancyType === "OverSupply" ? "+" : "-"}
               {discrepancy.discrepancyQuantity.toLocaleString()}
             </div>
@@ -199,69 +201,69 @@ export default function DiscrepancyDetailsModal({
 
         {/* RESOLUTION HISTORY / STATUS */}
         {isResolved ? (
-          <div className="bg-muted/30 border border-border rounded-xl p-4 space-y-2 text-sm">
-            <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Resolution Details</div>
+          <div className="bg-surface-secondary/40 border border-divider rounded-control p-4 space-y-2 type-body">
+            <div className="type-overline uppercase text-text-muted">Resolution Details</div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div>
-                <span className="text-xs font-medium text-muted-foreground block">Action Taken</span>
-                <span className="text-sm font-semibold text-foreground">{discrepancy.resolutionType || "Resolved"}</span>
+                <span className="type-caption font-medium text-text-muted block">Action Taken</span>
+                <span className="type-body font-semibold text-text-primary">{discrepancy.resolutionType || "Resolved"}</span>
               </div>
               <div>
-                <span className="text-xs font-medium text-muted-foreground block">Resolved By</span>
-                <span className="text-sm font-semibold text-foreground">{discrepancy.resolvedBy || "System"}</span>
+                <span className="type-caption font-medium text-text-muted block">Resolved By</span>
+                <span className="type-body font-semibold text-text-primary">{discrepancy.resolvedBy || "System"}</span>
               </div>
               <div>
-                <span className="text-xs font-medium text-muted-foreground block">Resolved At</span>
-                <span className="text-sm font-semibold text-foreground">
+                <span className="type-caption font-medium text-text-muted block">Resolved At</span>
+                <span className="type-body font-semibold text-text-primary">
                   {discrepancy.resolvedAt ? new Date(discrepancy.resolvedAt).toLocaleString() : "—"}
                 </span>
               </div>
             </div>
             {discrepancy.lossReportNumber && (
-              <div className="pt-2 text-sm text-foreground">
+              <div className="pt-2 type-body text-text-primary">
                 <strong>Loss report created</strong>
               </div>
             )}
             {discrepancy.rtvNumber && (
-              <div className="pt-2 text-sm text-foreground">
+              <div className="pt-2 type-body text-text-primary">
                 Return to Vendor: <strong>{discrepancy.rtvNumber}</strong>
               </div>
             )}
             {discrepancy.resolutionNotes && (
-              <div className="text-xs text-muted-foreground pt-1 italic">"{discrepancy.resolutionNotes}"</div>
+              <div className="type-caption text-text-muted pt-1 italic">"{discrepancy.resolutionNotes}"</div>
             )}
           </div>
         ) : activeForm !== "none" ? (
           /* ACTION FORM FOR OPEN DISCREPANCY */
-          <div className="border-t border-border pt-4 space-y-4">
+          <div className="border-t border-divider pt-4 space-y-4">
 
             {/* FORM: CREATE LOSS REPORT */}
             {activeForm === "loss" && (
-              <div className="bg-muted/20 border border-border rounded-xl p-4 space-y-3">
-                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <div className="bg-surface-secondary/40 border border-divider rounded-control p-4 space-y-3">
+                <div className="type-overline uppercase text-text-muted">
                   Generate Loss Report
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="type-caption text-text-muted">
                   Goods will be permanently written off via Stock Ledger disposal. Quantity removed from inventory.
                 </p>
 
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">Reason for Write-Off *</label>
+                    <label className="type-caption font-semibold text-text-primary block mb-1">Reason for Write-Off *</label>
                     <input
                       type="text"
                       placeholder="e.g. Supplier confirmed cannot supply balance / Goods destroyed"
                       value={lossReason}
                       onChange={(e) => setLossReason(e.target.value)}
-                      className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-foreground focus:outline-none"
+                      className="w-full bg-surface border border-divider rounded-control px-3 py-2 type-body text-text-primary placeholder:text-text-muted focus:outline-none focus:border-border-focus"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">Authorised By *</label>
+                    <label className="type-caption font-semibold text-text-primary block mb-1">Authorised By *</label>
                     <select
                       value={lossAuthorisedBy}
                       onChange={(e) => setLossAuthorisedBy(e.target.value)}
-                      className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-foreground focus:outline-none"
+                      className="w-full bg-surface border border-divider rounded-control px-3 py-2 type-body text-text-primary focus:outline-none focus:border-border-focus"
                     >
                       {HR_EMPLOYEES.map((employee) => (
                         <option key={employee} value={employee}>{employee}</option>
@@ -269,13 +271,13 @@ export default function DiscrepancyDetailsModal({
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">Additional Notes</label>
+                    <label className="type-caption font-semibold text-text-primary block mb-1">Additional Notes</label>
                     <input
                       type="text"
                       placeholder="Optional notes or reference document"
                       value={lossNotes}
                       onChange={(e) => setLossNotes(e.target.value)}
-                      className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-foreground focus:outline-none"
+                      className="w-full bg-surface border border-divider rounded-control px-3 py-2 type-body text-text-primary placeholder:text-text-muted focus:outline-none focus:border-border-focus"
                     />
                   </div>
                 </div>
@@ -285,7 +287,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     onClick={() => setActiveForm("none")}
                     disabled={submitting}
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-control border border-divider bg-surface text-text-primary px-5 py-2.5 type-body font-semibold hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -305,7 +307,7 @@ export default function DiscrepancyDetailsModal({
                       });
                     }}
                     disabled={submitting}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 type-body font-semibold hover:bg-button-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-card cursor-pointer"
                   >
                     {submitting ? "Writing Off..." : "Confirm Loss Report"}
                   </button>
@@ -315,43 +317,43 @@ export default function DiscrepancyDetailsModal({
 
             {/* FORM: RETURN TO SUPPLIER */}
             {activeForm === "rtv" && (
-              <div className="bg-muted/20 border border-border rounded-xl p-4 space-y-3">
-                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <div className="bg-surface-secondary/40 border border-divider rounded-control p-4 space-y-3">
+                <div className="type-overline uppercase text-text-muted">
                   Request Return to Supplier
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="type-caption text-text-muted">
                   Creates an official return shipment request submitted for administrator approval prior to dispatch.
                 </p>
 
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">Reason for Return</label>
+                    <label className="type-caption font-semibold text-text-primary block mb-1">Reason for Return</label>
                     <input
                       type="text"
                       placeholder="e.g. Failed incoming Quality Assurance specifications / Rejected lot"
                       value={rtvReason}
                       onChange={(e) => setRtvReason(e.target.value)}
-                      className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-foreground focus:outline-none"
+                      className="w-full bg-surface border border-divider rounded-control px-3 py-2 type-body text-text-primary placeholder:text-text-muted focus:outline-none focus:border-border-focus"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">Carrier / Courier (Optional)</label>
+                    <label className="type-caption font-semibold text-text-primary block mb-1">Carrier / Courier (Optional)</label>
                     <input
                       type="text"
                       placeholder="e.g. DHL / Supplier Pickup"
                       value={rtvCarrier}
                       onChange={(e) => setRtvCarrier(e.target.value)}
-                      className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-foreground focus:outline-none"
+                      className="w-full bg-surface border border-divider rounded-control px-3 py-2 type-body text-text-primary placeholder:text-text-muted focus:outline-none focus:border-border-focus"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">Approval Request Notes</label>
+                    <label className="type-caption font-semibold text-text-primary block mb-1">Approval Request Notes</label>
                     <input
                       type="text"
                       placeholder="Notes for administrator approval or vendor RMA number"
                       value={rtvNotes}
                       onChange={(e) => setRtvNotes(e.target.value)}
-                      className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-foreground focus:outline-none"
+                      className="w-full bg-surface border border-divider rounded-control px-3 py-2 type-body text-text-primary placeholder:text-text-muted focus:outline-none focus:border-border-focus"
                     />
                   </div>
                 </div>
@@ -361,7 +363,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     onClick={() => setActiveForm("none")}
                     disabled={submitting}
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-control border border-divider bg-surface text-text-primary px-5 py-2.5 type-body font-semibold hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -376,7 +378,7 @@ export default function DiscrepancyDetailsModal({
                       })
                     }
                     disabled={submitting}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 type-body font-semibold hover:bg-button-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-card cursor-pointer"
                   >
                     {submitting ? "Submitting..." : "Submit Return Request"}
                   </button>
@@ -387,11 +389,11 @@ export default function DiscrepancyDetailsModal({
         ) : null}
 
         {/* FOOTER ACTIONS - All buttons in lower right corner */}
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-border mt-4">
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-divider mt-4">
           <ModalNativeCloseButton
             fallbackOnClose={onClose}
             disabled={submitting}
-            className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="rounded-control border border-divider bg-surface text-text-primary px-5 py-2.5 type-body font-semibold hover:bg-surface-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Close
           </ModalNativeCloseButton>
@@ -413,7 +415,7 @@ export default function DiscrepancyDetailsModal({
                         confirmText: "Confirm Resolution",
                       })
                     }
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-control border border-divider bg-surface text-text-primary px-5 py-2.5 type-body font-semibold hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Wait for Next Delivery
                   </button>
@@ -431,7 +433,7 @@ export default function DiscrepancyDetailsModal({
                         confirmText: "Confirm & Close",
                       })
                     }
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-control border border-divider bg-surface text-text-primary px-5 py-2.5 type-body font-semibold hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Close Remaining
                   </button>
@@ -440,7 +442,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("loss")}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                    className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 type-body font-semibold hover:bg-button-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-card cursor-pointer"
                   >
                     Create Loss Report
                   </button>
@@ -462,7 +464,7 @@ export default function DiscrepancyDetailsModal({
                         confirmText: "Confirm Resolution",
                       })
                     }
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-control border border-divider bg-surface text-text-primary px-5 py-2.5 type-body font-semibold hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Wait for Replacement Delivery
                   </button>
@@ -471,7 +473,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("loss")}
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-control border border-divider bg-surface text-text-primary px-5 py-2.5 type-body font-semibold hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Create Loss Report
                   </button>
@@ -480,7 +482,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("rtv")}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                    className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 type-body font-semibold hover:bg-button-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-card cursor-pointer"
                   >
                     Request Return to Supplier
                   </button>
@@ -502,7 +504,7 @@ export default function DiscrepancyDetailsModal({
                         confirmText: "Confirm Resolution",
                       })
                     }
-                    className="rounded-xl border border-border bg-card text-foreground px-5 py-2.5 text-sm font-semibold hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="rounded-control border border-divider bg-surface text-text-primary px-5 py-2.5 type-body font-semibold hover:bg-surface-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Keep (With Credit Note)
                   </button>
@@ -511,7 +513,7 @@ export default function DiscrepancyDetailsModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => setActiveForm("rtv")}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                    className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 type-body font-semibold hover:bg-button-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-card cursor-pointer"
                   >
                     Request Return to Supplier
                   </button>
@@ -522,7 +524,7 @@ export default function DiscrepancyDetailsModal({
         </div>
       </div>
 
-      {/* Confirmation Modal (440px PO / PR Format) */}
+      {/* Confirmation Modal */}
       <ActionConfirmModal
         open={Boolean(pendingConfirm)}
         title={pendingConfirm?.title || "Confirm Action"}
