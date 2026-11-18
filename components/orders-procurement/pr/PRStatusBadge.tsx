@@ -3,16 +3,6 @@
 import React from "react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { PRStatus } from "../types";
-import { 
-  FileEdit, 
-  Clock, 
-  RotateCcw, 
-  CheckCircle2, 
-  XCircle, 
-  ArrowRightCircle, 
-  Ban, 
-  Lock 
-} from "lucide-react";
 
 interface PRStatusBadgeProps {
   status: PRStatus | string;
@@ -25,65 +15,57 @@ export function PRStatusBadge({ status, className = "" }: PRStatusBadgeProps) {
   switch (norm) {
     case "Draft":
       return (
-        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
-          <FileEdit className="w-3.5 h-3.5" />
+        <StatusBadge status={norm} className={className}>
           Draft
         </StatusBadge>
       );
     case "Pending Approval":
     case "Pending":
       return (
-        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
-          <Clock className="w-3.5 h-3.5" />
+        <StatusBadge status={norm} className={className}>
           Pending Approval
         </StatusBadge>
       );
     case "Returned":
       return (
-        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
-          <RotateCcw className="w-3.5 h-3.5" />
+        <StatusBadge status={norm} className={className}>
           Returned
         </StatusBadge>
       );
     case "Approved":
       return (
-        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
-          <CheckCircle2 className="w-3.5 h-3.5" />
+        <StatusBadge status={norm} className={className}>
           Approved
         </StatusBadge>
       );
     case "Rejected":
       return (
-        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
-          <XCircle className="w-3.5 h-3.5" />
+        <StatusBadge status={norm} className={className}>
           Rejected
         </StatusBadge>
       );
     case "Converted to PO":
     case "Converted":
       return (
-        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
-          <ArrowRightCircle className="w-3.5 h-3.5" />
+        <StatusBadge status={norm} className={className}>
           Converted to Purchase Order
         </StatusBadge>
       );
     case "Cancelled":
       return (
-        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
-          <Ban className="w-3.5 h-3.5" />
+        <StatusBadge status={norm} className={className}>
           Cancelled
         </StatusBadge>
       );
     case "Closed":
       return (
-        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
-          <Lock className="w-3.5 h-3.5" />
+        <StatusBadge status={norm} className={className}>
           Closed
         </StatusBadge>
       );
     default:
       return (
-        <StatusBadge status={norm} className={`gap-1.5 ${className}`}>
+        <StatusBadge status={norm} className={className}>
           {status}
         </StatusBadge>
       );
