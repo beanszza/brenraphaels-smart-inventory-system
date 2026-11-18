@@ -23,17 +23,17 @@ export function SidebarNavSkeleton({ rows = 7 }: SidebarNavSkeletonProps) {
       data-testid="sidebar-nav-skeleton"
     >
       {/* Dashboard placeholder */}
-      <div className="flex items-center gap-sm px-sm py-sm">
-        <Skeleton className="h-4 w-4 rounded" />
-        <Skeleton className="h-4 w-24 rounded" />
+      <div className="flex items-center gap-3 px-2.5 py-2">
+        <Skeleton className="size-4.5 rounded-control" />
+        <Skeleton className="h-4 w-24 rounded-control" />
       </div>
 
       {/* Nav group placeholders */}
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex items-center gap-sm px-sm py-sm mt-xs">
-          <Skeleton className="h-4 w-4 rounded" />
-          <Skeleton className="h-4 flex-1 rounded" style={{ maxWidth: `${60 + ((i * 17) % 40)}%` }} />
-          <Skeleton className="h-4 w-4 rounded" />
+        <div key={i} className="flex items-center gap-3 px-2.5 py-2 mt-1">
+          <Skeleton className="size-4.5 rounded-control" />
+          <Skeleton className="h-4 flex-1 rounded-control" style={{ maxWidth: `${60 + ((i * 17) % 40)}%` }} />
+          <Skeleton className="size-4 rounded-control" />
         </div>
       ))}
 

@@ -31,8 +31,8 @@ export function BrandLockup({
     <div className={cn("flex items-center gap-3 text-left", className)}>
       <div
         className={cn(
-          "relative size-12 shrink-0 overflow-hidden rounded-[12px] bg-white",
-          !dark && "border border-[#ece6f2]",
+          "relative size-12 shrink-0 overflow-hidden rounded-inner bg-surface",
+          !dark && "border border-brand-lockup-tile-border",
         )}
       >
         <Image
@@ -46,8 +46,8 @@ export function BrandLockup({
       <div className="flex min-w-0 flex-1 flex-col gap-[3px] font-semibold">
         <p
           className={cn(
-            "whitespace-nowrap font-[family-name:var(--font-fraunces)] text-[20px] leading-normal",
-            dark ? "text-white" : "text-[#2a0f3f]",
+            "whitespace-nowrap font-brand type-wordmark leading-normal",
+            dark ? "text-brand-lockup-wordmark-dark" : "text-brand-lockup-wordmark-light",
           )}
           style={{ fontVariationSettings: '"SOFT" 0, "WONK" 1' }}
         >
@@ -55,8 +55,8 @@ export function BrandLockup({
         </p>
         <p
           className={cn(
-            "text-[9px] uppercase leading-[12px] tracking-[1.1px]",
-            dark ? "text-[#cdb8e6]" : "text-[#7a5899]",
+            "type-brand-caption",
+            dark ? "text-brand-lockup-caption-dark" : "text-brand-lockup-caption-light",
           )}
         >
           {SYSTEM_NAMES[system]}

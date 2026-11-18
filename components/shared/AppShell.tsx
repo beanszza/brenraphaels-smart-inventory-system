@@ -24,7 +24,7 @@ function MainContent({ children }: { children: React.ReactNode }) {
       <Header />
 
       {/* Main Canvas */}
-      <main className="flex-1 w-full bg-background relative">
+      <main className="flex-1 w-full bg-page relative">
         {children}
       </main>
     </div>
@@ -42,7 +42,7 @@ export function AppShell({
 }) {
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex min-h-screen w-full bg-background text-foreground relative">
+      <div className="flex min-h-screen w-full bg-page text-ink relative">
         {/* Sidebar Shell */}
         <Sidebar modules={modules} staff={staff} />
 

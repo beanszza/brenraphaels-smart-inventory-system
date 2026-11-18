@@ -19,7 +19,7 @@ const RootLayout = ({
 }>) => {
   return (
     <html lang="en" className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
-      <body className="min-h-screen bg-background text-foreground font-sans">
+      <body className="min-h-screen bg-page text-ink font-sans">
         <LayoutProvider>{children}</LayoutProvider>
       </body>
     </html>

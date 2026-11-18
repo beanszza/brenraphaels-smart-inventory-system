@@ -40,10 +40,10 @@ export function Sidebar({ modules, staff }: { modules: Module[]; staff: Staff })
       {isMobile && (
         <div
           onClick={toggleSidebar}
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[55] animate-in fade-in duration-200"
+          className="fixed inset-0 bg-scrim z-[55] animate-in fade-in duration-200"
         />
       )}
-      <aside className="fixed left-0 top-0 h-full w-(--sidebar-width) flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground z-[60] transition-all duration-300 shadow-xl md:shadow-none animate-in slide-in-from-left duration-300">
+      <aside className="fixed left-0 top-0 h-full w-(--sidebar-width) flex flex-col border-r border-topbar bg-surface text-ink z-[60] transition-all duration-300 shadow-xl md:shadow-none animate-in slide-in-from-left duration-300">
         <SidebarEnterpriseHeader isMobile={isMobile} />
 
         <SidebarContent className="px-3 py-4 overflow-y-auto">
@@ -57,8 +57,8 @@ export function Sidebar({ modules, staff }: { modules: Module[]; staff: Staff })
                     <React.Fragment key={group.label}>
                       <li
                         aria-hidden
-                        className={`pb-1.5 pl-2.5 text-[11px] font-semibold tracking-wide text-muted-foreground list-none ${
-                          index === 0 ? "pt-1" : "pt-[18px]"
+                        className={`pb-1.5 pl-2.5 type-nav-group text-ink-muted list-none ${
+                          index === 0 ? "pt-1" : "pt-4.5"
                         }`}
                       >
                         {group.label}
@@ -74,10 +74,10 @@ export function Sidebar({ modules, staff }: { modules: Module[]; staff: Staff })
                             <SidebarMenuButton
                               asChild
                               isActive={isActive}
-                              className="h-auto w-full flex items-center gap-3 px-2.5 py-[9px] rounded-lg text-[15px] font-medium text-sidebar-foreground transition-colors data-[active=true]:font-semibold data-[active=true]:text-sidebar-accent-foreground"
+                              className="h-10 w-full flex items-center gap-3 px-2.5 rounded-control type-label-nav text-ink transition-colors hover:bg-subtle data-[active=true]:type-label-nav-active data-[active=true]:bg-sidebar-accent data-[active=true]:text-ink"
                             >
                               <Link href={item.href} onClick={handleNavClick}>
-                                <ItemIcon className="size-[18px] shrink-0" />
+                                <ItemIcon className="size-4.5 shrink-0 text-ink-secondary group-data-[active=true]:text-ink" />
                                 <span>{item.name}</span>
                               </Link>
                             </SidebarMenuButton>
@@ -92,7 +92,7 @@ export function Sidebar({ modules, staff }: { modules: Module[]; staff: Staff })
           </SidebarGroup>
         </SidebarContent>
 
-        <SidebarFooter className="py-3.5 pl-4 pr-3 border-t border-sidebar-border">
+        <SidebarFooter className="py-3.5 pl-4 pr-3 border-t border-divider">
           <SidebarProfileFooter staff={staff} />
         </SidebarFooter>
 
