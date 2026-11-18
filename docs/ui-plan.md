@@ -487,7 +487,7 @@ Each sub-stage changes only class strings inside the listed files. Consumers pic
 > [!WARNING]
 > Unlike pure CSS/class-string swaps, the two changes below either modify JSX children or alter the semantic color group a user sees for a given status. Each **must be committed on its own** with a clearly labeled commit message so it can be reviewed or reverted independently.
 
-### Exception 1 — Remove Icons from `PRStatusBadge.tsx` (Changes JSX)
+### Exception 1 — Remove Icons from `PRStatusBadge.tsx` (Changes JSX) — **[COMPLETED]**
 * **Commit Label:** `refactor(ui-exception): remove icons from PRStatusBadge per Figma text-only badge spec`
 * **File:** `components/orders-procurement/pr/PRStatusBadge.tsx`
 * **Why It Is an Exception:** Figma (`05 · Components` `#840:151`) specifies that status badges are **text-only pills** (`no dot`, no icon). Removing `<FileEdit />`, `<Clock />`, `<RotateCcw />`, `<CheckCircle2 />`, `<XCircle />`, `<ArrowRightCircle />`, `<Ban />`, and `<Lock />` changes the rendered JSX children inside `PRStatusBadge`.
