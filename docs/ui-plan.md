@@ -274,7 +274,7 @@ flowchart LR
 | **3A–3G** | Shared components (buttons → tables) | ~33 | Yes, inside primitives (review Playwright diffs) |
 | **Exceptions** | 1) Remove `PRStatusBadge` icons (JSX change)<br>2) Remap `StatusBadge` colors (UX change) | 2 (1 per commit) | **[COMPLETED]** Both isolated badge commits completed & verified |
 | **4** | Layout shell (sidebar, header, page header, brand) | 11 | **[COMPLETED]** Yes (review Playwright diffs) |
-| **5** | Auth and system screens | 8 | Yes (review Playwright diffs) |
+| **5** | Auth and system screens | 8 | **[COMPLETED]** Yes (review Playwright diffs) |
 | **6.1–6.10** | Pages, one module per sub-stage | ~140 | Yes, one module at a time (review Playwright diffs) |
 | **7** | PDF and print exports | — | **Skipped for now** |
 | **8** | Remove legacy tokens, switch `scripts/check-tokens.mjs` to **FAIL** mode | 3 | No visual change |
@@ -518,7 +518,7 @@ Each sub-stage changes only class strings inside the listed files. Consumers pic
 
 ---
 
-## Stage 5 — Auth and system screens
+## Stage 5 — Auth and system screens — **[COMPLETED]**
 
 `components/auth/AuthScreen.tsx` (card `rounded-modal`, title `type-page-title`), `components/auth/ContinueToPortal.tsx`, `components/auth/SignOutButton.tsx`, `app/no-access/page.tsx`, `app/sign-in-error/page.tsx`, `app/signing-in/page.tsx`, `app/unavailable/page.tsx`, `app/not-found.tsx` (legacy `text-display-sm`/`text-body-md` → `type-*`).
 
