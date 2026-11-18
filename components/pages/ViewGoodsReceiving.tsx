@@ -48,7 +48,7 @@ export default function ViewGoodsReceiving({
             : "Review put-away stock, resolve delivery discrepancies, manage supplier returns, and handle inventory loss."
         }
       />
-      <div className="flex items-center justify-between border-b border-border gap-2">
+      <div className="flex items-center justify-between border-b border-divider gap-2">
         <nav aria-label="Goods Receiving" className="min-w-0">
           <div className="flex items-center gap-2 overflow-x-auto">
             {visibleTabs.map(([id, label]) => (
@@ -57,10 +57,10 @@ export default function ViewGoodsReceiving({
                 href={`/goods-receiving?tab=${id}`}
                 prefetch={true}
                 aria-current={activeTab === id ? "page" : undefined}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase border-b-2 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-2 focus-visible:outline-primary ${
+                className={`flex items-center gap-2 px-4 py-2.5 type-table-header uppercase border-b-2 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-2 focus-visible:outline-primary ${
                   activeTab === id
                     ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    : "border-transparent text-text-muted hover:text-text-primary"
                 }`}
               >
                 <span>{label}</span>
@@ -72,7 +72,7 @@ export default function ViewGoodsReceiving({
           <div className="pb-1 shrink-0">
             <Link
               href="/goods-receiving/logs"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-control border border-divider bg-surface px-3.5 py-1.5 type-table-header text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
             >
               <History size={14} />
               <span>Transaction History</span>

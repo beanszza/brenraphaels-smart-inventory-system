@@ -5,7 +5,6 @@ import { getDeliveryForReceiving } from "@/app/actions/receiving/procurement-rea
 import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useEffect, useState } from "react";
-import { Truck, Package } from "lucide-react";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalNativeCloseButton } from "@/components/shared/ModalCloseContext";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -69,11 +68,11 @@ export default function DeliveryDetailsModal({
       open={open}
       title={`Delivery Details — ${delivery.deliveryNumber}`}
       onClose={onClose}
-      size="max-w-4xl"
+      size="max-w-[640px]"
     >
-      <div className="space-y-6 text-foreground">
+      <div className="space-y-6 text-text-primary">
         {error && (
-          <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+          <div role="alert" className="rounded-control border border-status-red/30 bg-status-red/10 p-3 type-caption text-status-red">
             {error}
           </div>
         )}
@@ -83,27 +82,27 @@ export default function DeliveryDetailsModal({
         ) : detail ? (
           <>
             {/* Header Summary */}
-            <div className="bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            <div className="bg-surface-muted/30 border border-divider rounded-control p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Delivery No.</div>
-                <div className="text-sm font-semibold text-foreground mt-0.5">{detail.deliveryNumber}</div>
+                <div className="type-caption text-text-muted">Delivery No.</div>
+                <div className="type-body font-semibold text-text-primary mt-0.5">{detail.deliveryNumber}</div>
               </div>
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Purchase Order</div>
-                <div className="text-sm font-semibold text-foreground mt-0.5">{detail.poNumber}</div>
+                <div className="type-caption text-text-muted">Purchase Order</div>
+                <div className="type-body font-semibold text-text-primary mt-0.5">{detail.poNumber}</div>
               </div>
               {detail.prNumber && (
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground">Purchase Requisition Ref.</div>
-                  <div className="text-sm font-semibold text-foreground mt-0.5">{detail.prNumber}</div>
+                  <div className="type-caption text-text-muted">Purchase Requisition Ref.</div>
+                  <div className="type-body font-semibold text-text-primary mt-0.5">{detail.prNumber}</div>
                 </div>
               )}
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Supplier</div>
-                <div className="text-sm font-semibold text-foreground mt-0.5 truncate" title={detail.supplierName}>{detail.supplierName}</div>
+                <div className="type-caption text-text-muted">Supplier</div>
+                <div className="type-body font-semibold text-text-primary mt-0.5 truncate" title={detail.supplierName}>{detail.supplierName}</div>
               </div>
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Status</div>
+                <div className="type-caption text-text-muted">Status</div>
                 <div className="mt-1"><StatusBadge status={detail.status} /></div>
               </div>
             </div>
@@ -113,28 +112,28 @@ export default function DeliveryDetailsModal({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {detail.carrier && (
                   <div>
-                    <div className="text-xs font-medium text-muted-foreground">Carrier / Truck</div>
-                    <div className="text-sm font-semibold text-foreground mt-0.5">{detail.carrier}</div>
+                    <div className="type-caption text-text-muted">Carrier / Truck</div>
+                    <div className="type-body font-semibold text-text-primary mt-0.5">{detail.carrier}</div>
                   </div>
                 )}
                 {detail.trackingNumber && (
                   <div>
-                    <div className="text-xs font-medium text-muted-foreground">Tracking No.</div>
-                    <div className="text-sm font-semibold text-foreground mt-0.5">{detail.trackingNumber}</div>
+                    <div className="type-caption text-text-muted">Tracking No.</div>
+                    <div className="type-body font-semibold text-text-primary mt-0.5">{detail.trackingNumber}</div>
                   </div>
                 )}
                 {detail.estimatedArrival && (
                   <div>
-                    <div className="text-xs font-medium text-muted-foreground">Estimated Arrival</div>
-                    <div className="text-sm font-semibold text-foreground mt-0.5">
+                    <div className="type-caption text-text-muted">Estimated Arrival</div>
+                    <div className="type-body font-semibold text-text-primary mt-0.5">
                       {new Date(detail.estimatedArrival).toLocaleDateString()}
                     </div>
                   </div>
                 )}
                 {detail.actualArrival && (
                   <div>
-                    <div className="text-xs font-medium text-muted-foreground">Actual Arrival</div>
-                    <div className="text-sm font-semibold text-foreground mt-0.5">
+                    <div className="type-caption text-text-muted">Actual Arrival</div>
+                    <div className="type-body font-semibold text-text-primary mt-0.5">
                       {new Date(detail.actualArrival).toLocaleDateString()}
                     </div>
                   </div>
@@ -143,34 +142,34 @@ export default function DeliveryDetailsModal({
             )}
 
             {/* Line Items */}
-            <div className="border-t border-border pt-4 space-y-3">
-              <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            <div className="border-t border-divider pt-4 space-y-3">
+              <div className="type-table-header uppercase text-text-muted">
                 Delivery Line Items
               </div>
-              <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-                <table className="w-full">
-                  <thead className="border-b border-border bg-muted/30">
-                    <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+              <div className="overflow-x-auto rounded-control border border-divider bg-surface shadow-card">
+                <table className="w-full border-collapse">
+                  <thead className="table-head-row border-b border-divider bg-surface-muted/30">
+                    <tr className="text-left table-th text-text-muted whitespace-nowrap">
                       <th className="px-4 py-4">Item Name</th>
                       <th className="px-4 py-4 text-right">Declared Qty</th>
                       <th className="px-4 py-4">Unit of Measure</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-divider">
                     {(detail.items || []).length === 0 ? (
                       <tr>
-                        <td colSpan={3} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
+                        <td colSpan={3} className="px-4 py-12 text-center type-body font-normal text-text-muted">
                           No line items found for this delivery.
                         </td>
                       </tr>
                     ) : (
                       detail.items.map((item) => (
-                        <tr key={item.deliveryItemId} className="hover:bg-muted/30 transition-colors">
-                          <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">{item.itemName}</td>
-                          <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
+                        <tr key={item.deliveryItemId} className="table-row hover:bg-surface-hover transition-colors">
+                          <td className="px-4 py-4 table-td font-semibold text-text-primary whitespace-nowrap">{item.itemName}</td>
+                          <td className="px-4 py-4 table-td text-right font-semibold text-text-primary whitespace-nowrap">
                             {item.declaredQuantity.toLocaleString()}
                           </td>
-                          <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                          <td className="px-4 py-4 table-td text-text-muted whitespace-nowrap">
                             {item.purchaseUomName || item.uomName || "Unit"}
                           </td>
                         </tr>
@@ -184,11 +183,11 @@ export default function DeliveryDetailsModal({
         ) : null}
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-2">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-divider mt-2">
           <ModalNativeCloseButton
             fallbackOnClose={onClose}
             disabled={loading}
-            className="rounded-xl border border-border bg-card px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="rounded-control border border-divider bg-surface px-5 py-2 type-label-button text-text-primary hover:bg-surface-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Close
           </ModalNativeCloseButton>
@@ -199,7 +198,7 @@ export default function DeliveryDetailsModal({
               onClose();
               onCreateGrn(delivery.deliveryId);
             }}
-            className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="rounded-control bg-button-primary px-5 py-2 type-label-button text-text-inverse hover:bg-button-primary-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Create Goods Receipt Note for this Delivery
           </button>

@@ -28,11 +28,11 @@ export default function PendingReceivingTable({
   }
 
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-xl border border-border bg-card shadow-sm">
-      <table className="w-full">
-        <thead className="border-b border-border bg-muted/30">
-          <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-            <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[150px] w-44 whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">Delivery No.</th>
+    <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
+      <table className="w-full border-collapse">
+        <thead className="table-head-row border-b border-divider bg-surface-muted/30">
+          <tr className="text-left table-th text-text-muted whitespace-nowrap">
+            <th className="sticky left-0 z-20 bg-surface-muted px-4 py-4 min-w-[150px] w-44 whitespace-nowrap border-r border-divider shadow-sticky">Delivery No.</th>
             <th className="px-4 py-4 whitespace-nowrap">Supplier</th>
             <th className="px-4 py-4">Arrival Date</th>
             <th className="px-4 py-4">Carrier</th>
@@ -40,10 +40,10 @@ export default function PendingReceivingTable({
             <th className="w-16 px-4 py-4 text-center">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-divider">
           {deliveries.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-4 py-12 text-center text-sm font-normal text-muted-foreground">
+              <td colSpan={6} className="px-4 py-12 text-center type-body font-normal text-text-muted">
                 No deliveries pending receiving
               </td>
             </tr>
@@ -60,18 +60,18 @@ export default function PendingReceivingTable({
                 <tr
                   key={del.deliveryId}
                   onClick={() => onViewDelivery(del)}
-                  className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                  className="table-row group hover:bg-surface-hover transition-colors cursor-pointer"
                 >
-                  <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[150px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
+                  <td className="sticky left-0 z-10 bg-surface group-hover:bg-surface-hover px-4 py-4 table-td font-semibold text-text-primary whitespace-nowrap min-w-[150px] w-44 border-r border-divider shadow-sticky transition-colors">
                     {del.deliveryNumber}
                   </td>
-                  <td className="px-4 py-4 text-sm font-medium text-foreground truncate" title={del.supplierName}>
+                  <td className="px-4 py-4 table-td font-medium text-text-primary truncate" title={del.supplierName}>
                     {del.supplierName}
                   </td>
-                  <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                  <td className="px-4 py-4 table-td text-text-muted whitespace-nowrap">
                     {formattedArrival}
                   </td>
-                  <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                  <td className="px-4 py-4 table-td text-text-muted whitespace-nowrap">
                     {del.carrier || "—"}
                   </td>
                   <td className="px-4 py-4 text-center whitespace-nowrap">
@@ -87,7 +87,7 @@ export default function PendingReceivingTable({
                           type="button"
                           aria-label="Record actions"
                           onClick={(e) => e.stopPropagation()}
-                          className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none cursor-pointer"
+                          className="p-1.5 rounded-control text-text-primary hover:bg-surface-hover transition-colors focus:outline-none cursor-pointer"
                           title="Actions"
                         >
                           <MoreHorizontal size={18} />
@@ -96,11 +96,11 @@ export default function PendingReceivingTable({
                       <DropdownMenuContent
                         align="end"
                         onClick={(e) => e.stopPropagation()}
-                        className="w-36 rounded-xl border border-border bg-card shadow-xl py-1.5 text-left"
+                        className="w-36 rounded-control border border-divider bg-surface shadow-modal py-1.5 text-left"
                       >
                         <DropdownMenuItem
                           onSelect={() => onViewDelivery(del)}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted cursor-pointer"
+                          className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-hover focus:bg-surface-hover cursor-pointer"
                         >
                           <Eye size={14} className="shrink-0" /> View Details
                         </DropdownMenuItem>

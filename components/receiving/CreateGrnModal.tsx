@@ -963,25 +963,25 @@ export default function CreateGrnModal({
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
+          <span className="type-table-header uppercase text-text-muted">
             {title} ({groupItems.length})
           </span>
         </div>
-        <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-          <table className="w-full">
-            <thead className="border-b border-border bg-muted/30">
-              <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
+        <div className="overflow-x-auto rounded-control border border-divider bg-surface shadow-card">
+          <table className="w-full border-collapse">
+            <thead className="table-head-row border-b border-divider bg-surface-muted/30">
+              <tr className="text-left table-th text-text-muted whitespace-nowrap">
                 <th className="px-4 py-4">Item Description</th>
                 <th className="px-4 py-4 text-right">Declared</th>
                 <th className="px-4 py-4 text-right">Actual Received</th>
                 {showExpiryCol && (
-                  <th className="px-4 py-4 text-center">Expiry Date <span className="text-destructive">*</span></th>
+                  <th className="px-4 py-4 text-center">Expiry Date <span className="text-status-red">*</span></th>
                 )}
                 <th className="px-4 py-4 text-center">Variance</th>
                 <th className="px-4 py-4 text-right">Batch Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-divider">
               {groupItems.map((item) => {
                 const itemIndex = items.findIndex((i) => i.deliveryItemId === item.deliveryItemId);
                 const actualTotal = getItemTotalActual(item);
@@ -990,11 +990,11 @@ export default function CreateGrnModal({
 
                 return (
                   <React.Fragment key={item.deliveryItemId}>
-                    <tr className="hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap">
+                    <tr className="table-row hover:bg-surface-hover transition-colors">
+                      <td className="px-4 py-4 table-td font-semibold text-text-primary whitespace-nowrap">
                         {item.itemName}
                       </td>
-                      <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">{item.declared}</td>
+                      <td className="px-4 py-4 table-td text-right font-semibold text-text-primary whitespace-nowrap">{item.declared}</td>
                       <td className="px-4 py-4 text-sm text-right">
                         <div className="flex flex-col items-end">
                           <input
@@ -1007,21 +1007,21 @@ export default function CreateGrnModal({
                               if (e.key === "-" || e.key === "e") e.preventDefault();
                             }}
                             onChange={(e) => updateBatchQuantity(itemIndex, 0, e.target.value)}
-                            className={`w-24 rounded-xl border ${
+                            className={`w-24 rounded-control border ${
                               fieldErrors[`qty_${itemIndex}_0`]
-                                ? "!border-destructive text-destructive focus:!ring-destructive"
-                                : "border-border"
-                            } bg-background px-2.5 py-1.5 text-right text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-foreground`}
+                                ? "!border-status-red text-status-red focus:!ring-status-red"
+                                : "border-divider"
+                            } bg-surface px-2.5 py-1.5 text-right type-body font-semibold text-text-primary focus:outline-none focus:ring-1 focus:ring-ring`}
                           />
                           {fieldErrors[`qty_${itemIndex}_0`] && (
-                            <span className="text-xs text-destructive font-medium mt-0.5 whitespace-nowrap">
+                            <span className="type-caption text-status-red font-medium mt-0.5 whitespace-nowrap">
                               {fieldErrors[`qty_${itemIndex}_0`]}
                             </span>
                           )}
                         </div>
                       </td>
                       {showExpiryCol && (
-                        <td className="px-4 py-4 text-sm text-center">
+                        <td className="px-4 py-4 table-td text-center">
                           {item.hasExpiry ? (
                             <div className="flex flex-col items-center">
                               <input
@@ -1030,34 +1030,34 @@ export default function CreateGrnModal({
                                 max={getMaxFutureDateString()}
                                 value={item.batches[0].expiryDate}
                                 onChange={(e) => updateBatchExpiry(itemIndex, 0, e.target.value)}
-                                className={`rounded-xl border ${
+                                className={`rounded-control border ${
                                   fieldErrors[`expiry_${itemIndex}_0`]
-                                    ? "!border-destructive text-destructive focus:!ring-destructive"
-                                    : "border-border"
-                                } bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-foreground`}
+                                    ? "!border-status-red text-status-red focus:!ring-status-red"
+                                    : "border-divider"
+                                } bg-surface px-2.5 py-1.5 type-body text-text-primary focus:outline-none focus:ring-1 focus:ring-ring`}
                               />
                               {fieldErrors[`expiry_${itemIndex}_0`] && (
-                                <span className="text-xs text-destructive font-medium mt-0.5 whitespace-nowrap">
+                                <span className="type-caption text-status-red font-medium mt-0.5 whitespace-nowrap">
                                   {fieldErrors[`expiry_${itemIndex}_0`]}
                                 </span>
                               )}
                             </div>
                           ) : (
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">No Expiry</span>
+                            <span className="type-caption text-text-muted whitespace-nowrap">No Expiry</span>
                           )}
                         </td>
                       )}
-                      <td className="px-4 py-4 text-sm text-center font-medium whitespace-nowrap">
+                      <td className="px-4 py-4 table-td text-center font-medium whitespace-nowrap">
                         {variance === null ? (
-                          <span className="text-muted-foreground/60">—</span>
+                          <span className="text-text-muted/60">—</span>
                         ) : variance === 0 ? (
-                          <span className="font-semibold text-foreground">Match</span>
+                          <span className="font-semibold text-text-primary">Match</span>
                         ) : variance < 0 ? (
-                          <span className="text-destructive font-semibold">
+                          <span className="text-status-red font-semibold">
                             Short {Math.abs(variance)}
                           </span>
                         ) : (
-                          <span className="text-destructive font-semibold">
+                          <span className="text-status-red font-semibold">
                             Over +{variance}
                           </span>
                         )}
@@ -1066,7 +1066,7 @@ export default function CreateGrnModal({
                         <button
                           type="button"
                           onClick={() => addBatch(itemIndex)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 rounded-control border border-divider bg-surface px-3 py-1.5 type-table-header text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
                         >
                           <Plus size={14} className="shrink-0" />
                           <span>Add Batch</span>
@@ -1077,14 +1077,14 @@ export default function CreateGrnModal({
                     {item.batches.slice(1).map((batch, subIdx) => {
                       const batchIndex = subIdx + 1;
                       return (
-                        <tr key={batch.id} className="bg-muted/15 border-t border-border/40">
-                          <td className="px-4 py-3 pl-8 text-sm font-medium">
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
+                        <tr key={batch.id} className="table-row bg-surface-muted/15 border-t border-divider">
+                          <td className="px-4 py-3 pl-8 table-td font-medium">
+                            <div className="flex items-center gap-2 type-caption text-text-muted">
+                              <span className="w-1.5 h-1.5 rounded-pill bg-text-muted/50" />
                               <span>Batch #{batchIndex + 1}</span>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-right text-sm text-muted-foreground">—</td>
+                          <td className="px-4 py-3 text-right table-td text-text-muted">—</td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex flex-col items-end">
                               <input
@@ -1097,21 +1097,21 @@ export default function CreateGrnModal({
                                   if (e.key === "-" || e.key === "e") e.preventDefault();
                                 }}
                                 onChange={(e) => updateBatchQuantity(itemIndex, batchIndex, e.target.value)}
-                                className={`w-24 rounded-xl border ${
+                                className={`w-24 rounded-control border ${
                                   fieldErrors[`qty_${itemIndex}_${batchIndex}`]
-                                    ? "!border-destructive text-destructive focus:!ring-destructive"
-                                    : "border-border"
-                                } bg-background px-2.5 py-1.5 text-right text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-foreground`}
+                                    ? "!border-status-red text-status-red focus:!ring-status-red"
+                                    : "border-divider"
+                                } bg-surface px-2.5 py-1.5 text-right type-body font-semibold text-text-primary focus:outline-none focus:ring-1 focus:ring-ring`}
                               />
                               {fieldErrors[`qty_${itemIndex}_${batchIndex}`] && (
-                                <span className="text-xs text-destructive font-medium mt-0.5 whitespace-nowrap">
+                                <span className="type-caption text-status-red font-medium mt-0.5 whitespace-nowrap">
                                   {fieldErrors[`qty_${itemIndex}_${batchIndex}`]}
                                 </span>
                               )}
                             </div>
                           </td>
                           {showExpiryCol && (
-                            <td className="px-4 py-3 text-center">
+                            <td className="px-4 py-3 table-td text-center">
                               {item.hasExpiry ? (
                                 <div className="flex flex-col items-center">
                                   <input
@@ -1120,32 +1120,32 @@ export default function CreateGrnModal({
                                     max={getMaxFutureDateString()}
                                     value={batch.expiryDate}
                                     onChange={(e) => updateBatchExpiry(itemIndex, batchIndex, e.target.value)}
-                                    className={`rounded-xl border ${
+                                    className={`rounded-control border ${
                                       fieldErrors[`expiry_${itemIndex}_${batchIndex}`]
-                                        ? "!border-destructive text-destructive focus:!ring-destructive"
-                                        : "border-border"
-                                    } bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-foreground`}
+                                        ? "!border-status-red text-status-red focus:!ring-status-red"
+                                        : "border-divider"
+                                    } bg-surface px-2.5 py-1.5 type-body text-text-primary focus:outline-none focus:ring-1 focus:ring-ring`}
                                   />
                                   {fieldErrors[`expiry_${itemIndex}_${batchIndex}`] && (
-                                    <span className="text-xs text-destructive font-medium mt-0.5 whitespace-nowrap">
+                                    <span className="type-caption text-status-red font-medium mt-0.5 whitespace-nowrap">
                                       {fieldErrors[`expiry_${itemIndex}_${batchIndex}`]}
                                     </span>
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">No Expiry</span>
+                                <span className="type-caption text-text-muted whitespace-nowrap">No Expiry</span>
                               )}
                             </td>
                           )}
-                          <td className="px-4 py-3 text-center text-sm text-muted-foreground">—</td>
+                          <td className="px-4 py-3 text-center table-td text-text-muted">—</td>
                           <td className="px-4 py-3 text-right">
                             <button
                               type="button"
                               onClick={() => removeBatch(itemIndex, batchIndex)}
-                              className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors focus:outline-none cursor-pointer"
+                              className="p-1.5 rounded-control text-status-red hover:bg-status-red/10 transition-colors focus:outline-none cursor-pointer"
                               title="Remove Batch"
                             >
-                              <Trash2 size={16} className="text-destructive" />
+                              <Trash2 size={16} className="text-status-red" />
                             </button>
                           </td>
                         </tr>
@@ -1171,21 +1171,21 @@ export default function CreateGrnModal({
             : `Quality Assurance Review — ${activeGrn?.grnNumber || previewGrnNo}`
         }
         onClose={onClose}
-        size="max-w-4xl"
+        size="max-w-[640px]"
       >
-        <div className="space-y-4 text-foreground">
+        <div className="space-y-4 text-text-primary">
           {/* Top Assigned GRN Header */}
-          <div className="flex items-center justify-between border-b border-border pb-3">
+          <div className="flex items-center justify-between border-b border-divider pb-3">
             <div className="flex items-center gap-3">
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                step === 1 ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-colors ${
+                step === 1 ? "bg-button-primary text-text-inverse" : "bg-surface-muted text-text-primary"
               }`}>
                 <span>1</span>
                 <span>Receiving &amp; Physical Count</span>
               </div>
-              <span className="text-muted-foreground">›</span>
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                step === 2 ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground"
+              <span className="text-text-muted">›</span>
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-colors ${
+                step === 2 ? "bg-button-primary text-text-inverse" : "bg-surface-muted/50 text-text-muted"
               }`}>
                 <span>2</span>
                 <span>Quality Assurance Review</span>
@@ -1193,19 +1193,19 @@ export default function CreateGrnModal({
             </div>
 
             {step === 1 && (
-              <div className="text-xs font-medium text-muted-foreground">
-                Goods Receipt Note: <span className="font-bold text-foreground">{activeGrn?.grnNumber || previewGrnNo}</span>
+              <div className="type-caption text-text-muted">
+                Goods Receipt Note: <span className="font-semibold text-text-primary">{activeGrn?.grnNumber || previewGrnNo}</span>
               </div>
             )}
           </div>
 
           {error && (
-            <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-xs text-destructive flex items-start justify-between gap-3">
+            <div className="rounded-control border border-status-red/40 bg-status-red/10 px-4 py-3 type-caption text-status-red flex items-start justify-between gap-3">
               <span className="whitespace-pre-line leading-relaxed">{error}</span>
               <button
                 type="button"
                 onClick={() => setError(null)}
-                className="text-foreground font-bold text-xs hover:underline ml-2 shrink-0"
+                className="text-text-primary font-semibold type-caption hover:underline ml-2 shrink-0 cursor-pointer"
               >
                 Dismiss
               </button>
@@ -1216,8 +1216,8 @@ export default function CreateGrnModal({
           {step === 1 && (
             <>
               <section className="space-y-1.5">
-                <label className="block text-xs font-semibold text-foreground">
-                  Select Delivery <span className="text-destructive">*</span>
+                <label className="block type-label font-semibold text-text-primary">
+                  Select Delivery <span className="text-status-red">*</span>
                 </label>
                 <div className="flex items-center gap-3">
                   <select
@@ -1239,11 +1239,11 @@ export default function CreateGrnModal({
                       const target = deliveries.find((d) => d.deliveryId === id);
                       if (target) loadSource(target);
                     }}
-                    className={`w-64 rounded-xl border ${
+                    className={`w-64 rounded-control border ${
                       fieldErrors.delivery
-                        ? "!border-destructive focus:!ring-destructive"
-                        : "border-border"
-                    } bg-card px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-foreground cursor-pointer`}
+                        ? "!border-status-red focus:!ring-status-red"
+                        : "border-divider"
+                    } bg-surface px-3.5 py-2.5 type-body text-text-primary focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer`}
                   >
                     <option value="">Select Delivery</option>
                     {deliveries.map((d) => (
@@ -1254,26 +1254,26 @@ export default function CreateGrnModal({
                   </select>
                 </div>
                 {fieldErrors.delivery && (
-                  <p className="mt-1.5 text-xs font-medium text-destructive animate-in fade-in-50">
+                  <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">
                     {fieldErrors.delivery}
                   </p>
                 )}
 
                 {selected && (
-                  <div className="mt-3 rounded-xl border border-border bg-muted/20 p-4">
+                  <div className="mt-3 rounded-control border border-divider bg-surface-muted/30 p-4">
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                       <div>
-                        <span className="text-xs font-medium text-muted-foreground block">Supplier</span>
-                        <span className="text-sm font-semibold text-foreground mt-0.5 block">{selected.supplierName}</span>
+                        <span className="type-caption text-text-muted block">Supplier</span>
+                        <span className="type-body font-semibold text-text-primary mt-0.5 block">{selected.supplierName}</span>
                       </div>
                       <div>
-                        <span className="text-xs font-medium text-muted-foreground block">Delivery No.</span>
-                        <span className="text-sm font-semibold text-foreground mt-0.5 block">{selected.deliveryNumber}</span>
+                        <span className="type-caption text-text-muted block">Delivery No.</span>
+                        <span className="type-body font-semibold text-text-primary mt-0.5 block">{selected.deliveryNumber}</span>
                       </div>
                       {selected.carrier && selected.carrier !== "N/A" && (
                         <div>
-                          <span className="text-xs font-medium text-muted-foreground block">Carrier</span>
-                          <span className="text-sm font-semibold text-foreground mt-0.5 block">{selected.carrier}</span>
+                          <span className="type-caption text-text-muted block">Carrier</span>
+                          <span className="type-body font-semibold text-text-primary mt-0.5 block">{selected.carrier}</span>
                         </div>
                       )}
                     </div>
@@ -1282,9 +1282,9 @@ export default function CreateGrnModal({
               </section>
 
               {!selected && !loading && (
-                <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-2xl bg-muted/10">
-                  <p className="text-sm font-semibold text-muted-foreground">No delivery selected</p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">
+                <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-divider rounded-card bg-surface-muted/10">
+                  <p className="type-body font-semibold text-text-muted">No delivery selected</p>
+                  <p className="type-caption text-text-muted/70 mt-1">
                     Choose an arrived delivery above to enter physical counts.
                   </p>
                 </div>
@@ -1296,12 +1296,12 @@ export default function CreateGrnModal({
                 <>
                   <section className="space-y-4">
                     <div>
-                      <p className="text-sm font-bold text-foreground">
+                      <p className="type-body font-semibold text-text-primary">
                         {items.some((i) => i.hasExpiry)
                           ? "Physical Count & Expiry Verification"
                           : "Physical Count Verification"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="type-caption text-text-muted">
                         {items.some((i) => i.hasExpiry)
                           ? 'Enter actual counts and expiry dates for each item. Click "Add Batch" on the right if received across multiple lots or expiry dates.'
                           : 'Enter actual counts for each item. Click "Add Batch" on the right if received across multiple lots.'}
@@ -1312,19 +1312,19 @@ export default function CreateGrnModal({
                     {renderItemTableSection(toolsAndSupplies, "Tools and Supplies")}
                   </section>
 
-                  <section className="rounded-2xl border border-border bg-muted/20 p-4">
-                    <p className="mb-3 text-sm font-bold text-foreground">Receiving Check</p>
+                  <section className="rounded-card border border-divider bg-surface-muted/30 p-4">
+                    <p className="mb-3 type-body font-semibold text-text-primary">Receiving Check</p>
                     <div className="grid gap-3 sm:grid-cols-2">
                       {receivingChecks.map(([key, label]) => (
                         <label
                           key={key}
-                          className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium cursor-pointer hover:bg-muted/30 transition-colors"
+                          className="flex items-center gap-2.5 rounded-control border border-divider bg-surface px-3 py-2 type-caption font-medium cursor-pointer hover:bg-surface-hover transition-colors text-text-primary"
                         >
                           <input
                             type="checkbox"
                             checked={!!verified[key]}
                             onChange={(e) => setVerified((v) => ({ ...v, [key]: e.target.checked }))}
-                            className="h-4 w-4 rounded border-border text-foreground accent-foreground"
+                            className="h-4 w-4 rounded border-divider text-text-primary accent-primary"
                           />
                           <span>{label}</span>
                         </label>
@@ -1333,12 +1333,12 @@ export default function CreateGrnModal({
                   </section>
 
                   <label className="block space-y-1.5">
-                    <span className="text-xs font-semibold text-foreground block">Receiving Gate Notes</span>
+                    <span className="type-label font-semibold text-text-primary block">Receiving Gate Notes</span>
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       rows={2}
-                      className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-foreground"
+                      className="w-full rounded-control border border-divider bg-surface px-3 py-2 type-body text-text-primary focus:outline-none focus:ring-1 focus:ring-ring"
                       placeholder="Document quantity differences, packaging condition, or gate inspection notes."
                     />
                   </label>
@@ -1346,11 +1346,11 @@ export default function CreateGrnModal({
               )}
 
               {/* Step 1 Footer Action Buttons */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-divider pt-4">
                 <ModalNativeCloseButton
                   fallbackOnClose={onClose}
                   disabled={submitting}
-                  className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button text-text-primary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   Cancel
                 </ModalNativeCloseButton>
@@ -1361,7 +1361,7 @@ export default function CreateGrnModal({
                       type="button"
                       disabled={submitting}
                       onClick={() => setShowRejectModal(true)}
-                      className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      className="rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button text-text-primary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     >
                       Reject Entire Shipment
                     </button>
@@ -1370,7 +1370,7 @@ export default function CreateGrnModal({
                     type="button"
                     disabled={submitting || !isReadyForQa}
                     onClick={handlePromptProceedToQa}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                    className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 type-label-button hover:bg-button-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
                   >
                     {submitting ? "Proceeding…" : "Proceed to Quality Assurance"}
                   </button>
@@ -1382,10 +1382,10 @@ export default function CreateGrnModal({
           {/* ================= STEP 2: QUALITY ASSURANCE REVIEW (Mirroring Production & Quality) ================= */}
           {step === 2 && (
             <>
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-2 border-b border-border/60">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-2 border-b border-divider">
                 <div>
-                  <h3 className="text-base font-bold text-foreground">Quality Assurance Review</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <h3 className="type-card-title text-text-primary">Quality Assurance Review</h3>
+                  <p className="type-caption text-text-muted mt-0.5">
                     Count what passed and what failed for each received item. Passed units proceed to Stock-In; rejected units log a Discrepancy.
                   </p>
                 </div>
@@ -1394,7 +1394,7 @@ export default function CreateGrnModal({
               {/* Item QA Cards */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                  <span className="type-table-header uppercase text-text-muted">
                     Items to Inspect ({qaItems.length})
                   </span>
                 </div>
@@ -1410,61 +1410,61 @@ export default function CreateGrnModal({
                     return (
                       <div
                         key={qaItem.inspectionItemId}
-                        className="rounded-2xl border border-border bg-card overflow-hidden transition-colors shadow-xs"
+                        className="rounded-card border border-divider bg-surface overflow-hidden transition-colors shadow-card"
                       >
                         {/* Item Accordion Header */}
                         <div
                           onClick={() => toggleExpandQaItem(qaItem.inspectionItemId)}
-                          className="flex items-center justify-between p-3.5 bg-muted/60 dark:bg-muted/40 text-foreground border-b border-border/80 cursor-pointer hover:bg-muted/80 dark:hover:bg-muted/60 transition-colors select-none"
+                          className="flex items-center justify-between p-3.5 bg-surface-muted text-text-primary border-b border-divider cursor-pointer hover:bg-surface-hover transition-colors select-none"
                         >
                           <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="font-semibold text-sm text-foreground">{qaItem.itemName}</span>
-                            <span className="rounded-md bg-card border border-border text-muted-foreground px-2 py-0.5 text-xs font-medium">
+                            <span className="font-semibold type-body text-text-primary">{qaItem.itemName}</span>
+                            <span className="rounded-control bg-surface border border-divider text-text-muted px-2 py-0.5 type-caption font-medium">
                               {qaItem.categoryName || "Raw Material"}
                             </span>
                             {(qaItem.totalBatches || 1) > 1 && (
-                              <span className="rounded-md bg-card border border-border text-foreground px-2 py-0.5 text-xs font-medium">
+                              <span className="rounded-control bg-surface border border-divider text-text-primary px-2 py-0.5 type-caption font-medium">
                                 Batch #{qaItem.batchNumber || 1} of {qaItem.totalBatches}
                               </span>
                             )}
                             {qaItem.expiryDate && (
-                              <span className="rounded-md bg-card border border-border text-foreground px-2 py-0.5 text-xs font-medium">
+                              <span className="rounded-control bg-surface border border-divider text-text-primary px-2 py-0.5 type-caption font-medium">
                                 Exp: {qaItem.expiryDate}
                               </span>
                             )}
                           </div>
 
                           <div className="flex items-center gap-4">
-                            <div className="text-xs text-muted-foreground">
-                              Received: <strong className="text-foreground">{qaItem.deliveredQuantity}</strong>
+                            <div className="type-caption text-text-muted">
+                              Received: <strong className="text-text-primary font-semibold">{qaItem.deliveredQuantity}</strong>
                             </div>
                             {typeof qaItem.acceptedQuantity === "number" && (
-                              <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                              <div className="type-caption text-status-green font-semibold">
                                 Good: {qaItem.acceptedQuantity}
                               </div>
                             )}
                             {rejNum > 0 && (
-                              <div className="text-xs text-rose-600 dark:text-rose-400 font-bold">
+                              <div className="type-caption text-status-red font-semibold">
                                 Bad: {qaItem.rejectedQuantity}
                               </div>
                             )}
                             {isExpanded ? (
-                              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                              <ChevronUp className="w-4 h-4 text-text-muted" />
                             ) : (
-                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                              <ChevronDown className="w-4 h-4 text-text-muted" />
                             )}
                           </div>
                         </div>
 
                         {/* Item QA Body — Mirroring Production & Quality layout */}
                         {isExpanded && (
-                          <div className="p-4 space-y-4 border-t border-border/60">
+                          <div className="p-4 space-y-4 border-t border-divider">
                             {/* 1. Accepted (Good) & Rejected (Bad) Quantities + Conditional Reason Dropdowns */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               {/* Accepted (Good) Box */}
-                              <div className="space-y-2 p-3 rounded-xl border border-border bg-card">
-                                <label className="text-xs font-semibold text-foreground block">
-                                  Accepted / Good (units) <span className="text-destructive">*</span>
+                              <div className="space-y-2 p-3 rounded-control border border-divider bg-surface">
+                                <label className="type-caption font-semibold text-text-primary block">
+                                  Accepted / Good (units) <span className="text-status-red">*</span>
                                 </label>
                                 <input
                                   type="number"
@@ -1472,13 +1472,13 @@ export default function CreateGrnModal({
                                   max={qaItem.deliveredQuantity}
                                   value={qaItem.acceptedQuantity}
                                   onChange={(e) => handleSetAccepted(idx, e.target.value)}
-                                  className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                                  className="w-full h-10 rounded-control border border-divider bg-surface px-3 type-caption font-semibold text-text-primary focus:outline-none focus:ring-1 focus:ring-ring"
                                 />
 
                                 {accNum > 0 && (
                                   <div className="space-y-1 pt-1 animate-in fade-in">
-                                    <label className="text-xs font-semibold text-muted-foreground block">
-                                      Acceptance Reason <span className="text-destructive">*</span>
+                                    <label className="type-caption font-semibold text-text-muted block">
+                                      Acceptance Reason <span className="text-status-red">*</span>
                                     </label>
                                     <select
                                       value={qaItem.acceptedReason}
@@ -1490,7 +1490,7 @@ export default function CreateGrnModal({
                                           return c;
                                         });
                                       }}
-                                      className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                                      className="w-full h-10 rounded-control border border-divider bg-surface px-3 type-caption text-text-primary focus:outline-none focus:ring-1 focus:ring-ring"
                                     >
                                       {acceptanceReasons.map((r) => (
                                         <option key={r} value={r}>
@@ -1503,9 +1503,9 @@ export default function CreateGrnModal({
                               </div>
 
                               {/* Rejected (Bad) Box */}
-                              <div className="space-y-2 p-3 rounded-xl border border-border bg-card">
-                                <label className="text-xs font-semibold text-foreground block">
-                                  Rejected / Bad (units) <span className="text-destructive">*</span>
+                              <div className="space-y-2 p-3 rounded-control border border-divider bg-surface">
+                                <label className="type-caption font-semibold text-text-primary block">
+                                  Rejected / Bad (units) <span className="text-status-red">*</span>
                                 </label>
                                 <input
                                   type="number"
@@ -1513,13 +1513,13 @@ export default function CreateGrnModal({
                                   max={qaItem.deliveredQuantity}
                                   value={qaItem.rejectedQuantity}
                                   onChange={(e) => handleSetRejected(idx, e.target.value)}
-                                  className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs font-bold text-destructive focus:outline-none focus:ring-1 focus:ring-foreground"
+                                  className="w-full h-10 rounded-control border border-divider bg-surface px-3 type-caption font-semibold text-status-red focus:outline-none focus:ring-1 focus:ring-ring"
                                 />
 
                                 {rejNum > 0 && (
                                   <div className="space-y-1 pt-1 animate-in fade-in">
-                                    <label className="text-xs font-semibold text-muted-foreground block">
-                                      Rejection Reason <span className="text-destructive">*</span>
+                                    <label className="type-caption font-semibold text-text-muted block">
+                                      Rejection Reason <span className="text-status-red">*</span>
                                     </label>
                                     <select
                                       value={qaItem.defectReason}
@@ -1531,7 +1531,7 @@ export default function CreateGrnModal({
                                           return c;
                                         });
                                       }}
-                                      className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                                      className="w-full h-10 rounded-control border border-divider bg-surface px-3 type-caption text-text-primary focus:outline-none focus:ring-1 focus:ring-ring"
                                     >
                                       <option value="">Select defect reason</option>
                                       {defectReasons.map((r) => (
@@ -1540,7 +1540,7 @@ export default function CreateGrnModal({
                                         </option>
                                       ))}
                                     </select>
-                                    <p className="text-xs text-destructive pt-1">
+                                    <p className="type-caption text-status-red pt-1">
                                       Notice: Rejected units will automatically log a Discrepancy record for resolution.
                                     </p>
                                   </div>
@@ -1549,32 +1549,32 @@ export default function CreateGrnModal({
                             </div>
 
                             {/* 2. Retained Quality Assurance Checklist */}
-                            <div className="p-3 rounded-xl border border-border bg-card space-y-2">
+                            <div className="p-3 rounded-control border border-divider bg-surface space-y-2">
                               <div className="flex items-center justify-between">
-                                <p className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                <p className="type-caption font-semibold text-text-primary uppercase tracking-wider">
                                   Quality Assurance Checklist
                                 </p>
                                 <button
                                   type="button"
                                   onClick={() => toggleCheckAll(idx)}
-                                  className="text-xs font-semibold text-primary hover:underline cursor-pointer"
+                                  className="type-caption font-semibold text-primary hover:underline cursor-pointer"
                                 >
                                   {allChecked ? "Uncheck All" : "Check All"}
                                 </button>
                               </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 type-caption">
                                 {checksList.map((check) => (
                                   <label
                                     key={check.id}
-                                    className="flex items-center gap-2 cursor-pointer"
+                                    className="flex items-center gap-2 cursor-pointer text-text-primary"
                                   >
                                     <input
                                       type="checkbox"
                                       checked={!!qaItem.checks[check.id]}
                                       onChange={() => toggleQaCheck(idx, check.id)}
-                                      className="rounded border-border accent-foreground"
+                                      className="rounded border-divider text-text-primary accent-primary"
                                     />
-                                    <span className="text-foreground">{check.label}</span>
+                                    <span>{check.label}</span>
                                   </label>
                                 ))}
                               </div>
@@ -1582,7 +1582,7 @@ export default function CreateGrnModal({
 
                             {/* 3. Optional Item Remarks */}
                             <div className="space-y-1">
-                              <label className="text-xs font-semibold text-foreground block">
+                              <label className="type-caption font-semibold text-text-primary block">
                                 Item Remarks (Optional)
                               </label>
                               <input
@@ -1597,7 +1597,7 @@ export default function CreateGrnModal({
                                   });
                                 }}
                                 placeholder="Add sensory findings, packaging observations, or batch notes..."
-                                className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                                className="w-full h-10 rounded-control border border-divider bg-surface px-3 type-caption text-text-primary focus:outline-none focus:ring-1 focus:ring-ring"
                               />
                             </div>
                           </div>
@@ -1609,12 +1609,12 @@ export default function CreateGrnModal({
               </div>
 
               {/* Step 2 Footer Actions */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-divider pt-4">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button text-text-primary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Back to Receiving Counts
@@ -1625,7 +1625,7 @@ export default function CreateGrnModal({
                     type="button"
                     disabled={!isQaDone || submitting}
                     onClick={handleExportGrnReport}
-                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button text-text-primary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     <Download className="w-4 h-4" />
                     Export Goods Receipt Note
@@ -1634,7 +1634,7 @@ export default function CreateGrnModal({
                     type="button"
                     disabled={!isQaDone || submitting}
                     onClick={() => setConfirmFinishGrnOpen(true)}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
+                    className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 type-label-button hover:bg-button-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
                   >
                     {submitting ? "Finishing…" : "Confirm & Sign Off Quality Assurance Review"}
                   </button>
@@ -1650,33 +1650,33 @@ export default function CreateGrnModal({
         open={showRejectModal}
         title="Reject Entire Shipment"
         onClose={() => setShowRejectModal(false)}
-        maxWidth={440}
+        maxWidth={480}
       >
         <div className="flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+          <div className="w-12 h-12 rounded-pill bg-surface-muted flex items-center justify-center mb-4 text-text-primary">
             <AlertTriangle className="w-6 h-6" />
           </div>
 
-          <h2 className="text-xl font-bold text-foreground mb-1">
+          <h2 className="type-card-title text-text-primary mb-1">
             Reject Entire Shipment
           </h2>
 
-          <p className="text-xs font-semibold text-muted-foreground mb-3">
+          <p className="type-caption font-semibold text-text-muted mb-3">
             Delivery No: {selected?.deliveryNumber || "—"}
           </p>
 
-          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+          <p className="type-body text-text-muted mb-5 leading-relaxed">
             Are you sure you want to reject this entire shipment? This will mark the Goods Receipt Note as Rejected and automatically log Discrepancy records for every line item.
           </p>
 
           <div className="w-full text-left space-y-1.5 mb-4">
-            <label className="text-xs font-semibold text-foreground flex items-center gap-1">
-              Rejection Reason <span className="text-destructive">*</span>
+            <label className="type-label font-semibold text-text-primary flex items-center gap-1">
+              Rejection Reason <span className="text-status-red">*</span>
             </label>
             <select
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              className="w-full rounded-xl border border-border bg-background text-foreground px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-foreground"
+              className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-caption focus:outline-none focus:ring-1 focus:ring-ring"
             >
               <option value="">Select Reason</option>
               <option value="Severe transit damage to cargo">Severe transit damage to cargo</option>
@@ -1690,7 +1690,7 @@ export default function CreateGrnModal({
           </div>
 
           <div className="w-full text-left space-y-1.5 mb-5">
-            <label className="text-xs font-semibold text-foreground">
+            <label className="type-label font-semibold text-text-primary">
               Additional Remarks
             </label>
             <textarea
@@ -1698,7 +1698,7 @@ export default function CreateGrnModal({
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               placeholder="Additional notes or photos reference..."
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
+              className="w-full rounded-control border border-divider bg-surface px-3 py-2 type-body text-text-primary focus:outline-none focus:ring-1 focus:ring-ring resize-none"
             />
           </div>
 
@@ -1707,7 +1707,7 @@ export default function CreateGrnModal({
               type="button"
               onClick={() => setShowRejectModal(false)}
               disabled={submitting}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-5 py-2.5 type-label-button font-semibold text-text-primary border border-divider bg-surface hover:bg-surface-hover rounded-control transition-colors disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>
@@ -1715,7 +1715,7 @@ export default function CreateGrnModal({
               type="button"
               disabled={!rejectionReason.trim() || submitting}
               onClick={handleRejectShipment}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+              className="flex-1 px-5 py-2.5 type-label-button font-semibold text-text-inverse bg-button-primary hover:bg-button-primary-hover rounded-control transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
             >
               {submitting ? "Rejecting…" : "Confirm Rejection"}
             </button>
@@ -1728,25 +1728,25 @@ export default function CreateGrnModal({
         open={confirmProceedToQaOpen}
         title="Confirm Receiving Counts & Proceed to QA"
         onClose={() => setConfirmProceedToQaOpen(false)}
-        maxWidth={440}
+        maxWidth={480}
       >
         <div className="flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+          <div className="w-12 h-12 rounded-pill bg-surface-muted flex items-center justify-center mb-4 text-text-primary">
             <AlertTriangle className="w-6 h-6" />
           </div>
 
-          <h2 className="text-xl font-bold text-foreground mb-1">
+          <h2 className="type-card-title text-text-primary mb-1">
             Confirm Receiving Counts
           </h2>
 
-          <p className="text-xs font-semibold text-muted-foreground mb-3">
+          <p className="type-caption font-semibold text-text-muted mb-3">
             Delivery No: {selected?.deliveryNumber || "—"} • GRN No: {activeGrn?.grnNumber || previewGrnNo}
           </p>
 
-          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+          <p className="type-body text-text-muted mb-6 leading-relaxed">
             Are you sure you want to record the physical receiving counts for{" "}
-            <strong className="text-foreground">{items.length} item(s)</strong> and proceed to{" "}
-            <strong className="text-foreground">Quality Assurance Review</strong>?
+            <strong className="text-text-primary font-semibold">{items.length} item(s)</strong> and proceed to{" "}
+            <strong className="text-text-primary font-semibold">Quality Assurance Review</strong>?
           </p>
 
           <div className="flex justify-center gap-3 w-full">
@@ -1754,7 +1754,7 @@ export default function CreateGrnModal({
               type="button"
               onClick={() => setConfirmProceedToQaOpen(false)}
               disabled={submitting}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-5 py-2.5 type-label-button font-semibold text-text-primary border border-divider bg-surface hover:bg-surface-hover rounded-control transition-colors disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>
@@ -1762,7 +1762,7 @@ export default function CreateGrnModal({
               type="button"
               disabled={submitting}
               onClick={executeProceedToQa}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+              className="flex-1 px-5 py-2.5 type-label-button font-semibold text-text-inverse bg-button-primary hover:bg-button-primary-hover rounded-control transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
             >
               {submitting ? "Proceeding…" : "Confirm & Proceed"}
             </button>
@@ -1770,32 +1770,32 @@ export default function CreateGrnModal({
         </div>
       </NestedDialog>
 
-      {/* Confirmation before Finish GRN (Exact 440px PO / PR Confirmation Format) */}
+      {/* Confirmation before Finish GRN (Exact 480px PO / PR Confirmation Format) */}
       <NestedDialog
         open={confirmFinishGrnOpen}
         title="Confirm Quality Assurance Review"
         onClose={() => setConfirmFinishGrnOpen(false)}
-        maxWidth={440}
+        maxWidth={480}
       >
         <div className="flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
+          <div className="w-12 h-12 rounded-pill bg-surface-muted flex items-center justify-center mb-4 text-text-primary">
             <AlertTriangle className="w-6 h-6" />
           </div>
 
-          <h2 className="text-xl font-bold text-foreground mb-1">
+          <h2 className="type-card-title text-text-primary mb-1">
             Confirm Quality Assurance Review
           </h2>
 
-          <p className="text-xs font-semibold text-muted-foreground mb-3">
+          <p className="type-caption font-semibold text-text-muted mb-3">
             Goods Receipt Note No: {activeGrn?.grnNumber || previewGrnNo || "—"}
           </p>
 
-          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+          <p className="type-body text-text-muted mb-6 leading-relaxed">
             You are approving{" "}
-            <strong className="text-foreground">
+            <strong className="text-text-primary font-semibold">
               {qaItems.reduce((s, i) => s + Number(i.acceptedQuantity || 0), 0)} unit(s)
             </strong>{" "}
-            across <strong className="text-foreground">{qaItems.length} item batch(es)</strong> to proceed to Stock-In
+            across <strong className="text-text-primary font-semibold">{qaItems.length} item batch(es)</strong> to proceed to Stock-In
             {qaItems.reduce((s, i) => s + Number(i.rejectedQuantity || 0), 0) > 0
               ? ` and logging ${qaItems.reduce((s, i) => s + Number(i.rejectedQuantity || 0), 0)} rejected unit(s) for discrepancy resolution`
               : ""}
@@ -1807,7 +1807,7 @@ export default function CreateGrnModal({
               type="button"
               onClick={() => setConfirmFinishGrnOpen(false)}
               disabled={submitting}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-5 py-2.5 type-label-button font-semibold text-text-primary border border-divider bg-surface hover:bg-surface-hover rounded-control transition-colors disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>
@@ -1815,7 +1815,7 @@ export default function CreateGrnModal({
               type="button"
               disabled={submitting}
               onClick={executeFinishGrn}
-              className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+              className="flex-1 px-5 py-2.5 type-label-button font-semibold text-text-inverse bg-button-primary hover:bg-button-primary-hover rounded-control transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
             >
               {submitting ? "Signing Off..." : "Sign Off & Complete"}
             </button>

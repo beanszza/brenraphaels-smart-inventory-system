@@ -181,8 +181,8 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
       {/* Top Header Controls */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Receive Deliveries</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2 className="type-page-title text-text-primary">Receive Deliveries</h2>
+          <p className="mt-1 type-body text-text-muted">
             Record physical counts and complete Quality Assurance review for incoming deliveries.
           </p>
         </div>
@@ -192,7 +192,7 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
             size="sm"
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
+            className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-table-header text-text-primary hover:bg-surface-hover transition-colors h-10"
           >
             <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
@@ -202,7 +202,7 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
               asChild
               variant="outline"
               size="sm"
-              className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+              className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-table-header text-text-primary hover:bg-surface-hover transition-colors h-10 cursor-pointer"
             >
               <Link href="/goods-receiving/logs">
                 <History className="w-4 h-4" /> Transaction History
@@ -213,7 +213,7 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
           <Button
             type="button"
             onClick={() => handleCreateGrn(undefined)}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+            className="flex items-center justify-center gap-2 rounded-control bg-button-primary px-5 py-2.5 type-label-button text-text-inverse hover:bg-button-primary-hover transition-colors shadow-sm h-10"
           >
             <Plus className="w-4 h-4" /> Create Goods Receipt Note
           </Button>
@@ -221,7 +221,7 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
       </div>
 
       {/* Full-width Search Bar & Filter */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center rounded-xl border border-border bg-card p-3">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center rounded-card border border-divider bg-surface p-3">
         <div className="flex flex-1 items-center gap-2">
           <SearchInput
             aria-label="Search records"
@@ -244,7 +244,7 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
                 setSearch("");
                 setPage(1);
               }}
-              className="text-xs text-muted-foreground hover:text-foreground font-medium pr-2"
+              className="type-caption text-text-muted hover:text-text-primary font-medium pr-2"
             >
               Clear
             </button>
@@ -261,10 +261,10 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
                 setPage(1);
               }}
             >
-              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-xl border border-border bg-card px-3 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-control border border-divider bg-surface px-3 type-body text-text-primary shadow-sm focus:ring-1 focus:ring-ring">
                 <SelectValue placeholder="All Suppliers" />
               </SelectTrigger>
-              <SelectContent align="end" className="text-xs z-[9999]">
+              <SelectContent align="end" className="type-body bg-surface border-divider z-[9999]">
                 <SelectItem value="All">All Suppliers</SelectItem>
                 {uniqueSuppliers.map((supp) => (
                   <SelectItem key={supp} value={supp}>
@@ -278,7 +278,7 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
       </div>
 
       {/* Subtab Pill Navigation */}
-      <div className="border-b border-border overflow-x-auto">
+      <div className="border-b border-divider overflow-x-auto">
         <div className="flex items-center gap-1.5 min-w-max pb-2">
           <button
             type="button"
@@ -286,18 +286,18 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
               setActiveSubTab("pending");
               setPage(1);
             }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
               activeSubTab === "pending"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                ? "bg-button-primary text-text-inverse shadow-sm"
+                : "text-text-muted hover:text-text-primary hover:bg-surface-hover"
             }`}
           >
             <span>Pending Receiving</span>
             <span
-              className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
+              className={`px-1.5 py-0.5 rounded-pill type-caption font-mono font-medium ${
                 activeSubTab === "pending"
-                  ? "bg-background text-foreground"
-                  : "bg-muted text-muted-foreground"
+                  ? "bg-surface text-text-primary"
+                  : "bg-surface-muted text-text-muted"
               }`}
             >
               {counts.pending}
@@ -310,18 +310,18 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
               setActiveSubTab("posted");
               setPage(1);
             }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
               activeSubTab === "posted"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                ? "bg-button-primary text-text-inverse shadow-sm"
+                : "text-text-muted hover:text-text-primary hover:bg-surface-hover"
             }`}
           >
             <span>Posted GRNs</span>
             <span
-              className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
+              className={`px-1.5 py-0.5 rounded-pill type-caption font-mono font-medium ${
                 activeSubTab === "posted"
-                  ? "bg-background text-foreground"
-                  : "bg-muted text-muted-foreground"
+                  ? "bg-surface text-text-primary"
+                  : "bg-surface-muted text-text-muted"
               }`}
             >
               {counts.posted}
