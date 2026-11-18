@@ -472,21 +472,21 @@ export default function AddFinishedProductModal({
       open={open}
       title={isEditing ? "Edit Finished Product" : "Add Finished Product"}
       onClose={onClose}
-      size="max-w-3xl"
+      size="max-w-[560px]"
     >
       <form onSubmit={handlePromptSubmit} className="space-y-6">
         {/* ── Section 1: Product Information ── */}
         <div className="space-y-4">
-          <div className="border-b border-border pb-2 flex items-center justify-between">
+          <div className="border-b border-divider pb-2 flex items-center justify-between">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
+              <h3 className="type-table-header uppercase text-text-primary">
                 Product Information
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="type-caption text-text-muted mt-0.5">
                 Basic product details and catalog classification
               </p>
             </div>
-            <span className="text-xs font-semibold bg-muted px-2.5 py-1 rounded-lg border border-border text-foreground">
+            <span className="type-caption font-semibold bg-surface-secondary px-2.5 py-1 rounded-control border border-divider text-text-primary">
               Category: Finished Product
             </span>
           </div>
@@ -494,8 +494,8 @@ export default function AddFinishedProductModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Product Name */}
             <div className={isEditing ? "" : "md:col-span-2"}>
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Product Name <span className="text-destructive">*</span>
+              <label className="mb-1.5 block type-table-header text-text-primary">
+                Product Name <span className="text-status-danger">*</span>
               </label>
               <Input
                 type="text"
@@ -503,15 +503,15 @@ export default function AddFinishedProductModal({
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
                 aria-invalid={Boolean(duplicateProductNameError)}
-                className={`w-full rounded-xl border ${
+                className={`w-full rounded-control border ${
                   duplicateProductNameError
-                    ? "!border-destructive focus-visible:!ring-destructive"
-                    : "border-border"
-                } bg-card text-foreground px-3 py-2 text-sm`}
+                    ? "!border-status-danger focus-visible:!ring-status-danger"
+                    : "border-divider"
+                } bg-surface text-text-primary px-3 py-2 type-body`}
                 required
               />
               {duplicateProductNameError && (
-                <p className="mt-1.5 text-xs font-medium text-destructive">
+                <p className="mt-1.5 type-caption font-medium text-status-danger">
                   {duplicateProductNameError}
                 </p>
               )}
@@ -520,13 +520,13 @@ export default function AddFinishedProductModal({
             {/* Status (Shown ONLY when editing) */}
             {isEditing && (
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                <label className="mb-1.5 block type-table-header text-text-primary">
                   Status
                 </label>
                 <select
                   value={isActive ? "true" : "false"}
                   onChange={(e) => handleTopLevelStatusChange(e.target.value === "true")}
-                  className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm h-9"
+                  className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-body h-9"
                 >
                   <option value="true">Active</option>
                   <option value="false">Inactive</option>
@@ -536,7 +536,7 @@ export default function AddFinishedProductModal({
 
             {/* Product Description */}
             <div className="md:col-span-2">
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              <label className="mb-1.5 block type-table-header text-text-primary">
                 Product Description
               </label>
               <textarea
@@ -544,23 +544,23 @@ export default function AddFinishedProductModal({
                 placeholder="Detailed description of finished product, ingredients summary, or production notes..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-body focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand"
               />
             </div>
 
             {/* Optional Photo Upload (1 per product) */}
             <div className="md:col-span-2">
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Product Photo <span className="text-muted-foreground font-normal">(Optional — Shared across product variants)</span>
+              <label className="mb-1.5 block type-table-header text-text-primary">
+                Product Photo <span className="text-text-muted font-normal">(Optional — Shared across product variants)</span>
               </label>
               <div className="flex items-center gap-4">
                 {photoPreview ? (
-                  <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-border shrink-0">
+                  <div className="relative w-14 h-14 rounded-control overflow-hidden border border-divider shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                   </div>
                 ) : (
-                  <div className="w-14 h-14 rounded-xl border border-dashed border-border bg-muted/30 flex items-center justify-center shrink-0 text-muted-foreground">
+                  <div className="w-14 h-14 rounded-control border border-dashed border-divider bg-surface-secondary/50 flex items-center justify-center shrink-0 text-text-muted">
                     <ImageIcon className="w-6 h-6" />
                   </div>
                 )}
@@ -574,12 +574,12 @@ export default function AddFinishedProductModal({
                   />
                   <label
                     htmlFor="product-photo-upload"
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer transition-colors shadow-xs"
+                    className="inline-flex items-center gap-1.5 rounded-control border border-divider bg-surface px-4 py-2 type-caption font-semibold text-text-primary hover:bg-surface-hover cursor-pointer transition-colors shadow-xs"
                   >
                     <ImageIcon className="w-3.5 h-3.5" />
                     {photoFile || photoPreview ? "Change Photo" : "Upload Photo"}
                   </label>
-                  <p className="text-[11px] text-muted-foreground mt-1">
+                  <p className="type-caption text-text-muted mt-1">
                     JPG, PNG, or WebP up to 10MB
                   </p>
                 </div>
@@ -590,12 +590,12 @@ export default function AddFinishedProductModal({
 
         {/* ── Section 2: Product Variants ── */}
         <div className="space-y-4 pt-2">
-          <div className="flex items-center justify-between border-b border-border pb-2">
+          <div className="flex items-center justify-between border-b border-divider pb-2">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
+              <h3 className="type-table-header uppercase text-text-primary">
                 Product Variants
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="type-caption text-text-muted mt-0.5">
                 Configure Content Size and Packaging Type to auto-generate Variant Name &amp; SKU
               </p>
             </div>
@@ -604,7 +604,7 @@ export default function AddFinishedProductModal({
               variant="outline"
               size="sm"
               onClick={handleAddVariant}
-              className="rounded-xl border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer gap-1.5"
+              className="rounded-control border border-divider bg-surface px-3.5 py-1.5 type-caption font-semibold text-text-primary hover:bg-surface-hover cursor-pointer gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Variant
@@ -625,11 +625,11 @@ export default function AddFinishedProductModal({
               return (
                 <div
                   key={v.id}
-                  className="p-4 rounded-xl border border-border bg-muted/20 space-y-3 transition-all"
+                  className="p-4 rounded-control border border-divider bg-surface-secondary/40 space-y-3 transition-all"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[11px] font-bold">
+                    <span className="type-table-header text-text-primary flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-full bg-brand-light text-brand flex items-center justify-center type-caption font-bold">
                         {index + 1}
                       </span>
                       Variant {index + 1}
@@ -642,7 +642,7 @@ export default function AddFinishedProductModal({
                           onChange={(e) =>
                             handleVariantStatusChange(v.id, e.target.value === "true")
                           }
-                          className="rounded-lg border border-border bg-card text-foreground px-2.5 py-1 text-xs font-medium h-7"
+                          className="rounded-control border border-divider bg-surface text-text-primary px-2.5 py-1 type-caption font-medium h-7"
                         >
                           <option value="true">Active</option>
                           <option value="false">Inactive</option>
@@ -654,7 +654,7 @@ export default function AddFinishedProductModal({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveVariant(v.id)}
-                          className="text-xs h-7 text-destructive hover:bg-destructive/10 cursor-pointer"
+                          className="type-caption h-7 text-status-danger hover:bg-status-danger/10 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5 mr-1" /> Remove
                         </Button>
@@ -665,28 +665,28 @@ export default function AddFinishedProductModal({
                   {/* Row 1: Variant Name (Auto, Read-Only) & Variant SKU (Auto, Read-Only) */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                        Variant Name <span className="text-muted-foreground font-normal">(Auto-generated)</span>
+                      <label className="mb-1.5 block type-table-header text-text-primary">
+                        Variant Name <span className="text-text-muted font-normal">(Auto-generated)</span>
                       </label>
                       <Input
                         type="text"
                         value={composedVariantName}
                         readOnly
                         disabled
-                        className="w-full rounded-xl border border-border bg-muted/40 text-foreground px-3 py-2 text-sm font-semibold cursor-not-allowed"
+                        className="w-full rounded-control border border-divider bg-surface-secondary/60 text-text-primary px-3 py-2 type-body font-semibold cursor-not-allowed"
                       />
                     </div>
 
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                        Variant SKU <span className="text-muted-foreground font-normal">(Unique)</span>
+                      <label className="mb-1.5 block type-table-header text-text-primary">
+                        Variant SKU <span className="text-text-muted font-normal">(Unique)</span>
                       </label>
                       <Input
                         type="text"
                         value={previewSku}
                         readOnly
                         disabled
-                        className="w-full rounded-xl border border-border bg-muted/40 text-muted-foreground px-3 py-2 text-sm cursor-not-allowed"
+                        className="w-full rounded-control border border-divider bg-surface-secondary/60 text-text-muted px-3 py-2 type-body cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -695,8 +695,8 @@ export default function AddFinishedProductModal({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Content Size */}
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                        Content Size <span className="text-destructive">*</span>
+                      <label className="mb-1.5 block type-table-header text-text-primary">
+                        Content Size <span className="text-status-danger">*</span>
                       </label>
                       <Input
                         type="number"
@@ -707,22 +707,22 @@ export default function AddFinishedProductModal({
                         onChange={(e) =>
                           handleUpdateVariantField(v.id, "contentSize", e.target.value)
                         }
-                        className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
+                        className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-body"
                         required
                       />
                     </div>
 
                     {/* Packaging Type (Jar, Container, Pouch) */}
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                        Packaging Type <span className="text-destructive">*</span>
+                      <label className="mb-1.5 block type-table-header text-text-primary">
+                        Packaging Type <span className="text-status-danger">*</span>
                       </label>
                       <select
                         value={v.packagingType}
                         onChange={(e) =>
                           handleUpdateVariantField(v.id, "packagingType", e.target.value)
                         }
-                        className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm h-9"
+                        className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-body h-9"
                       >
                         {PACKAGING_TYPES.map((pkg) => (
                           <option key={pkg} value={pkg}>
@@ -736,8 +736,8 @@ export default function AddFinishedProductModal({
                   {/* Row 3: Min Stock Level & Max Stock Level (Per Variant, matches SupplyModal) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                        Min Stock Level <span className="text-destructive">*</span>
+                      <label className="mb-1.5 block type-table-header text-text-primary">
+                        Min Stock Level <span className="text-status-danger">*</span>
                       </label>
                       <Input
                         type="number"
@@ -748,14 +748,14 @@ export default function AddFinishedProductModal({
                         onChange={(e) =>
                           handleUpdateVariantField(v.id, "minStockLevel", e.target.value)
                         }
-                        className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
+                        className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-body"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                        Max Stock Level <span className="text-destructive">*</span>
+                      <label className="mb-1.5 block type-table-header text-text-primary">
+                        Max Stock Level <span className="text-status-danger">*</span>
                       </label>
                       <Input
                         type="number"
@@ -766,7 +766,7 @@ export default function AddFinishedProductModal({
                         onChange={(e) =>
                           handleUpdateVariantField(v.id, "maxStockLevel", e.target.value)
                         }
-                        className="w-full rounded-xl border border-border bg-card text-foreground px-3 py-2 text-sm"
+                        className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-body"
                         required
                       />
                     </div>
@@ -778,20 +778,20 @@ export default function AddFinishedProductModal({
         </div>
 
         {/* ── Footer Actions (Exact SupplyModal pattern) ── */}
-        <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
+        <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
           <ModalCloseButton
             type="button"
             variant="outline"
             fallbackOnClose={onClose}
             disabled={submitting}
-            className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
+            className="rounded-control border border-divider bg-surface px-5 py-2.5 type-body font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
           >
             Cancel
           </ModalCloseButton>
           <Button
             type="submit"
             disabled={submitting || Boolean(duplicateProductNameError)}
-            className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 type-body font-semibold hover:bg-button-primary-hover shadow-card transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? "Saving..." : isEditing ? "Save Changes" : "Save Finished Product"}
           </Button>

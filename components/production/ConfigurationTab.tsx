@@ -86,8 +86,9 @@ export default function ConfigurationTab({
       if (syncPos) {
         triggerSilentPosSync(true);
       }
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to load finished products");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(e?.response?.data?.message || e?.message || "Failed to load finished products");
     } finally {
       setLoading(false);
     }
@@ -170,13 +171,13 @@ export default function ConfigurationTab({
 
   return (
     <div className="space-y-6 animate-page-in">
-      {/* Top Header & Action Buttons (Matches Resources & Suppliers) */}
+      {/* Top Header & Action Buttons */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">
+          <h2 className="type-page-title text-text-primary">
             Finished Products &amp; Variants
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 type-body text-text-muted">
             Manage finished goods, content sizes, units of measurement, packaging types, and SKUs
           </p>
         </div>
@@ -187,7 +188,7 @@ export default function ConfigurationTab({
             size="sm"
             onClick={() => fetchProducts(true)}
             disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-body font-semibold text-text-primary hover:bg-surface-secondary transition-colors h-10 cursor-pointer shadow-card"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -196,7 +197,7 @@ export default function ConfigurationTab({
           <Button
             type="button"
             onClick={handleOpenAddProduct}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10 cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-control bg-button-primary px-5 py-2.5 type-body font-semibold text-text-inverse hover:bg-button-primary/85 transition-colors shadow-card h-10 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Add New Product
@@ -204,8 +205,8 @@ export default function ConfigurationTab({
         </div>
       </div>
 
-      {/* Search & Filter Bar (Uniform with SupplyTab) */}
-      <div className="mb-6 rounded-xl border border-border bg-card p-3">
+      {/* Search & Filter Bar */}
+      <div className="mb-6 rounded-card border border-divider bg-surface p-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <SearchInput
             containerClassName="flex-1"
@@ -226,10 +227,10 @@ export default function ConfigurationTab({
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="h-10 min-w-[180px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+              <SelectTrigger className="h-10 min-w-[180px] w-auto rounded-control border border-divider bg-surface px-3.5 type-body font-medium text-text-primary shadow-card focus:border-border-focus">
                 <SelectValue placeholder="All Products" />
               </SelectTrigger>
-              <SelectContent className="min-w-[180px]">
+              <SelectContent className="min-w-[180px] bg-surface border-divider type-caption">
                 <SelectItem value="All">All Products</SelectItem>
                 {distinctProductNames.map((prodName) => (
                   <SelectItem key={prodName} value={prodName}>
@@ -247,10 +248,10 @@ export default function ConfigurationTab({
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="h-10 min-w-[165px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+              <SelectTrigger className="h-10 min-w-[165px] w-auto rounded-control border border-divider bg-surface px-3.5 type-body font-medium text-text-primary shadow-card focus:border-border-focus">
                 <SelectValue placeholder="All Packaging" />
               </SelectTrigger>
-              <SelectContent className="min-w-[165px]">
+              <SelectContent className="min-w-[165px] bg-surface border-divider type-caption">
                 {PACKAGING_FILTERS.map((pkg) => (
                   <SelectItem key={pkg} value={pkg}>
                     {pkg === "All" ? "All Packaging" : pkg}
@@ -262,7 +263,7 @@ export default function ConfigurationTab({
         </div>
       </div>
 
-      {/* Status Tabs (All / Active / Inactive with badge counts) */}
+      {/* Status Tabs */}
       <ResourceStatusTabs
         value={statusFilter}
         counts={statusCounts}
@@ -272,32 +273,32 @@ export default function ConfigurationTab({
         }}
       />
 
-      {/* Products & Variants Table (Uniform with SupplyTable / CategoryTable) */}
+      {/* Products & Variants Table */}
       {loading ? (
-        <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+        <div className="rounded-card border border-divider bg-surface overflow-hidden shadow-card">
           <ProductionSkeleton />
         </div>
       ) : (
-        <div className="overflow-x-auto custom-scrollbar rounded-xl border border-border bg-card shadow-sm">
-          <table className="w-full min-w-[800px]">
-            <thead className="border-b border-border bg-muted/30">
-              <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs w-14 px-4 py-4 text-center whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">No.</th>
-                <th className="w-16 px-4 py-4 text-center whitespace-nowrap">Photo</th>
-                <th className="px-4 py-4 min-w-[180px] whitespace-nowrap">Product Name</th>
-                <th className="px-4 py-4">Variant</th>
-                <th className="px-4 py-4">Packaging</th>
-                <th className="px-4 py-4">Variant SKU</th>
-                <th className="px-4 py-4 text-center">Status</th>
-                <th className="w-16 px-4 py-4 text-center">Actions</th>
+        <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
+          <table className="w-full min-w-[800px] border-collapse">
+            <thead className="border-b border-divider bg-surface-secondary">
+              <tr className="table-head-row text-left whitespace-nowrap">
+                <th className="sticky left-0 z-20 bg-surface-secondary table-th w-14 px-4 py-3 text-center whitespace-nowrap border-r border-divider shadow-sticky">No.</th>
+                <th className="table-th w-16 px-4 py-3 text-center whitespace-nowrap">Photo</th>
+                <th className="table-th px-4 py-3 min-w-[180px] whitespace-nowrap">Product Name</th>
+                <th className="table-th px-4 py-3">Variant</th>
+                <th className="table-th px-4 py-3">Packaging</th>
+                <th className="table-th px-4 py-3">Variant SKU</th>
+                <th className="table-th px-4 py-3 text-center">Status</th>
+                <th className="table-th w-16 px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-divider">
               {paginatedProducts.length === 0 ? (
                 <tr>
                   <td
                     colSpan={8}
-                    className="px-4 py-12 text-center text-sm font-normal text-muted-foreground"
+                    className="px-4 py-12 text-center type-body text-text-muted"
                   >
                     {searchQuery || productFilter !== "All" || packagingFilter !== "All" || statusFilter !== "All"
                       ? "No finished product variants found matching your filters."
@@ -309,16 +310,16 @@ export default function ConfigurationTab({
                   <tr
                     key={product.productId}
                     onClick={() => handleOpenEditProduct(product)}
-                    className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                    className="table-row group hover:bg-surface-secondary/50 transition-colors cursor-pointer"
                   >
                     {/* No. */}
-                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 w-14 px-4 py-4 text-sm text-center text-muted-foreground whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
+                    <td className="sticky left-0 z-10 bg-surface group-hover:bg-surface-secondary/50 w-14 px-4 py-3 table-td text-center text-text-muted whitespace-nowrap border-r border-divider shadow-sticky transition-colors">
                       {index + 1 + (safeCurrentPage - 1) * pageSize}
                     </td>
 
                     {/* Photo */}
-                    <td className="w-16 px-4 py-4 text-center">
-                      <div className="w-9 h-9 rounded-md border border-border bg-muted/30 overflow-hidden flex items-center justify-center shrink-0 mx-auto">
+                    <td className="w-16 px-4 py-3 text-center">
+                      <div className="w-9 h-9 rounded-control border border-divider bg-surface-secondary/40 overflow-hidden flex items-center justify-center shrink-0 mx-auto">
                         {product.imageUrl ? (
                           <img
                             src={product.imageUrl}
@@ -338,54 +339,54 @@ export default function ConfigurationTab({
                     </td>
 
                     {/* Product Name */}
-                    <td className="px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[180px]">
+                    <td className="px-4 py-3 table-td font-semibold text-text-primary whitespace-nowrap min-w-[180px]">
                       {product.itemName}
                     </td>
 
                     {/* Variant */}
-                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
-                      <span className="rounded-md bg-muted text-foreground border border-border px-2.5 py-0.5 text-xs font-semibold">
+                    <td className="px-4 py-3 table-td text-text-muted whitespace-nowrap">
+                      <span className="rounded-control bg-surface-secondary text-text-primary border border-divider px-2.5 py-0.5 type-caption font-semibold">
                         {product.variant || "Standard"}
                       </span>
                     </td>
 
                     {/* Packaging */}
-                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-text-muted whitespace-nowrap">
                       {product.packagingType || "Jar"}
                     </td>
 
                     {/* Variant SKU */}
-                    <td className="px-4 py-4 text-sm text-muted-foreground font-mono whitespace-nowrap">
+                    <td className="px-4 py-3 table-td text-text-muted tabular-nums whitespace-nowrap">
                       {product.sku || "—"}
                     </td>
 
                     {/* Status */}
-                    <td className="px-4 py-4 text-center whitespace-nowrap">
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       <StatusBadge
                         status={product.isActive === false ? "Inactive" : "Active"}
                       />
                     </td>
 
                     {/* Actions: Edit Product */}
-                    <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <td className="w-16 px-4 py-3 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
                               type="button"
-                              className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors focus:outline-none cursor-pointer"
+                              className="p-1.5 rounded-control text-text-primary hover:bg-surface-secondary transition-colors focus:outline-none cursor-pointer"
                               title="Actions"
                               aria-label="Actions"
                             >
                               <MoreHorizontal size={18} />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-44 rounded-xl border border-border bg-card shadow-xl p-1.5 text-left z-[100]">
+                          <DropdownMenuContent align="end" className="w-44 rounded-control border border-divider bg-surface shadow-modal p-1.5 text-left z-[100]">
                             <DropdownMenuItem
                               onClick={() => handleOpenEditProduct(product)}
-                              className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none"
+                              className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary focus:text-text-primary cursor-pointer rounded-control transition-colors outline-none"
                             >
-                              <Pencil size={14} className="shrink-0 text-muted-foreground" />
+                              <Pencil size={14} className="shrink-0 text-text-muted" />
                               <span>Edit Product</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -400,7 +401,7 @@ export default function ConfigurationTab({
         </div>
       )}
 
-      {/* Pagination (Shared Resources & Suppliers Pagination component) */}
+      {/* Pagination */}
       <Pagination
         currentPage={safeCurrentPage}
         totalPages={totalPages}

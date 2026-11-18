@@ -86,10 +86,10 @@ export default function ProductionTrackingTab({
   return (
     <div className="space-y-6 animate-page-in">
       {/* ── Header ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-divider pb-4">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Production Tracking</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2 className="type-section-title text-text-primary">Production Tracking</h2>
+          <p className="mt-1 type-body text-text-muted">
             Track active kitchen batches, advance cooking stages, complete packaging, and record batch outcomes.
           </p>
         </div>
@@ -99,7 +99,7 @@ export default function ProductionTrackingTab({
               variant="outline"
               size="sm"
               onClick={fetchBatches}
-              className="text-sm h-9 px-3.5 rounded-xl border-border hover:bg-muted font-semibold cursor-pointer"
+              className="type-body h-9 px-3.5 rounded-control border border-divider bg-surface hover:bg-surface-hover text-text-primary font-semibold cursor-pointer"
             >
               Refresh
             </Button>
@@ -111,11 +111,11 @@ export default function ProductionTrackingTab({
       <div className="flex flex-col lg:flex-row gap-5 items-start">
         {/* Left Column: Compact Active Batches Bar (w-full lg:w-64 shrink-0) */}
         <div className="w-full lg:w-64 shrink-0">
-          <div className="border border-border rounded-2xl bg-card p-3 space-y-3 shadow-xs">
+          <div className="border border-divider rounded-card bg-surface p-3 space-y-3 shadow-card">
             {/* Card Header */}
-            <div className="flex items-center justify-between pb-1 border-b border-border/60">
-              <h3 className="font-semibold text-xs uppercase tracking-wider text-foreground">Active Batches</h3>
-              <span className="text-xs font-medium text-muted-foreground">
+            <div className="flex items-center justify-between pb-1 border-b border-divider">
+              <h3 className="type-table-header uppercase text-text-primary">Active Batches</h3>
+              <span className="type-caption font-medium text-text-muted">
                 {activeBatches.length} {activeBatches.length === 1 ? "Batch" : "Batches"}
               </span>
             </div>
@@ -126,7 +126,7 @@ export default function ProductionTrackingTab({
               placeholder="Search active batches..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="text-xs"
+              className="type-caption"
             />
 
             {/* Batches List */}
@@ -134,7 +134,7 @@ export default function ProductionTrackingTab({
               {loading ? (
                 <ProductionSkeleton />
               ) : displayedBatches.length === 0 ? (
-                <div className="py-10 px-3 text-center text-xs text-muted-foreground">
+                <div className="py-10 px-3 text-center type-caption text-text-muted">
                   No active batches in kitchen production.
                 </div>
               ) : (
@@ -144,32 +144,32 @@ export default function ProductionTrackingTab({
                     <div
                       key={b.batchId}
                       onClick={() => setSelectedBatchId(b.batchId)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer text-left ${
+                      className={`p-3 rounded-control border transition-all cursor-pointer text-left ${
                         isSelected
-                          ? "border-foreground bg-muted/20 ring-1 ring-foreground shadow-sm"
-                          : "border-border bg-card hover:border-foreground/40 hover:bg-muted/10"
+                          ? "border-brand bg-brand-light/30 ring-1 ring-brand shadow-xs"
+                          : "border-divider bg-surface hover:border-brand/40 hover:bg-surface-hover"
                       }`}
                     >
                       <div className="min-w-0">
                         <span
-                          className="font-semibold text-sm text-foreground block truncate"
+                          className="font-semibold type-body text-text-primary block truncate"
                           title={b.batchNumber}
                         >
                           {b.batchNumber}
                         </span>
                         <span
-                          className="text-xs text-muted-foreground block mt-0.5 truncate"
+                          className="type-caption text-text-muted block mt-0.5 truncate"
                           title={b.recipeName || b.productName}
                         >
                           {b.recipeName || b.productName}
                         </span>
                       </div>
 
-                      <div className="mt-2.5 pt-2 border-t border-border/70 flex items-center justify-between text-xs">
-                        <span className="font-medium text-foreground bg-muted/60 px-2 py-0.5 rounded border border-border text-xs">
+                      <div className="mt-2.5 pt-2 border-t border-divider flex items-center justify-between type-caption">
+                        <span className="font-medium text-text-primary bg-surface-secondary px-2 py-0.5 rounded-control border border-divider">
                           {b.currentStage || b.stage || "Pre-Production"}
                         </span>
-                        <span className="font-semibold text-foreground text-xs">
+                        <span className="font-semibold text-text-primary">
                           {b.estimatedQuantity} {b.yieldUom || "jars"}
                         </span>
                       </div>
@@ -184,8 +184,8 @@ export default function ProductionTrackingTab({
         {/* Right Column: Waterfall Stage Progression & Packaging (flex-1) */}
         <div className="flex-1 min-w-0 w-full">
           {!selectedBatchId ? (
-            <div className="rounded-2xl border border-border bg-card p-16 text-center shadow-xs flex flex-col items-center justify-center min-h-[380px]">
-              <p className="text-sm text-muted-foreground">
+            <div className="rounded-card border border-divider bg-surface p-16 text-center shadow-card flex flex-col items-center justify-center min-h-[380px]">
+              <p className="type-body text-text-muted">
                 Select an active batch from the left to execute the waterfall stages.
               </p>
             </div>

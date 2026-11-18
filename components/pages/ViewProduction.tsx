@@ -95,14 +95,14 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
   };
 
   return (
-    <div className="w-full min-h-full py-6 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="w-full min-h-full page-container py-6 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
       <PageHeader
         title="Production & Quality"
         description="End-to-end production management, material lot reservations, sequential stage tracking, and quality assurance."
       />
 
       {/* Main Tab Bar matching Resources & Suppliers styling */}
-      <div className="flex items-center justify-between border-b border-border gap-2">
+      <div className="flex items-center justify-between border-b border-divider gap-2">
         <div className="flex items-center gap-2 overflow-x-auto min-w-0">
           {allowedTabs.map((tab) => {
             const isActive = activeTab === tab.key;
@@ -112,10 +112,10 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
                 href={`/production-quality?tab=${tab.key}`}
                 prefetch={true}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 type-caption font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? "border-foreground text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    ? "border-text-primary text-text-primary"
+                    : "border-transparent text-text-muted hover:text-text-primary"
                 }`}
               >
                 <span>{tab.label.toUpperCase()}</span>
@@ -129,7 +129,7 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
               asChild
               variant="outline"
               size="sm"
-              className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+              className="flex items-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-caption font-semibold text-text-primary hover:bg-surface-secondary transition-colors h-10 cursor-pointer shadow-card"
             >
               <Link href="/production-quality/logs">
                 <History className="w-3.5 h-3.5" /> Transaction History

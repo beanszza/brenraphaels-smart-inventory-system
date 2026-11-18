@@ -16,13 +16,13 @@ export default function ProductionKpiCards({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Card 1: Total Production Requests */}
-      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+      <div className="rounded-card border border-divider bg-surface p-5 sm:p-6 shadow-card flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+          <span className="type-overline font-semibold tracking-wider text-text-muted uppercase">
             Total Production Requests
           </span>
           <svg
-            className="w-20 h-6 text-foreground"
+            className="w-20 h-6 text-brand"
             viewBox="0 0 80 24"
             fill="none"
           >
@@ -38,23 +38,23 @@ export default function ProductionKpiCards({
         </div>
 
         <div className="mt-4">
-          <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+          <div className="type-kpi font-extrabold tracking-tight text-text-primary">
             {totalRequests}
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="type-caption text-text-muted mt-1">
             All created batches across all statuses
           </p>
         </div>
       </div>
 
       {/* Card 2: Pending Approval */}
-      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+      <div className="rounded-card border border-divider bg-surface p-5 sm:p-6 shadow-card flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+          <span className="type-overline font-semibold tracking-wider text-text-muted uppercase">
             Pending Approval
           </span>
           <svg
-            className="w-20 h-6 text-muted-foreground/70"
+            className="w-20 h-6 text-text-muted"
             viewBox="0 0 80 24"
             fill="none"
           >
@@ -70,23 +70,23 @@ export default function ProductionKpiCards({
         </div>
 
         <div className="mt-4">
-          <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+          <div className="type-kpi font-extrabold tracking-tight text-text-primary">
             {pendingApprovalCount}
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="type-caption text-text-muted mt-1">
             Requests awaiting administrator review
           </p>
         </div>
       </div>
 
       {/* Card 3: Active Production Batches */}
-      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+      <div className="rounded-card border border-divider bg-surface p-5 sm:p-6 shadow-card flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+          <span className="type-overline font-semibold tracking-wider text-text-muted uppercase">
             Active in Production
           </span>
           <svg
-            className="w-20 h-6 text-foreground"
+            className="w-20 h-6 text-brand"
             viewBox="0 0 80 24"
             fill="none"
           >
@@ -102,10 +102,10 @@ export default function ProductionKpiCards({
         </div>
 
         <div className="mt-4">
-          <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+          <div className="type-kpi font-extrabold tracking-tight text-text-primary">
             {activeBatchesCount}
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="type-caption text-text-muted mt-1">
             Batches currently undergoing waterfall tracking
           </p>
         </div>
