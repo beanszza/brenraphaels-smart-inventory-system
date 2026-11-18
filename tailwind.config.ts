@@ -1,5 +1,7 @@
 import type { Config } from "tailwindcss";
 
+// Design tokens live in app/styles/tokens.css (Tailwind CSS v4 @theme / @utility).
+// This file is kept minimal so tooling such as the shadcn CLI continues to work.
 const config: Config = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
@@ -8,22 +10,7 @@ const config: Config = {
     "./context/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {
-      fontFamily: {
-        sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-geist-mono)', 'ui-monospace', 'monospace'],
-      },
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
-      },
-      spacing: {
-        gutter: '24px',
-        'margin-mobile': '16px',
-        'margin-desktop': '48px',
-      },
-    },
+    extend: {},
   },
   plugins: [],
 };

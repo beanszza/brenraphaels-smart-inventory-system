@@ -1,0 +1,405 @@
+/*
+ * Single source of truth — Figma "Foundations" (#836:11278, boards 00–08)
+ * Shared across IMS, CREOMS, HRMS, and POS.
+ *
+ * Stage 1: Additive tokens only. Existing variables in globals.css remain untouched
+ * so zero visible changes occur until Stage 2 aliases them.
+ */
+
+:root {
+  /* ─── 02 · Color: Brand & AI Primitives ─── */
+  --brand-primary: #5b2a86;
+  --brand-primary-hover: #4a226e;
+  --brand-ai: #7c3aed;
+  --brand-focus: #a78bfa;
+  --brand-tint-soft: #f3e8ff;
+  --brand-tint-tab: #efe8f7;
+  --brand-tint-selected: #f5f0ff;
+  --brand-border-selected: #8b5cf6;
+  --brand-ai-panel: #f7f3fb;
+  --brand-ai-panel-alt: #fbf8ff;
+  --brand-ai-border: #e9ddf7;
+
+  /* ─── 02 · Color: Text Primitives ─── */
+  --ink: #18181b;
+  --ink-strong: #3f3f46;
+  --ink-secondary: #52525b;
+  --ink-muted: #71717a;
+  --ink-disabled: #a1a1aa;
+  --on-brand: #ffffff;
+
+  /* ─── 02 · Color: Surfaces & Backgrounds ─── */
+  --bg-page: #fafafa;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f1f1f3;
+  --bg-nav-active: #efeff1;
+  --bg-switcher: #f4f1f7;
+  --bg-toast: #18181b;
+
+  /* ─── 02 · Color: Borders & Dividers ─── */
+  --border-input: #e4e4e7;
+  --border-card: #e6e1ee;
+  --border-divider: #f0edf4;
+  --border-topbar: #ebebeb;
+
+  /* ─── 02 · Color: Status Pill Pairs (bg + fg) ─── */
+  --status-green-bg: #e3f4e8;
+  --status-green-fg: #1e6b3a;
+  --status-amber-bg: #fdf1d8;
+  --status-amber-fg: #8a5a00;
+  --status-red-bg: #fbe6e0;
+  --status-red-fg: #9a3412;
+  --status-blue-bg: #e3eefb;
+  --status-blue-fg: #1d4f91;
+  --status-teal-bg: #e1f5ee;
+  --status-teal-fg: #0f6e56;
+  --status-purple-bg: #efe6f8;
+  --status-purple-fg: #5b2a86;
+  --status-gray-bg: #eeecf2;
+  --status-gray-fg: #5a5368;
+
+  /* ─── 02 · Color: Semantic & Notice Colors ─── */
+  --semantic-success: #16a34a;
+  --semantic-warning: #b45309;
+  --semantic-danger: #dc2626;
+
+  --notice-warning-bg: #fffbeb;
+  --notice-warning-border: #f5dfa8;
+  --notice-warning-text: #78350f;
+  --notice-danger-bg: #fff7f7;
+  --notice-danger-border: #f4c7c7;
+  --notice-danger-text: #9a3412;
+
+  /* ─── 02 & 07 · Color: Scrim, Gradients & Brand Lockup ─── */
+  --scrim: rgb(23 15 31 / 0.45);
+  --gradient-login: linear-gradient(90deg, #1f0f31 0%, #361a56 50%, #5b2a86 100%);
+  --brand-lockup-tile-border: #ece6f2;
+  --brand-lockup-wordmark-light: #2a0f3f;
+  --brand-lockup-caption-light: #7a5899;
+  --brand-lockup-wordmark-dark: #ffffff;
+  --brand-lockup-caption-dark: #cdb8e6;
+
+  /* ─── 04 · Layout Dimensions ─── */
+  --layout-sidebar: 288px;
+  --layout-topbar: 64px;
+  --layout-rail: 360px;
+  --layout-page-top: 20px;
+  --layout-page-x: 32px;
+  --layout-page-bottom: 28px;
+}
+
+.dark {
+  /* ─── Dark Mode Values (derived from existing .dark palette) ─── */
+  --brand-primary: #cba5ed;
+  --brand-primary-hover: #d8baf3;
+  --brand-ai: #b794f4;
+  --brand-focus: #a78bfa;
+  --brand-tint-soft: #311f47;
+  --brand-tint-tab: #382448;
+  --brand-tint-selected: #2f1f42;
+  --brand-border-selected: #a78bfa;
+  --brand-ai-panel: #261b38;
+  --brand-ai-panel-alt: #2b1f3f;
+  --brand-ai-border: #48326b;
+
+  --ink: #f3edf9;
+  --ink-strong: #e1d8ec;
+  --ink-secondary: #c9bfd8;
+  --ink-muted: #b5a9c5;
+  --ink-disabled: #6e6380;
+  --on-brand: #ffffff;
+
+  --bg-page: #171320;
+  --bg-surface: #211a2d;
+  --bg-subtle: #2a2236;
+  --bg-nav-active: #30243e;
+  --bg-switcher: #261e33;
+  --bg-toast: #30293c;
+
+  --border-input: #41364e;
+  --border-card: #41364e;
+  --border-divider: #30273c;
+  --border-topbar: #3a3046;
+
+  --status-green-bg: #153c2a;
+  --status-green-fg: #8fe0b0;
+  --status-amber-bg: #42331a;
+  --status-amber-fg: #f3ce88;
+  --status-red-bg: #481f29;
+  --status-red-fg: #ffadb3;
+  --status-blue-bg: #1c304d;
+  --status-blue-fg: #a7ceff;
+  --status-teal-bg: #153c38;
+  --status-teal-fg: #8be0cd;
+  --status-purple-bg: #382448;
+  --status-purple-fg: #e2c4fa;
+  --status-gray-bg: #30293c;
+  --status-gray-fg: #c9bfd8;
+
+  --semantic-success: #73dda1;
+  --semantic-warning: #f3ca77;
+  --semantic-danger: #ff8b8b;
+
+  --notice-warning-bg: #352814;
+  --notice-warning-border: #5c4520;
+  --notice-warning-text: #f3ce88;
+  --notice-danger-bg: #3b1922;
+  --notice-danger-border: #662a38;
+  --notice-danger-text: #ffadb3;
+
+  --scrim: rgb(10 6 16 / 0.65);
+  --gradient-login: linear-gradient(90deg, #171320 0%, #2a1842 50%, #4a226e 100%);
+  --brand-lockup-tile-border: #41364e;
+  --brand-lockup-wordmark-light: #f3edf9;
+  --brand-lockup-caption-light: #cdb8e6;
+  --brand-lockup-wordmark-dark: #ffffff;
+  --brand-lockup-caption-dark: #cdb8e6;
+}
+
+@theme inline {
+  /* ─── New Figma Token Utilities (additive only in Stage 1) ─── */
+  --color-primary-hover: var(--brand-primary-hover);
+  --color-ai: var(--brand-ai);
+  --color-focus: var(--brand-focus);
+  --color-tint-soft: var(--brand-tint-soft);
+  --color-tint-tab: var(--brand-tint-tab);
+  --color-tint-selected: var(--brand-tint-selected);
+  --color-border-selected: var(--brand-border-selected);
+  --color-ai-panel: var(--brand-ai-panel);
+  --color-ai-panel-alt: var(--brand-ai-panel-alt);
+  --color-ai-border: var(--brand-ai-border);
+
+  --color-ink: var(--ink);
+  --color-ink-strong: var(--ink-strong);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-disabled: var(--ink-disabled);
+  --color-on-brand: var(--on-brand);
+
+  --color-page: var(--bg-page);
+  --color-surface: var(--bg-surface);
+  --color-subtle: var(--bg-subtle);
+  --color-nav-active: var(--bg-nav-active);
+  --color-switcher: var(--bg-switcher);
+  --color-toast: var(--bg-toast);
+
+  --color-divider: var(--border-divider);
+  --color-topbar: var(--border-topbar);
+
+  --color-status-green-bg: var(--status-green-bg);
+  --color-status-green-fg: var(--status-green-fg);
+  --color-status-amber-bg: var(--status-amber-bg);
+  --color-status-amber-fg: var(--status-amber-fg);
+  --color-status-red-bg: var(--status-red-bg);
+  --color-status-red-fg: var(--status-red-fg);
+  --color-status-blue-bg: var(--status-blue-bg);
+  --color-status-blue-fg: var(--status-blue-fg);
+  --color-status-teal-bg: var(--status-teal-bg);
+  --color-status-teal-fg: var(--status-teal-fg);
+  --color-status-purple-bg: var(--status-purple-bg);
+  --color-status-purple-fg: var(--status-purple-fg);
+  --color-status-gray-bg: var(--status-gray-bg);
+  --color-status-gray-fg: var(--status-gray-fg);
+
+  --color-notice-warning-bg: var(--notice-warning-bg);
+  --color-notice-warning-border: var(--notice-warning-border);
+  --color-notice-warning-text: var(--notice-warning-text);
+  --color-notice-danger-bg: var(--notice-danger-bg);
+  --color-notice-danger-border: var(--notice-danger-border);
+  --color-notice-danger-text: var(--notice-danger-text);
+
+  --color-scrim: var(--scrim);
+
+  --color-brand-lockup-tile-border: var(--brand-lockup-tile-border);
+  --color-brand-lockup-wordmark-light: var(--brand-lockup-wordmark-light);
+  --color-brand-lockup-caption-light: var(--brand-lockup-caption-light);
+  --color-brand-lockup-wordmark-dark: var(--brand-lockup-wordmark-dark);
+  --color-brand-lockup-caption-dark: var(--brand-lockup-caption-dark);
+
+  /* ─── 03 · Corner Radii (new named tokens; --radius-sm/md/lg stay untouched until Stage 2) ─── */
+  --radius-control: 8px;
+  --radius-inner: 10px;
+  --radius-card: 12px;
+  --radius-modal: 16px;
+  --radius-pill: 999px;
+
+  /* ─── 03 · Elevation & Shadows ─── */
+  --shadow-card: 0 1px 2px 0 rgb(24 24 27 / 0.04);
+  --shadow-modal: 0 12px 40px 0 rgb(0 0 0 / 0.18);
+  --shadow-drawer: -8px 0 32px 0 rgb(0 0 0 / 0.14);
+  --shadow-focus: 0 0 0 3px rgb(167 139 250 / 0.35);
+  --shadow-sticky-col: 2px 0 5px -2px rgb(0 0 0 / 0.06);
+
+  /* ─── 02 · Brand Font Family ─── */
+  --font-brand: var(--font-fraunces), serif;
+}
+
+/* ─── 01 · Typography (26 Figma text styles, prefixed with type-* to avoid text-* color collisions) ─── */
+@utility type-page-title {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+@utility type-stat-value {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+@utility type-modal-title {
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+}
+
+@utility type-card-title {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+@utility type-subsection {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+@utility type-body {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+@utility type-body-strong {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+@utility type-body-secondary {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+}
+
+@utility type-caption {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+@utility type-label-field {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+@utility type-label-button {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+@utility type-label-button-sm {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+@utility type-label-tab {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+@utility type-label-nav {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+@utility type-label-nav-active {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+@utility type-nav-group {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+@utility type-breadcrumb {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+@utility type-badge {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+@utility type-badge-compact {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+}
+
+@utility type-table-header {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+@utility type-table-cell {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+}
+
+@utility type-table-id {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+@utility type-mobile-title {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+@utility type-mobile-subtitle {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+@utility type-wordmark {
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+@utility type-brand-caption {
+  font-size: 9px;
+  line-height: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+}
+
+/* ─── Repeated Pattern Utilities ─── */
+@utility page-container {
+  padding: var(--layout-page-top) var(--layout-page-x) var(--layout-page-bottom);
+}
+
+@utility bg-login-gradient {
+  background-image: var(--gradient-login);
+}
