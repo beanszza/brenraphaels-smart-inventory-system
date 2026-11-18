@@ -42,21 +42,22 @@ export default function PaginationFooter({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-border bg-muted/50/30 text-xs font-medium text-muted-foreground">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-divider bg-surface type-caption text-ink-muted">
       <div>
-        Showing <span className="font-bold text-foreground">{startIndex + 1}</span> to{" "}
-        <span className="font-bold text-foreground">{Math.min(startIndex + itemsPerPage, totalItems)}</span> of{" "}
-        <span className="font-bold text-foreground">{totalItems}</span> entries
+        Showing <span className="font-semibold text-ink">{startIndex + 1}</span> to{" "}
+        <span className="font-semibold text-ink">{Math.min(startIndex + itemsPerPage, totalItems)}</span> of{" "}
+        <span className="font-semibold text-ink">{totalItems}</span> entries
       </div>
 
       <div className="flex items-center gap-1.5 flex-wrap justify-center">
         <Button
           variant="outline"
+          size="sm"
           onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
           disabled={currentPage === 1}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-border bg-card text-foreground hover:bg-primary hover:text-primary-foreground disabled:opacity-40 disabled:hover:bg-card disabled:hover:text-foreground disabled:cursor-not-allowed transition-colors text-xs font-semibold cursor-pointer"
+          className="flex items-center gap-1 cursor-pointer"
         >
-          <ChevronLeft size={14} /> Previous
+          <ChevronLeft size={16} /> Previous
         </Button>
 
         <div className="flex items-center gap-1">
@@ -65,17 +66,16 @@ export default function PaginationFooter({
               <Button
                 key={idx}
                 variant={currentPage === p ? "default" : "outline"}
+                size="sm"
                 onClick={() => onPageChange(p)}
-                className={`w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-colors cursor-pointer ${
-                  currentPage === p
-                    ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/85"
-                    : "bg-card text-foreground border border-border hover:bg-primary hover:text-primary-foreground"
+                className={`size-8 p-0 rounded-control font-medium type-label-button-sm cursor-pointer ${
+                  currentPage === p ? "shadow-none" : ""
                 }`}
               >
                 {p}
               </Button>
             ) : (
-              <span key={idx} className="w-6 text-center text-foreground font-bold select-none text-xs">
+              <span key={idx} className="w-6 text-center text-ink-muted select-none type-caption">
                 ...
               </span>
             )
@@ -84,11 +84,12 @@ export default function PaginationFooter({
 
         <Button
           variant="outline"
+          size="sm"
           onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
           disabled={currentPage === totalPages}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-border bg-card text-foreground hover:bg-primary hover:text-primary-foreground disabled:opacity-40 disabled:hover:bg-card disabled:hover:text-foreground disabled:cursor-not-allowed transition-colors text-xs font-semibold cursor-pointer"
+          className="flex items-center gap-1 cursor-pointer"
         >
-          Next <ChevronRight size={14} />
+          Next <ChevronRight size={16} />
         </Button>
       </div>
     </div>

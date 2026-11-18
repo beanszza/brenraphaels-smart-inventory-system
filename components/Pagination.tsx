@@ -44,11 +44,11 @@ export default function Pagination({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-border bg-muted/50/30 text-xs font-medium text-muted-foreground rounded-b-xl">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-divider bg-surface type-caption text-ink-muted rounded-b-card">
       <div>
-        Showing <span className="font-bold text-foreground">{startIndex + 1}</span> to{" "}
-        <span className="font-bold text-foreground">{Math.min(startIndex + itemsPerPage, totalCount)}</span> of{" "}
-        <span className="font-bold text-foreground">{totalCount}</span> entries
+        Showing <span className="font-semibold text-ink">{startIndex + 1}</span> to{" "}
+        <span className="font-semibold text-ink">{Math.min(startIndex + itemsPerPage, totalCount)}</span> of{" "}
+        <span className="font-semibold text-ink">{totalCount}</span> entries
       </div>
 
       <div className="flex items-center gap-1.5 flex-wrap justify-center">
@@ -56,9 +56,9 @@ export default function Pagination({
           type="button"
           onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
           disabled={currentPage === 1}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-border bg-card text-foreground hover:bg-primary hover:text-primary-foreground disabled:opacity-40 disabled:hover:bg-card disabled:hover:text-foreground disabled:cursor-not-allowed transition-colors text-xs font-semibold cursor-pointer"
+          className="flex items-center gap-1 h-8 px-3 rounded-control border border-input bg-surface text-ink hover:bg-subtle disabled:opacity-40 disabled:hover:bg-surface disabled:hover:text-ink disabled:cursor-not-allowed transition-colors type-label-button-sm cursor-pointer"
         >
-          <ChevronLeft size={14} /> Previous
+          <ChevronLeft size={16} /> Previous
         </button>
 
         <div className="flex items-center gap-1">
@@ -68,16 +68,16 @@ export default function Pagination({
                 key={idx}
                 type="button"
                 onClick={() => onPageChange(p)}
-                className={`w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-colors cursor-pointer ${
+                className={`size-8 rounded-control font-medium type-label-button-sm flex items-center justify-center transition-colors cursor-pointer ${
                   currentPage === p
-                    ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/85"
-                    : "bg-card text-foreground border border-border hover:bg-primary hover:text-primary-foreground"
+                    ? "bg-primary text-on-brand shadow-none hover:bg-primary-hover"
+                    : "bg-surface text-ink border border-input hover:bg-subtle"
                 }`}
               >
                 {p}
               </button>
             ) : (
-              <span key={idx} className="w-6 text-center text-foreground font-bold select-none text-xs">
+              <span key={idx} className="w-6 text-center text-ink-muted select-none type-caption">
                 ...
               </span>
             )
@@ -88,9 +88,9 @@ export default function Pagination({
           type="button"
           onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
           disabled={currentPage === totalPages}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-border bg-card text-foreground hover:bg-primary hover:text-primary-foreground disabled:opacity-40 disabled:hover:bg-card disabled:hover:text-foreground disabled:cursor-not-allowed transition-colors text-xs font-semibold cursor-pointer"
+          className="flex items-center gap-1 h-8 px-3 rounded-control border border-input bg-surface text-ink hover:bg-subtle disabled:opacity-40 disabled:hover:bg-surface disabled:hover:text-ink disabled:cursor-not-allowed transition-colors type-label-button-sm cursor-pointer"
         >
-          Next <ChevronRight size={14} />
+          Next <ChevronRight size={16} />
         </button>
       </div>
     </div>
