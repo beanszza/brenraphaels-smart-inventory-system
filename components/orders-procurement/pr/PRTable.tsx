@@ -78,30 +78,30 @@ export function PRTable({
       : "—";
 
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-border bg-card shadow-sm">
-      <table className="w-full text-xs">
-        <thead>
-          <tr className="border-b border-border bg-muted/40">
-            <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap min-w-[160px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">PURCHASE REQUISITION NUMBER</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">REQUEST DATE</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">REQUESTED BY</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">DEPARTMENT</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">REQUIRED DATE</th>
-            <th className="px-4 py-3 text-left font-bold text-muted-foreground tracking-wider whitespace-nowrap">STATUS</th>
-            <th className="px-4 py-3 text-center font-bold text-muted-foreground tracking-wider whitespace-nowrap w-24">ACTIONS</th>
+    <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
+      <table className="w-full">
+        <thead className="border-b border-divider bg-surface-muted table-head-row">
+          <tr className="border-b border-divider bg-surface-muted table-head-row">
+            <th className="sticky left-0 z-20 bg-surface-muted px-4 py-3 text-left type-table-header uppercase text-text-muted tracking-wider whitespace-nowrap min-w-[160px] w-44 border-r border-divider shadow-sticky-col table-th">PURCHASE REQUISITION NUMBER</th>
+            <th className="px-4 py-3 text-left type-table-header uppercase text-text-muted tracking-wider whitespace-nowrap table-th">REQUEST DATE</th>
+            <th className="px-4 py-3 text-left type-table-header uppercase text-text-muted tracking-wider whitespace-nowrap table-th">REQUESTED BY</th>
+            <th className="px-4 py-3 text-left type-table-header uppercase text-text-muted tracking-wider whitespace-nowrap table-th">DEPARTMENT</th>
+            <th className="px-4 py-3 text-left type-table-header uppercase text-text-muted tracking-wider whitespace-nowrap table-th">REQUIRED DATE</th>
+            <th className="px-4 py-3 text-left type-table-header uppercase text-text-muted tracking-wider whitespace-nowrap table-th">STATUS</th>
+            <th className="px-4 py-3 text-center type-table-header uppercase text-text-muted tracking-wider whitespace-nowrap w-24 table-th">ACTIONS</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-divider">
           {requisitions.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-5 py-8 text-center text-xs font-medium text-muted-foreground">
+              <td colSpan={7} className="px-5 py-8 text-center type-body text-text-muted">
                 No purchase requisitions found.
               </td>
             </tr>
           ) : (
             requisitions.map((pr) => {
               const isDraft = pr.status === "Draft";
-              const isPending = pr.status === "Pending Approval" || (pr.status as any) === "Pending";
+              const isPending = pr.status === "Pending Approval" || (pr.status as string) === "Pending";
               const isReturned = pr.status === "Returned";
               const isApproved = pr.status === "Approved";
               const isCancellable = isDraft || isPending || isReturned;
@@ -110,7 +110,7 @@ export function PRTable({
               const actions: ActionItem[] = [
                 {
                   label: "View Details",
-                  icon: <Eye className="w-4 h-4 text-foreground" />,
+                  icon: <Eye className="w-4 h-4 text-text-primary" />,
                   onClick: () => {
                     setOpenDropdownPrId(null);
                     onView(pr);
@@ -123,7 +123,7 @@ export function PRTable({
                 if (onApprove) {
                   actions.push({
                     label: "Approve",
-                    icon: <CheckCircle2 className="w-4 h-4 text-foreground" />,
+                    icon: <CheckCircle2 className="w-4 h-4 text-text-primary" />,
                     onClick: () => {
                       setOpenDropdownPrId(null);
                       onApprove(pr);
@@ -133,7 +133,7 @@ export function PRTable({
                 if (onReturn) {
                   actions.push({
                     label: "Return for Revision",
-                    icon: <CornerUpLeft className="w-4 h-4 text-foreground" />,
+                    icon: <CornerUpLeft className="w-4 h-4 text-text-primary" />,
                     onClick: () => {
                       setOpenDropdownPrId(null);
                       onReturn(pr);
@@ -143,7 +143,7 @@ export function PRTable({
                 if (onReject) {
                   actions.push({
                     label: "Reject",
-                    icon: <XCircle className="w-4 h-4 text-destructive" />,
+                    icon: <XCircle className="w-4 h-4 text-status-red" />,
                     onClick: () => {
                       setOpenDropdownPrId(null);
                       onReject(pr);
@@ -158,7 +158,7 @@ export function PRTable({
                 if ((isDraft || isReturned) && onEdit) {
                   actions.push({
                     label: isReturned ? "Edit & Re-Submit" : "Edit Draft",
-                    icon: <Pencil className="w-4 h-4 text-foreground" />,
+                    icon: <Pencil className="w-4 h-4 text-text-primary" />,
                     onClick: () => {
                       setOpenDropdownPrId(null);
                       onEdit(pr);
@@ -170,7 +170,7 @@ export function PRTable({
                 if (isCancellable && onCancel) {
                   actions.push({
                     label: "Cancel Requisition",
-                    icon: <Ban className="w-4 h-4 text-foreground" />,
+                    icon: <Ban className="w-4 h-4 text-text-primary" />,
                     onClick: () => {
                       setOpenDropdownPrId(null);
                       onCancel(pr);
@@ -182,7 +182,7 @@ export function PRTable({
                 if (isApproved && !pr.isFullyConvertedToPo && onCreatePo) {
                   actions.push({
                     label: "Create Purchase Order",
-                    icon: <ShoppingBag className="w-4 h-4 text-foreground" />,
+                    icon: <ShoppingBag className="w-4 h-4 text-text-primary" />,
                     onClick: () => {
                       setOpenDropdownPrId(null);
                       onCreatePo(pr);
@@ -194,52 +194,52 @@ export function PRTable({
               return (
                 <tr
                   key={pr.prId}
-                  className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                  className="group hover:bg-hover transition-colors cursor-pointer table-row"
                   onClick={() => onView(pr)}
                 >
-                  <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-3.5 font-mono text-foreground whitespace-nowrap font-medium min-w-[160px] w-44 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
+                  <td className="sticky left-0 z-10 bg-surface group-hover:bg-hover px-4 py-3.5 font-mono text-text-primary whitespace-nowrap font-medium min-w-[160px] w-44 border-r border-divider shadow-sticky-col transition-colors table-td">
                     {pr.prNumber}
                   </td>
-                  <td className="px-4 py-3.5 text-muted-foreground whitespace-nowrap">
+                  <td className="px-4 py-3.5 text-text-muted whitespace-nowrap table-td">
                     {fmtDate(pr.requestDate)}
                   </td>
-                  <td className="px-4 py-3.5 font-medium text-foreground whitespace-nowrap">
+                  <td className="px-4 py-3.5 font-medium text-text-primary whitespace-nowrap table-td">
                     {pr.requestedBy && pr.requestedBy !== "Unauthenticated"
                       ? pr.requestedBy
                       : "—"}
                   </td>
-                  <td className="px-4 py-3.5 text-muted-foreground whitespace-nowrap">
+                  <td className="px-4 py-3.5 text-text-muted whitespace-nowrap table-td">
                     {pr.department || "Inventory"}
                   </td>
-                  <td className="px-4 py-3.5 text-muted-foreground whitespace-nowrap">
+                  <td className="px-4 py-3.5 text-text-muted whitespace-nowrap table-td">
                     {fmtDate(pr.requiredDate)}
                   </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap">
+                  <td className="px-4 py-3.5 whitespace-nowrap table-td">
                     <StatusBadge status={pr.status} />
                   </td>
                   <td
-                    className="px-4 py-3.5 text-center whitespace-nowrap"
+                    className="px-4 py-3.5 text-center whitespace-nowrap table-td"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          className="p-1.5 rounded-lg border border-transparent text-foreground hover:bg-muted/80 transition-all data-[state=open]:bg-muted data-[state=open]:border-border data-[state=open]:shadow-sm"
+                          className="p-1.5 rounded-control border border-transparent text-text-primary hover:bg-hover transition-all data-[state=open]:bg-surface-muted data-[state=open]:border-divider data-[state=open]:shadow-sm"
                           aria-label="Actions menu"
                         >
-                          <MoreHorizontal className="w-4 h-4 text-foreground" />
+                          <MoreHorizontal className="w-4 h-4 text-text-primary" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 z-[200]">
+                      <DropdownMenuContent align="end" className="w-48 z-[200] rounded-menu border border-divider bg-surface shadow-menu">
                         {actions.map((action, idx) => (
                           <DropdownMenuItem
                             key={action.label + idx}
                             onClick={action.onClick}
-                            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer"
+                            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer type-caption text-text-primary hover:bg-hover"
                           >
-                            <span className="shrink-0 text-foreground">{action.icon}</span>
-                            <span className="truncate text-foreground">{action.label}</span>
+                            <span className="shrink-0 text-text-primary">{action.icon}</span>
+                            <span className="truncate text-text-primary">{action.label}</span>
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>

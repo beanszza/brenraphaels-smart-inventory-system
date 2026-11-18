@@ -75,7 +75,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
   // Create and Edit PR Modals
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [editingPR, setEditingPR] = useState<PurchaseRequisition | null>(null);
-  const [prefillPR, setPrefillPR] = useState<any | null>(null);
+  const [prefillPR, setPrefillPR] = useState<PurchaseRequisition | null>(null);
 
   // Check for prefilled PR data from Production Request Shortfall
   useEffect(() => {
@@ -84,7 +84,8 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
       try {
         const parsed = JSON.parse(rawPrefill);
         sessionStorage.removeItem("prefill_pr");
-        setPrefillPR(parsed);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setPrefillPR(parsed as PurchaseRequisition);
         setOpenCreateModal(true);
       } catch (e) {
         console.error("Failed to parse prefill_pr:", e);
@@ -160,12 +161,12 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
 
   return (
     <div className="space-y-6 animate-page-in">
-      {notice && <p role="status" className="rounded-lg bg-primary/10 p-3 text-sm text-primary">{notice}</p>}
+      {notice && <p role="status" className="rounded-control bg-surface-muted border border-divider p-3 type-body text-accent">{notice}</p>}
       {/* Top Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Purchase Requisitions</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Manage raw material and ingredient purchase requisitions</p>
+          <h2 className="type-page-title text-text-primary">Purchase Requisitions</h2>
+          <p className="mt-1 type-body text-text-muted">Manage raw material and ingredient purchase requisitions</p>
         </div>
         <div className="flex items-center gap-3">
           <Button
@@ -173,7 +174,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
             size="sm"
             onClick={fetchRequisitions}
             disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10"
+            className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-label-button text-text-primary hover:bg-hover transition-colors h-10"
           >
             <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
@@ -183,7 +184,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
               asChild
               variant="outline"
               size="sm"
-              className="flex items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors h-10 cursor-pointer"
+              className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-label-button text-text-primary hover:bg-hover transition-colors h-10 cursor-pointer"
             >
               <Link href="/orders-procurement/logs">
                 <History className="w-4 h-4" /> Transaction History
@@ -195,7 +196,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
           <Button
             type="button"
             onClick={() => setOpenCreateModal(true)}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors shadow-sm h-10"
+            className="flex items-center justify-center gap-2 rounded-control bg-button-primary px-5 py-2.5 type-label-button text-button-primary-foreground hover:bg-button-primary-hover transition-colors shadow-sm h-10"
           >
             <Plus className="w-4 h-4" /> Create Purchase Requisition
           </Button>
@@ -204,7 +205,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
       </div>
 
       {/* Filters Bar */}
-      <div className="mb-6 rounded-xl border border-border bg-card p-3">
+      <div className="mb-6 rounded-card border border-divider bg-surface p-3 shadow-card">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <SearchInput
             containerClassName="flex-1"
@@ -225,10 +226,10 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-xl border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm focus:ring-1 focus:ring-ring">
+                <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-control border border-divider bg-surface px-3.5 type-body text-text-primary shadow-sm focus:ring-1 focus:ring-accent">
                   <SelectValue placeholder="All Departments" />
                 </SelectTrigger>
-                <SelectContent className="min-w-[210px]">
+                <SelectContent className="min-w-[210px] rounded-menu border border-divider bg-surface shadow-menu">
                   <SelectItem value="all">All Departments</SelectItem>
                   <SelectItem value="Inventory">Inventory</SelectItem>
                   <SelectItem value="Production">Production</SelectItem>
@@ -243,7 +244,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
       </div>
 
       {/* Tabs Row */}
-      <div className="border-b border-border overflow-x-auto">
+      <div className="border-b border-divider overflow-x-auto">
         <div className="flex items-center gap-1.5 min-w-max pb-2">
           {/* Requests Tab (Visible to Admin only) */}
           {isAdmin && (
@@ -253,16 +254,16 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
                 setActiveTab("Requests");
                 setPage(1);
               }}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-pill type-label-tab transition-all ${
                 activeTab === "Requests"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "bg-button-primary text-button-primary-foreground shadow-sm"
+                  : "bg-surface-muted text-text-muted hover:text-text-primary hover:bg-hover"
               }`}
             >
               <span>Requests</span>
               {counts.Requests > 0 && (
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  activeTab === "Requests" ? "bg-background text-foreground" : "bg-foreground/20 text-foreground"
+                <span className={`px-1.5 py-0.2 rounded-pill type-caption font-bold ${
+                  activeTab === "Requests" ? "bg-surface text-text-primary" : "bg-text-primary/20 text-text-primary"
                 }`}>
                   {counts.Requests}
                 </span>
@@ -283,16 +284,16 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
                   setActiveTab(tab);
                   setPage(1);
                 }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-pill type-label-tab transition-all ${
                   isSelected
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    ? "bg-button-primary text-button-primary-foreground shadow-sm"
+                    : "text-text-muted hover:text-text-primary hover:bg-hover"
                 }`}
               >
                 <span>{tab}</span>
                 <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
-                    isSelected ? "bg-background text-foreground" : "bg-muted text-muted-foreground"
+                  className={`px-1.5 py-0.2 rounded-pill type-caption font-mono font-medium ${
+                    isSelected ? "bg-surface text-text-primary" : "bg-surface-muted text-text-muted"
                   }`}
                 >
                   {count}
@@ -305,8 +306,8 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
 
       {/* Active Tab Subtitle for Requests tab */}
       {isAdmin && activeTab === "Requests" && (
-        <div className="p-3 rounded-xl border border-border bg-muted/20 text-xs text-foreground flex items-center gap-2">
-          <Inbox className="w-4 h-4 text-foreground shrink-0" />
+        <div className="p-3 rounded-card border border-divider bg-surface-muted type-caption text-text-primary flex items-center gap-2">
+          <Inbox className="w-4 h-4 text-text-primary shrink-0" />
           <span>Showing all product requisitions pending your review. Approve, Reject, or Return for Revision with mandatory notes.</span>
         </div>
       )}

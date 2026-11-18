@@ -5,11 +5,7 @@ import { listRequisitions, createRequisition, updateRequisition } from "@/app/ac
 import { requisitionSupplies } from "@/app/actions/orders/screens";
 import { actionResponse } from "@/lib/resources/action-response";
 
-
-import { StatusBadge } from "@/components/shared/StatusBadge";
-
 import React, { useState, useEffect, useMemo } from "react";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Trash2, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -18,10 +14,8 @@ import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { PurchaseRequisition, PRItem } from "../types";
 import { useStaff } from "@/context/StaffContext";
-import ConfirmModal from "@/components/ConfirmModal";
 import { normalizePrPriority } from "@/lib/orders/requisition-lifecycle";
 import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 
@@ -151,6 +145,7 @@ export function CreatePRModal({
   useEffect(() => {
     if (open) {
       if (initialData) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (initialData.prNumber) setPrNumber(initialData.prNumber);
         if (initialData.requestDate) {
           setRequestDate(
@@ -225,7 +220,7 @@ export function CreatePRModal({
         // Preview PR number if creating new
         if (!initialData?.prNumber) {
           if (prRes.data?.success) {
-            const list: any[] = prRes.data.data || [];
+            const list: { prNumber?: string }[] = prRes.data.data || [];
             const year = new Date().getFullYear();
             let maxSeq = 0;
             list.forEach((pr) => {
@@ -390,7 +385,7 @@ export function CreatePRModal({
           requestedQuantity: it.requestedQuantity,
           purchaseUomId: it.purchaseUomId || 1, // Fallback if missing
           estimatedUnitPrice: it.estimatedUnitPrice || 0,
-          suggestedSupplierId: (it as any).suggestedSupplierId || null,
+          suggestedSupplierId: (it as { suggestedSupplierId?: number | null }).suggestedSupplierId || null,
         })),
       };
 
@@ -406,11 +401,12 @@ export function CreatePRModal({
       } else {
         router.push("/orders-procurement");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to save PR:", err);
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
       setErrors((prev) => ({
         ...prev,
-        submit: err?.response?.data?.message || "An error occurred while saving the requisition.",
+        submit: e?.response?.data?.message || e?.message || "An error occurred while saving the requisition.",
       }));
     } finally {
       setSubmitting(false);
@@ -426,66 +422,66 @@ export function CreatePRModal({
           setIsReviewing(false);
           onClose();
         }}
-        size={isReviewing ? "max-w-3xl" : "max-w-5xl"}
+        size="max-w-[640px]"
       >
         {isReviewing ? (
           /* Review Step */
           <div className="space-y-4">
-            <div className="p-3.5 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground">
+            <div className="p-3.5 rounded-card bg-surface-muted border border-divider type-caption text-text-muted">
               Please review the details below before {reviewAction === "submit" ? "submitting for approval" : "saving as draft"}.
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 p-4 rounded-xl bg-muted/20 border border-border text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider type-caption">
               <div>
-                <span className="text-muted-foreground block text-[11px] mb-1">Department</span>
-                <span className="font-semibold text-foreground">{department}</span>
+                <span className="text-text-muted block type-caption mb-1">Department</span>
+                <span className="font-semibold text-text-primary">{department}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-[11px] mb-1">Requested By</span>
-                <span className="font-semibold text-foreground">{requestedBy}</span>
+                <span className="text-text-muted block type-caption mb-1">Requested By</span>
+                <span className="font-semibold text-text-primary">{requestedBy}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-[11px] mb-1">Purpose</span>
-                <span className="font-semibold text-foreground">{resolvedPurpose}</span>
+                <span className="text-text-muted block type-caption mb-1">Purpose</span>
+                <span className="font-semibold text-text-primary">{resolvedPurpose}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-[11px] mb-1">Priority</span>
-                <span className="font-semibold text-foreground">{priority}</span>
+                <span className="text-text-muted block type-caption mb-1">Priority</span>
+                <span className="font-semibold text-text-primary">{priority}</span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-[11px] mb-1">Required Date</span>
-                <span className="font-semibold text-foreground">{requiredDate}</span>
+                <span className="text-text-muted block type-caption mb-1">Required Date</span>
+                <span className="font-semibold text-text-primary">{requiredDate}</span>
               </div>
             </div>
 
             {notes && (
-              <div className="p-4 rounded-xl bg-muted/20 border border-border text-xs">
-                <span className="text-muted-foreground block text-[11px] mb-1">Notes</span>
-                <span className="font-medium text-foreground leading-relaxed">{notes}</span>
+              <div className="p-4 rounded-card bg-surface-muted border border-divider type-caption">
+                <span className="text-text-muted block type-caption mb-1">Notes</span>
+                <span className="font-medium text-text-primary leading-relaxed">{notes}</span>
               </div>
             )}
 
-            <div className="border border-border rounded-xl overflow-x-auto bg-card">
-              <table className="w-full text-xs">
-                <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[11px]">
+            <div className="border border-divider rounded-card overflow-x-auto bg-surface shadow-card">
+              <table className="w-full">
+                <thead className="bg-surface-muted border-b border-divider text-text-muted uppercase table-head-row type-table-header">
                   <tr>
-                    <th className="px-4 py-2.5 text-left font-bold">ITEM NAME</th>
-                    <th className="px-4 py-2.5 text-left font-bold">Unit of Measure</th>
-                    <th className="px-4 py-2.5 text-right font-bold">QUANTITY</th>
+                    <th className="table-th px-4 py-2.5 text-left font-bold">ITEM NAME</th>
+                    <th className="table-th px-4 py-2.5 text-left font-bold">Unit of Measure</th>
+                    <th className="table-th px-4 py-2.5 text-right font-bold">QUANTITY</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-divider">
                   {items.map((item, idx) => {
                     const sup = uniqueSupplies.find((s) => s.itemId === item.itemId);
                     return (
-                      <tr key={idx} className="hover:bg-muted/10">
-                        <td className="px-4 py-2.5 font-medium text-foreground">
+                      <tr key={idx} className="table-row hover:bg-hover transition-colors">
+                        <td className="table-td px-4 py-2.5 font-medium text-text-primary">
                           {item.itemName || sup?.itemName}
                         </td>
-                        <td className="px-4 py-2.5 text-muted-foreground">
+                        <td className="table-td px-4 py-2.5 text-text-muted">
                           {item.uomName || sup?.uomName || "Unit"}
                         </td>
-                        <td className="px-4 py-2.5 text-right font-bold text-foreground">
+                        <td className="table-td px-4 py-2.5 text-right font-bold text-text-primary">
                           {item.requestedQuantity}
                         </td>
                       </tr>
@@ -496,13 +492,13 @@ export function CreatePRModal({
             </div>
 
             {/* Review Footer Buttons */}
-            <div className="flex justify-end gap-3 pt-5 border-t border-border mt-4">
+            <div className="flex justify-end gap-3 pt-5 border-t border-divider mt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsReviewing(false)}
                 disabled={submitting}
-                className="rounded-xl px-5 py-2.5 h-auto text-sm font-semibold cursor-pointer border-border bg-card hover:bg-muted text-foreground"
+                className="rounded-control px-5 py-2.5 h-auto type-label-button cursor-pointer border-divider bg-surface hover:bg-hover text-text-primary"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Edit
@@ -511,7 +507,7 @@ export function CreatePRModal({
                 type="button"
                 disabled={submitting}
                 onClick={() => setConfirmSaveOpen(true)}
-                className="rounded-xl px-6 py-2.5 h-auto text-sm font-semibold shadow-sm bg-primary text-primary-foreground hover:bg-primary/85 cursor-pointer disabled:opacity-50"
+                className="rounded-control px-6 py-2.5 h-auto type-label-button shadow-sm bg-button-primary text-button-primary-foreground hover:bg-button-primary-hover cursor-pointer disabled:opacity-50"
               >
                 {submitting ? "Submitting..." : `Confirm & ${reviewAction === "submit" ? "Submit" : "Save"}`}
               </Button>
@@ -521,7 +517,7 @@ export function CreatePRModal({
           /* Main Form Step */
           <div className="space-y-4">
             {errors.submit && (
-              <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-center justify-between animate-in fade-in-50">
+              <div role="alert" className="rounded-control border border-status-red/30 bg-status-red/10 p-3 type-caption text-status-red flex items-center justify-between animate-in fade-in-50">
                 <span role="alert" className="font-medium">{errors.submit}</span>
                 <button
                   type="button"
@@ -539,31 +535,31 @@ export function CreatePRModal({
               </div>
             )}
             {/* Top Form Fields: Clean, modern 3-column responsive grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider">
               {/* PR Number */}
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                <label className="mb-1.5 block type-label font-semibold text-text-primary">
                   Purchase Requisition Number
                 </label>
-                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-all">
+                <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted select-all">
                   {prNumber || "PR-XXXX-XXXX"}
                 </div>
               </div>
 
               {/* Request Date */}
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                <label className="mb-1.5 block type-label font-semibold text-text-primary">
                   Request Date
                 </label>
-                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+                <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted">
                   {requestDate}
                 </div>
               </div>
 
               {/* Required Date */}
               <div>
-                <label className={`mb-1.5 block text-xs font-semibold ${errors.requiredDate ? "text-destructive" : "text-foreground"}`}>
-                  Required Date <span className="text-destructive">*</span>
+                <label className={`mb-1.5 block type-label font-semibold ${errors.requiredDate ? "text-status-red" : "text-text-primary"}`}>
+                  Required Date <span className="text-status-red">*</span>
                 </label>
                 <div className="relative">
                   <Input
@@ -582,46 +578,46 @@ export function CreatePRModal({
                         return c;
                       });
                     }}
-                    className={`w-full h-10 rounded-xl border ${
-                      errors.requiredDate ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                    } bg-card px-3.5 py-2 pr-10 text-xs text-foreground transition-colors cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                    className={`w-full h-10 rounded-control border ${
+                      errors.requiredDate ? "!border-status-red focus-visible:!ring-status-red" : "border-divider"
+                    } bg-surface px-3.5 py-2 pr-10 type-body text-text-primary transition-colors cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
                   />
-                  <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                 </div>
                 {errors.requiredDate && (
-                  <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.requiredDate}</p>
+                  <p className="mt-1 type-caption font-medium text-status-red animate-in fade-in-50">{errors.requiredDate}</p>
                 )}
               </div>
 
               {/* Requested By (Read-Only from Account) */}
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                <label className="mb-1.5 block type-label font-semibold text-text-primary">
                   Requested By
                 </label>
-                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-none">
+                <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted select-none">
                   {requestedBy || "Loading..."}
                 </div>
               </div>
 
               {/* Department (Read-Only from Account) */}
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                <label className="mb-1.5 block type-label font-semibold text-text-primary">
                   Department
                 </label>
-                <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-none">
+                <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted select-none">
                   {department || "Inventory"}
                 </div>
               </div>
 
               {/* Priority (Fixed in Row 2 so Purpose "Other" never pushes it down) */}
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                  Priority <span className="text-destructive">*</span>
+                <label className="mb-1.5 block type-label font-semibold text-text-primary">
+                  Priority <span className="text-status-red">*</span>
                 </label>
                 <select
                   value={priority}
                   onChange={(e) => setPriority(normalizePrPriority(e.target.value))}
-                  className="w-full h-10 rounded-xl border border-border bg-card px-3.5 py-2 text-xs text-foreground transition-colors cursor-pointer focus:ring-1 focus:ring-ring"
+                  className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 py-2 type-body text-text-primary transition-colors cursor-pointer focus:ring-1 focus:ring-accent"
                 >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
@@ -633,8 +629,8 @@ export function CreatePRModal({
               <div className="sm:col-span-2 lg:col-span-3">
                 <div className={`grid grid-cols-1 gap-3.5 ${purposeChoice === "Other" ? "sm:grid-cols-2" : ""}`}>
                   <div>
-                    <label className={`mb-1.5 block text-xs font-semibold ${errors.purpose ? "text-destructive" : "text-foreground"}`}>
-                      Purpose <span className="text-destructive">*</span>
+                    <label className={`mb-1.5 block type-label font-semibold ${errors.purpose ? "text-status-red" : "text-text-primary"}`}>
+                      Purpose <span className="text-status-red">*</span>
                     </label>
                     <select
                       value={purposeChoice}
@@ -651,7 +647,7 @@ export function CreatePRModal({
                           return c;
                         });
                       }}
-                      className="w-full h-10 rounded-xl border border-border bg-card px-3.5 py-2 text-xs text-foreground transition-colors cursor-pointer focus:ring-1 focus:ring-ring"
+                      className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 py-2 type-body text-text-primary transition-colors cursor-pointer focus:ring-1 focus:ring-accent"
                     >
                       {PR_PURPOSE_CHOICES.map((choice) => (
                         <option key={choice} value={choice}>
@@ -663,10 +659,10 @@ export function CreatePRModal({
                   {purposeChoice === "Other" && (
                     <div>
                       <div className="mb-1.5 flex items-center justify-between">
-                        <label className={`block text-xs font-semibold ${errors.purpose ? "text-destructive" : "text-foreground"}`}>
-                          Specify Reason <span className="text-destructive">*</span>
+                        <label className={`block type-label font-semibold ${errors.purpose ? "text-status-red" : "text-text-primary"}`}>
+                          Specify Reason <span className="text-status-red">*</span>
                         </label>
-                        <span className={`text-[11px] ${customPurpose.length >= PURPOSE_OTHER_MAX ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+                        <span className={`type-caption ${customPurpose.length >= PURPOSE_OTHER_MAX ? "font-medium text-status-amber" : "text-text-muted"}`}>
                           {customPurpose.length}/{PURPOSE_OTHER_MAX}
                         </span>
                       </div>
@@ -693,14 +689,14 @@ export function CreatePRModal({
                         }}
                         placeholder="Enter custom purpose (max 50 chars)..."
                         aria-invalid={!!errors.purpose}
-                        className={`w-full h-10 rounded-xl border ${
-                          errors.purpose ? "!border-destructive focus-visible:!ring-destructive" : "border-border"
-                        } bg-card px-3.5 py-2 text-xs text-foreground transition-colors`}
+                        className={`w-full h-10 rounded-control border ${
+                          errors.purpose ? "!border-status-red focus-visible:!ring-status-red" : "border-divider"
+                        } bg-surface px-3.5 py-2 type-body text-text-primary transition-colors`}
                       />
                       {errors.purpose ? (
-                        <p className="mt-1 text-[11px] font-medium text-destructive animate-in fade-in-50">{errors.purpose}</p>
+                        <p className="mt-1 type-caption font-medium text-status-red animate-in fade-in-50">{errors.purpose}</p>
                       ) : customPurposeWarning ? (
-                        <p className="mt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-50">{customPurposeWarning}</p>
+                        <p className="mt-1 type-caption font-medium text-status-amber animate-in fade-in-50">{customPurposeWarning}</p>
                       ) : null}
                     </div>
                   )}
@@ -711,34 +707,34 @@ export function CreatePRModal({
             {/* Requested Supplies & Ingredients Section */}
             <div className="space-y-2 pt-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-foreground">
-                  Requested Items <span className="text-destructive">*</span>
+                <label className="type-label font-semibold text-text-primary">
+                  Requested Items <span className="text-status-red">*</span>
                 </label>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="type-caption text-text-muted">
                   {items.length} item(s) selected
                 </span>
               </div>
 
               {errors.items && (
-                <p className="text-xs text-destructive">{errors.items}</p>
+                <p className="type-caption text-status-red">{errors.items}</p>
               )}
 
-              <div className="overflow-x-auto rounded-xl border border-border bg-card">
-                <table className="w-full text-xs">
-                  <thead className="border-b border-border bg-muted/40 uppercase text-muted-foreground">
+              <div className="overflow-x-auto rounded-card border border-divider bg-surface shadow-card">
+                <table className="w-full">
+                  <thead className="border-b border-divider bg-surface-muted uppercase text-text-muted table-head-row type-table-header">
                     <tr>
-                      <th className="px-3 py-2.5 text-left font-semibold">SUPPLY NAME</th>
-                      <th className="px-3 py-2.5 text-left font-semibold">SUPPLY NO.</th>
-                      <th className="px-3 py-2.5 text-left font-semibold">Unit of Measure</th>
-                      <th className="px-3 py-2.5 text-right font-semibold">ACTUAL INVENTORY</th>
-                      <th className="px-3 py-2.5 text-right font-semibold">QUANTITY (TO ORDER)</th>
-                      <th className="px-3 py-2.5 text-center font-semibold w-10"></th>
+                      <th className="table-th px-3 py-2.5 text-left font-semibold">SUPPLY NAME</th>
+                      <th className="table-th px-3 py-2.5 text-left font-semibold">SUPPLY NO.</th>
+                      <th className="table-th px-3 py-2.5 text-left font-semibold">Unit of Measure</th>
+                      <th className="table-th px-3 py-2.5 text-right font-semibold">ACTUAL INVENTORY</th>
+                      <th className="table-th px-3 py-2.5 text-right font-semibold">QUANTITY (TO ORDER)</th>
+                      <th className="table-th px-3 py-2.5 text-center font-semibold w-10"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-divider">
                     {items.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-xs">
+                        <td colSpan={6} className="table-td px-4 py-8 text-center text-text-muted type-body">
                           No items added yet. Click &quot;+ Add Item&quot; below to add raw materials or ingredients.
                         </td>
                       </tr>
@@ -749,13 +745,13 @@ export function CreatePRModal({
                         const actualInv = selectedSupply ? selectedSupply.currentStock : (item.actualInventory || 0);
 
                         return (
-                          <tr key={idx} className="hover:bg-muted/20 transition-colors">
+                          <tr key={idx} className="table-row hover:bg-hover transition-colors">
                             {/* Supply Name (Dropdown) */}
-                            <td className="px-3 py-2 min-w-[200px]">
+                            <td className="table-td px-3 py-2 min-w-[200px]">
                               <select
                                 value={item.itemId || ""}
                                 onChange={(e) => handleSelectSupply(idx, Number(e.target.value))}
-                                className="w-full rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs text-foreground focus:ring-1 focus:ring-ring"
+                                className="w-full rounded-control border border-divider bg-surface px-2.5 py-1.5 type-body text-text-primary focus:ring-1 focus:ring-accent"
                               >
                                 {uniqueSupplies.map((sup) => {
                                   const isAlreadySelected = items.some((other, otherIdx) => otherIdx !== idx && other.itemId === sup.itemId);
@@ -773,38 +769,38 @@ export function CreatePRModal({
                             </td>
 
                             {/* Supply No. */}
-                            <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                            <td className="table-td px-3 py-2 text-text-muted whitespace-nowrap">
                               {supplyNo}
                             </td>
 
                             {/* Unit of Measure */}
-                            <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                            <td className="table-td px-3 py-2 text-text-muted whitespace-nowrap">
                               {item.uomName || selectedSupply?.uomName || "Unit"}
                             </td>
 
                             {/* Actual Inventory */}
-                            <td className="px-3 py-2 text-right text-muted-foreground whitespace-nowrap">
+                            <td className="table-td px-3 py-2 text-right text-text-muted whitespace-nowrap">
                               {Number(actualInv).toLocaleString()}
                             </td>
 
                             {/* Quantity (To Order) */}
-                            <td className="px-3 py-2 text-right w-36">
+                            <td className="table-td px-3 py-2 text-right w-36">
                               <Input
                                 type="number"
                                 min={1}
                                 step="any"
                                 value={item.requestedQuantity || ""}
                                 onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                                className="h-8 w-28 text-right text-xs font-bold border-border bg-card ml-auto"
+                                className="h-8 w-28 text-right type-body font-bold border-divider bg-surface text-text-primary ml-auto rounded-control"
                               />
                             </td>
 
                             {/* Remove Row */}
-                            <td className="px-2 py-2 text-center">
+                            <td className="table-td px-2 py-2 text-center">
                               <button
                                 type="button"
                                 onClick={() => handleRemoveItem(idx)}
-                                className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted transition-colors cursor-pointer"
+                                className="p-1 rounded-control text-text-muted hover:text-status-red hover:bg-hover transition-colors cursor-pointer"
                                 title="Remove"
                               >
                                 <Trash2 size={15} />
@@ -822,20 +818,20 @@ export function CreatePRModal({
                 type="button"
                 onClick={handleAddItem}
                 disabled={loadingSupplies || uniqueSupplies.length === 0 || items.length >= uniqueSupplies.length}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-foreground bg-card border border-border rounded-xl hover:bg-muted transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 type-caption font-semibold text-text-primary bg-surface border border-divider rounded-control hover:bg-hover transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus size={14} /> Add Item
               </button>
             </div>
 
             {/* Bottom Section: Notes (Optional) on bottom left */}
-            <div className="flex flex-col sm:flex-row justify-start pt-3 border-t border-border">
+            <div className="flex flex-col sm:flex-row justify-start pt-3 border-t border-divider">
               <div className="w-full sm:w-1/2 lg:w-5/12 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-foreground">
-                    Notes <span className="text-muted-foreground font-normal">(Optional)</span>
+                  <label className="type-label font-semibold text-text-primary">
+                    Notes <span className="text-text-muted font-normal">(Optional)</span>
                   </label>
-                  <span className="text-[10px] text-muted-foreground">{notes.length}/300</span>
+                  <span className="type-caption text-text-muted">{notes.length}/300</span>
                 </div>
                 <Textarea
                   rows={3}
@@ -843,19 +839,19 @@ export function CreatePRModal({
                   placeholder="Enter additional notes (optional)..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-card px-3 py-2 text-xs text-foreground focus:ring-1 focus:ring-ring resize-none"
+                  className="w-full rounded-control border border-divider bg-surface px-3 py-2 type-body text-text-primary focus:ring-1 focus:ring-accent resize-none"
                 >
                 </Textarea>
               </div>
             </div>
 
             {/* Modal Footer: Matching Resources & Suppliers Modals */}
-            <div className="flex flex-wrap justify-end gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
+            <div className="flex flex-wrap justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
               <ModalCloseButton
                 type="button"
                 variant="outline"
                 fallbackOnClose={onClose}
-                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                className="rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button text-text-primary hover:bg-hover transition-colors cursor-pointer"
               >
                 Cancel
               </ModalCloseButton>
@@ -869,7 +865,7 @@ export function CreatePRModal({
                     setIsReviewing(true);
                   }
                 }}
-                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                className="rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button text-text-primary hover:bg-hover transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               >
                 Save as Draft
               </Button>
@@ -882,7 +878,7 @@ export function CreatePRModal({
                     setIsReviewing(true);
                   }
                 }}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                className="rounded-control bg-button-primary text-button-primary-foreground px-5 py-2.5 type-label-button hover:bg-button-primary-hover transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               >
                 Submit for Approval
               </Button>

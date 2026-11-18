@@ -35,7 +35,7 @@ export function PRDetailsModal({
 
   if (!pr) return null;
 
-  const isPending = pr.status === "Pending Approval" || (pr.status as any) === "Pending";
+  const isPending = pr.status === "Pending Approval" || (pr.status as string) === "Pending";
   const isApproved = pr.status === "Approved";
   const isClosed = pr.status === "Closed";
   const displayPriority = normalizePrPriority(pr.priority);
@@ -50,8 +50,9 @@ export function PRDetailsModal({
       } else {
         setReportError(res.data?.message || "Unable to generate report.");
       }
-    } catch (err: any) {
-      setReportError(err?.response?.data?.message || err?.message || "Unable to download lifecycle report.");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      setReportError(e?.response?.data?.message || e?.message || "Unable to download lifecycle report.");
     } finally {
       setDownloadingReport(false);
     }
@@ -86,29 +87,29 @@ export function PRDetailsModal({
       open={!!pr}
       title={isAdmin && isPending ? `Review Product Requisition — ${pr.prNumber}` : `Product Requisition Details — ${pr.prNumber}`}
       onClose={onClose}
-      size="max-w-5xl"
+      size="max-w-[640px]"
     >
       <div className="space-y-6">
         {/* Top Header Row with Status Badge */}
-        <div className="flex items-center justify-between pb-3 border-b border-border">
+        <div className="flex items-center justify-between pb-3 border-b border-divider">
           <div className="flex items-center gap-3">
             <StatusBadge status={pr.status} />
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="type-caption text-text-muted">
             {pr.department} · {displayPriority} Priority
           </div>
         </div>
 
         {/* Feedback / Rejection / Return / Cancellation Reason */}
         {pr.adminNotes ? (
-          <div className={`p-4 rounded-xl border space-y-1.5 ${
+          <div className={`p-4 rounded-card border space-y-1.5 ${
             pr.status === "Cancelled" || pr.status === "Rejected"
-              ? "border-destructive/30 bg-destructive/5 text-destructive"
+              ? "border-status-red/30 bg-status-red/5 text-status-red"
               : pr.status === "Returned"
-              ? "border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-400"
-              : "border-border bg-muted/40 text-foreground"
+              ? "border-status-amber/30 bg-status-amber/5 text-status-amber"
+              : "border-divider bg-surface-muted text-text-primary"
           }`}>
-            <div className="flex items-center gap-2 text-xs font-bold">
+            <div className="flex items-center gap-2 type-caption font-bold">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>
                 {pr.status === "Cancelled"
@@ -120,86 +121,86 @@ export function PRDetailsModal({
                   : "Admin Feedback:"}
               </span>
             </div>
-            <p className="text-xs pl-6 whitespace-pre-wrap leading-relaxed opacity-95">{pr.adminNotes}</p>
+            <p className="type-caption pl-6 whitespace-pre-wrap leading-relaxed opacity-95">{pr.adminNotes}</p>
           </div>
         ) : (pr.status === "Cancelled" || pr.status === "Rejected") ? (
-          <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 space-y-1.5 text-destructive">
-            <div className="flex items-center gap-2 text-xs font-bold">
+          <div className="p-4 rounded-card border border-status-red/20 bg-status-red/5 space-y-1.5 text-status-red">
+            <div className="flex items-center gap-2 type-caption font-bold">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{pr.status === "Cancelled" ? "Cancellation Reason:" : "Rejection Reason:"}</span>
             </div>
-            <p className="text-xs pl-6 text-muted-foreground italic">No rejection or cancellation reason was recorded.</p>
+            <p className="type-caption pl-6 text-text-muted italic">No rejection or cancellation reason was recorded.</p>
           </div>
         ) : null}
 
         {/* Read-only Form matching CreatePRForm (3 columns per row) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-2xl bg-muted/20 border border-border">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider">
           {/* PR Number */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
               Purchase Requisition Number
             </label>
-            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground select-all">
+            <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted select-all">
               {pr.prNumber}
             </div>
           </div>
 
           {/* Request Date */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
               Request Date
             </label>
-            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+            <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted">
               {formattedRequestDate}
             </div>
           </div>
 
           {/* Required Date */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
               Required Date
             </label>
-            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+            <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted">
               {formattedRequiredDate}
             </div>
           </div>
 
           {/* Requested By */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
               Requested By
             </label>
-            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+            <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted">
               {pr.requestedBy && pr.requestedBy !== "Unauthenticated" ? pr.requestedBy : "Inventory Manager"}
             </div>
           </div>
 
           {/* Department */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
               Department
             </label>
-            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+            <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted">
               {pr.department || "Inventory"}
             </div>
           </div>
 
           {/* Purpose */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
               Purpose
             </label>
-            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+            <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted">
               {pr.purpose || pr.requestType || "Stock Replenishment"}
             </div>
           </div>
 
           {/* Priority */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+            <label className="mb-1.5 block type-label font-semibold text-text-primary">
               Priority
             </label>
-            <div className="flex items-center h-10 px-3.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+            <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted">
               {displayPriority}
             </div>
           </div>
@@ -208,60 +209,60 @@ export function PRDetailsModal({
         {/* Requested Supplies & Ingredients Table */}
         <div className="space-y-3">
           {duplicateNames.map((name) => (
-            <div key={name} className="flex items-start gap-2 rounded-xl border border-red-400 bg-red-50 p-3 text-xs font-semibold text-red-700 dark:bg-red-950 dark:text-red-300">
+            <div key={name} className="flex items-start gap-2 rounded-card border border-status-red/40 bg-status-red/10 p-3 type-caption font-semibold text-status-red">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>Warning: Duplicate ingredient detected - {name}. Please review and consolidate before proceeding.</span>
             </div>
           ))}
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-foreground">
+            <h3 className="type-subsection text-text-primary">
               Requested Items
             </h3>
-            <span className="text-xs text-muted-foreground">
+            <span className="type-caption text-text-muted">
               {pr.items?.length || 0} item(s) listed
             </span>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-border bg-card">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-border bg-muted/40 uppercase text-muted-foreground">
+          <div className="overflow-x-auto rounded-card border border-divider bg-surface">
+            <table className="w-full text-left">
+              <thead className="border-b border-divider bg-surface-muted uppercase text-text-muted table-head-row type-table-header">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">SUPPLY NAME</th>
-                  <th className="px-4 py-3 font-semibold">SUPPLY NO.</th>
-                  <th className="px-4 py-3 font-semibold">Unit of Measure</th>
-                  <th className="px-4 py-3 text-right font-semibold">ACTUAL INVENTORY</th>
-                  <th className="px-4 py-3 text-right font-semibold">QUANTITY (TO ORDER)</th>
+                  <th className="table-th px-4 py-3 font-semibold">SUPPLY NAME</th>
+                  <th className="table-th px-4 py-3 font-semibold">SUPPLY NO.</th>
+                  <th className="table-th px-4 py-3 font-semibold">Unit of Measure</th>
+                  <th className="table-th px-4 py-3 text-right font-semibold">ACTUAL INVENTORY</th>
+                  <th className="table-th px-4 py-3 text-right font-semibold">QUANTITY (TO ORDER)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-divider">
                 {pr.items && pr.items.length > 0 ? (
                   pr.items.map((item, idx) => (
                     <tr
                       key={idx}
                       className={duplicateItemIds.has(item.itemId)
-                        ? "bg-red-50 text-red-800 dark:bg-red-950/50"
-                        : "hover:bg-muted/20 transition-colors"}
+                        ? "bg-status-red/10 text-status-red table-row"
+                        : "table-row hover:bg-hover transition-colors"}
                     >
-                      <td className="px-4 py-3 font-medium text-foreground">
+                      <td className="table-td px-4 py-3 font-medium text-text-primary">
                         {item.itemName}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">
+                      <td className="table-td px-4 py-3 text-text-muted">
                         {item.itemCode || `SPL-${item.itemId}`}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">
+                      <td className="table-td px-4 py-3 text-text-muted">
                         {item.uomName || "Unit"}
                       </td>
-                      <td className="px-4 py-3 text-right text-muted-foreground">
+                      <td className="table-td px-4 py-3 text-right text-text-muted">
                         {Number(item.actualInventory || 0).toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-foreground">
+                      <td className="table-td px-4 py-3 text-right font-bold text-text-primary">
                         {Number(item.requestedQuantity || 0).toLocaleString()}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-xs text-muted-foreground">
+                    <td colSpan={5} className="table-td px-4 py-8 text-center type-body text-text-muted">
                       No supplies or ingredients found in this requisition.
                     </td>
                   </tr>
@@ -273,12 +274,12 @@ export function PRDetailsModal({
 
         {/* Notes on bottom left */}
         {pr.notes && (
-          <div className="flex justify-start pt-2 border-t border-border">
+          <div className="flex justify-start pt-2 border-t border-divider">
             <div className="w-full sm:w-1/2 lg:w-5/12 space-y-1.5">
-              <label className="block text-xs font-semibold text-foreground">
+              <label className="block type-label font-semibold text-text-primary">
                 Notes
               </label>
-              <div className="w-full rounded-xl border border-border bg-muted/40 p-3 text-xs text-foreground leading-relaxed whitespace-pre-wrap">
+              <div className="w-full rounded-control border border-divider bg-surface-muted p-3 type-body text-text-primary leading-relaxed whitespace-pre-wrap">
                 {pr.notes}
               </div>
             </div>
@@ -287,14 +288,14 @@ export function PRDetailsModal({
 
         {/* Report download error */}
         {reportError && (
-          <p role="alert" className="text-xs font-medium text-destructive">
+          <p role="alert" className="type-caption font-medium text-status-red">
             {reportError}
           </p>
         )}
 
         {/* Modal Footer with Operations */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-5 pb-3 border-t border-border mt-6 mb-2">
-          <div className="text-xs text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
+          <div className="type-caption text-text-muted">
             {pr.updatedAt ? `Last modified: ${new Date(pr.updatedAt).toLocaleString()}` : ""}
           </div>
 
@@ -304,7 +305,7 @@ export function PRDetailsModal({
               type="button"
               variant="outline"
               fallbackOnClose={onClose}
-              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+              className="rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button text-text-primary hover:bg-hover transition-colors"
             >
               Close
             </ModalCloseButton>
@@ -315,7 +316,7 @@ export function PRDetailsModal({
                 type="button"
                 onClick={handleDownloadReport}
                 disabled={downloadingReport}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm inline-flex items-center gap-2"
+                className="rounded-control bg-button-primary text-button-primary-foreground px-5 py-2.5 type-label-button hover:bg-button-primary-hover transition-colors shadow-sm inline-flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
                 {downloadingReport ? "Generating PDF..." : "Download Full Report (PDF)"}
@@ -330,7 +331,7 @@ export function PRDetailsModal({
                     type="button"
                     variant="outline"
                     onClick={() => onReturn(pr)}
-                    className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+                    className="rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button text-text-primary hover:bg-hover transition-colors"
                   >
                     Return for Revision
                   </Button>
@@ -341,7 +342,7 @@ export function PRDetailsModal({
                     type="button"
                     variant="outline"
                     onClick={() => onReject(pr)}
-                    className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+                    className="rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button text-text-primary hover:bg-hover transition-colors"
                   >
                     Reject
                   </Button>
@@ -351,7 +352,7 @@ export function PRDetailsModal({
                   <Button
                     type="button"
                     onClick={() => onApprove(pr)}
-                    className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
+                    className="rounded-control bg-button-primary text-button-primary-foreground px-5 py-2.5 type-label-button hover:bg-button-primary-hover transition-colors shadow-sm"
                   >
                     Approve
                   </Button>
@@ -364,7 +365,7 @@ export function PRDetailsModal({
               <Button
                 type="button"
                 onClick={() => onCreatePo(pr)}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/85 transition-colors shadow-sm"
+                className="rounded-control bg-button-primary text-button-primary-foreground px-5 py-2.5 type-label-button hover:bg-button-primary-hover transition-colors shadow-sm"
               >
                 Create Purchase Order
               </Button>
