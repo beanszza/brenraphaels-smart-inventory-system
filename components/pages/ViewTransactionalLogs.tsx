@@ -179,16 +179,16 @@ export default function ViewTransactionalLogs({
   };
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden min-h-screen bg-background p-2 sm:p-4 transition-colors font-sans text-foreground">
+    <div className="w-full max-w-full overflow-x-hidden min-h-screen bg-canvas p-2 sm:p-4 transition-colors font-sans text-text-primary">
       <div className="w-full max-w-full space-y-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <Button variant="outline" onClick={() => router.back()} className="mb-3 px-4 py-2 text-sm font-semibold rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-colors shadow-sm">
+            <Button variant="outline" onClick={() => router.back()} className="mb-3 px-4 py-2 type-button font-semibold rounded-control border border-divider bg-surface text-text-primary hover:bg-surface-hover transition-colors shadow-xs">
               <ArrowLeft className="w-4 h-4" />
               Back
             </Button>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{title}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+            <h1 className="type-page-title text-text-primary tracking-tight">{title}</h1>
+            <p className="mt-1 type-body text-text-muted">{subtitle}</p>
           </div>
         </div>
 

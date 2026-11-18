@@ -94,22 +94,22 @@ export default function AuditLogsTable({
 
   return (
     <>
-      <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
+      <div className="rounded-panel border border-divider bg-surface overflow-hidden shadow-xs">
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left text-sm border-collapse">
-            <thead className="bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
+          <table className="w-full text-left type-table-cell border-collapse">
+            <thead className="bg-surface-hover type-table-header uppercase tracking-wider text-text-muted border-b border-divider">
               <tr>
-                <th className="sticky left-0 z-20 w-16 whitespace-nowrap px-4 py-3.5 text-center bg-muted/95 backdrop-blur-xs border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">#</th>
+                <th className="sticky left-0 z-20 w-16 whitespace-nowrap px-4 py-3.5 text-center bg-surface-hover/95 backdrop-blur-xs border-r border-divider shadow-xs">#</th>
                 <th className="whitespace-nowrap px-4 py-3.5 min-w-[200px]">Action &amp; Event Activity</th>
                 <th className="whitespace-nowrap px-4 py-3.5">Target Entity &amp; Details</th>
                 <th className="whitespace-nowrap px-4 py-3.5">Date &amp; Exact Time</th>
                 <th className="whitespace-nowrap px-4 py-3.5">Performed By</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-divider">
               {paginatedLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
+                  <td colSpan={5} className="px-6 py-12 text-center text-text-muted">
                     {emptyMessage}
                   </td>
                 </tr>
@@ -121,10 +121,10 @@ export default function AuditLogsTable({
                   return (
                     <tr
                       key={log.id || index}
-                      className="hover:bg-muted/30 transition-colors group"
+                      className="hover:bg-surface-hover/50 transition-colors group"
                     >
                       {/* Row Number (#) */}
-                      <td className="sticky left-0 z-10 w-16 whitespace-nowrap px-4 py-3.5 text-center font-mono text-xs font-bold text-muted-foreground bg-card group-hover:bg-muted/40 transition-colors border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                      <td className="sticky left-0 z-10 w-16 whitespace-nowrap px-4 py-3.5 text-center font-mono type-caption font-semibold text-text-muted bg-surface group-hover:bg-surface-hover/50 transition-colors border-r border-divider shadow-xs">
                         {startIdx + index + 1}
                       </td>
 
@@ -134,7 +134,7 @@ export default function AuditLogsTable({
                           type="button"
                           onClick={() => setSelectedLog(log)}
                           title="Click to view full event details"
-                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-muted/80 text-foreground border border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer shadow-xs group/btn"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold bg-surface-hover text-text-primary border border-divider hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer shadow-xs group/btn"
                         >
                           {getActivityIcon(log.activity)}
                           <span>{activitySummary.label}</span>
@@ -148,11 +148,11 @@ export default function AuditLogsTable({
                       {/* Summarized Target Entity & Details */}
                       <td className="px-4 py-3.5 max-w-md">
                         <div className="flex flex-col min-w-0">
-                          <span className="font-semibold text-foreground text-sm truncate">
+                          <span className="font-semibold text-text-primary type-body truncate">
                             {entitySummary.primary}
                           </span>
                           {entitySummary.secondary && (
-                            <span className="text-xs text-muted-foreground truncate">
+                            <span className="type-caption text-text-muted truncate">
                               {entitySummary.secondary}
                             </span>
                           )}
@@ -160,18 +160,18 @@ export default function AuditLogsTable({
                       </td>
 
                       {/* Timestamp (MM/DD/YYYY HH:MM:SS) */}
-                      <td className="whitespace-nowrap px-4 py-3.5 text-muted-foreground text-xs font-mono">
+                      <td className="whitespace-nowrap px-4 py-3.5 text-text-muted type-caption font-mono">
                         <div className="flex items-center gap-1.5">
-                          <Clock size={13} className="text-muted-foreground" />
+                          <Clock size={13} className="text-text-muted" />
                           <span>{formatTimestamp(log.timestamp)}</span>
                         </div>
                       </td>
 
                       {/* Performed By User */}
-                      <td className="whitespace-nowrap px-4 py-3.5 text-muted-foreground">
-                        <div className="flex items-center gap-1.5 font-medium text-xs">
-                          <User size={13} className="text-foreground" />
-                          <span className="text-foreground font-medium">{log.user}</span>
+                      <td className="whitespace-nowrap px-4 py-3.5 text-text-muted">
+                        <div className="flex items-center gap-1.5 font-medium type-caption">
+                          <User size={13} className="text-text-primary" />
+                          <span className="text-text-primary font-medium">{log.user}</span>
                         </div>
                       </td>
                     </tr>
