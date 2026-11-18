@@ -141,10 +141,10 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
   return (
     <div className="space-y-6 animate-page-in">
       {/* ── Header ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-divider pb-4">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Quality Assurance Review</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2 className="type-section-title text-text-primary">Quality Assurance Review</h2>
+          <p className="mt-1 type-body text-text-muted">
             Inspect finished production lots, verify sensory and packaging parameters, and approve for stock-in.
           </p>
         </div>
@@ -153,7 +153,7 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
             variant="outline"
             size="sm"
             onClick={fetchBatches}
-            className="text-xs h-8 rounded-lg border-border hover:bg-muted font-semibold cursor-pointer"
+            className="type-button h-8 rounded-control border-divider hover:bg-surface-hover font-semibold cursor-pointer text-text-primary"
           >
             Refresh
           </Button>
@@ -168,10 +168,10 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
             setSubTab("pending");
             setSelectedBatchId(null);
           }}
-          className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
             subTab === "pending"
               ? "bg-primary text-primary-foreground shadow-xs"
-              : "border border-border bg-card text-muted-foreground hover:bg-muted"
+              : "border border-divider bg-surface text-text-muted hover:bg-surface-hover hover:text-text-primary"
           }`}
         >
           <span>Pending Inspection</span>
@@ -183,10 +183,10 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
             setSubTab("completed");
             setSelectedBatchId(null);
           }}
-          className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
             subTab === "completed"
               ? "bg-primary text-primary-foreground shadow-xs"
-              : "border border-border bg-card text-muted-foreground hover:bg-muted"
+              : "border border-divider bg-surface text-text-muted hover:bg-surface-hover hover:text-text-primary"
           }`}
         >
           <span>Cleared / Completed QA</span>
@@ -197,11 +197,11 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
       <div className="flex flex-col lg:flex-row gap-5 items-start">
         {/* Left List of Batches in this subtab (w-full lg:w-72 shrink-0) */}
         <div className="w-full lg:w-72 shrink-0 space-y-3">
-          <div className="flex items-center justify-between pb-1 border-b border-border/60">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-foreground">
+          <div className="flex items-center justify-between pb-1 border-b border-divider">
+            <h3 className="type-overline font-semibold uppercase tracking-wider text-text-primary">
               {subTab === "pending" ? "Awaiting QA" : "Inspected"}
             </h3>
-            <span className="text-[11px] font-semibold text-muted-foreground font-mono">
+            <span className="type-caption font-semibold text-text-muted font-mono">
               {batches.length} {batches.length === 1 ? "Batch" : "Batches"}
             </span>
           </div>
@@ -210,7 +210,7 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
             {loading ? (
               <ProductionSkeleton />
             ) : batches.length === 0 ? (
-              <div className="p-6 text-center text-xs text-muted-foreground rounded-xl border border-border bg-card">
+              <div className="p-6 text-center type-caption text-text-muted rounded-panel border border-divider bg-surface">
                 No batches found in this view.
               </div>
             ) : (
@@ -220,22 +220,22 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                   <div
                     key={b.batchId}
                     onClick={() => handleSelectBatch(b)}
-                    className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                    className={`p-3 rounded-panel border transition-all cursor-pointer ${
                       isSelected
-                        ? "border-foreground bg-muted/20 ring-1 ring-foreground shadow-xs"
-                        : "border-border bg-card hover:border-foreground/40 hover:bg-muted/10"
+                        ? "border-primary bg-primary/5 ring-1 ring-primary shadow-xs"
+                        : "border-divider bg-surface hover:border-divider-strong hover:bg-surface-hover"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-1.5">
-                      <span className="font-mono text-xs font-bold text-foreground truncate block">
+                      <span className="font-mono type-caption font-semibold text-text-primary truncate block">
                         {(b.fgLotCode || "").replace(/^FG-/i, "") || b.batchNumber}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-border bg-card font-semibold text-foreground shrink-0">
+                      <span className="type-caption px-1.5 py-0.5 rounded-control border border-divider bg-surface-hover font-semibold text-text-primary shrink-0">
                         {b.status}
                       </span>
                     </div>
-                    <div className="text-xs font-semibold text-foreground mt-1 truncate">{b.productName}</div>
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-2 pt-2 border-t border-border/70 font-mono">
+                    <div className="type-caption font-semibold text-text-primary mt-1 truncate">{b.productName}</div>
+                    <div className="flex items-center justify-between type-caption text-text-muted mt-2 pt-2 border-t border-divider font-mono">
                       <span>Packed: {Number(b.packedQty).toLocaleString()}</span>
                       <span>Yield: {Number(b.yieldPercentage).toFixed(1)}%</span>
                     </div>
@@ -249,25 +249,25 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
         {/* Right QA Inspection Card (flex-1) */}
         <div className="flex-1 min-w-0 w-full">
           {selectedBatch ? (
-            <div className="p-5 rounded-xl border border-border bg-card space-y-5 animate-in fade-in">
+            <div className="p-5 rounded-panel border border-divider bg-surface space-y-5 animate-in fade-in">
               <div>
-                <h3 className="text-base font-bold text-foreground">QA review</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <h3 className="type-card-title text-text-primary">QA review</h3>
+                <p className="type-caption text-text-muted mt-0.5">
                   Count what passed and what failed. Passed units go to stock. Failed units go to loss and disposal.
                 </p>
               </div>
 
               {/* Summary Metadata Grid matching Screenshot 1 */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl border border-border bg-muted/10 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-panel border border-divider bg-surface-hover text-text-primary">
                 <div>
-                  <p className="text-[10px] uppercase font-semibold text-muted-foreground">FINISHED GOODS LOT</p>
-                  <p className="font-bold text-foreground mt-0.5">
+                  <p className="type-overline uppercase font-semibold text-text-muted">FINISHED GOODS LOT</p>
+                  <p className="type-caption font-semibold text-text-primary mt-0.5">
                     {(selectedBatch.fgLotCode || "").replace(/^FG-/i, "") || "CCS-261008-01"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-semibold text-muted-foreground">MFG DATE</p>
-                  <p className="font-semibold text-foreground mt-0.5">
+                  <p className="type-overline uppercase font-semibold text-text-muted">MFG DATE</p>
+                  <p className="type-caption font-semibold text-text-primary mt-0.5">
                     {new Date(selectedBatch.mfgDate).toLocaleDateString("en-GB", {
                       day: "2-digit",
                       month: "short",
@@ -276,8 +276,8 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-semibold text-muted-foreground">EXPIRY</p>
-                  <p className="font-semibold text-foreground mt-0.5">
+                  <p className="type-overline uppercase font-semibold text-text-muted">EXPIRY</p>
+                  <p className="type-caption font-semibold text-text-primary mt-0.5">
                     {selectedBatch.expiryDate
                       ? new Date(selectedBatch.expiryDate).toLocaleDateString("en-GB", {
                           day: "2-digit",
@@ -288,20 +288,20 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-semibold text-muted-foreground">REQUEST QTY</p>
-                  <p className="font-bold text-foreground mt-0.5">
+                  <p className="type-overline uppercase font-semibold text-text-muted">REQUEST QTY</p>
+                  <p className="type-caption font-semibold text-text-primary mt-0.5">
                     {selectedBatch.requestQty.toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-semibold text-muted-foreground">PACKED QTY</p>
-                  <p className="font-bold text-foreground mt-0.5">
+                  <p className="type-overline uppercase font-semibold text-text-muted">PACKED QTY</p>
+                  <p className="type-caption font-semibold text-text-primary mt-0.5">
                     {selectedBatch.packedQty.toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-semibold text-muted-foreground">YIELD</p>
-                  <p className="font-bold text-foreground mt-0.5">
+                  <p className="type-overline uppercase font-semibold text-text-muted">YIELD</p>
+                  <p className="type-caption font-semibold text-text-primary mt-0.5">
                     {selectedBatch.yieldPercentage.toFixed(1)}%
                   </p>
                 </div>
@@ -312,8 +312,8 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                 <div className="space-y-4 pt-1">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Accepted Input */}
-                    <div className="space-y-2 p-3 rounded-lg border border-border bg-card">
-                      <Label className="text-xs font-bold text-foreground">
+                    <div className="space-y-2 p-3 rounded-panel border border-divider bg-surface">
+                      <Label className="type-caption font-semibold text-text-primary">
                         Accepted (units) <span className="text-destructive">*</span>
                       </Label>
                       <Input
@@ -326,20 +326,20 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                           setAcceptedQty(val);
                           setRejectedQty(Math.max(0, selectedBatch.packedQty - val));
                         }}
-                        className="h-9 text-xs border-border bg-background font-bold"
+                        className="h-9 type-input border-divider bg-surface font-semibold text-text-primary"
                       />
 
                       {acceptedQty > 0 && (
                         <div className="space-y-1 pt-1 animate-in fade-in">
-                          <Label className="text-[11px] text-muted-foreground">Acceptance Reason</Label>
+                          <Label className="type-caption text-text-muted">Acceptance Reason</Label>
                           <Select
                             value={acceptedReason}
                             onValueChange={setAcceptedReason}
                           >
-                            <SelectTrigger className="h-8 text-xs border-border bg-background">
+                            <SelectTrigger className="h-8 type-input border-divider bg-surface text-text-primary">
                               <SelectValue placeholder="Select reason" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-surface border-divider text-text-primary">
                               <SelectItem value="Meets All Sensory & Packaging Standards">
                                 Meets All Sensory & Packaging Standards
                               </SelectItem>
@@ -356,8 +356,8 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                     </div>
 
                     {/* Rejected Input */}
-                    <div className="space-y-2 p-3 rounded-lg border border-border bg-card">
-                      <Label className="text-xs font-bold text-foreground">
+                    <div className="space-y-2 p-3 rounded-panel border border-divider bg-surface">
+                      <Label className="type-caption font-semibold text-text-primary">
                         Rejected (units) <span className="text-destructive">*</span>
                       </Label>
                       <Input
@@ -370,20 +370,20 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                           setRejectedQty(val);
                           setAcceptedQty(Math.max(0, selectedBatch.packedQty - val));
                         }}
-                        className="h-9 text-xs border-border bg-background font-bold text-destructive"
+                        className="h-9 type-input border-divider bg-surface font-semibold text-destructive"
                       />
 
                       {rejectedQty > 0 && (
                         <div className="space-y-1 pt-1 animate-in fade-in">
-                          <Label className="text-[11px] text-muted-foreground">Rejection Reason</Label>
+                          <Label className="type-caption text-text-muted">Rejection Reason</Label>
                           <Select
                             value={rejectedReason}
                             onValueChange={setRejectedReason}
                           >
-                            <SelectTrigger className="h-8 text-xs border-border bg-background">
+                            <SelectTrigger className="h-8 type-input border-divider bg-surface text-text-primary">
                               <SelectValue placeholder="Select defect reason" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-surface border-divider text-text-primary">
                               <SelectItem value="Improper Seal / Leakage">Improper Seal / Leakage</SelectItem>
                               <SelectItem value="Off-Flavor / Color Discrepancy">Off-Flavor / Color Discrepancy</SelectItem>
                               <SelectItem value="Contamination / Foreign Matter">Contamination / Foreign Matter</SelectItem>
@@ -391,7 +391,7 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                               <SelectItem value="Damaged Jar / Cap / Label">Damaged Jar / Cap / Label</SelectItem>
                             </SelectContent>
                           </Select>
-                          <p className="text-[10px] text-destructive pt-1">
+                          <p className="type-overline text-destructive pt-1">
                             Notice: Rejected units will automatically log a Loss Report in Loss & Disposal.
                           </p>
                         </div>
@@ -400,11 +400,11 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                   </div>
 
                   {/* Checklist */}
-                  <div className="p-3 rounded-lg border border-border bg-card space-y-2">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <div className="p-3 rounded-panel border border-divider bg-surface space-y-2">
+                    <p className="type-overline font-semibold uppercase tracking-wider text-text-muted">
                       Quality Inspection Checklist
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 type-caption">
                       {[
                         { key: "sealIntegrity", label: "Packaging seal integrity & tightness" },
                         { key: "labelClarity", label: "Label accuracy & expiry date clarity" },
@@ -419,9 +419,9 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                             onChange={(e) =>
                               setChecklist((prev) => ({ ...prev, [item.key]: e.target.checked }))
                             }
-                            className="rounded border-border"
+                            className="rounded border-divider text-primary focus:ring-primary"
                           />
-                          <span className="text-foreground">{item.label}</span>
+                          <span className="text-text-primary">{item.label}</span>
                         </label>
                       ))}
                     </div>
@@ -429,13 +429,13 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
 
                   {/* Remarks */}
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-foreground">Remarks (Optional)</Label>
+                    <Label className="type-caption font-semibold text-text-primary">Remarks (Optional)</Label>
                     <Textarea
                       placeholder="Add sensory findings, inspector observations..."
                       rows={2}
                       value={remarks}
                       onChange={(e) => setRemarks(e.target.value)}
-                      className="text-xs border-border bg-background"
+                      className="type-input border-divider bg-surface text-text-primary"
                     />
                   </div>
 
@@ -463,75 +463,74 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                           }
                           setConfirmModal(true);
                         }}
-                        className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/85 transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                        className="px-5 py-2.5 type-button font-semibold rounded-control bg-primary text-primary-foreground hover:bg-primary-hover transition-colors cursor-pointer shadow-sm disabled:opacity-50"
                       >
                         Confirm & Sign Off QA Review
                       </button>
                     ) : (
-                      <span className="text-xs text-muted-foreground italic">
+                      <span className="type-caption text-text-muted italic">
                         Admin View-Only Mode (Inspection operated by Quality Assurance Officer)
                       </span>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="p-4 rounded-lg border border-border bg-muted/20 text-xs space-y-1">
-                  <p className="font-bold text-foreground">Inspection Completed</p>
-                  <p className="text-muted-foreground text-[11px]">
+                <div className="p-4 rounded-panel border border-divider bg-surface-hover type-caption space-y-1">
+                  <p className="font-semibold text-text-primary">Inspection Completed</p>
+                  <p className="text-text-muted type-caption">
                     This batch has passed QA and is ready for inventory stock-in.
                   </p>
                 </div>
               )}
             </div>
           ) : (
-            <div className="p-12 text-center border border-border rounded-xl bg-card text-xs text-muted-foreground">
+            <div className="p-12 text-center border border-divider rounded-panel bg-surface type-caption text-text-muted">
               Select a batch from the list on the left to begin quality inspection.
             </div>
           )}
         </div>
       </div>
 
-      {/* Confirmation Modal (Matching PO / PR Confirmation Format) */}
+      {/* Confirmation Modal (Matching PO / PR Confirmation Format - 480px max-w) */}
       {mounted && confirmModal && selectedBatch && typeof document !== "undefined" && createPortal(
         <div
-          className="pointer-events-auto font-sans fixed inset-0 z-[100002] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+          className="pointer-events-auto font-sans fixed inset-0 z-[100002] flex items-center justify-center p-4 bg-backdrop backdrop-blur-xs animate-in fade-in duration-150"
         >
           <div
             role="alertdialog"
             aria-modal="true"
-            style={{ width: "100%", maxWidth: "440px" }}
-            className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col p-6 text-foreground shrink-0"
+            className="w-full max-w-[480px] bg-surface rounded-panel shadow-2xl border border-divider overflow-hidden flex flex-col p-6 text-text-primary shrink-0"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col items-center justify-center text-center">
               {/* Circular Alert Icon */}
-              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 text-foreground">
-                <AlertTriangle className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-full bg-surface-hover flex items-center justify-center mb-4 text-text-primary">
+                <AlertTriangle className="w-6 h-6 text-warning" />
               </div>
 
               {/* Title */}
-              <h2 className="text-xl font-bold text-foreground mb-1">
+              <h2 className="type-modal-title text-text-primary mb-1">
                 Confirm Quality Assurance Review
               </h2>
 
               {/* Subtitle */}
-              <p className="text-xs font-semibold text-muted-foreground mb-3">
+              <p className="type-caption font-semibold text-text-muted mb-3">
                 Finished Goods Lot: {(selectedBatch.fgLotCode || "").replace(/^FG-/i, "") || selectedBatch.batchNumber}
               </p>
 
               {/* Message */}
-              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                You are approving <strong className="text-foreground">{acceptedQty} units</strong> to proceed to stock-in
+              <p className="type-body text-text-muted mb-6 leading-relaxed">
+                You are approving <strong className="text-text-primary font-semibold">{acceptedQty} units</strong> to proceed to stock-in
                 {rejectedQty > 0 ? ` and logging ${rejectedQty} units to Loss & Disposal` : ""}. This action is permanent.
               </p>
 
-              {/* Buttons matching PO / PR Confirmation format */}
+              {/* Buttons matching standard confirm format */}
               <div className="flex justify-center gap-3 w-full">
                 <button
                   type="button"
                   onClick={() => setConfirmModal(false)}
                   disabled={submitting}
-                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+                  className="flex-1 px-5 py-2.5 type-button font-semibold text-text-primary border border-divider bg-surface hover:bg-surface-hover rounded-control transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -539,7 +538,7 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
                   type="button"
                   onClick={handleSubmitQa}
                   disabled={submitting}
-                  className="flex-1 px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/85 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+                  className="flex-1 px-5 py-2.5 type-button font-semibold text-primary-foreground bg-primary hover:bg-primary-hover rounded-control transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
                 >
                   {submitting ? "Signing Off..." : "Sign Off & Complete"}
                 </button>

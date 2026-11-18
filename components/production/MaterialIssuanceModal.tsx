@@ -476,7 +476,7 @@ export default function MaterialIssuanceModal({
         stopCamera();
         onClose();
       }}
-      size="max-w-4xl"
+      size="max-w-[640px]"
     >
       {/* Hidden canvas for jsQR analysis */}
       <canvas ref={canvasRef} className="hidden" />
@@ -485,12 +485,12 @@ export default function MaterialIssuanceModal({
         {loading && <ProductionSkeleton />}
         {/* Header Summary Card */}
         {issuance && (
-          <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-muted/20 border border-border">
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-control bg-surface-secondary/40 border border-divider">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-foreground text-sm">{issuance.productName}</span>
+                <span className="font-semibold text-text-primary type-body">{issuance.productName}</span>
               </div>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+              <div className="flex items-center gap-3 type-caption text-text-muted mt-0.5">
                 <span>Request No: {issuance.reqNumber}</span>
                 <span>•</span>
                 <span>Recipe: {issuance.recipeName}</span>
@@ -510,19 +510,19 @@ export default function MaterialIssuanceModal({
         {/* QR CODE SCANNER SECTION - APPEARS DIRECTLY ON TOP OF MATERIAL ISSUANCE    */}
         {/* ========================================================================= */}
         {!isAlreadyIssued && !allVerified && cameraVisible && (
-          <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden animate-in fade-in duration-200">
+          <div className="rounded-control border border-divider bg-surface shadow-card overflow-hidden animate-in fade-in duration-200">
             {/* Panel Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-divider bg-surface-secondary/40">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-control bg-brand text-text-inverse flex items-center justify-center shrink-0">
                   <Camera size={15} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+                  <h4 className="type-table-header text-text-primary uppercase tracking-wider">
                     QR Code Scanner
                   </h4>
-                  <p className="text-[11px] text-muted-foreground">
-                    Point camera at Goods & Receiving packaging QR code
+                  <p className="type-caption text-text-muted">
+                    Point camera at Goods &amp; Receiving packaging QR code
                   </p>
                 </div>
               </div>
@@ -531,16 +531,16 @@ export default function MaterialIssuanceModal({
             {/* Body: 2-Column Responsive Layout */}
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
               {/* Left Column: Camera Viewfinder */}
-              <div className="relative w-full aspect-4/3 bg-black rounded-xl overflow-hidden flex items-center justify-center border border-border">
+              <div className="relative w-full aspect-4/3 bg-black rounded-control overflow-hidden flex items-center justify-center border border-divider">
                 {/* 1. Timed Out Overlay (1 minute inactivity) - purely informative, no buttons here */}
                 {isTimedOut ? (
-                  <div className="flex flex-col items-center justify-center text-center p-6 text-muted-foreground gap-2 z-20 w-full h-full bg-black/95">
-                    <div className="w-10 h-10 rounded-full bg-muted/20 border border-border flex items-center justify-center text-foreground">
-                      <AlertCircle className="w-5 h-5 text-foreground" />
+                  <div className="flex flex-col items-center justify-center text-center p-6 text-text-muted gap-2 z-20 w-full h-full bg-black/95">
+                    <div className="w-10 h-10 rounded-full bg-surface-secondary/20 border border-divider flex items-center justify-center text-text-primary">
+                      <AlertCircle className="w-5 h-5 text-text-primary" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-foreground">Camera Session Timed Out</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5 max-w-[220px]">
+                      <p className="type-caption font-semibold text-text-primary">Camera Session Timed Out</p>
+                      <p className="type-caption text-text-muted mt-0.5 max-w-[220px]">
                         Auto-closed after 1 minute of inactivity.
                       </p>
                     </div>
@@ -558,18 +558,18 @@ export default function MaterialIssuanceModal({
 
                 {/* 3. Fallback / Loading State */}
                 {!isTimedOut && !hasCamera && (
-                  <div className="flex flex-col items-center justify-center text-center p-5 text-muted-foreground gap-2">
+                  <div className="flex flex-col items-center justify-center text-center p-5 text-text-muted gap-2">
                     {cameraLoading ? (
                       <>
                         <ProductionSkeleton />
-                        <p className="text-xs font-semibold text-foreground">Initializing Camera...</p>
-                        <p className="text-[11px] text-muted-foreground">Requesting video stream</p>
+                        <p className="type-caption font-semibold text-text-primary">Initializing Camera...</p>
+                        <p className="type-caption text-text-muted">Requesting video stream</p>
                       </>
                     ) : (
                       <>
-                        <Barcode className="w-10 h-10 text-muted-foreground/40 mb-1 animate-pulse" />
-                        <p className="text-xs font-semibold text-foreground">Camera Scanner Inactive</p>
-                        <p className="text-[11px] text-muted-foreground max-w-[200px]">
+                        <Barcode className="w-10 h-10 text-text-muted/40 mb-1 animate-pulse" />
+                        <p className="type-caption font-semibold text-text-primary">Camera Scanner Inactive</p>
+                        <p className="type-caption text-text-muted max-w-[200px]">
                           {errorMessage || "Camera unavailable."}
                         </p>
                       </>
@@ -579,32 +579,32 @@ export default function MaterialIssuanceModal({
 
                 {/* 4. Scanning Reticle & Laser */}
                 {!isTimedOut && hasCamera && scanStatus === "idle" && (
-                  <div className="absolute inset-5 border-2 border-foreground/40 rounded-xl pointer-events-none flex flex-col justify-between p-2">
-                    <div className="absolute inset-x-2 top-0 h-0.5 bg-foreground/80 shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse" />
+                  <div className="absolute inset-5 border-2 border-text-primary/40 rounded-control pointer-events-none flex flex-col justify-between p-2">
+                    <div className="absolute inset-x-2 top-0 h-0.5 bg-text-primary/80 shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse" />
                     <div className="flex justify-between">
-                      <div className="w-3 h-3 border-t-2 border-l-2 border-foreground" />
-                      <div className="w-3 h-3 border-t-2 border-r-2 border-foreground" />
+                      <div className="w-3 h-3 border-t-2 border-l-2 border-text-primary" />
+                      <div className="w-3 h-3 border-t-2 border-r-2 border-text-primary" />
                     </div>
                     <div className="text-center">
-                      <span className="text-[9px] uppercase tracking-wider bg-black/75 text-white px-2.5 py-0.5 rounded border border-white/20">
+                      <span className="type-overline uppercase tracking-wider bg-black/75 text-white px-2.5 py-0.5 rounded-control border border-white/20">
                         ALIGN QR CODE
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <div className="w-3 h-3 border-b-2 border-l-2 border-foreground" />
-                      <div className="w-3 h-3 border-b-2 border-r-2 border-foreground" />
+                      <div className="w-3 h-3 border-b-2 border-l-2 border-text-primary" />
+                      <div className="w-3 h-3 border-b-2 border-r-2 border-text-primary" />
                     </div>
                   </div>
                 )}
 
                 {/* 5. Success Overlay */}
                 {scanStatus === "success" && (
-                  <div className="absolute inset-0 bg-background/95 backdrop-blur-xs flex flex-col items-center justify-center gap-1.5 animate-in fade-in z-20">
-                    <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                  <div className="absolute inset-0 bg-surface/95 backdrop-blur-xs flex flex-col items-center justify-center gap-1.5 animate-in fade-in z-20">
+                    <div className="w-10 h-10 rounded-full bg-badge-success-bg text-badge-success-text flex items-center justify-center">
                       <CheckCircle2 className="w-6 h-6" />
                     </div>
-                    <p className="text-xs font-bold text-foreground">Success: Material Verified!</p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="type-caption font-semibold text-text-primary">Success: Material Verified!</p>
+                    <p className="type-caption text-text-muted">
                       {lastScanned?.itemName} • {lastScanned?.lotCode}
                     </p>
                   </div>
@@ -612,12 +612,12 @@ export default function MaterialIssuanceModal({
 
                 {/* 6. Already Scanned Overlay */}
                 {scanStatus === "already_scanned" && (
-                  <div className="absolute inset-0 bg-background/95 backdrop-blur-xs flex flex-col items-center justify-center gap-2 animate-in fade-in z-20 p-4 text-center">
-                    <div className="w-10 h-10 rounded-full bg-destructive/15 text-destructive border border-destructive/20 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-surface/95 backdrop-blur-xs flex flex-col items-center justify-center gap-2 animate-in fade-in z-20 p-4 text-center">
+                    <div className="w-10 h-10 rounded-full bg-status-danger/15 text-status-danger border border-status-danger/20 flex items-center justify-center">
                       <AlertTriangle className="w-6 h-6" />
                     </div>
-                    <p className="text-xs font-bold text-foreground">Already Scanned</p>
-                    <p className="text-[11px] text-muted-foreground max-w-[220px]">
+                    <p className="type-caption font-semibold text-text-primary">Already Scanned</p>
+                    <p className="type-caption text-text-muted max-w-[220px]">
                       {errorMessage || "This material has already been verified and cannot be scanned again."}
                     </p>
                   </div>
@@ -625,12 +625,12 @@ export default function MaterialIssuanceModal({
 
                 {/* 7. Error Overlay */}
                 {scanStatus === "error" && (
-                  <div className="absolute inset-0 bg-background/95 backdrop-blur-xs flex flex-col items-center justify-center gap-2 animate-in fade-in z-20 p-4 text-center">
-                    <div className="w-10 h-10 rounded-full bg-destructive/15 text-destructive border border-destructive/20 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-surface/95 backdrop-blur-xs flex flex-col items-center justify-center gap-2 animate-in fade-in z-20 p-4 text-center">
+                    <div className="w-10 h-10 rounded-full bg-status-danger/15 text-status-danger border border-status-danger/20 flex items-center justify-center">
                       <AlertCircle className="w-6 h-6" />
                     </div>
-                    <p className="text-xs font-bold text-foreground">Scan Error</p>
-                    <p className="text-[11px] text-muted-foreground max-w-[220px]">
+                    <p className="type-caption font-semibold text-text-primary">Scan Error</p>
+                    <p className="type-caption text-text-muted max-w-[220px]">
                       {errorMessage || "Error: QR code cannot be found."}
                     </p>
                   </div>
@@ -639,30 +639,30 @@ export default function MaterialIssuanceModal({
 
               {/* Right Column: Simple Scanner Monitor + Controls */}
               <div className="space-y-3">
-                <div className="p-3 rounded-xl border border-border bg-muted/20 space-y-2.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-foreground flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-foreground animate-pulse" />
+                <div className="p-3 rounded-control border border-divider bg-surface-secondary/40 space-y-2.5">
+                  <div className="flex items-center justify-between type-caption">
+                    <span className="font-semibold text-text-primary flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
                       QR Scanner
                     </span>
-                    <span className="text-[11px] px-2 py-0.5 rounded-md bg-muted border border-border text-foreground font-semibold">
+                    <span className="type-caption px-2 py-0.5 rounded-control bg-surface border border-divider text-text-primary font-semibold">
                       {totalLots - verifiedCount} remaining
                     </span>
                   </div>
 
                   {lastScanned ? (
-                    <div className="p-2.5 rounded-lg bg-card border border-border space-y-1 animate-in fade-in text-xs">
+                    <div className="p-2.5 rounded-control bg-surface border border-divider space-y-1 animate-in fade-in type-caption">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-foreground">{lastScanned.itemName}</span>
+                        <span className="font-semibold text-text-primary">{lastScanned.itemName}</span>
                         <StatusBadge status="Success">Success</StatusBadge>
                       </div>
-                      <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+                      <div className="type-caption text-text-muted flex items-center justify-between">
                         <span>Lot: {lastScanned.lotCode}</span>
                         <span>{lastScanned.reservedQuantity} kg</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="py-3 px-2 text-center text-xs text-muted-foreground">
+                    <div className="py-3 px-2 text-center type-caption text-text-muted">
                       Ready to scan. Point camera at packaging QR code.
                     </div>
                   )}
@@ -670,22 +670,22 @@ export default function MaterialIssuanceModal({
 
                 {/* Status Feedback Banners */}
                 {scanStatus === "already_scanned" && (
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl border border-destructive/30 bg-destructive/10 text-foreground text-xs animate-shake">
-                    <AlertTriangle className="w-4 h-4 shrink-0 text-destructive" />
+                  <div className="flex items-center gap-2 p-2.5 rounded-control border border-status-danger/30 bg-status-danger/10 text-text-primary type-caption animate-shake">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-status-danger" />
                     <span className="font-semibold">{errorMessage || "Already Scanned: This material cannot be scanned again."}</span>
                   </div>
                 )}
 
                 {scanStatus === "error" && (
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl border border-destructive/30 bg-destructive/10 text-foreground text-xs animate-shake">
-                    <AlertCircle className="w-4 h-4 shrink-0 text-destructive" />
+                  <div className="flex items-center gap-2 p-2.5 rounded-control border border-status-danger/30 bg-status-danger/10 text-text-primary type-caption animate-shake">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-status-danger" />
                     <span className="font-semibold">{errorMessage || "Error: QR code cannot be found."}</span>
                   </div>
                 )}
 
                 {scanStatus === "success" && (
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-muted text-foreground text-xs animate-in fade-in">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 text-foreground" />
+                  <div className="flex items-center gap-2 p-2.5 rounded-control border border-divider bg-surface-secondary text-text-primary type-caption animate-in fade-in">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-brand" />
                     <span className="font-semibold">
                       Success: {lastScanned ? `${lastScanned.itemName} verified!` : "Material verified!"}
                     </span>
@@ -693,27 +693,27 @@ export default function MaterialIssuanceModal({
                 )}
 
                 {scanStatus === "idle" && !isTimedOut && (
-                  <div className="p-2.5 rounded-xl border border-border bg-card text-xs text-muted-foreground flex items-center gap-2">
-                    <Barcode className="w-4 h-4 text-foreground shrink-0 animate-pulse" />
-                    <span className="text-[11px]">Ready to scan...</span>
+                  <div className="p-2.5 rounded-control border border-divider bg-surface type-caption text-text-muted flex items-center gap-2">
+                    <Barcode className="w-4 h-4 text-brand shrink-0 animate-pulse" />
+                    <span className="type-caption">Ready to scan...</span>
                   </div>
                 )}
 
                 {isTimedOut && (
-                  <div className="p-3 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-foreground shrink-0" />
-                    <span className="text-[11px]">Camera session timed out. Click Rescan to resume.</span>
+                  <div className="p-3 rounded-control border border-divider bg-surface-secondary/40 type-caption text-text-muted flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-text-primary shrink-0" />
+                    <span className="type-caption">Camera session timed out. Click Rescan to resume.</span>
                   </div>
                 )}
 
-                {/* Close and Rescan buttons positioned in this panel (replacing the manual barcode / simulate scan buttons) */}
+                {/* Close and Rescan buttons */}
                 <div className="flex items-center gap-2 pt-1">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleCloseCamera}
-                    className="flex-1 text-xs border-border hover:bg-muted font-semibold cursor-pointer"
+                    className="flex-1 type-caption border-divider hover:bg-surface-hover font-semibold cursor-pointer rounded-control"
                   >
                     <X className="w-3.5 h-3.5 mr-1" /> Close Camera
                   </Button>
@@ -721,7 +721,7 @@ export default function MaterialIssuanceModal({
                     type="button"
                     size="sm"
                     onClick={handleRescan}
-                    className="flex-1 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer shadow-sm"
+                    className="flex-1 type-caption font-semibold bg-button-primary text-text-inverse hover:bg-button-primary-hover cursor-pointer shadow-card rounded-control"
                   >
                     <RefreshCw className="w-3.5 h-3.5 mr-1" /> Rescan
                   </Button>
@@ -733,16 +733,16 @@ export default function MaterialIssuanceModal({
 
         {/* Collapsed / Reopen Camera Button if camera was closed */}
         {!isAlreadyIssued && !allVerified && !cameraVisible && (
-          <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
-            <div className="flex items-center gap-2 text-xs">
-              <Camera className="w-4 h-4 text-foreground" />
-              <span className="font-semibold text-foreground">Camera Scanner Closed</span>
-              <span className="text-muted-foreground">— You can reopen the camera anytime to scan packaging QR codes.</span>
+          <div className="flex items-center justify-between p-3 rounded-control border border-divider bg-surface shadow-card">
+            <div className="flex items-center gap-2 type-caption">
+              <Camera className="w-4 h-4 text-text-primary" />
+              <span className="font-semibold text-text-primary">Camera Scanner Closed</span>
+              <span className="text-text-muted">— You can reopen the camera anytime to scan packaging QR codes.</span>
             </div>
             <Button
               size="sm"
               onClick={handleRescan}
-              className="text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer shadow-sm"
+              className="type-caption font-semibold bg-button-primary text-text-inverse hover:bg-button-primary-hover cursor-pointer shadow-card rounded-control"
             >
               <Camera className="w-3.5 h-3.5 mr-1.5" /> Open Camera Scanner
             </Button>
@@ -751,14 +751,14 @@ export default function MaterialIssuanceModal({
 
         {/* All Lots Verified Banner */}
         {allVerified && !isAlreadyIssued && (
-          <div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-muted/20">
+          <div className="flex items-center justify-between p-3.5 rounded-control border border-badge-success-border bg-badge-success-bg text-badge-success-text">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs">
+              <div className="w-7 h-7 rounded-full bg-badge-success-bg border border-badge-success-border text-badge-success-text flex items-center justify-center font-semibold type-caption">
                 ✓
               </div>
               <div>
-                <h4 className="text-xs font-bold text-foreground">All Material Lots Successfully Verified!</h4>
-                <p className="text-[11px] text-muted-foreground">
+                <h4 className="type-table-header uppercase text-badge-success-text">All Material Lots Successfully Verified!</h4>
+                <p className="type-caption text-badge-success-text opacity-90">
                   All {totalLots} required ingredient lots have been confirmed by QR code. You can now issue the materials.
                 </p>
               </div>
@@ -767,16 +767,16 @@ export default function MaterialIssuanceModal({
         )}
 
         {/* Verification Progress Bar */}
-        <div className="p-4 rounded-xl border border-border bg-card space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-foreground">Verification Progress</span>
-            <span className="font-bold text-foreground">
+        <div className="p-4 rounded-control border border-divider bg-surface space-y-2 shadow-card">
+          <div className="flex items-center justify-between type-caption">
+            <span className="font-semibold text-text-primary">Verification Progress</span>
+            <span className="font-semibold text-text-primary">
               {verifiedCount} of {totalLots} lots verified ({totalLots > 0 ? Math.round((verifiedCount / totalLots) * 100) : 0}%)
             </span>
           </div>
-          <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+          <div className="w-full h-2 rounded-full bg-surface-secondary overflow-hidden">
             <div
-              className="h-full bg-foreground transition-all duration-300"
+              className="h-full bg-brand transition-all duration-300"
               style={{ width: `${totalLots > 0 ? (verifiedCount / totalLots) * 100 : 0}%` }}
             />
           </div>
@@ -784,26 +784,26 @@ export default function MaterialIssuanceModal({
 
         {/* Material Lot Verification Table */}
         <div className="space-y-2">
-          <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+          <h4 className="type-table-header text-text-primary uppercase tracking-wider">
             Material Lot Verification
           </h4>
 
-          <div className="border border-border rounded-xl overflow-hidden bg-card">
+          <div className="border border-divider rounded-control overflow-hidden bg-surface shadow-card">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="border-b border-border bg-muted/30">
-                  <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                    <th className="px-4 py-4">Ingredient Name</th>
-                    <th className="px-4 py-4">Supply No.</th>
-                    <th className="px-4 py-4">Suggested Lot</th>
-                    <th className="px-4 py-4 text-right">Reserved Qty</th>
+              <table className="w-full text-left border-collapse type-body">
+                <thead className="border-b border-divider bg-surface-secondary">
+                  <tr className="table-head-row text-left type-table-header uppercase text-text-muted whitespace-nowrap">
+                    <th className="table-th px-4 py-3">Ingredient Name</th>
+                    <th className="table-th px-4 py-3">Supply No.</th>
+                    <th className="table-th px-4 py-3">Suggested Lot</th>
+                    <th className="table-th px-4 py-3 text-right">Reserved Qty</th>
                     {issuance?.reservations?.some((r) => Boolean(r.expiryDate)) && (
-                      <th className="px-4 py-4">Expiry Date</th>
+                      <th className="table-th px-4 py-3">Expiry Date</th>
                     )}
-                    <th className="px-4 py-4 text-center">Status</th>
+                    <th className="table-th px-4 py-3 text-center">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-divider">
                   {issuance?.reservations?.map((res) => {
                     const isVerified = verifiedLotIds.has(res.lotId);
                     const isJustVerified = lastScanned?.lotCode === res.lotCode;
@@ -811,41 +811,41 @@ export default function MaterialIssuanceModal({
                     return (
                       <tr
                         key={res.reservationId}
-                        className={`hover:bg-muted/10 transition-colors ${
-                          isJustVerified ? "bg-muted/30" : ""
+                        className={`table-row hover:bg-surface-hover/50 transition-colors ${
+                          isJustVerified ? "bg-surface-secondary/50" : ""
                         }`}
                       >
                         {/* Ingredient Name */}
-                        <td className="px-4 py-4 text-sm font-semibold text-foreground">
+                        <td className="table-td px-4 py-3.5 type-body font-semibold text-text-primary">
                           {res.itemName}
                         </td>
 
                         {/* Supply No. */}
-                        <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                        <td className="table-td px-4 py-3.5 type-body text-text-muted whitespace-nowrap">
                           {res.itemCode || "—"}
                         </td>
 
                         {/* Suggested Lot Code */}
-                        <td className="px-4 py-4 text-sm font-medium text-foreground whitespace-nowrap">
-                          <span className="bg-muted text-foreground border border-border px-2.5 py-0.5 rounded-md text-xs font-semibold">
+                        <td className="table-td px-4 py-3.5 type-body font-medium text-text-primary whitespace-nowrap">
+                          <span className="bg-surface-secondary text-text-primary border border-divider px-2.5 py-0.5 rounded-control type-caption font-semibold">
                             {res.lotCode}
                           </span>
                         </td>
 
                         {/* Reserved Quantity */}
-                        <td className="px-4 py-4 text-sm text-right font-semibold text-foreground whitespace-nowrap">
+                        <td className="table-td px-4 py-3.5 type-body text-right font-semibold text-text-primary whitespace-nowrap">
                           {res.reservedQuantity}
                         </td>
 
                         {/* Expiry Date */}
                         {issuance?.reservations?.some((r) => Boolean(r.expiryDate)) && (
-                          <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                          <td className="table-td px-4 py-3.5 type-body text-text-muted whitespace-nowrap">
                             {res.expiryDate ? new Date(res.expiryDate).toLocaleDateString() : "No Expiry"}
                           </td>
                         )}
 
                         {/* Status Column */}
-                        <td className="px-4 py-4 text-center whitespace-nowrap">
+                        <td className="table-td px-4 py-3.5 text-center whitespace-nowrap">
                           {isVerified || isAlreadyIssued ? (
                             <StatusBadge status="Verified">Verified</StatusBadge>
                           ) : (
@@ -857,7 +857,7 @@ export default function MaterialIssuanceModal({
                   })}
                   {(!issuance?.reservations || issuance.reservations.length === 0) && (
                     <tr>
-                      <td colSpan={issuance?.reservations?.some((r) => Boolean(r.expiryDate)) ? 6 : 5} className="py-8 text-center text-xs text-muted-foreground">
+                      <td colSpan={issuance?.reservations?.some((r) => Boolean(r.expiryDate)) ? 6 : 5} className="py-8 text-center type-caption text-text-muted">
                         No material reservations recorded for this issuance.
                       </td>
                     </tr>
@@ -869,7 +869,7 @@ export default function MaterialIssuanceModal({
         </div>
 
         {/* Modal Bottom Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-border">
+        <div className="flex items-center justify-between pt-4 border-t border-divider">
           <ModalCloseButton
             type="button"
             variant="outline"
@@ -877,7 +877,7 @@ export default function MaterialIssuanceModal({
               stopCamera();
               onClose();
             }}
-            className="text-sm font-semibold px-5 py-2.5 rounded-xl border-border hover:bg-muted cursor-pointer"
+            className="type-body font-semibold px-5 py-2.5 rounded-control border border-divider bg-surface hover:bg-surface-hover text-text-primary cursor-pointer"
           >
             Close
           </ModalCloseButton>
@@ -894,21 +894,21 @@ export default function MaterialIssuanceModal({
                   setConfirmIssueOpen(true);
                 }}
                 disabled={!allVerified || issuing}
-                className={`text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm ${
+                className={`type-body font-semibold px-5 py-2.5 rounded-control transition-all shadow-card ${
                   allVerified
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-                    : "bg-muted text-muted-foreground cursor-not-allowed"
+                    ? "bg-button-primary text-text-inverse hover:bg-button-primary-hover cursor-pointer"
+                    : "bg-surface-secondary text-text-muted cursor-not-allowed"
                 }`}
               >
                 {issuing ? "Issuing..." : "Issue Materials"}
               </Button>
             ) : (
-              <span className="text-xs text-muted-foreground italic">
+              <span className="type-caption text-text-muted italic">
                 Admin View-Only Mode (Materials issued by IMS Manager)
               </span>
             )
           ) : (
-            <span className="text-xs font-semibold text-foreground bg-muted border border-border px-3 py-1.5 rounded-xl">
+            <span className="type-caption font-semibold text-text-primary bg-surface-secondary border border-divider px-3 py-1.5 rounded-control">
               Materials Issued
             </span>
           )}

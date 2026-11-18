@@ -69,8 +69,8 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Production Loss Reports</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <h2 className="type-section-title text-text-primary">Production Loss Reports</h2>
+          <p className="type-body text-text-muted mt-0.5">
             Automatic loss tracking and cost accounting for QA-rejected and compromised batches.
           </p>
         </div>
@@ -80,9 +80,9 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
           size="sm"
           onClick={fetchLossReports}
           disabled={loading}
-          className="flex items-center gap-1.5 h-9 rounded-xl border-border hover:bg-muted font-semibold text-xs text-foreground cursor-pointer shadow-sm"
+          className="flex items-center gap-1.5 h-9 rounded-control border border-divider bg-surface hover:bg-surface-hover font-semibold type-caption text-text-primary cursor-pointer shadow-xs"
         >
-          <RefreshCw className={`w-3.5 h-3.5 `} />
+          <RefreshCw className="w-3.5 h-3.5" />
           Refresh
         </Button>
       </div>
@@ -90,12 +90,12 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
       {/* 3 KPI Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1 */}
-        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+        <div className="rounded-card border border-divider bg-surface p-5 sm:p-6 shadow-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <span className="type-overline tracking-wider text-text-muted uppercase">
               Total Loss Batches
             </span>
-            <svg className="w-20 h-6 text-foreground" viewBox="0 0 80 24" fill="none">
+            <svg className="w-20 h-6 text-text-primary" viewBox="0 0 80 24" fill="none">
               <path
                 d="M 2 8 C 14 10, 24 18, 38 14 C 52 10, 62 20, 76 18"
                 stroke="currentColor"
@@ -107,22 +107,22 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
             </svg>
           </div>
           <div className="mt-4">
-            <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+            <div className="type-kpi font-semibold tracking-tight text-text-primary">
               {totalLossBatches}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="type-caption text-text-muted mt-1">
               Batches rejected during QA or preparation
             </p>
           </div>
         </div>
 
         {/* Card 2 */}
-        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+        <div className="rounded-card border border-divider bg-surface p-5 sm:p-6 shadow-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <span className="type-overline tracking-wider text-text-muted uppercase">
               Estimated Financial Loss
             </span>
-            <svg className="w-20 h-6 text-muted-foreground/70" viewBox="0 0 80 24" fill="none">
+            <svg className="w-20 h-6 text-text-muted/70" viewBox="0 0 80 24" fill="none">
               <path
                 d="M 2 6 C 14 8, 26 18, 40 12 C 54 18, 64 20, 76 22"
                 stroke="currentColor"
@@ -134,22 +134,22 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
             </svg>
           </div>
           <div className="mt-4">
-            <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground font-mono">
+            <div className="type-kpi font-semibold tracking-tight text-text-primary">
               ₱{totalFinancialLoss.toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Cost of consumed ingredients & supplies
+            <p className="type-caption text-text-muted mt-1">
+              Cost of consumed ingredients &amp; supplies
             </p>
           </div>
         </div>
 
         {/* Card 3 */}
-        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+        <div className="rounded-card border border-divider bg-surface p-5 sm:p-6 shadow-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <span className="type-overline tracking-wider text-text-muted uppercase">
               Total Volume Forfeited
             </span>
-            <svg className="w-20 h-6 text-foreground" viewBox="0 0 80 24" fill="none">
+            <svg className="w-20 h-6 text-text-primary" viewBox="0 0 80 24" fill="none">
               <path
                 d="M 2 16 C 16 12, 30 18, 44 8 C 58 16, 68 6, 76 10"
                 stroke="currentColor"
@@ -161,10 +161,10 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
             </svg>
           </div>
           <div className="mt-4">
-            <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground font-mono">
+            <div className="type-kpi font-semibold tracking-tight text-text-primary">
               {totalUnitsLost.toLocaleString()} PCS
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="type-caption text-text-muted mt-1">
               Target units that failed food safety / sensory
             </p>
           </div>
@@ -172,7 +172,7 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
       </div>
 
       {/* Search Input */}
-      <div className="rounded-xl border border-border bg-card p-3">
+      <div className="rounded-card border border-divider bg-surface p-3 shadow-card">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <SearchInput
             containerClassName="flex-1"
@@ -304,96 +304,96 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl border border-border bg-muted/10 text-xs">
+            <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto type-body">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-control border border-divider bg-surface-secondary/40 type-caption">
                 <div>
-                  <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
-                    Product & Variant
+                  <span className="type-overline text-text-muted uppercase font-semibold block">
+                    Product &amp; Variant
                   </span>
-                  <span className="font-semibold text-sm text-foreground">{selectedReport.productName}</span>
-                  <div className="text-muted-foreground text-xs">{selectedReport.variant}</div>
+                  <span className="font-semibold type-body text-text-primary">{selectedReport.productName}</span>
+                  <div className="text-text-muted type-caption">{selectedReport.variant}</div>
                 </div>
                 <div>
-                  <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
+                  <span className="type-overline text-text-muted uppercase font-semibold block">
                     Target Yield
                   </span>
-                  <span className="font-semibold text-sm text-foreground">
+                  <span className="font-semibold type-body text-text-primary">
                     {selectedReport.targetYield} PCS
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
+                  <span className="type-overline text-text-muted uppercase font-semibold block">
                     Logged Date
                   </span>
-                  <span className="font-semibold text-sm text-foreground">
+                  <span className="font-semibold type-body text-text-primary">
                     {new Date(selectedReport.date).toLocaleDateString()}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
+                  <span className="type-overline text-text-muted uppercase font-semibold block">
                     Estimated Loss
                   </span>
-                  <span className="font-bold text-destructive text-sm">
+                  <span className="font-semibold text-badge-danger-text type-body">
                     ₱{selectedReport.totalEstimatedLoss.toLocaleString()}
                   </span>
                 </div>
               </div>
 
               {/* Rejection reason & inspector */}
-              <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-1.5 text-xs">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
-                  Rejection Reason & Inspector Assessment
+              <div className="p-4 rounded-control border border-divider bg-surface-secondary/40 space-y-1.5 type-caption">
+                <span className="type-table-header uppercase tracking-wider text-text-muted block">
+                  Rejection Reason &amp; Inspector Assessment
                 </span>
-                <p className="font-semibold text-foreground text-sm">{selectedReport.rejectionReason}</p>
+                <p className="font-semibold text-text-primary type-body">{selectedReport.rejectionReason}</p>
                 {selectedReport.notes && (
-                  <p className="text-muted-foreground text-xs italic">"{selectedReport.notes}"</p>
+                  <p className="text-text-muted type-caption italic">"{selectedReport.notes}"</p>
                 )}
-                <p className="text-xs text-muted-foreground pt-1">
-                  Evaluated by: <span className="font-semibold text-foreground">{selectedReport.inspector}</span>
+                <p className="type-caption text-text-muted pt-1">
+                  Evaluated by: <span className="font-semibold text-text-primary">{selectedReport.inspector}</span>
                 </p>
               </div>
 
               {/* Lost Ingredients Breakdown Table */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-2">
-                  Issued Ingredients & Supplies Forfeited ({selectedReport.items.length})
+                <h4 className="type-table-header uppercase tracking-wider text-text-primary mb-2">
+                  Issued Ingredients &amp; Supplies Forfeited ({selectedReport.items.length})
                 </h4>
-                <div className="border border-border rounded-xl overflow-hidden bg-card">
-                  <table className="w-full text-left">
-                    <thead className="border-b border-border bg-muted/30">
-                      <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                        <th className="px-4 py-4">Item Name</th>
-                        <th className="px-4 py-4">Lot Number</th>
-                        <th className="px-4 py-4">Quantity</th>
-                        <th className="px-4 py-4">Unit Cost</th>
-                        <th className="px-4 py-4 text-right">Total Cost</th>
+                <div className="border border-divider rounded-control overflow-hidden bg-surface shadow-card">
+                  <table className="w-full text-left border-collapse type-body">
+                    <thead className="border-b border-divider bg-surface-secondary">
+                      <tr className="table-head-row text-left type-table-header uppercase text-text-muted whitespace-nowrap">
+                        <th className="table-th px-4 py-3">Item Name</th>
+                        <th className="table-th px-4 py-3">Lot Number</th>
+                        <th className="table-th px-4 py-3">Quantity</th>
+                        <th className="table-th px-4 py-3">Unit Cost</th>
+                        <th className="table-th px-4 py-3 text-right">Total Cost</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-divider">
                       {selectedReport.items.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-muted/20">
-                          <td className="px-4 py-4 text-sm font-semibold text-foreground">
+                        <tr key={idx} className="table-row hover:bg-surface-hover/50">
+                          <td className="table-td px-4 py-3 type-body font-semibold text-text-primary">
                             {item.itemName}
                           </td>
-                          <td className="px-4 py-4 text-sm text-muted-foreground">
+                          <td className="table-td px-4 py-3 type-body text-text-muted">
                             {item.lotNumber}
                           </td>
-                          <td className="px-4 py-4 text-sm text-muted-foreground">
+                          <td className="table-td px-4 py-3 type-body text-text-muted">
                             {item.quantity} {item.uom}
                           </td>
-                          <td className="px-4 py-4 text-sm text-muted-foreground">₱{item.unitCost.toFixed(2)}</td>
-                          <td className="px-4 py-4 text-sm font-semibold text-foreground text-right">
+                          <td className="table-td px-4 py-3 type-body text-text-muted">₱{item.unitCost.toFixed(2)}</td>
+                          <td className="table-td px-4 py-3 type-body font-semibold text-text-primary text-right">
                             ₱{item.totalCost.toFixed(2)}
                           </td>
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="bg-muted/30 font-bold border-t border-border">
-                      <tr>
-                        <td colSpan={4} className="py-4 px-4 text-right uppercase text-xs font-semibold text-muted-foreground">
+                    <tfoot className="bg-surface-secondary font-semibold border-t border-divider">
+                      <tr className="table-head-row">
+                        <td colSpan={4} className="table-td py-3 px-4 text-right uppercase type-caption font-semibold text-text-muted">
                           Total Loss Value:
                         </td>
-                        <td className="py-4 px-4 text-right text-sm font-bold text-destructive">
+                        <td className="table-td py-3 px-4 text-right type-body font-semibold text-badge-danger-text">
                           ₱{selectedReport.totalEstimatedLoss.toLocaleString()}
                         </td>
                       </tr>
@@ -404,12 +404,12 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end p-4 border-t border-border bg-muted/20">
+            <div className="flex justify-end p-4 border-t border-divider bg-surface-secondary/40">
               <Button
                 type="button"
                 variant="outline"
                 onClick={requestCloseReport}
-                className="text-xs font-semibold border-border hover:bg-muted cursor-pointer"
+                className="type-caption font-semibold rounded-control border border-divider bg-surface hover:bg-surface-hover text-text-primary cursor-pointer px-5 py-2"
               >
                 Close Report
               </Button>
