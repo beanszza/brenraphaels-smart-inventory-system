@@ -161,20 +161,20 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
 
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       {/* Planning Inputs */}
-      <Card className="border-border">
-        <CardHeader className="pb-3 border-b border-border/60">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Calculator className="w-4 h-4 text-muted-foreground" />
+      <Card className="border-divider bg-surface rounded-panel">
+        <CardHeader className="pb-3 border-b border-divider">
+          <CardTitle className="type-card-title text-text-primary flex items-center gap-2">
+            <Calculator className="w-4 h-4 text-text-muted" />
             Planning Parameters
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Planning Horizon (days)</Label>
+              <Label className="type-caption font-semibold text-text-primary">Planning Horizon (days)</Label>
               <Input
                 type="number"
-                className="h-9 text-sm"
+                className="h-9 type-input bg-surface border-divider text-text-primary"
                 value={horizon}
                 onChange={(e) => setHorizon(e.target.value)}
                 min="1"
@@ -183,20 +183,20 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
             </div>
           </div>
 
-          <Separator />
+          <Separator className="bg-divider" />
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Planned Production Runs</p>
+            <p className="type-overline font-semibold text-text-muted uppercase tracking-wider">Planned Production Runs</p>
             <div className="flex flex-wrap gap-2 items-end">
               <div className="flex-1 space-y-1.5">
-                <Label className="text-xs font-medium">Recipe</Label>
+                <Label className="type-caption font-semibold text-text-primary">Recipe</Label>
                 <Select
                   value={newRun.recipeId}
                   onValueChange={(v) => setNewRun((p) => ({ ...p, recipeId: v }))}
                 >
-                  <SelectTrigger className="h-9 text-sm">
+                  <SelectTrigger className="h-9 type-input bg-surface border-divider text-text-primary">
                     <SelectValue placeholder="Select recipe..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-surface border-divider text-text-primary">
                     {recipes.length === 0
                       ? <SelectItem value="none" disabled>No recipes loaded yet</SelectItem>
                       : recipes.map((r) => (
@@ -207,16 +207,16 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
                 </Select>
               </div>
               <div className="w-24 space-y-1.5">
-                <Label className="text-xs font-medium">Batches</Label>
+                <Label className="type-caption font-semibold text-text-primary">Batches</Label>
                 <Input
                   type="number"
-                  className="h-9 text-sm"
+                  className="h-9 type-input bg-surface border-divider text-text-primary"
                   value={newRun.batchCount}
                   onChange={(e) => setNewRun((p) => ({ ...p, batchCount: e.target.value }))}
                   min="1"
                 />
               </div>
-              <Button size="sm" variant="outline" onClick={addPlannedRun} className="gap-1.5 h-9">
+              <Button size="sm" variant="outline" onClick={addPlannedRun} className="gap-1.5 h-9 type-button font-semibold rounded-control border-divider bg-surface hover:bg-surface-hover text-text-primary">
                 <Plus className="w-3.5 h-3.5" /> Add
               </Button>
             </div>
@@ -224,12 +224,12 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
             {plannedRuns.length > 0 && (
               <div className="space-y-1 mt-2">
                 {plannedRuns.map((run, i) => (
-                  <div key={i} className="flex items-center justify-between bg-muted/40 rounded-md px-3 py-2 text-sm">
-                    <span className="font-medium">{run.recipeName}</span>
+                  <div key={i} className="flex items-center justify-between bg-surface-hover rounded-control px-3 py-2 type-caption">
+                    <span className="font-semibold text-text-primary">{run.recipeName}</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-muted-foreground">{run.batchCount} batch{run.batchCount > 1 ? "es" : ""}</span>
+                      <span className="text-text-muted">{run.batchCount} batch{run.batchCount > 1 ? "es" : ""}</span>
                       <button onClick={() => removeRun(i)}>
-                        <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                        <Trash2 className="w-3.5 h-3.5 text-text-muted hover:text-text-primary transition-colors" />
                       </button>
                     </div>
                   </div>
@@ -239,7 +239,7 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={runMrp} disabled={loading} className="gap-1.5">
+            <Button onClick={runMrp} disabled={loading} className="gap-1.5 type-button font-semibold rounded-control bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm">
               {loading ? <><Clock className="w-4 h-4 animate-pulse" />Running...</>
                 : <><Play className="w-4 h-4" />Run MRP Plan</>}
             </Button>
@@ -274,14 +274,14 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
               { label: "Critical",      value: critical,              icon: AlertCircle },
               { label: "Est. Cost",     value: `₱${needsReorder.reduce((s, r) => s + r.estimatedCost, 0).toLocaleString("en-PH", { maximumFractionDigits: 0 })}`, icon: Calculator },
             ].map(({ label, value, icon: Icon }) => (
-              <Card key={label} className="border-border">
+              <Card key={label} className="border-divider bg-surface rounded-panel">
                 <CardContent className="p-4 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <Icon className="w-4 h-4 text-muted-foreground" />
+                  <div className="w-8 h-8 rounded-control bg-surface-hover flex items-center justify-center shrink-0">
+                    <Icon className="w-4 h-4 text-text-muted" />
                   </div>
                   <div>
-                    <p className="text-xl font-bold">{value}</p>
-                    <p className="text-xs text-muted-foreground">{label}</p>
+                    <p className="type-kpi font-semibold text-text-primary">{value}</p>
+                    <p className="type-caption text-text-muted">{label}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -295,42 +295,42 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
               description="All items have sufficient stock for the planning horizon and planned batches."
             />
           ) : (
-            <Card className="border-border">
-              <CardHeader className="pb-3 border-b border-border/60">
-                <CardTitle className="text-sm font-semibold">Material Requirements</CardTitle>
+            <Card className="border-divider bg-surface rounded-panel">
+              <CardHeader className="pb-3 border-b border-divider">
+                <CardTitle className="type-card-title text-text-primary">Material Requirements</CardTitle>
               </CardHeader>
-              <Table>
+              <Table className="border-collapse">
                 <TableHeader>
-                  <TableRow className="border-border">
-                    <TableHead className="text-xs font-semibold text-muted-foreground">Item</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground text-right">Gross Req.</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground text-right">On-Hand</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground text-right">On-Order</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground text-right">Net Req.</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground">Urgency</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground">Preferred Supplier</TableHead>
-                    <TableHead className="text-xs font-semibold text-muted-foreground text-right">Est. Cost</TableHead>
+                  <TableRow className="border-divider bg-surface-hover">
+                    <TableHead className="type-table-header text-text-muted">Item</TableHead>
+                    <TableHead className="type-table-header text-text-muted text-right">Gross Req.</TableHead>
+                    <TableHead className="type-table-header text-text-muted text-right">On-Hand</TableHead>
+                    <TableHead className="type-table-header text-text-muted text-right">On-Order</TableHead>
+                    <TableHead className="type-table-header text-text-muted text-right">Net Req.</TableHead>
+                    <TableHead className="type-table-header text-text-muted">Urgency</TableHead>
+                    <TableHead className="type-table-header text-text-muted">Preferred Supplier</TableHead>
+                    <TableHead className="type-table-header text-text-muted text-right">Est. Cost</TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+                <TableBody className="divide-y divide-divider">
                   {results.map((req) => (
-                    <TableRow key={req.itemId} className="border-border text-sm hover:bg-muted/20">
+                    <TableRow key={req.itemId} className="border-divider type-table-cell hover:bg-surface-hover/60 transition-colors">
                       <TableCell>
                         <div>
-                          <p className="font-medium">{req.itemName}</p>
-                          <p className="text-xs text-muted-foreground">{req.uomName}</p>
+                          <p className="font-semibold text-text-primary">{req.itemName}</p>
+                          <p className="type-caption text-text-muted">{req.uomName}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{req.grossRequirement.toLocaleString()}</TableCell>
-                      <TableCell className="text-right tabular-nums">{req.onHandQty.toLocaleString()}</TableCell>
-                      <TableCell className="text-right tabular-nums">{req.onOrderQty.toLocaleString()}</TableCell>
-                      <TableCell className={`text-right tabular-nums font-semibold ${req.netRequirement > 0 ? "" : "text-muted-foreground"}`}>
+                      <TableCell className="text-right tabular-nums text-text-primary">{req.grossRequirement.toLocaleString()}</TableCell>
+                      <TableCell className="text-right tabular-nums text-text-primary">{req.onHandQty.toLocaleString()}</TableCell>
+                      <TableCell className="text-right tabular-nums text-text-primary">{req.onOrderQty.toLocaleString()}</TableCell>
+                      <TableCell className={`text-right tabular-nums font-semibold ${req.netRequirement > 0 ? "text-text-primary" : "text-text-muted"}`}>
                         {req.netRequirement.toLocaleString()}
                       </TableCell>
                       <TableCell><UrgencyBadge urgency={req.urgency} /></TableCell>
-                      <TableCell className="text-muted-foreground">{req.preferredSupplier}</TableCell>
-                      <TableCell className="text-right tabular-nums font-mono text-sm">
+                      <TableCell className="text-text-muted">{req.preferredSupplier}</TableCell>
+                      <TableCell className="text-right tabular-nums font-mono type-table-cell text-text-primary">
                         {req.estimatedCost > 0
                           ? `₱${req.estimatedCost.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                           : "—"
@@ -341,7 +341,7 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-xs h-7 gap-1"
+                            className="type-button h-7 gap-1 rounded-control border-divider bg-surface hover:bg-surface-hover text-text-primary"
                             onClick={() => { setSelectedItem(req); setShowPrModal(true); }}
                           >
                             <ShoppingCart className="w-3 h-3" />
@@ -378,18 +378,18 @@ export default function ViewMrp({ initialRecipes }: { initialRecipes: Recipe[] }
         onConfirm={handleCreatePR}
       >
         {selectedItem && (
-          <div className="p-3 bg-muted/40 border border-border rounded-xl space-y-1.5 text-xs">
+          <div className="p-3 bg-surface-hover border border-divider rounded-control space-y-1.5 type-caption">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Preferred Supplier</span>
-              <span className="font-semibold text-foreground">{selectedItem.preferredSupplier}</span>
+              <span className="text-text-muted">Preferred Supplier</span>
+              <span className="font-semibold text-text-primary">{selectedItem.preferredSupplier}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Estimated Cost</span>
-              <span className="font-mono font-semibold text-foreground">
+              <span className="text-text-muted">Estimated Cost</span>
+              <span className="font-mono font-semibold text-text-primary">
                 ₱{selectedItem.estimatedCost.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
               </span>
             </div>
-            {error && <p role="alert" className="text-xs text-destructive pt-1">{error}</p>}
+            {error && <p role="alert" className="type-caption text-destructive pt-1">{error}</p>}
           </div>
         )}
       </ActionConfirmModal>
