@@ -439,7 +439,7 @@ Each sub-stage changes only class strings inside the listed files. Consumers pic
 | `components/ui/button.tsx` | `default` size `h-9` → `h-10 px-4`, `sm` → `h-8 px-3`, `lg` → `h-12` (mobile 48), `rounded-md` → `rounded-control`, text → `type-label-button(-sm)`, remove `shadow-sm` (Figma is flat), primary hover → `bg-primary-hover`, secondary/outline → `bg-surface border-input text-ink`, ghost hover → `bg-subtle`, focus → `ring-2 ring-focus`, `disabled:opacity-40`. **Add** `ai` variant (`bg-tint-soft border-ai-border text-ai`), with no consumer changes |
 | `components/auth/AuthScreen.tsx` | Align `primaryActionClass` / `secondaryActionClass` strings with the button tokens |
 
-### 3B — Form controls (29 inputs, 23 selects, 15 textareas)
+### 3B — Form controls (29 inputs, 23 selects, 15 textareas) — **[COMPLETED]**
 | File | Change |
 | :--- | :--- |
 | `components/ui/input.tsx` | `h-10 px-3 rounded-control border-input bg-surface type-body`, placeholder `text-ink-muted`, focus `border-primary shadow-focus`, disabled `bg-subtle text-ink-disabled` |
