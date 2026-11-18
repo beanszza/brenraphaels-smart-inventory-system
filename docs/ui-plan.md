@@ -451,7 +451,7 @@ Each sub-stage changes only class strings inside the listed files. Consumers pic
 | `components/shared/SearchInput.tsx` (30 consumers) | Input tokens and 16px icon |
 | `components/shared/AddressSelector.tsx` | Input and select tokens |
 
-### 3C — Menus and popovers (19 dropdown consumers)
+### 3C — Menus and popovers (19 dropdown consumers) — **[COMPLETED]**
 `components/ui/dropdown-menu.tsx`, `components/ui/popover.tsx`, `components/ui/hover-card.tsx`, `components/ui/tooltip.tsx`: `rounded-inner`, `shadow-modal`, `p-1.5`, items `h-9 rounded-sm type-body`, separators `bg-divider`.
 
 ### 3D — Badges and status pills (styling only)
