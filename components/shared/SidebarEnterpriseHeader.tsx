@@ -36,15 +36,15 @@ export function SidebarEnterpriseHeader({
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-80 bg-surface border border-border text-ink z-[99999] p-2 space-y-1 shadow-modal rounded-modal"
+              className="w-88 bg-surface border border-border text-ink z-[99999] p-2 space-y-1 shadow-modal rounded-modal"
               align="start"
               side="bottom"
-              sideOffset={2}
+              sideOffset={10}
             >
-              <DropdownMenuLabel className="type-caption font-semibold uppercase tracking-wider text-ink-muted px-3 py-1.5">
+              <DropdownMenuLabel className="type-caption font-semibold uppercase tracking-wider text-ink-muted px-3 pt-2 pb-2.5">
                 Select Enterprise Module
               </DropdownMenuLabel>
-              <DropdownMenuSeparator className="my-1 bg-divider" />
+              <DropdownMenuSeparator className="-mx-2 mb-2 mt-0 bg-divider" />
               {systems.map((sys) => {
                 const SysIcon = sys.icon;
                 return (
@@ -53,7 +53,7 @@ export function SidebarEnterpriseHeader({
                     onClick={() => {
                       if (sys.url) navigate(sys.url);
                     }}
-                    className={`cursor-pointer type-body-secondary flex items-center justify-between p-2.5 rounded-control transition-all font-medium gap-3 ${
+                    className={`cursor-pointer h-auto type-body-secondary flex items-center justify-between px-3 py-3 rounded-inner transition-all font-medium gap-3 ${
                       sys.active
                         ? "bg-tint-soft text-primary font-semibold"
                         : "bg-surface text-ink hover:bg-subtle"
