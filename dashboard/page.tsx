@@ -29,7 +29,7 @@ export default async function AnalyticsDashboardPage() {
     analytics.distribution;
 
   return (
-    <div className="page-container w-full min-h-full space-y-5 animate-page-in">
+    <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="min-w-0">
           <h1 className="type-page-title text-ink">Dashboard</h1>
@@ -38,7 +38,7 @@ export default async function AnalyticsDashboardPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-2 shrink-0">
           {DATE_FILTERS.map((filter) => (
             <button
               key={filter.label}
@@ -46,8 +46,8 @@ export default async function AnalyticsDashboardPage() {
               aria-pressed={filter.active}
               className={
                 filter.active
-                  ? "h-8 px-3 rounded-control type-label-button-sm bg-primary text-on-brand border border-primary transition-colors cursor-pointer"
-                  : "h-8 px-3 rounded-control type-label-button-sm bg-surface text-ink border border-input hover:bg-page transition-colors cursor-pointer"
+                  ? "h-8 px-2.5 sm:px-3 rounded-control type-label-button-sm bg-primary text-on-brand border border-primary text-center whitespace-nowrap transition-colors cursor-pointer"
+                  : "h-8 px-2.5 sm:px-3 rounded-control type-label-button-sm bg-surface text-ink border border-input hover:bg-page text-center whitespace-nowrap transition-colors cursor-pointer"
               }
             >
               {filter.label}
@@ -55,9 +55,9 @@ export default async function AnalyticsDashboardPage() {
           ))}
           <button
             type="button"
-            className="h-8 px-3 rounded-control type-label-button-sm bg-surface text-ink border border-input hover:bg-page transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+            className="h-8 px-2.5 sm:px-3 rounded-control type-label-button-sm bg-surface text-ink border border-input hover:bg-page transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer"
           >
-            <Download className="size-3.5 text-ink-secondary" />
+            <Download className="size-3.5 text-ink-secondary shrink-0" />
             Export
           </button>
         </div>

@@ -16,7 +16,7 @@ function KpiCard({ title, value, subtitle, trend, isAlert }: KpiCardProps) {
   const TrendIcon = isPositive ? ArrowUp : ArrowDown;
 
   return (
-    <div className="rounded-card border border-border bg-surface p-5 flex flex-col">
+    <div className="rounded-card border border-border bg-surface p-4 sm:p-5 flex flex-col">
       <div className="flex items-center justify-between gap-2">
         <span className="type-body-secondary text-ink-muted">{title}</span>
         {trend !== null && (
@@ -47,7 +47,7 @@ function KpiCard({ title, value, subtitle, trend, isAlert }: KpiCardProps) {
 
 export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {kpiData.activeInventory && (
         <KpiCard
           title="Active Inventory"

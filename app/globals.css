@@ -335,10 +335,6 @@ nav::-webkit-scrollbar { display: none; }
 }
 
 /* ─── Utility ─── */
-header {
-  z-index: 100 !important;
-}
-
 .input-date-icon::-webkit-inner-spin-button,
 .input-date-icon::-webkit-calendar-picker-indicator {
   opacity: 0;
