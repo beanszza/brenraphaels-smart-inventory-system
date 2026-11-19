@@ -49,13 +49,13 @@ function ProcurementRecommendationCard({
           <thead>
             <tr className="table-head-row">
               <th className="table-th px-3.5 py-2.5">
-                Item &amp; Basis
+                Item &amp; basis
               </th>
               <th className="table-th px-3.5 py-2.5">
-                Preferred Supplier
+                Preferred supplier
               </th>
               <th className="table-th px-3.5 py-2.5 whitespace-nowrap text-right">
-                Order Qty
+                Order qty
               </th>
               <th className="table-th px-3.5 py-2.5 whitespace-nowrap text-center">
                 Urgency

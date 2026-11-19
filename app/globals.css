@@ -41,7 +41,7 @@
   --badge-teal: var(--status-teal-bg);
   --badge-teal-foreground: var(--status-teal-fg);
   --badge-notification: var(--semantic-danger);
-  --badge-notification-foreground: var(--on-brand);
+  --badge-notification-foreground: var(--on-toast);
   --badge-neutral: var(--status-gray-bg);
   --badge-neutral-foreground: var(--status-gray-fg);
   --border: var(--border-card);

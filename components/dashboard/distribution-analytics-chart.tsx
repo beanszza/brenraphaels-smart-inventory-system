@@ -144,14 +144,14 @@ export default function DistributionAnalyticsChart({ data }: { data: BranchFlow[
             <XAxis
               type="number"
               allowDecimals={false}
-              tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+              tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
               type="category"
               dataKey="branch"
-              tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+              tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
               axisLine={false}
               tickLine={false}
               width={120}
@@ -183,7 +183,7 @@ export default function DistributionAnalyticsChart({ data }: { data: BranchFlow[
                 dataKey="received"
                 position="right"
                 style={{
-                  fontSize: 11,
+                  fontSize: 12,
                   fill: "var(--muted-foreground)",
                   fontWeight: 600,
                 }}
@@ -200,7 +200,7 @@ export default function DistributionAnalyticsChart({ data }: { data: BranchFlow[
                 dataKey="transfers"
                 position="right"
                 style={{
-                  fontSize: 11,
+                  fontSize: 12,
                   fill: "var(--muted-foreground)",
                   fontWeight: 600,
                 }}

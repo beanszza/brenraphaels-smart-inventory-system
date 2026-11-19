@@ -84,7 +84,7 @@ export default function InventoryDistributionChart({
                 textAnchor="middle"
                 dominantBaseline="central"
                 fontSize={24}
-                fontWeight={700}
+                fontWeight={600}
                 fill="var(--ink)"
               >
                 {total}
@@ -94,7 +94,7 @@ export default function InventoryDistributionChart({
                 y="57%"
                 textAnchor="middle"
                 dominantBaseline="central"
-                fontSize={11}
+                fontSize={12}
                 fontWeight={500}
                 fill="var(--ink-muted)"
               >

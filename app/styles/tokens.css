@@ -27,6 +27,7 @@
   --ink-muted: #71717a;
   --ink-disabled: #a1a1aa;
   --on-brand: #ffffff;
+  --on-toast: #ffffff;
 
   /* ─── 02 · Color: Surfaces & Backgrounds ─── */
   --bg-page: #fafafa;
@@ -107,7 +108,8 @@
   --ink-secondary: #c9bfd8;
   --ink-muted: #b5a9c5;
   --ink-disabled: #6e6380;
-  --on-brand: #ffffff;
+  --on-brand: #170b24;
+  --on-toast: #ffffff;
 
   --bg-page: #171320;
   --bg-surface: #211a2d;
@@ -182,6 +184,7 @@
   --color-nav-active: var(--bg-nav-active);
   --color-switcher: var(--bg-switcher);
   --color-toast: var(--bg-toast);
+  --color-toast-foreground: var(--on-toast);
 
   --color-divider: var(--border-divider);
   --color-topbar: var(--border-topbar);
@@ -232,6 +235,16 @@
 
   /* ─── 02 · Brand Font Family ─── */
   --font-brand: var(--font-fraunces), serif;
+
+  /* ─── TEMPORARY: remove in cleanup ─── */
+  --color-button-primary: var(--brand-primary);
+  --color-button-primary-hover: var(--brand-primary-hover);
+  --color-button-primary-foreground: var(--on-brand);
+  --color-text-primary: var(--ink);
+  --color-text-muted: var(--ink-muted);
+  --color-text-inverse: var(--on-brand);
+  --color-surface-hover: var(--bg-subtle);
+  --radius-panel: var(--radius-card);
 }
 
 /* ─── 01 · Typography (26 Figma text styles, prefixed with type-* to avoid text-* color collisions) ─── */

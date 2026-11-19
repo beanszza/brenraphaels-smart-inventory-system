@@ -36,7 +36,7 @@ function KpiCard({ title, value, subtitle, trend, icon }: KpiCardProps) {
               {Math.abs(trend)}%
             </Badge>
           )}
-          <div className="size-9 rounded-control bg-subtle flex items-center justify-center text-ink shrink-0">
+          <div className="size-9 rounded-control bg-tint-soft flex items-center justify-center text-primary shrink-0">
             {icon}
           </div>
         </div>
@@ -63,7 +63,7 @@ export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
           value={kpiData.activeInventory.value}
           subtitle="Active items across all categories"
           trend={kpiData.activeInventory.trend}
-          icon={<Package className="size-4 text-primary" />}
+          icon={<Package className="size-5 text-primary" />}
         />
       )}
       {kpiData.lowStockAlerts && (
@@ -72,7 +72,7 @@ export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
           value={kpiData.lowStockAlerts.value}
           subtitle="Items at or below minimum stock level"
           trend={kpiData.lowStockAlerts.trend}
-          icon={<AlertTriangle className="size-4 text-destructive" />}
+          icon={<AlertTriangle className="size-5 text-destructive" />}
         />
       )}
       {kpiData.productionBatches && (
@@ -81,7 +81,7 @@ export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
           value={kpiData.productionBatches.value}
           subtitle="Batches scheduled or completed this month"
           trend={kpiData.productionBatches.trend}
-          icon={<Factory className="size-4 text-primary" />}
+          icon={<Factory className="size-5 text-primary" />}
         />
       )}
       {kpiData.activeSuppliers && (
@@ -90,7 +90,7 @@ export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
           value={kpiData.activeSuppliers.value}
           subtitle="Registered and active vendor partners"
           trend={kpiData.activeSuppliers.trend}
-          icon={<Handshake className="size-4 text-primary" />}
+          icon={<Handshake className="size-5 text-primary" />}
         />
       )}
     </div>

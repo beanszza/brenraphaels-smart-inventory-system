@@ -93,7 +93,7 @@ export default function ProductionQualityChart({
                 textAnchor="middle"
                 dominantBaseline="central"
                 fontSize={24}
-                fontWeight={700}
+                fontWeight={600}
                 fill="var(--ink)"
               >
                 {passRate}%
@@ -103,7 +103,7 @@ export default function ProductionQualityChart({
                 y="57%"
                 textAnchor="middle"
                 dominantBaseline="central"
-                fontSize={11}
+                fontSize={12}
                 fontWeight={500}
                 fill="var(--ink-muted)"
               >
