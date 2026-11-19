@@ -34,8 +34,8 @@ function ProcurementRecommendationCard({
   }
 
   return (
-    <div className="rounded-card border border-border bg-surface p-5 sm:p-6 flex flex-col">
-      <div className="mb-4">
+    <div className="rounded-card border border-border bg-surface overflow-hidden flex flex-col">
+      <div className="px-5 pt-5 pb-3.5">
         <h3 className="type-card-title text-ink">
           Procurement Recommendations
         </h3>
@@ -44,52 +44,55 @@ function ProcurementRecommendationCard({
         </p>
       </div>
 
-      <div className="overflow-x-auto rounded-inner border border-border">
+      <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
-            <tr className="table-head-row">
-              <th className="table-th px-3.5 py-2.5">
+            <tr className="table-head-row bg-tint-tab border-t border-divider border-b border-border">
+              <th className="table-th text-primary px-2.5 sm:px-4">
                 Item &amp; basis
               </th>
-              <th className="table-th px-3.5 py-2.5">
+              <th className="table-th text-primary hidden sm:table-cell">
                 Preferred supplier
               </th>
-              <th className="table-th px-3.5 py-2.5 whitespace-nowrap text-right">
+              <th className="table-th text-primary px-2 sm:px-4 whitespace-nowrap text-right">
                 Order qty
               </th>
-              <th className="table-th px-3.5 py-2.5 whitespace-nowrap text-center">
+              <th className="table-th text-primary px-2.5 sm:px-4 whitespace-nowrap text-center">
                 Urgency
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-divider">
             {procurementRecommendations.map((rec) => (
-              <tr key={rec.id} className="table-row">
-                <td className="table-td px-3.5 py-3 align-top">
-                  <div className="flex items-center gap-2">
+              <tr key={rec.id} className="table-row hover:bg-page">
+                <td className="table-td px-2.5 sm:px-4 align-top">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                     <span className="type-body font-semibold text-ink">
                       {rec.item}
                     </span>
-                    <span className="type-caption tabular-nums text-ink-muted">
+                    <span className="type-table-id tabular-nums whitespace-nowrap text-primary">
                       {rec.id}
                     </span>
                   </div>
                   <p className="type-caption text-ink-muted mt-0.5 leading-relaxed">
                     {rec.reason}
                   </p>
+                  <p className="type-caption text-ink-secondary mt-0.5 truncate max-w-[140px] sm:hidden" title={rec.supplier}>
+                    {rec.supplier}
+                  </p>
                 </td>
-                <td className="table-td px-3.5 py-3 align-top text-ink-muted max-w-[180px]">
+                <td className="table-td align-top text-ink-secondary max-w-[180px] hidden sm:table-cell">
                   <span className="block truncate" title={rec.supplier}>
                     {rec.supplier}
                   </span>
                 </td>
-                <td className="table-td px-3.5 py-3 align-top text-right type-table-cell font-semibold tabular-nums text-ink whitespace-nowrap">
+                <td className="table-td px-2 sm:px-4 align-top text-right type-table-cell font-semibold tabular-nums text-ink whitespace-nowrap">
                   {rec.recommendedQty.toLocaleString()}{" "}
                   <span className="font-normal text-ink-muted">
                     {rec.unit}
                   </span>
                 </td>
-                <td className="table-td px-3.5 py-3 align-top text-center whitespace-nowrap">
+                <td className="table-td px-2.5 sm:px-4 align-top text-center whitespace-nowrap">
                   <UrgencyBadge level={rec.urgency} />
                 </td>
               </tr>
@@ -121,8 +124,8 @@ function InventoryForecastCard({
   );
 
   return (
-    <div className="rounded-card border border-border bg-surface p-5 sm:p-6 flex flex-col">
-      <div className="mb-4">
+    <div className="rounded-card border border-border bg-surface p-5 flex flex-col">
+      <div className="mb-3">
         <h3 className="type-card-title text-ink">
           Inventory Demand Forecast
         </h3>
@@ -131,7 +134,7 @@ function InventoryForecastCard({
         </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="divide-y divide-divider">
         {sorted.map((fc) => {
           const fillPct = Math.min(
             100,
@@ -149,15 +152,15 @@ function InventoryForecastCard({
           return (
             <div
               key={fc.sku}
-              className="rounded-inner border border-border bg-subtle p-3.5 hover:bg-switcher transition-colors"
+              className="py-3 first:pt-1 last:pb-0 space-y-2"
             >
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="type-caption font-semibold text-ink truncate">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="type-body font-semibold text-ink">
                       {fc.item}
                     </span>
-                    <span className="type-caption tabular-nums text-ink-muted shrink-0">
+                    <span className="type-caption tabular-nums whitespace-nowrap text-ink-muted">
                       {fc.sku}
                     </span>
                   </div>
@@ -166,7 +169,7 @@ function InventoryForecastCard({
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2.5 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <div className="text-right">
                     <p className="type-caption font-semibold tabular-nums text-ink">
                       {fc.currentStock.toLocaleString()}{" "}
@@ -174,7 +177,11 @@ function InventoryForecastCard({
                         / {fc.forecastedDemand.toLocaleString()} {fc.unit}
                       </span>
                     </p>
-                    <p className="type-caption font-medium tabular-nums text-ink-muted">
+                    <p
+                      className={`type-caption font-medium tabular-nums ${
+                        fc.urgency === "High" ? "text-destructive" : "text-ink-muted"
+                      }`}
+                    >
                       ~{fc.daysRemaining}d remaining
                     </p>
                   </div>
@@ -182,7 +189,7 @@ function InventoryForecastCard({
                 </div>
               </div>
 
-              <div className="h-2 bg-subtle rounded-pill overflow-hidden">
+              <div className="h-1.5 bg-tint-tab rounded-pill overflow-hidden">
                 <div
                   className={`h-full rounded-pill transition-all duration-300 ${barClass}`}
                   style={{ width: `${Math.max(fillPct > 0 ? 4 : 0, fillPct)}%` }}
@@ -204,11 +211,17 @@ export default function AiRecommendations({
   forecasts: InventoryForecast[] | null;
 }) {
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
       {procurement && (
-        <ProcurementRecommendationCard procurementRecommendations={procurement} />
+        <div className={forecasts ? "min-w-0 xl:col-span-7" : "min-w-0 xl:col-span-12"}>
+          <ProcurementRecommendationCard procurementRecommendations={procurement} />
+        </div>
       )}
-      {forecasts && <InventoryForecastCard inventoryForecasts={forecasts} />}
+      {forecasts && (
+        <div className={procurement ? "min-w-0 xl:col-span-5" : "min-w-0 xl:col-span-12"}>
+          <InventoryForecastCard inventoryForecasts={forecasts} />
+        </div>
+      )}
     </div>
   );
 }

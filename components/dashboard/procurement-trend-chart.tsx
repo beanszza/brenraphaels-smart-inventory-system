@@ -60,7 +60,7 @@ export default function ProcurementTrendChart({
   const rangeText = firstMonth && lastMonth ? `${firstMonth} – ${lastMonth}` : "Last 6 months";
 
   return (
-    <div className="rounded-card border border-border bg-surface p-5 sm:p-6 flex flex-col justify-between">
+    <div className="rounded-card border border-border bg-surface p-5 flex flex-col justify-between h-full">
       <div className="flex items-start justify-between gap-2 mb-4">
         <div>
           <h3 className="type-card-title text-ink">
@@ -80,26 +80,26 @@ export default function ProcurementTrendChart({
           >
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="var(--border)"
+              stroke="var(--border-divider)"
               vertical={false}
             />
             <XAxis
               dataKey="month"
-              tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+              tick={{ fontSize: 12, fill: "var(--ink-muted)" }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
               yAxisId="left"
               allowDecimals={false}
-              tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+              tick={{ fontSize: 12, fill: "var(--ink-muted)" }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
               yAxisId="right"
               orientation="right"
-              tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+              tick={{ fontSize: 12, fill: "var(--ink-muted)" }}
               axisLine={false}
               tickLine={false}
             />
@@ -119,21 +119,23 @@ export default function ProcurementTrendChart({
               type="monotone"
               dataKey="orders"
               name="Purchase Orders"
-              stroke="var(--primary)"
+              stroke="var(--brand-primary)"
               strokeWidth={2.5}
-              dot={{ fill: "var(--primary)", r: 4, strokeWidth: 2, stroke: "var(--surface)" }}
+              dot={{ fill: "var(--brand-primary)", r: 4, strokeWidth: 2, stroke: "var(--bg-surface)" }}
               activeDot={{ r: 6 }}
+              isAnimationActive={false}
             />
             <Line
               yAxisId="right"
               type="monotone"
               dataKey="valueK"
               name="Order Value (₱K)"
-              stroke="var(--color-success)"
+              stroke="var(--brand-focus)"
               strokeWidth={2.5}
               strokeDasharray="5 3"
-              dot={{ fill: "var(--color-success)", r: 4, strokeWidth: 2, stroke: "var(--surface)" }}
+              dot={{ fill: "var(--brand-focus)", r: 4, strokeWidth: 2, stroke: "var(--bg-surface)" }}
               activeDot={{ r: 6 }}
+              isAnimationActive={false}
             />
           </LineChart>
         </ResponsiveContainer>

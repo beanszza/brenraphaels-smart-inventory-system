@@ -10,12 +10,20 @@ import {
 import type { CategorySlice } from "@/lib/dashboard/types";
 import { EmptyChart } from "./EmptyChart";
 
+const PURPLE_SERIES = [
+  "var(--brand-primary)",
+  "var(--brand-ai)",
+  "var(--brand-border-selected)",
+  "var(--brand-focus)",
+  "var(--brand-tint-tab)",
+] as const;
+
 function CustomTooltip({
   active,
   payload,
 }: {
   active?: boolean;
-  payload?: Array<{ name: string; value: number; payload: { color: string } }>;
+  payload?: Array<{ name: string; value: number; payload: { fillColor: string } }>;
 }) {
   if (active && payload && payload.length) {
     const item = payload[0];
@@ -24,7 +32,7 @@ function CustomTooltip({
         <div className="flex items-center gap-2">
           <span
             className="w-2.5 h-2.5 rounded-full"
-            style={{ background: item.payload.color }}
+            style={{ background: item.payload.fillColor }}
           />
           <span className="type-caption font-semibold text-ink">
             {item.name}
@@ -47,8 +55,13 @@ export default function InventoryDistributionChart({
   const total = inventoryDistribution.reduce((s, d) => s + d.value, 0);
   if (!total) return <EmptyChart title="Inventory Distribution" subtitle="Active items grouped by category" />;
 
+  const coloredData = inventoryDistribution.map((entry, index) => ({
+    ...entry,
+    fillColor: PURPLE_SERIES[index % PURPLE_SERIES.length],
+  }));
+
   return (
-    <div className="rounded-card border border-border bg-surface p-5 sm:p-6 flex flex-col justify-between">
+    <div className="rounded-card border border-border bg-surface p-5 flex flex-col justify-between h-full">
       <div>
         <h3 className="type-card-title text-ink">
           Inventory Distribution
@@ -58,81 +71,80 @@ export default function InventoryDistributionChart({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4 mt-4">
-        <div className="h-[220px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={inventoryDistribution}
-                cx="50%"
-                cy="50%"
-                innerRadius={55}
-                outerRadius={88}
-                paddingAngle={3}
-                dataKey="value"
-                strokeWidth={2}
-                stroke="var(--surface)"
-              >
-                {inventoryDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <text
-                x="50%"
-                y="47%"
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={24}
-                fontWeight={600}
-                fill="var(--ink)"
-              >
-                {total}
-              </text>
-              <text
-                x="50%"
-                y="57%"
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={12}
-                fontWeight={500}
-                fill="var(--ink-muted)"
-              >
-                Items
-              </text>
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+      <div className="h-[180px] w-full my-3">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={coloredData}
+              cx="50%"
+              cy="50%"
+              innerRadius={50}
+              outerRadius={76}
+              paddingAngle={3}
+              dataKey="value"
+              strokeWidth={2}
+              stroke="var(--bg-surface)"
+              isAnimationActive={false}
+            >
+              {coloredData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fillColor} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+            <text
+              x="50%"
+              y="46%"
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={22}
+              fontWeight={600}
+              fill="var(--ink)"
+            >
+              {total}
+            </text>
+            <text
+              x="50%"
+              y="58%"
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={12}
+              fontWeight={500}
+              fill="var(--ink-muted)"
+            >
+              Items
+            </text>
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
 
-        <div className="space-y-2.5">
-          {inventoryDistribution.map((entry) => {
-            const pct = Math.round((entry.value / total) * 100);
-            return (
-              <div
-                key={entry.name}
-                className="flex items-center justify-between gap-3 rounded-inner border border-border bg-subtle px-3.5 py-2.5"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ background: entry.color }}
-                  />
-                  <span className="type-caption font-semibold text-ink truncate">
-                    {entry.name}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="type-caption font-semibold tabular-nums text-ink">
-                    {entry.value}
-                  </span>
-                  <span className="type-caption font-medium tabular-nums text-ink-muted w-9 text-right">
-                    ({pct}%)
-                  </span>
-                </div>
+      <div className="divide-y divide-divider">
+        {coloredData.map((entry) => {
+          const pct = Math.round((entry.value / total) * 100);
+          return (
+            <div
+              key={entry.name}
+              className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ background: entry.fillColor }}
+                />
+                <span className="type-caption font-medium text-ink truncate">
+                  {entry.name}
+                </span>
               </div>
-            );
-          })}
-        </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="type-caption font-semibold tabular-nums text-ink">
+                  {entry.value}
+                </span>
+                <span className="type-caption font-medium tabular-nums text-ink-muted w-9 text-right">
+                  ({pct}%)
+                </span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

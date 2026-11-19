@@ -12,7 +12,6 @@ import {
   ResponsiveContainer,
   LabelList,
 } from "recharts";
-import { Package, ArrowRightLeft } from "lucide-react";
 import type { BranchFlow } from "@/lib/dashboard/types";
 import { Badge } from "@/components/ui/badge";
 import { EmptyChart } from "./EmptyChart";
@@ -75,51 +74,38 @@ export default function DistributionAnalyticsChart({ data }: { data: BranchFlow[
   }
 
   return (
-    <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
-      <div className="flex items-center justify-between gap-2 mb-4">
-        <div>
-          <h3 className="type-card-title text-ink">
-            Distribution Analytics
-          </h3>
-          <p className="type-caption text-ink-muted mt-0.5">
-            Transfers received and dispatched across branch locations
-          </p>
-        </div>
-      </div>
-
-      {/* Top receiver callout */}
-      <div className="mb-5 p-4 rounded-inner border border-border bg-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="min-w-0">
-          <Badge variant="purple">Top Receiver</Badge>
-          <h4 className="type-body font-semibold text-ink mt-1.5 truncate">
-            {topBranch.branch}
-          </h4>
+    <div className="rounded-card border border-border bg-surface p-5 flex flex-col justify-between h-full">
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h3 className="type-card-title text-ink">
+              Distribution Analytics
+            </h3>
+            <p className="type-caption text-ink-muted mt-0.5">
+              Transfers received and dispatched across branch locations
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2.5 rounded-inner border border-border bg-surface px-3 py-2 min-w-[110px]">
-            <div className="p-1.5 rounded-sm bg-subtle text-ink">
-              <Package className="size-4" />
-            </div>
+        {/* Top receiver callout — flat divider strip (no nested gray boxes) */}
+        <div className="mt-3.5 pb-3.5 mb-4 border-b border-divider flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <Badge variant="purple">Top Receiver</Badge>
+            <h4 className="type-body-secondary font-semibold text-ink mt-1 truncate">
+              {topBranch.branch}
+            </h4>
+          </div>
+
+          <div className="flex items-center gap-4 shrink-0 text-right">
             <div>
-              <p className="type-nav-group text-ink-muted">
-                Received
-              </p>
-              <p className="type-body font-semibold tabular-nums text-ink">
+              <p className="type-caption text-ink-muted">Received</p>
+              <p className="type-subsection tabular-nums text-ink">
                 {topBranch.received}
               </p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 rounded-inner border border-border bg-surface px-3 py-2 min-w-[110px]">
-            <div className="p-1.5 rounded-sm bg-subtle text-ink">
-              <ArrowRightLeft className="size-4" />
-            </div>
             <div>
-              <p className="type-nav-group text-ink-muted">
-                Transfers
-              </p>
-              <p className="type-body font-semibold tabular-nums text-ink">
+              <p className="type-caption text-ink-muted">Transfers</p>
+              <p className="type-subsection tabular-nums text-ink">
                 {topBranch.transfers}
               </p>
             </div>
@@ -127,46 +113,46 @@ export default function DistributionAnalyticsChart({ data }: { data: BranchFlow[
         </div>
       </div>
 
-      <div className="w-full h-[260px]">
+      <div className="w-full h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={sorted}
             layout="vertical"
-            margin={{ top: 0, right: 36, left: 8, bottom: 0 }}
+            margin={{ top: 0, right: 32, left: 4, bottom: 0 }}
             barCategoryGap="28%"
             barGap={3}
           >
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="var(--border)"
+              stroke="var(--border-divider)"
               horizontal={false}
             />
             <XAxis
               type="number"
               allowDecimals={false}
-              tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+              tick={{ fontSize: 12, fill: "var(--ink-muted)" }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
               type="category"
               dataKey="branch"
-              tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+              tick={{ fontSize: 12, fill: "var(--ink-muted)" }}
               axisLine={false}
               tickLine={false}
-              width={120}
+              width={96}
             />
             <Tooltip
               content={<CustomTooltip />}
               cursor={{
-                fill: isDarkMode ? "var(--color-surface)" : "var(--color-page)",
+                fill: isDarkMode ? "var(--bg-surface)" : "var(--bg-page)",
                 opacity: 0.5,
               }}
             />
             <Legend
               iconType="circle"
               iconSize={8}
-              wrapperStyle={{ paddingTop: "12px" }}
+              wrapperStyle={{ paddingTop: "10px" }}
               formatter={(value) => (
                 <span className="type-caption font-medium text-ink pl-1">
                   {value}
@@ -176,15 +162,16 @@ export default function DistributionAnalyticsChart({ data }: { data: BranchFlow[
             <Bar
               dataKey="received"
               name="Received"
-              fill="var(--primary)"
+              fill="var(--brand-primary)"
               radius={[0, 4, 4, 0]}
+              isAnimationActive={false}
             >
               <LabelList
                 dataKey="received"
                 position="right"
                 style={{
                   fontSize: 12,
-                  fill: "var(--muted-foreground)",
+                  fill: "var(--ink-muted)",
                   fontWeight: 600,
                 }}
                 dx={6}
@@ -193,15 +180,16 @@ export default function DistributionAnalyticsChart({ data }: { data: BranchFlow[
             <Bar
               dataKey="transfers"
               name="Transfers"
-              fill="var(--color-success)"
+              fill="var(--brand-focus)"
               radius={[0, 4, 4, 0]}
+              isAnimationActive={false}
             >
               <LabelList
                 dataKey="transfers"
                 position="right"
                 style={{
                   fontSize: 12,
-                  fill: "var(--muted-foreground)",
+                  fill: "var(--ink-muted)",
                   fontWeight: 600,
                 }}
                 dx={6}
