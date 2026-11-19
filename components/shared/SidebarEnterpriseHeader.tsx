@@ -36,15 +36,15 @@ export function SidebarEnterpriseHeader({
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-88 bg-surface border border-border text-ink z-[99999] p-2 space-y-1 shadow-modal rounded-modal"
+              className="w-80 bg-surface border border-border text-ink z-[99999] p-1.5 space-y-0.5 shadow-modal rounded-card"
               align="start"
               side="bottom"
-              sideOffset={10}
+              sideOffset={6}
             >
-              <DropdownMenuLabel className="type-caption font-semibold uppercase tracking-wider text-ink-muted px-3 pt-2 pb-2.5">
+              <DropdownMenuLabel className="type-nav-group text-ink-muted px-2.5 py-1.5">
                 Select Enterprise Module
               </DropdownMenuLabel>
-              <DropdownMenuSeparator className="-mx-2 mb-2 mt-0 bg-divider" />
+              <DropdownMenuSeparator className="-mx-1.5 my-1 bg-divider" />
               {systems.map((sys) => {
                 const SysIcon = sys.icon;
                 return (
@@ -53,24 +53,24 @@ export function SidebarEnterpriseHeader({
                     onClick={() => {
                       if (sys.url) navigate(sys.url);
                     }}
-                    className={`cursor-pointer h-auto type-body-secondary flex items-center justify-between px-3 py-3 rounded-inner transition-all font-medium gap-3 ${
+                    className={`cursor-pointer h-auto type-body-secondary flex items-center justify-between px-2.5 py-2 rounded-control transition-all font-medium gap-2.5 ${
                       sys.active
                         ? "bg-tint-soft text-primary font-semibold"
                         : "bg-surface text-ink hover:bg-subtle"
                     }`}
                   >
-                    <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
+                    <div className="flex items-center gap-2.5 overflow-hidden min-w-0 flex-1">
                       <div
-                        className={`size-10 rounded-inner flex items-center justify-center shrink-0 transition-colors ${
+                        className={`size-8 rounded-control flex items-center justify-center shrink-0 transition-colors ${
                           sys.active
                             ? "bg-ai text-on-brand shadow-none"
                             : "bg-subtle text-ink-secondary"
                         }`}
                       >
-                        <SysIcon className="size-5 shrink-0" />
+                        <SysIcon className="size-4 shrink-0" />
                       </div>
                       <div className="flex flex-col min-w-0 overflow-hidden flex-1 justify-center gap-0.5">
-                        <span className="font-semibold type-body-secondary truncate leading-snug text-ink">
+                        <span className="font-semibold type-body-secondary truncate leading-tight text-ink">
                           {sys.fullName}
                         </span>
                         <span className="type-caption text-ink-muted truncate leading-tight">
@@ -79,8 +79,8 @@ export function SidebarEnterpriseHeader({
                       </div>
                     </div>
                     {sys.active && (
-                      <div className="size-5 rounded-pill bg-ai text-on-brand flex items-center justify-center shrink-0 ml-1.5 shadow-none">
-                        <Check className="size-3 stroke-[2.5]" />
+                      <div className="size-4.5 rounded-pill bg-ai text-on-brand flex items-center justify-center shrink-0 ml-1 shadow-none">
+                        <Check className="size-2.5 stroke-[2.5]" />
                       </div>
                     )}
                   </DropdownMenuItem>
