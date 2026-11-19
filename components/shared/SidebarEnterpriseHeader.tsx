@@ -29,19 +29,19 @@ export function SidebarEnterpriseHeader({
         <div className="flex-1 min-w-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <div className="flex items-center p-2.5 rounded-card bg-surface border border-border hover:bg-subtle cursor-pointer transition-colors group gap-3">
+              <div className="flex items-center p-2 rounded-control hover:bg-subtle cursor-pointer transition-colors group gap-3">
                 <h1 className="sr-only">Bren Raphael&apos;s Inventory Management System</h1>
                 <BrandLockup system="IMS" className="min-w-0 flex-1" />
                 <ChevronsUpDown className="size-4 text-ink-muted shrink-0 group-hover:text-ink transition-colors" />
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[264px] bg-surface border border-border text-ink z-[99999] p-1.5 space-y-1 shadow-modal rounded-inner"
+              className="w-80 bg-surface border border-border text-ink z-[99999] p-2 space-y-1 shadow-modal rounded-card"
               align="start"
               side="bottom"
               sideOffset={6}
             >
-              <DropdownMenuLabel className="type-caption font-medium text-ink-muted px-2.5 py-1.5 lowercase first-letter:capitalize">
+              <DropdownMenuLabel className="type-caption font-semibold uppercase tracking-wider text-ink-muted px-3 py-1.5">
                 Select Enterprise Module
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="my-1 bg-divider" />
@@ -53,18 +53,18 @@ export function SidebarEnterpriseHeader({
                     onClick={() => {
                       if (sys.url) navigate(sys.url);
                     }}
-                    className={`cursor-pointer type-body-secondary flex items-center justify-between p-2 rounded-control transition-all font-medium gap-2.5 ${
+                    className={`cursor-pointer type-body-secondary flex items-center justify-between p-2 rounded-control transition-all font-medium gap-3 ${
                       sys.active
-                        ? "bg-tint-tab text-primary font-semibold"
+                        ? "bg-tint-soft text-primary font-semibold"
                         : "bg-surface text-ink hover:bg-subtle"
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 overflow-hidden min-w-0 flex-1">
+                    <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
                       <div
-                        className={`size-8 rounded-control flex items-center justify-center shrink-0 transition-colors ${
+                        className={`size-9 rounded-control flex items-center justify-center shrink-0 transition-colors ${
                           sys.active
-                            ? "bg-tint-soft text-primary"
-                            : "bg-transparent text-ink-muted"
+                            ? "bg-primary text-on-brand shadow-none"
+                            : "bg-subtle text-ink-secondary"
                         }`}
                       >
                         <SysIcon className="size-4.5 shrink-0" />
