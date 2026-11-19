@@ -24,12 +24,12 @@ export function SidebarEnterpriseHeader({
   navigate?: (url: string) => void;
 }) {
   return (
-    <SidebarHeader className="h-24 justify-center py-0 pl-3.5 pr-2.5 border-b border-divider">
+    <SidebarHeader className="h-20 justify-center py-2 px-3 border-b border-divider">
       <div className="flex items-center justify-between gap-2">
         <div className="flex-1 min-w-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <div className="flex items-center p-2 rounded-control hover:bg-subtle cursor-pointer transition-colors group gap-3">
+              <div className="flex items-center p-1.5 rounded-control hover:bg-subtle cursor-pointer transition-colors group gap-2.5">
                 <h1 className="sr-only">Bren Raphael&apos;s Inventory Management System</h1>
                 <BrandLockup system="IMS" className="min-w-0 flex-1" />
                 <ChevronsUpDown className="size-4 text-ink-muted shrink-0 group-hover:text-ink transition-colors" />
@@ -39,7 +39,8 @@ export function SidebarEnterpriseHeader({
               className="w-80 bg-surface border border-border text-ink z-[99999] p-2 space-y-1 shadow-modal rounded-card"
               align="start"
               side="bottom"
-              sideOffset={6}
+              sideOffset={4}
+              alignOffset={-4}
             >
               <DropdownMenuLabel className="type-caption font-semibold uppercase tracking-wider text-ink-muted px-3 py-1.5">
                 Select Enterprise Module

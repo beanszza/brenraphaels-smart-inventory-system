@@ -634,11 +634,13 @@ git diff -U0 -- '*.tsx' '*.ts' | Select-String '^[+-](?![+-])' | Select-String -
 5. **Dialog Widths:** **Keep the existing default widths in Stage 3F**, and set Figma widths (`480 px` confirm / `560 px` form / `640 px` large) per modal during Stage 6.
 6. **Minimum Text Size (`12 px`):** **Accept the `12 px` minimum (`type-caption`)** across `text-[10px]` / `text-[11px]` usages, then review the densest tables during Stage 6.
 7. **PDFs (Stage 7):** **Skip for now.**
-8. **Sidebar Enterprise Switcher Block (`SidebarEnterpriseHeader.tsx`):** **Seamless logo lockup sitting directly on the sidebar with no outer border or background box** (`border-none bg-transparent hover:bg-subtle`), matching CREOMS and Figma foundations.
-   - *Reason:* Eliminates unnecessary nested borders and background containers, keeping the brand lockup flat and cohesive with the sidebar surface.
+8. **Sidebar Enterprise Switcher Block & Dropdown Spacing (`SidebarEnterpriseHeader.tsx`):** **Seamless logo lockup on sidebar with snug dropdown spacing** (`h-20`, `p-1.5`, `sideOffset={4}`, `alignOffset={-4}`).
+   - *Reason:* Eliminates unnecessary nested borders/boxes and removes excess vertical gap so the module switcher attaches cleanly below the brand lockup.
 9. **Sidebar Active Nav Item (`Sidebar.tsx`):** **Use a white/tint-based active state** (`bg-tint-tab text-ink font-semibold`, icon `text-primary`) instead of Figma's flat neutral gray `bg-nav-active` (`#efeff1`).
    - *Reason:* Eliminates dull neutral gray active indicator and harmonizes with the brand-tinted shell and white switcher header.
 10. **Enterprise System Dropdown (`SidebarEnterpriseHeader.tsx`):** **320px (`w-80`) overlay with uppercase `SELECT ENTERPRISE MODULE` header, white rows with `bg-subtle` hover, inactive icon tiles in `bg-subtle`, active row in `bg-tint-soft text-primary` with `bg-brand-ai` icon and checkmark badge** (matching CREOMS reference).
    - *Reason:* Ensures all system names fit without truncation, preserves consistent iconography with soft background tiles, and highlights the active enterprise module with vibrant brand styling.
-11. **App Header / Top Bar (`Header.tsx`):** **Use `bg-page` to seamlessly match the dashboard canvas background without a clashing divider line.**
-   - *Reason:* Eliminates the white stripe and horizontal line across the top of the dashboard, creating a cohesive, unified canvas from the top navigation to the content cards.
+11. **App Header & Dashboard Canvas (`Header.tsx`, `AppShell.tsx`):** **Both Header and Dashboard canvas use white `bg-surface`, with `border-b border-divider` separating them.**
+   - *Reason:* Ensures the header and dashboard content share a unified, clean white canvas with a crisp border dividing the navigation topbar from the page content.
+12. **Sidebar Background (`Sidebar.tsx`):** **Sidebar uses `bg-page` (`#fafafa` in light mode / `#171320` in dark mode).**
+   - *Reason:* Provides intentional contrast between the navigational sidebar shell and the white main content canvas.
