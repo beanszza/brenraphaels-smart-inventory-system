@@ -24,7 +24,7 @@ export function SidebarEnterpriseHeader({
   navigate?: (url: string) => void;
 }) {
   return (
-    <SidebarHeader className="h-20 justify-center py-2 px-3 border-b border-divider">
+    <SidebarHeader className="h-20 justify-center py-2 px-3 border-none">
       <div className="flex items-center justify-between gap-2">
         <div className="flex-1 min-w-0">
           <DropdownMenu>
@@ -39,7 +39,7 @@ export function SidebarEnterpriseHeader({
               className="w-80 bg-surface border border-border text-ink z-[99999] p-2 space-y-1 shadow-modal rounded-modal"
               align="start"
               side="bottom"
-              sideOffset={8}
+              sideOffset={2}
             >
               <DropdownMenuLabel className="type-caption font-semibold uppercase tracking-wider text-ink-muted px-3 py-1.5">
                 Select Enterprise Module
