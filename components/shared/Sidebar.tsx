@@ -74,10 +74,10 @@ export function Sidebar({ modules, staff }: { modules: Module[]; staff: Staff })
                             <SidebarMenuButton
                               asChild
                               isActive={isActive}
-                              className="h-10 w-full flex items-center gap-3 px-2.5 rounded-control type-label-nav text-ink transition-colors hover:bg-subtle data-[active=true]:type-label-nav-active data-[active=true]:bg-sidebar-accent data-[active=true]:text-ink"
+                              className="h-10 w-full flex items-center gap-3 px-2.5 rounded-control type-label-nav text-ink transition-colors hover:bg-subtle data-[active=true]:type-label-nav-active data-[active=true]:bg-tint-tab data-[active=true]:text-ink"
                             >
                               <Link href={item.href} onClick={handleNavClick}>
-                                <ItemIcon className="size-4.5 shrink-0 text-ink-secondary group-data-[active=true]:text-ink" />
+                                <ItemIcon className="size-4.5 shrink-0 text-ink-secondary group-data-[active=true]:text-primary" />
                                 <span>{item.name}</span>
                               </Link>
                             </SidebarMenuButton>

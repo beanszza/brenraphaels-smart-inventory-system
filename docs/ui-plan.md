@@ -634,3 +634,9 @@ git diff -U0 -- '*.tsx' '*.ts' | Select-String '^[+-](?![+-])' | Select-String -
 5. **Dialog Widths:** **Keep the existing default widths in Stage 3F**, and set Figma widths (`480 px` confirm / `560 px` form / `640 px` large) per modal during Stage 6.
 6. **Minimum Text Size (`12 px`):** **Accept the `12 px` minimum (`type-caption`)** across `text-[10px]` / `text-[11px]` usages, then review the densest tables during Stage 6.
 7. **PDFs (Stage 7):** **Skip for now.**
+8. **Sidebar Enterprise Switcher Block (`SidebarEnterpriseHeader.tsx`):** **Use white `bg-surface` with `1px border-border`** instead of Figma's `bg-switcher` (`#f4f1f7`).
+   - *Reason:* Creates a crisp card aesthetic matching the application surface foundation and provides clear contrast against the sidebar background.
+9. **Sidebar Active Nav Item (`Sidebar.tsx`):** **Use a white/tint-based active state** (e.g. `bg-tint-tab text-ink font-semibold` or `bg-surface border border-border text-ink`) instead of Figma's flat neutral gray `bg-nav-active` (`#efeff1`).
+   - *Reason:* Eliminates dull neutral gray active indicator and harmonizes with the brand-tinted shell and white switcher header.
+10. **Enterprise System Dropdown (`SidebarEnterpriseHeader.tsx`):** **Sentence-case header text, white rows (`bg-surface`), hover state `bg-subtle`, no gray icon tiles (`bg-transparent text-ink-muted`), and width constrained to trigger.**
+   - *Reason:* Removes aggressive all-caps uppercase header, eliminates noisy gray background tiles behind icons for cleaner scanning, ensures dropdown aligns with the 264px trigger width rather than overhanging by 46px into main page content, and provides strong contrast for the active selection.

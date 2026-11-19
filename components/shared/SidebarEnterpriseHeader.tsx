@@ -29,19 +29,19 @@ export function SidebarEnterpriseHeader({
         <div className="flex-1 min-w-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <div className="flex items-center p-2.5 rounded-card bg-switcher hover:bg-subtle cursor-pointer transition-colors group gap-3">
+              <div className="flex items-center p-2.5 rounded-card bg-surface border border-border hover:bg-subtle cursor-pointer transition-colors group gap-3">
                 <h1 className="sr-only">Bren Raphael&apos;s Inventory Management System</h1>
                 <BrandLockup system="IMS" className="min-w-0 flex-1" />
                 <ChevronsUpDown className="size-4 text-ink-muted shrink-0 group-hover:text-ink transition-colors" />
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-72 sm:w-80 bg-surface border border-border text-ink z-[99999] p-2 space-y-1 shadow-modal rounded-inner"
+              className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[264px] bg-surface border border-border text-ink z-[99999] p-1.5 space-y-1 shadow-modal rounded-inner"
               align="start"
               side="bottom"
               sideOffset={6}
             >
-              <DropdownMenuLabel className="type-nav-group text-ink-muted px-3 py-1.5">
+              <DropdownMenuLabel className="type-caption font-medium text-ink-muted px-2.5 py-1.5 lowercase first-letter:capitalize">
                 Select Enterprise Module
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="my-1 bg-divider" />
@@ -53,21 +53,21 @@ export function SidebarEnterpriseHeader({
                     onClick={() => {
                       if (sys.url) navigate(sys.url);
                     }}
-                    className={`cursor-pointer type-body-secondary flex items-center justify-between p-2.5 rounded-control transition-all font-medium gap-3 ${
+                    className={`cursor-pointer type-body-secondary flex items-center justify-between p-2 rounded-control transition-all font-medium gap-2.5 ${
                       sys.active
-                        ? "bg-tint-selected text-primary font-semibold"
-                        : "hover:bg-subtle hover:text-ink"
+                        ? "bg-tint-tab text-primary font-semibold"
+                        : "bg-surface text-ink hover:bg-subtle"
                     }`}
                   >
-                    <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
+                    <div className="flex items-center gap-2.5 overflow-hidden min-w-0 flex-1">
                       <div
                         className={`size-8 rounded-control flex items-center justify-center shrink-0 transition-colors ${
                           sys.active
-                            ? "bg-primary text-on-brand shadow-none"
-                            : "bg-subtle text-ink-muted"
+                            ? "bg-tint-soft text-primary"
+                            : "bg-transparent text-ink-muted"
                         }`}
                       >
-                        <SysIcon className="size-4 shrink-0" />
+                        <SysIcon className="size-4.5 shrink-0" />
                       </div>
                       <div className="flex flex-col min-w-0 overflow-hidden flex-1 justify-center gap-0.5">
                         <span className="font-semibold type-body-secondary truncate leading-snug text-ink">
@@ -79,7 +79,7 @@ export function SidebarEnterpriseHeader({
                       </div>
                     </div>
                     {sys.active && (
-                      <div className="size-5 rounded-pill bg-primary text-on-brand flex items-center justify-center shrink-0 ml-2 shadow-none">
+                      <div className="size-5 rounded-pill bg-primary text-on-brand flex items-center justify-center shrink-0 ml-1.5 shadow-none">
                         <Check className="size-3 stroke-[2.5]" />
                       </div>
                     )}
