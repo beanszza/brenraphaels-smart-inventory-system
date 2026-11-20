@@ -10,13 +10,13 @@ import { listLocations } from "@/app/actions/stock-transfer/locations";
 import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { X, Plus, Trash2, AlertCircle, Package, Calendar } from "lucide-react";
+import { Plus, Trash2, AlertCircle, Package, Calendar } from "lucide-react";
 import { FinishedProductOption, LocationOption } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
+import { Button } from "@/components/ui/button";
+import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { StockTransferConfirmModal } from "./StockTransferConfirmModal";
 
 export const STR_REASON_CHOICES = [
@@ -59,7 +59,6 @@ interface NewItemRow {
 }
 
 export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps) {
-  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<FinishedProductOption[]>([]);
   const [locations, setLocations] = useState<LocationOption[]>([]);
@@ -92,17 +91,8 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
     if (open) {
-      const original = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
       fetchPrerequisites();
-      return () => {
-        document.body.style.overflow = original;
-      };
     }
   }, [open]);
 
@@ -353,355 +343,338 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
     }
   };
 
-  const { requestClose, confirmModal } = useConfirmedClose(onClose);
-
-  if (!open || !mounted) return null;
-
-  return createPortal(
-    <div
-      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-backdrop backdrop-blur-xs p-4 sm:p-6 animate-in fade-in duration-150"
+  return (
+    <ModalWrapper
+      open={open}
+      title="Create Stock Transfer Request"
+      onClose={() => { if (!loading) onClose(); }}
+      size="max-w-5xl"
     >
-      {confirmModal}
-      <div
-        className="w-full max-w-[640px] max-h-[92vh] bg-surface rounded-panel shadow-modal border border-divider overflow-hidden flex flex-col text-text-primary shrink-0"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-divider px-6 py-5">
-          <div>
-            <h2 className="type-modal-title text-text-primary">
-              Create Stock Transfer Request
-            </h2>
-            <p className="type-caption text-text-muted mt-0.5">
-              Submit a transfer request to distribute finished goods to a branch
-            </p>
+      <form onSubmit={handleSubmit} className="space-y-5 text-ink">
+        {prerequisitesLoading && (
+          <div role="status" aria-label="Loading products and destinations" className="space-y-3">
+            <Skeleton className="h-10 w-full rounded-control" />
+            <Skeleton className="h-10 w-full rounded-control" />
           </div>
-          <button
-            type="button"
-            onClick={requestClose}
-            className="rounded-control p-2 text-text-muted hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
+        )}
+        {!prerequisitesLoading && !prerequisitesReady && (
+          <button type="button" onClick={fetchPrerequisites} className="type-caption underline text-ink cursor-pointer">
+            Retry loading products and destinations
           </button>
-        </div>
+        )}
+        {formError && (
+          <div className="rounded-control border border-destructive/40 bg-destructive/10 p-3.5 type-caption text-destructive flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span role="alert">{formError}</span>
+          </div>
+        )}
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-          {prerequisitesLoading && <div role="status" aria-label="Loading products and destinations" className="space-y-3">
-            <Skeleton className="h-10 w-full rounded-control" /><Skeleton className="h-10 w-full rounded-control" />
-          </div>}
-          {!prerequisitesLoading && !prerequisitesReady && <button type="button" onClick={fetchPrerequisites} className="type-caption underline text-text-primary">Retry loading products and destinations</button>}
-          {formError && (
-            <div className="rounded-control border border-destructive/40 bg-destructive/10 p-3.5 type-caption text-destructive flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span role="alert">{formError}</span>
+        {/* Form Top Grid - Request No, Destination, Required Date, Priority */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+          {/* Request Number (Auto-assigned, visible immediately) */}
+          <div className="space-y-1.5">
+            <label className="block type-label-field text-ink">
+              Request Number
+            </label>
+            <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle type-body-secondary font-mono font-semibold text-ink select-all">
+              {requestNumber || "Generating..."}
+            </div>
+          </div>
+
+          {/* Destination Branch */}
+          <div className="space-y-1.5">
+            <label className="block type-label-field text-ink">
+              Destination Branch <span className="text-destructive">*</span>
+            </label>
+            <Select value={toLocationId} onValueChange={setToLocationId}>
+              <SelectTrigger className="w-full h-10 px-3.5 rounded-control border-border bg-surface type-body text-ink">
+                <SelectValue placeholder="Select Destination Branch" />
+              </SelectTrigger>
+              <SelectContent className="bg-surface border-border text-ink">
+                {locations.map((loc) => (
+                  <SelectItem key={loc.locationId} value={String(loc.locationId)} className="type-body">
+                    {loc.locationName} ({loc.locationType})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Required Fulfillment Date with far-right calendar icon */}
+          <div className="space-y-1.5">
+            <label className="block type-label-field text-ink">
+              Required Date <span className="text-destructive">*</span>
+            </label>
+            <div className="relative">
+              <Input
+                type="date"
+                min={getTodayDateString()}
+                max={getMaxFutureDateString()}
+                value={requiredDate}
+                onChange={(e) => setRequiredDate(e.target.value)}
+                className="w-full h-10 rounded-control border-border bg-surface px-3.5 pr-10 type-body text-ink cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+              />
+              <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+            </div>
+          </div>
+
+          {/* Priority */}
+          <div className="space-y-1.5">
+            <label className="block type-label-field text-ink">
+              Priority
+            </label>
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger className="w-full h-10 px-3.5 rounded-control border-border bg-surface type-body font-medium text-ink">
+                <SelectValue placeholder="Select Priority" />
+              </SelectTrigger>
+              <SelectContent className="bg-surface border-border">
+                <SelectItem value="Low" className="type-body">Low</SelectItem>
+                <SelectItem value="Medium" className="type-body">Medium</SelectItem>
+                <SelectItem value="High" className="type-body">High</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Reason / Purpose Dropdown */}
+          <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
+            <label className="block type-label-field text-ink">
+              Reason / Purpose <span className="text-destructive">*</span>
+            </label>
+            <Select
+              value={reasonChoice}
+              onValueChange={(val) => {
+                setReasonChoice(val);
+                setFormError(null);
+              }}
+            >
+              <SelectTrigger className="w-full h-10 px-3.5 rounded-control border-border bg-surface type-body text-ink">
+                <SelectValue placeholder="Select Reason" />
+              </SelectTrigger>
+              <SelectContent className="bg-surface border-border">
+                {STR_REASON_CHOICES.map((choice) => (
+                  <SelectItem key={choice} value={choice} className="type-body">
+                    {choice === "Other" ? "Other (Please specify)" : choice}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* If 'Other' chosen: Specify Reason field */}
+          {reasonChoice === "Other" && (
+            <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
+              <label className="block type-label-field text-ink">
+                Specify Reason <span className="text-destructive">*</span>
+              </label>
+              <Input
+                type="text"
+                placeholder="Please specify reason for stock transfer..."
+                value={customReason}
+                onChange={(e) => setCustomReason(e.target.value)}
+                className="h-10 rounded-control border-border bg-surface px-3.5 type-body text-ink"
+                maxLength={100}
+              />
             </div>
           )}
+        </div>
 
-          {/* Form Top Grid - Request No, Destination, Required Date, Priority */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            {/* Request Number (Auto-assigned, visible immediately) */}
-            <div className="space-y-1.5">
-              <label className="type-caption font-semibold text-text-primary">
-                Request Number
-              </label>
-              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover type-caption font-mono font-semibold text-text-primary select-all">
-                {requestNumber || "Generating..."}
-              </div>
-            </div>
-
-            {/* Destination Branch */}
-            <div className="space-y-1.5">
-              <label className="type-caption font-semibold text-text-primary">
-                Destination Branch <span className="text-destructive">*</span>
-              </label>
-              <Select value={toLocationId} onValueChange={setToLocationId}>
-                <SelectTrigger className="h-10 rounded-control border border-divider bg-surface type-input font-medium text-text-primary">
-                  <SelectValue placeholder="Select Destination Branch" />
-                </SelectTrigger>
-                <SelectContent className="bg-surface border-divider text-text-primary">
-                  {locations.map((loc) => (
-                    <SelectItem key={loc.locationId} value={String(loc.locationId)}>
-                      {loc.locationName} ({loc.locationType})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Required Fulfillment Date with far-right calendar icon */}
-            <div className="space-y-1.5">
-              <label className="type-caption font-semibold text-text-primary">
-                Required Date <span className="text-destructive">*</span>
-              </label>
-              <div className="relative">
-                <Input
-                  type="date"
-                  min={getTodayDateString()}
-                  max={getMaxFutureDateString()}
-                  value={requiredDate}
-                  onChange={(e) => setRequiredDate(e.target.value)}
-                  className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 pr-10 type-input text-text-primary cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                />
-                <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              </div>
-            </div>
-
-            {/* Priority */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-text-primary">
-                Priority
-              </label>
-              <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger className="h-10 rounded-control border border-divider bg-surface text-xs font-medium text-text-primary">
-                  <SelectValue placeholder="Select Priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Low">Low</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Reason / Purpose Dropdown matching Destination Branch column width */}
-            <div className="space-y-1.5 sm:col-span-1">
-              <label className="text-xs font-semibold text-text-primary">
-                Reason / Purpose <span className="text-destructive">*</span>
-              </label>
-              <Select
-                value={reasonChoice}
-                onValueChange={(val) => {
-                  setReasonChoice(val);
-                  setFormError(null);
-                }}
-              >
-                <SelectTrigger className="h-10 rounded-control border border-divider bg-surface text-xs font-medium text-text-primary">
-                  <SelectValue placeholder="Select Reason" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STR_REASON_CHOICES.map((choice) => (
-                    <SelectItem key={choice} value={choice}>
-                      {choice === "Other" ? "Other (Please specify)" : choice}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* If 'Other' chosen: Specify Reason field */}
-            {reasonChoice === "Other" && (
-              <div className="space-y-1.5 sm:col-span-3">
-                <label className="text-xs font-semibold text-text-primary">
-                  Specify Reason <span className="text-destructive">*</span>
-                </label>
-                <Input
-                  type="text"
-                  placeholder="Please specify reason for stock transfer..."
-                  value={customReason}
-                  onChange={(e) => setCustomReason(e.target.value)}
-                  className="h-10 rounded-control border border-divider bg-surface text-xs text-text-primary"
-                  maxLength={100}
-                />
-              </div>
-            )}
+        {/* Dynamic Items Table */}
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <h3 className="type-subsection text-ink flex items-center gap-2">
+              <Package className="w-4 h-4 text-ink-muted" />
+              Finished Products to Transfer ({items.length})
+            </h3>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addItemRow}
+              disabled={products.length > 0 && items.length >= products.length}
+              className="flex items-center gap-1.5 px-3.5 h-9 rounded-control border-border bg-surface type-label-button-sm text-ink hover:bg-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Product
+            </Button>
           </div>
 
-          {/* Dynamic Items Table */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="type-card-title text-text-primary flex items-center gap-2">
-                <Package className="w-4 h-4 text-text-muted" />
-                Finished Products to Transfer ({items.length})
-              </h3>
-              <button
-                type="button"
-                onClick={addItemRow}
-                disabled={products.length > 0 && items.length >= products.length}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-control border border-divider bg-surface text-xs font-semibold text-text-primary hover:bg-surface-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" /> Add Product
-              </button>
-            </div>
+          <div className="table-card shadow-card">
+            <div className="overflow-x-auto table-scrollbar">
+              <table className="w-full text-left border-collapse">
+                <thead className="table-head-row border-b border-divider">
+                  <tr className="text-left whitespace-nowrap">
+                    <th className="table-th py-2.5 px-3 min-w-[220px]">Product &amp; Variant</th>
+                    <th className="table-th py-2.5 px-3 min-w-[100px] whitespace-nowrap">SKU</th>
+                    <th className="table-th py-2.5 px-3 min-w-[120px] whitespace-nowrap">Commissary Stock</th>
+                    <th className="table-th py-2.5 px-3 min-w-[190px]">Expiry Date &amp; Lots</th>
+                    <th className="table-th py-2.5 px-3 min-w-[96px] whitespace-nowrap">Quantity</th>
+                    <th className="table-th py-2.5 px-2 w-10 text-center"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-divider">
+                  {items.map((row, idx) => {
+                    const isInsufficient =
+                      Boolean(row.productId) &&
+                      typeof row.requestedQuantity === "number" &&
+                      row.requestedQuantity > 0 &&
+                      row.requestedQuantity > row.availableQuantity;
 
-            <div className="border border-divider rounded-control overflow-hidden bg-surface shadow-xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-surface-hover text-text-muted font-semibold border-b border-divider">
-                    <tr>
-                      <th className="px-4 py-3 min-w-[240px]">Product & Variant</th>
-                      <th className="px-4 py-3 min-w-[130px] whitespace-nowrap">SKU</th>
-                      <th className="px-4 py-3 min-w-[130px] whitespace-nowrap">Commissary Stock</th>
-                      <th className="px-4 py-3 min-w-[220px]">Expiry Date & Lots</th>
-                      <th className="px-4 py-3 min-w-[110px] whitespace-nowrap">Quantity</th>
-                      <th className="px-3 py-3 w-10 text-center"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {items.map((row, idx) => {
-                      const isInsufficient =
-                        Boolean(row.productId) &&
-                        typeof row.requestedQuantity === "number" &&
-                        row.requestedQuantity > 0 &&
-                        row.requestedQuantity > row.availableQuantity;
+                    return (
+                      <tr key={idx} className="table-row hover:bg-subtle/40 transition-colors">
+                        <td className="px-3 py-3 table-td">
+                          <Select
+                            value={row.productId ? String(row.productId) : ""}
+                            onValueChange={(val) => handleProductChange(idx, val)}
+                          >
+                            <SelectTrigger className="h-9 rounded-control border-border bg-surface type-body-secondary font-medium text-ink w-full">
+                              <SelectValue placeholder="Select Finished Product" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60 bg-surface border-border">
+                              {products
+                                .filter(
+                                  (p) =>
+                                    p.productId === row.productId ||
+                                    !items.some((other, oIdx) => oIdx !== idx && other.productId === p.productId)
+                                )
+                                .map((p) => (
+                                  <SelectItem key={p.productId} value={String(p.productId)} className="type-body-secondary">
+                                    {p.itemName} ({p.variant || "Standard"})
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </td>
 
-                      return (
-                        <tr key={idx} className="hover:bg-surface-hover/20 transition-colors">
-                          <td className="px-4 py-3">
-                            <Select
-                              value={row.productId ? String(row.productId) : ""}
-                              onValueChange={(val) => handleProductChange(idx, val)}
-                            >
-                              <SelectTrigger className="h-9 rounded-control border border-divider bg-surface text-xs font-medium text-text-primary w-full">
-                                <SelectValue placeholder="Select Finished Product" />
-                              </SelectTrigger>
-                              <SelectContent className="max-h-60">
-                                {products
-                                  .filter(
-                                    (p) =>
-                                      p.productId === row.productId ||
-                                      !items.some((other, oIdx) => oIdx !== idx && other.productId === p.productId)
-                                  )
-                                  .map((p) => (
-                                    <SelectItem key={p.productId} value={String(p.productId)}>
-                                      {p.itemName} ({p.variant || "Standard"})
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                          </td>
+                        <td className="px-3 py-3 table-td text-ink-muted whitespace-nowrap">
+                          {row.sku || "—"}
+                        </td>
 
-                          <td className="px-4 py-3 text-text-muted whitespace-nowrap">
-                            {row.sku || "—"}
-                          </td>
-
-                          <td className="px-4 py-3 font-medium whitespace-nowrap">
-                            {row.productId ? (
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-semibold text-text-primary">
-                                  {row.availableQuantity}
+                        <td className="px-3 py-3 table-td font-medium whitespace-nowrap">
+                          {row.productId ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-ink">
+                                {row.availableQuantity}
+                              </span>
+                              {isInsufficient ? (
+                                <span className="type-caption text-destructive font-semibold">
+                                  (Shortage)
                                 </span>
-                                {isInsufficient ? (
-                                  <span className="type-caption text-destructive font-semibold">
-                                    (Shortage)
-                                  </span>
-                                ) : (
-                                  <span className="type-caption text-text-primary font-semibold">
-                                    (In Stock)
-                                  </span>
-                                )}
+                              ) : (
+                                <span className="type-caption text-ink font-semibold">
+                                  (In Stock)
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-ink-muted">—</span>
+                          )}
+                        </td>
+
+                        <td className="px-3 py-3 table-td text-ink-muted">
+                          {row.productId ? (
+                            row.isChecking ? (
+                              <Skeleton aria-label="Checking stock" className="h-4 w-16" />
+                            ) : row.allocatedLots && row.allocatedLots.length > 0 ? (
+                              <div className="space-y-1.5 py-0.5">
+                                {row.allocatedLots.map((al, aIdx) => (
+                                  <div key={aIdx} className="space-y-0.5">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="font-semibold text-ink type-caption">
+                                        {al.expiryDate && al.expiryDate !== "No Expiry" && al.expiryDate !== "N/A"
+                                          ? (() => {
+                                              try {
+                                                const d = new Date(al.expiryDate);
+                                                return isNaN(d.getTime()) ? al.expiryDate : d.toLocaleDateString();
+                                              } catch {
+                                                return al.expiryDate;
+                                              }
+                                            })()
+                                          : "No Expiry"}
+                                      </span>
+                                    </div>
+                                    <div className="type-caption text-ink-muted font-mono">
+                                      Lot: {al.lotCode}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             ) : (
-                              <span className="text-text-muted">—</span>
-                            )}
-                          </td>
+                              <span className="text-ink-muted type-caption">No lot</span>
+                            )
+                          ) : (
+                            <span className="text-ink-muted type-caption">—</span>
+                          )}
+                        </td>
 
-                          <td className="px-4 py-3 text-text-muted">
-                            {row.productId ? (
-                              row.isChecking ? (
-                                <Skeleton aria-label="Checking stock" className="h-4 w-16" />
-                              ) : row.allocatedLots && row.allocatedLots.length > 0 ? (
-                                <div className="space-y-1.5 py-0.5">
-                                  {row.allocatedLots.map((al, aIdx) => (
-                                    <div key={aIdx} className="space-y-0.5">
-                                      <div className="flex items-center gap-1.5 flex-wrap">
-                                        <span className="font-semibold text-text-primary text-xs">
-                                          {al.expiryDate && al.expiryDate !== "No Expiry" && al.expiryDate !== "N/A"
-                                            ? (() => {
-                                                try {
-                                                  const d = new Date(al.expiryDate);
-                                                  return isNaN(d.getTime()) ? al.expiryDate : d.toLocaleDateString();
-                                                } catch {
-                                                  return al.expiryDate;
-                                                }
-                                              })()
-                                            : "No Expiry"}
-                                        </span>
-                                      </div>
-                                      <div className="type-caption text-text-muted font-mono">
-                                        Lot: {al.lotCode}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-text-muted text-xs">No lot</span>
-                              )
-                            ) : (
-                              <span className="text-text-muted text-xs">—</span>
-                            )}
-                          </td>
+                        <td className="px-3 py-3 table-td">
+                          <Input
+                            type="number"
+                            min="1"
+                            max={row.availableQuantity > 0 ? row.availableQuantity : undefined}
+                            step="1"
+                            value={row.requestedQuantity}
+                            onChange={(e) => handleQuantityChange(idx, e.target.value)}
+                            className={`h-9 rounded-control border bg-surface type-body-secondary text-ink font-semibold w-24 ${
+                              isInsufficient ? "border-destructive text-destructive focus-visible:ring-destructive" : "border-border"
+                            }`}
+                          />
+                          {isInsufficient && (
+                            <p className="type-caption text-destructive font-semibold mt-1">
+                              Exceeds stock ({row.availableQuantity})
+                            </p>
+                          )}
+                        </td>
 
-                          <td className="px-4 py-3">
-                            <Input
-                              type="number"
-                              min="1"
-                              max={row.availableQuantity > 0 ? row.availableQuantity : undefined}
-                              step="1"
-                              value={row.requestedQuantity}
-                              onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                              className={`h-9 rounded-control border bg-surface text-xs text-text-primary font-semibold w-24 ${
-                                isInsufficient ? "border-destructive text-destructive focus-visible:ring-destructive" : "border-divider"
-                              }`}
-                            />
-                            {isInsufficient && (
-                              <p className="type-caption text-destructive font-semibold mt-1">
-                                Exceeds stock ({row.availableQuantity})
-                              </p>
-                            )}
-                          </td>
-
-                          <td className="px-3 py-3 text-center">
-                            <button
-                              type="button"
-                              onClick={() => removeItemRow(idx)}
-                              disabled={items.length <= 1}
-                              className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-hover disabled:opacity-30 transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                        <td className="px-2 py-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => removeItemRow(idx)}
+                            disabled={items.length <= 1}
+                            className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle disabled:opacity-30 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
+        </div>
 
-          {/* Form Actions Footer */}
-          <div className="flex items-center justify-end gap-3 border-t border-divider pt-5">
-            <button
-              type="button"
-              onClick={requestClose}
-              disabled={loading}
-              className="rounded-control border border-divider bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
-            >
-              Close
-            </button>
-            <button
-              type="submit"
-              disabled={
-                loading ||
-                !prerequisitesReady ||
-                items.some(
-                  (row) =>
-                    row.isChecking ||
-                    !row.productId ||
-                    typeof row.requestedQuantity !== "number" ||
-                    row.requestedQuantity <= 0 ||
-                    row.availableQuantity <= 0 ||
-                    row.requestedQuantity > row.availableQuantity
-                )
-              }
-              className="flex items-center gap-2 rounded-control bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {loading ? "Submitting..." : "Submit Request"}
-            </button>
-          </div>
-        </form>
-      </div>
+        {/* Form Actions Footer (matching SupplierModal) */}
+        <div className="flex items-center justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
+          <ModalCloseButton
+            type="button"
+            variant="outline"
+            disabled={loading}
+            fallbackOnClose={onClose}
+            className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors h-10 cursor-pointer"
+          >
+            Cancel
+          </ModalCloseButton>
+          <Button
+            type="submit"
+            disabled={
+              loading ||
+              !prerequisitesReady ||
+              items.some(
+                (row) =>
+                  row.isChecking ||
+                  !row.productId ||
+                  typeof row.requestedQuantity !== "number" ||
+                  row.requestedQuantity <= 0 ||
+                  row.availableQuantity <= 0 ||
+                  row.requestedQuantity > row.availableQuantity
+              )
+            }
+            className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed h-10 cursor-pointer"
+          >
+            {loading ? "Submitting..." : "Submit Request"}
+          </Button>
+        </div>
+      </form>
 
       {showSubmitConfirm && (
         <StockTransferConfirmModal
@@ -715,7 +688,6 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
           onConfirm={doSubmit}
         />
       )}
-    </div>,
-    document.body
+    </ModalWrapper>
   );
 }

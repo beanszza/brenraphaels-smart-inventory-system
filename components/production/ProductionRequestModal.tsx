@@ -616,24 +616,24 @@ export default function ProductionRequestModal({
       open={open}
       title={isViewMode ? `Production Request: ${initialRequest?.reqNumber}` : "New Production Request"}
       onClose={onClose}
-      size="max-w-[640px]"
+      size="max-w-5xl"
     >
-      <div className="space-y-5 text-text-primary">
+      <div className="space-y-5 text-ink">
         {/* Informative Status Notification Banners for View Mode (single status header, no duplicate fields) */}
         {isViewMode && initialRequest?.status === "Rejected" && (
-          <div className="p-4 rounded-control border border-divider bg-surface-secondary/40 flex items-start justify-between gap-3">
+          <div className="p-4 rounded-control border border-border bg-subtle/60 flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              <XCircle className="w-5 h-5 text-badge-danger-text shrink-0 mt-0.5" />
+              <XCircle className="w-5 h-5 text-status-red-fg shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <h4 className="type-body font-semibold text-text-primary">Production Request Rejected</h4>
-                <p className="type-body text-text-muted">
-                  Rejected by <strong className="text-text-primary">{resolveStaffName(initialRequest.rejectedBy) || "Admin"}</strong>
+                <h4 className="type-body-strong text-ink">Production Request Rejected</h4>
+                <p className="type-body-secondary text-ink-muted">
+                  Rejected by <strong className="text-ink">{resolveStaffName(initialRequest.rejectedBy) || "Admin"}</strong>
                   {initialRequest.rejectedAt ? ` on ${new Date(initialRequest.rejectedAt).toLocaleDateString()}` : ""}.
                   {initialRequest.rejectionReason && (
                     <span> Reason: &quot;{initialRequest.rejectionReason}&quot;.</span>
                   )}
                 </p>
-                <p className="type-caption text-text-muted font-medium">
+                <p className="type-caption text-ink-muted font-medium">
                   ✓ All reserved ingredient lots for this request have been released back to available inventory.
                 </p>
               </div>
@@ -643,13 +643,13 @@ export default function ProductionRequestModal({
         )}
 
         {isViewMode && initialRequest?.status === "Approved" && (
-          <div className="p-4 rounded-control border border-divider bg-surface-secondary/40 flex items-start justify-between gap-3">
+          <div className="p-4 rounded-control border border-border bg-subtle/60 flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-badge-success-text shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-5 h-5 text-status-green-fg shrink-0 mt-0.5" />
               <div className="space-y-0.5">
-                <h4 className="type-body font-semibold text-text-primary">Production Request Approved &amp; Lots Finalized</h4>
-                <p className="type-body text-text-muted">
-                  Approved by <strong className="text-text-primary">{resolveStaffName(initialRequest.approvedBy) || "Admin"}</strong>
+                <h4 className="type-body-strong text-ink">Production Request Approved &amp; Lots Finalized</h4>
+                <p className="type-body-secondary text-ink-muted">
+                  Approved by <strong className="text-ink">{resolveStaffName(initialRequest.approvedBy) || "Admin"}</strong>
                   {initialRequest.approvedAt ? ` on ${new Date(initialRequest.approvedAt).toLocaleDateString()}` : ""}.
                   The reserved ingredient lots shown below are locked for this request and will be consumed upon Material Issuance.
                 </p>
@@ -660,12 +660,12 @@ export default function ProductionRequestModal({
         )}
 
         {isViewMode && initialRequest?.status === "Pending Approval" && (
-          <div className="p-4 rounded-control border border-divider bg-surface-secondary/40 flex items-start justify-between gap-3">
+          <div className="p-4 rounded-control border border-border bg-subtle/60 flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              <Clock className="w-5 h-5 text-text-primary shrink-0 mt-0.5" />
+              <Clock className="w-5 h-5 text-ink shrink-0 mt-0.5" />
               <div className="space-y-0.5">
-                <h4 className="type-body font-semibold text-text-primary">Pending Approval — Lots Reserved</h4>
-                <p className="type-body text-text-muted">
+                <h4 className="type-body-strong text-ink">Pending Approval — Lots Reserved</h4>
+                <p className="type-body-secondary text-ink-muted">
                   The ingredient lots shown below are actively reserved for this request and cannot be assigned to other production requests.
                 </p>
               </div>
@@ -684,23 +684,23 @@ export default function ProductionRequestModal({
             </div>
           )}
 
-        {/* Form Inputs (Organized Top Section) */}
+        {/* Form Inputs (Organized Top Section matching SupplierModal formatting) */}
         <div className="space-y-4">
           {/* Row 1: Finished Product, Variant, Recipe / BOM */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
             {/* Finished Product */}
             <div className="space-y-1.5">
-              <label className="block type-caption font-semibold text-text-primary">Finished Product</label>
+              <label className="block type-label-field text-ink">Finished Product</label>
               {isViewMode ? (
-                <div className="flex h-10 items-center px-3 rounded-control border border-divider bg-surface type-body font-medium text-text-primary">
+                <div className="flex h-10 items-center px-3.5 rounded-control border border-border bg-surface type-body font-medium text-ink">
                   {initialRequest?.productName}
                 </div>
               ) : (
                 <Select value={selectedProductName} onValueChange={handleProductSelect}>
-                  <SelectTrigger className="w-full h-10 px-3 type-body rounded-control border-divider bg-surface">
+                  <SelectTrigger className="w-full h-10 px-3.5 type-body rounded-control border-border bg-surface text-ink">
                     <SelectValue placeholder="Select product..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-surface border-divider">
+                  <SelectContent className="bg-surface border-border">
                     {uniqueProductNames.map((name) => (
                       <SelectItem key={name} value={name} className="type-body">
                         {name}
@@ -713,9 +713,9 @@ export default function ProductionRequestModal({
 
             {/* Variant */}
             <div className="space-y-1.5">
-              <label className="block type-caption font-semibold text-text-primary">Variant</label>
+              <label className="block type-label-field text-ink">Variant</label>
               {isViewMode ? (
-                <div className="flex h-10 items-center px-3 rounded-control border border-divider bg-surface type-body font-medium text-text-primary">
+                <div className="flex h-10 items-center px-3.5 rounded-control border border-border bg-surface type-body font-medium text-ink">
                   {initialRequest?.variant || "Standard"}
                 </div>
               ) : (
@@ -724,7 +724,7 @@ export default function ProductionRequestModal({
                   onValueChange={handleVariantSelect}
                   disabled={!selectedProductName || availableVariants.length === 0}
                 >
-                  <SelectTrigger className="w-full h-10 px-3 type-body rounded-control border-divider bg-surface">
+                  <SelectTrigger className="w-full h-10 px-3.5 type-body rounded-control border-border bg-surface text-ink">
                     <SelectValue
                       placeholder={
                         !selectedProductName
@@ -735,7 +735,7 @@ export default function ProductionRequestModal({
                       }
                     />
                   </SelectTrigger>
-                  <SelectContent className="bg-surface border-divider">
+                  <SelectContent className="bg-surface border-border">
                     {availableVariants.map((v) => (
                       <SelectItem key={v} value={v} className="type-body">
                         {v}
@@ -748,9 +748,9 @@ export default function ProductionRequestModal({
 
             {/* Recipe / BOM */}
             <div className="space-y-1.5">
-              <label className="block type-caption font-semibold text-text-primary">Recipe / BOM</label>
+              <label className="block type-label-field text-ink">Recipe / BOM</label>
               {isViewMode ? (
-                <div className="flex h-10 items-center px-3 rounded-control border border-divider bg-surface type-body font-medium text-text-primary">
+                <div className="flex h-10 items-center px-3.5 rounded-control border border-border bg-surface type-body font-medium text-ink">
                   {initialRequest?.recipeName}
                 </div>
               ) : (
@@ -767,7 +767,7 @@ export default function ProductionRequestModal({
                   }}
                   disabled={!productId || filteredRecipes.length === 0}
                 >
-                  <SelectTrigger className="w-full h-10 px-3 type-body rounded-control border-divider bg-surface">
+                  <SelectTrigger className="w-full h-10 px-3.5 type-body rounded-control border-border bg-surface text-ink">
                     <SelectValue
                       placeholder={
                         !selectedProductName
@@ -780,7 +780,7 @@ export default function ProductionRequestModal({
                       }
                     />
                   </SelectTrigger>
-                  <SelectContent className="bg-surface border-divider">
+                  <SelectContent className="bg-surface border-border">
                     {filteredRecipes.length > 0 ? (
                       filteredRecipes.map((r) => (
                         <SelectItem key={r.recipeId} value={String(r.recipeId)} className="type-body">
@@ -788,7 +788,7 @@ export default function ProductionRequestModal({
                         </SelectItem>
                       ))
                     ) : (
-                      <div className="p-3 type-body text-text-muted text-center">
+                      <div className="p-3 type-body-secondary text-ink-muted text-center">
                         No recipe configured for this variant.
                       </div>
                     )}
@@ -798,13 +798,13 @@ export default function ProductionRequestModal({
             </div>
           </div>
 
-          {/* Row 2: Target Quantity, Priority Level, Required Date, Required Time */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+          {/* Row 2: Target Quantity, Priority Level, Required Date */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
             {/* Target Output Quantity */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-foreground">Target Output Quantity</label>
+              <label className="block type-label-field text-ink">Target Output Quantity</label>
               {isViewMode ? (
-                <div className="flex h-10 items-center px-3 rounded-control border border-divider bg-surface type-body font-semibold text-text-primary">
+                <div className="flex h-10 items-center px-3.5 rounded-control border border-border bg-surface type-body-strong text-ink">
                   {initialRequest?.quantity} {initialRequest?.yieldUom}
                 </div>
               ) : (
@@ -814,7 +814,7 @@ export default function ProductionRequestModal({
                   readOnly
                   disabled
                   tabIndex={-1}
-                  className="h-10 w-full rounded-control border-divider bg-surface-secondary/40 px-3 py-2 type-body font-medium text-text-primary placeholder:font-normal placeholder:text-text-muted cursor-not-allowed opacity-90 select-none"
+                  className="h-10 w-full rounded-control border-border bg-subtle px-3.5 py-2 type-body font-medium text-ink placeholder:font-normal placeholder:text-ink-muted cursor-not-allowed opacity-90 select-none"
                   placeholder={recipeId ? String(quantity) : "Select recipe first"}
                 />
               )}
@@ -822,17 +822,17 @@ export default function ProductionRequestModal({
 
             {/* Priority Level: Low, Medium, High */}
             <div className="space-y-1.5">
-              <label className="block type-caption font-semibold text-text-primary">Priority Level</label>
+              <label className="block type-label-field text-ink">Priority Level</label>
               {isViewMode ? (
-                <div className="flex h-10 items-center px-3 rounded-control border border-divider bg-surface type-body font-medium text-text-primary">
+                <div className="flex h-10 items-center px-3.5 rounded-control border border-border bg-surface type-body font-medium text-ink">
                   {priority}
                 </div>
               ) : (
                 <Select value={priority} onValueChange={(val: any) => setPriority(val)}>
-                  <SelectTrigger className="w-full h-10 px-3 type-body rounded-control border-divider bg-surface font-medium">
+                  <SelectTrigger className="w-full h-10 px-3.5 type-body rounded-control border-border bg-surface text-ink font-medium">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-surface border-divider">
+                  <SelectContent className="bg-surface border-border">
                     <SelectItem value="Low" className="type-body">
                       Low
                     </SelectItem>
@@ -849,9 +849,9 @@ export default function ProductionRequestModal({
 
             {/* Required Date (Date left-aligned, calendar icon on far right end) */}
             <div className="space-y-1.5">
-              <label className="block type-caption font-semibold text-text-primary">Required Date</label>
+              <label className="block type-label-field text-ink">Required Date</label>
               {isViewMode ? (
-                <div className="flex h-10 items-center px-3 rounded-control border border-divider bg-surface type-body text-text-primary">
+                <div className="flex h-10 items-center px-3.5 rounded-control border border-border bg-surface type-body text-ink">
                   {initialRequest?.requiredDate ? new Date(initialRequest.requiredDate).toLocaleDateString() : "—"}
                 </div>
               ) : (
@@ -862,20 +862,23 @@ export default function ProductionRequestModal({
                     max={getMaxFutureDateString()}
                     value={requiredDate}
                     onChange={(e) => handleDateChange(e.target.value)}
-                    className="h-10 w-full rounded-control border-divider bg-surface px-3 pr-9 py-2 type-body text-text-primary [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:top-1/2 [&::-webkit-calendar-picker-indicator]:-translate-y-1/2 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    className="h-10 w-full rounded-control border-border bg-surface px-3.5 pr-9 py-2 type-body text-ink [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:top-1/2 [&::-webkit-calendar-picker-indicator]:-translate-y-1/2 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
-                  <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+                  <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
                 </div>
               )}
             </div>
+          </div>
 
+          {/* Row 3: Required Time + Reason / Batch Purpose */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
             {/* Required Time (12-hour format with AM/PM) */}
             <div className="space-y-1.5">
-              <label className="block type-caption font-semibold text-text-primary">Required Time</label>
+              <label className="block type-label-field text-ink">Required Time</label>
               {isViewMode ? (
-                <div className="h-10 px-3 rounded-control border border-divider bg-surface type-body font-medium text-text-primary flex items-center justify-between">
+                <div className="h-10 px-3.5 rounded-control border border-border bg-surface type-body font-medium text-ink flex items-center justify-between">
                   <span>{formatTimeTo12Hour(initialRequest?.requiredTime || requiredTime)}</span>
-                  <span className="type-caption px-2 py-0.5 rounded-pill bg-surface-secondary text-text-muted font-semibold uppercase">
+                  <span className="type-caption px-2 py-0.5 rounded-pill bg-subtle text-ink-muted font-semibold uppercase">
                     {parse24HTo12H(initialRequest?.requiredTime || requiredTime).period}
                   </span>
                 </div>
@@ -887,10 +890,10 @@ export default function ProductionRequestModal({
                       value={timeHour}
                       onValueChange={(val) => updateTime(val, timeMinute, timePeriod)}
                     >
-                      <SelectTrigger className={`h-10 flex-1 type-body font-medium rounded-control ${timeError ? "border-badge-danger-border" : "border-divider"} bg-surface px-2.5 text-center shadow-card`}>
+                      <SelectTrigger className={`h-10 flex-1 type-body font-medium rounded-control ${timeError ? "border-destructive" : "border-border"} bg-surface px-2.5 text-center text-ink`}>
                         <SelectValue placeholder="HH" />
                       </SelectTrigger>
-                      <SelectContent className="max-h-56 bg-surface border-divider">
+                      <SelectContent className="max-h-56 bg-surface border-border">
                         {HOURS_12.map((h) => {
                           const isPastHour =
                             requiredDate === today &&
@@ -904,17 +907,17 @@ export default function ProductionRequestModal({
                       </SelectContent>
                     </Select>
 
-                    <span className="text-text-muted font-semibold type-body shrink-0">:</span>
+                    <span className="text-ink-muted font-semibold type-body shrink-0">:</span>
 
                     {/* Minute */}
                     <Select
                       value={timeMinute}
                       onValueChange={(val) => updateTime(timeHour, val, timePeriod)}
                     >
-                      <SelectTrigger className={`h-10 flex-1 type-body font-medium rounded-control ${timeError ? "border-badge-danger-border" : "border-divider"} bg-surface px-2.5 text-center shadow-card`}>
+                      <SelectTrigger className={`h-10 flex-1 type-body font-medium rounded-control ${timeError ? "border-destructive" : "border-border"} bg-surface px-2.5 text-center text-ink`}>
                         <SelectValue placeholder="MM" />
                       </SelectTrigger>
-                      <SelectContent className="max-h-56 bg-surface border-divider">
+                      <SelectContent className="max-h-56 bg-surface border-border">
                         {Array.from(new Set([...MINUTES_OPTIONS, timeMinute]))
                           .sort((a, b) => Number(a) - Number(b))
                           .map((m) => {
@@ -931,15 +934,15 @@ export default function ProductionRequestModal({
                     </Select>
 
                     {/* AM / PM Segmented Control */}
-                    <div className={`flex rounded-control border ${timeError ? "border-badge-danger-border" : "border-divider"} p-0.5 bg-surface-secondary/40 shrink-0 h-10 items-center`}>
+                    <div className={`flex rounded-control border ${timeError ? "border-destructive" : "border-border"} p-0.5 bg-subtle shrink-0 h-10 items-center`}>
                       <button
                         type="button"
                         disabled={requiredDate === today && new Date().getHours() >= 12}
                         onClick={() => updateTime(timeHour, timeMinute, "AM")}
                         className={`h-full px-2.5 type-caption font-semibold rounded-control transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                           timePeriod === "AM"
-                            ? "bg-button-primary text-text-inverse shadow-card"
-                            : "text-text-muted hover:text-text-primary"
+                            ? "bg-primary text-primary-foreground shadow-card"
+                            : "text-ink-muted hover:text-ink"
                         }`}
                       >
                         AM
@@ -949,8 +952,8 @@ export default function ProductionRequestModal({
                         onClick={() => updateTime(timeHour, timeMinute, "PM")}
                         className={`h-full px-2.5 type-caption font-semibold rounded-control transition-colors cursor-pointer ${
                           timePeriod === "PM"
-                            ? "bg-button-primary text-text-inverse shadow-card"
-                            : "text-text-muted hover:text-text-primary"
+                            ? "bg-primary text-primary-foreground shadow-card"
+                            : "text-ink-muted hover:text-ink"
                         }`}
                       >
                         PM
@@ -958,69 +961,69 @@ export default function ProductionRequestModal({
                     </div>
                   </div>
                   {timeError && (
-                    <p role="alert" className="type-caption font-medium text-badge-danger-text">
+                    <p role="alert" className="type-caption font-medium text-status-red-fg">
                       {timeError}
                     </p>
                   )}
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Row 3: Reason / Batch Purpose Dropdown */}
-          <div className="space-y-1.5 w-full sm:max-w-md">
-            <label className="block type-caption font-semibold text-text-primary">Reason / Batch Purpose</label>
-            {isViewMode ? (
-              <div className="flex h-10 items-center px-3 rounded-control border border-divider bg-surface type-body text-text-primary truncate">
-                {initialRequest?.reason || "Regular Stock Replenishment"}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Select value={selectedReasonOption} onValueChange={setSelectedReasonOption}>
-                  <SelectTrigger className="w-full h-10 px-3 type-body rounded-control border-divider bg-surface">
-                    <SelectValue placeholder="Select reason..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-surface border-divider">
-                    {REASON_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt} className="type-body">
-                        {opt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedReasonOption === "Other" && (
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="type-caption font-semibold text-text-primary">Specify Other Reason</span>
-                      <span className={`type-caption ${customReason.length >= CUSTOM_REASON_MAX ? "font-medium text-badge-warning-text" : "text-text-muted"}`}>
-                        {customReason.length}/{CUSTOM_REASON_MAX}
-                      </span>
+            {/* Reason / Batch Purpose Dropdown */}
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="block type-label-field text-ink">Reason / Batch Purpose</label>
+              {isViewMode ? (
+                <div className="flex h-10 items-center px-3.5 rounded-control border border-border bg-surface type-body text-ink truncate">
+                  {initialRequest?.reason || "Regular Stock Replenishment"}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Select value={selectedReasonOption} onValueChange={setSelectedReasonOption}>
+                    <SelectTrigger className="w-full h-10 px-3.5 type-body rounded-control border-border bg-surface text-ink">
+                      <SelectValue placeholder="Select reason..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-surface border-border">
+                      {REASON_OPTIONS.map((opt) => (
+                        <SelectItem key={opt} value={opt} className="type-body">
+                          {opt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedReasonOption === "Other" && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="type-caption font-medium text-ink">Specify Other Reason</span>
+                        <span className={`type-caption ${customReason.length >= CUSTOM_REASON_MAX ? "font-medium text-status-amber-fg" : "text-ink-muted"}`}>
+                          {customReason.length}/{CUSTOM_REASON_MAX}
+                        </span>
+                      </div>
+                      <Input
+                        type="text"
+                        value={customReason}
+                        maxLength={CUSTOM_REASON_MAX}
+                        onChange={(e) => setCustomReason(e.target.value.slice(0, CUSTOM_REASON_MAX))}
+                        placeholder="Specify other reason..."
+                        className="h-10 px-3.5 type-body rounded-control border-border bg-surface text-ink"
+                      />
                     </div>
-                    <Input
-                      type="text"
-                      value={customReason}
-                      maxLength={CUSTOM_REASON_MAX}
-                      onChange={(e) => setCustomReason(e.target.value.slice(0, CUSTOM_REASON_MAX))}
-                      placeholder="Specify other reason..."
-                      className="h-10 px-3 type-body rounded-control border-divider bg-surface"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Shortfall Warning Banner */}
         {lotSuggestions?.hasAnyShortfall && (
-          <div className="flex items-start justify-between gap-4 p-4 rounded-control border border-divider bg-surface-secondary/40">
+          <div className="flex items-start justify-between gap-4 p-4 rounded-control border border-border bg-subtle/60">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-4 h-4 text-text-primary shrink-0 mt-0.5" />
+              <AlertTriangle className="w-4 h-4 text-ink shrink-0 mt-0.5" />
               <div>
-                <h4 className="type-caption font-semibold text-text-primary">
+                <h4 className="type-body-strong text-ink">
                   Material Shortfall Detected
                 </h4>
-                <p className="type-caption text-text-muted mt-0.5">
+                <p className="type-caption text-ink-muted mt-0.5">
                   Available lot stock in inventory is insufficient for all required recipe ingredients. Submitting will generate a Purchase Requisition for the required shortfall quantities.
                 </p>
               </div>
@@ -1031,7 +1034,7 @@ export default function ProductionRequestModal({
                 type="button"
                 onClick={() => setConfirmCreatePrOpen(true)}
                 disabled={submitting}
-                className="bg-button-primary text-text-inverse hover:bg-button-primary/85 font-semibold type-caption px-3.5 py-1.5 rounded-control transition-colors shrink-0 shadow-card cursor-pointer"
+                className="bg-primary text-primary-foreground hover:bg-primary-hover font-semibold type-caption px-3.5 py-1.5 rounded-control transition-colors shrink-0 shadow-card cursor-pointer"
               >
                 Create PR Now
               </Button>
@@ -1039,7 +1042,7 @@ export default function ProductionRequestModal({
 
             {isViewMode && initialRequest?.linkedPrId && (
               <div className="flex items-center gap-2">
-                <span className="type-caption font-semibold text-text-primary">
+                <span className="type-caption font-semibold text-ink">
                   PR: {initialRequest.linkedPrNumber}
                 </span>
                 <Button
@@ -1047,7 +1050,7 @@ export default function ProductionRequestModal({
                   variant="outline"
                   size="sm"
                   onClick={() => onViewPrSummary && onViewPrSummary({ prNumber: initialRequest.linkedPrNumber })}
-                  className="type-caption h-7 rounded-control border-divider hover:bg-surface-secondary"
+                  className="type-caption h-7 rounded-control border-border hover:bg-subtle"
                 >
                   View PR
                 </Button>
@@ -1059,25 +1062,25 @@ export default function ProductionRequestModal({
         {/* Bill of Materials Table */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h4 className="type-overline font-semibold text-text-primary uppercase tracking-wider">
+            <h4 className="type-nav-group text-ink-muted">
               Bill of Materials
             </h4>
             {loadingSuggestions && (
-              <span className="type-caption text-text-muted animate-pulse">Calculating available lots...</span>
+              <span className="type-caption text-ink-muted animate-pulse">Calculating available lots...</span>
             )}
           </div>
 
-          <div className="border border-divider rounded-card overflow-hidden bg-surface shadow-card">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse type-body">
-                <thead className="bg-surface-secondary border-b border-divider">
-                  <tr className="table-head-row text-left whitespace-nowrap">
-                    <th className="table-th py-2.5 px-4">Supply No.</th>
-                    <th className="table-th py-2.5 px-4">Ingredient Name</th>
-                    <th className="table-th py-2.5 px-4">Unit of Measure</th>
-                    <th className="table-th py-2.5 px-4 text-right">Required Quantity</th>
-                    <th className="table-th py-2.5 px-4 text-right">Available in Stock</th>
-                    <th className="table-th py-2.5 px-4 min-w-[160px]">
+          <div className="table-card shadow-card">
+            <div className="overflow-x-auto table-scrollbar">
+              <table className="w-full text-left border-collapse">
+                <thead className="table-head-row border-b border-divider">
+                  <tr className="text-left whitespace-nowrap">
+                    <th className="table-th py-2.5 px-3">Supply No.</th>
+                    <th className="table-th py-2.5 px-3">Ingredient Name</th>
+                    <th className="table-th py-2.5 px-3">Unit of Measure</th>
+                    <th className="table-th py-2.5 px-3 text-right">Required Quantity</th>
+                    <th className="table-th py-2.5 px-3 text-right">Available in Stock</th>
+                    <th className="table-th py-2.5 px-3 min-w-[140px]">
                       {isViewMode
                         ? initialRequest?.status === "Rejected"
                           ? "Released Lots"
@@ -1091,9 +1094,9 @@ export default function ProductionRequestModal({
                       const a = (ing.lots || []).filter((l: any) => Number(l.suggestedQuantity) > 0);
                       return (initialRequest?.status === "Rejected" && r.length > 0 ? r : a).some((l: any) => Boolean(l.expiryDate));
                     }) && (
-                      <th className="table-th py-2.5 px-4 min-w-[120px]">Expiry Date</th>
+                      <th className="table-th py-2.5 px-3 min-w-[110px]">Expiry Date</th>
                     )}
-                    <th className="table-th py-2.5 px-4 text-center">Stock Status</th>
+                    <th className="table-th py-2.5 px-3 text-center">Stock Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-divider">
@@ -1108,41 +1111,41 @@ export default function ProductionRequestModal({
                     const hasShortfall = item.hasShortfall || item.totalAvailable < item.requiredQuantity;
 
                     return (
-                      <tr key={item.ingredientId} className="table-row hover:bg-surface-secondary/50 transition-colors">
+                      <tr key={item.ingredientId} className="table-row hover:bg-subtle/50 transition-colors">
                         {/* Supply No. */}
-                        <td className="py-3 px-4 table-td font-semibold text-text-primary whitespace-nowrap">
+                        <td className="py-3 px-3 table-td font-semibold text-ink whitespace-nowrap">
                           {item.itemCode || "—"}
                         </td>
 
                         {/* Ingredient Name */}
-                        <td className="py-3 px-4 table-td font-semibold text-text-primary">
+                        <td className="py-3 px-3 table-td font-semibold text-ink">
                           {item.itemName}
                         </td>
 
                         {/* Unit of Measure */}
-                        <td className="py-3 px-4 table-td text-text-muted whitespace-nowrap">
+                        <td className="py-3 px-3 table-td text-ink-muted whitespace-nowrap">
                           {item.uomAbbr || "units"}
                         </td>
 
                         {/* Required Quantity */}
-                        <td className="py-3 px-4 table-td text-right font-semibold text-text-primary whitespace-nowrap">
+                        <td className="py-3 px-3 table-td text-right font-semibold text-ink whitespace-nowrap">
                           {item.requiredQuantity.toFixed(2)}
                         </td>
 
                         {/* Available in Stock */}
-                        <td className="py-3 px-4 table-td text-right font-semibold text-text-primary whitespace-nowrap">
+                        <td className="py-3 px-3 table-td text-right font-semibold text-ink whitespace-nowrap">
                           {item.totalAvailable.toFixed(2)}
                         </td>
 
                         {/* Suggested / Reserved / Released Lots */}
-                        <td className="py-3 px-4 table-td min-w-[180px]">
+                        <td className="py-3 px-3 table-td min-w-[140px]">
                           {isRejected ? (
                             releasedLots.length > 0 ? (
                               <div className="space-y-1.5">
                                 {releasedLots.map((l: any) => (
                                   <div
                                     key={l.lotId}
-                                    className="type-caption font-medium text-text-muted bg-surface-secondary/40 px-2 py-0.5 rounded-control border border-divider inline-flex items-center gap-1.5 line-through opacity-80"
+                                    className="type-caption font-medium text-ink-muted bg-subtle px-2 py-0.5 rounded-control border border-divider inline-flex items-center gap-1.5 line-through opacity-80"
                                   >
                                     <span>{l.lotCode}</span>
                                     <span className="font-normal whitespace-nowrap">
@@ -1152,24 +1155,24 @@ export default function ProductionRequestModal({
                                 ))}
                               </div>
                             ) : (
-                              <span className="type-caption text-text-muted italic">None (Released)</span>
+                              <span className="type-caption text-ink-muted italic">None (Released)</span>
                             )
                           ) : activeLots.length > 0 ? (
                             <div className="space-y-1.5">
                               {activeLots.map((l) => (
                                 <div
                                   key={l.lotId}
-                                  className="type-caption font-medium text-text-primary bg-surface-secondary px-2 py-0.5 rounded-control border border-divider inline-flex items-center gap-1.5"
+                                  className="type-caption font-medium text-ink bg-subtle px-2 py-0.5 rounded-control border border-divider inline-flex items-center gap-1.5"
                                 >
                                   <span>{l.lotCode}</span>
-                                  <span className="text-text-muted font-normal whitespace-nowrap">
+                                  <span className="text-ink-muted font-normal whitespace-nowrap">
                                     ({Number(l.suggestedQuantity).toFixed(2)} {item.uomAbbr})
                                   </span>
                                 </div>
                               ))}
                             </div>
                           ) : (
-                            <span className="type-caption text-text-muted italic">None</span>
+                            <span className="type-caption text-ink-muted italic">None</span>
                           )}
                         </td>
 
@@ -1179,23 +1182,23 @@ export default function ProductionRequestModal({
                           const a = (ing.lots || []).filter((l: any) => Number(l.suggestedQuantity) > 0);
                           return (isRejected && r.length > 0 ? r : a).some((l: any) => Boolean(l.expiryDate));
                         }) && (
-                          <td className="py-3 px-4 table-td min-w-[120px] whitespace-nowrap">
+                          <td className="py-3 px-3 table-td min-w-[110px] whitespace-nowrap">
                             {(isRejected && releasedLots.length > 0 ? releasedLots : activeLots).length > 0 ? (
                               <div className="space-y-1.5">
                                 {(isRejected && releasedLots.length > 0 ? releasedLots : activeLots).map((l: any) => (
-                                  <div key={l.lotId} className="type-caption text-text-muted py-0.5">
+                                  <div key={l.lotId} className="type-caption text-ink-muted py-0.5">
                                     {l.expiryDate ? new Date(l.expiryDate).toLocaleDateString() : "No Expiry"}
                                   </div>
                                 ))}
                               </div>
                             ) : (
-                              <span className="type-caption text-text-muted italic">—</span>
+                              <span className="type-caption text-ink-muted italic">—</span>
                             )}
                           </td>
                         )}
 
                         {/* Stock Status */}
-                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
                           {isRejected ? (
                             <StatusBadge status="Released">Released to Stock</StatusBadge>
                           ) : isApproved ? (
@@ -1223,7 +1226,7 @@ export default function ProductionRequestModal({
                             ? 8
                             : 7
                         }
-                        className="py-8 text-center type-caption text-text-muted"
+                        className="py-8 text-center type-caption text-ink-muted"
                       >
                         Select a product and recipe to preview bill of materials and suggested lots.
                       </td>
@@ -1235,15 +1238,15 @@ export default function ProductionRequestModal({
           </div>
         </div>
 
-        {/* Modal Action Buttons */}
-        <div className="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-divider">
+        {/* Modal Action Buttons (matching SupplierModal footer) */}
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
           <ModalCloseButton
             type="button"
             variant="outline"
             fallbackOnClose={onClose}
-            className="type-body font-semibold rounded-control border-divider bg-surface px-5 py-2.5 hover:bg-surface-secondary text-text-primary cursor-pointer"
+            className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors h-10 cursor-pointer"
           >
-            Close
+            {isViewMode ? "Close" : "Cancel"}
           </ModalCloseButton>
 
           {!isViewMode ? (
@@ -1251,7 +1254,7 @@ export default function ProductionRequestModal({
               type="button"
               onClick={handlePromptSubmit}
               disabled={submitting || !productId || !recipeId || !quantity || quantity <= 0 || !requiredDate || Boolean(timeError)}
-              className="bg-button-primary text-text-inverse font-semibold type-body px-5 py-2.5 rounded-control hover:bg-button-primary/85 transition-colors shadow-card disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed h-10 cursor-pointer"
             >
               {submitting
                 ? "Processing..."
@@ -1269,7 +1272,7 @@ export default function ProductionRequestModal({
                     variant="outline"
                     onClick={() => setActionModal({ open: true, type: "reject" })}
                     disabled={submitting}
-                    className="type-body font-semibold text-text-primary rounded-control border-divider bg-surface px-5 py-2.5 hover:bg-surface-secondary cursor-pointer"
+                    className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors h-10 cursor-pointer"
                   >
                     Reject Request
                   </Button>
@@ -1277,7 +1280,7 @@ export default function ProductionRequestModal({
                     type="button"
                     onClick={() => setActionModal({ open: true, type: "approve" })}
                     disabled={submitting}
-                    className="bg-button-primary text-text-inverse font-semibold type-body px-5 py-2.5 rounded-control hover:bg-button-primary/85 transition-colors shadow-card cursor-pointer"
+                    className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs h-10 cursor-pointer"
                   >
                     Approve Request
                   </Button>
@@ -1290,7 +1293,7 @@ export default function ProductionRequestModal({
                   type="button"
                   variant="outline"
                   onClick={() => setConfirmCreatePrOpen(true)}
-                  className="type-body font-semibold text-text-primary rounded-control border-divider bg-surface px-5 py-2.5 hover:bg-surface-secondary cursor-pointer"
+                  className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors h-10 cursor-pointer"
                 >
                   Create Purchase Requisition
                 </Button>
@@ -1304,7 +1307,7 @@ export default function ProductionRequestModal({
                     onProceedToIssuance(initialRequest.prodReqId);
                     onClose();
                   }}
-                  className="bg-button-primary text-text-inverse font-semibold type-body px-5 py-2.5 rounded-control hover:bg-button-primary/85 transition-colors shadow-card cursor-pointer"
+                  className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs h-10 cursor-pointer"
                 >
                   Proceed to Material Issuance
                 </Button>
@@ -1319,7 +1322,7 @@ export default function ProductionRequestModal({
                       onStartProduction(initialRequest);
                     }
                   }}
-                  className="bg-button-primary text-text-inverse font-semibold type-body px-5 py-2.5 rounded-control hover:bg-button-primary/85 transition-colors shadow-card cursor-pointer"
+                  className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs h-10 cursor-pointer"
                 >
                   Start Production
                 </Button>
