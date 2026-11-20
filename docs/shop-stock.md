@@ -63,3 +63,13 @@ Every committed reserve/release/deduct/add-back queues an IMS `record.updated` a
 `npx vitest run tests/shop-stock.test.ts` tests the authenticated Request/Response boundary against a fresh real PostgreSQL cluster, faking only the audit gateway. It applies the actual SQL migration twice and exercises available quantities, competing reservations, retries, state transitions, configuration, Size isolation and held/expired stock. PostgreSQL server/client tools (`pg_config`, `initdb`, `pg_ctl`, `psql`) must be installed; tests never read the configured application DATABASE_URL. The cluster is stopped and removed afterward.
 
 Live checks belong in the separate production-verification ticket: configure the key/Warehouse, check one known Size, connect the dependent storefront, verify a complete reserve/pack/return and cancellation flow, and confirm central audit delivery. No deployment wait is required for this PR.
+
+## Product feed (CREOMS #668)
+
+`GET /api/shop/products` with the same `Authorization: Bearer <IMS_SHOP_API_KEY>` returns every Size the IMS holds:
+
+```json
+{ "products": [{ "productId": 123, "name": "Ube Jam", "variant": "250g", "image": "<stored reference>", "price": 120.5, "active": true }] }
+```
+
+`name` is the Item's name, `price` the Size's selling price and `active` the Item's active state (inactive Sizes are still listed so the shop can tell what was discontinued). A blank Variant is returned as `variant: null`: one unlabelled default Size. `image` is the stored reference, or null. A missing or wrong credential gets 401. Creating a product without a Variant shows a warning but succeeds. Like stock reads, call it on a user action or reconnect; do not poll.
