@@ -99,11 +99,25 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
       <PageHeader
         title="Production & Quality"
         description="End-to-end production management, material lot reservations, sequential stage tracking, and quality assurance."
+        actions={
+          isAdmin ? (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-caption font-semibold text-text-primary hover:bg-surface-hover transition-colors h-10 cursor-pointer shadow-card"
+            >
+              <Link href="/production-quality/logs">
+                <History className="w-3.5 h-3.5" /> Transaction History
+              </Link>
+            </Button>
+          ) : undefined
+        }
       />
 
       {/* Main Tab Bar matching Resources & Suppliers styling */}
-      <div className="flex items-center justify-between border-b border-divider gap-2">
-        <div className="flex items-center gap-2 overflow-x-auto min-w-0">
+      <div className="border-b border-divider">
+        <div className="flex items-center gap-2 overflow-x-auto">
           {allowedTabs.map((tab) => {
             const isActive = activeTab === tab.key;
             return (
@@ -123,20 +137,6 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
             );
           })}
         </div>
-        {isAdmin && (
-          <div className="pb-1 shrink-0">
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-caption font-semibold text-text-primary hover:bg-surface-secondary transition-colors h-10 cursor-pointer shadow-card"
-            >
-              <Link href="/production-quality/logs">
-                <History className="w-3.5 h-3.5" /> Transaction History
-              </Link>
-            </Button>
-          </div>
-        )}
       </div>
 
       <div className={`transition-opacity duration-150 ${pending ? "opacity-60 pointer-events-none" : "opacity-100"}`}>

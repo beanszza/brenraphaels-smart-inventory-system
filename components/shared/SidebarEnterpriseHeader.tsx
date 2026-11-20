@@ -24,7 +24,7 @@ export function SidebarEnterpriseHeader({
   navigate?: (url: string) => void;
 }) {
   return (
-    <SidebarHeader className="h-20 justify-center py-2 px-3 border-none">
+    <SidebarHeader className="h-20 justify-center py-2 px-3 border-b border-divider">
       <div className="flex items-center justify-between gap-2">
         <div className="flex-1 min-w-0">
           <DropdownMenu>

@@ -239,7 +239,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
           <button
             type="button"
             onClick={() => startTransition(() => router.push("/stock-transfer"))}
-            className={`flex items-center gap-2 px-4 py-2.5 type-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 type-caption font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               activeMainTab === "transfers"
                 ? "border-primary text-text-primary"
                 : "border-transparent text-text-muted hover:text-text-primary hover:border-divider"
@@ -256,7 +256,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
           <button
             type="button"
             onClick={() => startTransition(() => router.push("/stock-transfer?tab=locations"))}
-            className={`flex items-center gap-2 px-4 py-2.5 type-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 type-caption font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               activeMainTab === "locations"
                 ? "border-primary text-text-primary"
                 : "border-transparent text-text-muted hover:text-text-primary hover:border-divider"
