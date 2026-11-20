@@ -1,0 +1,93 @@
+import { afterAll, beforeAll, beforeEach, expect, it, vi } from "vitest";
+import type { PrismaClient } from "@prisma/client";
+import type { StockEventPorts } from "@/lib/shop/stock-events";
+import { startShopDatabase } from "./shop-database";
+
+function fakePorts(initial: Record<number, string>, failOn: number[] = []) {
+  const state = new Map(Object.entries(initial).map(([id, f]) => [Number(id), f]));
+  const known = new Map<number, string>();
+  const sent: number[] = [];
+  const ports: StockEventPorts = {
+    current: async () => [...state].map(([productId, fingerprint]) => ({ productId, fingerprint })),
+    published: async () => new Map(known),
+    remember: async ({ productId, fingerprint }) => { known.set(productId, fingerprint); },
+    publish: async id => { if (failOn.includes(id)) throw new Error("down"); sent.push(id); },
+  };
+  return { ports, state, sent };
+}
+
+let db: Awaited<ReturnType<typeof startShopDatabase>>;
+let prisma: PrismaClient;
+let publishStockChanges: typeof import("@/lib/shop/stock-events").publishStockChanges;
+const events: number[] = [];
+
+it("records a baseline on the first run without publishing", async () => {
+  const { ports, sent } = fakePorts({ 1: "a", 2: "b" });
+  await publishStockChanges(ports);
+  expect(sent).toEqual([]);
+});
+it("publishes one event per changed Size and nothing for unchanged Sizes", async () => {
+  const { ports, state, sent } = fakePorts({ 1: "a", 2: "b" });
+  await publishStockChanges(ports);
+  state.set(2, "b2");
+  await publishStockChanges(ports);
+  expect(sent).toEqual([2]);
+  await publishStockChanges(ports);
+  expect(sent).toEqual([2]);
+});
+it("publishes a new product once", async () => {
+  const { ports, state, sent } = fakePorts({ 1: "a" });
+  await publishStockChanges(ports);
+  state.set(3, "c");
+  await publishStockChanges(ports);
+  await publishStockChanges(ports);
+  expect(sent).toEqual([3]);
+});
+it("never throws when publishing fails, and retries that Size next time", async () => {
+  const { ports, state, sent } = fakePorts({ 1: "a", 2: "b" }, [2]);
+  await publishStockChanges(ports);
+  state.set(1, "a2"); state.set(2, "b2");
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  await expect(publishStockChanges(ports)).resolves.toBe(1);
+  expect(sent).toEqual([1]);
+  const again = vi.fn(async () => { throw new Error("db down"); });
+  await expect(publishStockChanges({ ...ports, current: again })).resolves.toBe(0);
+});
+
+beforeAll(async () => {
+  db = await startShopDatabase();
+  vi.stubEnv("DATABASE_URL", db.url);
+  vi.stubEnv("IMS_SHOP_WAREHOUSE_ID", "1000");
+  vi.stubEnv("IMS_GATEWAY_URL", "https://gateway.test");
+  vi.stubEnv("IMS_GATEWAY_CALLER_KEY", "k");
+  vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+    expect(url).toBe("https://gateway.test/notifications/stock/changed");
+    events.push(JSON.parse(String(init.body)).sizeId);
+    return new Response(null, { status: 204 });
+  }));
+  ({ prisma } = await import("@/lib/prisma"));
+  ({ publishStockChanges } = await import("@/lib/shop/stock-events"));
+}, 60_000);
+afterAll(async () => { await prisma?.$disconnect(); db?.close(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+beforeEach(() => { events.length = 0; });
+
+it("publishes the Size ID alone when a real stock, price or product change commits", async () => {
+  await prisma.$executeRawUnsafe('TRUNCATE "Categories", "UnitOfMeasures", "Locations", "ShopStockSnapshots" CASCADE');
+  await prisma.categories.create({ data: { CategoryId: 1, CategoryName: "Finished", Description: "" } });
+  await prisma.unitOfMeasures.create({ data: { UomId: 1, Name: "Piece", Abbreviation: "pc", Code: "PC" } });
+  await prisma.items.create({ data: { ItemId: 1, ItemName: "Ube Jam", UomId: 1, StockUomId: 1, CategoryId: 1, MinStockLevel: 0, MaxStockLevel: 100, IsActive: true } });
+  await prisma.finishedProducts.create({ data: { ProductId: 1, ItemId: 1, Sku: "J", Variant: "250g", SellingPrice: 100 } });
+  const run = () => publishStockChanges();
+  await run();
+  expect(events).toEqual([]);
+  await run();
+  expect(events).toEqual([]);
+  await prisma.finishedProducts.update({ where: { ProductId: 1 }, data: { SellingPrice: 110 } });
+  await run();
+  expect(events).toEqual([1]);
+  await prisma.finishedProducts.create({ data: { ProductId: 2, ItemId: 1, Sku: "J2", Variant: "500g", SellingPrice: 200 } });
+  await run();
+  expect(events).toEqual([1, 2]);
+  await run();
+  expect(events).toEqual([1, 2]);
+}, 30_000);

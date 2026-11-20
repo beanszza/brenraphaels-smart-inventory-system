@@ -112,6 +112,19 @@ export const notificationGateway: NotificationGatewayPort = {
   },
 };
 
+/** Tells the Staff live channel that one Size changed. Carries only the Size ID; nothing is stored. */
+export async function publishStockChanged(sizeId: number, signal: AbortSignal = AbortSignal.timeout(SEND_TIMEOUT_MS)): Promise<void> {
+  const { base, key } = gateway();
+  const response = await fetch(`${base}/notifications/stock/changed`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ sizeId }),
+    cache: "no-store",
+    signal,
+  });
+  if (!response.ok) throw new Error(`The gateway refused the stock event: ${response.status}`);
+}
+
 /** Compatibility URL for existing bell callers; credentials stay on the server. */
 export async function notificationLiveUrl(userId: string): Promise<string> {
   const { url, ticket } = await notificationGateway.issueLiveTicket(userId);

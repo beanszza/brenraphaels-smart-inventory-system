@@ -73,3 +73,9 @@ Live checks belong in the separate production-verification ticket: configure the
 ```
 
 `name` is the Item's name, `price` the Size's selling price and `active` the Item's active state (inactive Sizes are still listed so the shop can tell what was discontinued). A blank Variant is returned as `variant: null`: one unlabelled default Size. `image` is the stored reference, or null. A missing or wrong credential gets 401. Creating a product without a Variant shows a warning but succeeds. Like stock reads, call it on a user action or reconnect; do not poll.
+
+## Stock events (CREOMS #674)
+
+When a Size's available stock, image, name, price or active state changes, or a new Size appears, IMS publishes one `{ "sizeId": 123 }` event to the notifications service (`POST /notifications/stock/changed`, IMS gateway credential), which relays it to Staff with the Orders Module. Nothing else is sent, stored or replayed.
+
+IMS watches every write to stock, product and item rows (`lib/prisma.ts`), waits one second for the writer to commit, then compares each Size with the last state it published (`ShopStockSnapshots`). Unchanged Sizes publish nothing. The first run only records a baseline. A failed publish is logged and retried on the next change; it never blocks or fails the stock change. Apply `prisma/sql/shop-stock.sql` (it adds `ShopStockSnapshots`) before deploying. Needs `IMS_GATEWAY_URL` and `IMS_GATEWAY_CALLER_KEY`; without them nothing is published.

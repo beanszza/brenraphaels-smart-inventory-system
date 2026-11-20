@@ -29,7 +29,7 @@ export async function startShopDatabase() {
       env: { ...process.env, DATABASE_URL: url }, stdio: "pipe",
     });
   } catch (error) { close(); throw error; }
-  run("psql", [url, "-v", "ON_ERROR_STOP=1", "-c", 'DROP TABLE "ShopStockLines", "ShopStockAuditOutbox"']);
+  run("psql", [url, "-v", "ON_ERROR_STOP=1", "-c", 'DROP TABLE "ShopStockLines", "ShopStockAuditOutbox", "ShopStockSnapshots"']);
   for (let i = 0; i < 2; i++) run("psql", [url, "-v", "ON_ERROR_STOP=1", "-f", "prisma/sql/shop-stock.sql"]);
   return { url, close };
 }

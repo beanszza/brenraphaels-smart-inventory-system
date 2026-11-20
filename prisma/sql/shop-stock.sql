@@ -14,4 +14,8 @@ CREATE TABLE IF NOT EXISTS "ShopStockAuditOutbox" (
   "Key" varchar(64) PRIMARY KEY,
   "Event" jsonb NOT NULL
 );
+CREATE TABLE IF NOT EXISTS "ShopStockSnapshots" (
+  "ProductId" integer PRIMARY KEY,
+  "Fingerprint" varchar(512) NOT NULL
+);
 COMMIT;
