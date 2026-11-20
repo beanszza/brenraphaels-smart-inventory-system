@@ -143,7 +143,7 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
       {/* ── Header ── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-divider pb-4">
         <div>
-          <h2 className="type-section-title text-text-primary">Quality Assurance Review</h2>
+          <h2 className="type-page-title text-text-primary">Quality Assurance Review</h2>
           <p className="mt-1 type-body text-text-muted">
             Inspect finished production lots, verify sensory and packaging parameters, and approve for stock-in.
           </p>

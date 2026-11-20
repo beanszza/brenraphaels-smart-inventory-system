@@ -69,7 +69,7 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="type-section-title text-text-primary">Production Loss Reports</h2>
+          <h2 className="type-page-title text-text-primary">Production Loss Reports</h2>
           <p className="type-body text-text-muted mt-0.5">
             Automatic loss tracking and cost accounting for QA-rejected and compromised batches.
           </p>

@@ -221,7 +221,7 @@ export default function ProductionStockInTab({ initialRows, initialItems, curren
       {/* ── Header (Matching Resources & Suppliers Header) ── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="type-section-title text-text-primary">Finished Goods Stock-In</h2>
+          <h2 className="type-page-title text-text-primary">Finished Goods Stock-In</h2>
           <p className="mt-1 type-body text-text-muted">
             Review completed batches passed by Quality Assurance and commit finished products into active inventory.
           </p>

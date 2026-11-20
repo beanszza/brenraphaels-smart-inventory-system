@@ -82,7 +82,7 @@ export default function MaterialIssuanceTab({ initialRows, initialIssuanceId }: 
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="type-section-title text-text-primary">Material Issuances</h2>
+        <h2 className="type-page-title text-text-primary">Material Issuances</h2>
         <p className="mt-1 type-body text-text-muted">
           Verify allocated lot codes via physical barcode/QR code scan and release raw materials to the production floor.
         </p>

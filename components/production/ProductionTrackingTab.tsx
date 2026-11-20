@@ -88,7 +88,7 @@ export default function ProductionTrackingTab({
       {/* ── Header ── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-divider pb-4">
         <div>
-          <h2 className="type-section-title text-text-primary">Production Tracking</h2>
+          <h2 className="type-page-title text-text-primary">Production Tracking</h2>
           <p className="mt-1 type-body text-text-muted">
             Track active kitchen batches, advance cooking stages, complete packaging, and record batch outcomes.
           </p>
