@@ -91,3 +91,30 @@ it("publishes the Size ID alone when a real stock, price or product change commi
   await run();
   expect(events).toEqual([1, 2]);
 }, 30_000);
+
+it("publishes when the Finished Goods tab's stock for a Size changes, even where the shop Warehouse figure does not", async () => {
+  await prisma.$executeRawUnsafe('TRUNCATE "Categories", "UnitOfMeasures", "Locations", "ShopStockSnapshots" CASCADE');
+  await prisma.categories.create({ data: { CategoryId: 1, CategoryName: "Finished Goods", Description: "" } });
+  await prisma.unitOfMeasures.create({ data: { UomId: 1, Name: "Piece", Abbreviation: "pc", Code: "PC" } });
+  await prisma.locations.create({ data: { LocationId: 2, LocationName: "Elsewhere", LocationType: "Branch", IsActive: true } });
+  await prisma.items.create({ data: { ItemId: 1, ItemName: "Ube Jam", UomId: 1, StockUomId: 1, CategoryId: 1, MinStockLevel: 0, MaxStockLevel: 100, IsActive: true } });
+  await prisma.finishedProducts.create({ data: { ProductId: 1, ItemId: 1, Sku: "J", Variant: "250g", SellingPrice: 100 } });
+  await prisma.inventoryLots.create({ data: {
+    LotId: 1, LotCode: "LOT-1", ItemId: 1, LocationId: 2, SourceType: "Opening", ReceivedDate: new Date(), IsExpiryEstimated: false,
+    QuantityReceived: 50, QuantityRemaining: 50, ReservedQuantity: 0, UomId: 1, UnitCost: 10, Status: "Active", IsOpeningBalance: true,
+  } });
+  const recipe = await prisma.recipes.create({ data: { ProductId: 1, OutputQuantity: 1, Notes: "", IsActive: true } });
+  await prisma.productionBatches.create({ data: {
+    RecipeId: recipe.RecipeId, ProductId: 1, BatchMultiplier: 1, EstimatedQuantity: 50, ActualQuantity: 50, ProductionDate: new Date(),
+    Stage: "Done", QualityStatus: "Passed", RejectionReason: "", ImageUrl: "", Notes: "", FgLotId: 1, Status: "Completed",
+  } });
+  const run = () => publishStockChanges();
+  await run();
+  events.length = 0;
+  await prisma.inventoryLots.update({ where: { LotId: 1 }, data: { QuantityRemaining: 40 } });
+  await run();
+  expect(events).toEqual([1]);
+  await prisma.inventoryLots.update({ where: { LotId: 1 }, data: { ReservedQuantity: 5 } });
+  await run();
+  expect(events).toEqual([1, 1]);
+}, 30_000);

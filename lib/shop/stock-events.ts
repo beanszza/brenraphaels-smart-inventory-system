@@ -1,4 +1,5 @@
 import { publishStockChanged } from "@/lib/gateway/notifications";
+import { readInventory } from "./inventory";
 import { stockAvailability, warehouse } from "./stock";
 
 /** What Staff see of one Size: stock, name, image, price (and whether it is still sold). */
@@ -14,7 +15,7 @@ export interface StockEventPorts {
 }
 
 /**
- * Publishes one Size-ID event for each Size whose available stock, image, name, price or
+ * Publishes one Size-ID event for each Size whose available stock (shop Warehouse or Finished Goods tab), image, name, price or
  * presence changed since it was last published. The first run only records a baseline.
  * A failed publish leaves that Size unrecorded so the next run tries again, and never throws.
  */
@@ -55,12 +56,14 @@ const databasePorts: StockEventPorts = {
         try { return (await stockAvailability(tx, id, warehouseId)).available.toNumber(); } catch { return null; }
       }, { isolationLevel: "RepeatableRead" });
     } catch { /* No configured Warehouse: stock is unknown, names, images and prices still count. */ }
+    // What the Finished Goods tab and CREOMS show, so a change there publishes even when the shop Warehouse figure is unchanged.
+    const tab = new Map((await readInventory(products.map(product => product.ProductId))).products.map(figures => [figures.productId, [figures.quantity, figures.reserved]]));
     const states: SizeState[] = [];
     for (const product of products) {
       states.push({
         productId: product.ProductId,
         fingerprint: JSON.stringify([
-          await available(product.ProductId), product.Items.ItemName, product.ImageUrl?.trim() || null,
+          await available(product.ProductId), tab.get(product.ProductId) ?? null, product.Items.ItemName, product.ImageUrl?.trim() || null,
           Number(product.SellingPrice), product.Items.IsActive,
         ]),
       });
