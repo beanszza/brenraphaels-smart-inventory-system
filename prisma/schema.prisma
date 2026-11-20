@@ -1322,6 +1322,11 @@ model ShopStockAuditOutbox {
   Event Json
 }
 
+model ShopStockSnapshots {
+  ProductId   Int    @id
+  Fingerprint String @db.VarChar(512)
+}
+
 model StockWriteOffs {
   WriteOffId         Int                  @id @default(autoincrement())
   SwoNumber          String               @unique @db.VarChar(32)
