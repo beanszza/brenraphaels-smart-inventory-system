@@ -16,6 +16,7 @@ const PUBLIC_PATHS = new Set([
 function isExternalIntegrationPath(pathname: string): boolean {
   return (
     pathname === "/api/shop/stock" ||
+    pathname === "/api/shop/products" ||
     pathname === "/api/pos/locations/sync" ||
     pathname === "/api/scms/locations/sync" ||
     pathname.startsWith("/api/scms/transfers/") ||
