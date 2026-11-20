@@ -392,6 +392,8 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
   }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: "createFinishedProductWithVariants", name: "createFinishedProductWithVariants" }, description: "Validation refused for createFinishedProductWithVariants", version: auditVersion([body]) });
 }
 
+const NO_VARIANT_WARNING = "This product has no Variant, so it will be sold as one unlabelled default Size. Add a Variant if it comes in more than one Size.";
+
 export async function createFinishedProduct(body: any = {}) {
   const staff = await requireModule("Production & Quality");
   return mutate(staff, async (tx) => {
@@ -490,7 +492,12 @@ export async function createFinishedProduct(body: any = {}) {
     };
 
     return {
-      result: resourceResult({ success: true, data: response }),
+      result: resourceResult({
+        success: true,
+        data: response,
+        // A product without a Variant is allowed: it is sold as one unlabelled default Size.
+        ...(variantLabel ? {} : { message: NO_VARIANT_WARNING }),
+      }),
       audit: {
         module: "Production & Quality",
         action: "record.created",

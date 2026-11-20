@@ -192,6 +192,15 @@ for (const c of mutations) {
   });
 }
 
+it("warns when a product is created without a Variant but still saves it", async () => {
+  const blank = await production.createFinishedProduct({ productName: "Jam", sellingPrice: 100 }) as ResourceResult | { data: ResourceResult };
+  const result = "success" in blank ? blank : blank.data;
+  expect(result).toMatchObject({ success: true, message: expect.stringContaining("no Variant") });
+  expect(fake.committed.length).toBeGreaterThan(0);
+  const withVariant = await production.createFinishedProduct({ productName: "Jam", sellingPrice: 100, variant: "250g" }) as ResourceResult | { data: ResourceResult };
+  expect(("success" in withVariant ? withVariant : withVariant.data).message).toBeUndefined();
+});
+
 const actions = import.meta.glob("../app/actions/production/*.ts");
 for (const [path, load] of Object.entries(actions)) {
   const exports = await load() as Record<string, (...args: unknown[]) => Promise<unknown>>;
