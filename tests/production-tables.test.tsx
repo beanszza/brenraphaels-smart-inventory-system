@@ -8,7 +8,7 @@ import ProductionStockInTab from "@/components/production/ProductionStockInTab";
 import ProductionTrackingTab from "@/components/production/ProductionTrackingTab";
 import ConfigurationTab from "@/components/production/ConfigurationTab";
 import LossTab from "@/components/production/LossTab";
-import type { ProductionRequestEntity, MaterialIssuanceDTO } from "@/components/production/types";
+import type { ProductionRequestEntity, MaterialIssuanceDTO, FinishedProductItem } from "@/components/production/types";
 
 const read = vi.hoisted(() => vi.fn());
 vi.mock("@/app/actions/production/requests", () => ({ listProductionRequests: read }));
@@ -72,4 +72,23 @@ it("displays Batch Number for In Progress / Completed requests and omits min-h-[
   const html = renderToStaticMarkup(<ProductionRequestsTab initialRows={[row]} currentUser="staff" />);
   expect(html).toContain("BTH-UBEJAM-20261112-0001");
   expect(html).not.toContain("min-h-[280px]");
+});
+
+it("resolves file-storage UUIDs via ProductionImage and displays variant selling price in ConfigurationTab", () => {
+  const uuid = "550e8400-e29b-41d4-a716-446655440000";
+  const row: FinishedProductItem = {
+    productId: 42,
+    itemId: 101,
+    itemName: "C2 Green Tea",
+    sellingPrice: 125.5,
+    sku: "C2GR-250ML-JAR",
+    variant: "250mL Jar",
+    packagingType: "Jar",
+    imageUrl: uuid,
+    isActive: true,
+  };
+  const html = renderToStaticMarkup(<ConfigurationTab initialRows={[row]} />);
+  expect(html).not.toContain(`src="${uuid}"`);
+  expect(html).toContain("₱125.50");
+  expect(html).toContain("Price");
 });

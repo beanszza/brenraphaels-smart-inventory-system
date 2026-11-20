@@ -178,7 +178,7 @@ export default function ConfigurationTab({
             Finished Products &amp; Variants
           </h2>
           <p className="mt-1 type-body text-text-muted">
-            Manage finished goods, content sizes, units of measurement, packaging types, and SKUs
+            Manage finished goods, content sizes, units of measurement, packaging types, prices, and SKUs
           </p>
         </div>
 
@@ -289,6 +289,7 @@ export default function ConfigurationTab({
                 <th className="table-th px-4 py-3">Variant</th>
                 <th className="table-th px-4 py-3">Packaging</th>
                 <th className="table-th px-4 py-3">Variant SKU</th>
+                <th className="table-th px-4 py-3 text-right whitespace-nowrap">Price</th>
                 <th className="table-th px-4 py-3 text-center">Status</th>
                 <th className="table-th w-16 px-4 py-3 text-center">Actions</th>
               </tr>
@@ -297,7 +298,7 @@ export default function ConfigurationTab({
               {paginatedProducts.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-4 py-12 text-center type-body text-text-muted"
                   >
                     {searchQuery || productFilter !== "All" || packagingFilter !== "All" || statusFilter !== "All"
@@ -320,7 +321,10 @@ export default function ConfigurationTab({
                     {/* Photo */}
                     <td className="w-16 px-4 py-3 text-center">
                       <div className="w-9 h-9 rounded-control border border-divider bg-surface-secondary/40 overflow-hidden flex items-center justify-center shrink-0 mx-auto">
-                        {product.imageUrl ? (
+                        {product.imageUrl &&
+                        (product.imageUrl.startsWith("http://") ||
+                          product.imageUrl.startsWith("https://") ||
+                          product.imageUrl.startsWith("data:image/")) ? (
                           <img
                             src={product.imageUrl}
                             alt={product.itemName}
@@ -358,6 +362,14 @@ export default function ConfigurationTab({
                     {/* Variant SKU */}
                     <td className="px-4 py-3 table-td text-text-muted tabular-nums whitespace-nowrap">
                       {product.sku || "—"}
+                    </td>
+
+                    {/* Price */}
+                    <td className="px-4 py-3 table-td text-right font-semibold text-text-primary tabular-nums whitespace-nowrap">
+                      ₱{Number(product.sellingPrice ?? 0).toLocaleString("en-PH", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </td>
 
                     {/* Status */}

@@ -38,10 +38,16 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
 
     const effectivePrice =
       body.sellingPrice !== undefined
-        ? body.sellingPrice
+        ? Number(body.sellingPrice)
         : body.unitCost !== undefined
-        ? body.unitCost
+        ? Number(body.unitCost)
         : product.SellingPrice;
+
+    if (body.sellingPrice !== undefined || body.unitCost !== undefined) {
+      if (isNaN(Number(effectivePrice)) || Number(effectivePrice) < 0) {
+        return refuse("Selling price must be a valid non-negative number.");
+      }
+    }
 
     const resolvedVariant =
       body.contentSize !== undefined && String(body.contentSize).trim() !== ""

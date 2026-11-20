@@ -211,13 +211,13 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
       seenNames.add(vNameKey);
 
       const effectivePrice =
-        typeof v.unitCost === "number" && !isNaN(v.unitCost)
-          ? v.unitCost
-          : typeof v.sellingPrice === "number" && !isNaN(v.sellingPrice)
+        typeof v.sellingPrice === "number" && !isNaN(v.sellingPrice)
           ? v.sellingPrice
+          : typeof v.unitCost === "number" && !isNaN(v.unitCost)
+          ? v.unitCost
           : 0;
       if (effectivePrice < 0) {
-        refuse("Unit cost must be a valid non-negative number.");
+        refuse("Selling price must be a valid non-negative number.");
       }
 
       const minStock =

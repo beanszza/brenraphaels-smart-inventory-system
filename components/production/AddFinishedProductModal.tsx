@@ -41,6 +41,7 @@ interface VariantRow {
   contentSize: string;
   contentUom: VariantContentUom;
   packagingType: VariantPackagingType;
+  sellingPrice: string;
   minStockLevel: string;
   maxStockLevel: string;
   variantName: string;
@@ -82,6 +83,7 @@ export default function AddFinishedProductModal({
       contentSize: "250",
       contentUom: "" as any,
       packagingType: "Jar",
+      sellingPrice: "",
       minStockLevel: "10",
       maxStockLevel: "100",
       variantName: composeVariantName("250", "", "Jar"),
@@ -151,11 +153,18 @@ export default function AddFinishedProductModal({
       setDescription(editingItem.description || "");
       setIsActive(editingItem.isActive !== false);
       setPhotoFile(null);
-      setPhotoPreview(editingItem.imageUrl || "");
 
-      // Resolve actual image URL for preview if not already set
-      if (!editingItem.imageUrl) {
-        resolveProductionImage("product", editingItem.productId).then((resolvedUrl) => {
+      const rawImg = editingItem.imageUrl?.trim() || "";
+      const isDirectUrl =
+        rawImg.startsWith("http://") ||
+        rawImg.startsWith("https://") ||
+        rawImg.startsWith("data:image/");
+
+      setPhotoPreview(isDirectUrl ? rawImg : "");
+
+      // Resolve actual image URL from file storage when stored as a fileId (or missing)
+      if (!isDirectUrl) {
+        resolveProductionImage("product", editingItem.productId, "medium").then((resolvedUrl) => {
           if (isMounted && resolvedUrl && resolvedUrl !== FILE_PLACEHOLDER) {
             setPhotoPreview(resolvedUrl);
           }
@@ -168,6 +177,10 @@ export default function AddFinishedProductModal({
           const sizeVal = item.contentSize || parsed.contentSize || "250";
           const uomVal = (item.contentUom as VariantContentUom) || parsed.uom || "ML";
           const pkgVal = (item.packagingType as VariantPackagingType) || parsed.packagingType || "Jar";
+          const priceVal =
+            item.sellingPrice !== undefined && item.sellingPrice > 0
+              ? String(item.sellingPrice)
+              : "";
           const minVal =
             item.minStockLevel !== undefined && item.minStockLevel > 0
               ? String(item.minStockLevel)
@@ -184,6 +197,7 @@ export default function AddFinishedProductModal({
             contentSize: sizeVal,
             contentUom: uomVal,
             packagingType: pkgVal,
+            sellingPrice: priceVal,
             minStockLevel: minVal,
             maxStockLevel: maxVal,
             variantName: composeVariantName(sizeVal, uomVal, pkgVal),
@@ -203,6 +217,7 @@ export default function AddFinishedProductModal({
           contentSize: "250",
           contentUom: "ML",
           packagingType: "Jar",
+          sellingPrice: "",
           minStockLevel: "10",
           maxStockLevel: "100",
           variantName: composeVariantName("250", "ML", "Jar"),
@@ -224,6 +239,7 @@ export default function AddFinishedProductModal({
         contentSize: "350",
         contentUom: "" as any,
         packagingType: "Jar",
+        sellingPrice: "",
         minStockLevel: "10",
         maxStockLevel: "100",
         variantName: composeVariantName("350", "", "Jar"),
@@ -242,7 +258,7 @@ export default function AddFinishedProductModal({
 
   const handleUpdateVariantField = (
     id: string,
-    field: "contentSize" | "contentUom" | "packagingType" | "minStockLevel" | "maxStockLevel",
+    field: "contentSize" | "contentUom" | "packagingType" | "sellingPrice" | "minStockLevel" | "maxStockLevel",
     value: string
   ) => {
     setVariants((prev) =>
@@ -318,6 +334,11 @@ export default function AddFinishedProductModal({
         toast.error(`Variant ${i + 1} requires a valid Content Size (e.g. 250, 350).`);
         return;
       }
+      const priceNum = parseFloat(v.sellingPrice);
+      if (!v.sellingPrice.trim() || isNaN(priceNum) || priceNum <= 0) {
+        toast.error(`Variant ${i + 1} requires a valid Selling Price greater than 0.`);
+        return;
+      }
       const minStockNum = parseFloat(v.minStockLevel);
       const maxStockNum = parseFloat(v.maxStockLevel);
       if (isNaN(minStockNum) || minStockNum <= 0) {
@@ -364,6 +385,7 @@ export default function AddFinishedProductModal({
               contentSize: v.contentSize.trim(),
               contentUom: v.contentUom,
               packagingType: v.packagingType,
+              sellingPrice: parseFloat(v.sellingPrice) || 0,
               minStockLevel: parseFloat(v.minStockLevel) || 10,
               maxStockLevel: parseFloat(v.maxStockLevel) || 100,
               sku: v.existingSku,
@@ -390,8 +412,7 @@ export default function AddFinishedProductModal({
                 packagingType: v.packagingType,
                 minStockLevel: parseFloat(v.minStockLevel) || 10,
                 maxStockLevel: parseFloat(v.maxStockLevel) || 100,
-                unitCost: 0,
-                sellingPrice: 0,
+                sellingPrice: parseFloat(v.sellingPrice) || 0,
               })),
             })
           );
@@ -409,7 +430,7 @@ export default function AddFinishedProductModal({
           }
         }
 
-        // Automatically sync with POS in background (without overwriting POS price)
+        // Automatically sync with POS in background (using SCMS variant prices as source of truth)
         syncProductCatalogToPos(trimmedName, { isNewCreation: false }).catch(() => {});
 
         toast.success("Finished product updated successfully!");
@@ -430,8 +451,7 @@ export default function AddFinishedProductModal({
               packagingType: v.packagingType,
               minStockLevel: parseFloat(v.minStockLevel) || 10,
               maxStockLevel: parseFloat(v.maxStockLevel) || 100,
-              unitCost: 0,
-              sellingPrice: 0,
+              sellingPrice: parseFloat(v.sellingPrice) || 0,
             };
           }),
         };
@@ -733,7 +753,31 @@ export default function AddFinishedProductModal({
                     </div>
                   </div>
 
-                  {/* Row 3: Min Stock Level & Max Stock Level (Per Variant, matches SupplyModal) */}
+                  {/* Row 3: Selling Price (Per Variant) */}
+                  <div>
+                    <label className="mb-1.5 block type-table-header text-text-primary">
+                      Selling Price (₱) <span className="text-status-danger">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 type-body text-text-muted">
+                        ₱
+                      </span>
+                      <Input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={v.sellingPrice}
+                        onChange={(e) =>
+                          handleUpdateVariantField(v.id, "sellingPrice", e.target.value)
+                        }
+                        className="w-full rounded-control border border-divider bg-surface text-text-primary pl-7 pr-3 py-2 type-body font-semibold tabular-nums"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 4: Min Stock Level & Max Stock Level (Per Variant, matches SupplyModal) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="mb-1.5 block type-table-header text-text-primary">
