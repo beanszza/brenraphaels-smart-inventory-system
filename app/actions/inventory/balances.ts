@@ -1,5 +1,6 @@
 "use server";
 import type { Prisma } from "@prisma/client";
+import { lotSelect, sizeFigures } from "@/lib/shop/inventory";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
@@ -149,13 +150,7 @@ export async function listInventory(query = "") {
           ProductionBatches: {
             select: {
               InventoryLots: {
-                select: {
-                  LotId: true,
-                  LotCode: true,
-                  QuantityRemaining: true,
-                  ReservedQuantity: true,
-                  Status: true,
-                },
+                select: lotSelect,
               },
             },
           },
@@ -184,20 +179,7 @@ export async function listInventory(query = "") {
     > = {};
     for (const fp of finishedProductRows) {
       if (!variantsMap[fp.ItemId]) variantsMap[fp.ItemId] = [];
-      let variantStock = 0;
-      let variantReserved = 0;
-      const seenLots = new Set<number>();
-      fp.ProductionBatches?.forEach((batch) => {
-        const lot = batch.InventoryLots;
-        const isSeededTestLot =
-          typeof lot?.LotCode === "string" &&
-          (lot.LotCode.startsWith("LOT-UJH-2026-") || lot.LotCode.startsWith("LOT-UBH-2026-"));
-        if (lot && !isSeededTestLot && (lot.Status === "Available" || lot.Status === "Active") && !seenLots.has(lot.LotId)) {
-          seenLots.add(lot.LotId);
-          variantStock += Number(lot.QuantityRemaining || 0);
-          variantReserved += Number(lot.ReservedQuantity || 0);
-        }
-      });
+      const { quantity: variantStock, reserved: variantReserved } = sizeFigures(fp.ProductionBatches);
 
       variantsMap[fp.ItemId].push({
         productId: fp.ProductId,
