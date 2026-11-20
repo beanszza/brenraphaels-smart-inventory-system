@@ -1,6 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { StockRefusal } from "./stock";
 
+/** Lots seeded for testing; the tab never counts them. */
+const SEEDED_TEST_LOT_PREFIXES = ["LOT-UJH-2026-", "LOT-UBH-2026-"];
+const COUNTED_LOT_STATUSES = ["Available", "Active"];
+
+/** The lot fields sizeFigures reads, so the tab and the shop inventory read select the same ones. */
+export const lotSelect = { LotId: true, LotCode: true, QuantityRemaining: true, ReservedQuantity: true, Status: true } as const;
+
 type BatchLot = { LotCode: string; QuantityRemaining: unknown; ReservedQuantity: unknown; Status: string; LotId: number } | null;
 
 /**
@@ -12,8 +19,8 @@ export function sizeFigures(batches: { InventoryLots: BatchLot }[] | undefined):
   const seen = new Set<number>();
   for (const batch of batches ?? []) {
     const lot = batch.InventoryLots;
-    const seeded = typeof lot?.LotCode === "string" && (lot.LotCode.startsWith("LOT-UJH-2026-") || lot.LotCode.startsWith("LOT-UBH-2026-"));
-    if (lot && !seeded && (lot.Status === "Available" || lot.Status === "Active") && !seen.has(lot.LotId)) {
+    const seeded = !!lot && SEEDED_TEST_LOT_PREFIXES.some(prefix => lot.LotCode.startsWith(prefix));
+    if (lot && !seeded && COUNTED_LOT_STATUSES.includes(lot.Status) && !seen.has(lot.LotId)) {
       seen.add(lot.LotId);
       quantity += Number(lot.QuantityRemaining || 0);
       reserved += Number(lot.ReservedQuantity || 0);
@@ -36,7 +43,7 @@ export async function readInventory(ids: number[]) {
     where: { ProductId: { in: ids } },
     select: {
       ProductId: true,
-      ProductionBatches: { select: { InventoryLots: { select: { LotId: true, LotCode: true, QuantityRemaining: true, ReservedQuantity: true, Status: true } } } },
+      ProductionBatches: { select: { InventoryLots: { select: lotSelect } } },
     },
     orderBy: { ProductId: "asc" },
   });

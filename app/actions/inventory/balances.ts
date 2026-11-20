@@ -1,6 +1,6 @@
 "use server";
 import type { Prisma } from "@prisma/client";
-import { sizeFigures } from "@/lib/shop/inventory";
+import { lotSelect, sizeFigures } from "@/lib/shop/inventory";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
@@ -150,13 +150,7 @@ export async function listInventory(query = "") {
           ProductionBatches: {
             select: {
               InventoryLots: {
-                select: {
-                  LotId: true,
-                  LotCode: true,
-                  QuantityRemaining: true,
-                  ReservedQuantity: true,
-                  Status: true,
-                },
+                select: lotSelect,
               },
             },
           },
