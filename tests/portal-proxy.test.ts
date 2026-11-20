@@ -29,3 +29,10 @@ it("refuses unsigned data requests and never treats cookie presence as validatio
     "https://localhost:3003/inventory?lot=42",
   );
 });
+
+it("lets the shop's server-to-server calls reach their own key check, but nothing else under /api/shop", () => {
+  for (const path of ["/api/shop/stock", "/api/shop/products"]) {
+    expect(proxy(new NextRequest(`https://localhost:3003${path}`)).status).toBe(200);
+  }
+  expect(proxy(new NextRequest("https://localhost:3003/api/shop/other")).status).toBe(401);
+});
