@@ -1,9 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { MoreHorizontal, Pencil } from "lucide-react";
 import { CategoryItem } from "./types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface CategoryTableProps {
   items: CategoryItem[];
@@ -20,85 +26,75 @@ export default function CategoryTable({
   canConfigure = true,
   onEdit,
 }: CategoryTableProps) {
-  const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
 
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-card border border-border bg-surface">
-      <table className="w-full min-w-[700px]">
+    <div className="overflow-x-auto custom-scrollbar">
+      <table className="w-full min-w-[700px] border-collapse">
         <thead>
-          <tr className="table-head-row">
-            <th className="sticky left-0 z-20 w-16 px-5 py-2.5 bg-subtle table-th border-r border-border shadow-sticky-col">No.</th>
-            <th className="px-5 py-2.5 table-th min-w-[180px]">Category Name</th>
-            <th className="px-5 py-2.5 table-th">Description</th>
-            <th className="px-5 py-2.5 table-th">Linked Items</th>
-            <th className="px-5 py-2.5 table-th">Expiry</th>
-            <th className="px-5 py-2.5 table-th">Status</th>
-            {canConfigure && <th className="px-5 py-2.5 text-center table-th">Actions</th>}
+          <tr className="border-b border-divider">
+            <th className="w-12 pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">No.</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[180px]">Category Name</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Description</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Linked Items</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Expiry</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Status</th>
+            {canConfigure && <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">Actions</th>}
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-divider">
           {items.length === 0 ? (
             <tr>
               <td
                 colSpan={canConfigure ? 7 : 6}
-                className="px-5 py-12 text-center type-body font-normal text-ink-muted"
+                className="py-12 text-center type-body font-normal text-ink-muted"
               >
                 No categories found.
               </td>
             </tr>
           ) : (
             items.map((item, index) => (
-              <tr key={item.categoryId} className="table-row group">
-                <td className="sticky left-0 z-10 w-16 px-5 py-3 table-td text-ink-muted whitespace-nowrap bg-surface group-hover:bg-subtle transition-colors border-r border-border shadow-sticky-col tabular-nums">
+              <tr key={item.categoryId} className="hover:bg-page transition-colors group">
+                <td className="w-12 py-3 pr-4 type-body text-ink-muted whitespace-nowrap tabular-nums">
                   {index + 1 + (currentPage - 1) * pageSize}
                 </td>
-                <td className="table-td text-ink whitespace-nowrap min-w-[180px]">
-                  <span className="rounded-pill bg-subtle text-ink border border-border px-2.5 py-0.5 type-caption font-semibold">
-                    {item.categoryName}
-                  </span>
+                <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap min-w-[180px]">
+                  {item.categoryName}
                 </td>
-                <td className="table-td text-ink-muted max-w-[280px] truncate">
+                <td className="py-3 pr-4 type-body text-ink-muted max-w-[280px] truncate">
                   {item.description || "-"}
                 </td>
-                <td className="table-td text-ink-muted whitespace-nowrap">
+                <td className={`py-3 pr-4 type-body whitespace-nowrap tabular-nums ${item.itemCount ? "text-ink" : "text-ink-muted"}`}>
                   {item.itemCount !== undefined ? `${item.itemCount} item(s)` : "-"}
                 </td>
-                <td className="table-td whitespace-nowrap">
+                <td className="py-3 pr-4 whitespace-nowrap">
                   <StatusBadge status={item.hasExpiry !== false ? "Yes" : "No"}>
                     {item.hasExpiry !== false ? "Has Expiry" : "No Expiry"}
                   </StatusBadge>
                 </td>
-                <td className="table-td whitespace-nowrap">
+                <td className="py-3 pr-4 whitespace-nowrap">
                   <StatusBadge status={item.isActive !== false ? "Active" : "Inactive"} />
                 </td>
                 {canConfigure && (
-                  <td className="table-td text-center relative whitespace-nowrap">
-                    <button
-                      type="button"
-                      aria-label="Record actions"
-                      onClick={() =>
-                        setActiveDropdownId(
-                          activeDropdownId === item.categoryId ? null : item.categoryId
-                        )
-                      }
-                      className="p-1.5 rounded-control text-ink hover:bg-subtle transition-colors focus:outline-none cursor-pointer"
-                    >
-                      <MoreHorizontal size={18} />
-                    </button>
-                    {activeDropdownId === item.categoryId && (
-                      <div className="absolute right-10 top-2 z-[100] w-36 rounded-inner border border-border bg-surface shadow-modal py-1.5 text-left">
+                  <td className="w-16 py-3 pl-4 text-center whitespace-nowrap">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          onClick={() => {
-                            onEdit(item);
-                            setActiveDropdownId(null);
-                          }}
-                          className="flex w-full items-center gap-2 px-3 py-2 type-body text-ink hover:bg-subtle transition-colors cursor-pointer"
+                          aria-label="Record actions"
+                          className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors focus:outline-none cursor-pointer"
+                        >
+                          <MoreHorizontal size={18} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem
+                          onClick={() => onEdit(item)}
+                          className="cursor-pointer type-body-secondary"
                         >
                           <Pencil size={14} className="shrink-0" /> Edit Category
-                        </button>
-                      </div>
-                    )}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 )}
               </tr>

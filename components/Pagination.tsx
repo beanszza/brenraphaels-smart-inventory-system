@@ -8,6 +8,7 @@ interface PaginationProps {
   totalPages?: number;
   totalCount: number;
   itemsPerPage?: number;
+  embedded?: boolean;
   onPageChange: (page: number) => void;
 }
 
@@ -16,6 +17,7 @@ export default function Pagination({
   totalPages: propTotalPages,
   totalCount,
   itemsPerPage = 10,
+  embedded = false,
   onPageChange,
 }: PaginationProps) {
   if (totalCount === 0) return null;
@@ -44,7 +46,13 @@ export default function Pagination({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-divider bg-surface type-caption text-ink-muted rounded-b-card">
+    <div
+      className={
+        embedded
+          ? "flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 mt-2 border-t border-divider bg-surface type-caption text-ink-muted"
+          : "flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-divider bg-surface type-caption text-ink-muted rounded-b-card"
+      }
+    >
       <div>
         Showing <span className="font-semibold text-ink">{startIndex + 1}</span> to{" "}
         <span className="font-semibold text-ink">{Math.min(startIndex + itemsPerPage, totalCount)}</span> of{" "}

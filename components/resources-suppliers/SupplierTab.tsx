@@ -79,19 +79,19 @@ export default function SupplierTab({
   const paginatedSuppliers = filteredSuppliers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
-    <div className="space-y-6 animate-page-in">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-5 animate-page-in">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="type-page-title text-ink">Supplier Management</h2>
           <p className="mt-1 type-body text-ink-muted">Partner directories, verified contacts, and statuses</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center justify-center gap-2 rounded-control bg-surface border border-border px-4 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-10"
+            className="flex items-center justify-center gap-1.5 rounded-control bg-surface border border-border px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-9 shadow-none"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
           </Button>
@@ -100,7 +100,7 @@ export default function SupplierTab({
               variant="outline"
               size="sm"
               asChild
-              className="flex items-center justify-center gap-2 rounded-control bg-surface border border-border px-4 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-10 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 rounded-control bg-surface border border-border px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-9 shadow-none cursor-pointer"
             >
               <Link href="/resources-suppliers/logs">
                 <FileText className="w-4 h-4" /> Transaction History
@@ -111,23 +111,12 @@ export default function SupplierTab({
             <Button
               type="button"
               onClick={onAddNew}
-              className="flex items-center justify-center gap-2 rounded-control bg-primary px-5 py-2.5 type-label-button text-primary-foreground hover:bg-primary-hover transition-colors shadow-xs h-10"
+              className="flex items-center justify-center gap-1.5 rounded-control bg-primary px-3.5 py-2 type-label-button text-on-brand hover:bg-primary-hover transition-colors h-9 shadow-none"
             >
               <Plus className="w-4 h-4" /> Add Supplier
             </Button>
           )}
         </div>
-      </div>
-
-      <div className="mb-6 rounded-card border border-border bg-surface p-3">
-        <SearchInput
-          placeholder="Search by Supplier No, company, contact, or email..."
-          value={searchQuery}
-          onChange={(e) => {
-            onSearchChange(e.target.value);
-            onPageChange(1);
-          }}
-        />
       </div>
 
       <ResourceStatusTabs
@@ -139,21 +128,36 @@ export default function SupplierTab({
         }}
       />
 
-      <SupplierTable
-        suppliers={paginatedSuppliers}
-        currentPage={currentPage}
-        pageSize={pageSize}
-        canConfigure={canConfigure}
-        onEdit={onEdit}
-        onView={onView}
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
+          placeholder="Search supplier, contact, or email..."
+          value={searchQuery}
+          onChange={(e) => {
+            onSearchChange(e.target.value);
+            onPageChange(1);
+          }}
+        />
+      </div>
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalCount={totalCount}
-        onPageChange={onPageChange}
-      />
+      <div className="rounded-card border border-border bg-surface p-5">
+        <SupplierTable
+          suppliers={paginatedSuppliers}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          canConfigure={canConfigure}
+          onEdit={onEdit}
+          onView={onView}
+        />
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          onPageChange={onPageChange}
+          embedded
+        />
+      </div>
     </div>
   );
 }

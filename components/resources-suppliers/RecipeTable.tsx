@@ -1,10 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { MoreHorizontal, Pencil } from "lucide-react";
 import { Recipe } from "./types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface RecipeTableProps {
   recipes: Recipe[];
@@ -14,35 +20,34 @@ interface RecipeTableProps {
 }
 
 export default function RecipeTable({ recipes, currentPage, pageSize, onEdit }: RecipeTableProps) {
-  const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
 
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
-      <table className="w-full min-w-[700px]">
-        <thead className="border-b border-divider bg-surface-muted table-head-row">
-          <tr className="text-left type-table-header uppercase text-text-muted">
-            <th className="sticky left-0 z-20 w-16 px-4 py-3.5 table-th bg-surface-muted border-r border-divider shadow-sticky-col">No.</th>
-            <th className="table-th px-4 py-3.5 min-w-[200px]">Recipe Name</th>
-            <th className="table-th px-4 py-3.5">Finished Product</th>
-            <th className="table-th px-4 py-3.5">Batch Size</th>
-            <th className="table-th px-4 py-3.5">Status</th>
-            <th className="table-th px-4 py-3.5 text-center">Actions</th>
+    <div className="overflow-x-auto custom-scrollbar">
+      <table className="w-full min-w-[700px] border-collapse">
+        <thead>
+          <tr className="border-b border-divider">
+            <th className="w-12 pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">No.</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[200px]">Recipe Name</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Finished Product</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Batch Size</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Status</th>
+            <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-divider">
           {recipes.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-5 py-12 text-center type-body text-text-muted">
+              <td colSpan={6} className="py-12 text-center type-body text-ink-muted">
                 No recipes found.
               </td>
             </tr>
           ) : (
             recipes.map((recipe, index) => (
-              <tr key={recipe.recipeId} className="table-row hover:bg-hover transition-colors group">
-                <td className="sticky left-0 z-10 w-16 px-4 py-3 table-td text-text-muted whitespace-nowrap bg-surface group-hover:bg-hover transition-colors border-r border-divider shadow-sticky-col">
+              <tr key={recipe.recipeId} className="hover:bg-page transition-colors group">
+                <td className="w-12 py-3 pr-4 type-body text-ink-muted whitespace-nowrap tabular-nums">
                   {index + 1 + (currentPage - 1) * pageSize}
                 </td>
-                <td className="table-td px-4 py-3 font-semibold text-text-primary min-w-[200px]">
+                <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap min-w-[200px]">
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <span
@@ -54,18 +59,18 @@ export default function RecipeTable({ recipes, currentPage, pageSize, onEdit }: 
                     </HoverCardTrigger>
                     <HoverCardContent className="w-72">
                       <div className="space-y-1.5">
-                        <p className="type-caption font-semibold text-text-primary">{recipe.recipeName}</p>
+                        <p className="type-caption font-semibold text-ink">{recipe.recipeName}</p>
                         {recipe.recipeCode && (
-                          <p className="type-caption font-mono text-text-muted">No: {recipe.recipeCode}</p>
+                          <p className="type-caption font-mono text-ink-muted">No: {recipe.recipeCode}</p>
                         )}
                         {recipe.finishedProduct && (
-                          <p className="type-caption text-text-muted">Product: {recipe.finishedProduct}</p>
+                          <p className="type-caption text-ink-muted">Product: {recipe.finishedProduct}</p>
                         )}
-                        <p className="type-caption text-text-muted">
+                        <p className="type-caption text-ink-muted">
                           Batch Size: {recipe.outputQuantity ? `${recipe.outputQuantity} pcs` : recipe.yieldLabel || "100 pcs"}
                         </p>
                         {recipe.notes && (
-                          <p className="type-caption text-text-muted">Notes: {recipe.notes}</p>
+                          <p className="type-caption text-ink-muted">Notes: {recipe.notes}</p>
                         )}
                         <div className="pt-1">
                           <StatusBadge status={recipe.isActive ? "Active" : "Inactive"} />
@@ -74,37 +79,33 @@ export default function RecipeTable({ recipes, currentPage, pageSize, onEdit }: 
                     </HoverCardContent>
                   </HoverCard>
                 </td>
-                <td className="table-td px-4 py-3 text-text-muted">{recipe.finishedProduct || "N/A"}</td>
-                <td className="table-td px-4 py-3 text-text-muted">
+                <td className="py-3 pr-4 type-body text-ink">{recipe.finishedProduct || "N/A"}</td>
+                <td className="py-3 pr-4 type-body text-ink whitespace-nowrap tabular-nums">
                   {recipe.outputQuantity ? `${recipe.outputQuantity} pcs` : recipe.yieldLabel || "100 pcs"}
                 </td>
-                <td className="table-td px-4 py-3">
+                <td className="py-3 pr-4 whitespace-nowrap">
                   <StatusBadge status={recipe.isActive ? "Active" : "Inactive"} />
                 </td>
-                <td className="table-td px-4 py-3 text-center relative">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveDropdownId(activeDropdownId === recipe.recipeId ? null : recipe.recipeId)
-                    }
-                    aria-label="Record actions" className="p-1.5 rounded-control text-text-primary hover:bg-hover transition-colors focus:outline-none"
-                  >
-                    <MoreHorizontal size={18} />
-                  </button>
-                  {activeDropdownId === recipe.recipeId && (
-                    <div className="absolute right-10 top-2 z-[100] w-32 rounded-menu border border-divider bg-surface shadow-menu py-1.5 text-left">
+                <td className="w-16 py-3 pl-4 text-center whitespace-nowrap">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
                       <button
                         type="button"
-                        onClick={() => {
-                          onEdit(recipe);
-                          setActiveDropdownId(null);
-                        }}
-                        className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-hover transition-colors"
+                        aria-label="Record actions"
+                        className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors focus:outline-none cursor-pointer"
+                      >
+                        <MoreHorizontal size={18} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem
+                        onClick={() => onEdit(recipe)}
+                        className="cursor-pointer type-body-secondary"
                       >
                         <Pencil size={14} className="shrink-0" /> Edit Recipe
-                      </button>
-                    </div>
-                  )}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </td>
               </tr>
             ))

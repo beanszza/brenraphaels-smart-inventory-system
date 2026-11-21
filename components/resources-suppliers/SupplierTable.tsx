@@ -1,10 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { MoreHorizontal, Pencil, Eye } from "lucide-react";
 import { Supplier } from "./types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface SupplierTableProps {
   suppliers: Supplier[];
@@ -23,36 +29,35 @@ export default function SupplierTable({
   onEdit,
   onView,
 }: SupplierTableProps) {
-  const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
 
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-card border border-border bg-surface">
-      <table className="w-full">
+    <div className="overflow-x-auto custom-scrollbar">
+      <table className="w-full min-w-[760px] border-collapse">
         <thead>
-          <tr className="table-head-row">
-            <th className="sticky left-0 z-20 w-16 px-4 py-2.5 text-center bg-subtle table-th border-r border-border shadow-sticky-col">No.</th>
-            <th className="px-4 py-2.5 table-th min-w-[200px]">Supplier Name</th>
-            <th className="px-4 py-2.5 table-th">Contact Person</th>
-            <th className="px-4 py-2.5 table-th">Email</th>
-            <th className="px-4 py-2.5 table-th whitespace-nowrap">Phone</th>
-            <th className="px-4 py-2.5 text-center table-th whitespace-nowrap">Status</th>
-            <th className="w-16 px-4 py-2.5 text-center table-th whitespace-nowrap">Actions</th>
+          <tr className="border-b border-divider">
+            <th className="w-12 pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">No.</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[200px]">Supplier Name</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Contact Person</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Email</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Phone</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Status</th>
+            <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-divider">
           {suppliers.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-4 py-12 text-center type-body font-normal text-ink-muted">
+              <td colSpan={7} className="py-12 text-center type-body font-normal text-ink-muted">
                 No suppliers found.
               </td>
             </tr>
           ) : (
             suppliers.map((supplier, index) => (
-              <tr key={supplier.supplierId} className="table-row group">
-                <td className="sticky left-0 z-10 w-16 px-4 py-3 table-td text-center text-ink-muted whitespace-nowrap bg-surface group-hover:bg-subtle transition-colors border-r border-border shadow-sticky-col tabular-nums">
+              <tr key={supplier.supplierId} className="hover:bg-page transition-colors group">
+                <td className="w-12 py-3 pr-4 type-body text-ink-muted whitespace-nowrap tabular-nums">
                   {index + 1 + (currentPage - 1) * pageSize}
                 </td>
-                <td className="table-td font-semibold text-ink whitespace-nowrap min-w-[200px]">
+                <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap min-w-[200px]">
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <span className="cursor-default whitespace-nowrap">
@@ -74,55 +79,46 @@ export default function SupplierTable({
                     </HoverCardContent>
                   </HoverCard>
                 </td>
-                <td className="table-td text-ink-muted whitespace-nowrap">
+                <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                   {supplier.contactPerson}
                 </td>
-                <td className="table-td text-ink-muted">
+                <td className="py-3 pr-4 type-body text-ink">
                   {supplier.email}
                 </td>
-                <td className="table-td text-ink-muted whitespace-nowrap">
+                <td className="py-3 pr-4 type-body text-ink whitespace-nowrap tabular-nums">
                   {supplier.phone}
                 </td>
-                <td className="table-td text-center whitespace-nowrap">
+                <td className="py-3 pr-4 whitespace-nowrap">
                   <StatusBadge status={supplier.isActive ? "Active" : "Inactive"} />
                 </td>
-                <td className="w-16 table-td text-center relative whitespace-nowrap">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveDropdownId(activeDropdownId === supplier.supplierId ? null : supplier.supplierId)
-                    }
-                    aria-label="Record actions"
-                    className="p-1.5 rounded-control text-ink hover:bg-subtle transition-colors focus:outline-none cursor-pointer"
-                  >
-                    <MoreHorizontal size={18} />
-                  </button>
-                  {activeDropdownId === supplier.supplierId && (
-                    <div className="absolute right-10 top-2 z-[100] w-36 rounded-inner border border-border bg-surface shadow-modal py-1.5 text-left">
+                <td className="w-16 py-3 pl-4 text-center whitespace-nowrap">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
                       <button
                         type="button"
-                        onClick={() => {
-                          onView(supplier);
-                          setActiveDropdownId(null);
-                        }}
-                        className="flex w-full items-center gap-2 px-3 py-2 type-body text-ink hover:bg-subtle transition-colors cursor-pointer"
+                        aria-label="Record actions"
+                        className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors focus:outline-none cursor-pointer"
+                      >
+                        <MoreHorizontal size={18} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem
+                        onClick={() => onView(supplier)}
+                        className="cursor-pointer type-body-secondary"
                       >
                         <Eye size={14} className="shrink-0" /> View Details
-                      </button>
+                      </DropdownMenuItem>
                       {canConfigure && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onEdit(supplier);
-                            setActiveDropdownId(null);
-                          }}
-                          className="flex w-full items-center gap-2 px-3 py-2 type-body text-ink hover:bg-subtle transition-colors cursor-pointer"
+                        <DropdownMenuItem
+                          onClick={() => onEdit(supplier)}
+                          className="cursor-pointer type-body-secondary"
                         >
                           <Pencil size={14} className="shrink-0" /> Edit Supplier
-                        </button>
+                        </DropdownMenuItem>
                       )}
-                    </div>
-                  )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </td>
               </tr>
             ))

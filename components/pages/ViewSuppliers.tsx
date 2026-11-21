@@ -196,7 +196,7 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
   ];
 
   return (
-    <div className="page-container space-y-6 animate-page-in">
+    <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
       <PageHeader
         title="Resources & Suppliers"
         description={
