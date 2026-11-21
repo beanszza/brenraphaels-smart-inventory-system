@@ -150,7 +150,14 @@ export default function SupplyTab({
               </span>
             </span>
           </SelectTrigger>
-          <SelectContent className="min-w-[230px]">
+          <SelectContent
+            position="popper"
+            side="bottom"
+            align="start"
+            sideOffset={4}
+            avoidCollisions={false}
+            className="min-w-[230px] max-h-72"
+          >
             <SelectItem value="All">All Categories</SelectItem>
             {categories.map((c) => (
               <SelectItem key={c.categoryId} value={c.categoryName}>
