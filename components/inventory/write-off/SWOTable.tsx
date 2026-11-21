@@ -66,42 +66,42 @@ export function SWOTable({
     })}`;
 
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-card border border-border bg-surface">
-      <table className="w-full">
+    <div className="overflow-x-auto custom-scrollbar">
+      <table className="w-full min-w-[820px] border-collapse">
         <thead>
-          <tr className="table-head-row">
-            <th className="sticky left-0 z-20 min-w-[160px] w-44 px-4 py-2.5 text-left table-th whitespace-nowrap bg-subtle border-r border-border shadow-sticky-col">
-              WRITE-OFF NUMBER
+          <tr className="border-b border-divider">
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[160px]">
+              Write-Off No.
             </th>
-            <th className="px-4 py-2.5 text-left table-th whitespace-nowrap">
-              REQUEST DATE
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
+              Request Date
             </th>
-            <th className="px-4 py-2.5 text-left table-th whitespace-nowrap">
-              REQUESTED BY
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
+              Requested By
             </th>
-            <th className="px-4 py-2.5 text-left table-th whitespace-nowrap">
-              ITEM
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
+              Item
             </th>
-            <th className="px-4 py-2.5 text-left table-th whitespace-nowrap">
-              BATCH / LOT
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
+              Batch / Lot
             </th>
-            <th className="px-4 py-2.5 text-left table-th whitespace-nowrap">
-              REASONS
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
+              Reasons
             </th>
-            <th className="px-4 py-2.5 text-left table-th whitespace-nowrap">
-              STATUS
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
+              Status
             </th>
-            <th className="px-4 py-2.5 text-center table-th whitespace-nowrap w-24">
-              ACTIONS
+            <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">
+              Actions
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-divider">
           {writeOffs.length === 0 ? (
             <tr>
               <td
                 colSpan={8}
-                className="px-5 py-8 text-center type-body text-ink-muted"
+                className="py-12 text-center type-body text-ink-muted"
               >
                 No stock write-off records found.
               </td>
@@ -111,7 +111,6 @@ export function SWOTable({
               const isPending = swo.status === "Pending Approval";
               const isApproved = swo.status === "Approved";
               const isRemoved = swo.status === "Removed";
-              const totalLots = swo.items.reduce((acc, it) => acc + it.lines.length, 0);
               const distinctReasons = Array.from(
                 new Set(
                   swo.items.flatMap((it) =>
@@ -142,7 +141,7 @@ export function SWOTable({
                 if (onReject) {
                   actions.push({
                     label: "Reject",
-                    icon: <XCircle className="w-4 h-4 text-status-red" />,
+                    icon: <XCircle className="w-4 h-4 text-destructive" />,
                     onClick: () => onReject(swo),
                     destructive: true,
                   });
@@ -162,7 +161,7 @@ export function SWOTable({
               if (isImsManager && isPending && onCancel) {
                 actions.push({
                   label: "Cancel Request",
-                  icon: <Ban className="w-4 h-4 text-status-red" />,
+                  icon: <Ban className="w-4 h-4 text-destructive" />,
                   onClick: () => onCancel(swo),
                   destructive: true,
                 });
@@ -180,31 +179,31 @@ export function SWOTable({
               }
 
               return (
-                <tr key={swo.writeOffId} className="table-row group">
+                <tr key={swo.writeOffId} className="hover:bg-page transition-colors group">
                   {/* SWO Number */}
-                  <td className="sticky left-0 z-10 min-w-[160px] w-44 px-4 py-3 table-td font-semibold text-ink whitespace-nowrap bg-surface group-hover:bg-subtle transition-colors border-r border-border shadow-sticky-col">
+                  <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[160px]">
                     <button
                       type="button"
                       onClick={() => onView(swo)}
-                      className="hover:underline text-left font-semibold text-ink cursor-pointer"
+                      className="hover:underline text-left font-medium text-primary cursor-pointer"
                     >
                       {swo.swoNumber}
                     </button>
                   </td>
 
                   {/* Request Date */}
-                  <td className="table-td text-ink-muted whitespace-nowrap">
+                  <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                     {fmtDate(swo.requestedAt)}
                   </td>
 
                   {/* Requested By */}
-                  <td className="table-td text-ink whitespace-nowrap">
+                  <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                     {swo.requestedByName || swo.requestedBy}
                   </td>
 
                   {/* Item */}
-                  <td className="table-td text-ink">
-                    <div className="font-medium text-ink">
+                  <td className="py-3 pr-4 type-body text-ink">
+                    <div className="text-ink">
                       {swo.items.map((it) => it.itemName).slice(0, 2).join(", ")}
                       {swo.items.length > 2 ? ` +${swo.items.length - 2} more` : ""}
                     </div>
@@ -216,12 +215,12 @@ export function SWOTable({
                   </td>
 
                   {/* Batch / Lot */}
-                  <td className="table-td text-ink whitespace-nowrap">
+                  <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                     {(() => {
                       const allLots = swo.items.flatMap((it) => it.lines.map((l) => l.lotCode));
                       return (
                         <>
-                          <div className="font-medium text-ink">
+                          <div className="text-ink tabular-nums">
                             {allLots.slice(0, 2).join(", ") || "—"}
                             {allLots.length > 2 ? ` +${allLots.length - 2} more` : ""}
                           </div>
@@ -236,27 +235,27 @@ export function SWOTable({
                   </td>
 
                   {/* Reasons */}
-                  <td className="table-td text-ink-muted">
+                  <td className="py-3 pr-4 type-body text-ink-muted">
                     <span className="line-clamp-1">
                       {distinctReasons.join(", ") || "—"}
                     </span>
                   </td>
 
                   {/* Status */}
-                  <td className="table-td whitespace-nowrap">
+                  <td className="py-3 pr-4 whitespace-nowrap">
                     <SWOStatusBadge status={swo.status} />
                   </td>
 
                   {/* Actions */}
-                  <td className="table-td text-center whitespace-nowrap">
+                  <td className="w-16 py-3 pl-4 text-center whitespace-nowrap">
                     {actions.length === 1 ? (
                       <button
                         type="button"
                         onClick={actions[0].onClick}
                         title="View Details"
-                        className="inline-flex size-8 items-center justify-center rounded-control border border-border bg-surface text-ink hover:bg-subtle transition-colors cursor-pointer"
+                        className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors cursor-pointer"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye size={18} />
                       </button>
                     ) : (
                       <DropdownMenu>
@@ -264,19 +263,19 @@ export function SWOTable({
                           <button
                             type="button"
                             aria-label={`Actions for ${swo.swoNumber}`}
-                            className="inline-flex size-8 items-center justify-center rounded-control border border-border bg-surface text-ink hover:bg-subtle transition-colors cursor-pointer"
+                            className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors focus:outline-none cursor-pointer"
                           >
-                            <MoreHorizontal className="w-4 h-4" />
+                            <MoreHorizontal size={18} />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56 rounded-inner p-1.5 shadow-modal">
+                        <DropdownMenuContent align="end" className="w-56">
                           {actions.map((act, idx) => (
                             <DropdownMenuItem
                               key={idx}
                               onClick={act.onClick}
-                              className={`flex items-center gap-2.5 rounded-sm px-2.5 py-2 type-body cursor-pointer ${
+                              className={`cursor-pointer type-body-secondary ${
                                 act.destructive
-                                  ? "text-status-red focus:text-status-red"
+                                  ? "text-destructive focus:text-destructive"
                                   : "text-ink"
                               }`}
                             >

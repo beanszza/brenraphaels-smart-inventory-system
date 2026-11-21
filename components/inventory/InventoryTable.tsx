@@ -108,51 +108,51 @@ export default function InventoryTable({
   };
 
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-card border border-border bg-surface">
-      <table className="w-full">
+    <div className="overflow-x-auto custom-scrollbar">
+      <table className="w-full min-w-[820px] border-collapse">
         <thead>
-          <tr className="table-head-row">
-            <th className="sticky left-0 z-20 w-8 px-2 py-2.5 text-center bg-subtle"></th>
-            <th className="sticky left-8 z-20 w-12 px-3 py-2.5 text-left table-th whitespace-nowrap bg-subtle border-r border-border shadow-sticky-col">
+          <tr className="border-b border-divider">
+            <th className="w-8 pb-2.5 pt-1 pr-2 text-center"></th>
+            <th className="w-12 pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
               No.
             </th>
-            <th className="px-3 py-2.5 text-left table-th whitespace-nowrap min-w-[200px]">
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[200px]">
               Item Name
             </th>
             {isFinishedGoods ? (
-              <th className="px-3 py-2.5 text-left table-th whitespace-nowrap">
+              <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
                 Variant
               </th>
             ) : (
-              <th className="px-3 py-2.5 text-left table-th whitespace-nowrap">
+              <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
                 UOM
               </th>
             )}
-            <th className="px-3 py-2.5 text-left table-th whitespace-nowrap">
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
               Current Stock
             </th>
-            <th className="px-3 py-2.5 text-left table-th whitespace-nowrap">
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
               Reserved
             </th>
-            <th className="px-3 py-2.5 text-left table-th whitespace-nowrap min-w-[180px]">
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[180px]">
               Stock Level
             </th>
-            <th className="px-3 py-2.5 text-left table-th whitespace-nowrap">
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
               Status
             </th>
             {canShowActions && (
-              <th className="px-3 py-2.5 text-center table-th whitespace-nowrap">
+              <th className="pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">
                 Actions
               </th>
             )}
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-divider">
           {items.length === 0 ? (
             <tr>
               <td
                 colSpan={totalColumns}
-                className="px-5 py-12 text-center type-body font-medium text-ink-muted"
+                className="py-12 text-center type-body text-ink-muted"
               >
                 No Inventory Records Found
               </td>
@@ -188,13 +188,20 @@ export default function InventoryTable({
                   ? "Low Stock"
                   : "In Stock";
 
+              const barColorClass =
+                statusText === "Out of Stock"
+                  ? "bg-destructive"
+                  : statusText === "Low Stock"
+                  ? "bg-warning"
+                  : "bg-success";
+
               return (
                 <React.Fragment key={item.inventoryId}>
                   <tr
                     onClick={() => toggleRow(item)}
-                    className="table-row cursor-pointer select-none group"
+                    className="hover:bg-page transition-colors cursor-pointer select-none group"
                   >
-                    <td className="sticky left-0 z-10 w-8 px-2 py-3 text-center text-ink-muted group-hover:text-ink bg-surface group-hover:bg-subtle transition-colors">
+                    <td className="w-8 py-3 pr-2 text-center text-ink-muted group-hover:text-ink">
                       <button
                         type="button"
                         aria-label={`Show lots for ${item.itemName}`}
@@ -211,67 +218,63 @@ export default function InventoryTable({
                         )}
                       </button>
                     </td>
-                    <td className="sticky left-8 z-10 w-12 px-3 py-3 table-td font-semibold text-ink whitespace-nowrap bg-surface group-hover:bg-subtle transition-colors border-r border-border shadow-sticky-col tabular-nums">
+                    <td className="w-12 py-3 pr-4 type-body text-ink-muted whitespace-nowrap tabular-nums">
                       {(currentPage - 1) * pageSize + idx + 1}
                     </td>
-                    <td className="table-td text-ink min-w-[200px]">
-                      <span className="font-semibold text-ink">
-                        {item.itemName}
-                      </span>
+                    <td className="py-3 pr-4 type-body font-medium text-primary min-w-[200px] whitespace-nowrap">
+                      {item.itemName}
                     </td>
                     {isFinishedGoods ? (
-                      <td className="table-td text-ink whitespace-nowrap">
+                      <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                         {item.variantName ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-pill type-caption font-medium bg-subtle border border-border text-ink">
-                            {item.variantName}
-                          </span>
+                          <span>{item.variantName}</span>
                         ) : (
-                          <span className="text-ink-muted font-mono">—</span>
+                          <span className="text-ink-muted">—</span>
                         )}
                       </td>
                     ) : (
-                      <td className="table-td text-ink-muted">
+                      <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                         {item.uomName || "—"}
                       </td>
                     )}
-                    <td className="table-td font-semibold text-ink tabular-nums">
+                    <td className="py-3 pr-4 type-body font-medium text-ink tabular-nums whitespace-nowrap">
                       {item.currentStock.toLocaleString(undefined, {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 2,
                       })}
                     </td>
-                    <td className="table-td font-semibold font-mono text-ink tabular-nums">
+                    <td className="py-3 pr-4 type-body text-ink tabular-nums whitespace-nowrap">
                       {Number(item.reservedStock || 0).toLocaleString(undefined, {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 2,
                       })}
                     </td>
-                    <td className="table-td">
-                      <div className="w-40 space-y-1">
+                    <td className="py-3 pr-4">
+                      <div className="w-36 space-y-1">
                         <div className="flex items-center justify-between type-caption">
-                          <span className="font-semibold text-ink tabular-nums">
+                          <span className="font-medium text-ink tabular-nums">
                             {percentage}%
                           </span>
                           <span className="type-caption text-ink-muted tabular-nums">
                             Max: {item.maxStockLevel}
                           </span>
                         </div>
-                        <div className="h-2 w-full bg-subtle rounded-pill overflow-hidden">
+                        <div className="h-1.5 w-full bg-subtle rounded-pill overflow-hidden">
                           <div
-                            className="h-full bg-ink rounded-pill transition-all duration-300"
-                            style={{ width: `${percentage}%` }}
+                            className={`h-full ${barColorClass} rounded-pill transition-all duration-300`}
+                            style={{ width: `${Math.max(percentage, item.currentStock === 0 ? 3 : 0)}%` }}
                           />
                         </div>
                       </div>
                     </td>
-                    <td className="table-td whitespace-nowrap">
+                    <td className="py-3 pr-4 whitespace-nowrap">
                       <StatusBadge
                         status={statusText}
                         className={INVENTORY_STATUS_BADGE_CLASSES[statusText]}
                       />
                     </td>
                     {canShowActions && (
-                      <td className="table-td text-center">
+                      <td className="py-3 pl-4 text-center whitespace-nowrap">
                         {isLow ? (
                           <Button
                             size="sm"
@@ -279,12 +282,12 @@ export default function InventoryTable({
                               e.stopPropagation();
                               onOrderNow?.(item);
                             }}
-                            className="h-7 px-3 type-label-button font-medium bg-primary text-primary-foreground hover:bg-primary-hover transition-colors cursor-pointer rounded-pill"
+                            className="h-7 px-3 type-label-button-sm font-medium bg-primary text-on-brand hover:bg-primary-hover transition-colors cursor-pointer rounded-control shadow-none"
                           >
                             {isFinishedGoods ? "Produce Now" : "Order Now"}
                           </Button>
                         ) : (
-                          <span className="text-ink-muted font-mono">—</span>
+                          <span className="text-ink-muted">—</span>
                         )}
                       </td>
                     )}
@@ -292,7 +295,7 @@ export default function InventoryTable({
 
                   {/* Expandable Lot Detail Row */}
                   {isExpanded && (
-                    <tr className="bg-subtle/40 border-b border-border">
+                    <tr className="bg-page/70 border-b border-divider">
                       <td colSpan={totalColumns} className="p-4 sm:p-5">
                         <div className="rounded-card border border-border bg-surface p-4 space-y-3">
                           <div className="flex items-center justify-between border-b border-divider pb-2">
@@ -331,35 +334,35 @@ export default function InventoryTable({
                             const hasAnyExpiry = availableLots.some((lot) => Boolean(lot.expiryDate));
                             return (
                             <div className="overflow-x-auto">
-                              <table className="w-full">
+                              <table className="w-full border-collapse">
                                 <thead>
-                                  <tr className="table-head-row">
-                                    <th className="px-3 py-2 text-left table-th">
+                                  <tr className="border-b border-divider">
+                                    <th className="pb-2 pt-1 pr-3 text-left type-table-header text-ink-muted">
                                       Lot Code
                                     </th>
-                                    <th className="px-3 py-2 text-left table-th">
+                                    <th className="pb-2 pt-1 pr-3 text-left type-table-header text-ink-muted">
                                       {isFinishedGoods ? "Production Date" : "Delivered Date"}
                                     </th>
                                     {hasAnyExpiry && (
-                                      <th className="px-3 py-2 text-left table-th">
+                                      <th className="pb-2 pt-1 pr-3 text-left type-table-header text-ink-muted">
                                         Expiry Date
                                       </th>
                                     )}
-                                    <th className="px-3 py-2 text-right table-th">
+                                    <th className="pb-2 pt-1 pr-3 text-right type-table-header text-ink-muted">
                                       Qty Remaining
                                     </th>
-                                    <th className="px-3 py-2 text-right table-th">
+                                    <th className="pb-2 pt-1 pr-3 text-right type-table-header text-ink-muted">
                                       Reserved
                                     </th>
-                                    <th className="px-3 py-2 text-left table-th">
+                                    <th className="pb-2 pt-1 pr-3 text-left type-table-header text-ink-muted">
                                       % Share
                                     </th>
-                                    <th className="px-3 py-2 text-center table-th">
+                                    <th className="pb-2 pt-1 pl-3 text-center type-table-header text-ink-muted">
                                       Status
                                     </th>
                                   </tr>
                                 </thead>
-                                <tbody className="divide-y divide-border">
+                                <tbody className="divide-y divide-divider">
                                   {availableLots.map((lot) => {
                                     const resQty = Number(lot.reservedQuantity || 0);
                                     const sharePercent =
@@ -377,20 +380,20 @@ export default function InventoryTable({
                                     return (
                                       <tr
                                         key={lot.lotId}
-                                        className="table-row"
+                                        className="hover:bg-page transition-colors"
                                       >
-                                        <td className="table-td font-mono font-medium text-ink">
+                                        <td className="py-2.5 pr-3 type-table-cell font-medium text-primary tabular-nums">
                                           {lot.lotCode}
                                         </td>
-                                        <td className="table-td text-ink-muted">
+                                        <td className="py-2.5 pr-3 type-table-cell text-ink">
                                           {formatDate(lot.receivedDate)}
                                         </td>
                                         {hasAnyExpiry && (
-                                          <td className="table-td">
+                                          <td className="py-2.5 pr-3 type-table-cell">
                                             {getExpiryDisplay(lot)}
                                           </td>
                                         )}
-                                        <td className="table-td text-right font-mono font-semibold text-ink tabular-nums">
+                                        <td className="py-2.5 pr-3 text-right type-table-cell font-medium text-ink tabular-nums">
                                           {lot.quantityRemaining.toLocaleString(
                                             undefined,
                                             {
@@ -404,20 +407,20 @@ export default function InventoryTable({
                                             </span>
                                           )}
                                         </td>
-                                        <td className="table-td text-right font-mono font-semibold text-ink tabular-nums">
+                                        <td className="py-2.5 pr-3 text-right type-table-cell text-ink tabular-nums">
                                           {resQty.toLocaleString(undefined, {
                                             minimumFractionDigits: 0,
                                             maximumFractionDigits: 2,
                                           })}
                                         </td>
-                                        <td className="table-td">
+                                        <td className="py-2.5 pr-3">
                                           <div className="space-y-1 w-24">
-                                            <div className="flex justify-between type-caption text-ink-muted font-mono">
+                                            <div className="flex justify-between type-caption text-ink-muted tabular-nums">
                                               <span>{sharePercent}%</span>
                                             </div>
                                             <div className="h-1.5 w-full bg-subtle rounded-pill overflow-hidden">
                                               <div
-                                                className="h-full bg-ink rounded-pill transition-all duration-300"
+                                                className="h-full bg-primary rounded-pill transition-all duration-300"
                                                 style={{
                                                   width: `${Math.min(
                                                     sharePercent,
@@ -428,7 +431,7 @@ export default function InventoryTable({
                                             </div>
                                           </div>
                                         </td>
-                                        <td className="table-td text-center whitespace-nowrap">
+                                        <td className="py-2.5 pl-3 text-center whitespace-nowrap">
                                           <StatusBadge status={lot.status} />
                                         </td>
                                       </tr>

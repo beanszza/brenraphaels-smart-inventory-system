@@ -293,7 +293,7 @@ export default function ViewInventory({
   };
 
   return (
-    <div className="page-container space-y-6 animate-page-in">
+    <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
       <PageHeader
         title="Inventory Management"
         description="Monitor real-time warehouse stocks, ingredients, raw materials, and finished goods"
@@ -306,9 +306,9 @@ export default function ViewInventory({
             <button
               type="button"
               onClick={() => setMainTab("inventory")}
-              className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap outline-none ${
                 mainTab === "inventory"
-                  ? "border-primary text-primary"
+                  ? "border-primary text-primary -mb-px"
                   : "border-transparent text-ink-muted hover:text-ink"
               }`}
             >
@@ -318,19 +318,19 @@ export default function ViewInventory({
             <button
               type="button"
               onClick={() => setMainTab("write-off")}
-              className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap outline-none ${
                 mainTab === "write-off"
-                  ? "border-primary text-primary"
+                  ? "border-primary text-primary -mb-px"
                   : "border-transparent text-ink-muted hover:text-ink"
               }`}
             >
               <span>STOCK WRITE-OFF</span>
               {pendingRequestsCount > 0 && (
                 <span
-                  className={`px-1.5 py-0.5 rounded-pill type-caption font-semibold ${
+                  className={`px-1.5 py-0.5 rounded-pill type-caption font-semibold tabular-nums ${
                     mainTab === "write-off"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-subtle text-ink"
+                      ? "bg-status-purple-bg text-primary"
+                      : "bg-subtle text-ink-muted"
                   }`}
                 >
                   {pendingRequestsCount}
@@ -358,11 +358,12 @@ export default function ViewInventory({
             categoryCounts={categoryCounts}
           />
 
-          {/* Dynamic Category Tabs */}
-          <div className="border-b border-divider">
-            <div className="flex items-center gap-2 overflow-x-auto">
+          {/* Dynamic Category Sub-tabs */}
+          <div className="overflow-x-auto">
+            <div className="flex items-center gap-1 min-w-max">
               {categoryTabs.map((tab) => {
                 const isActive = categoryFilter === tab.id;
+                const displayLabel = tab.id === "Tools and Supplies" ? "Tools & Supplies" : tab.id;
                 return (
                   <button
                     key={tab.id}
@@ -372,109 +373,135 @@ export default function ViewInventory({
                       setProductFilter("All");
                       setPage(1);
                     }}
-                    className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    aria-pressed={isActive}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
                       isActive
-                        ? "border-ink text-ink"
-                        : "border-transparent text-ink-muted hover:text-ink"
+                        ? "bg-status-purple-bg text-primary"
+                        : "text-ink-muted hover:text-ink hover:bg-subtle"
                     }`}
                   >
-                    <span>{tab.label}</span>
+                    <span>{displayLabel}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Search, Product Filter (Finished Goods only), and Category Filter Bar */}
-          <div className="rounded-card border border-border bg-surface p-3">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-sm">
-              <SearchInput
-                containerClassName="flex-1"
-                aria-label="Search inventory"
-                placeholder="Search by name or Supply No (e.g. SPL-0001)..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
+          {/* Standalone Filters & Search Row */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Product Filter Dropdown: Show strictly only when on Finished Goods */}
+            {categoryFilter === "Finished Goods" && availableFinishedProducts.length > 0 && (
+              <Select
+                value={productFilter}
+                onValueChange={(val) => {
+                  setProductFilter(val);
                   setPage(1);
                 }}
-              />
-              <div className="flex flex-wrap items-center gap-sm shrink-0">
-                {/* Product Filter Dropdown: Show strictly only when on Finished Goods */}
-                {categoryFilter === "Finished Goods" && availableFinishedProducts.length > 0 && (
-                  <Select
-                    value={productFilter}
-                    onValueChange={(val) => {
-                      setProductFilter(val);
-                      setPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="h-10 min-w-[180px] w-auto rounded-control border border-border bg-surface px-3.5 type-body font-medium text-ink shadow-xs focus:ring-1 focus:ring-ring">
+              >
+                <SelectTrigger className="h-[38px] w-full sm:w-auto sm:min-w-[220px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
+                  <span className="truncate">
+                    <span className="text-ink-muted font-normal mr-1.5">Product:</span>
+                    <span className="font-medium text-ink">
                       <SelectValue placeholder="All Products" />
-                    </SelectTrigger>
-                    <SelectContent className="min-w-[180px]">
-                      <SelectItem value="All">All Products</SelectItem>
-                      {availableFinishedProducts.map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {p}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-
-                {/* Dynamic Category Selector */}
-                <Select
-                  value={categoryFilter}
-                  onValueChange={(val) => {
-                    setCategoryFilter(val);
-                    setProductFilter("All");
-                    setPage(1);
-                  }}
+                    </span>
+                  </span>
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  sideOffset={4}
+                  avoidCollisions={false}
+                  className="min-w-[220px] max-h-72"
                 >
-                  <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-control border border-border bg-surface px-3.5 type-body font-medium text-ink shadow-xs focus:ring-1 focus:ring-ring">
-                    <SelectValue placeholder="Select Category" />
-                  </SelectTrigger>
-                  <SelectContent className="min-w-[210px]">
-                    {categoryTabs.map((tab) => (
-                      <SelectItem key={tab.id} value={tab.id}>
-                        {tab.id === "Tools and Supplies" ? "Tools & Supplies" : tab.id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <SelectItem value="All">All Products</SelectItem>
+                  {availableFinishedProducts.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
-                {isAdmin && (
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-10 rounded-control border-border bg-surface px-4 py-2 type-label-button text-ink hover:bg-subtle cursor-pointer"
-                  >
-                    <Link href="/inventory/logs">
-                      <History className="w-4 h-4 mr-1.5" />
-                      Transaction History
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            </div>
+            {/* Dynamic Category Selector */}
+            <Select
+              value={categoryFilter}
+              onValueChange={(val) => {
+                setCategoryFilter(val);
+                setProductFilter("All");
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-[38px] w-full sm:w-auto sm:min-w-[230px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
+                <span className="truncate">
+                  <span className="text-ink-muted font-normal mr-1.5">Category:</span>
+                  <span className="font-medium text-ink">
+                    <SelectValue placeholder="Select Category" />
+                  </span>
+                </span>
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                sideOffset={4}
+                avoidCollisions={false}
+                className="min-w-[230px] max-h-72"
+              >
+                {categoryTabs.map((tab) => (
+                  <SelectItem key={tab.id} value={tab.id}>
+                    {tab.id === "Tools and Supplies" ? "Tools & Supplies" : tab.id}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <SearchInput
+              containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
+              aria-label="Search inventory"
+              placeholder="Search item name or code..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+              }}
+            />
+
+            {isAdmin && (
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="sm:ml-auto h-9 rounded-control border border-border bg-surface px-3.5 py-2 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
+              >
+                <Link href="/inventory/logs">
+                  <History className="w-4 h-4 mr-1.5" />
+                  Transaction History
+                </Link>
+              </Button>
+            )}
           </div>
 
-          {/* Table with progress bar & order now */}
-          <InventoryTable
-            items={paginatedInventories}
-            currentPage={page}
-            pageSize={pageSize}
-            onOrderNow={canPerformActions ? handleOrderNow : undefined}
-            isFinishedGoods={categoryFilter === "Finished Goods"}
-            showActions={canPerformActions}
-          />
+          {/* Padded Table Card */}
+          <div className="rounded-card border border-border bg-surface p-5">
+            <InventoryTable
+              items={paginatedInventories}
+              currentPage={page}
+              pageSize={pageSize}
+              onOrderNow={canPerformActions ? handleOrderNow : undefined}
+              isFinishedGoods={categoryFilter === "Finished Goods"}
+              showActions={canPerformActions}
+            />
 
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            totalCount={totalCount}
-            onPageChange={setPage}
-          />
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              onPageChange={setPage}
+              embedded
+            />
+          </div>
         </>
       )}
 
