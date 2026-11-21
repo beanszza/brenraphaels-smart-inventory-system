@@ -118,47 +118,45 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
   ];
 
   return (
-    <div className="space-y-4">
-      {/* Top action row */}
+    <div className="space-y-5 animate-page-in">
+      {/* Top action & subtab row */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Subtab Pill Navigation */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          {tabs.map((t) => {
-            const isActive = activeSubTab === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => {
-                  setActiveSubTab(t.id);
-                  setPage(1);
-                }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-button-primary text-text-inverse shadow-card"
-                    : "text-text-muted hover:text-text-primary hover:bg-surface-secondary/50"
-                }`}
-              >
-                <span>{t.label}</span>
-                <span
-                  className={`px-1.5 py-0.5 rounded-pill type-caption font-medium ${
-                    isActive ? "bg-surface text-text-primary" : "bg-surface-secondary text-text-muted"
+        <div className="overflow-x-auto">
+          <div className="flex items-center gap-1 min-w-max">
+            {tabs.map((t) => {
+              const isActive = activeSubTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveSubTab(t.id);
+                    setPage(1);
+                  }}
+                  aria-pressed={isActive}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
+                    isActive
+                      ? "bg-status-purple-bg text-primary"
+                      : "text-ink-muted hover:text-ink hover:bg-subtle"
                   }`}
                 >
-                  {t.count}
-                </span>
-              </button>
-            );
-          })}
+                  <span>{t.label}</span>
+                  <span className="tabular-nums">{t.count}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="outline"
+            size="sm"
             onClick={fetchDiscrepancies}
             disabled={loading}
-            className="h-10 rounded-control border border-divider bg-surface px-4 py-2 type-body font-semibold text-text-primary hover:bg-surface-secondary cursor-pointer"
+            className="flex items-center justify-center gap-1.5 h-9 rounded-control border border-border bg-surface px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors shadow-none cursor-pointer"
           >
             Refresh
           </Button>
@@ -166,10 +164,11 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
             <Button
               asChild
               variant="outline"
-              className="h-10 rounded-control border border-divider bg-surface px-4 py-2 type-body font-semibold text-text-primary hover:bg-surface-secondary cursor-pointer"
+              size="sm"
+              className="flex items-center justify-center gap-1.5 h-9 rounded-control border border-border bg-surface px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors shadow-none cursor-pointer"
             >
               <Link href="/goods-receiving/logs">
-                <History className="w-4 h-4 mr-1.5" />
+                <History className="w-4 h-4" />
                 Transaction History
               </Link>
             </Button>
@@ -177,77 +176,80 @@ export default function DiscrepancyTab({ initialDiscrepancies }: { initialDiscre
         </div>
       </div>
 
-      {/* Search & Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-card border border-divider bg-surface p-3">
-        <div className="flex flex-1 items-center gap-2">
-          <SearchInput
-            aria-label="Search records"
-            containerClassName="flex-1"
-            placeholder="Search by discrepancy, Goods Receipt Note, Purchase Order, item, or supplier..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
+      {/* Standalone Filters & Search Row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={supplierFilter}
+          onValueChange={(val) => {
+            setSupplierFilter(val);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger aria-label="Filter by supplier" className="h-[38px] w-full sm:w-auto sm:min-w-[230px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
+            <span className="truncate">
+              <span className="text-ink-muted font-normal mr-1.5">Supplier:</span>
+              <span className="font-medium text-ink">
+                <SelectValue placeholder="All Suppliers" />
+              </span>
+            </span>
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            side="bottom"
+            align="start"
+            sideOffset={4}
+            avoidCollisions={false}
+            className="min-w-[230px] max-h-72"
+          >
+            <SelectItem value="All">All Suppliers</SelectItem>
+            {uniqueSuppliers.map((supp) => (
+              <SelectItem key={supp} value={supp}>
+                {supp}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <SearchInput
+          aria-label="Search records"
+          containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
+          placeholder="Search discrepancy, GRN, or item..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
               setPage(1);
             }}
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearch("");
-                setPage(1);
-              }}
-              className="type-caption text-text-muted hover:text-text-primary font-medium px-2"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-
-        {/* Filters */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center">
-            <Select
-              value={supplierFilter}
-              onValueChange={(val) => {
-                setSupplierFilter(val);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-control border border-divider bg-surface px-3 type-body font-medium text-text-primary shadow-card focus:border-border-focus">
-                <SelectValue placeholder="All Suppliers" />
-              </SelectTrigger>
-              <SelectContent align="end" className="type-caption z-[9999]">
-                <SelectItem value="All">All Suppliers</SelectItem>
-                {uniqueSuppliers.map((supp) => (
-                  <SelectItem key={supp} value={supp}>
-                    {supp}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+            className="type-caption text-ink-muted hover:text-ink font-medium px-2 cursor-pointer"
+          >
+            Clear
+          </button>
+        )}
       </div>
 
-      {/* Table */}
-      <DiscrepancyTable
-        discrepancies={paginatedList}
-        loading={loading}
-        onSelectDiscrepancy={handleSelect}
-      />
+      {/* Padded Table Card */}
+      <div className="rounded-card border border-border bg-surface p-5">
+        <DiscrepancyTable
+          discrepancies={paginatedList}
+          loading={loading}
+          onSelectDiscrepancy={handleSelect}
+        />
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="p-4 border-t border-divider">
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            totalCount={totalCount}
-            onPageChange={setPage}
-          />
-        </div>
-      )}
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          onPageChange={setPage}
+          embedded
+        />
+      </div>
 
       {/* Details / Resolution Modal */}
       <DiscrepancyDetailsModal

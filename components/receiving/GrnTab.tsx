@@ -177,22 +177,22 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
   };
 
   return (
-    <div className="space-y-6 animate-page-in">
+    <div className="space-y-5 animate-page-in">
       {/* Top Header Controls */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="type-page-title text-text-primary">Receive Deliveries</h2>
-          <p className="mt-1 type-body text-text-muted">
+          <h2 className="type-page-title text-ink">Receive Deliveries</h2>
+          <p className="mt-1 type-body text-ink-muted">
             Record physical counts and complete Quality Assurance review for incoming deliveries.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-table-header text-text-primary hover:bg-surface-hover transition-colors h-10"
+            className="flex items-center justify-center gap-1.5 rounded-control bg-surface border border-border px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-9 shadow-none cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
@@ -202,7 +202,7 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
               asChild
               variant="outline"
               size="sm"
-              className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-table-header text-text-primary hover:bg-surface-hover transition-colors h-10 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 rounded-control bg-surface border border-border px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-9 shadow-none cursor-pointer"
             >
               <Link href="/goods-receiving/logs">
                 <History className="w-4 h-4" /> Transaction History
@@ -213,95 +213,31 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
           <Button
             type="button"
             onClick={() => handleCreateGrn(undefined)}
-            className="flex items-center justify-center gap-2 rounded-control bg-button-primary px-5 py-2.5 type-label-button text-text-inverse hover:bg-button-primary-hover transition-colors shadow-sm h-10"
+            className="flex items-center justify-center gap-1.5 rounded-control bg-primary px-3.5 py-2 type-label-button text-on-brand hover:bg-primary-hover transition-colors h-9 shadow-none cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Create Goods Receipt Note
           </Button>
         </div>
       </div>
 
-      {/* Full-width Search Bar & Filter */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center rounded-card border border-divider bg-surface p-3">
-        <div className="flex flex-1 items-center gap-2">
-          <SearchInput
-            aria-label="Search records"
-            containerClassName="flex-1"
-            placeholder={
-              activeSubTab === "pending"
-                ? "Search arrived deliveries by Delivery# or Supplier..."
-                : "Search posted receipts by Goods Receipt Note#, Delivery#, or Supplier..."
-            }
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearch("");
-                setPage(1);
-              }}
-              className="type-caption text-text-muted hover:text-text-primary font-medium pr-2"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-
-        {/* Filters */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center">
-            <Select
-              value={supplierFilter}
-              onValueChange={(val) => {
-                setSupplierFilter(val);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-control border border-divider bg-surface px-3 type-body text-text-primary shadow-sm focus:ring-1 focus:ring-ring">
-                <SelectValue placeholder="All Suppliers" />
-              </SelectTrigger>
-              <SelectContent align="end" className="type-body bg-surface border-divider z-[9999]">
-                <SelectItem value="All">All Suppliers</SelectItem>
-                {uniqueSuppliers.map((supp) => (
-                  <SelectItem key={supp} value={supp}>
-                    {supp}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
       {/* Subtab Pill Navigation */}
-      <div className="border-b border-divider overflow-x-auto">
-        <div className="flex items-center gap-1.5 min-w-max pb-2">
+      <div className="overflow-x-auto">
+        <div className="flex items-center gap-1 min-w-max">
           <button
             type="button"
             onClick={() => {
               setActiveSubTab("pending");
               setPage(1);
             }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
+            aria-pressed={activeSubTab === "pending"}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
               activeSubTab === "pending"
-                ? "bg-button-primary text-text-inverse shadow-sm"
-                : "text-text-muted hover:text-text-primary hover:bg-surface-hover"
+                ? "bg-status-purple-bg text-primary"
+                : "text-ink-muted hover:text-ink hover:bg-subtle"
             }`}
           >
             <span>Pending Receiving</span>
-            <span
-              className={`px-1.5 py-0.5 rounded-pill type-caption font-mono font-medium ${
-                activeSubTab === "pending"
-                  ? "bg-surface text-text-primary"
-                  : "bg-surface-muted text-text-muted"
-              }`}
-            >
-              {counts.pending}
-            </span>
+            <span className="tabular-nums">{counts.pending}</span>
           </button>
 
           <button
@@ -310,48 +246,105 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
               setActiveSubTab("posted");
               setPage(1);
             }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
+            aria-pressed={activeSubTab === "posted"}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
               activeSubTab === "posted"
-                ? "bg-button-primary text-text-inverse shadow-sm"
-                : "text-text-muted hover:text-text-primary hover:bg-surface-hover"
+                ? "bg-status-purple-bg text-primary"
+                : "text-ink-muted hover:text-ink hover:bg-subtle"
             }`}
           >
             <span>Posted GRNs</span>
-            <span
-              className={`px-1.5 py-0.5 rounded-pill type-caption font-mono font-medium ${
-                activeSubTab === "posted"
-                  ? "bg-surface text-text-primary"
-                  : "bg-surface-muted text-text-muted"
-              }`}
-            >
-              {counts.posted}
-            </span>
+            <span className="tabular-nums">{counts.posted}</span>
           </button>
         </div>
       </div>
 
-      {/* Active Table Content */}
-      {activeSubTab === "pending" ? (
-        <PendingReceivingTable
-          deliveries={paginatedDeliveries}
-          loading={loading}
-          onViewDelivery={handleViewDelivery}
-        />
-      ) : (
-        <GrnTable
-          grns={paginatedGrns}
-          loading={loading}
-          onSelectGrn={handleSelectGrn}
-        />
-      )}
+      {/* Standalone Filters & Search Row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={supplierFilter}
+          onValueChange={(val) => {
+            setSupplierFilter(val);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger aria-label="Filter by supplier" className="h-[38px] w-full sm:w-auto sm:min-w-[230px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
+            <span className="truncate">
+              <span className="text-ink-muted font-normal mr-1.5">Supplier:</span>
+              <span className="font-medium text-ink">
+                <SelectValue placeholder="All Suppliers" />
+              </span>
+            </span>
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            side="bottom"
+            align="start"
+            sideOffset={4}
+            avoidCollisions={false}
+            className="min-w-[230px] max-h-72"
+          >
+            <SelectItem value="All">All Suppliers</SelectItem>
+            {uniqueSuppliers.map((supp) => (
+              <SelectItem key={supp} value={supp}>
+                {supp}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      {/* Pagination */}
-      <Pagination
-        currentPage={page}
-        totalPages={totalPages}
-        totalCount={totalCount}
-        onPageChange={setPage}
-      />
+        <SearchInput
+          aria-label="Search records"
+          containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
+          placeholder={
+            activeSubTab === "pending"
+              ? "Search delivery or supplier..."
+              : "Search GRN, delivery, or supplier..."
+          }
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setPage(1);
+            }}
+            className="type-caption text-ink-muted hover:text-ink font-medium px-2 cursor-pointer"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Padded Table Card */}
+      <div className="rounded-card border border-border bg-surface p-5">
+        {activeSubTab === "pending" ? (
+          <PendingReceivingTable
+            deliveries={paginatedDeliveries}
+            loading={loading}
+            onViewDelivery={handleViewDelivery}
+          />
+        ) : (
+          <GrnTable
+            grns={paginatedGrns}
+            loading={loading}
+            onSelectGrn={handleSelectGrn}
+          />
+        )}
+
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          onPageChange={setPage}
+          embedded
+        />
+      </div>
 
       {/* Delivery Details Modal (read-only) */}
       {deliveryDetailsOpen && (

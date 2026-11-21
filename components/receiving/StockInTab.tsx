@@ -95,31 +95,33 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
   }, [searchFiltered, page, pageSize]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 animate-page-in">
       {/* Top action bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Committed Sub-Tab Pill */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setPage(1)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer bg-button-primary text-text-inverse shadow-card"
-          >
-            <span>Committed</span>
-            <span className="px-1.5 py-0.5 rounded-pill type-caption font-medium bg-surface text-text-primary">
-              {committedStockIns.length}
-            </span>
-          </button>
+        <div className="overflow-x-auto">
+          <div className="flex items-center gap-1 min-w-max">
+            <button
+              type="button"
+              onClick={() => setPage(1)}
+              aria-pressed={true}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap bg-status-purple-bg text-primary"
+            >
+              <span>Committed</span>
+              <span className="tabular-nums">{committedStockIns.length}</span>
+            </button>
+          </div>
         </div>
 
-        {/* Action Button */}
-        <div className="flex items-center gap-2">
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="outline"
+            size="sm"
             onClick={fetchStockIns}
             disabled={loading}
-            className="h-10 px-4 type-body font-semibold rounded-control border border-divider bg-surface hover:bg-surface-secondary text-text-primary flex items-center gap-2 cursor-pointer shadow-card"
+            className="h-9 px-3.5 py-2 type-label-button rounded-control border border-border bg-surface hover:bg-subtle text-ink flex items-center gap-1.5 cursor-pointer shadow-none"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -128,7 +130,8 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
             <Button
               asChild
               variant="outline"
-              className="h-10 px-4 type-body font-semibold rounded-control border border-divider bg-surface hover:bg-surface-secondary text-text-primary flex items-center gap-2 cursor-pointer shadow-card"
+              size="sm"
+              className="h-9 px-3.5 py-2 type-label-button rounded-control border border-border bg-surface hover:bg-subtle text-ink flex items-center gap-1.5 cursor-pointer shadow-none"
             >
               <Link href="/goods-receiving/logs">
                 <History className="w-4 h-4" />
@@ -139,7 +142,7 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
           <Button
             type="button"
             onClick={() => setCreateModalOpen(true)}
-            className="h-10 px-5 type-body font-semibold rounded-control bg-button-primary text-text-inverse hover:bg-button-primary/85 flex items-center gap-2 cursor-pointer shadow-card"
+            className="h-9 px-3.5 py-2 type-label-button rounded-control bg-primary text-on-brand hover:bg-primary-hover flex items-center gap-1.5 cursor-pointer shadow-none"
           >
             <Plus className="w-4 h-4" />
             Create Stock-In
@@ -147,140 +150,151 @@ export default function StockInTab({ initialStockIns }: { initialStockIns: Stock
         </div>
       </div>
 
-      {/* Search & Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-card border border-divider bg-surface p-3">
+      {/* Standalone Filters & Search Row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={supplierFilter}
+          onValueChange={(val) => {
+            setSupplierFilter(val);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger aria-label="Filter by supplier" className="h-[38px] w-full sm:w-auto sm:min-w-[230px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
+            <span className="truncate">
+              <span className="text-ink-muted font-normal mr-1.5">Supplier:</span>
+              <span className="font-medium text-ink">
+                <SelectValue placeholder="All Suppliers" />
+              </span>
+            </span>
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            side="bottom"
+            align="start"
+            sideOffset={4}
+            avoidCollisions={false}
+            className="min-w-[230px] max-h-72"
+          >
+            <SelectItem value="All">All Suppliers</SelectItem>
+            {uniqueSuppliers.map((supp) => (
+              <SelectItem key={supp} value={supp}>
+                {supp}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         <SearchInput
           aria-label="Search records"
-          containerClassName="flex-1"
-          placeholder="Search by Stock-In number, Goods Receipt Note, or supplier..."
+          containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
+          placeholder="Search stock-in, GRN, or supplier..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(1);
           }}
         />
-
-        {/* Filters */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center">
-            <Select
-              value={supplierFilter}
-              onValueChange={(val) => {
-                setSupplierFilter(val);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-control border border-divider bg-surface px-3 type-body font-medium text-text-primary shadow-card focus:border-border-focus">
-                <SelectValue placeholder="All Suppliers" />
-              </SelectTrigger>
-              <SelectContent align="end" className="type-caption z-[9999]">
-                <SelectItem value="All">All Suppliers</SelectItem>
-                {uniqueSuppliers.map((supp) => (
-                  <SelectItem key={supp} value={supp}>
-                    {supp}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
       </div>
 
-      {/* Table Section */}
+      {/* Padded Table Card */}
       {loading ? (
         <ReceivingSkeleton />
       ) : (
-        <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
-          <table className="w-full border-collapse">
-            <thead className="border-b border-divider bg-surface-secondary">
-              <tr className="table-head-row text-left whitespace-nowrap">
-                <th className="sticky left-0 z-20 bg-surface-secondary table-th px-4 py-3 min-w-[150px] w-40 whitespace-nowrap border-r border-divider shadow-sticky">Stock-In No.</th>
-                <th className="table-th px-4 py-3 whitespace-nowrap">Goods Receipt Note No.</th>
-                <th className="table-th px-4 py-3">Supplier</th>
-                <th className="table-th px-4 py-3">Date</th>
-                <th className="table-th px-4 py-3 text-center">Items</th>
-                <th className="table-th px-4 py-3 text-center">Status</th>
-                <th className="table-th w-16 px-4 py-3 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-divider">
-              {paginatedList.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center type-body text-text-muted">
-                    No committed stock-in records found
-                  </td>
+        <div className="rounded-card border border-border bg-surface p-5">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full min-w-[760px] border-collapse">
+              <thead>
+                <tr className="border-b border-divider">
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[150px]">Stock-In No.</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Goods Receipt Note No.</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Supplier</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Date</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-center whitespace-nowrap">Items</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Status</th>
+                  <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">Actions</th>
                 </tr>
-              ) : (
-                paginatedList.map((s) => (
-                  <tr
-                    key={s.stockInId}
-                    onClick={() => {
-                      setSelectedStockIn(s);
-                      setDetailsModalOpen(true);
-                    }}
-                    className="table-row group hover:bg-surface-secondary/50 transition-colors cursor-pointer"
-                  >
-                    <td className="sticky left-0 z-10 bg-surface group-hover:bg-surface-secondary/50 px-4 py-3 table-td font-semibold text-text-primary whitespace-nowrap min-w-[150px] w-40 border-r border-divider shadow-sticky transition-colors">
-                      {s.stockInNumber}
-                    </td>
-                    <td className="px-4 py-3 table-td text-text-muted whitespace-nowrap">
-                      {s.grnNumber}
-                    </td>
-                    <td className="px-4 py-3 table-td font-medium text-text-primary max-w-[200px] truncate" title={s.supplierName}>
-                      {s.supplierName}
-                    </td>
-                    <td className="px-4 py-3 table-td text-text-muted whitespace-nowrap">
-                      {new Date(s.committedAt || s.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 table-td text-center font-semibold text-text-primary whitespace-nowrap">
-                      {s.lines.length}
-                    </td>
-                    <td className="px-4 py-3 text-center whitespace-nowrap">
-                      <StatusBadge status={s.status} />
-                    </td>
-                    <td
-                      className="w-16 px-4 py-3 text-center relative whitespace-nowrap"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            aria-label="Record actions"
-                            onClick={(e) => e.stopPropagation()}
-                            className="p-1.5 rounded-control text-text-primary hover:bg-surface-secondary transition-colors focus:outline-none cursor-pointer"
-                          >
-                            <MoreHorizontal size={18} />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-40 rounded-control border border-divider bg-surface shadow-modal py-1.5 text-left"
-                        >
-                          <DropdownMenuItem
-                            onSelect={() => {
-                              setSelectedStockIn(s);
-                              setDetailsModalOpen(true);
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary cursor-pointer"
-                          >
-                            <Eye size={14} className="shrink-0" /> View &amp; QR Tags
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+              </thead>
+              <tbody className="divide-y divide-divider">
+                {paginatedList.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center type-body text-ink-muted">
+                      No committed stock-in records found
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  paginatedList.map((s) => (
+                    <tr
+                      key={s.stockInId}
+                      onClick={() => {
+                        setSelectedStockIn(s);
+                        setDetailsModalOpen(true);
+                      }}
+                      className="group hover:bg-page transition-colors cursor-pointer"
+                    >
+                      <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[150px]">
+                        {s.stockInNumber}
+                      </td>
+                      <td className="py-3 pr-4 type-body text-ink whitespace-nowrap tabular-nums">
+                        {s.grnNumber}
+                      </td>
+                      <td className="py-3 pr-4 type-body text-ink max-w-[200px] truncate" title={s.supplierName}>
+                        {s.supplierName}
+                      </td>
+                      <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
+                        {new Date(s.committedAt || s.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 pr-4 type-body text-ink text-center whitespace-nowrap tabular-nums">
+                        {s.lines.length}
+                      </td>
+                      <td className="py-3 pr-4 whitespace-nowrap">
+                        <StatusBadge status={s.status} />
+                      </td>
+                      <td
+                        className="w-16 py-3 pl-4 text-center whitespace-nowrap"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label="Record actions"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors focus:outline-none cursor-pointer"
+                            >
+                              <MoreHorizontal size={18} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-44"
+                          >
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setSelectedStockIn(s);
+                                setDetailsModalOpen(true);
+                              }}
+                              className="cursor-pointer type-body-secondary"
+                            >
+                              <Eye size={14} className="shrink-0" /> View &amp; QR Tags
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-          {totalPages > 1 && (
-            <div className="p-4 border-t border-divider">
-              <Pagination currentPage={page} totalPages={totalPages} totalCount={totalCount} onPageChange={setPage} />
-            </div>
-          )}
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            onPageChange={setPage}
+            embedded
+          />
         </div>
       )}
 

@@ -176,19 +176,21 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
   }, [filtered, page, pageSize]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 animate-page-in">
       {/* Top action row */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="type-overline uppercase text-text-muted">
-          Return to Vendor Records ({rtvs.length})
+        <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-status-purple-bg text-primary type-label-tab w-fit">
+          <span>Return to Vendor Records</span>
+          <span className="tabular-nums">{rtvs.length}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="outline"
+            size="sm"
             onClick={fetchRtvs}
             disabled={loading}
-            className="h-10 rounded-control border border-divider bg-surface px-4 py-2 type-body font-semibold text-text-primary hover:bg-surface-secondary cursor-pointer shadow-card"
+            className="h-9 rounded-control border border-border bg-surface px-3.5 py-2 type-label-button text-ink hover:bg-subtle cursor-pointer shadow-none"
           >
             Refresh
           </Button>
@@ -196,7 +198,8 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
             <Button
               asChild
               variant="outline"
-              className="h-10 rounded-control border border-divider bg-surface px-4 py-2 type-body font-semibold text-text-primary hover:bg-surface-secondary cursor-pointer shadow-card"
+              size="sm"
+              className="h-9 rounded-control border border-border bg-surface px-3.5 py-2 type-label-button text-ink hover:bg-subtle cursor-pointer shadow-none"
             >
               <Link href="/goods-receiving/logs">
                 <History className="w-4 h-4 mr-1.5" />
@@ -207,192 +210,192 @@ export default function RtvTab({ initialReturns }: { initialReturns: RtvRecord[]
         </div>
       </div>
 
-      {/* Search & Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center rounded-card border border-divider bg-surface p-3">
-        <div className="flex flex-1 items-center gap-2">
-          <SearchInput
-            aria-label="Search records"
-            containerClassName="flex-1"
-            placeholder="Search supplier returns by Return to Vendor No., Supplier, or Item..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
+      {/* Standalone Filters & Search Row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={supplierFilter}
+          onValueChange={(val) => {
+            setSupplierFilter(val);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger aria-label="Filter by supplier" className="h-[38px] w-full sm:w-auto sm:min-w-[230px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
+            <span className="truncate">
+              <span className="text-ink-muted font-normal mr-1.5">Supplier:</span>
+              <span className="font-medium text-ink">
+                <SelectValue placeholder="All Suppliers" />
+              </span>
+            </span>
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            side="bottom"
+            align="start"
+            sideOffset={4}
+            avoidCollisions={false}
+            className="min-w-[230px] max-h-72"
+          >
+            <SelectItem value="All">All Suppliers</SelectItem>
+            {uniqueSuppliers.map((supp) => (
+              <SelectItem key={supp} value={supp}>
+                {supp}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <SearchInput
+          aria-label="Search records"
+          containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
+          placeholder="Search RTV No., supplier, or item..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
               setPage(1);
             }}
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearch("");
-                setPage(1);
-              }}
-              className="type-caption text-text-muted hover:text-text-primary font-medium px-2"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-
-        {/* Filters */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center">
-            <Select
-              value={supplierFilter}
-              onValueChange={(val) => {
-                setSupplierFilter(val);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger aria-label="Filter by supplier" className="h-10 w-[180px] rounded-control border border-divider bg-surface px-3 type-body font-medium text-text-primary shadow-card focus:border-border-focus">
-                <SelectValue placeholder="All Suppliers" />
-              </SelectTrigger>
-              <SelectContent align="end" className="type-caption z-[9999]">
-                <SelectItem value="All">All Suppliers</SelectItem>
-                {uniqueSuppliers.map((supp) => (
-                  <SelectItem key={supp} value={supp}>
-                    {supp}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+            className="type-caption text-ink-muted hover:text-ink font-medium px-2 cursor-pointer"
+          >
+            Clear
+          </button>
+        )}
       </div>
 
-      {/* Table */}
+      {/* Padded Table Card */}
       {loading ? (
         <ReceivingSkeleton />
       ) : (
-        <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
-          <table className="w-full border-collapse">
-            <thead className="border-b border-divider bg-surface-secondary">
-              <tr className="table-head-row text-left whitespace-nowrap">
-                <th className="sticky left-0 z-20 bg-surface-secondary table-th px-4 py-3 min-w-[160px] w-44 whitespace-nowrap border-r border-divider shadow-sticky">Return to Vendor No.</th>
-                <th className="table-th px-4 py-3 whitespace-nowrap">Date</th>
-                <th className="table-th px-4 py-3">Supplier</th>
-                <th className="table-th px-4 py-3">Item</th>
-                <th className="table-th px-4 py-3 text-right">Return Qty</th>
-                <th className="table-th px-4 py-3">Reason</th>
-                <th className="table-th px-4 py-3 text-center">Status</th>
-                <th className="table-th w-16 px-4 py-3 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-divider">
-              {paginatedList.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center type-body text-text-muted">
-                    No supplier returns found
-                  </td>
+        <div className="rounded-card border border-border bg-surface p-5">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full min-w-[820px] border-collapse">
+              <thead>
+                <tr className="border-b border-divider">
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[160px]">Return to Vendor No.</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Date</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Supplier</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Item</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-right whitespace-nowrap">Return Qty</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Reason</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Status</th>
+                  <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">Actions</th>
                 </tr>
-              ) : (
-                paginatedList.map((rtv) => {
-                const isPendingApproval = rtv.status === "PendingApproval" || rtv.status === "Pending Approval";
-                const isPendingDispatch = rtv.status === "PendingDispatch" || rtv.status === "Pending Dispatch";
-
-                return (
-                  <tr key={rtv.rtvId} className="table-row group hover:bg-surface-secondary/50 transition-colors">
-                    <td className="sticky left-0 z-10 bg-surface group-hover:bg-surface-secondary/50 px-4 py-3 table-td font-semibold text-text-primary whitespace-nowrap min-w-[160px] w-44 border-r border-divider shadow-sticky transition-colors">
-                      {rtv.rtvNumber}
-                    </td>
-                    <td className="px-4 py-3 table-td text-text-muted whitespace-nowrap">
-                      {new Date(rtv.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 table-td font-medium text-text-primary max-w-[160px] truncate" title={rtv.supplierName}>
-                      {rtv.supplierName || `Supplier #${rtv.supplierId}`}
-                    </td>
-                    <td className="px-4 py-3 table-td font-medium text-text-primary max-w-[160px] truncate" title={rtv.itemName}>
-                      {rtv.itemName || `Item #${rtv.itemId}`}
-                    </td>
-                    <td className="px-4 py-3 table-td text-right font-semibold text-text-primary whitespace-nowrap">
-                      {(rtv.returnedQuantity ?? rtv.quantityReturned ?? 0).toLocaleString()} {rtv.uomName || "Units"}
-                    </td>
-                    <td className="px-4 py-3 table-td text-text-muted max-w-[180px] truncate" title={rtv.returnReason || (rtv as { reason?: string }).reason}>
-                      {rtv.returnReason || (rtv as { reason?: string }).reason || "Defective stock"}
-                    </td>
-                    <td className="px-4 py-3 text-center whitespace-nowrap">
-                      <StatusBadge status={rtv.status} />
-                    </td>
-                    <td className="w-16 px-4 py-3 text-center whitespace-nowrap relative">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            aria-label="Record actions"
-                            className="p-1.5 rounded-control text-text-primary hover:bg-surface-secondary transition-colors focus:outline-none cursor-pointer"
-                            title="Actions"
-                          >
-                            <MoreHorizontal size={18} />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="w-40 rounded-control border border-divider bg-surface shadow-modal py-1.5 text-left"
-                        >
-                          <DropdownMenuItem
-                            onSelect={() => setSelectedRtv(rtv)}
-                            className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary cursor-pointer"
-                          >
-                            <Eye size={14} className="shrink-0" /> View Details
-                          </DropdownMenuItem>
-                          {isPendingApproval && (
-                            <>
-                              <DropdownMenuItem
-                                onSelect={() => {
-                                  setApprovingRtv(rtv);
-                                  setActionError(null);
-                                }}
-                                disabled={actionLoading}
-                                className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary cursor-pointer disabled:opacity-50"
-                              >
-                                <Check size={14} className="shrink-0" /> Approve
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onSelect={() => {
-                                  setRejectingRtv(rtv);
-                                  setRejectionReason("");
-                                  setRejectionError(null);
-                                  setActionError(null);
-                                }}
-                                disabled={actionLoading}
-                                className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-badge-danger-text hover:bg-badge-danger-bg focus:bg-badge-danger-bg cursor-pointer disabled:opacity-50"
-                              >
-                                <XCircle size={14} className="shrink-0" /> Reject
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                          {isPendingDispatch && (
-                            <DropdownMenuItem
-                              onSelect={() => {
-                                setDispatchingRtv(rtv);
-                                setCreditNoteNumber("");
-                                setActionError(null);
-                              }}
-                              disabled={actionLoading}
-                              className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary cursor-pointer disabled:opacity-50"
-                            >
-                              <Truck size={14} className="shrink-0" /> Dispatch
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+              </thead>
+              <tbody className="divide-y divide-divider">
+                {paginatedList.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center type-body text-ink-muted">
+                      No supplier returns found
                     </td>
                   </tr>
-                );
-              }))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                ) : (
+                  paginatedList.map((rtv) => {
+                  const isPendingApproval = rtv.status === "PendingApproval" || rtv.status === "Pending Approval";
+                  const isPendingDispatch = rtv.status === "PendingDispatch" || rtv.status === "Pending Dispatch";
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="p-4 border-t border-divider">
+                  return (
+                    <tr key={rtv.rtvId} className="group hover:bg-page transition-colors">
+                      <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[160px]">
+                        {rtv.rtvNumber}
+                      </td>
+                      <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
+                        {new Date(rtv.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 pr-4 type-body text-ink max-w-[160px] truncate" title={rtv.supplierName}>
+                        {rtv.supplierName || `Supplier #${rtv.supplierId}`}
+                      </td>
+                      <td className="py-3 pr-4 type-body text-ink max-w-[160px] truncate" title={rtv.itemName}>
+                        {rtv.itemName || `Item #${rtv.itemId}`}
+                      </td>
+                      <td className="py-3 pr-4 type-body font-medium text-ink text-right whitespace-nowrap tabular-nums">
+                        {(rtv.returnedQuantity ?? rtv.quantityReturned ?? 0).toLocaleString()} {rtv.uomName || "Units"}
+                      </td>
+                      <td className="py-3 pr-4 type-body text-ink-muted max-w-[180px] truncate" title={rtv.returnReason || (rtv as { reason?: string }).reason}>
+                        {rtv.returnReason || (rtv as { reason?: string }).reason || "Defective stock"}
+                      </td>
+                      <td className="py-3 pr-4 whitespace-nowrap">
+                        <StatusBadge status={rtv.status} />
+                      </td>
+                      <td className="w-16 py-3 pl-4 text-center whitespace-nowrap">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label="Record actions"
+                              className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors focus:outline-none cursor-pointer"
+                              title="Actions"
+                            >
+                              <MoreHorizontal size={18} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem
+                              onSelect={() => setSelectedRtv(rtv)}
+                              className="cursor-pointer type-body-secondary"
+                            >
+                              <Eye size={14} className="shrink-0" /> View Details
+                            </DropdownMenuItem>
+                            {isPendingApproval && (
+                              <>
+                                <DropdownMenuItem
+                                  onSelect={() => {
+                                    setApprovingRtv(rtv);
+                                    setActionError(null);
+                                  }}
+                                  disabled={actionLoading}
+                                  className="cursor-pointer type-body-secondary"
+                                >
+                                  <Check size={14} className="shrink-0" /> Approve
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onSelect={() => {
+                                    setRejectingRtv(rtv);
+                                    setRejectionReason("");
+                                    setRejectionError(null);
+                                    setActionError(null);
+                                  }}
+                                  disabled={actionLoading}
+                                  className="cursor-pointer type-body-secondary text-destructive focus:text-destructive"
+                                >
+                                  <XCircle size={14} className="shrink-0" /> Reject
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {isPendingDispatch && (
+                              <DropdownMenuItem
+                                onSelect={() => {
+                                  setDispatchingRtv(rtv);
+                                  setCreditNoteNumber("");
+                                  setActionError(null);
+                                }}
+                                disabled={actionLoading}
+                                className="cursor-pointer type-body-secondary"
+                              >
+                                <Truck size={14} className="shrink-0" /> Dispatch
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  );
+                }))}
+              </tbody>
+            </table>
+          </div>
+
           <Pagination
             currentPage={page}
             totalPages={totalPages}
             totalCount={totalCount}
             onPageChange={setPage}
+            embedded
           />
         </div>
       )}

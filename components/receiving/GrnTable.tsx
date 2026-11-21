@@ -24,22 +24,22 @@ export default function GrnTable({ grns, loading, onSelectGrn }: GrnTableProps) 
   }
 
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
-      <table className="w-full border-collapse">
-        <thead className="table-head-row border-b border-divider bg-surface-muted/30">
-          <tr className="text-left table-th text-text-muted whitespace-nowrap">
-            <th className="sticky left-0 z-20 bg-surface-muted px-4 py-4 min-w-[160px] w-48 whitespace-nowrap border-r border-divider shadow-sticky">Goods Receipt Note No.</th>
-            <th className="px-4 py-4 whitespace-nowrap">Delivery #</th>
-            <th className="px-4 py-4">Supplier</th>
-            <th className="px-4 py-4">Received Date</th>
-            <th className="px-4 py-4 text-center">Status</th>
-            <th className="w-16 px-4 py-4 text-center">Actions</th>
+    <div className="overflow-x-auto custom-scrollbar">
+      <table className="w-full min-w-[720px] border-collapse">
+        <thead>
+          <tr className="border-b border-divider">
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[170px]">Goods Receipt Note No.</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Delivery #</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Supplier</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Received Date</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Status</th>
+            <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-divider">
           {grns.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-4 py-12 text-center type-body font-normal text-text-muted">
+              <td colSpan={6} className="py-12 text-center type-body text-ink-muted">
                 No goods receipt notes found
               </td>
             </tr>
@@ -48,25 +48,25 @@ export default function GrnTable({ grns, loading, onSelectGrn }: GrnTableProps) 
               <tr
                 key={grn.grnId}
                 onClick={() => onSelectGrn(grn)}
-                className="table-row group hover:bg-surface-hover transition-colors cursor-pointer"
+                className="group hover:bg-page transition-colors cursor-pointer"
               >
-                <td className="sticky left-0 z-10 bg-surface group-hover:bg-surface-hover px-4 py-4 table-td font-semibold text-text-primary whitespace-nowrap min-w-[160px] w-48 border-r border-divider shadow-sticky transition-colors">
+                <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[170px]">
                   {grn.grnNumber}
                 </td>
-                <td className="px-4 py-4 table-td text-text-muted whitespace-nowrap">
+                <td className="py-3 pr-4 type-body text-ink whitespace-nowrap tabular-nums">
                   {grn.deliveryNumber || "—"}
                 </td>
-                <td className="px-4 py-4 table-td font-medium text-text-primary max-w-[180px] truncate" title={grn.supplierName}>
+                <td className="py-3 pr-4 type-body text-ink max-w-[200px] truncate" title={grn.supplierName}>
                   {grn.supplierName}
                 </td>
-                <td className="px-4 py-4 table-td text-text-muted whitespace-nowrap">
+                <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                   {new Date(grn.receivedDate).toLocaleDateString()}
                 </td>
-                <td className="px-4 py-4 text-center whitespace-nowrap">
+                <td className="py-3 pr-4 whitespace-nowrap">
                   <StatusBadge status={grn.status} />
                 </td>
                 <td
-                  className="w-16 px-4 py-4 text-center relative whitespace-nowrap"
+                  className="w-16 py-3 pl-4 text-center whitespace-nowrap"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <DropdownMenu>
@@ -75,7 +75,7 @@ export default function GrnTable({ grns, loading, onSelectGrn }: GrnTableProps) 
                         type="button"
                         aria-label="Record actions"
                         onClick={(e) => e.stopPropagation()}
-                        className="p-1.5 rounded-control text-text-primary hover:bg-surface-hover transition-colors focus:outline-none cursor-pointer"
+                        className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors focus:outline-none cursor-pointer"
                       >
                         <MoreHorizontal size={18} />
                       </button>
@@ -83,11 +83,11 @@ export default function GrnTable({ grns, loading, onSelectGrn }: GrnTableProps) 
                     <DropdownMenuContent
                       align="end"
                       onClick={(e) => e.stopPropagation()}
-                      className="w-36 rounded-control border border-divider bg-surface shadow-modal py-1.5 text-left"
+                      className="w-40"
                     >
                       <DropdownMenuItem
                         onSelect={() => onSelectGrn(grn)}
-                        className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-hover focus:bg-surface-hover cursor-pointer"
+                        className="cursor-pointer type-body-secondary"
                       >
                         <Eye size={14} className="shrink-0" /> View Details
                       </DropdownMenuItem>

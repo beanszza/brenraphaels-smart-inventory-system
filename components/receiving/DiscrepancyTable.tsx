@@ -28,23 +28,23 @@ export default function DiscrepancyTable({
   }
 
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
-      <table className="w-full border-collapse">
-        <thead className="border-b border-divider bg-surface-secondary">
-          <tr className="table-head-row text-left whitespace-nowrap">
-            <th className="sticky left-0 z-20 bg-surface-secondary table-th px-4 py-3 min-w-[150px] w-40 whitespace-nowrap border-r border-divider shadow-sticky">Discrepancy No.</th>
-            <th className="table-th px-4 py-3 whitespace-nowrap">Type</th>
-            <th className="table-th px-4 py-3">Item Name</th>
-            <th className="table-th px-4 py-3 text-right">Variance</th>
-            <th className="table-th px-4 py-3">Resolution</th>
-            <th className="table-th px-4 py-3 text-center">Status</th>
-            <th className="table-th w-16 px-4 py-3 text-center">Actions</th>
+    <div className="overflow-x-auto custom-scrollbar">
+      <table className="w-full min-w-[740px] border-collapse">
+        <thead>
+          <tr className="border-b border-divider">
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[150px]">Discrepancy No.</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Type</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Item Name</th>
+            <th className="pb-2.5 pt-1 pr-6 type-table-header text-ink-muted text-right whitespace-nowrap">Variance</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Resolution</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Status</th>
+            <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-divider">
           {discrepancies.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-4 py-12 text-center type-body text-text-muted">
+              <td colSpan={7} className="py-12 text-center type-body text-ink-muted">
                 No discrepancies found
               </td>
             </tr>
@@ -58,37 +58,33 @@ export default function DiscrepancyTable({
                 <tr
                   key={d.discrepancyId}
                   onClick={() => onSelectDiscrepancy(d)}
-                  className="table-row group hover:bg-surface-secondary/50 transition-colors cursor-pointer"
+                  className="group hover:bg-page transition-colors cursor-pointer"
                 >
-                  <td className="sticky left-0 z-10 bg-surface group-hover:bg-surface-secondary/50 px-4 py-3 table-td font-semibold text-text-primary whitespace-nowrap min-w-[150px] w-40 border-r border-divider shadow-sticky transition-colors">
+                  <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[150px]">
                     {d.discrepancyNumber}
                   </td>
-                  <td className="px-4 py-3 table-td whitespace-nowrap">
-                    <span className="type-caption font-semibold px-2.5 py-0.5 rounded-control bg-surface-secondary border border-divider text-text-primary">
-                      {isShort ? "Shortage" : isOver ? "Over Supply" : "Rejected"}
-                    </span>
+                  <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
+                    {isShort ? "Shortage" : isOver ? "Over Supply" : "Rejected"}
                   </td>
-                  <td className="px-4 py-3 table-td font-medium text-text-primary max-w-[200px] truncate" title={d.itemName}>
+                  <td className="py-3 pr-4 type-body text-ink max-w-[200px] truncate" title={d.itemName}>
                     {d.itemName}
                   </td>
-                  <td className="px-4 py-3 table-td text-right font-semibold text-text-primary whitespace-nowrap">
+                  <td className="py-3 pr-6 type-body font-medium text-ink text-right whitespace-nowrap tabular-nums">
                     {isOver ? "+" : "-"}
                     {d.discrepancyQuantity.toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 table-td text-text-muted whitespace-nowrap">
+                  <td className="py-3 pr-4 type-body whitespace-nowrap">
                     {d.resolutionType ? (
-                      <span className="font-semibold text-text-primary">{d.resolutionType}</span>
+                      <span className="text-ink">{d.resolutionType}</span>
                     ) : (
-                      <span className="text-text-muted italic">
-                        Pending Action
-                      </span>
+                      <span className="text-ink-muted">Pending Action</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-center whitespace-nowrap">
+                  <td className="py-3 pr-4 whitespace-nowrap">
                     <StatusBadge status={d.status} />
                   </td>
                   <td
-                    className="w-16 px-4 py-3 text-center whitespace-nowrap relative"
+                    className="w-16 py-3 pl-4 text-center whitespace-nowrap"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <DropdownMenu>
@@ -97,7 +93,7 @@ export default function DiscrepancyTable({
                           type="button"
                           aria-label="Record actions"
                           onClick={(e) => e.stopPropagation()}
-                          className="p-1.5 rounded-control text-text-primary hover:bg-surface-secondary transition-colors focus:outline-none cursor-pointer"
+                          className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors focus:outline-none cursor-pointer"
                           title="Actions"
                         >
                           <MoreHorizontal size={18} />
@@ -106,11 +102,11 @@ export default function DiscrepancyTable({
                       <DropdownMenuContent
                         align="end"
                         onClick={(e) => e.stopPropagation()}
-                        className="w-36 rounded-control border border-divider bg-surface shadow-modal py-1.5 text-left"
+                        className="w-40"
                       >
                         <DropdownMenuItem
                           onSelect={() => onSelectDiscrepancy(d)}
-                          className="flex w-full items-center gap-2 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary cursor-pointer"
+                          className="cursor-pointer type-body-secondary"
                         >
                           <Eye size={14} className="shrink-0" /> {isOpen ? "Resolve" : "View Details"}
                         </DropdownMenuItem>

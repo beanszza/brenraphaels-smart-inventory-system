@@ -39,7 +39,7 @@ export default function ViewGoodsReceiving({
   });
 
   return (
-    <div className="w-full min-h-full py-7 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
       <PageHeader
         title="Goods Receiving & Inbound Logistics"
         description={
@@ -57,10 +57,10 @@ export default function ViewGoodsReceiving({
                 href={`/goods-receiving?tab=${id}`}
                 prefetch={true}
                 aria-current={activeTab === id ? "page" : undefined}
-                className={`flex items-center gap-2 px-4 py-2.5 type-table-header uppercase border-b-2 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-2 focus-visible:outline-primary ${
+                className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold uppercase border-b-2 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-2 focus-visible:outline-primary ${
                   activeTab === id
-                    ? "border-primary text-primary"
-                    : "border-transparent text-text-muted hover:text-text-primary"
+                    ? "border-primary text-primary -mb-px"
+                    : "border-transparent text-ink-muted hover:text-ink"
                 }`}
               >
                 <span>{label}</span>
@@ -69,12 +69,12 @@ export default function ViewGoodsReceiving({
           </div>
         </nav>
         {isAdmin && (
-          <div className="pb-1 shrink-0">
+          <div className="pb-1.5 shrink-0">
             <Link
               href="/goods-receiving/logs"
-              className="inline-flex items-center gap-1.5 rounded-control border border-divider bg-surface px-3.5 py-1.5 type-table-header text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 h-9 rounded-control border border-border bg-surface px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors cursor-pointer"
             >
-              <History size={14} />
+              <History size={15} />
               <span>Transaction History</span>
             </Link>
           </div>
