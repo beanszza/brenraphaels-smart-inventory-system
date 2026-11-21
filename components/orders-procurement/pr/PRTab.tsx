@@ -160,21 +160,21 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
 
 
   return (
-    <div className="space-y-6 animate-page-in">
-      {notice && <p role="status" className="rounded-control bg-surface-muted border border-divider p-3 type-body text-accent">{notice}</p>}
+    <div className="space-y-5 animate-page-in">
+      {notice && <p role="status" className="rounded-control bg-subtle border border-border p-3 type-body text-primary">{notice}</p>}
       {/* Top Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="type-page-title text-text-primary">Purchase Requisitions</h2>
-          <p className="mt-1 type-body text-text-muted">Manage raw material and ingredient purchase requisitions</p>
+          <h2 className="type-page-title text-ink">Purchase Requisitions</h2>
+          <p className="mt-1 type-body text-ink-muted">Manage raw material and ingredient purchase requisitions</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={fetchRequisitions}
             disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-label-button text-text-primary hover:bg-hover transition-colors h-10"
+            className="flex items-center justify-center gap-1.5 rounded-control bg-surface border border-border px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-9 shadow-none cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
@@ -184,7 +184,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
               asChild
               variant="outline"
               size="sm"
-              className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-label-button text-text-primary hover:bg-hover transition-colors h-10 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 rounded-control bg-surface border border-border px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-9 shadow-none cursor-pointer"
             >
               <Link href="/orders-procurement/logs">
                 <History className="w-4 h-4" /> Transaction History
@@ -193,59 +193,20 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
           )}
 
           {!isAdmin && (
-          <Button
-            type="button"
-            onClick={() => setOpenCreateModal(true)}
-            className="flex items-center justify-center gap-2 rounded-control bg-button-primary px-5 py-2.5 type-label-button text-button-primary-foreground hover:bg-button-primary-hover transition-colors shadow-sm h-10"
-          >
-            <Plus className="w-4 h-4" /> Create Purchase Requisition
-          </Button>
+            <Button
+              type="button"
+              onClick={() => setOpenCreateModal(true)}
+              className="flex items-center justify-center gap-1.5 rounded-control bg-primary px-3.5 py-2 type-label-button text-on-brand hover:bg-primary-hover transition-colors h-9 shadow-none cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Create Purchase Requisition
+            </Button>
           )}
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className="mb-6 rounded-card border border-divider bg-surface p-3 shadow-card">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <SearchInput
-            containerClassName="flex-1"
-            placeholder="Search by Purchase Requisition No., Requester, or Department..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-          />
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center">
-              <Select
-                value={deptFilter === "" ? "all" : deptFilter}
-                onValueChange={(val) => {
-                  setDeptFilter(val === "all" ? "" : val);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-control border border-divider bg-surface px-3.5 type-body text-text-primary shadow-sm focus:ring-1 focus:ring-accent">
-                  <SelectValue placeholder="All Departments" />
-                </SelectTrigger>
-                <SelectContent className="min-w-[210px] rounded-menu border border-divider bg-surface shadow-menu">
-                  <SelectItem value="all">All Departments</SelectItem>
-                  <SelectItem value="Inventory">Inventory</SelectItem>
-                  <SelectItem value="Production">Production</SelectItem>
-                  <SelectItem value="Warehouse">Warehouse</SelectItem>
-                  <SelectItem value="Quality Assurance">Quality Assurance</SelectItem>
-                  <SelectItem value="Administration">Administration</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs Row */}
-      <div className="border-b border-divider overflow-x-auto">
-        <div className="flex items-center gap-1.5 min-w-max pb-2">
+      {/* Status Sub-tabs */}
+      <div className="overflow-x-auto">
+        <div className="flex items-center gap-1 min-w-max">
           {/* Requests Tab (Visible to Admin only) */}
           {isAdmin && (
             <button
@@ -254,19 +215,16 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
                 setActiveTab("Requests");
                 setPage(1);
               }}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-pill type-label-tab transition-all ${
+              aria-pressed={activeTab === "Requests"}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
                 activeTab === "Requests"
-                  ? "bg-button-primary text-button-primary-foreground shadow-sm"
-                  : "bg-surface-muted text-text-muted hover:text-text-primary hover:bg-hover"
+                  ? "bg-status-purple-bg text-primary"
+                  : "text-ink-muted hover:text-ink hover:bg-subtle"
               }`}
             >
               <span>Requests</span>
               {counts.Requests > 0 && (
-                <span className={`px-1.5 py-0.2 rounded-pill type-caption font-semibold ${
-                  activeTab === "Requests" ? "bg-surface text-text-primary" : "bg-text-primary/20 text-text-primary"
-                }`}>
-                  {counts.Requests}
-                </span>
+                <span className="tabular-nums">{counts.Requests}</span>
               )}
             </button>
           )}
@@ -284,55 +242,101 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
                   setActiveTab(tab);
                   setPage(1);
                 }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-pill type-label-tab transition-all ${
+                aria-pressed={isSelected}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
                   isSelected
-                    ? "bg-button-primary text-button-primary-foreground shadow-sm"
-                    : "text-text-muted hover:text-text-primary hover:bg-hover"
+                    ? "bg-status-purple-bg text-primary"
+                    : "text-ink-muted hover:text-ink hover:bg-subtle"
                 }`}
               >
                 <span>{tab}</span>
-                <span
-                  className={`px-1.5 py-0.2 rounded-pill type-caption font-mono font-medium ${
-                    isSelected ? "bg-surface text-text-primary" : "bg-surface-muted text-text-muted"
-                  }`}
-                >
-                  {count}
-                </span>
+                <span className="tabular-nums">{count}</span>
               </button>
             );
           })}
         </div>
       </div>
 
+      {/* Standalone Filters & Search Row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={deptFilter === "" ? "all" : deptFilter}
+          onValueChange={(val) => {
+            setDeptFilter(val === "all" ? "" : val);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="h-[38px] w-full sm:w-auto sm:min-w-[230px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
+            <span className="truncate">
+              <span className="text-ink-muted font-normal mr-1.5">Department:</span>
+              <span className="font-medium text-ink">
+                <SelectValue placeholder="All Departments" />
+              </span>
+            </span>
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            side="bottom"
+            align="start"
+            sideOffset={4}
+            avoidCollisions={false}
+            className="min-w-[230px] max-h-72"
+          >
+            <SelectItem value="all">All Departments</SelectItem>
+            <SelectItem value="Inventory">Inventory</SelectItem>
+            <SelectItem value="Production">Production</SelectItem>
+            <SelectItem value="Warehouse">Warehouse</SelectItem>
+            <SelectItem value="Quality Assurance">Quality Assurance</SelectItem>
+            <SelectItem value="Administration">Administration</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <SearchInput
+          containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
+          placeholder="Search PR No., requester, or dept..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+        />
+      </div>
+
       {/* Active Tab Subtitle for Requests tab */}
       {isAdmin && activeTab === "Requests" && (
-        <div className="p-3 rounded-card border border-divider bg-surface-muted type-caption text-text-primary flex items-center gap-2">
-          <Inbox className="w-4 h-4 text-text-primary shrink-0" />
+        <div className="p-3 rounded-card border border-border bg-subtle type-caption text-ink flex items-center gap-2">
+          <Inbox className="w-4 h-4 text-primary shrink-0" />
           <span>Showing all product requisitions pending your review. Approve, Reject, or Return for Revision with mandatory notes.</span>
         </div>
       )}
 
-      {/* PR Table */}
-      {loading ? <OrdersSkeleton /> : (<PRTable
-        requisitions={paginatedList}
-        isAdmin={isAdmin}
-        isRequestsTab={activeTab === "Requests"}
-        onView={(pr) => setSelectedPR(pr)}
-        onEdit={(pr) => setEditingPR(pr)}
-        onCancel={(pr) => setActionModal({ pr, type: "cancel" })}
-        onApprove={(pr) => setActionModal({ pr, type: "approve" })}
-        onReject={(pr) => setActionModal({ pr, type: "reject" })}
-        onReturn={(pr) => setActionModal({ pr, type: "return" })}
-        onCreatePo={(pr) => onCreatePo?.(pr.prId)}
-      />)}
+      {/* Padded Table Card */}
+      {loading ? (
+        <OrdersSkeleton />
+      ) : (
+        <div className="rounded-card border border-border bg-surface p-5">
+          <PRTable
+            requisitions={paginatedList}
+            isAdmin={isAdmin}
+            isRequestsTab={activeTab === "Requests"}
+            onView={(pr) => setSelectedPR(pr)}
+            onEdit={(pr) => setEditingPR(pr)}
+            onCancel={(pr) => setActionModal({ pr, type: "cancel" })}
+            onApprove={(pr) => setActionModal({ pr, type: "approve" })}
+            onReject={(pr) => setActionModal({ pr, type: "reject" })}
+            onReturn={(pr) => setActionModal({ pr, type: "return" })}
+            onCreatePo={(pr) => onCreatePo?.(pr.prId)}
+          />
 
-      {/* Pagination */}
-      <Pagination
-        currentPage={page}
-        totalPages={totalPages}
-        totalCount={totalCount}
-        onPageChange={setPage}
-      />
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            onPageChange={setPage}
+            embedded
+          />
+        </div>
+      )}
 
       {/* PR Details / Review Modal */}
       <PRDetailsModal

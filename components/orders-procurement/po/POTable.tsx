@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import { Eye, Pencil, MoreHorizontal, Ban, Trash2 } from "lucide-react";
 import { PurchaseOrderPO } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -27,37 +27,24 @@ interface POTableProps {
 }
 
 export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onDiscardDraft }: POTableProps) {
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setOpenDropdownId(null);
-      }
-    }
-    if (openDropdownId !== null) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [openDropdownId]);
-
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
-      <table className="w-full">
-        <thead className="border-b border-divider bg-surface-muted table-head-row">
-          <tr className="border-b border-divider bg-surface-muted table-head-row uppercase text-text-muted type-table-header">
-            <th className="sticky left-0 z-20 bg-surface-muted px-4 py-3 text-left type-table-header text-text-muted tracking-wider whitespace-nowrap min-w-[160px] w-44 border-r border-divider shadow-sticky-col table-th">PURCHASE ORDER NUMBER</th>
-            <th className="px-4 py-3 text-left type-table-header text-text-muted tracking-wider whitespace-nowrap table-th">SUPPLIER</th>
-            <th className="px-4 py-3 text-left type-table-header text-text-muted tracking-wider whitespace-nowrap table-th">ORDER DATE</th>
-            <th className="px-4 py-3 text-left type-table-header text-text-muted tracking-wider whitespace-nowrap table-th">REQUESTED BY</th>
-            <th className="px-4 py-3 text-left type-table-header text-text-muted tracking-wider whitespace-nowrap table-th">TOTAL AMOUNT</th>
-            <th className="px-4 py-3 text-left type-table-header text-text-muted tracking-wider whitespace-nowrap table-th">STATUS</th>
-            <th className="px-4 py-3 text-center type-table-header text-text-muted tracking-wider whitespace-nowrap w-24 table-th">ACTIONS</th>
+    <div className="overflow-x-auto custom-scrollbar">
+      <table className="w-full min-w-[780px] border-collapse">
+        <thead>
+          <tr className="border-b border-divider">
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[160px]">Purchase Order No.</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Supplier</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Order Date</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Requested By</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Total Amount</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Status</th>
+            <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-divider">
           {orders.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-5 py-8 text-center type-body text-text-muted">
+              <td colSpan={7} className="py-12 text-center type-body text-ink-muted">
                 No purchase orders found.
               </td>
             </tr>
@@ -70,8 +57,8 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onD
               const actions: ActionItem[] = [
                 {
                   label: "View Details",
-                  icon: <Eye className="w-4 h-4 text-text-primary" />,
-                  onClick: () => { setOpenDropdownId(null); onView(po); },
+                  icon: <Eye className="w-4 h-4 text-ink" />,
+                  onClick: () => onView(po),
                 },
               ];
 
@@ -80,22 +67,22 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onD
                 if ((isDraft || isReturned) && onEdit) {
                   actions.push({
                     label: isReturned ? "Edit & Re-Submit" : "Resend via Gmail",
-                    icon: <Pencil className="w-4 h-4 text-text-primary" />,
-                    onClick: () => { setOpenDropdownId(null); onEdit(po); },
+                    icon: <Pencil className="w-4 h-4 text-ink" />,
+                    onClick: () => onEdit(po),
                   });
                 }
                 if (isDraft && onDiscardDraft) {
                   actions.push({
                     label: "Discard Draft",
-                    icon: <Trash2 className="w-4 h-4 text-status-red" />,
-                    onClick: () => { setOpenDropdownId(null); onDiscardDraft(po); },
+                    icon: <Trash2 className="w-4 h-4 text-destructive" />,
+                    onClick: () => onDiscardDraft(po),
                   });
                 }
                 if (!isDraft && isCancellable && onCancel) {
                   actions.push({
                     label: "Cancel Purchase Order",
-                    icon: <Ban className="w-4 h-4 text-text-primary" />,
-                    onClick: () => { setOpenDropdownId(null); onCancel(po); },
+                    icon: <Ban className="w-4 h-4 text-ink" />,
+                    onClick: () => onCancel(po),
                   });
                 }
               }
@@ -107,45 +94,45 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onD
                 new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", minimumFractionDigits: 2 }).format(n);
 
               return (
-                <tr key={po.poId} className="group hover:bg-hover transition-colors cursor-pointer table-row" onClick={() => onView(po)}>
-                  <td className="sticky left-0 z-10 bg-surface group-hover:bg-hover px-4 py-3.5 font-mono text-text-primary whitespace-nowrap font-medium min-w-[160px] w-44 border-r border-divider shadow-sticky-col transition-colors table-td">
+                <tr key={po.poId} className="group hover:bg-page transition-colors cursor-pointer" onClick={() => onView(po)}>
+                  <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[160px]">
                     {po.poNumber}
                   </td>
-                  <td className="px-4 py-3.5 font-medium text-text-primary whitespace-nowrap table-td">
+                  <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                     {po.supplierName || "—"}
                   </td>
-                  <td className="px-4 py-3.5 text-text-muted whitespace-nowrap table-td">
+                  <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                     {fmtDate(po.orderDate)}
                   </td>
-                  <td className="px-4 py-3.5 text-text-muted whitespace-nowrap table-td">
+                  <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                     {po.requestedBy || "—"}
                   </td>
-                  <td className="px-4 py-3.5 font-mono font-semibold text-text-primary whitespace-nowrap table-td">
+                  <td className="py-3 pr-4 type-body font-medium text-ink whitespace-nowrap tabular-nums">
                     {fmtCurrency(po.totalAmount || 0)}
                   </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap table-td">
+                  <td className="py-3 pr-4 whitespace-nowrap">
                     <StatusBadge status={po.status} />
                   </td>
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap table-td" onClick={(e) => e.stopPropagation()}>
+                  <td className="w-16 py-3 pl-4 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          className="p-1.5 rounded-control border border-transparent text-text-primary hover:bg-hover transition-all data-[state=open]:bg-surface-muted data-[state=open]:border-divider data-[state=open]:shadow-sm"
+                          className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors focus:outline-none cursor-pointer"
                           aria-label="Actions menu"
                         >
-                          <MoreHorizontal className="w-4 h-4 text-text-primary" />
+                          <MoreHorizontal size={18} />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 z-[200] rounded-menu border border-divider bg-surface shadow-menu">
+                      <DropdownMenuContent align="end" className="w-48">
                         {actions.map((action, idx) => (
                           <DropdownMenuItem
                             key={action.label + idx}
                             onClick={action.onClick}
-                            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer type-caption text-text-primary hover:bg-hover"
+                            className="cursor-pointer type-body-secondary"
                           >
-                            <span className="shrink-0 text-text-primary">{action.icon}</span>
-                            <span className="truncate text-text-primary">{action.label}</span>
+                            <span className="shrink-0">{action.icon}</span>
+                            <span className="truncate">{action.label}</span>
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>

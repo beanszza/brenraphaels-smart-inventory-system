@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import { Eye, CheckCircle, Receipt, Ban, MoreHorizontal } from "lucide-react";
 import { Delivery } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -32,19 +32,6 @@ export function DeliveryTable({
   onCancel,
   onCreateGrn,
 }: DeliveryTableProps) {
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setOpenDropdownId(null);
-      }
-    }
-    if (openDropdownId !== null) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [openDropdownId]);
-
   const fmtDate = (d?: string) =>
     d
       ? new Date(d).toLocaleDateString("en-US", {
@@ -55,24 +42,24 @@ export function DeliveryTable({
       : "—";
 
   return (
-    <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
-      <table className="w-full type-table-cell">
+    <div className="overflow-x-auto custom-scrollbar">
+      <table className="w-full min-w-[820px] border-collapse">
         <thead>
-          <tr className="border-b border-divider bg-surface-muted table-head-row type-table-header">
-            <th className="table-th sticky left-0 z-20 bg-surface-muted backdrop-blur-xs px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap min-w-[160px] w-44 border-r border-divider shadow-sticky">DELIVERY NO.</th>
-            <th className="table-th px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">PURCHASE ORDER REF.</th>
-            <th className="table-th px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">SUPPLIER</th>
-            <th className="table-th px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">CARRIER</th>
-            <th className="table-th px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">EXPECTED DATE</th>
-            <th className="table-th px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">ITEMS</th>
-            <th className="table-th px-4 py-3 text-left font-semibold text-text-muted tracking-wider whitespace-nowrap">STATUS</th>
-            <th className="table-th px-4 py-3 text-center font-semibold text-text-muted tracking-wider whitespace-nowrap w-24">ACTIONS</th>
+          <tr className="border-b border-divider">
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[150px]">Delivery No.</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Purchase Order Ref.</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Supplier</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Carrier</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Expected Date</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Items</th>
+            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Status</th>
+            <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-divider">
           {deliveries.length === 0 ? (
             <tr>
-              <td colSpan={8} className="px-5 py-8 text-center type-body font-medium text-text-muted">
+              <td colSpan={8} className="py-12 text-center type-body text-ink-muted">
                 No delivery shipments found.
               </td>
             </tr>
@@ -87,11 +74,8 @@ export function DeliveryTable({
               const actions: ActionItem[] = [
                 {
                   label: "View Details",
-                  icon: <Eye className="w-4 h-4 text-text-primary" />,
-                  onClick: () => {
-                    setOpenDropdownId(null);
-                    onView(delivery);
-                  },
+                  icon: <Eye className="w-4 h-4 text-ink" />,
+                  onClick: () => onView(delivery),
                 },
               ];
 
@@ -99,84 +83,75 @@ export function DeliveryTable({
               if (isScheduled && onArrive) {
                 actions.push({
                   label: "Mark Arrived",
-                  icon: <CheckCircle className="w-4 h-4 text-text-primary" />,
-                  onClick: () => {
-                    setOpenDropdownId(null);
-                    onArrive(delivery);
-                  },
+                  icon: <CheckCircle className="w-4 h-4 text-ink" />,
+                  onClick: () => onArrive(delivery),
                 });
               }
               if (isArrived && !delivery.grnNumber && onCreateGrn) {
                 actions.push({
                   label: "Create Goods Receipt Note",
-                  icon: <Receipt className="w-4 h-4 text-text-primary" />,
-                  onClick: () => {
-                    setOpenDropdownId(null);
-                    onCreateGrn(delivery);
-                  },
+                  icon: <Receipt className="w-4 h-4 text-ink" />,
+                  onClick: () => onCreateGrn(delivery),
                 });
               }
               if (isCancellable && onCancel) {
                 actions.push({
                   label: "Cancel Delivery",
-                  icon: <Ban className="w-4 h-4 text-text-primary" />,
-                  onClick: () => {
-                    setOpenDropdownId(null);
-                    onCancel(delivery);
-                  },
+                  icon: <Ban className="w-4 h-4 text-ink" />,
+                  onClick: () => onCancel(delivery),
                 });
               }
 
               return (
                 <tr
                   key={delivery.deliveryId}
-                  className="group hover:bg-surface-hover transition-colors cursor-pointer table-row"
+                  className="group hover:bg-page transition-colors cursor-pointer"
                   onClick={() => onView(delivery)}
                 >
-                  <td className="table-td sticky left-0 z-10 bg-surface group-hover:bg-surface-hover px-4 py-3.5 font-mono text-text-primary whitespace-nowrap font-medium min-w-[160px] w-44 border-r border-divider shadow-sticky transition-colors">
+                  <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[150px]">
                     {delivery.deliveryNumber}
                   </td>
-                  <td className="table-td px-4 py-3.5 font-mono text-text-muted whitespace-nowrap">
+                  <td className="py-3 pr-4 type-body text-ink whitespace-nowrap tabular-nums">
                     {delivery.poNumber || "—"}
                   </td>
-                  <td className="table-td px-4 py-3.5 font-medium text-text-primary whitespace-nowrap max-w-[200px] truncate" title={delivery.supplierName}>
+                  <td className="py-3 pr-4 type-body text-ink whitespace-nowrap max-w-[200px] truncate" title={delivery.supplierName}>
                     {delivery.supplierName || "—"}
                   </td>
-                  <td className="table-td px-4 py-3.5 text-text-muted whitespace-nowrap">
+                  <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                     {delivery.carrier || "In-House"}
                   </td>
-                  <td className="table-td px-4 py-3.5 text-text-muted whitespace-nowrap">
+                  <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                     {fmtDate(delivery.expectedArrivalDate || delivery.scheduledDate)}
                   </td>
-                  <td className="table-td px-4 py-3.5 font-mono text-text-primary whitespace-nowrap">
+                  <td className="py-3 pr-4 type-body text-ink whitespace-nowrap tabular-nums">
                     {itemCount} {itemCount === 1 ? "item" : "items"}
                   </td>
-                  <td className="table-td px-4 py-3.5 whitespace-nowrap">
+                  <td className="py-3 pr-4 whitespace-nowrap">
                     <StatusBadge status={delivery.status} />
                   </td>
                   <td
-                    className="table-td px-4 py-3.5 text-center whitespace-nowrap"
+                    className="w-16 py-3 pl-4 text-center whitespace-nowrap"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          className="p-1.5 rounded-control border border-transparent text-text-primary hover:bg-surface-hover transition-all data-[state=open]:bg-surface-muted data-[state=open]:border-divider cursor-pointer"
+                          className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors focus:outline-none cursor-pointer"
                           aria-label="Actions menu"
                         >
-                          <MoreHorizontal className="w-4 h-4 text-text-primary" />
+                          <MoreHorizontal size={18} />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 z-[200] rounded-card border border-divider bg-surface shadow-modal">
+                      <DropdownMenuContent align="end" className="w-52">
                         {actions.map((action, idx) => (
                           <DropdownMenuItem
                             key={action.label + idx}
                             onClick={action.onClick}
-                            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer type-caption font-medium hover:bg-surface-hover text-text-primary"
+                            className="cursor-pointer type-body-secondary"
                           >
-                            <span className="shrink-0 text-text-primary">{action.icon}</span>
-                            <span className="truncate text-text-primary">{action.label}</span>
+                            <span className="shrink-0">{action.icon}</span>
+                            <span className="truncate">{action.label}</span>
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>

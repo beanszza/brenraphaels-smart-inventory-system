@@ -168,28 +168,28 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
   };
 
   return (
-    <div className="space-y-6 animate-page-in">
+    <div className="space-y-5 animate-page-in">
       {notice && (
-        <p role="status" className="rounded-control bg-surface-muted border border-divider p-3 type-body text-accent">
+        <p role="status" className="rounded-control bg-subtle border border-border p-3 type-body text-primary">
           {notice}
         </p>
       )}
 
       {/* Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="type-page-title text-text-primary">Purchase Orders</h2>
-          <p className="mt-1 type-body text-text-muted">
+          <h2 className="type-page-title text-ink">Purchase Orders</h2>
+          <p className="mt-1 type-body text-ink-muted">
             Manage supplier purchase orders referencing approved purchase requisitions.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={fetchOrders}
             disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-label-button text-text-primary hover:bg-hover transition-colors h-10 cursor-pointer"
+            className="flex items-center justify-center gap-1.5 rounded-control bg-surface border border-border px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-9 shadow-none cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
@@ -199,7 +199,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
               asChild
               variant="outline"
               size="sm"
-              className="flex items-center justify-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-label-button text-text-primary hover:bg-hover transition-colors h-10 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 rounded-control bg-surface border border-border px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-9 shadow-none cursor-pointer"
             >
               <Link href="/orders-procurement/logs">
                 <History className="w-4 h-4" /> Transaction History
@@ -211,7 +211,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
             <Button
               type="button"
               onClick={() => setOpenCreateModal(true)}
-              className="flex items-center justify-center gap-2 rounded-control bg-button-primary px-5 py-2.5 type-label-button text-button-primary-foreground hover:bg-button-primary-hover transition-colors shadow-sm h-10 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 rounded-control bg-primary px-3.5 py-2 type-label-button text-on-brand hover:bg-primary-hover transition-colors h-9 shadow-none cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Create Purchase Order
             </Button>
@@ -219,46 +219,9 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className="mb-6 rounded-card border border-divider bg-surface p-3 shadow-card">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <SearchInput
-            containerClassName="flex-1"
-            placeholder="Search by Purchase Order No., Purchase Requisition Reference, Supplier, or Requester..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-          />
-
-          <div className="flex items-center gap-3">
-            <Select
-              value={supplierFilter === "" ? "all" : supplierFilter}
-              onValueChange={(val) => {
-                setSupplierFilter(val === "all" ? "" : val);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-control border border-divider bg-surface px-3.5 type-body text-text-primary shadow-sm focus:ring-1 focus:ring-accent">
-                <SelectValue placeholder="All Suppliers" />
-              </SelectTrigger>
-              <SelectContent className="min-w-[210px] rounded-menu border border-divider bg-surface shadow-menu">
-                <SelectItem value="all">All Suppliers</SelectItem>
-                {uniqueSuppliers.map((sup) => (
-                  <SelectItem key={sup} value={sup}>
-                    {sup}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      {/* Status Tabs */}
-      <div className="border-b border-divider overflow-x-auto">
-        <div className="flex items-center gap-1.5 min-w-max pb-2">
+      {/* Status Sub-tabs */}
+      <div className="overflow-x-auto">
+        <div className="flex items-center gap-1 min-w-max">
           {STATUS_TABS.map((tab) => {
             const count = counts[tab] || 0;
             const isSelected = activeTab === tab;
@@ -270,47 +233,89 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
                   setActiveTab(tab);
                   setPage(1);
                 }}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-pill type-label-tab transition-all cursor-pointer ${
+                aria-pressed={isSelected}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
                   isSelected
-                    ? "bg-button-primary text-button-primary-foreground shadow-sm"
-                    : "text-text-muted hover:text-text-primary hover:bg-hover"
+                    ? "bg-status-purple-bg text-primary"
+                    : "text-ink-muted hover:text-ink hover:bg-subtle"
                 }`}
               >
                 <span>{tab}</span>
-                <span
-                  className={`px-1.5 py-0.5 rounded-pill type-caption font-mono font-medium ${
-                    isSelected ? "bg-surface text-text-primary" : "bg-surface-muted text-text-muted"
-                  }`}
-                >
-                  {count}
-                </span>
+                <span className="tabular-nums">{count}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Table */}
+      {/* Standalone Filters & Search Row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={supplierFilter === "" ? "all" : supplierFilter}
+          onValueChange={(val) => {
+            setSupplierFilter(val === "all" ? "" : val);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="h-[38px] w-full sm:w-auto sm:min-w-[230px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
+            <span className="truncate">
+              <span className="text-ink-muted font-normal mr-1.5">Supplier:</span>
+              <span className="font-medium text-ink">
+                <SelectValue placeholder="All Suppliers" />
+              </span>
+            </span>
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            side="bottom"
+            align="start"
+            sideOffset={4}
+            avoidCollisions={false}
+            className="min-w-[230px] max-h-72"
+          >
+            <SelectItem value="all">All Suppliers</SelectItem>
+            {uniqueSuppliers.map((sup) => (
+              <SelectItem key={sup} value={sup}>
+                {sup}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <SearchInput
+          containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
+          placeholder="Search PO No., PR ref, or supplier..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+        />
+      </div>
+
+      {/* Padded Table Card */}
       {loading ? (
         <OrdersSkeleton />
       ) : (
-        <POTable
-          orders={paginatedList}
-          isAdmin={isAdmin}
-          onView={(po) => setSelectedPO(po)}
-          onEdit={(po) => setEditingPO(po)}
-          onCancel={(po) => setActionModal({ po, type: "cancel" })}
-          onDiscardDraft={(po) => setDiscardingPO(po)}
-        />
-      )}
+        <div className="rounded-card border border-border bg-surface p-5">
+          <POTable
+            orders={paginatedList}
+            isAdmin={isAdmin}
+            onView={(po) => setSelectedPO(po)}
+            onEdit={(po) => setEditingPO(po)}
+            onCancel={(po) => setActionModal({ po, type: "cancel" })}
+            onDiscardDraft={(po) => setDiscardingPO(po)}
+          />
 
-      {/* Pagination */}
-      <Pagination
-        currentPage={page}
-        totalPages={totalPages}
-        totalCount={totalCount}
-        onPageChange={setPage}
-      />
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            onPageChange={setPage}
+            embedded
+          />
+        </div>
+      )}
 
       {/* Purchase Order Details Modal */}
       <PODetailsModal
