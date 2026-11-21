@@ -16,43 +16,43 @@ function KpiCard({ title, value, subtitle, trend, isAlert }: KpiCardProps) {
   const TrendIcon = isPositive ? ArrowUp : ArrowDown;
 
   return (
-    <div className="rounded-card border border-border bg-surface p-4 sm:p-5 flex flex-col">
-      <div className="flex items-center justify-between gap-2">
-        <span className="type-body-secondary text-ink-muted">{title}</span>
-        {trend !== null && (
-          <span
-            className={`inline-flex items-center gap-0.5 type-caption font-medium tabular-nums shrink-0 ${
-              isPositive ? "text-success" : "text-destructive"
-            }`}
-          >
-            <TrendIcon className="size-3" />
-            {Math.abs(trend)}%
-          </span>
-        )}
-      </div>
+    <div className="rounded-card border border-border bg-surface px-5 py-4 flex flex-col justify-between gap-1">
+      <span className="type-caption font-medium text-ink-muted">{title}</span>
 
-      <div className="type-stat-value text-ink tabular-nums mt-1.5">
+      <div className="type-stat-value text-ink tabular-nums tracking-tight">
         {value.toLocaleString()}
       </div>
-      <p
-        className={`type-caption mt-2 ${
-          isAlert && value > 0 ? "text-destructive" : "text-ink-muted"
-        }`}
-      >
-        {subtitle}
-      </p>
+
+      {trend !== null ? (
+        <p
+          className={`inline-flex items-center gap-1 type-caption font-medium tabular-nums ${
+            isPositive ? "text-success" : "text-destructive"
+          }`}
+        >
+          <TrendIcon className="size-3 shrink-0" />
+          <span>{Math.abs(trend)}% vs last month</span>
+        </p>
+      ) : (
+        <p
+          className={`type-caption font-medium ${
+            isAlert && value > 0 ? "text-status-amber-fg" : "text-ink-muted"
+          }`}
+        >
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 }
 
 export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
       {kpiData.activeInventory && (
         <KpiCard
           title="Active Inventory"
           value={kpiData.activeInventory.value}
-          subtitle="Active items across all categories"
+          subtitle="Active items across categories"
           trend={kpiData.activeInventory.trend}
         />
       )}
@@ -60,7 +60,7 @@ export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
         <KpiCard
           title="Low Stock Alerts"
           value={kpiData.lowStockAlerts.value}
-          subtitle="Items at or below minimum stock level"
+          subtitle="At or below minimum level"
           trend={kpiData.lowStockAlerts.trend}
           isAlert
         />
@@ -69,7 +69,7 @@ export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
         <KpiCard
           title="Production Batches"
           value={kpiData.productionBatches.value}
-          subtitle="Batches scheduled or completed this month"
+          subtitle="Scheduled or completed this month"
           trend={kpiData.productionBatches.trend}
         />
       )}
@@ -77,7 +77,7 @@ export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
         <KpiCard
           title="Active Suppliers"
           value={kpiData.activeSuppliers.value}
-          subtitle="Registered and active vendor partners"
+          subtitle="Registered vendor partners"
           trend={kpiData.activeSuppliers.trend}
         />
       )}

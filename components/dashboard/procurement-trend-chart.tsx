@@ -1,16 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
+  Cell,
   XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
+  LabelList,
 } from "recharts";
 import type { ProcurementMonth } from "@/lib/dashboard/types";
+import { EmptyChart } from "./EmptyChart";
+
+type TrendMetric = "orders" | "valueK";
 
 function CustomTooltip({
   active,
@@ -18,30 +21,27 @@ function CustomTooltip({
   label,
 }: {
   active?: boolean;
-  payload?: Array<{ name: string; value: number; color: string }>;
+  payload?: Array<{ payload: ProcurementMonth }>;
   label?: string;
 }) {
   if (active && payload && payload.length) {
+    const row = payload[0].payload;
     return (
-      <div className="bg-surface border border-border rounded-inner px-3 py-2.5 shadow-modal min-w-[150px]">
-        <p className="type-caption font-semibold text-ink mb-1.5">
-          {label}
-        </p>
+      <div className="bg-surface border border-border rounded-inner px-3 py-2.5 shadow-modal min-w-[164px]">
+        <p className="type-caption font-semibold text-ink mb-1.5">{label}</p>
         <div className="space-y-1">
-          {payload.map((p, i) => (
-            <div key={i} className="flex items-center justify-between gap-4">
-              <span className="flex items-center gap-1.5 type-caption text-ink-muted">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ background: p.color }}
-                />
-                {p.name}
-              </span>
-              <span className="type-caption font-semibold tabular-nums text-ink">
-                {p.name === "Order Value (₱K)" ? `₱${p.value}K` : p.value}
-              </span>
-            </div>
-          ))}
+          <div className="flex items-center justify-between gap-4">
+            <span className="type-caption text-ink-muted">Purchase orders</span>
+            <span className="type-caption font-semibold tabular-nums text-ink">
+              {row.orders.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="type-caption text-ink-muted">Order value</span>
+            <span className="type-caption font-semibold tabular-nums text-ink">
+              ₱{row.valueK.toLocaleString()}K
+            </span>
+          </div>
         </div>
       </div>
     );
@@ -54,92 +54,148 @@ export default function ProcurementTrendChart({
 }: {
   data: ProcurementMonth[];
 }) {
+  const [metric, setMetric] = useState<TrendMetric>("orders");
+
+  if (!procurementTrend.length) {
+    return (
+      <EmptyChart
+        title="Procurement Trend"
+        subtitle="Purchase orders over the last 6 months"
+      />
+    );
+  }
+
   const totalOrders = procurementTrend.reduce((sum, m) => sum + m.orders, 0);
+  const totalValueK =
+    Math.round(procurementTrend.reduce((sum, m) => sum + m.valueK, 0) * 10) / 10;
   const firstMonth = procurementTrend[0]?.month;
   const lastMonth = procurementTrend[procurementTrend.length - 1]?.month;
-  const rangeText = firstMonth && lastMonth ? `${firstMonth} – ${lastMonth}` : "Last 6 months";
+  const rangeText =
+    firstMonth && lastMonth ? `${firstMonth} – ${lastMonth}` : "last 6 months";
+
+  const headline =
+    metric === "orders"
+      ? `${totalOrders.toLocaleString()} purchase orders placed over the last 6 months.`
+      : `₱${totalValueK.toLocaleString()}K total order value across ${rangeText}.`;
+
+  const footerCaption =
+    metric === "orders"
+      ? `Total order value of ₱${totalValueK.toLocaleString()}K across ${rangeText} · Hover any bar for ₱K breakdown.`
+      : `${totalOrders.toLocaleString()} purchase orders across ${rangeText} · Hover any bar for order count.`;
+
+  const lastIndex = procurementTrend.length - 1;
 
   return (
-    <div className="rounded-card border border-border bg-surface p-5 flex flex-col justify-between h-full">
-      <div className="flex items-start justify-between gap-2 mb-4">
-        <div>
-          <h3 className="type-card-title text-ink">
+    <div className="rounded-card border border-border bg-surface p-5 flex flex-col justify-between h-full gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="type-caption font-medium text-ink-muted">
             Procurement Trend
-          </h3>
-          <p className="type-caption text-ink-muted mt-0.5">
-            {totalOrders.toLocaleString()} purchase orders over 6 months ({rangeText})
           </p>
+          <h3 className="type-card-title text-ink mt-0.5 tracking-tight">
+            {headline}
+          </h3>
+        </div>
+
+        <div
+          role="group"
+          aria-label="Procurement chart metric"
+          className="inline-flex items-center p-0.5 rounded-control border border-input bg-page shrink-0"
+        >
+          {(
+            [
+              { key: "orders", label: "Orders" },
+              { key: "valueK", label: "Value (₱K)" },
+            ] as const
+          ).map((opt) => {
+            const active = metric === opt.key;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setMetric(opt.key)}
+                className={`px-2.5 py-1 rounded-sm type-caption font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                  active
+                    ? "bg-primary text-on-brand"
+                    : "text-ink-secondary hover:text-ink"
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="h-[250px] w-full">
+      <div className="h-[224px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
+          <BarChart
             data={procurementTrend}
-            margin={{ top: 8, right: 12, left: -12, bottom: 4 }}
+            margin={{ top: 24, right: 6, left: 6, bottom: 2 }}
+            barCategoryGap="16%"
           >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="var(--border-divider)"
-              vertical={false}
-            />
             <XAxis
               dataKey="month"
-              tick={{ fontSize: 12, fill: "var(--ink-muted)" }}
               axisLine={false}
               tickLine={false}
+              tick={(props) => {
+                const { x, y, payload, index } = props;
+                const isLatest = index === lastIndex;
+                return (
+                  <text
+                    x={x}
+                    y={Number(y) + 12}
+                    textAnchor="middle"
+                    fontSize={12}
+                    fontWeight={isLatest ? 600 : 400}
+                    fill={isLatest ? "var(--brand-primary)" : "var(--ink-muted)"}
+                  >
+                    {payload.value}
+                  </text>
+                );
+              }}
             />
-            <YAxis
-              yAxisId="left"
-              allowDecimals={false}
-              tick={{ fontSize: 12, fill: "var(--ink-muted)" }}
-              axisLine={false}
-              tickLine={false}
+            <Tooltip
+              content={<CustomTooltip />}
+              cursor={{ fill: "var(--bg-subtle)", opacity: 0.45, radius: 8 }}
             />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              tick={{ fontSize: 12, fill: "var(--ink-muted)" }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend
-              iconType="circle"
-              iconSize={8}
-              wrapperStyle={{ paddingTop: "8px" }}
-              formatter={(value) => (
-                <span className="type-caption font-medium text-ink pl-1">
-                  {value}
-                </span>
-              )}
-            />
-            <Line
-              yAxisId="left"
-              type="monotone"
-              dataKey="orders"
-              name="Purchase Orders"
-              stroke="var(--brand-primary)"
-              strokeWidth={2.5}
-              dot={{ fill: "var(--brand-primary)", r: 4, strokeWidth: 2, stroke: "var(--bg-surface)" }}
-              activeDot={{ r: 6 }}
+            <Bar
+              dataKey={metric}
+              radius={[8, 8, 2, 2]}
               isAnimationActive={false}
-            />
-            <Line
-              yAxisId="right"
-              type="monotone"
-              dataKey="valueK"
-              name="Order Value (₱K)"
-              stroke="var(--brand-focus)"
-              strokeWidth={2.5}
-              strokeDasharray="5 3"
-              dot={{ fill: "var(--brand-focus)", r: 4, strokeWidth: 2, stroke: "var(--bg-surface)" }}
-              activeDot={{ r: 6 }}
-              isAnimationActive={false}
-            />
-          </LineChart>
+            >
+              {procurementTrend.map((entry, idx) => (
+                <Cell
+                  key={entry.month}
+                  fill={
+                    idx === lastIndex
+                      ? "var(--brand-primary)"
+                      : "var(--brand-focus)"
+                  }
+                  fillOpacity={idx === lastIndex ? 1 : 0.45}
+                />
+              ))}
+              <LabelList
+                dataKey={metric}
+                position="top"
+                offset={8}
+                formatter={(val) => {
+                  const n = Number(val ?? 0);
+                  return metric === "valueK" ? `₱${n}K` : n.toLocaleString();
+                }}
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fill: "var(--ink-secondary)",
+                }}
+              />
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
       </div>
+
+      <p className="type-caption text-ink-muted">{footerCaption}</p>
     </div>
   );
 }

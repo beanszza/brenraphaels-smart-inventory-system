@@ -12,9 +12,9 @@ const METRICS: {
   unit: string;
   barClass: string;
 }[] = [
-  { key: "onTimeRate",  label: "On-Time Rate",  unit: "%", barClass: "bg-primary" },
+  { key: "onTimeRate", label: "On-Time Rate", unit: "%", barClass: "bg-primary" },
   { key: "avgLeadDays", label: "Avg Lead Time", unit: "d", barClass: "bg-primary" },
-  { key: "defectRate",  label: "Defect Rate",   unit: "%", barClass: "bg-destructive" },
+  { key: "defectRate", label: "Defect Rate", unit: "%", barClass: "bg-destructive" },
 ];
 
 export default function SupplierPerformanceChart({
@@ -47,27 +47,35 @@ export default function SupplierPerformanceChart({
     ...sorted.map((s) => s[activeMetric]),
   );
 
+  const headline =
+    activeMetric === "onTimeRate"
+      ? `${best.supplier} leads at ${best.onTimeRate}% on-time.`
+      : activeMetric === "avgLeadDays"
+        ? `${best.supplier} has the fastest lead time (${best.avgLeadDays}d).`
+        : `${best.supplier} holds the lowest defect rate (${best.defectRate}%).`;
+
   return (
-    <div className="rounded-card border border-border bg-surface p-5 flex flex-col justify-between h-full">
-      <div>
-        <div className="mb-3">
-          <h3 className="type-card-title text-ink">
+    <div className="rounded-card border border-border bg-surface p-5 flex flex-col justify-between h-full gap-4">
+      <div className="space-y-3">
+        <div>
+          <p className="type-caption font-medium text-ink-muted">
             Supplier Performance
-          </h3>
-          <p className="type-caption text-ink-muted mt-0.5">
-            Compare suppliers by delivery punctuality, lead time, and quality
           </p>
+          <h3 className="type-card-title text-ink mt-0.5 tracking-tight">
+            {headline}
+          </h3>
         </div>
 
-        <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-1 sm:gap-1.5 mb-4">
+        <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-1.5">
           {METRICS.map((m) => {
             const active = activeMetric === m.key;
             return (
               <button
                 key={m.key}
                 type="button"
+                aria-pressed={active}
                 onClick={() => setActiveMetric(m.key)}
-                className={`px-1.5 sm:px-2.5 py-1 rounded-control type-caption font-medium text-center transition-colors cursor-pointer truncate ${
+                className={`px-2.5 py-1 rounded-control type-caption font-medium text-center transition-colors cursor-pointer truncate ${
                   active
                     ? "bg-primary text-on-brand border border-primary"
                     : "bg-surface text-ink-secondary border border-input hover:bg-page hover:text-ink"
@@ -78,63 +86,27 @@ export default function SupplierPerformanceChart({
             );
           })}
         </div>
-
-        {/* Summary Callouts — flat divider strip (no nested gray boxes) */}
-        <div className="grid grid-cols-2 gap-4 pb-3.5 mb-4 border-b border-divider">
-          <div className="min-w-0">
-            <span className="type-caption font-medium text-success">
-              Top Performer
-            </span>
-            <p
-              className="type-body-secondary font-semibold text-ink mt-0.5 truncate"
-              title={best.supplier}
-            >
-              {best.supplier}
-            </p>
-            <p className="type-caption tabular-nums text-ink-muted">
-              {best[activeMetric]}
-              {metric.unit}
-            </p>
-          </div>
-
-          <div className="min-w-0">
-            <span className="type-caption font-medium text-warning">
-              Needs Attention
-            </span>
-            <p
-              className="type-body-secondary font-semibold text-ink mt-0.5 truncate"
-              title={worst.supplier}
-            >
-              {worst.supplier}
-            </p>
-            <p className="type-caption tabular-nums text-ink-muted">
-              {worst[activeMetric]}
-              {metric.unit}
-            </p>
-          </div>
-        </div>
       </div>
 
-      {/* Horizontal Supplier Bars */}
-      <div className="space-y-3">
+      <div className="space-y-3 flex-1">
         {sorted.map((s) => {
           const val = s[activeMetric];
           const pct = Math.min(100, Math.round((val / maxVal) * 100));
           return (
-            <div key={s.supplier} className="space-y-1">
+            <div key={s.supplier} className="space-y-1.5">
               <div className="flex items-center justify-between gap-3">
                 <span
-                  className="type-caption font-medium text-ink truncate"
+                  className="type-body-secondary font-medium text-ink truncate"
                   title={s.supplier}
                 >
                   {s.supplier}
                 </span>
-                <span className="type-caption font-semibold tabular-nums text-ink-muted shrink-0">
+                <span className="type-body-secondary font-semibold tabular-nums text-ink shrink-0">
                   {val}
                   {metric.unit}
                 </span>
               </div>
-              <div className="h-1.5 w-full rounded-pill bg-tint-tab overflow-hidden">
+              <div className="h-2 w-full rounded-pill bg-status-gray-bg overflow-hidden">
                 <div
                   className={`h-full rounded-pill transition-all duration-300 ${metric.barClass}`}
                   style={{ width: `${Math.max(val > 0 ? 4 : 0, pct)}%` }}
@@ -144,6 +116,16 @@ export default function SupplierPerformanceChart({
           );
         })}
       </div>
+
+      {sorted.length > 1 && (
+        <p className="type-caption text-ink-muted">
+          Needs attention:{" "}
+          <span className="font-medium text-status-amber-fg">
+            {worst.supplier} ({worst[activeMetric]}
+            {metric.unit})
+          </span>
+        </p>
+      )}
     </div>
   );
 }
