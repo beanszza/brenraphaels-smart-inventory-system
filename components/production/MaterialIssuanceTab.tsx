@@ -79,166 +79,174 @@ export default function MaterialIssuanceTab({ initialRows, initialIssuanceId }: 
   const paginatedIssuances = filteredIssuances.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 animate-page-in">
       {/* Header */}
       <div>
-        <h2 className="type-page-title text-text-primary">Material Issuances</h2>
-        <p className="mt-1 type-body text-text-muted">
+        <h2 className="type-page-title text-ink">Material Issuances</h2>
+        <p className="mt-1 type-body text-ink-muted">
           Verify allocated lot codes via physical barcode/QR code scan and release raw materials to the production floor.
         </p>
       </div>
 
-      {/* Search and Status Filter Bar */}
-      <div className="rounded-card border border-divider bg-surface p-3 shadow-card">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <SearchInput
-            containerClassName="min-w-0 flex-1"
-            placeholder="Search by issuance #, request #, or product..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
-
-          <div className="flex items-center gap-sm shrink-0">
-            <Select
-              value={statusFilter}
-              onValueChange={(val) => {
-                setStatusFilter(val);
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="h-10 min-w-[210px] w-auto rounded-control border border-divider bg-surface px-3.5 type-body font-medium text-text-primary shadow-xs focus:ring-1 focus:ring-brand">
+      {/* Standalone Filters & Search Row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={statusFilter}
+          onValueChange={(val) => {
+            setStatusFilter(val);
+            setCurrentPage(1);
+          }}
+        >
+          <SelectTrigger className="h-[38px] w-full sm:w-auto sm:min-w-[220px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
+            <span className="truncate">
+              <span className="text-ink-muted font-normal mr-1.5">Status:</span>
+              <span className="font-medium text-ink">
                 <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent className="min-w-[210px] bg-surface border-divider">
-                <SelectItem value="All">All Statuses</SelectItem>
-                <SelectItem value="Pending">Pending Scan</SelectItem>
-                <SelectItem value="Scanning">Scanning</SelectItem>
-                <SelectItem value="Issued">Issued</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+              </span>
+            </span>
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            side="bottom"
+            align="start"
+            sideOffset={4}
+            avoidCollisions={false}
+            className="min-w-[220px] max-h-72"
+          >
+            <SelectItem value="All">All Statuses</SelectItem>
+            <SelectItem value="Pending">Pending Scan</SelectItem>
+            <SelectItem value="Scanning">Scanning</SelectItem>
+            <SelectItem value="Issued">Issued</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <SearchInput
+          containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
+          placeholder="Search issuance, request, or item..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
-        <table className="w-full min-w-[900px] border-collapse type-body">
-          <thead className="border-b border-divider bg-surface-secondary">
-            <tr className="table-head-row text-left type-table-header uppercase text-text-muted whitespace-nowrap">
-              <th className="table-th sticky left-0 z-20 bg-surface-secondary/95 backdrop-blur-xs px-4 py-3 min-w-[160px] w-44 whitespace-nowrap border-r border-divider shadow-sticky">Issuance Number</th>
-              <th className="table-th px-4 py-3 whitespace-nowrap">Request Number</th>
-              <th className="table-th px-4 py-3">Product</th>
-              <th className="table-th px-4 py-3">Recipe</th>
-              <th className="table-th px-4 py-3 text-right">Target Output</th>
-              <th className="table-th px-4 py-3 text-center">Status</th>
-              <th className="table-th px-4 py-3">Issued Date</th>
-              <th className="table-th w-16 px-4 py-3 text-center whitespace-nowrap">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-divider">
-            {loading ? (
-              <tr>
-                <td colSpan={8} className="px-4 py-12 text-center type-body font-normal text-text-muted">
-                  <ProductionSkeleton />
-                </td>
+      {/* Padded Table Card */}
+      <div className="rounded-card border border-border bg-surface p-5">
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full min-w-[820px] border-collapse">
+            <thead>
+              <tr className="border-b border-divider">
+                <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[160px]">Issuance Number</th>
+                <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Request Number</th>
+                <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Product</th>
+                <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Recipe</th>
+                <th className="pb-2.5 pt-1 pr-6 type-table-header text-ink-muted text-right whitespace-nowrap">Target Output</th>
+                <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Status</th>
+                <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Issued Date</th>
+                <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">Actions</th>
               </tr>
-            ) : paginatedIssuances.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-4 py-12 text-center type-body font-normal text-text-muted">
-                  No material issuances found. Once a production request is approved, initialize issuance to scan supplies.
-                </td>
-              </tr>
-            ) : (
-              paginatedIssuances.map((iss) => {
-                const isDone = iss.status === "Issued";
+            </thead>
+            <tbody className="divide-y divide-divider">
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center type-body text-ink-muted">
+                    <ProductionSkeleton />
+                  </td>
+                </tr>
+              ) : paginatedIssuances.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center type-body text-ink-muted">
+                    No material issuances found. Once a production request is approved, initialize issuance to scan supplies.
+                  </td>
+                </tr>
+              ) : (
+                paginatedIssuances.map((iss) => {
+                  const isDone = iss.status === "Issued";
 
-                return (
-                  <tr
-                    key={iss.issuanceId}
-                    onClick={() => handleOpenScanner(iss.issuanceId)}
-                    className="table-row group hover:bg-surface-hover/50 transition-colors cursor-pointer"
-                  >
-                    <td className="table-td sticky left-0 z-10 bg-surface group-hover:bg-surface-hover px-4 py-3.5 type-body font-semibold text-text-primary whitespace-nowrap min-w-[160px] w-44 border-r border-divider shadow-sticky transition-colors">
-                      {iss.issuanceNumber}
-                    </td>
+                  return (
+                    <tr
+                      key={iss.issuanceId}
+                      onClick={() => handleOpenScanner(iss.issuanceId)}
+                      className="group hover:bg-page transition-colors cursor-pointer"
+                    >
+                      <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[160px]">
+                        {iss.issuanceNumber}
+                      </td>
 
-                    <td className="table-td px-4 py-3.5 type-body text-text-muted whitespace-nowrap">
-                      {iss.reqNumber}
-                    </td>
+                      <td className="py-3 pr-4 type-body text-ink whitespace-nowrap tabular-nums">
+                        {iss.reqNumber}
+                      </td>
 
-                    <td className="table-td px-4 py-3.5 type-body text-text-primary whitespace-nowrap">
-                      {iss.productName}
-                    </td>
+                      <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
+                        {iss.productName}
+                      </td>
 
-                    <td className="table-td px-4 py-3.5 type-body text-text-muted whitespace-nowrap">
-                      {iss.recipeName}
-                    </td>
+                      <td className="py-3 pr-4 type-body text-ink-muted whitespace-nowrap">
+                        {iss.recipeName}
+                      </td>
 
-                    <td className="table-td px-4 py-3.5 type-body text-right font-semibold text-text-primary whitespace-nowrap">
-                      {iss.requestQuantity}
-                    </td>
+                      <td className="py-3 pr-6 type-body font-medium text-ink text-right whitespace-nowrap tabular-nums">
+                        {iss.requestQuantity}
+                      </td>
 
-                    <td className="table-td px-4 py-3.5 text-center whitespace-nowrap">
-                      <StatusBadge status={iss.status} />
-                    </td>
+                      <td className="py-3 pr-4 whitespace-nowrap">
+                        <StatusBadge status={iss.status} />
+                      </td>
 
-                    <td className="table-td px-4 py-3.5 type-body text-text-muted whitespace-nowrap">
-                      {iss.issuedAt ? new Date(iss.issuedAt).toLocaleDateString() : "—"}
-                    </td>
+                      <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
+                        {iss.issuedAt ? new Date(iss.issuedAt).toLocaleDateString() : "—"}
+                      </td>
 
-                    {/* Actions (Three Dots Menu) */}
-                    <td className="table-td w-16 px-4 py-3.5 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-center">
+                      {/* Actions (Three Dots Menu) */}
+                      <td className="w-16 py-3 pl-4 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
                               type="button"
-                              className="p-1.5 rounded-control text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer focus:outline-none"
+                              className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors cursor-pointer focus:outline-none"
                               title="Actions"
                               aria-label="Actions"
                             >
                               <MoreHorizontal size={18} />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 rounded-control border border-divider bg-surface shadow-modal p-1.5 text-left z-[100]">
+                          <DropdownMenuContent align="end" className="w-44">
                             {!isDone && (
                               <DropdownMenuItem
                                 onClick={() => handleOpenScanner(iss.issuanceId)}
-                                className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-semibold text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary focus:text-text-primary cursor-pointer rounded-control transition-colors outline-none"
+                                className="cursor-pointer type-body-secondary font-medium"
                               >
-                                <QrCode size={14} className="shrink-0 text-text-muted" />
+                                <QrCode size={14} className="shrink-0" />
                                 <span>Scan Materials</span>
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem
                               onClick={() => handleOpenScanner(iss.issuanceId)}
-                              className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary focus:text-text-primary cursor-pointer rounded-control transition-colors outline-none"
+                              className="cursor-pointer type-body-secondary"
                             >
-                              <Eye size={14} className="shrink-0 text-text-muted" />
+                              <Eye size={14} className="shrink-0" />
                               <span>View Details</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
 
-      {/* Pagination */}
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalCount={totalCount}
-        onPageChange={setCurrentPage}
-      />
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          onPageChange={setCurrentPage}
+          embedded
+        />
+      </div>
 
       {/* Material Issuance Modal */}
       <MaterialIssuanceModal

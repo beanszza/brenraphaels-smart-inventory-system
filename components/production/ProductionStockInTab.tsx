@@ -217,28 +217,28 @@ export default function ProductionStockInTab({ initialRows, initialItems, curren
   };
 
   return (
-    <div className="space-y-6 animate-page-in">
-      {/* ── Header (Matching Resources & Suppliers Header) ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-5 animate-page-in">
+      {/* ── Header ── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="type-page-title text-text-primary">Finished Goods Stock-In</h2>
-          <p className="mt-1 type-body text-text-muted">
+          <h2 className="type-page-title text-ink">Finished Goods Stock-In</h2>
+          <p className="mt-1 type-body text-ink-muted">
             Review completed batches passed by Quality Assurance and commit finished products into active inventory.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={fetchBatches}
-            className="rounded-control border border-divider bg-surface px-4 py-2 type-caption font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+            className="h-9 rounded-control border border-border bg-surface px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors cursor-pointer shadow-none"
           >
             Refresh
           </Button>
           {!isAdmin && (
             <Button
               onClick={handleOpenCreateModal}
-              className="flex items-center gap-2 rounded-control bg-button-primary px-5 py-2.5 type-body font-semibold text-text-inverse hover:bg-button-primary-hover transition-colors shadow-card cursor-pointer"
+              className="flex items-center gap-1.5 h-9 rounded-control bg-primary px-3.5 py-2 type-label-button text-on-brand hover:bg-primary-hover transition-colors shadow-none cursor-pointer"
             >
               <Plus size={16} /> Create Stock-In
             </Button>
@@ -246,177 +246,178 @@ export default function ProductionStockInTab({ initialRows, initialItems, curren
         </div>
       </div>
 
-      {/* ── Search & Filter Bar (Matching Resources & Suppliers Card) ── */}
-      <div className="rounded-card border border-divider bg-surface p-3 shadow-card">
-        <div className="flex items-center justify-between gap-3">
-          <SearchInput
-            containerClassName="flex-1"
-            placeholder="Search by name, lot, or batch (e.g. UJ-261008-02)..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="type-caption"
-          />
-          <div className="flex items-center gap-2 shrink-0">
-            <Select value={productFilter} onValueChange={setProductFilter}>
-              <SelectTrigger className="h-9 min-w-[200px] w-auto rounded-control border border-divider bg-surface px-3.5 type-caption font-medium text-text-primary shadow-xs">
-                <SelectValue placeholder="All Products" />
-              </SelectTrigger>
-              <SelectContent className="min-w-[200px] bg-surface border-divider">
-                <SelectItem value="All">All Products</SelectItem>
-                {uniqueProducts.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      {/* ── Status Sub-tabs ── */}
+      <div className="overflow-x-auto">
+        <div className="flex items-center gap-1 min-w-max">
+          <button
+            type="button"
+            onClick={() => setSubTab("all")}
+            aria-pressed={subTab === "all"}
+            className={`flex items-center gap-1.5 rounded-control px-3.5 py-2 type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
+              subTab === "all"
+                ? "bg-status-purple-bg text-primary"
+                : "text-ink-muted hover:text-ink hover:bg-subtle"
+            }`}
+          >
+            <span>All</span>
+            <span className="tabular-nums">{allBatches.length}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSubTab("pending")}
+            aria-pressed={subTab === "pending"}
+            className={`flex items-center gap-1.5 rounded-control px-3.5 py-2 type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
+              subTab === "pending"
+                ? "bg-status-purple-bg text-primary"
+                : "text-ink-muted hover:text-ink hover:bg-subtle"
+            }`}
+          >
+            <span>Ready for Stock-In</span>
+            <span className="tabular-nums">{pendingBatches.length}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSubTab("history")}
+            aria-pressed={subTab === "history"}
+            className={`flex items-center gap-1.5 rounded-control px-3.5 py-2 type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
+              subTab === "history"
+                ? "bg-status-purple-bg text-primary"
+                : "text-ink-muted hover:text-ink hover:bg-subtle"
+            }`}
+          >
+            <span>Stock-In History</span>
+            <span className="tabular-nums">{historyBatches.length}</span>
+          </button>
         </div>
       </div>
 
-      {/* ── Status Pills (Matching Resources & Suppliers Pill Tabs) ── */}
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setSubTab("all")}
-          className={`flex items-center gap-2 rounded-full px-4 py-1.5 type-caption font-semibold transition-all cursor-pointer ${subTab === "all"
-              ? "bg-button-primary text-text-inverse shadow-xs"
-              : "border border-divider bg-surface text-text-muted hover:bg-surface-hover"
-            }`}
-        >
-          <span>All</span>
-          <span
-            className={`rounded-full px-1.5 py-0.5 type-caption font-semibold ${subTab === "all" ? "bg-surface text-text-primary" : "bg-surface-secondary text-text-muted"
-              }`}
+      {/* ── Standalone Filters & Search Row ── */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select value={productFilter} onValueChange={setProductFilter}>
+          <SelectTrigger className="h-[38px] w-full sm:w-auto sm:min-w-[230px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
+            <span className="truncate">
+              <span className="text-ink-muted font-normal mr-1.5">Product:</span>
+              <span className="font-medium text-ink">
+                <SelectValue placeholder="All Products" />
+              </span>
+            </span>
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            side="bottom"
+            align="start"
+            sideOffset={4}
+            avoidCollisions={false}
+            className="min-w-[230px] max-h-72"
           >
-            {allBatches.length}
-          </span>
-        </button>
+            <SelectItem value="All">All Products</SelectItem>
+            {uniqueProducts.map((p) => (
+              <SelectItem key={p} value={p}>
+                {p}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <button
-          type="button"
-          onClick={() => setSubTab("pending")}
-          className={`flex items-center gap-2 rounded-full px-4 py-1.5 type-caption font-semibold transition-all cursor-pointer ${subTab === "pending"
-              ? "bg-button-primary text-text-inverse shadow-xs"
-              : "border border-divider bg-surface text-text-muted hover:bg-surface-hover"
-            }`}
-        >
-          <span>Ready for Stock-In</span>
-          <span
-            className={`rounded-full px-1.5 py-0.5 type-caption font-semibold ${subTab === "pending" ? "bg-surface text-text-primary" : "bg-surface-secondary text-text-muted"
-              }`}
-          >
-            {pendingBatches.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setSubTab("history")}
-          className={`flex items-center gap-2 rounded-full px-4 py-1.5 type-caption font-semibold transition-all cursor-pointer ${subTab === "history"
-              ? "bg-button-primary text-text-inverse shadow-xs"
-              : "border border-divider bg-surface text-text-muted hover:bg-surface-hover"
-            }`}
-        >
-          <span>Stock-In History</span>
-          <span
-            className={`rounded-full px-1.5 py-0.5 type-caption font-semibold ${subTab === "history" ? "bg-surface text-text-primary" : "bg-surface-secondary text-text-muted"
-              }`}
-          >
-            {historyBatches.length}
-          </span>
-        </button>
+        <SearchInput
+          containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
+          placeholder="Search lot, product, or batch..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
       </div>
 
-      {/* ── Table (Matching SupplyTable layout: No QA Status, No Variant Under Name) ── */}
-      <div className="overflow-x-auto custom-scrollbar rounded-card border border-divider bg-surface shadow-card">
+      {/* ── Padded Table Card ── */}
+      <div className="rounded-card border border-border bg-surface p-5">
         {loading ? (
           <ProductionSkeleton />
         ) : displayedBatches.length === 0 ? (
-          <div className="p-12 text-center space-y-2">
-            <p className="type-body font-semibold text-text-primary">
+          <div className="py-12 text-center space-y-2">
+            <p className="type-body font-medium text-ink">
               {subTab === "pending"
                 ? "No finished goods batches waiting for stock-in."
                 : "No stock-in records found."}
             </p>
-            <p className="type-caption text-text-muted">
+            <p className="type-caption text-ink-muted">
               Batches cleared by Quality Assurance will appear here ready to commit to inventory.
             </p>
           </div>
         ) : (
-          <table className="w-full min-w-[800px] border-collapse type-body">
-            <thead className="border-b border-divider bg-surface-secondary">
-              <tr className="table-head-row text-left type-table-header uppercase text-text-muted whitespace-nowrap">
-                <th className="table-th sticky left-0 z-20 bg-surface-secondary/95 backdrop-blur-xs px-4 py-3 min-w-[160px] w-44 whitespace-nowrap border-r border-divider shadow-sticky">Finished Goods Lot</th>
-                <th className="table-th px-4 py-3 whitespace-nowrap">Product Name</th>
-                <th className="table-th px-4 py-3">Batch Number</th>
-                <th className="table-th px-4 py-3 text-right">Units to Stock</th>
-                <th className="table-th px-4 py-3">Expiry Date</th>
-                <th className="table-th w-16 px-4 py-3 text-center whitespace-nowrap">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-divider">
-              {displayedBatches.map((b) => (
-                <tr key={b.batchId} className="table-row group hover:bg-surface-hover/50 transition-colors">
-                  <td className="table-td sticky left-0 z-10 bg-surface group-hover:bg-surface-hover px-4 py-3.5 type-body font-semibold text-text-primary whitespace-nowrap min-w-[160px] w-44 border-r border-divider shadow-sticky transition-colors">
-                    {(b.fgLotCode || "").replace(/^FG-/i, "") || "Pending Lot"}
-                  </td>
-                  <td className="table-td px-4 py-3.5 type-body text-text-primary whitespace-nowrap">
-                    {b.productName}
-                  </td>
-                  <td className="table-td px-4 py-3.5 type-body text-text-muted whitespace-nowrap">
-                    {b.batchNumber}
-                  </td>
-                  <td className="table-td px-4 py-3.5 type-body text-right font-semibold text-text-primary whitespace-nowrap">
-                    {Number(b.finalQuantity || b.actualQuantity).toLocaleString()} {b.yieldUom || "jars"}
-                  </td>
-                  <td className="table-td px-4 py-3.5 type-body text-text-muted whitespace-nowrap">
-                    {b.expiryDate
-                      ? new Date(b.expiryDate).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })
-                      : "—"}
-                  </td>
-                  <td className="table-td w-16 px-4 py-3.5 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-center">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full min-w-[760px] border-collapse">
+              <thead>
+                <tr className="border-b border-divider">
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[160px]">Finished Goods Lot</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Product Name</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Batch Number</th>
+                  <th className="pb-2.5 pt-1 pr-6 type-table-header text-ink-muted text-right whitespace-nowrap">Units to Stock</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Expiry Date</th>
+                  <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-divider">
+                {displayedBatches.map((b) => (
+                  <tr key={b.batchId} className="group hover:bg-page transition-colors">
+                    <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[160px]">
+                      {(b.fgLotCode || "").replace(/^FG-/i, "") || "Pending Lot"}
+                    </td>
+                    <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
+                      {b.productName}
+                    </td>
+                    <td className="py-3 pr-4 type-body text-ink-muted whitespace-nowrap tabular-nums">
+                      {b.batchNumber}
+                    </td>
+                    <td className="py-3 pr-6 type-body font-medium text-ink text-right whitespace-nowrap tabular-nums">
+                      {Number(b.finalQuantity || b.actualQuantity).toLocaleString()} {b.yieldUom || "jars"}
+                    </td>
+                    <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
+                      {b.expiryDate
+                        ? new Date(b.expiryDate).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                        : "—"}
+                    </td>
+                    <td className="w-16 py-3 pl-4 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
                             type="button"
-                            className="p-1.5 rounded-control text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer focus:outline-none"
+                            className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors cursor-pointer focus:outline-none"
                             title="Actions"
                             aria-label="Actions"
                           >
                             <MoreHorizontal size={18} />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 rounded-control border border-divider bg-surface shadow-modal p-1.5 text-left z-[100]">
+                        <DropdownMenuContent align="end" className="w-44">
                           <DropdownMenuItem
                             onClick={() => handleOpenForBatch(b)}
-                            className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary focus:text-text-primary cursor-pointer rounded-control transition-colors outline-none"
+                            className="cursor-pointer type-body-secondary"
                           >
-                            <Eye size={14} className="shrink-0 text-text-muted" />
+                            <Eye size={14} className="shrink-0" />
                             <span>View Details</span>
                           </DropdownMenuItem>
                           {!isAdmin && b.status === "For Stock-in" && (
                             <DropdownMenuItem
                               onClick={() => handleOpenForBatch(b)}
-                              className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-semibold text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary focus:text-text-primary cursor-pointer rounded-control transition-colors outline-none border-t border-divider"
+                              className="cursor-pointer type-body-secondary font-medium"
                             >
-                              <ArrowDownToLine size={14} className="shrink-0 text-text-muted" />
+                              <ArrowDownToLine size={14} className="shrink-0" />
                               <span>Commit Stock-In</span>
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

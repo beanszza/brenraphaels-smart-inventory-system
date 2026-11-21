@@ -95,7 +95,7 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
   };
 
   return (
-    <div className="w-full min-h-full page-container py-6 px-4 sm:px-6 md:px-8 space-y-6 animate-page-in">
+    <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
       <PageHeader
         title="Production & Quality"
         description="End-to-end production management, material lot reservations, sequential stage tracking, and quality assurance."
@@ -105,10 +105,10 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
               asChild
               variant="outline"
               size="sm"
-              className="flex items-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-caption font-semibold text-text-primary hover:bg-surface-hover transition-colors h-10 cursor-pointer shadow-card"
+              className="flex items-center gap-1.5 rounded-control bg-surface border border-border px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-9 cursor-pointer shadow-none"
             >
               <Link href="/production-quality/logs">
-                <History className="w-3.5 h-3.5" /> Transaction History
+                <History className="w-4 h-4" /> Transaction History
               </Link>
             </Button>
           ) : undefined
@@ -126,10 +126,10 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
                 href={`/production-quality?tab=${tab.key}`}
                 prefetch={true}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-2 px-4 py-2.5 type-caption font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap outline-none ${
                   isActive
-                    ? "border-text-primary text-text-primary"
-                    : "border-transparent text-text-muted hover:text-text-primary"
+                    ? "border-primary text-primary -mb-px"
+                    : "border-transparent text-ink-muted hover:text-ink"
                 }`}
               >
                 <span>{tab.label.toUpperCase()}</span>

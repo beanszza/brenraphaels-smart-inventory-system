@@ -171,100 +171,96 @@ export default function LossTab({ initialRows }: { initialRows: Parameters<typeo
         </div>
       </div>
 
-      {/* Search Input */}
-      <div className="rounded-card border border-divider bg-surface p-3 shadow-card">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <SearchInput
-            containerClassName="flex-1"
-            placeholder="Search by loss report ID, batch number, or product name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <span className="text-xs text-muted-foreground font-medium pl-1 hidden sm:inline">
-            Showing {filteredReports.length} records
-          </span>
-        </div>
+      {/* Standalone Search Row */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <SearchInput
+          containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
+          placeholder="Search loss ID, batch, or product..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <span className="type-caption text-ink-muted font-medium hidden sm:inline">
+          Showing {filteredReports.length} records
+        </span>
       </div>
 
-      {/* Loss Reports Table */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      {/* Padded Table Card */}
+      <div className="rounded-card border border-border bg-surface p-5">
         {loading ? (
           <ProductionSkeleton />
         ) : filteredReports.length === 0 ? (
-          <div className="p-12 text-center text-muted-foreground text-sm">
+          <div className="py-12 text-center text-ink-muted type-body">
             {searchQuery
               ? `No loss reports found matching "${searchQuery}".`
               : "No production losses recorded. All active batches have passed inspections."}
           </div>
         ) : (
           <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full min-w-[850px] text-left">
-              <thead className="border-b border-border bg-muted/30">
-                <tr className="text-left text-xs uppercase text-muted-foreground whitespace-nowrap">
-                  <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs px-4 py-4 min-w-[130px] w-36 whitespace-nowrap border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">Loss ID</th>
-                  <th className="px-4 py-4 whitespace-nowrap">Batch Number</th>
-                  <th className="px-4 py-4">Product Name</th>
-                  <th className="px-4 py-4">Variant</th>
-                  <th className="px-4 py-4">Failure Stage</th>
-                  <th className="px-4 py-4">Date Logged</th>
-                  <th className="px-4 py-4 text-right">Estimated Loss</th>
-                  <th className="w-16 px-4 py-4 text-center whitespace-nowrap">Actions</th>
+            <table className="w-full min-w-[820px] text-left border-collapse">
+              <thead>
+                <tr className="border-b border-divider">
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[130px]">Loss ID</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Batch Number</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Product Name</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Variant</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Failure Stage</th>
+                  <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Date Logged</th>
+                  <th className="pb-2.5 pt-1 pr-6 type-table-header text-ink-muted text-right whitespace-nowrap">Estimated Loss</th>
+                  <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-divider">
                 {filteredReports.map((report) => (
                   <tr
                     key={report.lossId}
                     onClick={() => setSelectedReport(report)}
-                    className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                    className="group hover:bg-page transition-colors cursor-pointer"
                   >
-                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-4 text-sm font-semibold text-foreground whitespace-nowrap min-w-[130px] w-36 border-r border-border/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors">
+                    <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[130px]">
                       {report.lossId}
                     </td>
-                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="py-3 pr-4 type-body text-ink-muted whitespace-nowrap tabular-nums">
                       {report.batchNumber}
                     </td>
-                    <td className="px-4 py-4 text-sm text-foreground whitespace-nowrap">
+                    <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                       {report.productName}
                     </td>
-                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="py-3 pr-4 type-body text-ink-muted whitespace-nowrap">
                       {report.variant}
                     </td>
-                    <td className="px-4 py-4 text-sm whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 font-semibold text-destructive">
+                    <td className="py-3 pr-4 type-body whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 font-medium text-destructive">
                         <AlertOctagon size={13} /> {report.failureStage}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                    <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                       {new Date(report.date).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-4 text-sm font-semibold text-destructive text-right whitespace-nowrap">
+                    <td className="py-3 pr-6 type-body font-medium text-destructive text-right whitespace-nowrap tabular-nums">
                       ₱{report.totalEstimatedLoss.toLocaleString()}
                     </td>
-                    <td className="w-16 px-4 py-4 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-center">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              className="p-1.5 rounded-lg text-foreground hover:bg-muted transition-colors cursor-pointer focus:outline-none"
-                              title="Actions"
-                              aria-label="Actions"
-                            >
-                              <MoreHorizontal size={18} />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 rounded-xl border border-border bg-card shadow-xl p-1.5 text-left z-[100]">
-                            <DropdownMenuItem
-                              onClick={() => setSelectedReport(report)}
-                              className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted focus:bg-muted focus:text-foreground cursor-pointer rounded-lg transition-colors outline-none"
-                            >
-                              <Eye size={14} className="shrink-0 text-muted-foreground" />
-                              <span>View Breakdown</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                    <td className="w-16 py-3 pl-4 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors cursor-pointer focus:outline-none"
+                            title="Actions"
+                            aria-label="Actions"
+                          >
+                            <MoreHorizontal size={18} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem
+                            onClick={() => setSelectedReport(report)}
+                            className="cursor-pointer type-body-secondary"
+                          >
+                            <Eye size={14} className="shrink-0" />
+                            <span>View Breakdown</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))}

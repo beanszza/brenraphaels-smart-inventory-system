@@ -244,19 +244,19 @@ export default function ProductionRequestsTab({
   const paginatedRequests = filteredRequests.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 animate-page-in">
       {/* Header & New Request Button */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="type-page-title text-text-primary">Production Requests</h2>
-          <p className="mt-1 type-body text-text-muted">
+          <h2 className="type-page-title text-ink">Production Requests</h2>
+          <p className="mt-1 type-body text-ink-muted">
             Plan production volumes, verify automated BOM lot reservations, review and approve requests, and start kitchen batches.
           </p>
         </div>
         {isImsManager && (
           <Button
             onClick={handleOpenNewModal}
-            className="flex items-center justify-center gap-2 rounded-control bg-button-primary px-5 py-2.5 type-body font-semibold text-text-inverse hover:bg-button-primary/85 transition-colors shadow-card cursor-pointer"
+            className="flex items-center justify-center gap-1.5 rounded-control bg-primary px-3.5 py-2 type-label-button text-on-brand hover:bg-primary-hover transition-colors h-9 shadow-none cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>New Production Request</span>
@@ -264,46 +264,9 @@ export default function ProductionRequestsTab({
         )}
       </div>
 
-      {/* Filters Bar */}
-      <div className="mb-6 rounded-card border border-divider bg-surface p-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <SearchInput
-            containerClassName="flex-1"
-            placeholder="Search by Request No., Product, or Variant..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center">
-              <Select
-                value={priorityFilter}
-                onValueChange={(val) => {
-                  setPriorityFilter(val);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="h-10 min-w-[180px] w-auto rounded-control border border-divider bg-surface px-3.5 type-body font-medium text-text-primary shadow-card focus:border-border-focus">
-                  <SelectValue placeholder="All Priorities" />
-                </SelectTrigger>
-                <SelectContent className="min-w-[180px] bg-surface border-divider type-caption">
-                  <SelectItem value="All">All Priorities</SelectItem>
-                  <SelectItem value="Low">Low</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Top Status Tabs */}
-      <div className="border-b border-divider overflow-x-auto">
-        <div className="flex items-center gap-1.5 min-w-max pb-2">
+      {/* Status Sub-tabs */}
+      <div className="overflow-x-auto">
+        <div className="flex items-center gap-1 min-w-max">
           {statusTabs.map((tab) => {
             const isSelected = activeTab === tab;
             const count = statusCounts[tab] || 0;
@@ -316,58 +279,98 @@ export default function ProductionRequestsTab({
                   setActiveTab(tab);
                   setCurrentPage(1);
                 }}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${isSelected
-                    ? "bg-button-primary text-text-inverse shadow-card"
-                    : "bg-surface-secondary text-text-muted hover:text-text-primary hover:bg-surface-secondary/80"
-                  }`}
+                aria-pressed={isSelected}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
+                  isSelected
+                    ? "bg-status-purple-bg text-primary"
+                    : "text-ink-muted hover:text-ink hover:bg-subtle"
+                }`}
               >
                 <span>{tab}</span>
-                <span
-                  className={`px-1.5 py-0.5 rounded-pill type-caption font-semibold ${isSelected ? "bg-surface text-text-primary" : "bg-surface-secondary text-text-muted"
-                    }`}
-                >
-                  {count}
-                </span>
+                <span className="tabular-nums">{count}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Requests Table */}
-      <div className="border border-divider rounded-card overflow-hidden bg-surface shadow-card">
+      {/* Standalone Filters & Search Row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={priorityFilter}
+          onValueChange={(val) => {
+            setPriorityFilter(val);
+            setCurrentPage(1);
+          }}
+        >
+          <SelectTrigger className="h-[38px] w-full sm:w-auto sm:min-w-[210px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
+            <span className="truncate">
+              <span className="text-ink-muted font-normal mr-1.5">Priority:</span>
+              <span className="font-medium text-ink">
+                <SelectValue placeholder="All Priorities" />
+              </span>
+            </span>
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            side="bottom"
+            align="start"
+            sideOffset={4}
+            avoidCollisions={false}
+            className="min-w-[210px] max-h-72"
+          >
+            <SelectItem value="All">All Priorities</SelectItem>
+            <SelectItem value="Low">Low</SelectItem>
+            <SelectItem value="Medium">Medium</SelectItem>
+            <SelectItem value="High">High</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <SearchInput
+          containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
+          placeholder="Search request, product, or variant..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+      </div>
+
+      {/* Padded Table Card */}
+      <div className="rounded-card border border-border bg-surface p-5">
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead className="border-b border-divider bg-surface-secondary">
-              <tr className="table-head-row text-left whitespace-nowrap">
-                <th className="sticky left-0 z-20 bg-surface-secondary table-th px-4 py-3 whitespace-nowrap min-w-[170px] w-44 border-r border-divider shadow-sticky">
+          <table className="w-full min-w-[820px] text-left border-collapse">
+            <thead>
+              <tr className="border-b border-divider">
+                <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[160px]">
                   {activeTab === "In Progress" || activeTab === "Completed"
                     ? "Batch Number"
                     : activeTab === "All"
                       ? "Request / Batch No."
                       : "Request Number"}
                 </th>
-                <th className="table-th px-4 py-3 whitespace-nowrap min-w-[180px]">
+                <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[180px]">
                   Product
                 </th>
-                <th className="table-th px-4 py-3 whitespace-nowrap">Variant</th>
-                <th className="table-th px-4 py-3 text-right whitespace-nowrap">Target Output</th>
-                <th className="table-th px-4 py-3 text-center whitespace-nowrap">Priority</th>
-                <th className="table-th px-4 py-3 text-center whitespace-nowrap">Status</th>
-                <th className="table-th px-4 py-3 whitespace-nowrap">Required Date</th>
-                <th className="table-th w-16 px-4 py-3 text-center whitespace-nowrap">Actions</th>
+                <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Variant</th>
+                <th className="pb-2.5 pt-1 pr-6 type-table-header text-ink-muted text-right whitespace-nowrap">Target Output</th>
+                <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Priority</th>
+                <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Status</th>
+                <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Required Date</th>
+                <th className="w-16 pb-2.5 pt-1 pl-4 type-table-header text-ink-muted text-center whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-divider">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center type-body text-text-muted animate-pulse">
+                  <td colSpan={8} className="py-12 text-center type-body text-ink-muted">
                     <ProductionSkeleton />
                   </td>
                 </tr>
               ) : paginatedRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center type-body text-text-muted">
+                  <td colSpan={8} className="py-12 text-center type-body text-ink-muted">
                     No production requests found in this view.
                   </td>
                 </tr>
@@ -376,8 +379,6 @@ export default function ProductionRequestsTab({
                   const isHigh = req.priority === "High" || req.priority === "Priority";
                   const isLow = req.priority === "Low";
                   const displayPriority = isHigh ? "High" : isLow ? "Low" : "Medium";
-                  const hasPr = Boolean(req.linkedPrId);
-                  const isMenuOpen = openDropdownId === req.prodReqId;
 
                   const isReadyForProd = req.status === "Materials Issued" || req.status === "Ready for Production";
                   const isInProd = req.status === "In Production" || req.status === "In Progress" || req.status === "For QA";
@@ -394,141 +395,140 @@ export default function ProductionRequestsTab({
                     <tr
                       key={req.prodReqId}
                       onClick={() => handleViewRequest(req)}
-                      className={`table-row group hover:bg-surface-secondary/50 transition-colors cursor-pointer ${isHigh ? "bg-surface-secondary/20 border-l-2 border-l-brand" : ""
-                        }`}
+                      className="group hover:bg-page transition-colors cursor-pointer"
                     >
                       {/* Request / Batch Number */}
-                      <td className="sticky left-0 z-10 bg-surface group-hover:bg-surface-secondary/50 px-4 py-3 table-td font-semibold text-text-primary whitespace-nowrap min-w-[170px] w-44 border-r border-divider shadow-sticky transition-colors">
+                      <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[160px]">
                         {(isInProd || isCompleted) && req.batches?.[0]?.batchNumber
                           ? req.batches[0].batchNumber
                           : req.reqNumber}
                       </td>
 
                       {/* Product (Product name only) */}
-                      <td className="px-4 py-3 table-td text-text-primary whitespace-nowrap min-w-[180px]">
+                      <td className="py-3 pr-4 type-body text-ink whitespace-nowrap min-w-[180px]">
                         {req.productName}
                       </td>
 
                       {/* Variant (Dedicated column) */}
-                      <td className="px-4 py-3 table-td text-text-muted whitespace-nowrap">
+                      <td className="py-3 pr-4 type-body text-ink-muted whitespace-nowrap">
                         {req.variant || "Standard"}
                       </td>
 
                       {/* Target Output */}
-                      <td className="px-4 py-3 table-td text-right font-semibold text-text-primary whitespace-nowrap">
+                      <td className="py-3 pr-6 type-body font-medium text-ink text-right whitespace-nowrap tabular-nums">
                         {req.quantity} {req.yieldUom}
                       </td>
 
-                      {/* Priority (Monochromatic badge - No red) */}
-                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                      {/* Priority */}
+                      <td className="py-3 pr-4 whitespace-nowrap">
                         <span
-                          className={`type-caption font-semibold px-2.5 py-0.5 rounded-pill border ${isHigh
-                              ? "bg-button-primary text-text-inverse border-button-primary"
+                          className={`inline-flex h-[22px] items-center rounded-pill px-2.5 py-[3px] type-badge ${
+                            isHigh
+                              ? "bg-status-amber-bg text-status-amber-fg"
                               : isLow
-                                ? "bg-surface-secondary text-text-muted border-divider"
-                                : "bg-surface-secondary text-text-primary border-divider"
-                            }`}
+                                ? "bg-status-gray-bg text-status-gray-fg"
+                                : "bg-status-blue-bg text-status-blue-fg"
+                          }`}
                         >
                           {displayPriority}
                         </span>
                       </td>
 
                       {/* Status Badge */}
-                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                      <td className="py-3 pr-4 whitespace-nowrap">
                         <StatusBadge status={displayStatus} />
                       </td>
 
                       {/* Required Schedule (Date only) */}
-                      <td className="px-4 py-3 table-td text-text-muted whitespace-nowrap">
-                        <div>{req.requiredDate ? new Date(req.requiredDate).toLocaleDateString() : "—"}</div>
+                      <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
+                        {req.requiredDate ? new Date(req.requiredDate).toLocaleDateString() : "—"}
                       </td>
 
                       {/* Actions */}
-                      <td className="w-16 px-4 py-3 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button
-                                type="button"
-                                className="p-1.5 rounded-control text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer focus:outline-none"
-                                title="Actions"
-                              >
-                                <MoreHorizontal size={18} />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 rounded-control border border-divider bg-surface shadow-modal p-1.5 text-left z-[100]">
+                      <td className="w-16 py-3 pl-4 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle transition-colors cursor-pointer focus:outline-none"
+                              title="Actions"
+                              aria-label="Actions"
+                            >
+                              <MoreHorizontal size={18} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedRequest(req);
+                                setIsModalOpen(true);
+                              }}
+                              className="cursor-pointer type-body-secondary"
+                            >
+                              <Eye size={14} className="shrink-0" />
+                              <span>View Details</span>
+                            </DropdownMenuItem>
+
+                            {req.batches?.[0]?.batchId && (
                               <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedRequest(req);
-                                  setIsModalOpen(true);
-                                }}
-                                className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary focus:text-text-primary cursor-pointer rounded-control transition-colors outline-none"
+                                onClick={() => setSummaryBatchId(req.batches[0].batchId)}
+                                className="cursor-pointer type-body-secondary"
                               >
-                                <Eye size={14} className="shrink-0 text-text-muted" />
-                                <span>View Details</span>
+                                <FileText size={14} className="shrink-0" />
+                                <span>Batch Summary &amp; PDF</span>
                               </DropdownMenuItem>
+                            )}
 
-                              {req.batches?.[0]?.batchId && (
+                            {isImsManager && req.status === "Approved" && onNavigateToIssuance && (
+                              <DropdownMenuItem
+                                onClick={() => onNavigateToIssuance(req.prodReqId)}
+                                className="cursor-pointer type-body-secondary"
+                              >
+                                <Layers size={14} className="shrink-0" />
+                                <span>Issue Materials</span>
+                              </DropdownMenuItem>
+                            )}
+
+                            {isHeadCook && isReadyForProd && (
+                              <DropdownMenuItem
+                                onClick={() => handleStartProduction(req)}
+                                className="cursor-pointer type-body-secondary font-medium"
+                              >
+                                <Play size={14} className="shrink-0" />
+                                <span>Start Production</span>
+                              </DropdownMenuItem>
+                            )}
+
+                            {isAdmin && req.status === "Pending Approval" && (
+                              <>
                                 <DropdownMenuItem
-                                  onClick={() => setSummaryBatchId(req.batches[0].batchId)}
-                                  className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary focus:text-text-primary cursor-pointer rounded-control transition-colors outline-none"
+                                  onClick={() => setAdminActionModal({ open: true, type: "approve", request: req })}
+                                  className="cursor-pointer type-body-secondary"
                                 >
-                                  <FileText size={14} className="shrink-0 text-text-muted" />
-                                  <span>Batch Summary &amp; PDF</span>
+                                  <CheckCircle size={14} className="shrink-0 text-success" />
+                                  <span>Approve</span>
                                 </DropdownMenuItem>
-                              )}
-
-                              {isImsManager && req.status === "Approved" && onNavigateToIssuance && (
                                 <DropdownMenuItem
-                                  onClick={() => onNavigateToIssuance(req.prodReqId)}
-                                  className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary focus:text-text-primary cursor-pointer rounded-control transition-colors outline-none"
+                                  onClick={() => setAdminActionModal({ open: true, type: "reject", request: req })}
+                                  className="cursor-pointer type-body-secondary text-destructive focus:text-destructive"
                                 >
-                                  <Layers size={14} className="shrink-0 text-text-muted" />
-                                  <span>Issue Materials</span>
+                                  <XCircle size={14} className="shrink-0" />
+                                  <span>Reject</span>
                                 </DropdownMenuItem>
-                              )}
+                              </>
+                            )}
 
-                              {isHeadCook && isReadyForProd && (
-                                <DropdownMenuItem
-                                  onClick={() => handleStartProduction(req)}
-                                  className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-semibold text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary focus:text-text-primary cursor-pointer rounded-control transition-colors outline-none"
-                                >
-                                  <Play size={14} className="shrink-0 text-text-muted" />
-                                  <span>Start Production</span>
-                                </DropdownMenuItem>
-                              )}
-
-                              {isAdmin && req.status === "Pending Approval" && (
-                                <>
-                                  <DropdownMenuItem
-                                    onClick={() => setAdminActionModal({ open: true, type: "approve", request: req })}
-                                    className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary focus:text-text-primary cursor-pointer rounded-control transition-colors outline-none"
-                                  >
-                                    <CheckCircle size={14} className="shrink-0 text-badge-success-text" />
-                                    <span>Approve</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => setAdminActionModal({ open: true, type: "reject", request: req })}
-                                    className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-medium text-badge-danger-text hover:bg-badge-danger-bg focus:bg-badge-danger-bg focus:text-badge-danger-text cursor-pointer rounded-control transition-colors outline-none"
-                                  >
-                                    <XCircle size={14} className="shrink-0 text-badge-danger-text" />
-                                    <span>Reject</span>
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-
-                              {isInProd && onStartBatchAndTrack && req.batches?.[0]?.batchId && (isHeadCook || isAdmin) && (
-                                <DropdownMenuItem
-                                  onClick={() => onStartBatchAndTrack(req.batches[0].batchId)}
-                                  className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary focus:text-text-primary cursor-pointer rounded-control transition-colors outline-none"
-                                >
-                                  <Activity size={14} className="shrink-0 text-text-muted" />
-                                  <span>Track Batch</span>
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+                            {isInProd && onStartBatchAndTrack && req.batches?.[0]?.batchId && (isHeadCook || isAdmin) && (
+                              <DropdownMenuItem
+                                onClick={() => onStartBatchAndTrack(req.batches[0].batchId)}
+                                className="cursor-pointer type-body-secondary"
+                              >
+                                <Activity size={14} className="shrink-0" />
+                                <span>Track Batch</span>
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   );
@@ -538,17 +538,13 @@ export default function ProductionRequestsTab({
           </table>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="p-3 border-t border-divider bg-surface flex justify-end">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalCount={totalCount}
-              onPageChange={setCurrentPage}
-            />
-          </div>
-        )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          onPageChange={setCurrentPage}
+          embedded
+        />
       </div>
 
       {/* Production Request Modal (Create / View) */}

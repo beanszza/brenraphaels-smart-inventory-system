@@ -139,12 +139,12 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
   };
 
   return (
-    <div className="space-y-6 animate-page-in">
+    <div className="space-y-5 animate-page-in">
       {/* ── Header ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-divider pb-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="type-page-title text-text-primary">Quality Assurance Review</h2>
-          <p className="mt-1 type-body text-text-muted">
+          <h2 className="type-page-title text-ink">Quality Assurance Review</h2>
+          <p className="mt-1 type-body text-ink-muted">
             Inspect finished production lots, verify sensory and packaging parameters, and approve for stock-in.
           </p>
         </div>
@@ -153,7 +153,7 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
             variant="outline"
             size="sm"
             onClick={fetchBatches}
-            className="type-button h-8 rounded-control border-divider hover:bg-surface-hover font-semibold cursor-pointer text-text-primary"
+            className="h-9 px-3.5 py-2 rounded-control border border-border bg-surface hover:bg-subtle type-label-button cursor-pointer text-ink shadow-none"
           >
             Refresh
           </Button>
@@ -161,36 +161,40 @@ export default function ProductionQaTab({ initialRows, currentUser }: Production
       </div>
 
       {/* ── Subtab Navigation (Pending QA & Completed QA) ── */}
-      <div className="flex items-center gap-2 overflow-x-auto">
-        <button
-          type="button"
-          onClick={() => {
-            setSubTab("pending");
-            setSelectedBatchId(null);
-          }}
-          className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
-            subTab === "pending"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "border border-divider bg-surface text-text-muted hover:bg-surface-hover hover:text-text-primary"
-          }`}
-        >
-          <span>Pending Inspection</span>
-        </button>
+      <div className="overflow-x-auto">
+        <div className="flex items-center gap-1 min-w-max">
+          <button
+            type="button"
+            onClick={() => {
+              setSubTab("pending");
+              setSelectedBatchId(null);
+            }}
+            aria-pressed={subTab === "pending"}
+            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer ${
+              subTab === "pending"
+                ? "bg-status-purple-bg text-primary"
+                : "text-ink-muted hover:bg-subtle hover:text-ink"
+            }`}
+          >
+            <span>Pending Inspection</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            setSubTab("completed");
-            setSelectedBatchId(null);
-          }}
-          className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
-            subTab === "completed"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "border border-divider bg-surface text-text-muted hover:bg-surface-hover hover:text-text-primary"
-          }`}
-        >
-          <span>Cleared / Completed QA</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSubTab("completed");
+              setSelectedBatchId(null);
+            }}
+            aria-pressed={subTab === "completed"}
+            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer ${
+              subTab === "completed"
+                ? "bg-status-purple-bg text-primary"
+                : "text-ink-muted hover:bg-subtle hover:text-ink"
+            }`}
+          >
+            <span>Cleared / Completed QA</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Main Layout: Slimmer Batch List & Spacious QA Form ── */}
