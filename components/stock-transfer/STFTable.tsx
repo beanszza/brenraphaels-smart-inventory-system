@@ -26,27 +26,27 @@ export function STFTable({
 
   if (transfers.length === 0) {
     return (
-      <div className="rounded-panel border border-divider bg-surface p-12 text-center type-body text-text-muted">
+      <div className="rounded-card border border-border bg-surface p-12 text-center type-body text-ink-muted">
         No formal stock transfers found matching your filter criteria.
       </div>
     );
   }
 
   return (
-    <div className="rounded-panel border border-divider bg-surface overflow-hidden shadow-xs">
+    <div className="rounded-card border border-border bg-surface p-5">
       <div className="overflow-x-auto custom-scrollbar">
         <table className="w-full border-collapse text-left">
-          <thead className="bg-surface-hover text-text-muted type-table-header border-b border-divider">
+          <thead className="border-b border-divider">
             <tr>
-              <th className="sticky left-0 z-20 min-w-[150px] w-44 px-5 py-3.5 whitespace-nowrap bg-surface-hover backdrop-blur-xs border-r border-divider shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">Transfer No.</th>
-              <th className="px-5 py-3.5 whitespace-nowrap">STR Ref</th>
-              <th className="px-5 py-3.5 whitespace-nowrap">Product &amp; Variant</th>
-              <th className="px-5 py-3.5">Destination</th>
-              <th className="px-5 py-3.5 text-right">Transfer Qty</th>
-              <th className="px-5 py-3.5">Scheduled Date</th>
-              <th className="px-5 py-3.5">Driver / Courier</th>
-              <th className="px-5 py-3.5">Status</th>
-              <th className="px-5 py-3.5 text-right">Actions</th>
+              <th className="py-3 pr-4 text-left type-table-header text-ink-muted whitespace-nowrap">Transfer No.</th>
+              <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">STR Ref</th>
+              <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">Product &amp; Variant</th>
+              <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">Destination</th>
+              <th className="pl-4 pr-6 py-3 text-right type-table-header text-ink-muted whitespace-nowrap">Transfer Qty</th>
+              <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">Scheduled Date</th>
+              <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">Driver / Courier</th>
+              <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">Status</th>
+              <th className="pl-4 py-3 text-right type-table-header text-ink-muted whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-divider">
@@ -56,51 +56,51 @@ export function STFTable({
               return (
                 <tr
                   key={st.transferId}
-                  className="hover:bg-surface-hover/60 transition-colors cursor-pointer group"
+                  className="hover:bg-page transition-colors cursor-pointer"
                   onClick={() => onView(st)}
                 >
-                  <td className="sticky left-0 z-10 min-w-[150px] w-44 px-5 py-4 font-mono font-semibold type-table-cell text-text-primary whitespace-nowrap bg-surface group-hover:bg-surface-hover transition-colors border-r border-divider shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                  <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap">
                     <span className="hover:underline">{st.transferNumber}</span>
                   </td>
 
-                  <td className="px-5 py-4 font-mono type-table-cell text-text-muted whitespace-nowrap">
+                  <td className="px-4 py-3 type-body text-ink-muted whitespace-nowrap">
                     {st.requestNumber || "—"}
                   </td>
 
-                  <td className="px-5 py-4 font-semibold type-table-cell text-text-primary">
+                  <td className="px-4 py-3 type-body font-medium text-ink">
                     <div>{st.productName}</div>
-                    <span className="type-caption text-text-muted font-normal">
+                    <span className="type-caption text-ink-muted font-normal">
                       {st.variant || "Standard"}
                     </span>
                   </td>
 
-                  <td className="px-5 py-4 type-table-cell text-text-primary">
+                  <td className="px-4 py-3 type-body text-ink">
                     {st.destLocationName}
                   </td>
 
-                  <td className="px-5 py-4 text-right font-semibold text-text-primary type-table-cell">
+                  <td className="pl-4 pr-6 py-3 text-right type-body font-medium tabular-nums text-ink">
                     {st.transferQuantity}
                   </td>
 
-                  <td className="px-5 py-4 type-table-cell text-text-muted">
+                  <td className="px-4 py-3 type-body text-ink-muted whitespace-nowrap">
                     {st.scheduledDate ? new Date(st.scheduledDate).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" }) : "—"}
                   </td>
 
-                  <td className="px-5 py-4 type-table-cell text-text-muted">
+                  <td className="px-4 py-3 type-body text-ink">
                     <div>{st.driverName || "—"}</div>
                     {st.vehiclePlate && (
-                      <span className="type-caption font-mono text-text-muted">
+                      <span className="type-caption text-ink-muted">
                         [{st.vehiclePlate}]
                       </span>
                     )}
                   </td>
 
-                  <td className="px-5 py-4">
+                  <td className="px-4 py-3">
                     <StatusBadge status={st.status} />
                   </td>
 
                   <td
-                    className="px-5 py-4 text-right"
+                    className="pl-4 py-3 text-right"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center justify-end gap-1.5">
@@ -112,7 +112,7 @@ export function STFTable({
                               type="button"
                               onClick={() => onDispatch(st)}
                               title="Dispatch Transfer"
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-control bg-primary text-primary-foreground type-button font-semibold hover:bg-primary-hover transition-colors shadow-xs cursor-pointer"
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-control bg-primary text-on-brand type-button hover:bg-primary-hover transition-colors cursor-pointer"
                             >
                               <Truck className="w-3.5 h-3.5" />
                               <span>Dispatch</span>
@@ -123,7 +123,7 @@ export function STFTable({
                               type="button"
                               onClick={() => onCancel(st)}
                               title="Cancel Transfer"
-                              className="p-1.5 rounded-control border border-divider bg-surface text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
+                              className="p-1.5 rounded-control border border-border bg-surface text-ink-muted hover:text-ink hover:bg-subtle transition-colors cursor-pointer"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -136,7 +136,7 @@ export function STFTable({
                         type="button"
                         onClick={() => onView(st)}
                         title="View Details"
-                        className="p-1.5 rounded-control border border-divider bg-surface text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
+                        className="p-1.5 rounded-control border border-border bg-surface text-ink-muted hover:text-ink hover:bg-subtle transition-colors cursor-pointer"
                       >
                         <Eye className="w-4 h-4" />
                       </button>

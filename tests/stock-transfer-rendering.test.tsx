@@ -144,13 +144,13 @@ it("hides Target Date on all tabs and shows Courier / Driver only on Scheduled a
 
   for (const tab of ["All", "Requests", "Pending Approval", "Approved", "Completed", "Cancelled", "Rejected"]) {
     const html = renderToStaticMarkup(<STRTable requests={[row]} loading={false} activeStatusTab={tab} onView={vi.fn()} />);
-    expect(html).not.toContain("TARGET DATE");
-    expect(html).not.toContain("COURIER / DRIVER");
+    expect(html).not.toContain("Target Date");
+    expect(html).not.toContain("Courier / Driver");
   }
 
   for (const tab of ["Scheduled", "Dispatched"]) {
     const html = renderToStaticMarkup(<STRTable requests={[row]} loading={false} activeStatusTab={tab} onView={vi.fn()} />);
-    expect(html).not.toContain("TARGET DATE");
-    expect(html).toContain("COURIER / DRIVER");
+    expect(html).not.toContain("Target Date");
+    expect(html).toContain("Courier / Driver");
   }
 });

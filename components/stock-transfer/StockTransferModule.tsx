@@ -187,19 +187,19 @@ export default function StockTransferModule({ requests, metrics, locations, acti
   };
 
   return (
-    <div className="w-full min-h-full py-6 px-4 sm:py-8 sm:px-6 md:px-8 space-y-6 animate-page-in">
-      {/* Top Page Header (matches Inventory module allowance) */}
+    <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
+      {/* Top Page Header */}
       <PageHeader
         title="Stock Transfers"
         description="Monitor, approve, schedule, and dispatch stock replenishment to branch stores"
         actions={
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={refreshAll}
               disabled={loading}
-              className="flex items-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-button font-semibold text-text-primary hover:bg-surface-hover transition-colors h-10 cursor-pointer"
+              className="h-9 px-3.5 py-2 rounded-control gap-1.5 bg-surface border border-border type-button text-ink hover:bg-subtle shadow-none cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </Button>
@@ -209,7 +209,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
                 asChild
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-2 rounded-control bg-surface border border-divider px-4 py-2 type-button font-semibold text-text-primary hover:bg-surface-hover transition-colors h-10 cursor-pointer"
+                className="h-9 px-3.5 py-2 rounded-control gap-1.5 bg-surface border border-border type-button text-ink hover:bg-subtle shadow-none cursor-pointer"
               >
                 <Link href="/stock-transfer/logs">
                   <History className="w-3.5 h-3.5" /> Transaction History
@@ -221,7 +221,7 @@ export default function StockTransferModule({ requests, metrics, locations, acti
               <Button
                 type="button"
                 onClick={() => setOpenCreateSTR(true)}
-                className="flex items-center gap-2 rounded-control bg-primary px-5 py-2.5 type-button font-semibold text-primary-foreground hover:bg-primary-hover transition-colors shadow-sm h-10 cursor-pointer"
+                className="h-9 px-3.5 py-2 rounded-control gap-1.5 bg-primary type-button text-on-brand hover:bg-primary-hover shadow-none cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Create Transfer Request
               </Button>
@@ -239,15 +239,15 @@ export default function StockTransferModule({ requests, metrics, locations, acti
           <button
             type="button"
             onClick={() => startTransition(() => router.push("/stock-transfer"))}
-            className={`flex items-center gap-2 px-4 py-2.5 type-caption font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 type-label-tab border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeMainTab === "transfers"
-                ? "border-primary text-text-primary"
-                : "border-transparent text-text-muted hover:text-text-primary hover:border-divider"
+                ? "border-primary text-primary"
+                : "border-transparent text-ink-muted hover:text-ink"
             }`}
           >
             <span>STOCK TRANSFERS</span>
             {statusCounts.All > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full type-caption font-semibold bg-surface-hover text-text-primary border border-divider">
+              <span className="px-1.5 py-0.5 rounded-full type-caption tabular-nums bg-subtle text-ink-muted">
                 {statusCounts.All}
               </span>
             )}
@@ -256,10 +256,10 @@ export default function StockTransferModule({ requests, metrics, locations, acti
           <button
             type="button"
             onClick={() => startTransition(() => router.push("/stock-transfer?tab=locations"))}
-            className={`flex items-center gap-2 px-4 py-2.5 type-caption font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 type-label-tab border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeMainTab === "locations"
-                ? "border-primary text-text-primary"
-                : "border-transparent text-text-muted hover:text-text-primary hover:border-divider"
+                ? "border-primary text-primary"
+                : "border-transparent text-ink-muted hover:text-ink"
             }`}
           >
             <span>LOCATIONS</span>
@@ -271,23 +271,10 @@ export default function StockTransferModule({ requests, metrics, locations, acti
       {activeMainTab === "locations" ? (
         <LocationsTab locations={locations} loading={loading} onRefresh={refreshAll} />
       ) : (
-        <div className="space-y-5">
-          {/* Search Filter Bar */}
-          <div className="rounded-control border border-divider bg-surface p-3">
-            <SearchInput
-              placeholder="Search by Request No., Transfer No., Destination Branch, Product, or Courier..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="type-input"
-            />
-          </div>
-
+        <div className="space-y-4">
           {/* Sub-status Tabs Row (Admin Requests tab + Status Tabs) */}
-          <div className="border-b border-divider overflow-x-auto pb-2">
-            <div className="flex items-center gap-1.5 min-w-max">
+          <div className="overflow-x-auto custom-scrollbar">
+            <div className="flex items-center gap-1 min-w-max">
               {/* Admin Requests Tab (Visible ONLY to Admin) */}
               {isAdmin && (
                 <button
@@ -296,24 +283,14 @@ export default function StockTransferModule({ requests, metrics, locations, acti
                     setActiveStatusTab("Requests");
                     setPage(1);
                   }}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
                     activeStatusTab === "Requests"
-                      ? "bg-primary text-primary-foreground shadow-xs"
-                      : "bg-surface-hover text-text-muted hover:text-text-primary hover:bg-surface-hover"
+                      ? "bg-status-purple-bg text-primary"
+                      : "text-ink-muted hover:text-ink hover:bg-subtle"
                   }`}
                 >
                   <span>Requests</span>
-                  {statusCounts.Requests > 0 && (
-                    <span
-                      className={`px-1.5 py-0.5 rounded-full type-caption font-semibold ${
-                        activeStatusTab === "Requests"
-                          ? "bg-surface text-text-primary"
-                          : "bg-surface-hover text-text-primary border border-divider"
-                      }`}
-                    >
-                      {statusCounts.Requests}
-                    </span>
-                  )}
+                  <span className="tabular-nums">{statusCounts.Requests || 0}</span>
                 </button>
               )}
 
@@ -330,31 +307,34 @@ export default function StockTransferModule({ requests, metrics, locations, acti
                       setActiveStatusTab(tab);
                       setPage(1);
                     }}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-control type-caption font-semibold transition-all cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
                       isSelected
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "bg-surface-hover text-text-muted hover:text-text-primary hover:bg-surface-hover"
+                        ? "bg-status-purple-bg text-primary"
+                        : "text-ink-muted hover:text-ink hover:bg-subtle"
                     }`}
                   >
                     <span>{tab}</span>
-                    {count > 0 && tab !== "All" && (
-                      <span
-                        className={`px-1.5 py-0.5 rounded-full type-caption font-semibold ${
-                          isSelected
-                            ? "bg-surface text-text-primary"
-                            : "bg-surface-hover text-text-primary border border-divider"
-                        }`}
-                      >
-                        {count}
-                      </span>
-                    )}
+                    <span className="tabular-nums">{count}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Unified Table Section */}
+          {/* Standalone Search Row */}
+          <div className="flex flex-wrap items-center gap-2">
+            <SearchInput
+              containerClassName="flex-none w-full sm:w-[320px] h-[38px]"
+              placeholder="Search request, branch, or product..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          {/* Unified Table Section with Embedded Pagination */}
           <STRTable
             requests={paginatedRequests}
             loading={loading}
@@ -366,20 +346,19 @@ export default function StockTransferModule({ requests, metrics, locations, acti
             onSchedule={(req) => setScheduleTargetReq(req)}
             onDispatch={(req) => handleOpenDispatch(req)}
             onCancel={(req) => setStrAction({ request: req, type: "cancel" })}
+            footer={
+              totalCount > 0 ? (
+                <Pagination
+                  currentPage={Math.min(page, totalPages)}
+                  totalPages={totalPages}
+                  totalCount={totalCount}
+                  itemsPerPage={pageSize}
+                  onPageChange={(p) => setPage(p)}
+                  embedded
+                />
+              ) : null
+            }
           />
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="pt-2">
-              <Pagination
-                currentPage={Math.min(page, totalPages)}
-                totalPages={totalPages}
-                totalCount={totalCount}
-                itemsPerPage={pageSize}
-                onPageChange={(p) => setPage(p)}
-              />
-            </div>
-          )}
         </div>
       )}
 
