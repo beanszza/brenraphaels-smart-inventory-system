@@ -617,21 +617,20 @@ describe("Inventory status badges and Category HasExpiry UI", () => {
 
     expect(html).toContain("font-sans");
     expect(html).not.toContain("font-mono");
-    // Labels use block text-xs font-semibold like CategoryModal / SupplyModal
-    expect(html).toContain('class="block text-xs font-semibold text-foreground">Target Output Quantity</label>');
-    // Target Output Quantity input uses h-10 text-sm and normal placeholder weight
+    // Labels use Figma token type-label-field text-ink
+    expect(html).toContain('class="block type-label-field text-ink">Target Output Quantity</label>');
+    // Target Output Quantity input uses h-10 and normal placeholder weight
     expect(html).toContain("placeholder:font-normal");
     expect(html).toContain("Select recipe first");
     // Required Date hides native middle calendar indicator and places lucide Calendar icon at right-3
     expect(html).toContain("pr-9");
     expect(html).toContain("right-3 top-1/2");
     expect(html).toContain("lucide-calendar");
-    // Reason / Batch Purpose is constrained and Close button has no icon beside Submit for Approval
-    expect(html).toContain("sm:max-w-md");
+    // Reason / Batch Purpose spans 2 columns and Cancel button has no icon beside Submit for Approval
+    expect(html).toContain("sm:col-span-2");
     expect(html).toContain("justify-end");
     expect(html).not.toContain("lucide-x");
-    expect(html).toContain(">Close</button>");
-    expect(html).not.toContain(">Cancel<");
+    expect(html).toContain(">Cancel</button>");
 
     // View mode does not duplicate product/request summary card
     const viewHtml = renderToStaticMarkup(

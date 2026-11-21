@@ -36,8 +36,8 @@ vi.mock("@/lib/prisma", () => {
       findFirst: async () => db(fake.missing ? null : lot),
       groupBy: async () => db([{ ItemId: 1, _sum: { ReservedQuantity: "3" } }]) },
     finishedProducts: { findMany: async () => db([{ ItemId: 1, ProductId: 1, Variant: "Large", Sku: "LARGE", ProductionBatches: [
-      { InventoryLots: { QuantityRemaining: "5", ReservedQuantity: "1", Status: "Available" } },
-      { InventoryLots: { QuantityRemaining: "100", ReservedQuantity: "0", Status: "OnHold" } },
+      { InventoryLots: { LotId: 101, LotCode: "LOT-FG-1", QuantityRemaining: "5", ReservedQuantity: "1", Status: "Available" } },
+      { InventoryLots: { LotId: 102, LotCode: "LOT-FG-2", QuantityRemaining: "100", ReservedQuantity: "0", Status: "OnHold" } },
     ] }]) },
     cycleCounts: { count: async () => db(1), findMany: async () => db([{ CycleCountId: 1, CountNumber: "CC-1", LocationId: 1, Locations: lot.Locations,
       CountDate: new Date("2026-10-01"), Status: "Open", CountedBy: "Legacy Counter", CycleCountItems: [counted],
