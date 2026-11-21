@@ -42,6 +42,87 @@ export function procurementTrend(orders: OrderRow[], now: Date): ProcurementMont
   });
 }
 
+/**
+ * Buckets non-draft/non-cancelled orders within an explicit [from, to] UTC range.
+ * Uses daily buckets for <= 14 days, weekly buckets for <= 62 days, and monthly buckets otherwise.
+ * Returns [] when there are zero matching orders in the range so the UI can show a clean empty state.
+ */
+export function procurementTrendForRange(orders: OrderRow[], from: Date, to: Date): ProcurementMonth[] {
+  const fromMs = from.getTime();
+  const toMs = to.getTime();
+  const counted = orders.filter(
+    (o) =>
+      !["draft", "cancelled"].includes(o.status.toLowerCase()) &&
+      o.orderDate.getTime() >= fromMs &&
+      o.orderDate.getTime() <= toMs,
+  );
+  if (!counted.length) return [];
+
+  const spanDays = Math.max(1, Math.ceil((toMs - fromMs) / DAY));
+
+  if (spanDays <= 14) {
+    const buckets: ProcurementMonth[] = [];
+    const startUtc = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate());
+    for (let i = 0; i < spanDays; i++) {
+      const bStart = startUtc + i * DAY;
+      const bEnd = bStart + DAY - 1;
+      const d = new Date(bStart);
+      const inside = counted.filter((o) => {
+        const t = o.orderDate.getTime();
+        return t >= bStart && t <= bEnd;
+      });
+      buckets.push({
+        month: `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`,
+        orders: inside.length,
+        valueK: round1(inside.reduce((s, o) => s + o.total, 0) / 1000),
+      });
+    }
+    return buckets;
+  }
+
+  if (spanDays <= 62) {
+    const buckets: ProcurementMonth[] = [];
+    let cursor = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate());
+    while (cursor <= toMs) {
+      const bEnd = Math.min(toMs, cursor + 7 * DAY - 1);
+      const d = new Date(cursor);
+      const inside = counted.filter((o) => {
+        const t = o.orderDate.getTime();
+        return t >= cursor && t <= bEnd;
+      });
+      buckets.push({
+        month: `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`,
+        orders: inside.length,
+        valueK: round1(inside.reduce((s, o) => s + o.total, 0) / 1000),
+      });
+      cursor += 7 * DAY;
+    }
+    return buckets;
+  }
+
+  const buckets: ProcurementMonth[] = [];
+  const spansYears = from.getUTCFullYear() !== to.getUTCFullYear();
+  let y = from.getUTCFullYear();
+  let m = from.getUTCMonth();
+  const endY = to.getUTCFullYear();
+  const endM = to.getUTCMonth();
+  while (y < endY || (y === endY && m <= endM)) {
+    const inside = counted.filter((o) => inMonth(o.orderDate, y, m));
+    const label = spansYears ? `${MONTHS[m]} '${String(y).slice(-2)}` : MONTHS[m];
+    buckets.push({
+      month: label,
+      orders: inside.length,
+      valueK: round1(inside.reduce((s, o) => s + o.total, 0) / 1000),
+    });
+    m++;
+    if (m > 11) {
+      m = 0;
+      y++;
+    }
+  }
+  return buckets;
+}
+
 export function productionQuality(batches: BatchRow[]): QualitySlice[] {
   let passed = 0, rejected = 0, cancelled = 0, inProgress = 0;
   for (const b of batches) {
@@ -65,6 +146,24 @@ export function batchesTrend(batches: BatchRow[], now: Date): { thisMonth: numbe
   const thisMonth = batches.filter((b) => inMonth(b.productionDate, now.getUTCFullYear(), now.getUTCMonth())).length;
   const last = batches.filter((b) => inMonth(b.productionDate, prev.getUTCFullYear(), prev.getUTCMonth())).length;
   return { thisMonth, trend: last > 0 ? round1(((thisMonth - last) / last) * 100) : null };
+}
+
+/** Count of batches within [from, to] compared against the immediately preceding equal-length window. */
+export function batchesTrendForRange(batches: BatchRow[], from: Date, to: Date): { thisMonth: number; trend: number | null } {
+  const fromMs = from.getTime();
+  const toMs = to.getTime();
+  const duration = Math.max(DAY, toMs - fromMs + 1);
+  const prevFromMs = fromMs - duration;
+  const prevToMs = fromMs - 1;
+  const current = batches.filter((b) => {
+    const t = b.productionDate.getTime();
+    return t >= fromMs && t <= toMs;
+  }).length;
+  const previous = batches.filter((b) => {
+    const t = b.productionDate.getTime();
+    return t >= prevFromMs && t <= prevToMs;
+  }).length;
+  return { thisMonth: current, trend: previous > 0 ? round1(((current - previous) / previous) * 100) : null };
 }
 
 /** Lead time and punctuality come from the first receipt against each order; defects from rejected receipts. */
@@ -143,4 +242,3 @@ export function procurementRecommendations(
   }
   return out.sort((a, b) => RANK[a.urgency] - RANK[b.urgency] || b.recommendedQty - a.recommendedQty).slice(0, 8);
 }
-

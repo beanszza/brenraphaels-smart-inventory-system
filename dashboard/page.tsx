@@ -10,10 +10,32 @@ import KpiCards from "@/components/dashboard/kpi-cards";
 import ProcurementTrendChart from "@/components/dashboard/procurement-trend-chart";
 import ProductionQualityChart from "@/components/dashboard/production-quality-chart";
 import SupplierPerformanceChart from "@/components/dashboard/supplier-performance-chart";
+import type { DashboardDateRange } from "@/lib/dashboard/types";
 
-export default async function AnalyticsDashboardPage() {
-  const analytics = await getDashboardAnalytics();
+type DashboardSearchParams = {
+  from?: string | string[];
+  to?: string | string[];
+  preset?: string | string[];
+};
 
+const pickParam = (value: string | string[] | undefined) =>
+  Array.isArray(value) ? value[0] : value;
+
+export default async function AnalyticsDashboardPage(props?: {
+  searchParams?: Promise<DashboardSearchParams>;
+}) {
+  const params = props?.searchParams ? await props.searchParams : undefined;
+  const from = pickParam(params?.from);
+  const to = pickParam(params?.to);
+  const preset = pickParam(params?.preset);
+  const range: DashboardDateRange | null =
+    from && to ? { from, to, ...(preset ? { label: preset } : {}) } : null;
+
+  const analytics = range
+    ? await getDashboardAnalytics(range)
+    : await getDashboardAnalytics();
+
+  const isRangeFiltered = Boolean(analytics.dateRange);
   const hasKpis = Object.values(analytics.kpis).some(Boolean);
   const hasPrimaryBand =
     analytics.procurementTrend || analytics.inventoryForecasts;
@@ -37,7 +59,9 @@ export default async function AnalyticsDashboardPage() {
         <DashboardToolbar analytics={analytics} />
       </div>
 
-      {hasKpis && <KpiCards kpis={analytics.kpis} />}
+      {hasKpis && (
+        <KpiCards kpis={analytics.kpis} isRangeFiltered={isRangeFiltered} />
+      )}
 
       {hasPrimaryBand && (
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-12 items-stretch">
@@ -49,7 +73,10 @@ export default async function AnalyticsDashboardPage() {
                   : "min-w-0 xl:col-span-12"
               }
             >
-              <ProcurementTrendChart data={analytics.procurementTrend} />
+              <ProcurementTrendChart
+                data={analytics.procurementTrend}
+                isRangeFiltered={isRangeFiltered}
+              />
             </div>
           )}
           {analytics.inventoryForecasts && (

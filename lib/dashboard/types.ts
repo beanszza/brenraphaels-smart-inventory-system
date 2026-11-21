@@ -1,7 +1,16 @@
 /** Serializable shapes the Dashboard widgets render. Every figure comes from the IMS database. */
 export type Urgency = "High" | "Medium" | "Low";
 
-export type Kpi = { value: number; unit: string; /** Month-over-month change in percent; null when there is no earlier period to compare. */ trend: number | null };
+export type DashboardDateRange = {
+  /** Inclusive start date in YYYY-MM-DD (UTC). */
+  from: string;
+  /** Inclusive end date in YYYY-MM-DD (UTC). */
+  to: string;
+  /** Optional preset label (e.g. "Last 7 days", "This month"). */
+  label?: string;
+};
+
+export type Kpi = { value: number; unit: string; /** Period-over-period change in percent; null when there is no earlier period to compare. */ trend: number | null };
 
 export type DashboardKpis = {
   activeInventory: Kpi | null;
@@ -39,6 +48,8 @@ export type InventoryForecast = {
 /** A section is null when the signed-in Staff does not hold the Module that owns its data. */
 export type DashboardAnalytics = {
   generatedAt: string;
+  /** Null or omitted when viewing the default Live (present) dashboard. */
+  dateRange?: DashboardDateRange | null;
   kpis: DashboardKpis;
   inventoryDistribution: CategorySlice[] | null;
   procurementTrend: ProcurementMonth[] | null;
@@ -48,4 +59,3 @@ export type DashboardAnalytics = {
   procurementRecommendations: ProcurementRecommendation[] | null;
   inventoryForecasts: InventoryForecast[] | null;
 };
-

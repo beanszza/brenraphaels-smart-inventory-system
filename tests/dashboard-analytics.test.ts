@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  batchesTrend, dailyUsage, distributionByBranch, inventoryByCategory, inventoryForecasts,
-  procurementRecommendations, procurementTrend, productionQuality, supplierPerformance, type ItemRow,
+  batchesTrend, batchesTrendForRange, dailyUsage, distributionByBranch, inventoryByCategory, inventoryForecasts,
+  procurementRecommendations, procurementTrend, procurementTrendForRange, productionQuality, supplierPerformance, type ItemRow,
 } from "@/lib/dashboard/compute";
 
 const now = new Date("2026-11-06T00:00:00Z");
@@ -28,6 +28,30 @@ describe("dashboard calculations", () => {
     expect(trend[4].orders).toBe(0);
   });
 
+  it("buckets short date ranges daily and returns empty array when a range has zero orders", () => {
+    const orders = [
+      { orderDate: new Date("2026-09-10T10:00:00Z"), status: "Ordered", total: 3000 },
+      { orderDate: new Date("2026-09-12T12:00:00Z"), status: "Completed", total: 1500 },
+    ];
+    const daily = procurementTrendForRange(
+      orders,
+      new Date("2026-09-10T00:00:00.000Z"),
+      new Date("2026-09-12T23:59:59.999Z"),
+    );
+    expect(daily).toEqual([
+      { month: "Sep 10", orders: 1, valueK: 3 },
+      { month: "Sep 11", orders: 0, valueK: 0 },
+      { month: "Sep 12", orders: 1, valueK: 1.5 },
+    ]);
+
+    const empty = procurementTrendForRange(
+      orders,
+      new Date("2025-01-01T00:00:00.000Z"),
+      new Date("2025-01-07T23:59:59.999Z"),
+    );
+    expect(empty).toEqual([]);
+  });
+
   it("classifies batches and omits empty slices", () => {
     const slices = productionQuality([
       { productionDate: now, status: "Stocked In", qualityStatus: "Passed" },
@@ -43,6 +67,23 @@ describe("dashboard calculations", () => {
     const b = (date: string) => ({ productionDate: new Date(date), status: "", qualityStatus: "" });
     expect(batchesTrend([b("2026-11-01"), b("2026-11-02"), b("2026-10-05")], now)).toEqual({ thisMonth: 2, trend: 100 });
     expect(batchesTrend([b("2026-11-01")], now)).toEqual({ thisMonth: 1, trend: null });
+  });
+
+  it("compares batches over a custom date range against the preceding equal window", () => {
+    const b = (date: string) => ({ productionDate: new Date(date), status: "", qualityStatus: "" });
+    const res = batchesTrendForRange(
+      [b("2026-09-10T12:00:00Z"), b("2026-09-12T12:00:00Z"), b("2026-09-05T12:00:00Z")],
+      new Date("2026-09-08T00:00:00.000Z"),
+      new Date("2026-09-14T23:59:59.999Z"),
+    );
+    expect(res).toEqual({ thisMonth: 2, trend: 100 });
+
+    const emptyRes = batchesTrendForRange(
+      [b("2026-09-10T12:00:00Z")],
+      new Date("2025-01-01T00:00:00.000Z"),
+      new Date("2025-01-07T23:59:59.999Z"),
+    );
+    expect(emptyRes).toEqual({ thisMonth: 0, trend: null });
   });
 
   it("scores suppliers from first receipts and rejected receipts", () => {

@@ -8,10 +8,18 @@ interface KpiCardProps {
   value: number;
   subtitle: string;
   trend: number | null;
+  trendComparisonLabel?: string;
   isAlert?: boolean;
 }
 
-function KpiCard({ title, value, subtitle, trend, isAlert }: KpiCardProps) {
+function KpiCard({
+  title,
+  value,
+  subtitle,
+  trend,
+  trendComparisonLabel = "vs last month",
+  isAlert,
+}: KpiCardProps) {
   const isPositive = (trend ?? 0) >= 0;
   const TrendIcon = isPositive ? ArrowUp : ArrowDown;
 
@@ -30,7 +38,9 @@ function KpiCard({ title, value, subtitle, trend, isAlert }: KpiCardProps) {
           }`}
         >
           <TrendIcon className="size-3 shrink-0" />
-          <span>{Math.abs(trend)}% vs last month</span>
+          <span>
+            {Math.abs(trend)}% {trendComparisonLabel}
+          </span>
         </p>
       ) : (
         <p
@@ -45,7 +55,13 @@ function KpiCard({ title, value, subtitle, trend, isAlert }: KpiCardProps) {
   );
 }
 
-export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
+export default function KpiCards({
+  kpis: kpiData,
+  isRangeFiltered = false,
+}: {
+  kpis: DashboardKpis;
+  isRangeFiltered?: boolean;
+}) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
       {kpiData.activeInventory && (
@@ -69,8 +85,15 @@ export default function KpiCards({ kpis: kpiData }: { kpis: DashboardKpis }) {
         <KpiCard
           title="Production Batches"
           value={kpiData.productionBatches.value}
-          subtitle="Scheduled or completed this month"
+          subtitle={
+            isRangeFiltered
+              ? "Scheduled or completed in selected range"
+              : "Scheduled or completed this month"
+          }
           trend={kpiData.productionBatches.trend}
+          trendComparisonLabel={
+            isRangeFiltered ? "vs prior period" : "vs last month"
+          }
         />
       )}
       {kpiData.activeSuppliers && (

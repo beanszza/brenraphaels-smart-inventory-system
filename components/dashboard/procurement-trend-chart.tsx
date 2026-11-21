@@ -51,31 +51,43 @@ function CustomTooltip({
 
 export default function ProcurementTrendChart({
   data: procurementTrend,
+  isRangeFiltered = false,
 }: {
   data: ProcurementMonth[];
+  isRangeFiltered?: boolean;
 }) {
   const [metric, setMetric] = useState<TrendMetric>("orders");
-
-  if (!procurementTrend.length) {
-    return (
-      <EmptyChart
-        title="Procurement Trend"
-        subtitle="Purchase orders over the last 6 months"
-      />
-    );
-  }
 
   const totalOrders = procurementTrend.reduce((sum, m) => sum + m.orders, 0);
   const totalValueK =
     Math.round(procurementTrend.reduce((sum, m) => sum + m.valueK, 0) * 10) / 10;
+
+  if (!procurementTrend.length || (totalOrders === 0 && totalValueK === 0)) {
+    return (
+      <EmptyChart
+        title="Procurement Trend"
+        subtitle={
+          isRangeFiltered
+            ? "Purchase orders in selected period"
+            : "Purchase orders over the last 6 months"
+        }
+        message="No purchase orders recorded for this period."
+      />
+    );
+  }
+
   const firstMonth = procurementTrend[0]?.month;
   const lastMonth = procurementTrend[procurementTrend.length - 1]?.month;
   const rangeText =
-    firstMonth && lastMonth ? `${firstMonth} – ${lastMonth}` : "last 6 months";
+    firstMonth && lastMonth && firstMonth !== lastMonth
+      ? `${firstMonth} – ${lastMonth}`
+      : firstMonth || "selected period";
 
   const headline =
     metric === "orders"
-      ? `${totalOrders.toLocaleString()} purchase orders placed over the last 6 months.`
+      ? isRangeFiltered
+        ? `${totalOrders.toLocaleString()} purchase ${totalOrders === 1 ? "order" : "orders"} in selected period.`
+        : `${totalOrders.toLocaleString()} purchase orders placed over the last 6 months.`
       : `₱${totalValueK.toLocaleString()}K total order value across ${rangeText}.`;
 
   const footerCaption =

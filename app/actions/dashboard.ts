@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireShell } from "@/lib/portal/staff";
 import { MODULES, type Module } from "@/lib/portal/config";
 import { loadDashboardAnalytics } from "@/lib/dashboard/screen-data";
-import type { DashboardAnalytics } from "@/lib/dashboard/types";
+import type { DashboardAnalytics, DashboardDateRange } from "@/lib/dashboard/types";
 
 export type DashboardSection = {
   module: Module;
@@ -75,7 +75,7 @@ export async function getDashboardData(): Promise<DashboardSection[]> {
 }
 
 /** Live analytics for the Dashboard charts; shows the full dashboard whenever the Dashboard module is enabled. */
-export async function getDashboardAnalytics(): Promise<DashboardAnalytics> {
+export async function getDashboardAnalytics(range?: DashboardDateRange | null): Promise<DashboardAnalytics> {
   await requireShell("/");
-  return loadDashboardAnalytics(MODULES);
+  return range ? loadDashboardAnalytics(MODULES, new Date(), range) : loadDashboardAnalytics(MODULES);
 }
