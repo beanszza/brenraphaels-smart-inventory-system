@@ -350,7 +350,6 @@ export default function ViewInventory({
   if (section === "write-off") {
     return (
       <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
-        <PageHeader title={headerInfo.title} description={headerInfo.description} />
         <StockWriteOffTab
           initialWriteOffs={initialWriteOffs}
           initialInventories={allInventories}
