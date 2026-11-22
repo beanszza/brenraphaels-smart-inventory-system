@@ -118,7 +118,8 @@ export async function publishStockChanged(sizeId: number, signal: AbortSignal = 
   const response = await fetch(`${base}/notifications/stock/changed`, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ sizeId }),
+    // The notification service takes ids as strings and refuses a number (microservices notifications schemas.ts).
+    body: JSON.stringify({ sizeId: String(sizeId) }),
     cache: "no-store",
     signal,
   });

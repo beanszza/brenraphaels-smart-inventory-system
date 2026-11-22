@@ -62,7 +62,10 @@ beforeAll(async () => {
   vi.stubEnv("IMS_GATEWAY_CALLER_KEY", "k");
   vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
     expect(url).toBe("https://gateway.test/notifications/stock/changed");
-    events.push(JSON.parse(String(init.body)).sizeId);
+    const { sizeId } = JSON.parse(String(init.body));
+    // The notification service refuses a numeric id, so the Size ID always goes as a string.
+    expect(typeof sizeId).toBe("string");
+    events.push(Number(sizeId));
     return new Response(null, { status: 204 });
   }));
   ({ prisma } = await import("@/lib/prisma"));
