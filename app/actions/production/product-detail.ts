@@ -40,8 +40,8 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
       body.sellingPrice !== undefined
         ? Number(body.sellingPrice)
         : body.unitCost !== undefined
-        ? Number(body.unitCost)
-        : product.SellingPrice;
+          ? Number(body.unitCost)
+          : product.SellingPrice;
 
     if (body.sellingPrice !== undefined || body.unitCost !== undefined) {
       if (isNaN(Number(effectivePrice)) || Number(effectivePrice) < 0) {
@@ -52,13 +52,13 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
     const resolvedVariant =
       body.contentSize !== undefined && String(body.contentSize).trim() !== ""
         ? composeVariantName(
-            body.contentSize,
-            body.contentUom || product.Items?.Uom?.Abbreviation || "ML",
-            body.packagingType || "Jar"
-          )
+          body.contentSize,
+          body.contentUom || product.Items?.Uom?.Abbreviation || "ML",
+          body.packagingType || "Jar"
+        )
         : body.variant !== undefined
-        ? body.variant
-        : product.Variant;
+          ? body.variant
+          : product.Variant;
 
     const parsed = parseVariantComponents(resolvedVariant, body.contentUom || product.Items?.Uom?.Abbreviation);
     const previousParsed = parseVariantComponents(product.Variant, product.Items?.Uom?.Abbreviation);
@@ -160,16 +160,16 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
         ...updateData,
         ...(hasItemUpdate
           ? {
-              Items: {
-                update: {
-                  ...(body.productName !== undefined ? { ItemName: body.productName.trim() } : {}),
-                  ...(body.isActive !== undefined ? { IsActive: Boolean(body.isActive) } : {}),
-                  ...(targetUomId !== undefined ? { UomId: targetUomId, StockUomId: targetUomId } : {}),
-                  ...(nextMinStock !== undefined ? { MinStockLevel: nextMinStock } : {}),
-                  ...(nextMaxStock !== undefined ? { MaxStockLevel: nextMaxStock } : {}),
-                },
+            Items: {
+              update: {
+                ...(body.productName !== undefined ? { ItemName: body.productName.trim() } : {}),
+                ...(body.isActive !== undefined ? { IsActive: Boolean(body.isActive) } : {}),
+                ...(targetUomId !== undefined ? { UomId: targetUomId, StockUomId: targetUomId } : {}),
+                ...(nextMinStock !== undefined ? { MinStockLevel: nextMinStock } : {}),
+                ...(nextMaxStock !== undefined ? { MaxStockLevel: nextMaxStock } : {}),
               },
-            }
+            },
+          }
           : {}),
       },
       include: {
@@ -228,11 +228,11 @@ export async function deleteFinishedProduct(idInput: string | number) {
     await unlinkFile(filesGateway, staff, productImage, id, product.ImageUrl);
 
     // Safely delete or detach dependent records to prevent foreign key errors
-    await (tx as any).stockTransferRequestItems.deleteMany({ where: { ProductId: id } }).catch(() => {});
-    await (tx as any).stockTransfers.deleteMany({ where: { ProductId: id } }).catch(() => {});
-    await (tx as any).productionRequests.deleteMany({ where: { ProductId: id } }).catch(() => {});
-    await (tx as any).productionBatches.deleteMany({ where: { ProductId: id } }).catch(() => {});
-    await (tx as any).recipes.deleteMany({ where: { ProductId: id } }).catch(() => {});
+    await (tx as any).stockTransferRequestItems.deleteMany({ where: { ProductId: id } }).catch(() => { });
+    await (tx as any).stockTransfers.deleteMany({ where: { ProductId: id } }).catch(() => { });
+    await (tx as any).productionRequests.deleteMany({ where: { ProductId: id } }).catch(() => { });
+    await (tx as any).productionBatches.deleteMany({ where: { ProductId: id } }).catch(() => { });
+    await (tx as any).recipes.deleteMany({ where: { ProductId: id } }).catch(() => { });
 
     await tx.finishedProducts.delete({ where: { ProductId: id } });
     return {

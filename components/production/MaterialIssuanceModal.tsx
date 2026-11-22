@@ -119,6 +119,7 @@ export default function MaterialIssuanceModal({
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(60);
   const [isTimedOut, setIsTimedOut] = useState<boolean>(false);
+  const [manualLotInput, setManualLotInput] = useState<string>("");
 
   // Fetch Issuance Details
   const fetchDetails = async () => {
@@ -572,6 +573,35 @@ export default function MaterialIssuanceModal({
                         <p className="type-caption text-text-muted max-w-[200px]">
                           {errorMessage || "Camera unavailable."}
                         </p>
+                        <div className="flex items-center gap-2 mt-3 w-full max-w-xs">
+                          <input
+                            type="text"
+                            placeholder="Enter QR or Lot Code..."
+                            value={manualLotInput}
+                            onChange={(e) => setManualLotInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && manualLotInput.trim()) {
+                                e.preventDefault();
+                                verifyAndRecordScan(manualLotInput.trim());
+                                setManualLotInput("");
+                              }
+                            }}
+                            className="h-8 px-2.5 text-xs border border-divider rounded-control flex-1 bg-surface text-text-primary"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => {
+                              if (manualLotInput.trim()) {
+                                verifyAndRecordScan(manualLotInput.trim());
+                                setManualLotInput("");
+                              }
+                            }}
+                            className="h-8 text-xs font-medium cursor-pointer"
+                          >
+                            Verify
+                          </Button>
+                        </div>
                       </>
                     )}
                   </div>
@@ -827,9 +857,19 @@ export default function MaterialIssuanceModal({
 
                         {/* Suggested Lot Code */}
                         <td className="table-td px-4 py-3.5 type-body font-medium text-text-primary whitespace-nowrap">
-                          <span className="bg-surface-secondary text-text-primary border border-divider px-2.5 py-0.5 rounded-control type-caption font-semibold">
+                          <button
+                            type="button"
+                            onClick={() => !isVerified && !isAlreadyIssued && verifyAndRecordScan(res.lotCode)}
+                            disabled={isVerified || isAlreadyIssued}
+                            title={isVerified ? "Verified" : "Click to verify lot"}
+                            className={`px-2.5 py-0.5 rounded-control type-caption font-semibold border ${
+                              isVerified || isAlreadyIssued
+                                ? "bg-surface-secondary text-text-primary border-divider cursor-default"
+                                : "bg-surface-secondary text-text-primary border-divider hover:border-brand cursor-pointer hover:bg-surface-hover"
+                            }`}
+                          >
                             {res.lotCode}
-                          </span>
+                          </button>
                         </td>
 
                         {/* Reserved Quantity */}

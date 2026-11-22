@@ -431,7 +431,7 @@ export default function AddFinishedProductModal({
         }
 
         // Automatically sync with POS in background (using SCMS variant prices as source of truth)
-        syncProductCatalogToPos(trimmedName, { isNewCreation: false }).catch(() => {});
+        syncProductCatalogToPos(trimmedName, { isNewCreation: false }).catch(() => { });
 
         toast.success("Finished product updated successfully!");
         onSuccess();
@@ -474,7 +474,7 @@ export default function AddFinishedProductModal({
         }
 
         // Automatically sync newly created product to POS with initial price 0
-        syncProductCatalogToPos(trimmedName, { isNewCreation: true }).catch(() => {});
+        syncProductCatalogToPos(trimmedName, { isNewCreation: true }).catch(() => { });
 
         toast.success("Finished product created successfully!");
         onSuccess();
@@ -523,11 +523,10 @@ export default function AddFinishedProductModal({
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
                 aria-invalid={Boolean(duplicateProductNameError)}
-                className={`w-full rounded-control border ${
-                  duplicateProductNameError
+                className={`w-full rounded-control border ${duplicateProductNameError
                     ? "!border-status-danger focus-visible:!ring-status-danger"
                     : "border-divider"
-                } bg-surface text-text-primary px-3 py-2 type-body`}
+                  } bg-surface text-text-primary px-3 py-2 type-body`}
                 required
               />
               {duplicateProductNameError && (

@@ -322,9 +322,9 @@ export default function ConfigurationTab({
                     <td className="w-16 px-4 py-3 text-center">
                       <div className="w-9 h-9 rounded-control border border-divider bg-surface-secondary/40 overflow-hidden flex items-center justify-center shrink-0 mx-auto">
                         {product.imageUrl &&
-                        (product.imageUrl.startsWith("http://") ||
-                          product.imageUrl.startsWith("https://") ||
-                          product.imageUrl.startsWith("data:image/")) ? (
+                          (product.imageUrl.startsWith("http://") ||
+                            product.imageUrl.startsWith("https://") ||
+                            product.imageUrl.startsWith("data:image/")) ? (
                           <img
                             src={product.imageUrl}
                             alt={product.itemName}

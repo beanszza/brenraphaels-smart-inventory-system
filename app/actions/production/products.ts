@@ -199,10 +199,10 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
       const resolvedName =
         v.contentSize !== undefined && String(v.contentSize).trim() !== ""
           ? composeVariantName(
-              v.contentSize,
-              v.contentUom || body.uomName || "ML",
-              v.packagingType || "Jar"
-            )
+            v.contentSize,
+            v.contentUom || body.uomName || "ML",
+            v.packagingType || "Jar"
+          )
           : (v.variantName || "").trim();
 
       const vNameKey = resolvedName.toLowerCase();
@@ -214,8 +214,8 @@ export async function createFinishedProductWithVariants(body: CreateFullProductI
         typeof v.sellingPrice === "number" && !isNaN(v.sellingPrice)
           ? v.sellingPrice
           : typeof v.unitCost === "number" && !isNaN(v.unitCost)
-          ? v.unitCost
-          : 0;
+            ? v.unitCost
+            : 0;
       if (effectivePrice < 0) {
         refuse("Selling price must be a valid non-negative number.");
       }
