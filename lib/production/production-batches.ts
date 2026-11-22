@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Existing DTO helpers moved out of route exports. */
+import { decodeRecipeNotes } from "@/lib/resources-suppliers/recipe-stages";
+
 export function productInitialsCode(itemName?: string | null): string {
   const cleaned = String(itemName || "").trim();
   if (!cleaned) return "PROD";
@@ -41,6 +43,7 @@ export function mapBatch(b: any) {
     recipeId: b.RecipeId,
     recipeName: recipe?.RecipeName ?? "",
     recipeCode: recipe?.RecipeCode ?? "",
+    recipeStages: decodeRecipeNotes(recipe?.Notes).stages,
     yieldUom: recipe?.UnitOfMeasures?.Abbreviation ?? "",
     batchMultiplier: Number(b.BatchMultiplier),
     estimatedQuantity: Number(b.EstimatedQuantity),

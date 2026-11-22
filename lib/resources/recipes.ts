@@ -1,6 +1,7 @@
 import type { Module } from "@/lib/portal/config";
 
 import { syncRecipeIngredients } from "@/lib/resources/recipe-ingredients";
+import { decodeRecipeNotes } from "@/lib/resources-suppliers/recipe-stages";
 
 import type { RecipeInput } from "@/lib/resources/inputs";
 import { prisma } from "@/lib/prisma";
@@ -55,6 +56,7 @@ export async function listRecipes(module: Module) {
     const responseData = recipes.map(recipe => {
       const outputQty = Number(recipe.OutputQuantity) > 0 ? Number(recipe.OutputQuantity) : 100;
       const yieldLabel = `Batch of ${outputQty} pcs`;
+      const decoded = decodeRecipeNotes(recipe.Notes);
 
       return {
         recipeId: recipe.RecipeId,
@@ -64,7 +66,8 @@ export async function listRecipes(module: Module) {
         yieldLabel: yieldLabel,
         productId: recipe.ProductId,
         outputQuantity: outputQty,
-        notes: recipe.Notes,
+        notes: decoded.notes,
+        stages: decoded.stages,
         isActive: recipe.IsActive,
         ingredients: recipe.RecipeIngredients.map(i => ({
           ingredientId: i.IngredientId,

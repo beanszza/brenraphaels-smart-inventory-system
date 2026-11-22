@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useMounted } from "@/hooks/use-mounted";
 import { visibleNavGroups } from "./SidebarNav";
+import { isAdminStaff } from "@/lib/auth-roles";
 import type { Module } from "@/lib/portal/config";
 import type { Staff } from "@/lib/portal/client";
 import { SidebarProfileFooter } from "./SidebarProfileFooter";
@@ -26,7 +27,7 @@ export function Sidebar({ modules, staff }: { modules: Module[]; staff: Staff })
   const pathname = usePathname();
   const { open, openMobile, setOpenMobile, toggleSidebar, isMobile } = useSidebar();
   const mounted = useMounted();
-  const groups = visibleNavGroups(modules);
+  const groups = visibleNavGroups(modules, isAdminStaff(staff));
   const isOpen = isMobile ? openMobile : open;
 
   const handleNavClick = () => {

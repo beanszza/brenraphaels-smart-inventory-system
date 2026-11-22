@@ -234,6 +234,13 @@ export default function ProductionBatchDetailView({
 
   const status = batch?.status || "In Production";
 
+  // Dynamic stages configured on the recipe (falls back to standard 6 stages)
+  const cookingStages: readonly string[] = useMemo(() => {
+    return batch?.recipeStages && batch.recipeStages.length > 0
+      ? batch.recipeStages
+      : COOKING_STAGES;
+  }, [batch?.recipeStages]);
+
   // Parse stage logs from batch.notes
   const stageLogs = useMemo(() => {
     const sLogs: Record<string, { endTime: string; by: string; notes?: string }> = {};
@@ -244,7 +251,7 @@ export default function ProductionBatchDetailView({
       const stageMatch = line.match(/\[STAGE:([^|]+)\|END:([^|]+)\|BY:([^\]|]+)(?:\|NOTES:([^\]]+))?\]/);
       if (stageMatch) {
         const stageName = stageMatch[1].trim();
-        if (COOKING_STAGES.includes(stageName as any)) {
+        if (cookingStages.includes(stageName) || COOKING_STAGES.includes(stageName as any)) {
           sLogs[stageName] = {
             endTime: stageMatch[2].trim(),
             by: stageMatch[3].trim(),
@@ -254,25 +261,25 @@ export default function ProductionBatchDetailView({
       }
     }
     return sLogs;
-  }, [batch?.notes]);
+  }, [batch?.notes, cookingStages]);
 
-  // True ONLY if all 6 cooking stages have been recorded in stageLogs
+  // True ONLY if all configured cooking stages have been recorded in stageLogs
   const allCookingStagesDone = useMemo(() => {
-    return COOKING_STAGES.every((st) => Boolean(stageLogs[st]?.endTime));
-  }, [stageLogs]);
+    return cookingStages.every((st) => Boolean(stageLogs[st]?.endTime));
+  }, [cookingStages, stageLogs]);
 
   // Derive active cooking stage: sequentially find the FIRST cooking stage not yet logged
   const activeCookingStage = useMemo(() => {
-    for (const st of COOKING_STAGES) {
+    for (const st of cookingStages) {
       if (!stageLogs[st]?.endTime) {
         return st;
       }
     }
     return "Packaging";
-  }, [stageLogs]);
+  }, [cookingStages, stageLogs]);
 
   const currentStage = activeCookingStage;
-  const currentCookingStageIndex = COOKING_STAGES.indexOf(activeCookingStage as any);
+  const currentCookingStageIndex = cookingStages.indexOf(activeCookingStage);
 
   // Determine if this batch has reached packaging lifecycle
   const isAtPackagingPhase = useMemo(() => {
@@ -315,7 +322,7 @@ export default function ProductionBatchDetailView({
 
     // Sequential stage check: completion cannot be earlier than previous stage!
     if (currentCookingStageIndex > 0) {
-      const prevStageName = COOKING_STAGES[currentCookingStageIndex - 1];
+      const prevStageName = cookingStages[currentCookingStageIndex - 1];
       const prevLog = stageLogs[prevStageName];
       if (prevLog?.endTime) {
         const prevTimestamp = parseStageLogToTimestamp(prevLog.endTime, stageDate);
@@ -341,8 +348,8 @@ export default function ProductionBatchDetailView({
     const pkgTimestamp = toTimestampFrom12H(pkgDate, pkgHour, pkgMinute, pkgPeriod);
 
     // Find the latest completed cooking stage
-    for (let i = COOKING_STAGES.length - 1; i >= 0; i--) {
-      const stName = COOKING_STAGES[i];
+    for (let i = cookingStages.length - 1; i >= 0; i--) {
+      const stName = cookingStages[i];
       const log = stageLogs[stName];
       if (log?.endTime) {
         const stageEndTs = parseStageLogToTimestamp(log.endTime, pkgDate);
@@ -370,7 +377,7 @@ export default function ProductionBatchDetailView({
     const stageToComplete =
       activeCookingStage && activeCookingStage !== "Packaging"
         ? activeCookingStage
-        : COOKING_STAGES[0];
+        : cookingStages[0];
 
     const errorMsg = validateStageDateTime();
     if (errorMsg) {
@@ -664,7 +671,7 @@ export default function ProductionBatchDetailView({
                 </p>
 
                 <div className="space-y-2.5">
-                  {COOKING_STAGES.map((stName, idx) => {
+                  {cookingStages.map((stName, idx) => {
                     const isDone = Boolean(stageLogs[stName]?.endTime);
                     const isCurrent = !isDone && activeCookingStage === stName && currentStepIndex === 0;
 
@@ -849,7 +856,7 @@ export default function ProductionBatchDetailView({
                   <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 flex items-center justify-between gap-3 animate-in fade-in">
                     <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
                       <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                      <span>All 6 kitchen production stages completed! Proceed to packaging.</span>
+                      <span>All {cookingStages.length} kitchen production stage(s) completed! Proceed to packaging.</span>
                     </div>
                     <Button
                       type="button"

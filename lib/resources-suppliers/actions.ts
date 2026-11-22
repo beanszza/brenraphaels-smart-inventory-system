@@ -7,6 +7,7 @@ import { requireModule } from "@/lib/portal/staff";
 import { isAdminStaff, isImsManager } from "@/lib/auth-roles";
 import { getSupplierDetails, getSupplyDetails } from "./data";
 import { encodeCategoryDescription, decodeCategoryDescription } from "./category-status";
+import { countWords, decodeRecipeNotes, encodeRecipeNotes } from "./recipe-stages";
 import { syncRecipeIngredients } from "@/lib/resources/recipe-ingredients";
 
 type Result = { success: boolean; message: string };
@@ -15,7 +16,7 @@ export type SupplyInput = { itemName: string; categoryId: number; uomId: number;
 export type SupplierInput = { companyName: string; contactPerson: string; email: string; phone: string;
   address: string; website?: string; isActive: boolean; suppliedItemIds: number[] };
 export type RecipeInput = { recipeName: string; productId: number; outputQuantity: number;
-  notes: string; isActive: boolean; ingredients: { itemId: number; uomId: number; standardQuantity: number }[] };
+  notes: string; stages?: string[]; isActive: boolean; ingredients: { itemId: number; uomId: number; standardQuantity: number }[] };
 export type CategoryInput = { categoryName: string; description?: string; isActive?: boolean; hasExpiry?: boolean };
 
 class ValidationError extends Error {}
@@ -31,7 +32,9 @@ function failed(error: unknown): Result {
 }
 function saved(message: string): Result {
   revalidatePath("/resources-suppliers");
+  revalidatePath("/recipes");
   revalidatePath("/inventory");
+  revalidatePath("/production-quality");
   return { success: true, message };
 }
 const linkDefaults = { UnitPrice: 0, Currency: "PHP", PackSize: 1, LeadTimeDays: 3,
@@ -131,6 +134,9 @@ export async function saveRecipe(input: RecipeInput, id?: number): Promise<Resul
     check(validId(input.productId), "Select a finished product.");
     check(Number.isFinite(input.outputQuantity) && input.outputQuantity > 0, "Target output quantity must be greater than zero.");
     check(typeof input.isActive === "boolean" && typeof input.notes === "string", "Invalid recipe details.");
+    const decodedNotes = decodeRecipeNotes(input.notes);
+    check(countWords(decodedNotes.notes) <= 100, "Notes cannot exceed 100 words.");
+    check(input.stages === undefined || (Array.isArray(input.stages) && input.stages.length > 0), "Select at least one production stage.");
     check(Array.isArray(input.ingredients) && input.ingredients.length > 0, "Add at least one ingredient.");
     check(new Set(input.ingredients.map(i => i.itemId)).size === input.ingredients.length, "Each ingredient may appear only once.");
     for (const ing of input.ingredients) {
@@ -159,8 +165,9 @@ export async function saveRecipe(input: RecipeInput, id?: number): Promise<Resul
         const to = uomMap.get(item.StockUomId ?? item.UomId);
         check(from && to && from.UomType === to.UomType && Number(from.ConversionFactor) > 0 && Number(to.ConversionFactor) > 0, "Ingredient units must be compatible with their stock units.");
       });
+      const encodedNotes = encodeRecipeNotes(input.notes, input.stages);
       const data = { RecipeName: input.recipeName.trim(), ProductId: input.productId, OutputQuantity: input.outputQuantity,
-        Notes: input.notes, IsActive: input.isActive };
+        Notes: encodedNotes, IsActive: input.isActive };
       const ingredients = input.ingredients.map(i => ({ ItemId: i.itemId, UomId: i.uomId, StandardQuantity: i.standardQuantity }));
       if (id) {
         const existing = await tx.recipes.findUnique({ where: { RecipeId: id }, include: { RecipeIngredients: true } });

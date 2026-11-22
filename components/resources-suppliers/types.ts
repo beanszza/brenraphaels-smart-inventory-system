@@ -44,6 +44,7 @@ export type Recipe = {
   productId: number;
   outputQuantity: number;
   notes: string;
+  stages?: string[];
   isActive: boolean;
   ingredients: { itemId: number; uomId: number; standardQuantity: number }[];
 };

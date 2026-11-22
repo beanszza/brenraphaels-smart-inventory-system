@@ -271,10 +271,10 @@ function RecipeModalForm({
               </select>
             </div>
 
-            {/* Target Output Quantity (pcs) */}
+            {/* Yield per batch */}
             <div className="sm:col-span-4">
               <label className="mb-1.5 block type-label font-semibold text-text-primary">
-                Target Output Quantity (pcs) <span className="text-status-red">*</span>
+                Yield per batch <span className="text-status-red">*</span>
               </label>
               <Input
                 type="number"

@@ -192,18 +192,13 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
     { id: "category", label: "CATEGORIES" },
     { id: "supplier", label: "SUPPLIER LIST" },
     { id: "supply", label: "SUPPLY LIST" },
-    ...(canSeeBom ? [{ id: "recipe", label: "BILL OF MATERIAL" }] : []),
   ];
 
   return (
     <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
       <PageHeader
         title="Resources & Suppliers"
-        description={
-          canSeeBom
-            ? "Manage your foundation data - Categories, Suppliers, Supply, and Recipes"
-            : "Manage your foundation data - Categories, Suppliers, and Supply"
-        }
+        description="Manage your foundation data - Categories, Suppliers, and Supply"
       />
 
       {/* Process Tabs in Uniform Order: Categories -> Supplier List -> Supply List -> BOM */}

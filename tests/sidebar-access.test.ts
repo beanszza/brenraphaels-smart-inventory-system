@@ -91,6 +91,16 @@ describe("Sidebar items", () => {
   it("shows nothing when no Module is held", () => {
     expect(visibleNavGroups([])).toEqual([]);
   });
+  it("shows Recipe sidebar tab only to Admin holding Resources & Suppliers", () => {
+    expect(names(visibleNavGroups(["Resources & Suppliers"], false))).toEqual([
+      "Resources & Suppliers",
+    ]);
+    expect(names(visibleNavGroups(["Resources & Suppliers"], true))).toEqual([
+      "Resources & Suppliers",
+      "Recipe",
+    ]);
+    expect(moduleForPath("/recipes")).toBe("Resources & Suppliers");
+  });
 });
 
 describe("Owning Module of a page address", () => {

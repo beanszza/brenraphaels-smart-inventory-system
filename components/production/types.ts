@@ -223,6 +223,7 @@ export interface ProductionBatchEntity {
   recipeId: number;
   recipeName: string;
   recipeCode: string;
+  recipeStages?: string[];
   yieldUom: string;
   batchMultiplier: number;
   estimatedQuantity: number;

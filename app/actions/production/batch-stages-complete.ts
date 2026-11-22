@@ -5,6 +5,7 @@ import { auditVersion } from "@/lib/audit";
 import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId, validateInput } from "@/lib/production/mutate";
+import { decodeRecipeNotes } from "@/lib/resources-suppliers/recipe-stages";
 const COOKING_STAGES = [
     "Steaming",
     "Peeling",
@@ -23,25 +24,28 @@ export async function completeBatchStage(idInput: string | number, body: any = {
         const endDate = String(body.endDate || "").trim();
         const notes = String(body.notes || "").trim();
         const completedBy = staff.username;
-        if (!stage || !COOKING_STAGES.includes(stage as any)) {
-            return refuse(`Invalid stage. Must be one of: ${COOKING_STAGES.join(", ")}`);
-        }
         if (!endTime) {
             return refuse("End time is required to complete this stage.");
         }
         const batch = await tx.productionBatches.findUnique({
             where: { BatchId: id },
+            include: { Recipes: { select: { Notes: true } } },
         });
         if (!batch) {
             return refuse("Batch not found.");
         }
+        const recipeStages = decodeRecipeNotes((batch as any).Recipes?.Notes).stages;
+        const activeStages: readonly string[] = recipeStages.length > 0 ? recipeStages : COOKING_STAGES;
+        if (!stage || (!activeStages.includes(stage) && !COOKING_STAGES.includes(stage as any))) {
+            return refuse(`Invalid stage. Must be one of: ${activeStages.join(", ")}`);
+        }
         if (["Rejected", "Completed", "Stocked In", "Cancelled", "For QA", "For Stock-in"].includes(batch.Status)) {
             return refuse("Cannot advance a rejected batch.");
         }
-        const stageIdx = COOKING_STAGES.indexOf(stage as any);
-        const nextStage = stageIdx < COOKING_STAGES.length - 1
-            ? COOKING_STAGES[stageIdx + 1]
-            : "Packaging"; // After Cooling -> Packaging
+        const stageIdx = activeStages.indexOf(stage);
+        const nextStage = stageIdx >= 0 && stageIdx < activeStages.length - 1
+            ? activeStages[stageIdx + 1]
+            : "Packaging";
         const fullEnd = endDate ? `${endDate} ${endTime}` : endTime;
         const logEntry = `[STAGE:${stage}|END:${fullEnd}|BY:${completedBy}${notes ? `|NOTES:${notes}` : ""}]`;
         const updatedNotes = batch.Notes ? `${batch.Notes}\n${logEntry}` : logEntry;

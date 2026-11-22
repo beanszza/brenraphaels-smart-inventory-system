@@ -24,6 +24,8 @@ export interface NavItem {
   group?: string;
   /** The Module Staff must hold to open this item. */
   module?: Module;
+  /** When true, only Admin staff see this item in the sidebar. */
+  adminOnly?: boolean;
 }
 
 export interface NavGroup {
@@ -47,6 +49,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { name: "Dashboard",            href: "/",                    icon: LayoutDashboard, module: "Dashboard" },
       { name: "Resources & Suppliers", href: "/resources-suppliers", icon: Warehouse, module: "Resources & Suppliers" },
+      { name: "Recipe",               href: "/recipes",             icon: ClipboardList, module: "Resources & Suppliers", adminOnly: true },
       { name: "Orders & Procurement", href: "/orders-procurement",  icon: ShoppingCart, module: "Orders & Procurement" },
     ],
   },
@@ -62,11 +65,13 @@ export const navGroups: NavGroup[] = [
 ];
 
 /** Sidebar groups limited to the Modules the Staff member holds; empty groups are dropped. */
-export function visibleNavGroups(modules: readonly Module[]): NavGroup[] {
+export function visibleNavGroups(modules: readonly Module[], isAdmin = false): NavGroup[] {
   return navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => item.module && modules.includes(item.module)),
+      items: group.items.filter(
+        (item) => item.module && modules.includes(item.module) && (!item.adminOnly || isAdmin)
+      ),
     }))
     .filter((group) => group.items.length > 0);
 }

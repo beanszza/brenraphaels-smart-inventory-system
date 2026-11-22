@@ -10,6 +10,7 @@ import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, read, refuse, positiveId, validateInput } from "@/lib/production/mutate";
 import { formatBatchNumber } from "@/lib/production/production-batches";
+import { decodeRecipeNotes } from "@/lib/resources-suppliers/recipe-stages";
 import { resolveStaffName } from "@/lib/orders/dto";
 const BATCH_INCLUDE = {
     FinishedProducts: {
@@ -56,6 +57,8 @@ function mapBatch(b: any) {
         sku: product?.Sku ?? "",
         recipeId: b.RecipeId,
         recipeName: recipe?.RecipeName ?? "",
+        recipeCode: recipe?.RecipeCode ?? "",
+        recipeStages: decodeRecipeNotes(recipe?.Notes).stages,
         yieldUom: recipe?.UnitOfMeasures?.Abbreviation ?? "units",
         batchMultiplier: Number(b.BatchMultiplier),
         estimatedQuantity: Number(b.EstimatedQuantity),

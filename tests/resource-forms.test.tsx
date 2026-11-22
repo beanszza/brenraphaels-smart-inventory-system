@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it, vi } from "vitest";
 import CategoryModal from "@/components/resources-suppliers/CategoryModal";
 import RecipeModal from "@/components/resources-suppliers/RecipeModal";
+import RecipeFormPage from "@/components/resources-suppliers/RecipeFormPage";
 import SupplierModal from "@/components/resources-suppliers/SupplierModal";
 import SupplyModal from "@/components/resources-suppliers/SupplyModal";
 
@@ -94,6 +95,64 @@ it("renders revised textfield character limits in Category, Supplier, and Supply
       onSave={async () => {}}
     />
   );
-  expect(recipeHtml).toContain("Target Output Quantity (pcs)");
+  expect(recipeHtml).toContain("Yield per batch");
   expect(recipeHtml).not.toContain("Batch Size");
+});
+
+it("renders full-page RecipeFormPage matching Figma redesign with Categories and Production Stages checklists", () => {
+  const html = renderToStaticMarkup(
+    <RecipeFormPage
+      editingRecipe={null}
+      finishedProducts={[{ productId: 1, itemName: "Ube Halaya Smooth", variant: "500 g tub" }]}
+      baseSupplies={[
+        {
+          itemId: 10,
+          itemName: "Purple yam (ube)",
+          categoryId: 1,
+          categoryName: "Ingredients",
+          uomId: 1,
+          uomName: "kg",
+          minStockLevel: 5,
+          maxStockLevel: 100,
+          currentStock: 50,
+          isActive: true,
+        },
+        {
+          itemId: 11,
+          itemName: "Plastic tubs 500 g",
+          categoryId: 2,
+          categoryName: "Packaging",
+          uomId: 2,
+          uomName: "pcs",
+          minStockLevel: 10,
+          maxStockLevel: 500,
+          currentStock: 200,
+          isActive: true,
+        },
+      ]}
+      categories={[
+        { categoryId: 1, categoryName: "Ingredients" },
+        { categoryId: 2, categoryName: "Packaging" },
+      ]}
+      onCancel={() => {}}
+      onSave={async () => {}}
+    />
+  );
+
+  expect(html).toContain("New recipe");
+  expect(html).toContain("Recipe Name");
+  expect(html).toContain("Product");
+  expect(html).toContain("Variant");
+  expect(html).toContain("Yield per batch");
+  expect(html).not.toContain("Cooking time");
+  expect(html).not.toContain("Shelf life");
+  expect(html).not.toContain("Storage");
+  expect(html).toContain("Categories");
+  expect(html).toContain("Production Stages");
+  for (const stage of ["Steaming", "Peeling", "Grinding", "Mixing", "Cooking", "Cooling"]) {
+    expect(html).toContain(stage);
+  }
+  expect(html).toContain("Add Stage");
+  expect(html).toContain("Notes");
+  expect(html).toContain("0 / 100 words");
 });

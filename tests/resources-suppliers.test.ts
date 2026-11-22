@@ -381,3 +381,85 @@ it("persists category hasExpiry flag on create and edit", async () => {
     data: expect.objectContaining({ HasExpiry: true }),
   }));
 });
+
+it("persists selected production stages in recipe notes and enforces the 100-word limit", async () => {
+  const overLimitNotes = Array.from({ length: 101 }, (_, i) => `word${i}`).join(" ");
+  expect(
+    await saveRecipe({
+      ...recipe,
+      notes: overLimitNotes,
+      stages: ["Cooking", "Cooling"],
+    })
+  ).toMatchObject({
+    success: false,
+    message: "Notes cannot exceed 100 words.",
+  });
+
+  let savedData: { Notes?: string } = {};
+  db.$transaction.mockImplementationOnce(async (callback) =>
+    callback({
+      finishedProducts: { findUnique: async () => ({ ItemId: 10 }) },
+      items: {
+        findUnique: async () => ({
+          ItemId: 2,
+          StockUomId: 1,
+          Category: { CategoryName: "Ingredients" },
+        }),
+      },
+      unitOfMeasures: {
+        findUnique: async () => ({ UomType: "Weight", ConversionFactor: 1 }),
+      },
+      recipeIngredients: { create: async () => {} },
+      recipes: {
+        findUnique: async () => ({ RecipeId: 3, RecipeIngredients: [] }),
+        update: async ({ data }: { data: { Notes?: string } }) => {
+          savedData = data;
+        },
+      },
+    })
+  );
+
+  const res = await saveRecipe(
+    {
+      ...recipe,
+      notes: "Stir continuously on low heat until thick.",
+      stages: ["Cooking", "Cooling", "Resting"],
+    },
+    3
+  );
+  expect(res).toMatchObject({ success: true });
+  expect(savedData.Notes).toBe(
+    "[STAGES:Cooking|Cooling|Resting]\nStir continuously on low heat until thick."
+  );
+
+  // Verify getResources decodes clean notes and stages array
+  db.items.findMany.mockResolvedValue([]);
+  db.suppliers.findMany.mockResolvedValue([]);
+  db.finishedProducts.findMany.mockResolvedValue([]);
+  db.categories.findMany.mockResolvedValue([
+    { CategoryId: 1, CategoryName: "Ingredients", Description: "Desc", _count: { Items: 0 } },
+  ]);
+  db.unitOfMeasures.findMany.mockResolvedValue([
+    { UomId: 1, Code: "kg", Name: "Kilogram", Abbreviation: "kg", UomType: "Weight", ConversionFactor: 1 },
+  ]);
+  db.recipes.findMany.mockResolvedValue([
+    {
+      RecipeId: 3,
+      RecipeCode: "BOM-2026-0003",
+      RecipeName: "Cake",
+      ProductId: 1,
+      OutputQuantity: 10,
+      Notes: savedData.Notes,
+      IsActive: true,
+      RecipeIngredients: [],
+      Product: { Items: { ItemName: "Cake" }, Variant: "Standard" },
+    },
+  ]);
+
+  const loaded = await getResources();
+  expect(loaded.recipes[0]).toMatchObject({
+    recipeId: 3,
+    notes: "Stir continuously on low heat until thick.",
+    stages: ["Cooking", "Cooling", "Resting"],
+  });
+});

@@ -3,6 +3,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/portal/staff";
 import { decodeCategoryDescription } from "./category-status";
+import { decodeRecipeNotes } from "./recipe-stages";
 import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
 import { parseVariantComponents } from "@/lib/production/sku";
 
@@ -119,6 +120,7 @@ export async function getResources() {
     recipes: recipes.map((r) => {
       const prodName = r.Product?.Items?.ItemName ?? "Finished Product";
       const parsedVar = r.Product?.Variant ? parseVariantComponents(r.Product.Variant).variantName : "";
+      const decodedNotes = decodeRecipeNotes(r.Notes);
       return {
         recipeId: r.RecipeId,
         recipeCode: r.RecipeCode ?? `BOM-${String(r.RecipeId).padStart(4, "0")}`,
@@ -126,7 +128,8 @@ export async function getResources() {
         productId: r.ProductId,
         finishedProduct: parsedVar ? `${prodName} (${parsedVar})` : prodName,
         outputQuantity: Number(r.OutputQuantity ?? 1),
-        notes: r.Notes ?? "",
+        notes: decodedNotes.notes,
+        stages: decodedNotes.stages,
         isActive: r.IsActive ?? true,
         displayName: `${r.RecipeName} — Batch of ${Number(r.OutputQuantity ?? 1)} pcs`,
         yieldLabel: `Batch of ${Number(r.OutputQuantity ?? 1)} pcs`,
