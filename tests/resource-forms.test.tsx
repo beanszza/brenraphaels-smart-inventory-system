@@ -156,3 +156,19 @@ it("renders full-page RecipeFormPage matching Figma redesign with Categories and
   expect(html).toContain("Notes");
   expect(html).toContain("0 / 100 words");
 });
+
+it("shows confirmation modal before discarding changes when going back to recipes", () => {
+  const html = renderToStaticMarkup(
+    <RecipeFormPage
+      editingRecipe={null}
+      finishedProducts={[{ productId: 1, itemName: "Ube Halaya Smooth", variant: "500 g tub" }]}
+      baseSupplies={[]}
+      categories={[{ categoryId: 1, categoryName: "Ingredients" }]}
+      onCancel={() => {}}
+      onSave={async () => {}}
+    />
+  );
+
+  expect(html).toContain("Recipes");
+  expect(html).toContain("Cancel");
+});

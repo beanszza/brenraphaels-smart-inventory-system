@@ -59,6 +59,7 @@ export default function RecipeFormPage({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
 
   const [recipeName, setRecipeName] = useState(editingRecipe?.recipeName ?? "");
   const [selectedProductName, setSelectedProductName] = useState(
@@ -360,7 +361,7 @@ export default function RecipeFormPage({
       <div className="space-y-1.5">
         <button
           type="button"
-          onClick={onCancel}
+          onClick={() => setConfirmDiscardOpen(true)}
           className="inline-flex items-center gap-1 type-body-secondary text-ink-muted hover:text-ink transition-colors cursor-pointer"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -938,7 +939,7 @@ export default function RecipeFormPage({
               type="button"
               variant="outline"
               disabled={saving}
-              onClick={onCancel}
+              onClick={() => setConfirmDiscardOpen(true)}
               className="h-9 px-4 rounded-control border border-border bg-surface type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
             >
               Cancel
@@ -953,6 +954,20 @@ export default function RecipeFormPage({
           </div>
         </div>
       </form>
+
+      <ActionConfirmModal
+        open={confirmDiscardOpen}
+        title="Discard Unsaved Changes?"
+        subtitle={recipeName.trim() ? `Recipe: ${recipeName.trim()}` : undefined}
+        description="Are you sure you want to go back? Any unsaved recipe details will be discarded."
+        confirmLabel="Discard & Leave"
+        cancelLabel="Stay"
+        onCancel={() => setConfirmDiscardOpen(false)}
+        onConfirm={() => {
+          setConfirmDiscardOpen(false);
+          onCancel();
+        }}
+      />
 
       <ActionConfirmModal
         open={confirmSaveOpen}
