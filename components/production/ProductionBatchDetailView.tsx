@@ -613,7 +613,7 @@ export default function ProductionBatchDetailView({
                     className={`flex items-center gap-2 px-2.5 py-1 rounded-xl transition-all text-left ${
                       canClick ? "cursor-pointer hover:bg-muted/40" : "cursor-not-allowed opacity-50"
                     }`}
-                    title={!canClick ? "Complete all 6 kitchen production stages first" : undefined}
+                    title={!canClick ? `Complete all ${cookingStages.length} kitchen production stages first` : undefined}
                   >
                     <div
                       className={`w-6 h-6 rounded-full flex items-center justify-center type-caption font-semibold transition-colors shrink-0 ${
