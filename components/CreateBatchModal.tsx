@@ -109,7 +109,7 @@ export default function CreateBatchModal({ open, onClose, onCreated }: Props) {
 
   const availableVariants = useMemo(() => {
     if (!finishedProduct) return [];
-    return recipes.filter(r => r.productId.toString() === finishedProduct);
+    return recipes.filter(r => r.productId.toString() === finishedProduct && (r as any).isActive !== false);
   }, [finishedProduct, recipes]);
 
   // Reset when modal opens

@@ -62,6 +62,7 @@ interface RecipeOption {
   productId: number;
   outputQuantity: number;
   yieldUom: string;
+  isActive?: boolean;
 }
 
 const REASON_OPTIONS = [
@@ -287,6 +288,7 @@ export default function ProductionRequestModal({
             productId: r.productId,
             outputQuantity: Number(r.outputQuantity) > 0 ? Number(r.outputQuantity) : 100,
             yieldUom: r.yieldUom || "pcs",
+            isActive: r.isActive !== false,
           }));
           cachedRecipes = recs;
           setRecipes(recs);
@@ -320,11 +322,13 @@ export default function ProductionRequestModal({
     setLotSuggestions(null);
   };
 
-  // Filter recipes strictly by the selected Variant's productId
+  // Filter recipes strictly by the selected Variant's productId (active only unless viewing existing request)
   useEffect(() => {
     if (productId) {
       const pId = Number(productId);
-      const matched = recipes.filter((r) => Number(r.productId) === pId);
+      const matched = recipes.filter(
+        (r) => Number(r.productId) === pId && (isViewMode || r.isActive !== false)
+      );
       setFilteredRecipes(matched);
       if (matched.length === 1) {
         setRecipeId(String(matched[0].recipeId));
@@ -775,7 +779,7 @@ export default function ProductionRequestModal({
                           : !productId
                           ? "Select variant first"
                           : filteredRecipes.length === 0
-                          ? "No recipe for this variant"
+                          ? "No active recipe for this variant"
                           : "Select recipe..."
                       }
                     />
@@ -789,7 +793,7 @@ export default function ProductionRequestModal({
                       ))
                     ) : (
                       <div className="p-3 type-body-secondary text-ink-muted text-center">
-                        No recipe configured for this variant.
+                        No active recipe configured for this variant.
                       </div>
                     )}
                   </SelectContent>

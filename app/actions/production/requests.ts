@@ -93,6 +93,9 @@ export async function createProductionRequest(body: any = {}) {
         if (!recipe) {
             return refuse("Recipe not found.");
         }
+        if (recipe.IsActive === false) {
+            return refuse("Selected recipe is inactive and cannot be used for production requests.");
+        }
         const year = new Date().getFullYear();
         const seq = await tx.documentSequences.upsert({
             where: { DocType_Year: { DocType: "ProdReq", Year: year } },

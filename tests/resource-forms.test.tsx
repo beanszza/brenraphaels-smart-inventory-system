@@ -172,3 +172,33 @@ it("shows confirmation modal before discarding changes when going back to recipe
   expect(html).toContain("Recipes");
   expect(html).toContain("Cancel");
 });
+
+it("renders Status badge and active/inactive options when editing a recipe", () => {
+  const html = renderToStaticMarkup(
+    <RecipeFormPage
+      editingRecipe={{
+        recipeId: 41,
+        recipeCode: "BOM-2026-0041",
+        recipeName: "Ube Jam Standard",
+        productId: 1,
+        finishedProduct: "Ube Halaya",
+        outputQuantity: 50,
+        notes: "Test notes",
+        stages: ["Steaming", "Cooking"],
+        isActive: false,
+        displayName: "Ube Jam Standard — Batch of 50 pcs",
+        yieldLabel: "Batch of 50 pcs",
+        ingredients: [],
+      }}
+      finishedProducts={[{ productId: 1, itemName: "Ube Halaya Smooth", variant: "500 g tub" }]}
+      baseSupplies={[]}
+      categories={[{ categoryId: 1, categoryName: "Ingredients" }]}
+      onCancel={() => {}}
+      onSave={async () => {}}
+    />
+  );
+
+  expect(html).toContain("Edit recipe");
+  expect(html).toContain("Inactive");
+  expect(html).toContain("Status");
+});

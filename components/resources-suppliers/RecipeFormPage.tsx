@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Plus, Trash2, Check } from "lucide-react";
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import {
   Recipe,
   FinishedProduct,
@@ -368,9 +369,12 @@ export default function RecipeFormPage({
           <span>Recipes</span>
         </button>
         <div>
-          <h1 className="type-page-title text-ink">
-            {editingRecipe ? "Edit recipe" : "New recipe"}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="type-page-title text-ink">
+              {editingRecipe ? "Edit recipe" : "New recipe"}
+            </h1>
+            <StatusBadge status={recipeActive ? "Active" : "Inactive"} />
+          </div>
           <p className="mt-1 type-body text-ink-muted">
             List what one batch uses. Production deducts these amounts from stock.
           </p>
@@ -484,7 +488,7 @@ export default function RecipeFormPage({
                 </div>
               </div>
 
-              {/* Yield per batch * (+ Status when editing) */}
+              {/* Yield per batch * and Status */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label
@@ -528,25 +532,23 @@ export default function RecipeFormPage({
                   )}
                 </div>
 
-                {editingRecipe && (
-                  <div>
-                    <label
-                      htmlFor="recipe-status-select"
-                      className="mb-1.5 block type-label text-ink"
-                    >
-                      Status
-                    </label>
-                    <select
-                      id="recipe-status-select"
-                      value={recipeActive ? "true" : "false"}
-                      onChange={(e) => setRecipeActive(e.target.value === "true")}
-                      className="h-10 w-full rounded-control border border-input bg-surface px-3.5 type-body text-ink focus:ring-1 focus:ring-ring focus:outline-none"
-                    >
-                      <option value="true">Active</option>
-                      <option value="false">Inactive</option>
-                    </select>
-                  </div>
-                )}
+                <div>
+                  <label
+                    htmlFor="recipe-status-select"
+                    className="mb-1.5 block type-label text-ink"
+                  >
+                    Status
+                  </label>
+                  <select
+                    id="recipe-status-select"
+                    value={recipeActive ? "true" : "false"}
+                    onChange={(e) => setRecipeActive(e.target.value === "true")}
+                    className="h-10 w-full rounded-control border border-input bg-surface px-3.5 type-body text-ink focus:ring-1 focus:ring-ring focus:outline-none"
+                  >
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -972,7 +974,7 @@ export default function RecipeFormPage({
       <ActionConfirmModal
         open={confirmSaveOpen}
         title={editingRecipe ? "Save Recipe Changes" : "Create Recipe"}
-        subtitle={`Recipe: ${recipeName.trim() || "—"} • ${activeRows.length} item(s) • ${checkedStages.length} stage(s)`}
+        subtitle={`Recipe: ${recipeName.trim() || "—"} • Status: ${recipeActive ? "Active" : "Inactive"} • ${activeRows.length} item(s) • ${checkedStages.length} stage(s)`}
         description={
           editingRecipe
             ? `Are you sure you want to save changes to recipe "${recipeName.trim()}"?`
