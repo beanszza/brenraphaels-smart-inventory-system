@@ -4,13 +4,15 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw, FileText } from "lucide-react";
-import { useIsAdmin } from "@/context/StaffContext";
+import { Plus, RefreshCw, FileText, Download } from "lucide-react";
+import { useIsAdmin, useOptionalStaff } from "@/context/StaffContext";
 import { SearchInput } from "@/components/shared/SearchInput";
 import Pagination from "@/components/Pagination";
+import { toast } from "sonner";
 import { Supplier } from "./types";
 import SupplierTable from "./SupplierTable";
 import ResourceStatusTabs from "./ResourceStatusTabs";
+import { downloadSuppliersPdf } from "./downloadSuppliersPdf";
 
 interface SupplierTabProps {
   suppliers: Supplier[];
@@ -42,12 +44,33 @@ export default function SupplierTab({
 }: SupplierTabProps) {
   const router = useRouter();
   const isAdmin = useIsAdmin();
+  const optionalStaff = useOptionalStaff();
   const [refreshing, setRefreshing] = React.useState(false);
+  const [exporting, setExporting] = React.useState(false);
 
   const handleRefresh = () => {
     setRefreshing(true);
     router.refresh();
     setTimeout(() => setRefreshing(false), 600);
+  };
+
+  const handleExportPdf = async () => {
+    try {
+      setExporting(true);
+      toast.info("Generating Supplier Directory PDF...");
+      const dataToExport = filteredSuppliers.length > 0 ? filteredSuppliers : suppliers;
+      await downloadSuppliersPdf(dataToExport, {
+        statusFilter,
+        searchQuery,
+        staffName: optionalStaff?.name,
+      });
+      toast.success("Supplier Directory PDF downloaded successfully!");
+    } catch (err) {
+      console.error("Failed to generate Supplier Directory PDF:", err);
+      toast.error("Failed to generate Supplier Directory PDF.");
+    } finally {
+      setExporting(false);
+    }
   };
 
   const statusCounts = {
@@ -86,6 +109,15 @@ export default function SupplierTab({
           <p className="mt-1 type-body text-ink-muted">Partner directories, verified contacts, and statuses</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={exporting || suppliers.length === 0}
+            className="flex items-center justify-center gap-1.5 rounded-control bg-surface border border-border px-3.5 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-9 shadow-none cursor-pointer"
+          >
+            <Download className="w-4 h-4" /> {exporting ? "Exporting..." : "Export PDF"}
+          </Button>
           <Button
             variant="outline"
             size="sm"

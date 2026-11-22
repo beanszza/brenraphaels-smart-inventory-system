@@ -5,6 +5,44 @@ import CategoryModal from "@/components/resources-suppliers/CategoryModal";
 import RecipeModal from "@/components/resources-suppliers/RecipeModal";
 import RecipeFormPage from "@/components/resources-suppliers/RecipeFormPage";
 import SupplierModal from "@/components/resources-suppliers/SupplierModal";
+import SupplierTab from "@/components/resources-suppliers/SupplierTab";
+import { downloadSuppliersPdf } from "@/components/resources-suppliers/downloadSuppliersPdf";
+
+const mockSave = vi.fn();
+class MockJsPdf {
+  setFont = vi.fn();
+  setFontSize = vi.fn();
+  setTextColor = vi.fn();
+  text = vi.fn();
+  setDrawColor = vi.fn();
+  setLineWidth = vi.fn();
+  line = vi.fn();
+  addPage = vi.fn();
+  setPage = vi.fn();
+  internal = {
+    getNumberOfPages: vi.fn().mockReturnValue(1),
+  };
+  lastAutoTable = { finalY: 100 };
+  save = mockSave;
+}
+
+vi.mock("jspdf", () => ({
+  jsPDF: MockJsPdf,
+  default: MockJsPdf,
+}));
+
+vi.mock("jspdf-autotable", () => ({
+  default: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+}));
+
+vi.mock("@/context/StaffContext", () => ({
+  useIsAdmin: () => true,
+  useOptionalStaff: () => ({ staffId: "2026-ADMIN-001", name: "System Administrator", role: "Admin" }),
+}));
 import SupplyModal from "@/components/resources-suppliers/SupplyModal";
 
 vi.mock("@/components/resources-suppliers/ModalWrapper", () => ({
@@ -202,3 +240,65 @@ it("renders Status badge and active/inactive options when editing a recipe", () 
   expect(html).toContain("Inactive");
   expect(html).toContain("Status");
 });
+
+it("renders Export PDF button in SupplierTab", () => {
+  const html = renderToStaticMarkup(
+    <SupplierTab
+      suppliers={[
+        {
+          supplierId: 1,
+          supplierCode: "SUP-001",
+          companyName: "Metro Sugar Supplies Inc.",
+          contactPerson: "Juan Dela Cruz",
+          email: "sales@metrosugar.ph",
+          phone: "+639171234567",
+          address: "Quezon City, Metro Manila",
+          isActive: true,
+        },
+      ]}
+      searchQuery=""
+      onSearchChange={() => {}}
+      statusFilter="All"
+      onStatusFilterChange={() => {}}
+      currentPage={1}
+      onPageChange={() => {}}
+      isAuthorizedForReports={true}
+      onAddNew={() => {}}
+      onEdit={() => {}}
+      onView={() => {}}
+    />
+  );
+
+  expect(html).toContain("Export PDF");
+  expect(html).toContain("Refresh");
+  expect(html).toContain("Supplier Management");
+  expect(html).toContain("Metro Sugar Supplies Inc.");
+});
+
+it("executes downloadSuppliersPdf without throwing errors", async () => {
+  mockSave.mockClear();
+
+  await expect(
+    downloadSuppliersPdf(
+      [
+        {
+          supplierId: 1,
+          supplierCode: "SUP-001",
+          companyName: "Metro Sugar Supplies Inc.",
+          contactPerson: "Juan Dela Cruz",
+          email: "sales@metrosugar.ph",
+          phone: "+639171234567",
+          address: "Quezon City, Metro Manila",
+          isActive: true,
+        },
+      ],
+      {
+        statusFilter: "All",
+        staffName: "System Administrator",
+      }
+    )
+  ).resolves.not.toThrow();
+
+  expect(mockSave).toHaveBeenCalled();
+});
+
