@@ -32,7 +32,7 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onD
       <table className="w-full min-w-[780px] border-collapse">
         <thead>
           <tr className="border-b border-divider">
-            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[160px]">Purchase Order No.</th>
+            <th className="sticky left-0 z-20 bg-surface pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[160px]">Purchase Order No.</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Supplier</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Order Date</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Requested By</th>
@@ -95,7 +95,7 @@ export function POTable({ orders, isAdmin = false, onView, onEdit, onCancel, onD
 
               return (
                 <tr key={po.poId} className="group hover:bg-page transition-colors cursor-pointer" onClick={() => onView(po)}>
-                  <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[160px]">
+                  <td className="sticky left-0 z-10 bg-surface group-hover:bg-page transition-colors py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[160px]">
                     {po.poNumber}
                   </td>
                   <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">

@@ -35,7 +35,7 @@ export default function SupplierTable({
       <table className="w-full min-w-[760px] border-collapse">
         <thead>
           <tr className="border-b border-divider">
-            <th className="w-12 pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">No.</th>
+            <th className="sticky left-0 z-20 bg-surface w-12 pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">No.</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[200px]">Supplier Name</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Contact Person</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Email</th>
@@ -54,7 +54,7 @@ export default function SupplierTable({
           ) : (
             suppliers.map((supplier, index) => (
               <tr key={supplier.supplierId} className="hover:bg-page transition-colors group">
-                <td className="w-12 py-3 pr-4 type-body text-ink-muted whitespace-nowrap tabular-nums">
+                <td className="sticky left-0 z-10 bg-surface group-hover:bg-page transition-colors w-12 py-3 pr-4 type-body text-ink-muted whitespace-nowrap tabular-nums">
                   {index + 1 + (currentPage - 1) * pageSize}
                 </td>
                 <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap min-w-[200px]">

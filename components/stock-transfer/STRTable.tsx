@@ -53,7 +53,7 @@ export function STRTable({
         <table className="w-full border-collapse text-left">
           <thead className="border-b border-divider">
             <tr>
-              <th className="py-3 pr-4 text-left type-table-header text-ink-muted whitespace-nowrap">Request No.</th>
+              <th className="sticky left-0 z-20 bg-surface py-3 pr-4 text-left type-table-header text-ink-muted whitespace-nowrap">Request No.</th>
               <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">Destination</th>
               <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">Product</th>
               <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">Variant</th>
@@ -83,11 +83,11 @@ export function STRTable({
               return (
                 <tr
                   key={req.requestId}
-                  className="hover:bg-page transition-colors cursor-pointer"
+                  className="group hover:bg-page transition-colors cursor-pointer"
                   onClick={() => onView(req)}
                 >
                   {/* Request No */}
-                  <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap">
+                  <td className="sticky left-0 z-10 bg-surface group-hover:bg-page transition-colors py-3 pr-4 type-body font-medium text-primary whitespace-nowrap">
                     <span className="hover:underline">{req.requestNumber}</span>
                   </td>
 

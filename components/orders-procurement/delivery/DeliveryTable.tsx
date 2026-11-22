@@ -46,7 +46,7 @@ export function DeliveryTable({
       <table className="w-full min-w-[820px] border-collapse">
         <thead>
           <tr className="border-b border-divider">
-            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[150px]">Delivery No.</th>
+            <th className="sticky left-0 z-20 bg-surface pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[150px]">Delivery No.</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Purchase Order Ref.</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Supplier</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Carrier</th>
@@ -108,7 +108,7 @@ export function DeliveryTable({
                   className="group hover:bg-page transition-colors cursor-pointer"
                   onClick={() => onView(delivery)}
                 >
-                  <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[150px]">
+                  <td className="sticky left-0 z-10 bg-surface group-hover:bg-page transition-colors py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[150px]">
                     {delivery.deliveryNumber}
                   </td>
                   <td className="py-3 pr-4 type-body text-ink whitespace-nowrap tabular-nums">

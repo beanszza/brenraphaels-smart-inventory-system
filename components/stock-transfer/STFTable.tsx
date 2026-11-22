@@ -38,7 +38,7 @@ export function STFTable({
         <table className="w-full border-collapse text-left">
           <thead className="border-b border-divider">
             <tr>
-              <th className="py-3 pr-4 text-left type-table-header text-ink-muted whitespace-nowrap">Transfer No.</th>
+              <th className="sticky left-0 z-20 bg-surface py-3 pr-4 text-left type-table-header text-ink-muted whitespace-nowrap">Transfer No.</th>
               <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">STR Ref</th>
               <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">Product &amp; Variant</th>
               <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">Destination</th>
@@ -56,10 +56,10 @@ export function STFTable({
               return (
                 <tr
                   key={st.transferId}
-                  className="hover:bg-page transition-colors cursor-pointer"
+                  className="group hover:bg-page transition-colors cursor-pointer"
                   onClick={() => onView(st)}
                 >
-                  <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap">
+                  <td className="sticky left-0 z-10 bg-surface group-hover:bg-page transition-colors py-3 pr-4 type-body font-medium text-primary whitespace-nowrap">
                     <span className="hover:underline">{st.transferNumber}</span>
                   </td>
 

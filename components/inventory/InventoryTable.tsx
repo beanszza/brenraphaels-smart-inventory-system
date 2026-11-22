@@ -112,8 +112,8 @@ export default function InventoryTable({
       <table className="w-full min-w-[820px] border-collapse">
         <thead>
           <tr className="border-b border-divider">
-            <th className="w-8 pb-2.5 pt-1 pr-2 text-center"></th>
-            <th className="w-12 pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
+            <th className="sticky left-0 z-20 bg-surface w-9 min-w-9 max-w-9 pb-2.5 pt-1 pr-2 text-center"></th>
+            <th className="sticky left-9 z-20 bg-surface w-12 pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">
               No.
             </th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[200px]">
@@ -201,7 +201,7 @@ export default function InventoryTable({
                     onClick={() => toggleRow(item)}
                     className="hover:bg-page transition-colors cursor-pointer select-none group"
                   >
-                    <td className="w-8 py-3 pr-2 text-center text-ink-muted group-hover:text-ink">
+                    <td className="sticky left-0 z-10 bg-surface group-hover:bg-page transition-colors w-9 min-w-9 max-w-9 py-3 pr-2 text-center text-ink-muted group-hover:text-ink">
                       <button
                         type="button"
                         aria-label={`Show lots for ${item.itemName}`}
@@ -218,7 +218,7 @@ export default function InventoryTable({
                         )}
                       </button>
                     </td>
-                    <td className="w-12 py-3 pr-4 type-body text-ink-muted whitespace-nowrap tabular-nums">
+                    <td className="sticky left-9 z-10 bg-surface group-hover:bg-page transition-colors w-12 py-3 pr-4 type-body text-ink-muted whitespace-nowrap tabular-nums">
                       {(currentPage - 1) * pageSize + idx + 1}
                     </td>
                     <td className="py-3 pr-4 type-body font-medium text-primary min-w-[200px] whitespace-nowrap">
@@ -337,7 +337,7 @@ export default function InventoryTable({
                               <table className="w-full border-collapse">
                                 <thead>
                                   <tr className="border-b border-divider">
-                                    <th className="pb-2 pt-1 pr-3 text-left type-table-header text-ink-muted">
+                                    <th className="sticky left-0 z-20 bg-surface pb-2 pt-1 pr-3 text-left type-table-header text-ink-muted whitespace-nowrap">
                                       Lot Code
                                     </th>
                                     <th className="pb-2 pt-1 pr-3 text-left type-table-header text-ink-muted">
@@ -380,9 +380,9 @@ export default function InventoryTable({
                                     return (
                                       <tr
                                         key={lot.lotId}
-                                        className="hover:bg-page transition-colors"
+                                        className="group hover:bg-page transition-colors"
                                       >
-                                        <td className="py-2.5 pr-3 type-table-cell font-medium text-primary tabular-nums">
+                                        <td className="sticky left-0 z-10 bg-surface group-hover:bg-page transition-colors py-2.5 pr-3 type-table-cell font-medium text-primary tabular-nums whitespace-nowrap">
                                           {lot.lotCode}
                                         </td>
                                         <td className="py-2.5 pr-3 type-table-cell text-ink">

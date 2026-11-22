@@ -343,7 +343,7 @@ export default function ProductionRequestsTab({
           <table className="w-full min-w-[820px] text-left border-collapse">
             <thead>
               <tr className="border-b border-divider">
-                <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[160px]">
+                <th className="sticky left-0 z-20 bg-surface pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[160px]">
                   {activeTab === "In Progress" || activeTab === "Completed"
                     ? "Batch Number"
                     : activeTab === "All"
@@ -398,7 +398,7 @@ export default function ProductionRequestsTab({
                       className="group hover:bg-page transition-colors cursor-pointer"
                     >
                       {/* Request / Batch Number */}
-                      <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[160px]">
+                      <td className="sticky left-0 z-10 bg-surface group-hover:bg-page transition-colors py-3 pr-4 type-body font-medium text-primary whitespace-nowrap tabular-nums min-w-[160px]">
                         {(isInProd || isCompleted) && req.batches?.[0]?.batchNumber
                           ? req.batches[0].batchNumber
                           : req.reqNumber}

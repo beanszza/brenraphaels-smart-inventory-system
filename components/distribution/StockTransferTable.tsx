@@ -33,7 +33,7 @@ export default function StockTransferTable({
         <table className="w-full border-collapse">
           <thead className="border-b border-divider">
             <tr>
-              <th className="py-3 pr-4 text-left type-table-header text-ink-muted whitespace-nowrap">Transfer ID</th>
+              <th className="sticky left-0 z-20 bg-surface py-3 pr-4 text-left type-table-header text-ink-muted whitespace-nowrap">Transfer ID</th>
               <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">Product</th>
               <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">Source</th>
               <th className="px-4 py-3 text-left type-table-header text-ink-muted whitespace-nowrap">Destination</th>
@@ -52,8 +52,8 @@ export default function StockTransferTable({
               </tr>
             ) : (
               transfers.map((item) => (
-                <tr key={item.id} className="hover:bg-page transition-colors">
-                  <td className="py-3 pr-4 type-body font-medium text-primary whitespace-nowrap">{item.id}</td>
+                <tr key={item.id} className="group hover:bg-page transition-colors">
+                  <td className="sticky left-0 z-10 bg-surface group-hover:bg-page transition-colors py-3 pr-4 type-body font-medium text-primary whitespace-nowrap">{item.id}</td>
                   <td className="px-4 py-3 type-body font-medium text-ink whitespace-nowrap">{item.product}</td>
                   <td className="px-4 py-3 type-body text-ink whitespace-nowrap">{item.from}</td>
                   <td className="px-4 py-3 type-body text-ink whitespace-nowrap">{item.to}</td>
