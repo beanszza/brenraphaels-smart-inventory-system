@@ -59,6 +59,10 @@ function CategoryModalForm({
       setNameError("Category Name cannot contain numbers.");
       return false;
     }
+    if (/(raw|tool|finished)/i.test(trimmed)) {
+      setNameError("Category Name cannot contain reserved words ('Raw', 'Tool', or 'Finished').");
+      return false;
+    }
     if (trimmed.length < 2) {
       setNameError("Category Name must be at least 2 characters.");
       return false;

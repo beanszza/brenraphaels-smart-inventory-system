@@ -215,7 +215,7 @@ export async function saveCategory(input: CategoryInput, id?: number): Promise<R
     check(text(input.categoryName, 50), "Category name is required (max 50 characters).");
     const categoryName = input.categoryName.trim();
     check(!/\d/.test(categoryName), "Category name cannot contain numbers.");
-    check(!categoryName.toLowerCase().includes("finished good"), "Cannot use 'Finished Goods' category name.");
+    check(!/(raw|tool|finished)/i.test(categoryName), "Category name cannot contain reserved words ('Raw', 'Tool', or 'Finished').");
     const description = (input.description ?? "").trim();
     check(description.length <= 100, "Category description cannot exceed 100 characters.");
 

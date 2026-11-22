@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { History } from "lucide-react";
+import { History, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
@@ -26,6 +26,8 @@ import ProductionRequestModal from "@/components/production/ProductionRequestMod
 import { useIsAdmin, useIsHeadCook, useIsImsManager } from "@/context/StaffContext";
 import { StockWriteOffTab } from "@/components/inventory/write-off/StockWriteOffTab";
 import type { StockWriteOffDto } from "@/components/inventory/write-off/types";
+
+export type InventorySection = "raw-materials" | "tools" | "finished-products" | "write-off";
 
 function matchesCategory(itemCat: string, filter: string): boolean {
   if (!filter || filter === "All") return true;
@@ -57,6 +59,25 @@ function matchesSearch(item: InventoryItem, query: string): boolean {
   return nameMatch || codeMatch || splCodeMatch || idMatch || variantMatch;
 }
 
+const SECTION_HEADERS: Record<InventorySection, { title: string; description: string }> = {
+  "raw-materials": {
+    title: "Raw Materials",
+    description: "Perishable ingredients, raw materials, and supplies with expiration tracking",
+  },
+  tools: {
+    title: "Tools & Supplies",
+    description: "Non-perishable operational equipment, tools, and supplies",
+  },
+  "finished-products": {
+    title: "Finished Products",
+    description: "Finished goods, batch yields, and package variants ready for fulfillment",
+  },
+  "write-off": {
+    title: "Stock Write-Off",
+    description: "Review, approve, and dispose damaged, expired, or decommissioned stock",
+  },
+};
+
 export default function ViewInventory({
   initialInventories,
   initialLots,
@@ -64,13 +85,15 @@ export default function ViewInventory({
   initialCategories = [],
   initialWriteOffs = [],
   asOf,
+  section = "raw-materials",
 }: {
   initialInventories: InventoryItem[];
   initialLots: LotItem[];
   initialTotal: number;
-  initialCategories?: { categoryId: number; categoryName: string }[];
+  initialCategories?: { categoryId: number; categoryName: string; hasExpiry?: boolean }[];
   initialWriteOffs?: StockWriteOffDto[];
   asOf: string;
+  section?: InventorySection;
 }) {
   const router = useRouter();
   const isAdmin = useIsAdmin();
@@ -78,47 +101,36 @@ export default function ViewInventory({
   const isImsManager = useIsImsManager();
   const canPerformActions = !isAdmin && !isHeadCook;
   const canAccessWriteOff = isAdmin || isImsManager;
-  const [mainTab, setMainTab] = useState<"inventory" | "write-off">(
-    isAdmin ? "write-off" : "inventory"
-  );
+  const allInventories = initialInventories;
+  const lots = initialLots;
+
   const pendingRequestsCount = useMemo(
     () => (initialWriteOffs || []).filter((s) => s.status === "Pending Approval").length,
     [initialWriteOffs]
   );
-  const allInventories = initialInventories;
+
+  // Filter items scoped to this section
+  const sectionInventories = useMemo(() => {
+    if (section === "finished-products") {
+      return allInventories.filter((item) => matchesCategory(item.categoryName, "Finished Goods"));
+    }
+    if (section === "tools") {
+      return allInventories.filter(
+        (item) => !matchesCategory(item.categoryName, "Finished Goods") && item.categoryHasExpiry === false
+      );
+    }
+    // Default: raw-materials (items whose category has expiry)
+    return allInventories.filter(
+      (item) => !matchesCategory(item.categoryName, "Finished Goods") && item.categoryHasExpiry !== false
+    );
+  }, [allInventories, section]);
+
   const [searchQuery, setSearchQuery] = useState("");
-  const firstTabId =
-    initialCategories && initialCategories.length > 0
-      ? initialCategories[0].categoryName
-      : initialInventories.find(
-          (item) => item.categoryName && !item.categoryName.toLowerCase().includes("finished good")
-        )?.categoryName || "Finished Goods";
-  const [categoryFilter, setCategoryFilter] = useState(firstTabId);
+  const [categoryFilter, setCategoryFilter] = useState("All");
   const [productFilter, setProductFilter] = useState("All");
   const [page, setPage] = useState(1);
 
-  const totalItemsCount = initialTotal;
-  const lots = initialLots;
-  const lowStockCount = allInventories.filter(
-    (i) => i.isLowStock || i.currentStock <= i.minStockLevel
-  ).length;
-  const expiringSoonCount = lots.filter(
-    (lot) =>
-      lot.expiryDate &&
-      Math.ceil((new Date(lot.expiryDate).getTime() - new Date(asOf).getTime()) / 86400000) <= 30 &&
-      new Date(lot.expiryDate).getTime() >= new Date(asOf).getTime()
-  ).length;
-
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const item of allInventories) {
-      const cat = item.categoryName || "Uncategorized";
-      counts[cat] = (counts[cat] || 0) + 1;
-    }
-    return counts;
-  }, [allInventories]);
-
-  // PR Modal State (for "Order Now" action on Raw Materials / Supplies)
+  // PR Modal State (for "Order Now" action on Raw Materials / Tools)
   const [isCreatePROpen, setIsCreatePROpen] = useState(false);
   const [selectedPRData, setSelectedPRData] = useState<PurchaseRequisition | undefined>(undefined);
 
@@ -133,55 +145,57 @@ export default function ViewInventory({
     reason?: string;
   } | null>(null);
 
-  // Dynamic Category Tabs from active supply categories + Finished Goods
+  // Category Tabs for Raw Materials and Tools
   const categoryTabs = useMemo(() => {
-    let baseList = initialCategories;
-    if (!baseList || baseList.length === 0) {
+    if (section === "finished-products" || section === "write-off") return [];
+    let baseList =
+      section === "tools"
+        ? initialCategories.filter((c) => c.hasExpiry === false)
+        : initialCategories.filter((c) => c.hasExpiry !== false);
+
+    if (baseList.length === 0) {
       const set = new Set<string>();
-      allInventories.forEach((item) => {
-        if (item.categoryName && !item.categoryName.toLowerCase().includes("finished good")) {
-          set.add(item.categoryName);
-        }
+      sectionInventories.forEach((item) => {
+        if (item.categoryName) set.add(item.categoryName);
       });
-      baseList = Array.from(set).map((name, i) => ({ categoryId: i + 1, categoryName: name }));
+      baseList = Array.from(set).map((name, i) => ({
+        categoryId: i + 1,
+        categoryName: name,
+        hasExpiry: section === "raw-materials",
+      }));
     }
 
     const dynamicTabs = baseList.map((c) => ({
       id: c.categoryName,
       label: c.categoryName === "Tools and Supplies" ? "TOOLS & SUPPLIES" : c.categoryName.toUpperCase(),
     }));
-    return [...dynamicTabs, { id: "Finished Goods", label: "FINISHED GOODS" }];
-  }, [initialCategories, allInventories]);
 
-  // Ensure categoryFilter is valid when tabs load
+    return [{ id: "All", label: "ALL" }, ...dynamicTabs];
+  }, [section, initialCategories, sectionInventories]);
+
+  // Reset category filter if it becomes invalid
   useEffect(() => {
     if (categoryTabs.length > 0 && !categoryTabs.some((t) => t.id === categoryFilter)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCategoryFilter(categoryTabs[0].id);
+      setCategoryFilter("All");
     }
   }, [categoryTabs, categoryFilter]);
 
   // Distinct finished goods product names for the Product filter dropdown
   const availableFinishedProducts = useMemo(() => {
+    if (section !== "finished-products") return [];
     const set = new Set<string>();
-    allInventories
-      .filter((item) => matchesCategory(item.categoryName, "Finished Goods"))
-      .forEach((item) => {
-        if (item.itemName) set.add(item.itemName.trim());
-      });
+    sectionInventories.forEach((item) => {
+      if (item.itemName) set.add(item.itemName.trim());
+    });
     return Array.from(set).sort();
-  }, [allInventories]);
+  }, [section, sectionInventories]);
 
   // Scoped items by category
-  // For Finished Goods: separate each product variant into its own row with its own Variant & SKU column!
+  // For Finished Products: separate each product variant into its own row with its own Variant
   const categoryScopedItems = useMemo(() => {
-    if (categoryFilter === "Finished Goods") {
-      const rawFinishedGoods = allInventories.filter((item) =>
-        matchesCategory(item.categoryName, "Finished Goods")
-      );
-      // Group by ItemId so multiple warehouse location rows for the same product don't duplicate variants!
+    if (section === "finished-products") {
       const itemMap = new Map<number, InventoryItem>();
-      rawFinishedGoods.forEach((item) => {
+      sectionInventories.forEach((item) => {
         if (!itemMap.has(item.itemId)) {
           itemMap.set(item.itemId, item);
         }
@@ -220,20 +234,59 @@ export default function ViewInventory({
       return rows;
     }
 
-    return allInventories.filter((item) => matchesCategory(item.categoryName, categoryFilter));
-  }, [allInventories, categoryFilter]);
+    if (!categoryFilter || categoryFilter === "All") {
+      return sectionInventories;
+    }
+    return sectionInventories.filter((item) => matchesCategory(item.categoryName, categoryFilter));
+  }, [section, sectionInventories, categoryFilter]);
 
-  // Full filtering: category + product filter (Finished Goods only) + search
+  // Full filtering: category/product + search
   const filteredInventories = useMemo(() => {
-    const isFinishedGoods = categoryFilter === "Finished Goods";
+    const isFinishedProducts = section === "finished-products";
     return categoryScopedItems.filter((item) => {
       const matchesProduct =
-        !isFinishedGoods ||
+        !isFinishedProducts ||
         productFilter === "All" ||
         item.itemName.toLowerCase() === productFilter.toLowerCase();
       return matchesProduct && matchesSearch(item, searchQuery);
     });
-  }, [categoryScopedItems, categoryFilter, productFilter, searchQuery]);
+  }, [categoryScopedItems, section, productFilter, searchQuery]);
+
+  // Counts for KPI Summary Cards
+  const totalItemsCount = useMemo(() => {
+    if (section === "finished-products") {
+      return categoryScopedItems.length;
+    }
+    return sectionInventories.length;
+  }, [section, categoryScopedItems.length, sectionInventories.length]);
+
+  const lowStockCount = useMemo(() => {
+    if (section === "finished-products") {
+      return categoryScopedItems.filter((i) => i.isLowStock || i.currentStock <= i.minStockLevel).length;
+    }
+    return sectionInventories.filter((i) => i.isLowStock || i.currentStock <= i.minStockLevel).length;
+  }, [section, categoryScopedItems, sectionInventories]);
+
+  const expiringSoonCount = useMemo(() => {
+    if (section === "tools") return 0;
+    const sectionItemIds = new Set(sectionInventories.map((i) => i.itemId));
+    return lots.filter(
+      (lot) =>
+        sectionItemIds.has(lot.itemId) &&
+        lot.expiryDate &&
+        Math.ceil((new Date(lot.expiryDate).getTime() - new Date(asOf).getTime()) / 86400000) <= 30 &&
+        new Date(lot.expiryDate).getTime() >= new Date(asOf).getTime()
+    ).length;
+  }, [section, sectionInventories, lots, asOf]);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of sectionInventories) {
+      const cat = item.categoryName || "Uncategorized";
+      counts[cat] = (counts[cat] || 0) + 1;
+    }
+    return counts;
+  }, [sectionInventories]);
 
   const pageSize = 10;
   const totalCount = filteredInventories.length;
@@ -251,7 +304,7 @@ export default function ViewInventory({
       Math.round((item.maxStockLevel > 0 ? item.maxStockLevel : 100) - item.currentStock)
     );
 
-    if (categoryFilter === "Finished Goods" || matchesCategory(item.categoryName, "Finished Goods")) {
+    if (section === "finished-products" || matchesCategory(item.categoryName, "Finished Goods")) {
       setProducePrefill({
         productId: item.productId,
         productName: item.itemName,
@@ -292,218 +345,202 @@ export default function ViewInventory({
     setIsCreatePROpen(true);
   };
 
-  return (
-    <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
-      <PageHeader
-        title="Inventory Management"
-        description="Monitor real-time warehouse stocks, ingredients, raw materials, and finished goods"
-      />
+  const headerInfo = SECTION_HEADERS[section] || SECTION_HEADERS["raw-materials"];
 
-      {/* Main Process Tabs (Only visible to IMS Manager & Admin; other accounts cannot see Stock Write-Off) */}
-      {canAccessWriteOff && (
-        <div className="border-b border-divider">
-          <div className="flex items-center gap-2 overflow-x-auto">
-            <button
-              type="button"
-              onClick={() => setMainTab("inventory")}
-              className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap outline-none ${
-                mainTab === "inventory"
-                  ? "border-primary text-primary -mb-px"
-                  : "border-transparent text-ink-muted hover:text-ink"
-              }`}
-            >
-              <span>INVENTORY</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMainTab("write-off")}
-              className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap outline-none ${
-                mainTab === "write-off"
-                  ? "border-primary text-primary -mb-px"
-                  : "border-transparent text-ink-muted hover:text-ink"
-              }`}
-            >
-              <span>STOCK WRITE-OFF</span>
-              {pendingRequestsCount > 0 && (
-                <span
-                  className={`px-1.5 py-0.5 rounded-pill type-caption font-semibold tabular-nums ${
-                    mainTab === "write-off"
-                      ? "bg-status-purple-bg text-primary"
-                      : "bg-subtle text-ink-muted"
-                  }`}
-                >
-                  {pendingRequestsCount}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {canAccessWriteOff && mainTab === "write-off" ? (
+  if (section === "write-off") {
+    return (
+      <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
+        <PageHeader title={headerInfo.title} description={headerInfo.description} />
         <StockWriteOffTab
           initialWriteOffs={initialWriteOffs}
           initialInventories={allInventories}
           initialLots={lots}
           initialCategories={initialCategories}
         />
-      ) : (
-        <>
-          {/* 3 KPI Cards */}
-          <InventorySummaryCards
-            totalItems={totalItemsCount}
-            lowStockCount={lowStockCount}
-            expiringSoonCount={expiringSoonCount}
-            categoryCounts={categoryCounts}
-          />
+      </div>
+    );
+  }
 
-          {/* Dynamic Category Sub-tabs */}
-          <div className="overflow-x-auto">
-            <div className="flex items-center gap-1 min-w-max">
-              {categoryTabs.map((tab) => {
-                const isActive = categoryFilter === tab.id;
-                const displayLabel = tab.id === "Tools and Supplies" ? "Tools & Supplies" : tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => {
-                      setCategoryFilter(tab.id);
-                      setProductFilter("All");
-                      setPage(1);
-                    }}
-                    aria-pressed={isActive}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
-                      isActive
-                        ? "bg-status-purple-bg text-primary"
-                        : "text-ink-muted hover:text-ink hover:bg-subtle"
-                    }`}
-                  >
-                    <span>{displayLabel}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+  return (
+    <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
+      <PageHeader title={headerInfo.title} description={headerInfo.description} />
 
-          {/* Standalone Filters & Search Row */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Product Filter Dropdown: Show strictly only when on Finished Goods */}
-            {categoryFilter === "Finished Goods" && availableFinishedProducts.length > 0 && (
-              <Select
-                value={productFilter}
-                onValueChange={(val) => {
-                  setProductFilter(val);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="h-[38px] w-full sm:w-auto sm:min-w-[220px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
-                  <span className="truncate">
-                    <span className="text-ink-muted font-normal mr-1.5">Product:</span>
-                    <span className="font-medium text-ink">
-                      <SelectValue placeholder="All Products" />
-                    </span>
-                  </span>
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  sideOffset={4}
-                  avoidCollisions={false}
-                  className="min-w-[220px] max-h-72"
+      {/* 3 KPI Cards */}
+      <InventorySummaryCards
+        totalItems={totalItemsCount}
+        lowStockCount={lowStockCount}
+        expiringSoonCount={expiringSoonCount}
+        categoryCounts={categoryCounts}
+      />
+
+      {/* Category Sub-tabs: Visible on Raw Materials and Tools */}
+      {categoryTabs.length > 0 && (
+        <div className="overflow-x-auto">
+          <div className="flex items-center gap-1 min-w-max">
+            {categoryTabs.map((tab) => {
+              const isActive = categoryFilter === tab.id;
+              const displayLabel = tab.id === "Tools and Supplies" ? "TOOLS & SUPPLIES" : tab.label;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setCategoryFilter(tab.id);
+                    setPage(1);
+                  }}
+                  aria-pressed={isActive}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
+                    isActive
+                      ? "bg-status-purple-bg text-primary font-semibold"
+                      : "text-ink-muted hover:text-ink hover:bg-subtle"
+                  }`}
                 >
-                  <SelectItem value="All">All Products</SelectItem>
-                  {availableFinishedProducts.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+                  <span>{displayLabel}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-            {/* Dynamic Category Selector */}
-            <Select
-              value={categoryFilter}
-              onValueChange={(val) => {
-                setCategoryFilter(val);
-                setProductFilter("All");
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="h-[38px] w-full sm:w-auto sm:min-w-[230px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
-                <span className="truncate">
-                  <span className="text-ink-muted font-normal mr-1.5">Category:</span>
-                  <span className="font-medium text-ink">
-                    <SelectValue placeholder="Select Category" />
-                  </span>
+      {/* Standalone Filters & Search Row */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Product Filter Dropdown: Show strictly only on Finished Products */}
+        {section === "finished-products" && availableFinishedProducts.length > 0 && (
+          <Select
+            value={productFilter}
+            onValueChange={(val) => {
+              setProductFilter(val);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="h-[38px] w-full sm:w-auto sm:min-w-[220px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
+              <span className="truncate">
+                <span className="text-ink-muted font-normal mr-1.5">Product:</span>
+                <span className="font-medium text-ink">
+                  <SelectValue placeholder="All Products" />
                 </span>
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                sideOffset={4}
-                avoidCollisions={false}
-                className="min-w-[230px] max-h-72"
-              >
-                {categoryTabs.map((tab) => (
+              </span>
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              side="bottom"
+              align="start"
+              sideOffset={4}
+              avoidCollisions={false}
+              className="min-w-[220px] max-h-72"
+            >
+              <SelectItem value="All">All Products</SelectItem>
+              {availableFinishedProducts.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {p}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Dynamic Category Selector: Shown on Raw Materials and Tools */}
+        {categoryTabs.length > 0 && (
+          <Select
+            value={categoryFilter}
+            onValueChange={(val) => {
+              setCategoryFilter(val);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="h-[38px] w-full sm:w-auto sm:min-w-[230px] rounded-control border border-input bg-surface px-3 type-body text-ink shadow-none focus:ring-1 focus:ring-ring">
+              <span className="truncate">
+                <span className="text-ink-muted font-normal mr-1.5">Category:</span>
+                <span className="font-medium text-ink">
+                  <SelectValue placeholder="Select Category" />
+                </span>
+              </span>
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              side="bottom"
+              align="start"
+              sideOffset={4}
+              avoidCollisions={false}
+              className="min-w-[230px] max-h-72"
+            >
+              <SelectItem value="All">All Categories</SelectItem>
+              {categoryTabs
+                .filter((tab) => tab.id !== "All")
+                .map((tab) => (
                   <SelectItem key={tab.id} value={tab.id}>
                     {tab.id === "Tools and Supplies" ? "Tools & Supplies" : tab.id}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
+            </SelectContent>
+          </Select>
+        )}
 
-            <SearchInput
-              containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
-              aria-label="Search inventory"
-              placeholder="Search item name or code..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setPage(1);
-              }}
-            />
+        <SearchInput
+          containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
+          aria-label="Search inventory"
+          placeholder="Search item name or code..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setPage(1);
+          }}
+        />
 
-            {isAdmin && (
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="sm:ml-auto h-9 rounded-control border border-border bg-surface px-3.5 py-2 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
-              >
-                <Link href="/inventory/logs">
-                  <History className="w-4 h-4 mr-1.5" />
-                  Transaction History
-                </Link>
-              </Button>
-            )}
-          </div>
+        {canAccessWriteOff && (
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="sm:ml-auto h-9 rounded-control border border-border bg-surface px-3.5 py-2 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
+          >
+            <Link href="/inventory/write-off">
+              <SlidersHorizontal className="w-4 h-4 mr-1.5" />
+              STOCK WRITE-OFF
+              {pendingRequestsCount > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-pill type-caption font-semibold bg-status-purple-bg text-primary tabular-nums">
+                  {pendingRequestsCount}
+                </span>
+              )}
+            </Link>
+          </Button>
+        )}
 
-          {/* Padded Table Card */}
-          <div className="rounded-card border border-border bg-surface p-5">
-            <InventoryTable
-              items={paginatedInventories}
-              currentPage={page}
-              pageSize={pageSize}
-              onOrderNow={canPerformActions ? handleOrderNow : undefined}
-              isFinishedGoods={categoryFilter === "Finished Goods"}
-              showActions={canPerformActions}
-            />
+        {isAdmin && (
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className={`${canAccessWriteOff ? "" : "sm:ml-auto"} h-9 rounded-control border border-border bg-surface px-3.5 py-2 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer`}
+          >
+            <Link href="/inventory/logs">
+              <History className="w-4 h-4 mr-1.5" />
+              Transaction History
+            </Link>
+          </Button>
+        )}
+      </div>
 
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              totalCount={totalCount}
-              onPageChange={setPage}
-              embedded
-            />
-          </div>
-        </>
-      )}
+      {/* Padded Table Card */}
+      <div className="rounded-card border border-border bg-surface p-5">
+        <InventoryTable
+          items={paginatedInventories}
+          currentPage={page}
+          pageSize={pageSize}
+          onOrderNow={canPerformActions ? handleOrderNow : undefined}
+          isFinishedGoods={section === "finished-products"}
+          showActions={canPerformActions}
+        />
+
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          onPageChange={setPage}
+          embedded
+        />
+      </div>
 
       {/* Create PR Modal triggered by Order Now */}
       {isCreatePROpen && (

@@ -13,8 +13,7 @@ import type { InventoryItem } from "@/components/inventory/types";
 import type { LotItem } from "@/components/lots/types";
 import type { StockWriteOffDto } from "@/components/inventory/write-off/types";
 
-export default async function InventoryPage() {
-  const staff = await requireModule("Inventory");
+export async function fetchInventoryScreenData(staff: any) {
   await migrateLegacySkusAndLots();
   await ensureStockWriteOffTables();
   const canViewWriteOff = isAdminStaff(staff) || isImsManager(staff);
@@ -30,10 +29,16 @@ export default async function InventoryPage() {
           where: {
             NOT: { CategoryName: { contains: "Finished", mode: "insensitive" } },
           },
-          select: { CategoryId: true, CategoryName: true, Description: true },
+          select: { CategoryId: true, CategoryName: true, Description: true, HasExpiry: true },
           orderBy: { CategoryName: "asc" },
         });
-        return rows.filter((c) => decodeCategoryDescription(c.Description, (c as any).IsActive).isActive);
+        return rows
+          .filter((c) => decodeCategoryDescription(c.Description, (c as any).IsActive).isActive)
+          .map((c) => ({
+            categoryId: c.CategoryId,
+            categoryName: c.CategoryName,
+            hasExpiry: (c as any).HasExpiry !== false,
+          }));
       } catch {
         return [];
       }
@@ -52,17 +57,22 @@ export default async function InventoryPage() {
     })(),
   ]);
 
+  return { inventory, lots, categories, writeOffs };
+}
+
+export default async function InventoryPage() {
+  const staff = await requireModule("Inventory");
+  const { inventory, lots, categories, writeOffs } = await fetchInventoryScreenData(staff);
+
   return (
     <ViewInventory
       initialInventories={inventory.items}
       initialLots={lots.items}
       initialTotal={inventory.totalCount}
-      initialCategories={categories.map((c) => ({
-        categoryId: c.CategoryId,
-        categoryName: c.CategoryName,
-      }))}
+      initialCategories={categories}
       initialWriteOffs={writeOffs}
       asOf={new Date().toISOString()}
+      section="raw-materials"
     />
   );
 }

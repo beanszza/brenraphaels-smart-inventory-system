@@ -32,6 +32,7 @@ export type InventoryItem = {
   isActive?: boolean;
   isLotTracked?: boolean;
   isExpiryTracked?: boolean;
+  categoryHasExpiry?: boolean;
   /** Populated for Finished Goods items — each variant (e.g. "250g Jar", "500g Tub") is a separate FinishedProduct record */
   finishedProductVariants?: FinishedProductVariant[];
 };

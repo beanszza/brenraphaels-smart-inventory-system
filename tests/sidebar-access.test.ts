@@ -79,10 +79,25 @@ describe("Modules held by Staff", () => {
 });
 
 describe("Sidebar items", () => {
-  it("shows Head Cook-style access as exactly Inventory, Production & Quality and Dashboard", () => {
+  it("shows Head Cook-style access as Dashboard, Raw Materials, Tools, Finished Products, and Production & Quality", () => {
     expect(
       names(visibleNavGroups(["Dashboard", "Inventory", "Production & Quality"])),
-    ).toEqual(["Dashboard", "Inventory", "Production & Quality"]);
+    ).toEqual([
+      "Dashboard",
+      "Raw Materials",
+      "Tools",
+      "Finished Products",
+      "Production & Quality",
+    ]);
+  });
+  it("shows Stock Write-Off only to staff authorized for stock write-off (Admin / IMS Manager)", () => {
+    expect(
+      names(visibleNavGroups(["Inventory"], false, false)),
+    ).toEqual(["Raw Materials", "Tools", "Finished Products"]);
+
+    expect(
+      names(visibleNavGroups(["Inventory"], false, true)),
+    ).toEqual(["Raw Materials", "Tools", "Finished Products", "Stock Write-Off"]);
   });
   it("drops groups left empty", () => {
     const groups = visibleNavGroups(["Dashboard"]);
@@ -107,6 +122,10 @@ describe("Owning Module of a page address", () => {
   it.each([
     ["/", "Dashboard"],
     ["/inventory", "Inventory"],
+    ["/inventory/raw-materials", "Inventory"],
+    ["/inventory/tools", "Inventory"],
+    ["/inventory/finished-products", "Inventory"],
+    ["/inventory/write-off", "Inventory"],
     ["/orders-procurement/edit-pr/42", "Orders & Procurement"],
     ["/resources-suppliers/logs", "Resources & Suppliers"],
     ["/traceability", "Inventory"],

@@ -314,6 +314,14 @@ it("enforces category, supplier, and supply character and numeric validation rul
     message: expect.stringContaining("100"),
   });
 
+  // Rejects reserved words (Raw, Tool, Finished)
+  for (const reserved of ["Raw Materials", "Raw Grams", "Kitchen Tools", "Tool", "Finished Goods", "Finished Products"]) {
+    expect(await saveCategory({ categoryName: reserved, description: "Valid", isActive: true })).toMatchObject({
+      success: false,
+      message: expect.stringContaining("reserved words"),
+    });
+  }
+
   db.categories.findFirst.mockResolvedValue(null);
   db.categories.create.mockResolvedValue({ CategoryId: 10, CategoryName: "A".repeat(50), Description: "D".repeat(100) });
   expect(await saveCategory({ categoryName: "A".repeat(50), description: "D".repeat(100), isActive: true })).toEqual({

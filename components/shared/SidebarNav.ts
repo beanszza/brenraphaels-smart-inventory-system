@@ -13,6 +13,9 @@ import {
   ClipboardList,
   BarChart3,
   Calculator,
+  Package,
+  Wrench,
+  SlidersHorizontal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Module } from "@/lib/portal/config";
@@ -26,6 +29,8 @@ export interface NavItem {
   module?: Module;
   /** When true, only Admin staff see this item in the sidebar. */
   adminOnly?: boolean;
+  /** When true, only staff authorized for stock write-off (Admin and IMS Manager) see this item. */
+  writeOffOnly?: boolean;
 }
 
 export interface NavGroup {
@@ -54,10 +59,18 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Inventory",
+    items: [
+      { name: "Raw Materials",     href: "/inventory/raw-materials",     icon: Package,           module: "Inventory" },
+      { name: "Tools",             href: "/inventory/tools",             icon: Wrench,            module: "Inventory" },
+      { name: "Finished Products", href: "/inventory/finished-products", icon: PackageCheck,      module: "Inventory" },
+      { name: "Stock Write-Off",   href: "/inventory/write-off",         icon: SlidersHorizontal, module: "Inventory", writeOffOnly: true },
+    ],
+  },
+  {
     label: "Operations",
     items: [
       { name: "Goods Receiving",      href: "/goods-receiving",     icon: PackageCheck, module: "Goods Receiving" },
-      { name: "Inventory",            href: "/inventory",           icon: Boxes, module: "Inventory" },
       { name: "Production & Quality", href: "/production-quality",  icon: Building2, module: "Production & Quality" },
       { name: "Stock Transfer",       href: "/stock-transfer",      icon: Truck, module: "Stock Transfer" },
     ],
@@ -65,19 +78,27 @@ export const navGroups: NavGroup[] = [
 ];
 
 /** Sidebar groups limited to the Modules the Staff member holds; empty groups are dropped. */
-export function visibleNavGroups(modules: readonly Module[], isAdmin = false): NavGroup[] {
+export function visibleNavGroups(
+  modules: readonly Module[],
+  isAdmin = false,
+  canWriteOff = isAdmin
+): NavGroup[] {
   return navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter(
-        (item) => item.module && modules.includes(item.module) && (!item.adminOnly || isAdmin)
-      ),
+      items: group.items.filter((item) => {
+        if (!item.module || !modules.includes(item.module)) return false;
+        if (item.adminOnly && !isAdmin) return false;
+        if (item.writeOffOnly && !canWriteOff) return false;
+        return true;
+      }),
     }))
     .filter((group) => group.items.length > 0);
 }
 
 /** Pages that are reachable but not in the sidebar still belong to one Module. */
 const unlistedRoutes: Record<string, Module> = {
+  "/inventory": "Inventory",
   "/cycle-counts": "Inventory",
   "/traceability": "Inventory",
   "/valuation": "Inventory",

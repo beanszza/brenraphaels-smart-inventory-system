@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useMounted } from "@/hooks/use-mounted";
 import { visibleNavGroups } from "./SidebarNav";
-import { isAdminStaff } from "@/lib/auth-roles";
+import { isAdminStaff, isImsManager } from "@/lib/auth-roles";
 import type { Module } from "@/lib/portal/config";
 import type { Staff } from "@/lib/portal/client";
 import { SidebarProfileFooter } from "./SidebarProfileFooter";
@@ -27,7 +27,8 @@ export function Sidebar({ modules, staff }: { modules: Module[]; staff: Staff })
   const pathname = usePathname();
   const { open, openMobile, setOpenMobile, toggleSidebar, isMobile } = useSidebar();
   const mounted = useMounted();
-  const groups = visibleNavGroups(modules, isAdminStaff(staff));
+  const canWriteOff = isAdminStaff(staff) || isImsManager(staff);
+  const groups = visibleNavGroups(modules, isAdminStaff(staff), canWriteOff);
   const isOpen = isMobile ? openMobile : open;
 
   const handleNavClick = () => {
@@ -66,9 +67,12 @@ export function Sidebar({ modules, staff }: { modules: Module[]; staff: Staff })
                       </li>
                       {group.items.map((item) => {
                         const ItemIcon = item.icon;
+                        const isRawMaterials = item.href === "/inventory/raw-materials";
                         const isActive =
                           item.href === "/"
                             ? pathname === "/"
+                            : isRawMaterials
+                            ? pathname === "/inventory" || pathname === "/inventory/raw-materials" || pathname.startsWith("/inventory/raw-materials/")
                             : pathname === item.href || pathname.startsWith(item.href + "/");
                         return (
                           <SidebarMenuItem key={item.name}>

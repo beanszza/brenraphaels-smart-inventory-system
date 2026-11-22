@@ -223,6 +223,7 @@ export async function listInventory(query = "") {
         isOverStock: maxStock > 0 && currentStock > maxStock,
         isLotTracked: item.IsLotTracked,
         isExpiryTracked: item.IsExpiryTracked,
+        categoryHasExpiry: (item.Category as { HasExpiry?: boolean } | null)?.HasExpiry !== false,
         isActive: item.IsActive,
         // Populated for finished goods only; empty array for raw materials / ingredients
         finishedProductVariants: variantsMap[item.ItemId] ?? [],
