@@ -1044,7 +1044,6 @@ function PRFormBody({
         description="Are you sure you want to leave this page? Any unsaved changes to this purchase requisition will be lost."
         confirmLabel="Discard & Leave"
         cancelLabel="Stay"
-        variant="destructive"
         onCancel={() => setConfirmDiscardOpen(false)}
         onConfirm={() => {
           setConfirmDiscardOpen(false);
