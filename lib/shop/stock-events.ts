@@ -1,5 +1,5 @@
 import { publishStockChanged } from "@/lib/gateway/notifications";
-import { readInventory } from "./inventory";
+import { readTabFigures } from "./inventory";
 import { stockAvailability, warehouse } from "./stock";
 
 /** What Staff see of one Size: stock, name, image, price (and whether it is still sold). */
@@ -56,8 +56,8 @@ const databasePorts: StockEventPorts = {
         try { return (await stockAvailability(tx, id, warehouseId)).available.toNumber(); } catch { return null; }
       }, { isolationLevel: "RepeatableRead" });
     } catch { /* No configured Warehouse: stock is unknown, names, images and prices still count. */ }
-    // What the Finished Goods tab and CREOMS show, so a change there publishes even when the shop Warehouse figure is unchanged.
-    const tab = new Map((await readInventory(products.map(product => product.ProductId))).products.map(figures => [figures.productId, [figures.quantity, figures.reserved]]));
+    // What the Finished Goods tab shows, so a change there publishes even when the shop Warehouse figure is unchanged.
+    const tab = new Map((await readTabFigures(products.map(product => product.ProductId))).map(figures => [figures.productId, [figures.quantity, figures.reserved]]));
     const states: SizeState[] = [];
     for (const product of products) {
       states.push({
