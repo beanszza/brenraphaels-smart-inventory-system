@@ -255,7 +255,22 @@ function POFormBody({
     setLoadingSuppliers(true);
     setEligibleSuppliers([]);
     try {
-      const itemIds = (pr.items || []).map((i) => i.itemId);
+      const orderedMap: Record<number, number> = {};
+      try {
+        const ordRes = await procurement.orderedQuantities(pr.prId);
+        if (ordRes.data?.success && Array.isArray(ordRes.data.data)) {
+          (ordRes.data.data as { itemId: number; orderedQty?: number }[]).forEach((o) => {
+            orderedMap[o.itemId] = Number(o.orderedQty) || 0;
+          });
+        }
+      } catch {}
+
+      // Only look up suppliers for PR items that still have remaining un-ordered quantity > 0
+      const remainingItemIds = (pr.items || [])
+        .filter((i) => Number(i.requestedQuantity) - (orderedMap[i.itemId] || 0) > 0)
+        .map((i) => i.itemId);
+      const itemIds = remainingItemIds.length > 0 ? remainingItemIds : (pr.items || []).map((i) => i.itemId);
+
       const supplierMap: Map<number, SupplierOption> = new Map();
       await Promise.all(
         itemIds.map(async (itemId) => {
@@ -299,6 +314,7 @@ function POFormBody({
 
       const catalog: { itemId: number; purchaseUomName?: string; purchaseUomId?: number }[] =
         catalogRes.data?.success && Array.isArray(catalogRes.data.data) ? catalogRes.data.data : [];
+      const suppliedItemIds = new Set(catalog.map((c) => Number(c.itemId)));
       const orderedMap: Record<number, number> = {};
       if (orderedRes.data?.success && Array.isArray(orderedRes.data.data)) {
         (orderedRes.data.data as { itemId: number; orderedQty?: number }[]).forEach((o) => {
@@ -306,22 +322,25 @@ function POFormBody({
         });
       }
 
-      const rows: ItemRow[] = (pr.items || []).map((prItem) => {
-        const catalogEntry = catalog.find((c) => c.itemId === prItem.itemId);
-        const alreadyOrdered = orderedMap[prItem.itemId] || 0;
-        const remaining = Math.max(0, prItem.requestedQuantity - alreadyOrdered);
+      // Show only PR items that this supplier actually supplies (and still need ordering or are in their catalog)
+      const rows: ItemRow[] = (pr.items || [])
+        .filter((prItem) => suppliedItemIds.has(Number(prItem.itemId)))
+        .map((prItem) => {
+          const catalogEntry = catalog.find((c) => Number(c.itemId) === Number(prItem.itemId));
+          const alreadyOrdered = orderedMap[prItem.itemId] || 0;
+          const remaining = Math.max(0, prItem.requestedQuantity - alreadyOrdered);
 
-        return {
-          itemId: prItem.itemId,
-          itemName: prItem.itemName,
-          uomName: prItem.uomName || catalogEntry?.purchaseUomName || "Unit",
-          purchaseUomId: catalogEntry?.purchaseUomId || prItem.purchaseUomId || 1,
-          alreadyOrdered,
-          requestedQty: prItem.requestedQuantity,
-          remaining,
-          orderQty: remaining > 0 ? String(remaining) : "0",
-        };
-      });
+          return {
+            itemId: prItem.itemId,
+            itemName: prItem.itemName,
+            uomName: prItem.uomName || catalogEntry?.purchaseUomName || "Unit",
+            purchaseUomId: catalogEntry?.purchaseUomId || prItem.purchaseUomId || 1,
+            alreadyOrdered,
+            requestedQty: prItem.requestedQuantity,
+            remaining,
+            orderQty: remaining > 0 ? String(remaining) : "0",
+          };
+        });
 
       setItemRows(rows);
       setRemovedRows([]);

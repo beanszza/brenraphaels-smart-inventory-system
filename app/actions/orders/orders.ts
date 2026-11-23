@@ -333,6 +333,11 @@ export async function approvePurchaseOrder(idInput: string | number, body: Appro
       include: PO_INCLUDE,
     });
 
+    const linkedPrId = order.PrId ?? order.PurchaseRequisitionPrId;
+    if (linkedPrId) {
+      await syncRequisitionLifecycle(tx, linkedPrId);
+    }
+
     return {
       result: resourceResult({
         success: true,
