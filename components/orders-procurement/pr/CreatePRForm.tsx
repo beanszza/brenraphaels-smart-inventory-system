@@ -6,7 +6,7 @@ import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Plus, Trash2, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronDown, Plus, Trash2, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -472,8 +472,8 @@ function PRFormBody({
   const containerClasses =
     variant === "page"
       ? embedded
-        ? "flex flex-col min-h-[calc(100vh-110px)] space-y-5 animate-page-in"
-        : "page-container px-4 sm:px-8 w-full flex flex-col min-h-[calc(100vh-80px)] space-y-5 animate-page-in"
+        ? "space-y-5 pb-10 animate-page-in"
+        : "page-container px-4 sm:px-8 w-full space-y-5 pb-10 animate-page-in"
       : "space-y-4";
 
   return (
@@ -532,7 +532,7 @@ function PRFormBody({
         <div
           className={
             variant === "page"
-              ? "grid grid-cols-1 lg:grid-cols-12 gap-5 items-start flex-1"
+              ? "grid grid-cols-1 lg:grid-cols-12 gap-5 items-start"
               : "space-y-4"
           }
         >
@@ -625,15 +625,18 @@ function PRFormBody({
                   <label className="mb-1.5 block type-label text-ink">
                     Priority <span className="text-destructive">*</span>
                   </label>
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(normalizePrPriority(e.target.value))}
-                    className="w-full h-10 rounded-control border border-input bg-surface px-3.5 py-2 type-body text-ink transition-colors cursor-pointer focus:ring-1 focus:ring-ring focus:outline-none"
-                  >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={priority}
+                      onChange={(e) => setPriority(normalizePrPriority(e.target.value))}
+                      className="w-full h-10 appearance-none rounded-control border border-input bg-surface pl-3.5 pr-9 py-2 type-body text-ink transition-colors cursor-pointer focus:ring-1 focus:ring-ring focus:outline-none"
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+                  </div>
                 </div>
 
                 {/* Purpose (+ Specify Reason when "Other") */}
@@ -651,29 +654,32 @@ function PRFormBody({
                       >
                         Purpose <span className="text-destructive">*</span>
                       </label>
-                      <select
-                        value={purposeChoice}
-                        onChange={(e) => {
-                          const next = e.target.value;
-                          setPurposeChoice(next);
-                          if (next !== "Other") {
-                            setCustomPurpose("");
-                            setCustomPurposeWarning("");
-                          }
-                          setErrors((prev) => {
-                            const c = { ...prev };
-                            delete c.purpose;
-                            return c;
-                          });
-                        }}
-                        className="w-full h-10 rounded-control border border-input bg-surface px-3.5 py-2 type-body text-ink transition-colors cursor-pointer focus:ring-1 focus:ring-ring focus:outline-none"
-                      >
-                        {PR_PURPOSE_CHOICES.map((choice) => (
-                          <option key={choice} value={choice}>
-                            {choice}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        <select
+                          value={purposeChoice}
+                          onChange={(e) => {
+                            const next = e.target.value;
+                            setPurposeChoice(next);
+                            if (next !== "Other") {
+                              setCustomPurpose("");
+                              setCustomPurposeWarning("");
+                            }
+                            setErrors((prev) => {
+                              const c = { ...prev };
+                              delete c.purpose;
+                              return c;
+                            });
+                          }}
+                          className="w-full h-10 appearance-none rounded-control border border-input bg-surface pl-3.5 pr-9 py-2 type-body text-ink transition-colors cursor-pointer focus:ring-1 focus:ring-ring focus:outline-none"
+                        >
+                          {PR_PURPOSE_CHOICES.map((choice) => (
+                            <option key={choice} value={choice}>
+                              {choice}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+                      </div>
                     </div>
 
                     {purposeChoice === "Other" && (
@@ -765,63 +771,58 @@ function PRFormBody({
                 <p className="type-caption font-medium text-destructive">{errors.items}</p>
               )}
 
+              {/* Clean Figma Items Grid (Matches RecipeFormPage & Figma Prototype) */}
               <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full min-w-[640px] border-collapse">
-                  <thead>
-                    <tr className="border-b border-divider">
-                      <th className="pb-2.5 pt-1 pr-3 type-table-header text-ink-muted text-left whitespace-nowrap">
-                        Supply Name
-                      </th>
-                      <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted text-left whitespace-nowrap">
-                        Supply No.
-                      </th>
-                      <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted text-left whitespace-nowrap">
-                        Unit of Measure
-                      </th>
-                      <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted text-right whitespace-nowrap">
-                        Actual Inventory
-                      </th>
-                      <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted text-right whitespace-nowrap">
-                        Quantity (To Order)
-                      </th>
-                      <th className="pb-2.5 pt-1 pl-2 w-9" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-divider">
-                    {items.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="py-8 text-center type-body text-ink-muted"
-                        >
-                          No items added yet. Click &quot;+ Add item&quot; below to add raw materials or supplies.
-                        </td>
-                      </tr>
-                    ) : (
-                      items.map((item, idx) => {
-                        const selectedSupply = uniqueSupplies.find(
-                          (s) => s.itemId === item.itemId
-                        );
-                        const supplyNo =
-                          item.itemCode ||
-                          selectedSupply?.itemCode ||
-                          (item.itemId ? `SPL-${item.itemId}` : "—");
-                        const actualInv = selectedSupply
-                          ? selectedSupply.currentStock
-                          : item.actualInventory || 0;
-                        const qtyError = errors[`item_qty_${idx}`];
+                <div className="min-w-[600px] space-y-2.5">
+                  <div className="grid grid-cols-12 gap-3 items-center pb-1">
+                    <div className="col-span-4 type-caption font-medium text-ink-muted">
+                      Supply Name
+                    </div>
+                    <div className="col-span-2 type-caption font-medium text-ink-muted">
+                      Supply No.
+                    </div>
+                    <div className="col-span-2 type-caption font-medium text-ink-muted">
+                      Unit of Measure
+                    </div>
+                    <div className="col-span-1 type-caption font-medium text-ink-muted text-right whitespace-nowrap">
+                      Actual Inv.
+                    </div>
+                    <div className="col-span-2 type-caption font-medium text-ink-muted text-right whitespace-nowrap">
+                      Quantity (To Order)
+                    </div>
+                    <div className="col-span-1" />
+                  </div>
 
-                        return (
-                          <tr key={idx} className="group">
+                  {items.length === 0 ? (
+                    <div className="rounded-control border border-dashed border-border py-7 text-center type-body text-ink-muted">
+                      No items added yet. Click &quot;+ Add item&quot; below to add raw materials or supplies.
+                    </div>
+                  ) : (
+                    items.map((item, idx) => {
+                      const selectedSupply = uniqueSupplies.find(
+                        (s) => s.itemId === item.itemId
+                      );
+                      const supplyNo =
+                        item.itemCode ||
+                        selectedSupply?.itemCode ||
+                        (item.itemId ? `SPL-${item.itemId}` : "—");
+                      const actualInv = selectedSupply
+                        ? selectedSupply.currentStock
+                        : item.actualInventory || 0;
+                      const qtyError = errors[`item_qty_${idx}`];
+
+                      return (
+                        <div key={idx} className="space-y-1">
+                          <div className="grid grid-cols-12 gap-3 items-center">
                             {/* Supply Name (Dropdown) */}
-                            <td className="py-2.5 pr-3 min-w-[220px]">
+                            <div className="col-span-4 relative">
                               <select
                                 aria-label={`Supply item row ${idx + 1}`}
                                 value={item.itemId || ""}
                                 onChange={(e) =>
                                   handleSelectSupply(idx, Number(e.target.value))
                                 }
-                                className="h-9 w-full rounded-control border border-input bg-surface px-3 type-body text-ink focus:ring-1 focus:ring-ring focus:outline-none"
+                                className="h-9 w-full appearance-none rounded-control border border-input bg-surface pl-3 pr-8 type-body text-ink focus:ring-1 focus:ring-ring focus:outline-none cursor-pointer"
                               >
                                 {uniqueSupplies.map((sup) => {
                                   const isAlreadySelected = items.some(
@@ -840,25 +841,26 @@ function PRFormBody({
                                   );
                                 })}
                               </select>
-                            </td>
+                              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
+                            </div>
 
                             {/* Supply No. */}
-                            <td className="py-2.5 px-3 type-body text-ink-secondary whitespace-nowrap tabular-nums">
+                            <div className="col-span-2 type-body text-ink-secondary truncate tabular-nums">
                               {supplyNo}
-                            </td>
+                            </div>
 
                             {/* Unit of Measure */}
-                            <td className="py-2.5 px-3 type-body text-ink-secondary whitespace-nowrap">
+                            <div className="col-span-2 type-body text-ink-secondary truncate">
                               {item.uomName || selectedSupply?.uomName || "Unit"}
-                            </td>
+                            </div>
 
                             {/* Actual Inventory */}
-                            <td className="py-2.5 px-3 type-body text-ink-secondary text-right whitespace-nowrap tabular-nums">
+                            <div className="col-span-1 type-body text-ink-secondary text-right tabular-nums">
                               {Number(actualInv).toLocaleString()}
-                            </td>
+                            </div>
 
                             {/* Quantity (To Order) */}
-                            <td className="py-2.5 px-3 text-right w-36">
+                            <div className="col-span-2">
                               <Input
                                 aria-label={`Quantity row ${idx + 1}`}
                                 type="number"
@@ -868,19 +870,14 @@ function PRFormBody({
                                 onChange={(e) =>
                                   handleQuantityChange(idx, e.target.value)
                                 }
-                                className={`h-9 w-28 text-right type-body font-semibold ${
+                                className={`h-9 w-full text-right type-body font-semibold ${
                                   qtyError ? "border-destructive" : "border-input"
-                                } bg-surface text-ink ml-auto rounded-control shadow-none focus:ring-1 focus:ring-ring tabular-nums`}
+                                } bg-surface text-ink rounded-control shadow-none focus:ring-1 focus:ring-ring tabular-nums`}
                               />
-                              {qtyError && (
-                                <p className="mt-1 type-caption text-destructive text-right">
-                                  {qtyError}
-                                </p>
-                              )}
-                            </td>
+                            </div>
 
                             {/* Remove Row */}
-                            <td className="py-2.5 pl-2 text-right">
+                            <div className="col-span-1 flex justify-end">
                               <button
                                 type="button"
                                 onClick={() => handleRemoveItem(idx)}
@@ -890,13 +887,18 @@ function PRFormBody({
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
+                            </div>
+                          </div>
+                          {qtyError && (
+                            <p className="type-caption text-destructive text-right pr-10">
+                              {qtyError}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
 
               <div className="pt-1">
@@ -908,7 +910,7 @@ function PRFormBody({
                     uniqueSupplies.length === 0 ||
                     items.length >= uniqueSupplies.length
                   }
-                  className="inline-flex items-center gap-1.5 type-label-button text-primary hover:text-primary-hover transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 type-body font-medium text-primary hover:underline transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add item</span>
@@ -939,7 +941,7 @@ function PRFormBody({
 
           {/* Right Column: Requisition Summary Card (Page Mode) */}
           {variant === "page" && (
-            <div className="lg:col-span-4 space-y-5 lg:sticky lg:top-6">
+            <div className="lg:col-span-4 space-y-5">
               <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
                 <h2 className="type-card-title text-ink">Requisition summary</h2>
 
@@ -997,11 +999,11 @@ function PRFormBody({
           )}
         </div>
 
-        {/* Bottom Action Bar */}
+        {/* Bottom Action Bar (Non-sticky, matching RecipeFormPage so it never blocks form fields) */}
         <div
           className={
             variant === "page"
-              ? "sticky bottom-0 z-10 -mx-4 sm:-mx-8 mt-6 border-t border-divider bg-surface px-4 sm:px-8 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+              ? "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-divider pt-4"
               : "flex flex-wrap justify-end gap-3 pt-5 pb-3 border-t border-divider mt-4"
           }
         >
