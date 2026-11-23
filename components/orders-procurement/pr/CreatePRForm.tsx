@@ -71,6 +71,19 @@ function formatSummaryDate(raw?: string | null): string {
   });
 }
 
+function createEmptyItemRow(): PRItem {
+  return {
+    prItemId: 0,
+    purchaseUomId: 0,
+    itemId: 0,
+    itemCode: "",
+    itemName: "",
+    uomName: "",
+    actualInventory: 0,
+    requestedQuantity: 1,
+  };
+}
+
 function resolveInitialPurpose(raw?: string | null) {
   const val = (raw ?? "").trim();
   if (!val) return { choice: PR_PURPOSE_CHOICES[0] as string, custom: "" };
@@ -123,15 +136,15 @@ function PRFormBody({
   const [requestDate, setRequestDate] = useState(
     initialData?.requestDate
       ? new Date(initialData.requestDate).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
       : new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
   );
   const defaultAccountName = staff.name;
   const detectedDepartment = "Inventory";
@@ -157,12 +170,14 @@ function PRFormBody({
   );
   const [statusText, setStatusText] = useState(initialData?.status || "Draft");
 
-  // Items table
-  const [items, setItems] = useState<PRItem[]>(
-    initialData?.items?.map((it) => ({
-      ...it,
-      requestedQuantity: it.requestedQuantity || 1,
-    })) || []
+  // Items rows (starts with 1 clean row ready to select, matching Figma & RecipeFormPage)
+  const [items, setItems] = useState<PRItem[]>(() =>
+    initialData?.items && initialData.items.length > 0
+      ? initialData.items.map((it) => ({
+          ...it,
+          requestedQuantity: it.requestedQuantity || 1,
+        }))
+      : [createEmptyItemRow()]
   );
 
   // Notes
@@ -209,10 +224,12 @@ function PRFormBody({
       setStatusText(initialData.status || "Draft");
       setNotes(initialData.notes || "");
       setItems(
-        initialData.items?.map((it) => ({
-          ...it,
-          requestedQuantity: it.requestedQuantity || 1,
-        })) || []
+        initialData.items && initialData.items.length > 0
+          ? initialData.items.map((it) => ({
+              ...it,
+              requestedQuantity: it.requestedQuantity || 1,
+            }))
+          : [createEmptyItemRow()]
       );
       setErrors({});
     } else {
@@ -232,7 +249,7 @@ function PRFormBody({
       setRequiredDate("");
       setStatusText("Draft");
       setNotes("");
-      setItems([]);
+      setItems([createEmptyItemRow()]);
       setErrors({});
     }
   }, [active, initialData, defaultAccountName, detectedDepartment]);
@@ -281,24 +298,10 @@ function PRFormBody({
     fetchSuppliesAndNumber();
   }, [active, initialData, initialSupplies]);
 
-  // Add Item (prevents duplicates)
+  // Add Item (adds a clean selectable row, matching Figma & RecipeFormPage)
   const handleAddItem = () => {
-    if (uniqueSupplies.length === 0) return;
-    const unused = uniqueSupplies.find((s) => !items.some((it) => it.itemId === s.itemId));
-    if (!unused) return;
-    setItems((prev) => [
-      ...prev,
-      {
-        prItemId: 0,
-        purchaseUomId: unused.purchaseUomId,
-        itemId: unused.itemId,
-        itemCode: unused.itemCode,
-        itemName: unused.itemName,
-        uomName: unused.uomName,
-        actualInventory: unused.currentStock,
-        requestedQuantity: 1,
-      },
-    ]);
+    if (uniqueSupplies.length > 0 && items.length >= uniqueSupplies.length) return;
+    setItems((prev) => [...prev, createEmptyItemRow()]);
     setErrors((prev) => {
       const copy = { ...prev };
       delete copy.items;
@@ -306,9 +309,12 @@ function PRFormBody({
     });
   };
 
-  // Remove Item
+  // Remove Item (resets if only 1 row remains so the Figma row layout stays visible)
   const handleRemoveItem = (index: number) => {
-    setItems((prev) => prev.filter((_, idx) => idx !== index));
+    setItems((prev) => {
+      if (prev.length <= 1) return [createEmptyItemRow()];
+      return prev.filter((_, idx) => idx !== index);
+    });
   };
 
   // Select Item in Dropdown
@@ -345,6 +351,7 @@ function PRFormBody({
   };
 
   const resolvedPurpose = purposeChoice === "Other" ? customPurpose.trim() : purposeChoice.trim();
+  const selectedItems = useMemo(() => items.filter((it) => it.itemId > 0), [items]);
 
   // Validation
   const validateForm = () => {
@@ -364,12 +371,12 @@ function PRFormBody({
     const dateError = getFutureDateError(requiredDate, "Required date", { allowToday: false });
     if (dateError) newErrors.requiredDate = dateError;
 
-    if (items.length === 0) {
+    if (selectedItems.length === 0) {
       newErrors.items = "At least one item must be requested.";
     } else {
       const duplicateIds = new Set<number>();
       const seenIds = new Set<number>();
-      items.forEach((item) => {
+      selectedItems.forEach((item) => {
         if (seenIds.has(item.itemId)) duplicateIds.add(item.itemId);
         seenIds.add(item.itemId);
       });
@@ -377,7 +384,7 @@ function PRFormBody({
         newErrors.items = "Duplicate items must be consolidated before saving.";
       }
       items.forEach((it, idx) => {
-        if (!it.requestedQuantity || it.requestedQuantity <= 0) {
+        if (it.itemId > 0 && (!it.requestedQuantity || it.requestedQuantity <= 0)) {
           newErrors[`item_qty_${idx}`] = "Quantity must be greater than 0.";
         }
       });
@@ -396,9 +403,9 @@ function PRFormBody({
     }
     if (getFutureDateError(requiredDate, "Required date", { allowToday: false })) return false;
     if (purposeChoice === "Other" && resolvedPurpose.length > PURPOSE_OTHER_MAX) return false;
-    if (items.length === 0) return false;
-    return items.every((it) => it.itemId > 0 && it.requestedQuantity > 0);
-  }, [requestedBy, department, resolvedPurpose, purposeChoice, priority, requiredDate, items]);
+    if (selectedItems.length === 0) return false;
+    return selectedItems.every((it) => it.itemId > 0 && it.requestedQuantity > 0);
+  }, [requestedBy, department, resolvedPurpose, purposeChoice, priority, requiredDate, selectedItems]);
 
   // Save / Submit execution (unchanged backend actions)
   const executeSave = async (submitForApproval: boolean) => {
@@ -418,7 +425,7 @@ function PRFormBody({
         purpose: resolvedPurpose,
         notes: notes.trim() || null,
         submitForApproval,
-        items: items.map((it) => ({
+        items: selectedItems.map((it) => ({
           itemId: it.itemId,
           requestedQuantity: it.requestedQuantity,
           purchaseUomId: it.purchaseUomId || 1,
@@ -555,7 +562,9 @@ function PRFormBody({
 
                 {/* Request Date */}
                 <div>
-                  <label className="mb-1.5 block type-label text-ink whitespace-nowrap">Request Date</label>
+                  <label className="mb-1.5 block type-label text-ink whitespace-nowrap">
+                    Request Date
+                  </label>
                   <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body text-ink-secondary">
                     {requestDate}
                   </div>
@@ -564,8 +573,9 @@ function PRFormBody({
                 {/* Required Date */}
                 <div>
                   <label
-                    className={`mb-1.5 block type-label ${errors.requiredDate ? "text-destructive" : "text-ink"
-                      }`}
+                    className={`mb-1.5 block type-label whitespace-nowrap ${
+                      errors.requiredDate ? "text-destructive" : "text-ink"
+                    }`}
                   >
                     Required Date <span className="text-destructive">*</span>
                   </label>
@@ -588,10 +598,11 @@ function PRFormBody({
                           return c;
                         });
                       }}
-                      className={`w-full h-10 rounded-control border ${errors.requiredDate
-                        ? "!border-destructive focus-visible:!ring-destructive"
-                        : "border-input"
-                        } bg-surface px-3.5 py-2 pr-10 type-body text-ink shadow-none transition-colors cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                      className={`w-full h-10 rounded-control border ${
+                        errors.requiredDate
+                          ? "!border-destructive focus-visible:!ring-destructive"
+                          : "border-input"
+                      } bg-surface px-3.5 py-2 pr-10 type-body text-ink shadow-none transition-colors cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
                     />
                     <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted pointer-events-none" />
                   </div>
@@ -604,7 +615,9 @@ function PRFormBody({
 
                 {/* Requested By (Read-Only from Account) */}
                 <div>
-                  <label className="mb-1.5 block type-label text-ink whitespace-nowrap">Requested By</label>
+                  <label className="mb-1.5 block type-label text-ink whitespace-nowrap">
+                    Requested By
+                  </label>
                   <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body text-ink-secondary select-none truncate">
                     {requestedBy || "Loading..."}
                   </div>
@@ -612,7 +625,9 @@ function PRFormBody({
 
                 {/* Department (Read-Only from Account) */}
                 <div>
-                  <label className="mb-1.5 block type-label text-ink whitespace-nowrap">Department</label>
+                  <label className="mb-1.5 block type-label text-ink whitespace-nowrap">
+                    Department
+                  </label>
                   <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body text-ink-secondary select-none">
                     {department || "Inventory"}
                   </div>
@@ -620,7 +635,7 @@ function PRFormBody({
 
                 {/* Priority */}
                 <div>
-                  <label className="mb-1.5 block type-label text-ink">
+                  <label className="mb-1.5 block type-label text-ink whitespace-nowrap">
                     Priority <span className="text-destructive">*</span>
                   </label>
                   <div className="relative">
@@ -640,13 +655,15 @@ function PRFormBody({
                 {/* Purpose (+ Specify Reason when "Other") */}
                 <div className="sm:col-span-2 lg:col-span-3">
                   <div
-                    className={`grid grid-cols-1 gap-4 ${purposeChoice === "Other" ? "sm:grid-cols-2" : ""
-                      }`}
+                    className={`grid grid-cols-1 gap-4 ${
+                      purposeChoice === "Other" ? "sm:grid-cols-2" : ""
+                    }`}
                   >
                     <div>
                       <label
-                        className={`mb-1.5 block type-label ${errors.purpose ? "text-destructive" : "text-ink"
-                          }`}
+                        className={`mb-1.5 block type-label ${
+                          errors.purpose ? "text-destructive" : "text-ink"
+                        }`}
                       >
                         Purpose <span className="text-destructive">*</span>
                       </label>
@@ -682,16 +699,18 @@ function PRFormBody({
                       <div>
                         <div className="mb-1.5 flex items-center justify-between">
                           <label
-                            className={`block type-label ${errors.purpose ? "text-destructive" : "text-ink"
-                              }`}
+                            className={`block type-label ${
+                              errors.purpose ? "text-destructive" : "text-ink"
+                            }`}
                           >
                             Specify Reason <span className="text-destructive">*</span>
                           </label>
                           <span
-                            className={`type-caption tabular-nums ${customPurpose.length >= PURPOSE_OTHER_MAX
-                              ? "font-medium text-status-amber"
-                              : "text-ink-muted"
-                              }`}
+                            className={`type-caption tabular-nums ${
+                              customPurpose.length >= PURPOSE_OTHER_MAX
+                                ? "font-medium text-status-amber"
+                                : "text-ink-muted"
+                            }`}
                           >
                             {customPurpose.length}/{PURPOSE_OTHER_MAX}
                           </span>
@@ -723,10 +742,11 @@ function PRFormBody({
                           }}
                           placeholder="Enter custom purpose (max 50 chars)..."
                           aria-invalid={!!errors.purpose}
-                          className={`w-full h-10 rounded-control border ${errors.purpose
-                            ? "!border-destructive focus-visible:!ring-destructive"
-                            : "border-input"
-                            } bg-surface px-3.5 py-2 type-body text-ink shadow-none transition-colors`}
+                          className={`w-full h-10 rounded-control border ${
+                            errors.purpose
+                              ? "!border-destructive focus-visible:!ring-destructive"
+                              : "border-input"
+                          } bg-surface px-3.5 py-2 type-body text-ink shadow-none transition-colors`}
                         />
                         {errors.purpose ? (
                           <p className="mt-1 type-caption font-medium text-destructive animate-in fade-in-50">
@@ -756,7 +776,7 @@ function PRFormBody({
                   </p>
                 </div>
                 <span className="type-caption font-medium text-ink-muted tabular-nums">
-                  {items.length} item(s) selected
+                  {selectedItems.length} item(s) selected
                 </span>
               </div>
 
@@ -764,10 +784,10 @@ function PRFormBody({
                 <p className="type-caption font-medium text-destructive">{errors.items}</p>
               )}
 
-              {/* Clean Figma Items Grid (Matches RecipeFormPage & Figma Prototype) */}
+              {/* Clean Figma Items Grid (Always shows ready-to-select row, never an empty box) */}
               <div className="overflow-x-auto custom-scrollbar">
-                <div className="min-w-[680px] space-y-2.5">
-                  <div className="grid grid-cols-[minmax(180px,1.8fr)_116px_96px_102px_124px_28px] gap-3 items-center pb-1">
+                <div className="min-w-[600px] space-y-2.5">
+                  <div className="grid grid-cols-[minmax(160px,1.5fr)_112px_92px_92px_112px_28px] gap-2.5 items-center pb-1">
                     <div className="type-caption font-medium text-ink-muted">
                       Supply Name
                     </div>
@@ -786,111 +806,116 @@ function PRFormBody({
                     <div />
                   </div>
 
-                  {items.length === 0 ? (
-                    <div className="rounded-control border border-dashed border-border py-7 text-center type-body text-ink-muted">
-                      No items added yet. Click &quot;+ Add item&quot; below to add raw materials or supplies.
-                    </div>
-                  ) : (
-                    items.map((item, idx) => {
-                      const selectedSupply = uniqueSupplies.find(
-                        (s) => s.itemId === item.itemId
-                      );
-                      const supplyNo =
-                        item.itemCode ||
-                        selectedSupply?.itemCode ||
-                        (item.itemId ? `SPL-${item.itemId}` : "—");
-                      const actualInv = selectedSupply
-                        ? selectedSupply.currentStock
-                        : item.actualInventory || 0;
-                      const qtyError = errors[`item_qty_${idx}`];
+                  {items.map((item, idx) => {
+                    const selectedSupply = uniqueSupplies.find(
+                      (s) => s.itemId === item.itemId
+                    );
+                    const hasItem = item.itemId > 0;
+                    const supplyNo = hasItem
+                      ? item.itemCode || selectedSupply?.itemCode || `SPL-${item.itemId}`
+                      : "—";
+                    const uomDisplay = hasItem
+                      ? item.uomName || selectedSupply?.uomName || "Unit"
+                      : "—";
+                    const actualInv = hasItem
+                      ? Number(
+                          selectedSupply ? selectedSupply.currentStock : item.actualInventory || 0
+                        ).toLocaleString()
+                      : "—";
+                    const qtyError = errors[`item_qty_${idx}`];
 
-                      return (
-                        <div key={idx} className="space-y-1">
-                          <div className="grid grid-cols-[minmax(180px,1.8fr)_116px_96px_102px_124px_28px] gap-3 items-center">
-                            {/* Supply Name (Dropdown) */}
-                            <div className="relative">
-                              <select
-                                aria-label={`Supply item row ${idx + 1}`}
-                                value={item.itemId || ""}
-                                onChange={(e) =>
-                                  handleSelectSupply(idx, Number(e.target.value))
-                                }
-                                className="h-9 w-full appearance-none rounded-control border border-input bg-surface pl-3 pr-8 type-body text-ink focus:ring-1 focus:ring-ring focus:outline-none cursor-pointer"
-                              >
-                                {uniqueSupplies.map((sup) => {
-                                  const isAlreadySelected = items.some(
-                                    (other, otherIdx) =>
-                                      otherIdx !== idx && other.itemId === sup.itemId
-                                  );
-                                  return (
-                                    <option
-                                      key={sup.itemId}
-                                      value={sup.itemId}
-                                      disabled={isAlreadySelected}
-                                    >
-                                      {sup.itemName}{" "}
-                                      {isAlreadySelected ? "(already added)" : ""}
-                                    </option>
-                                  );
-                                })}
-                              </select>
-                              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
-                            </div>
-
-                            {/* Supply No. */}
-                            <div className="type-body text-ink-secondary whitespace-nowrap tabular-nums">
-                              {supplyNo}
-                            </div>
-
-                            {/* Unit of Measure */}
-                            <div className="type-body text-ink-secondary truncate">
-                              {item.uomName || selectedSupply?.uomName || "Unit"}
-                            </div>
-
-                            {/* Actual Inventory */}
-                            <div className="type-body text-ink-secondary text-right tabular-nums">
-                              {Number(actualInv).toLocaleString()}
-                            </div>
-
-                            {/* Quantity (To Order) */}
-                            <div>
-                              <Input
-                                aria-label={`Quantity row ${idx + 1}`}
-                                type="number"
-                                min={1}
-                                step="any"
-                                value={item.requestedQuantity || ""}
-                                onChange={(e) =>
-                                  handleQuantityChange(idx, e.target.value)
-                                }
-                                className={`h-9 w-full text-right type-body font-semibold ${
-                                  qtyError ? "border-destructive" : "border-input"
-                                } bg-surface text-ink rounded-control shadow-none focus:ring-1 focus:ring-ring tabular-nums`}
-                              />
-                            </div>
-
-                            {/* Remove Row */}
-                            <div className="flex justify-end">
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveItem(idx)}
-                                className="p-1.5 rounded-control text-ink-muted hover:text-destructive hover:bg-subtle transition-colors cursor-pointer"
-                                title="Remove"
-                                aria-label="Remove item"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                    return (
+                      <div key={idx} className="space-y-1">
+                        <div className="grid grid-cols-[minmax(160px,1.5fr)_112px_92px_92px_112px_28px] gap-2.5 items-center">
+                          {/* Supply Name (Dropdown) */}
+                          <div className="relative">
+                            <select
+                              aria-label={`Supply item row ${idx + 1}`}
+                              value={item.itemId || ""}
+                              onChange={(e) =>
+                                handleSelectSupply(idx, Number(e.target.value))
+                              }
+                              className={`h-9 w-full appearance-none rounded-control border border-input bg-surface pl-3 pr-8 type-body ${
+                                hasItem ? "text-ink" : "text-ink-muted"
+                              } focus:ring-1 focus:ring-ring focus:outline-none cursor-pointer`}
+                            >
+                              <option value="" disabled>
+                                Select supply
+                              </option>
+                              {uniqueSupplies.map((sup) => {
+                                const isAlreadySelected = items.some(
+                                  (other, otherIdx) =>
+                                    otherIdx !== idx && other.itemId === sup.itemId
+                                );
+                                return (
+                                  <option
+                                    key={sup.itemId}
+                                    value={sup.itemId}
+                                    disabled={isAlreadySelected}
+                                  >
+                                    {sup.itemName}{" "}
+                                    {isAlreadySelected ? "(already added)" : ""}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
                           </div>
-                          {qtyError && (
-                            <p className="type-caption text-destructive text-right pr-10">
-                              {qtyError}
-                            </p>
-                          )}
+
+                          {/* Supply No. */}
+                          <div className="type-body text-ink-secondary whitespace-nowrap tabular-nums">
+                            {supplyNo}
+                          </div>
+
+                          {/* Unit of Measure */}
+                          <div className="type-body text-ink-secondary truncate">
+                            {uomDisplay}
+                          </div>
+
+                          {/* Actual Inventory */}
+                          <div className="type-body text-ink-secondary text-right tabular-nums">
+                            {actualInv}
+                          </div>
+
+                          {/* Quantity (To Order) */}
+                          <div>
+                            <Input
+                              aria-label={`Quantity row ${idx + 1}`}
+                              type="number"
+                              min={1}
+                              step="any"
+                              placeholder="0"
+                              value={item.requestedQuantity || ""}
+                              onChange={(e) =>
+                                handleQuantityChange(idx, e.target.value)
+                              }
+                              className={`h-9 w-full text-right type-body font-semibold ${
+                                qtyError ? "border-destructive" : "border-input"
+                              } bg-surface text-ink rounded-control shadow-none focus:ring-1 focus:ring-ring tabular-nums`}
+                            />
+                          </div>
+
+                          {/* Remove Row */}
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(idx)}
+                              className="p-1.5 rounded-control text-ink-muted hover:text-destructive hover:bg-subtle transition-colors cursor-pointer"
+                              title="Remove"
+                              aria-label="Remove item"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                      );
-                    })
-                  )}
+                        {qtyError && (
+                          <p className="type-caption text-destructive text-right pr-10">
+                            {qtyError}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -900,8 +925,7 @@ function PRFormBody({
                   onClick={handleAddItem}
                   disabled={
                     loadingSupplies ||
-                    uniqueSupplies.length === 0 ||
-                    items.length >= uniqueSupplies.length
+                    (uniqueSupplies.length > 0 && items.length >= uniqueSupplies.length)
                   }
                   className="inline-flex items-center gap-1.5 type-body font-medium text-primary hover:underline transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -984,7 +1008,7 @@ function PRFormBody({
                 <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
                   <span className="type-label text-ink">Total items requested</span>
                   <span className="type-card-title text-primary tabular-nums">
-                    {items.length} {items.length === 1 ? "item" : "items"}
+                    {selectedItems.length} {selectedItems.length === 1 ? "item" : "items"}
                   </span>
                 </div>
               </div>
@@ -1059,7 +1083,7 @@ function PRFormBody({
             ? "Submit Purchase Requisition"
             : "Save Purchase Requisition Draft"
         }
-        subtitle={`Requisition No: ${prNumber || "PR-XXXX-XXXX"} • ${items.length} item(s)`}
+        subtitle={`Requisition No: ${prNumber || "PR-XXXX-XXXX"} • ${selectedItems.length} item(s)`}
         description={
           pendingAction === "submit"
             ? `Are you sure you want to submit ${prNumber || "this purchase requisition"} for approval?`
