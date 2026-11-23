@@ -539,12 +539,12 @@ function PRFormBody({
         <div
           className={
             variant === "page"
-              ? "grid grid-cols-1 lg:grid-cols-12 gap-5 items-start"
+              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start"
               : "space-y-4"
           }
         >
           {/* Left Column: Requisition Details, Requested Items, Notes */}
-          <div className={variant === "page" ? "lg:col-span-8 space-y-5" : "space-y-4"}>
+          <div className="min-w-0 space-y-5">
             {/* Card 1: Requisition details */}
             <div className="rounded-card border border-border bg-surface p-5 space-y-4">
               <h2 className="type-card-title text-ink">Requisition details</h2>
@@ -784,10 +784,10 @@ function PRFormBody({
                 <p className="type-caption font-medium text-destructive">{errors.items}</p>
               )}
 
-              {/* Clean Figma Items Grid (Always shows ready-to-select row, never an empty box) */}
-              <div className="overflow-x-auto custom-scrollbar">
-                <div className="min-w-[600px] space-y-2.5">
-                  <div className="grid grid-cols-[minmax(160px,1.5fr)_112px_92px_92px_112px_28px] gap-2.5 items-center pb-1">
+              {/* Clean Figma Items Grid (Spacious columns, zero crowding or clipping) */}
+              <div className="overflow-x-auto custom-scrollbar -mx-1 px-1 py-0.5">
+                <div className="min-w-[700px] space-y-3">
+                  <div className="grid grid-cols-[minmax(200px,2fr)_124px_104px_104px_124px_32px] gap-4 items-center pb-1">
                     <div className="type-caption font-medium text-ink-muted">
                       Supply Name
                     </div>
@@ -826,7 +826,7 @@ function PRFormBody({
 
                     return (
                       <div key={idx} className="space-y-1">
-                        <div className="grid grid-cols-[minmax(160px,1.5fr)_112px_92px_92px_112px_28px] gap-2.5 items-center">
+                        <div className="grid grid-cols-[minmax(200px,2fr)_124px_104px_104px_124px_32px] gap-4 items-center">
                           {/* Supply Name (Dropdown) */}
                           <div className="relative">
                             <select
@@ -835,9 +835,9 @@ function PRFormBody({
                               onChange={(e) =>
                                 handleSelectSupply(idx, Number(e.target.value))
                               }
-                              className={`h-9 w-full appearance-none rounded-control border border-input bg-surface pl-3 pr-8 type-body ${
+                              className={`h-9 w-full appearance-none rounded-control border border-border bg-surface pl-3 pr-9 type-body-secondary ${
                                 hasItem ? "text-ink" : "text-ink-muted"
-                              } focus:ring-1 focus:ring-ring focus:outline-none cursor-pointer`}
+                              } focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none cursor-pointer transition-colors`}
                             >
                               <option value="" disabled>
                                 Select supply
@@ -859,21 +859,21 @@ function PRFormBody({
                                 );
                               })}
                             </select>
-                            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
+                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                           </div>
 
                           {/* Supply No. */}
-                          <div className="type-body text-ink-secondary whitespace-nowrap tabular-nums">
+                          <div className="type-body-secondary text-ink-secondary whitespace-nowrap tabular-nums">
                             {supplyNo}
                           </div>
 
                           {/* Unit of Measure */}
-                          <div className="type-body text-ink-secondary truncate">
+                          <div className="type-body-secondary text-ink-secondary truncate">
                             {uomDisplay}
                           </div>
 
                           {/* Actual Inventory */}
-                          <div className="type-body text-ink-secondary text-right tabular-nums">
+                          <div className="type-body-secondary font-medium text-ink-secondary text-right tabular-nums">
                             {actualInv}
                           </div>
 
@@ -889,8 +889,8 @@ function PRFormBody({
                               onChange={(e) =>
                                 handleQuantityChange(idx, e.target.value)
                               }
-                              className={`h-9 w-full text-right type-body font-semibold ${
-                                qtyError ? "border-destructive" : "border-input"
+                              className={`h-9 w-full text-right type-body-secondary font-semibold ${
+                                qtyError ? "border-destructive" : "border-border"
                               } bg-surface text-ink rounded-control shadow-none focus:ring-1 focus:ring-ring tabular-nums`}
                             />
                           </div>
@@ -958,7 +958,7 @@ function PRFormBody({
 
           {/* Right Column: Requisition Summary Card (Page Mode) */}
           {variant === "page" && (
-            <div className="lg:col-span-4 space-y-5">
+            <div className="space-y-5">
               <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
                 <h2 className="type-card-title text-ink">Requisition summary</h2>
 
