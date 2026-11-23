@@ -26,6 +26,7 @@ import ProductionRequestModal from "@/components/production/ProductionRequestMod
 import { useIsAdmin, useIsHeadCook, useIsImsManager } from "@/context/StaffContext";
 import { StockWriteOffTab } from "@/components/inventory/write-off/StockWriteOffTab";
 import type { StockWriteOffDto } from "@/components/inventory/write-off/types";
+import LiveStock from "@/components/inventory/LiveStock";
 
 export type InventorySection = "raw-materials" | "tools" | "finished-products" | "write-off";
 
@@ -369,6 +370,7 @@ export default function ViewInventory({
   return (
     <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
       <PageHeader title={headerInfo.title} description={headerInfo.description} />
+      <LiveStock />
 
       {/* 3 KPI Cards */}
       <InventorySummaryCards
