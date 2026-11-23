@@ -108,9 +108,9 @@ export function DeliveryDetailsModal({
   const footerHelperText = isCancelled
     ? "This delivery order has been cancelled."
     : isScheduled
-      ? "Step 1 of 2 · Review delivery before confirming arrival."
+      ? "Step 1 of 2 · Review delivery details."
       : isArrived && !delivery.grnNumber
-        ? "Delivery arrived · Create a Goods Receipt Note to complete receiving."
+        ? "Delivery arrived · Ready for GRN."
         : "Delivery received and recorded with GRN.";
 
   return (
@@ -405,9 +405,9 @@ export function DeliveryDetailsModal({
         )}
 
         {/* Full-Bleed Tinted Footer Bar */}
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-topbar bg-page px-6 py-3.5">
-          <span className="type-caption text-ink-muted">{footerHelperText}</span>
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="flex shrink-0 flex-wrap sm:flex-nowrap items-center justify-between gap-3 border-t border-topbar bg-page px-6 py-3.5">
+          <span className="type-caption text-ink-muted min-w-0 truncate">{footerHelperText}</span>
+          <div className="flex flex-wrap items-center gap-2 shrink-0 ml-auto">
             {(isArrived || Boolean(delivery.grnNumber)) && (
               <Button
                 type="button"
