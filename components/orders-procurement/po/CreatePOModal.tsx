@@ -378,12 +378,19 @@ function POFormBody({
 
   const updateRow = (idx: number, value: string) => {
     if (value !== "" && !/^\d*\.?\d{0,3}$/.test(value)) return;
+    const targetRow = itemRows[idx];
     setItemRows((prev) => prev.map((row, i) => (i === idx ? { ...row, orderQty: value } : row)));
     setErrors((prev) => {
-      if (!prev[`qty_${idx}`] && !prev.items) return prev;
       const copy = { ...prev };
-      delete copy[`qty_${idx}`];
       delete copy.items;
+      const qty = parseFloat(value);
+      if (value === "" || isNaN(qty) || qty < 0) {
+        copy[`qty_${idx}`] = "Required";
+      } else if (!isEdit && targetRow && qty > targetRow.remaining) {
+        copy[`qty_${idx}`] = `Cannot exceed remaining (${targetRow.remaining})`;
+      } else {
+        delete copy[`qty_${idx}`];
+      }
       return copy;
     });
   };
@@ -1073,7 +1080,14 @@ function POFormBody({
                       {/* Item Rows */}
                       {itemRows.map((row, idx) => {
                         const isFullyOrdered = !isEdit && row.remaining <= 0;
-                        const rowError = errors[`qty_${idx}`];
+                        const parsedQty = parseFloat(row.orderQty);
+                        const liveRowError =
+                          errors[`qty_${idx}`] ||
+                          (row.orderQty === "" || isNaN(parsedQty) || parsedQty < 0
+                            ? "Required"
+                            : !isEdit && parsedQty > row.remaining
+                            ? `Cannot exceed remaining (${row.remaining})`
+                            : "");
                         return (
                           <div key={row.itemId} className="space-y-1">
                             <div
@@ -1108,6 +1122,7 @@ function POFormBody({
                               <div className="min-w-0">
                                 <Input
                                   aria-label={`Order quantity for ${row.itemName}`}
+                                  aria-invalid={!!liveRowError}
                                   type="number"
                                   min={0}
                                   max={isEdit ? undefined : row.remaining}
@@ -1116,7 +1131,9 @@ function POFormBody({
                                   disabled={isFullyOrdered}
                                   onChange={(e) => updateRow(idx, e.target.value)}
                                   className={`h-9 w-full text-right font-semibold type-body-secondary bg-surface rounded-control text-ink shadow-none tabular-nums ${
-                                    rowError ? "border-destructive" : "border-input"
+                                    liveRowError
+                                      ? "!border-destructive focus-visible:!ring-destructive"
+                                      : "border-input"
                                   }`}
                                 />
                               </div>
@@ -1134,9 +1151,12 @@ function POFormBody({
                                 </button>
                               </div>
                             </div>
-                            {rowError && (
-                              <p className="type-caption text-destructive text-right pr-10">
-                                {rowError}
+                            {liveRowError && (
+                              <p
+                                role="alert"
+                                className="type-caption font-medium text-destructive text-right pr-10"
+                              >
+                                {liveRowError}
                               </p>
                             )}
                           </div>
