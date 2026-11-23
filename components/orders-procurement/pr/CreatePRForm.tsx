@@ -542,21 +542,21 @@ function PRFormBody({
             <div className="rounded-card border border-border bg-surface p-5 space-y-4">
               <h2 className="type-card-title text-ink">Requisition details</h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
                 {/* Purchase Requisition Number */}
                 <div>
-                  <label className="mb-1.5 block type-label text-ink">
-                    Purchase Requisition Number
+                  <label className="mb-1.5 block type-label text-ink whitespace-nowrap">
+                    Purchase Requisition No.
                   </label>
-                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle type-body text-ink-secondary select-all">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body text-ink-secondary select-all">
                     {prNumber || "PR-XXXX-XXXX"}
                   </div>
                 </div>
 
                 {/* Request Date */}
                 <div>
-                  <label className="mb-1.5 block type-label text-ink">Request Date</label>
-                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle type-body text-ink-secondary">
+                  <label className="mb-1.5 block type-label text-ink whitespace-nowrap">Request Date</label>
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body text-ink-secondary">
                     {requestDate}
                   </div>
                 </div>
@@ -604,16 +604,16 @@ function PRFormBody({
 
                 {/* Requested By (Read-Only from Account) */}
                 <div>
-                  <label className="mb-1.5 block type-label text-ink">Requested By</label>
-                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle type-body text-ink-secondary select-none">
+                  <label className="mb-1.5 block type-label text-ink whitespace-nowrap">Requested By</label>
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body text-ink-secondary select-none truncate">
                     {requestedBy || "Loading..."}
                   </div>
                 </div>
 
                 {/* Department (Read-Only from Account) */}
                 <div>
-                  <label className="mb-1.5 block type-label text-ink">Department</label>
-                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle type-body text-ink-secondary select-none">
+                  <label className="mb-1.5 block type-label text-ink whitespace-nowrap">Department</label>
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body text-ink-secondary select-none">
                     {department || "Inventory"}
                   </div>
                 </div>
@@ -766,8 +766,8 @@ function PRFormBody({
 
               {/* Clean Figma Items Grid (Matches RecipeFormPage & Figma Prototype) */}
               <div className="overflow-x-auto custom-scrollbar">
-                <div className="min-w-[660px] space-y-2.5">
-                  <div className="grid grid-cols-[minmax(190px,1.8fr)_120px_96px_84px_116px_32px] gap-3 items-center pb-1">
+                <div className="min-w-[680px] space-y-2.5">
+                  <div className="grid grid-cols-[minmax(180px,1.8fr)_116px_96px_102px_124px_28px] gap-3 items-center pb-1">
                     <div className="type-caption font-medium text-ink-muted">
                       Supply Name
                     </div>
@@ -778,7 +778,7 @@ function PRFormBody({
                       Unit of Measure
                     </div>
                     <div className="type-caption font-medium text-ink-muted text-right whitespace-nowrap">
-                      Actual Inv.
+                      Actual Inventory
                     </div>
                     <div className="type-caption font-medium text-ink-muted text-right whitespace-nowrap">
                       Quantity (To Order)
@@ -806,7 +806,7 @@ function PRFormBody({
 
                       return (
                         <div key={idx} className="space-y-1">
-                          <div className="grid grid-cols-[minmax(190px,1.8fr)_120px_96px_84px_116px_32px] gap-3 items-center">
+                          <div className="grid grid-cols-[minmax(180px,1.8fr)_116px_96px_102px_124px_28px] gap-3 items-center">
                             {/* Supply Name (Dropdown) */}
                             <div className="relative">
                               <select
