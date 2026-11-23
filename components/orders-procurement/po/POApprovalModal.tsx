@@ -47,6 +47,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [confirmApproveOpen, setConfirmApproveOpen] = useState(false);
+  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
 
   // Handle quantity modification
   const handleQuantityChange = (index: number, value: string) => {
@@ -174,37 +175,37 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
     <ModalWrapper
       open={true}
       title={`Confirm Supplier Approval — ${po.poNumber}`}
-      onClose={onClose}
+      onClose={() => setConfirmCloseOpen(true)}
       size="max-w-[640px]"
     >
       <div className="space-y-5">
         {/* Helper Banner */}
-        <div className="p-3.5 rounded-card bg-surface-muted border border-divider type-caption text-text-muted flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-status-green shrink-0" />
+        <div className="p-3.5 rounded-inner bg-page border border-border type-caption text-ink-secondary flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-status-green-fg shrink-0" />
           <span>
             Enter the confirmed accommodated quantities, total prices, and authorized supplier representative details from the supplier&apos;s reply.
           </span>
         </div>
 
         {errors.submit && (
-          <div className="p-3 rounded-card bg-status-red-bg border border-status-red type-caption text-status-red font-medium">
+          <div className="p-3 rounded-inner bg-notice-danger-bg border border-notice-danger-border type-caption text-notice-danger-text font-medium">
             {errors.submit}
           </div>
         )}
 
         {/* Purchase Order Summary Header */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider type-caption">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-4 rounded-inner bg-page border border-border type-caption">
           <div>
-            <span className="text-text-muted block type-caption mb-1">Supplier / Vendor</span>
-            <span className="font-semibold text-text-primary type-body">{po.supplierName}</span>
+            <span className="text-ink-muted block type-caption mb-1">Supplier / Vendor</span>
+            <span className="font-semibold text-ink type-body">{po.supplierName}</span>
           </div>
           <div>
-            <span className="text-text-muted block type-caption mb-1">Purchase Requisition Reference</span>
-            <span className="font-semibold text-text-primary type-body">{po.prNumber || "—"}</span>
+            <span className="text-ink-muted block type-caption mb-1">Purchase Requisition Reference</span>
+            <span className="font-semibold text-ink type-body">{po.prNumber || "—"}</span>
           </div>
           <div>
-            <span className="text-text-muted block type-caption mb-1">Original Order Date</span>
-            <span className="font-semibold text-text-primary type-body">
+            <span className="text-ink-muted block type-caption mb-1">Original Order Date</span>
+            <span className="font-semibold text-ink type-body">
               {new Date(po.orderDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
             </span>
           </div>
@@ -365,7 +366,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
         {/* Action Buttons */}
         <div className="flex items-center justify-between gap-3 pt-4 border-t border-divider flex-wrap">
           {hasMissingPriceOrQty ? (
-            <span className="type-caption text-status-red font-medium">
+            <span className="type-caption text-destructive font-medium">
               Enter a confirmed quantity and total price greater than ₱0.00 for every item to confirm.
             </span>
           ) : (
@@ -375,9 +376,9 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
             <ModalCloseButton
               type="button"
               variant="outline"
-              fallbackOnClose={onClose}
+              fallbackOnClose={() => setConfirmCloseOpen(true)}
               disabled={submitting}
-              className="rounded-control px-5 py-2.5 h-auto type-label-button font-semibold border-divider bg-surface hover:bg-surface-hover text-text-primary cursor-pointer"
+              className="rounded-control px-5 py-2.5 h-auto type-label-button border-input bg-surface hover:bg-subtle text-ink cursor-pointer shadow-none"
             >
               Close
             </ModalCloseButton>
@@ -389,7 +390,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
                 }
               }}
               disabled={submitting || hasMissingPriceOrQty}
-              className="rounded-control px-6 py-2.5 h-auto type-label-button font-semibold shadow-sm bg-button-primary text-text-inverse hover:bg-button-primary-hover cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-control px-6 py-2.5 h-auto type-label-button shadow-none bg-primary text-on-brand hover:bg-primary-hover cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Approving..." : "Confirm & Approve Order"}
             </Button>
@@ -400,7 +401,7 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
       <ActionConfirmModal
         open={confirmApproveOpen}
         title="Approve Purchase Order"
-        subtitle={`Purchase Order No: ${po.poNumber} • Supplier: ${po.supplierName}`}
+        subtitle={`Purchase Order Number: ${po.poNumber} • Supplier: ${po.supplierName}`}
         description={`Are you sure you want to confirm supplier approval and finalize pricing (Total: ₱${calculatedGrandTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) for ${po.poNumber}?`}
         confirmLabel="Confirm & Approve"
         submitting={submitting}
@@ -408,6 +409,20 @@ export function POApprovalModal({ po, onClose, onSuccess }: POApprovalModalProps
         onConfirm={async () => {
           setConfirmApproveOpen(false);
           await handleConfirmApproval();
+        }}
+      />
+
+      <ActionConfirmModal
+        open={confirmCloseOpen}
+        title="Discard Supplier Approval?"
+        subtitle={`Purchase Order Number: ${po.poNumber}`}
+        description="Are you sure you want to close this approval form? Any entered quantities or prices will not be saved."
+        confirmLabel="Discard & Close"
+        cancelLabel="Stay"
+        onCancel={() => setConfirmCloseOpen(false)}
+        onConfirm={() => {
+          setConfirmCloseOpen(false);
+          onClose();
         }}
       />
     </ModalWrapper>

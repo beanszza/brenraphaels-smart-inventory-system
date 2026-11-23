@@ -111,6 +111,8 @@ function POFormBody({
   const [isConfirmedSent, setIsConfirmedSent] = useState(false);
   const [confirmSendOpen, setConfirmSendOpen] = useState(false);
   const [confirmDoneOpen, setConfirmDoneOpen] = useState(false);
+  const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
+  const [confirmDiscardWaitingOpen, setConfirmDiscardWaitingOpen] = useState(false);
 
   const [selectedSupplierDetails, setSelectedSupplierDetails] =
     useState<SupplierOption | null>(null);
@@ -632,9 +634,21 @@ function POFormBody({
 
   const handleCloseAction = () => {
     if (createdOrder && !isConfirmedSent) {
-      void handleCancelOrCloseWhileWaiting();
+      setConfirmDiscardWaitingOpen(true);
       return;
     }
+    if (variant === "page") {
+      setConfirmLeaveOpen(true);
+      return;
+    }
+    setIsReviewing(false);
+    setCreatedOrder(null);
+    setIsConfirmedSent(false);
+    onClose();
+  };
+
+  const executeLeaveForm = () => {
+    setConfirmLeaveOpen(false);
     setIsReviewing(false);
     setCreatedOrder(null);
     setIsConfirmedSent(false);
@@ -805,7 +819,7 @@ function POFormBody({
                 type="button"
                 variant="outline"
                 disabled={submitting}
-                onClick={() => void handleCancelOrCloseWhileWaiting()}
+                onClick={() => setConfirmDiscardWaitingOpen(true)}
                 className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
               >
                 Close
@@ -1327,6 +1341,38 @@ function POFormBody({
         onConfirm={() => {
           setConfirmDoneOpen(false);
           void handleMarkAsSentInGmail();
+        }}
+      />
+
+      <ActionConfirmModal
+        open={confirmLeaveOpen}
+        title="Discard Unsaved Changes?"
+        subtitle={
+          nextPoNumber
+            ? `Purchase Order Number: ${nextPoNumber}`
+            : initialPo?.poNumber
+            ? `Purchase Order Number: ${initialPo.poNumber}`
+            : undefined
+        }
+        description="Are you sure you want to leave this page? Any unsaved selections or quantities for this purchase order will be lost."
+        confirmLabel="Discard & Leave"
+        cancelLabel="Stay"
+        onCancel={() => setConfirmLeaveOpen(false)}
+        onConfirm={executeLeaveForm}
+      />
+
+      <ActionConfirmModal
+        open={confirmDiscardWaitingOpen}
+        title="Cancel & Discard Draft Purchase Order?"
+        subtitle={createdOrder?.poNumber ? `Purchase Order Number: ${createdOrder.poNumber}` : undefined}
+        description={`Are you sure you want to close without confirming Gmail send? ${createdOrder?.poNumber || "This draft Purchase Order"} will be rolled back and its items will remain available on the Purchase Requisition.`}
+        confirmLabel="Discard Draft"
+        cancelLabel="Stay"
+        submitting={submitting}
+        onCancel={() => setConfirmDiscardWaitingOpen(false)}
+        onConfirm={() => {
+          setConfirmDiscardWaitingOpen(false);
+          void handleCancelOrCloseWhileWaiting();
         }}
       />
     </div>
