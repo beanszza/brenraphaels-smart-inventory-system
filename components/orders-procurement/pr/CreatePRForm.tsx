@@ -123,15 +123,15 @@ function PRFormBody({
   const [requestDate, setRequestDate] = useState(
     initialData?.requestDate
       ? new Date(initialData.requestDate).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
       : new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
   );
   const defaultAccountName = staff.name;
   const detectedDepartment = "Inventory";
@@ -564,9 +564,8 @@ function PRFormBody({
                 {/* Required Date */}
                 <div>
                   <label
-                    className={`mb-1.5 block type-label ${
-                      errors.requiredDate ? "text-destructive" : "text-ink"
-                    }`}
+                    className={`mb-1.5 block type-label ${errors.requiredDate ? "text-destructive" : "text-ink"
+                      }`}
                   >
                     Required Date <span className="text-destructive">*</span>
                   </label>
@@ -589,11 +588,10 @@ function PRFormBody({
                           return c;
                         });
                       }}
-                      className={`w-full h-10 rounded-control border ${
-                        errors.requiredDate
-                          ? "!border-destructive focus-visible:!ring-destructive"
-                          : "border-input"
-                      } bg-surface px-3.5 py-2 pr-10 type-body text-ink shadow-none transition-colors cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                      className={`w-full h-10 rounded-control border ${errors.requiredDate
+                        ? "!border-destructive focus-visible:!ring-destructive"
+                        : "border-input"
+                        } bg-surface px-3.5 py-2 pr-10 type-body text-ink shadow-none transition-colors cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
                     />
                     <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted pointer-events-none" />
                   </div>
@@ -642,15 +640,13 @@ function PRFormBody({
                 {/* Purpose (+ Specify Reason when "Other") */}
                 <div className="sm:col-span-2 lg:col-span-3">
                   <div
-                    className={`grid grid-cols-1 gap-4 ${
-                      purposeChoice === "Other" ? "sm:grid-cols-2" : ""
-                    }`}
+                    className={`grid grid-cols-1 gap-4 ${purposeChoice === "Other" ? "sm:grid-cols-2" : ""
+                      }`}
                   >
                     <div>
                       <label
-                        className={`mb-1.5 block type-label ${
-                          errors.purpose ? "text-destructive" : "text-ink"
-                        }`}
+                        className={`mb-1.5 block type-label ${errors.purpose ? "text-destructive" : "text-ink"
+                          }`}
                       >
                         Purpose <span className="text-destructive">*</span>
                       </label>
@@ -686,18 +682,16 @@ function PRFormBody({
                       <div>
                         <div className="mb-1.5 flex items-center justify-between">
                           <label
-                            className={`block type-label ${
-                              errors.purpose ? "text-destructive" : "text-ink"
-                            }`}
+                            className={`block type-label ${errors.purpose ? "text-destructive" : "text-ink"
+                              }`}
                           >
                             Specify Reason <span className="text-destructive">*</span>
                           </label>
                           <span
-                            className={`type-caption tabular-nums ${
-                              customPurpose.length >= PURPOSE_OTHER_MAX
-                                ? "font-medium text-status-amber"
-                                : "text-ink-muted"
-                            }`}
+                            className={`type-caption tabular-nums ${customPurpose.length >= PURPOSE_OTHER_MAX
+                              ? "font-medium text-status-amber"
+                              : "text-ink-muted"
+                              }`}
                           >
                             {customPurpose.length}/{PURPOSE_OTHER_MAX}
                           </span>
@@ -729,11 +723,10 @@ function PRFormBody({
                           }}
                           placeholder="Enter custom purpose (max 50 chars)..."
                           aria-invalid={!!errors.purpose}
-                          className={`w-full h-10 rounded-control border ${
-                            errors.purpose
-                              ? "!border-destructive focus-visible:!ring-destructive"
-                              : "border-input"
-                          } bg-surface px-3.5 py-2 type-body text-ink shadow-none transition-colors`}
+                          className={`w-full h-10 rounded-control border ${errors.purpose
+                            ? "!border-destructive focus-visible:!ring-destructive"
+                            : "border-input"
+                            } bg-surface px-3.5 py-2 type-body text-ink shadow-none transition-colors`}
                         />
                         {errors.purpose ? (
                           <p className="mt-1 type-caption font-medium text-destructive animate-in fade-in-50">
@@ -773,24 +766,24 @@ function PRFormBody({
 
               {/* Clean Figma Items Grid (Matches RecipeFormPage & Figma Prototype) */}
               <div className="overflow-x-auto custom-scrollbar">
-                <div className="min-w-[600px] space-y-2.5">
-                  <div className="grid grid-cols-12 gap-3 items-center pb-1">
-                    <div className="col-span-4 type-caption font-medium text-ink-muted">
+                <div className="min-w-[660px] space-y-2.5">
+                  <div className="grid grid-cols-[minmax(190px,1.8fr)_120px_96px_84px_116px_32px] gap-3 items-center pb-1">
+                    <div className="type-caption font-medium text-ink-muted">
                       Supply Name
                     </div>
-                    <div className="col-span-2 type-caption font-medium text-ink-muted">
+                    <div className="type-caption font-medium text-ink-muted whitespace-nowrap">
                       Supply No.
                     </div>
-                    <div className="col-span-2 type-caption font-medium text-ink-muted">
+                    <div className="type-caption font-medium text-ink-muted whitespace-nowrap">
                       Unit of Measure
                     </div>
-                    <div className="col-span-1 type-caption font-medium text-ink-muted text-right whitespace-nowrap">
+                    <div className="type-caption font-medium text-ink-muted text-right whitespace-nowrap">
                       Actual Inv.
                     </div>
-                    <div className="col-span-2 type-caption font-medium text-ink-muted text-right whitespace-nowrap">
+                    <div className="type-caption font-medium text-ink-muted text-right whitespace-nowrap">
                       Quantity (To Order)
                     </div>
-                    <div className="col-span-1" />
+                    <div />
                   </div>
 
                   {items.length === 0 ? (
@@ -813,9 +806,9 @@ function PRFormBody({
 
                       return (
                         <div key={idx} className="space-y-1">
-                          <div className="grid grid-cols-12 gap-3 items-center">
+                          <div className="grid grid-cols-[minmax(190px,1.8fr)_120px_96px_84px_116px_32px] gap-3 items-center">
                             {/* Supply Name (Dropdown) */}
-                            <div className="col-span-4 relative">
+                            <div className="relative">
                               <select
                                 aria-label={`Supply item row ${idx + 1}`}
                                 value={item.itemId || ""}
@@ -845,22 +838,22 @@ function PRFormBody({
                             </div>
 
                             {/* Supply No. */}
-                            <div className="col-span-2 type-body text-ink-secondary truncate tabular-nums">
+                            <div className="type-body text-ink-secondary whitespace-nowrap tabular-nums">
                               {supplyNo}
                             </div>
 
                             {/* Unit of Measure */}
-                            <div className="col-span-2 type-body text-ink-secondary truncate">
+                            <div className="type-body text-ink-secondary truncate">
                               {item.uomName || selectedSupply?.uomName || "Unit"}
                             </div>
 
                             {/* Actual Inventory */}
-                            <div className="col-span-1 type-body text-ink-secondary text-right tabular-nums">
+                            <div className="type-body text-ink-secondary text-right tabular-nums">
                               {Number(actualInv).toLocaleString()}
                             </div>
 
                             {/* Quantity (To Order) */}
-                            <div className="col-span-2">
+                            <div>
                               <Input
                                 aria-label={`Quantity row ${idx + 1}`}
                                 type="number"
@@ -877,7 +870,7 @@ function PRFormBody({
                             </div>
 
                             {/* Remove Row */}
-                            <div className="col-span-1 flex justify-end">
+                            <div className="flex justify-end">
                               <button
                                 type="button"
                                 onClick={() => handleRemoveItem(idx)}
@@ -1051,6 +1044,7 @@ function PRFormBody({
         description="Are you sure you want to leave this page? Any unsaved changes to this purchase requisition will be lost."
         confirmLabel="Discard & Leave"
         cancelLabel="Stay"
+        variant="destructive"
         onCancel={() => setConfirmDiscardOpen(false)}
         onConfirm={() => {
           setConfirmDiscardOpen(false);
