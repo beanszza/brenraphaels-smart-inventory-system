@@ -64,6 +64,7 @@ function mapPO(o: Record<string, unknown>): PurchaseOrderPO {
     adminNotes: o.adminNotes ? String(o.adminNotes) : undefined,
     totalAmount: Number(o.totalAmount || 0),
     hasRemainingToSchedule: Boolean(o.hasRemainingToSchedule),
+    emailConfirmed: o.emailConfirmed === undefined ? true : Boolean(o.emailConfirmed),
     items: (Array.isArray(o.items) ? o.items : []).map((raw) => {
       const i = raw as Record<string, unknown>;
       return {
@@ -193,7 +194,11 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           fetchOrders();
           setActiveTab("Pending Approval");
           if (saved?.poNumber) {
-            setNotice(`${saved.poNumber} marked as sent — awaiting supplier confirmation.`);
+            setNotice(
+              saved.emailConfirmed === false
+                ? `${saved.poNumber} saved in Pending Approval — open it to confirm Gmail send before approving.`
+                : `${saved.poNumber} marked as sent — awaiting supplier confirmation.`
+            );
           }
         }}
       />
@@ -211,6 +216,18 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           isAdmin={isAdmin}
           onClose={() => setSelectedPO(null)}
           onPrint={(po) => setPrintingPO(po)}
+          onConfirmEmailSent={async (po) => {
+            const res = await procurement.setOrderStatus(po.poId, {
+              status: "Pending Approval",
+              emailConfirmed: true,
+            });
+            const updated: PurchaseOrderPO = res.data?.data
+              ? mapPO(res.data.data)
+              : { ...po, status: "Pending Approval", emailConfirmed: true };
+            setSelectedPO(updated);
+            setNotice(`${po.poNumber} email send confirmed — you can now approve the order when the supplier replies.`);
+            fetchOrders();
+          }}
           onApproveWithForm={(po) => {
             setApprovingPO(po);
           }}
@@ -344,11 +361,10 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
                   setPage(1);
                 }}
                 aria-pressed={isSelected}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${
-                  isSelected
-                    ? "bg-status-purple-bg text-primary"
-                    : "text-ink-muted hover:text-ink hover:bg-subtle"
-                }`}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-control type-label-tab transition-colors cursor-pointer whitespace-nowrap ${isSelected
+                  ? "bg-status-purple-bg text-primary"
+                  : "text-ink-muted hover:text-ink hover:bg-subtle"
+                  }`}
               >
                 <span>{tab}</span>
                 <span className="tabular-nums">{count}</span>

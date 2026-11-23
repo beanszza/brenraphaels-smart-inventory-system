@@ -157,7 +157,7 @@ export async function createOrder(body: OrderInput) {
         ExpectedArrivalDate: expected,
         Status: body.initialStatus && body.initialStatus !== "Unspecified" ? body.initialStatus : "Pending Approval",
         PaymentType: body.paymentType || "Cash",
-        ProofImageUrl: "",
+        ProofImageUrl: body.emailConfirmed === false ? "EMAIL_PENDING" : "",
         TotalAmount: priced.total,
         RequestedBy: staff.username,
       },
@@ -254,6 +254,8 @@ export async function setOrderStatus(idInput: string | number, body: StatusInput
     }
     if (body.adminNotes) data.AdminNotes = body.adminNotes;
     if (body.comments) data.AdminNotes = body.comments;
+    if (body.emailConfirmed === true) data.ProofImageUrl = "EMAIL_CONFIRMED";
+    if (body.emailConfirmed === false) data.ProofImageUrl = "EMAIL_PENDING";
 
     const updated = await tx.purchaseOrders.update({ where: { PoId: id }, data, include: PO_INCLUDE });
     const linkedPrId = order.PrId ?? order.PurchaseRequisitionPrId;
@@ -285,6 +287,9 @@ export async function approvePurchaseOrder(idInput: string | number, body: Appro
     if (!order) return fail(`Purchase order with ID ${id} not found.`);
     if (order.Status !== "Pending Approval" && order.Status !== "PendingApproval" && order.Status !== "Draft") {
       return fail(`Only pending purchase orders can be approved. Current status: ${order.Status}.`);
+    }
+    if (order.ProofImageUrl === "EMAIL_PENDING") {
+      return fail("Please confirm that the Purchase Order email has been sent to the supplier before approving this order.");
     }
 
     if (!body.confirmedItems || body.confirmedItems.length === 0) {

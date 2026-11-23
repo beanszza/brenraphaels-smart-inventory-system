@@ -203,6 +203,7 @@ export function poDto(po: PO) {
     qaStatus: po.QaStatus,
     inspectedBy: po.InspectedBy,
     hasRemainingToSchedule,
+    emailConfirmed: po.ProofImageUrl !== "EMAIL_PENDING",
     items: po.PurchaseOrderItems.map((i) => {
       const qty = Number(i.PoItemQuantity);
       const total = Number(i.TotalPrice);

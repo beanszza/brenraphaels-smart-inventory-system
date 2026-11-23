@@ -24,6 +24,7 @@ export type StatusInput = {
   comments?: string | null;
   qaStatus?: string | null;
   qaNotes?: string | null;
+  emailConfirmed?: boolean;
 };
 
 export type OrderInput = {
@@ -32,6 +33,7 @@ export type OrderInput = {
   expectedArrivalDate?: string | null;
   paymentType?: string | null;
   initialStatus?: string | null;
+  emailConfirmed?: boolean;
   items: { itemId: number; poItemQuantity: number; purchaseUomId?: number | null }[];
 };
 

@@ -1,18 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   ChevronLeft,
   AlertCircle,
   CheckCircle2,
   Printer,
   PackageCheck,
+  Mail,
 } from "lucide-react";
 import { PurchaseOrderPO } from "../types";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { downloadPurchaseOrderPdf } from "./downloadPurchaseOrderPdf";
 
 export interface PODetailsProps {
   po: PurchaseOrderPO | null;
@@ -20,6 +23,7 @@ export interface PODetailsProps {
   onClose: () => void;
   onEdit?: (po: PurchaseOrderPO) => void;
   onApproveWithForm?: (po: PurchaseOrderPO) => void;
+  onConfirmEmailSent?: (po: PurchaseOrderPO) => Promise<void> | void;
   onPrint?: (po: PurchaseOrderPO) => void;
   onCancel?: (po: PurchaseOrderPO) => void;
   onCreateDelivery?: (po: PurchaseOrderPO) => void;
@@ -35,15 +39,20 @@ function PODetailsBody({
   isAdmin = false,
   onClose,
   onApproveWithForm,
+  onConfirmEmailSent,
   onPrint,
   onCancel,
   onCreateDelivery,
   variant,
   embedded = false,
 }: PODetailsBodyProps) {
+  const [confirmEmailModalOpen, setConfirmEmailModalOpen] = useState(false);
+  const [confirmingEmail, setConfirmingEmail] = useState(false);
+
   if (!po) return null;
 
   const isPending = po.status === "Pending Approval";
+  const isEmailPending = isPending && po.emailConfirmed === false;
   const isApproved = po.status === "Approved";
   const isCancellable = po.status === "Pending Approval";
   const canScheduleDelivery =
@@ -52,13 +61,43 @@ function PODetailsBody({
     ["Approved", "Ordered", "Partially Delivered"].includes(po.status) &&
     (po.hasRemainingToSchedule ?? po.status === "Approved");
 
+  const buildGmailUrl = () => {
+    const orderDetailsLines = (po.items || [])
+      .map((r, i) => `${i + 1}. ${r.itemName} - ${r.poItemQuantity} ${r.purchaseUomName || "Unit"}`)
+      .join("\n");
+    const contactName = po.supplierContactPerson
+      ? `Mr./Ms. ${po.supplierContactPerson}`
+      : po.supplierName || "Valued Supplier Partner";
+    const supplierCompany = po.supplierName || "your company";
+    const supplierEmail = po.supplierEmail?.trim() || "";
+    const emailSubject = `Purchase Order ${po.poNumber} - Bren Raphael's Ube Jam & Halaya`;
+    const emailBody =
+      `Dear ${contactName},\n\n` +
+      `Good day!\n\n` +
+      `On behalf of Bren Raphael's Ube Jam & Halaya, we would like to formally place Purchase Order No. ${po.poNumber} (Ref. ${po.prNumber || "N/A"}) with ${supplierCompany}. Please find the official Purchase Order document (${po.poNumber}.pdf) attached to this email for your reference.\n\n` +
+      `Requested Order Particulars:\n` +
+      `${orderDetailsLines}\n\n` +
+      `To confirm this order, kindly reply to this email with the following details:\n` +
+      `1. The exact quantity you can accommodate for each requested item.\n` +
+      `2. The total price for each item and the overall total order amount.\n` +
+      `3. Your committed delivery date.\n` +
+      `4. The full name, position, and contact number of the authorized representative confirming this order.\n\n` +
+      `Should you have any questions, please feel free to reach out to us.\n\n` +
+      `Thank you very much, and we look forward to your confirmation.\n\n` +
+      `Respectfully,\n\n` +
+      `${po.requestedBy || "Vince Neil Madeja"}\n` +
+      `Inventory Management & Procurement\n` +
+      `Bren Raphael's Ube Jam & Halaya`;
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(supplierEmail)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+  };
+
   const fmt = (d?: string) =>
     d
       ? new Date(d).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
       : "—";
 
   const fmtCurrency = (n: number) =>
@@ -137,8 +176,14 @@ function PODetailsBody({
               {!isAdmin && isPending && onApproveWithForm && (
                 <Button
                   type="button"
+                  disabled={isEmailPending}
+                  title={
+                    isEmailPending
+                      ? "Confirm that the email was sent to the supplier before approving this order"
+                      : undefined
+                  }
                   onClick={() => onApproveWithForm(po)}
-                  className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer"
+                  className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Approve Order
                 </Button>
@@ -159,6 +204,51 @@ function PODetailsBody({
         </div>
       </div>
 
+      {/* Email Send Confirmation Banner (shown when PO is Pending Approval but Gmail send wasn't confirmed yet) */}
+      {!isAdmin && isEmailPending && (
+        <div className="p-4 rounded-card border border-notice-warning-border bg-notice-warning-bg text-notice-warning-text flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5 type-body-secondary">
+            <Mail className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-notice-warning-text">
+                Email confirmation pending — Approve Order is locked
+              </p>
+              <p className="type-caption mt-0.5">
+                You have not confirmed sending <strong>{po.poNumber}.pdf</strong> to{" "}
+                <strong>{po.supplierEmail || po.supplierName}</strong> in Gmail yet. Confirm once
+                sent to unlock order approval.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.open(buildGmailUrl(), "_blank", "noopener,noreferrer");
+                }
+                void downloadPurchaseOrderPdf(po);
+              }}
+              className="rounded-control border border-border bg-surface px-3.5 h-9 type-label-button-sm text-ink hover:bg-subtle shadow-none cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <Mail className="w-3.5 h-3.5 text-primary" />
+              Open Gmail &amp; PDF
+            </Button>
+            {onConfirmEmailSent && (
+              <Button
+                type="button"
+                disabled={confirmingEmail}
+                onClick={() => setConfirmEmailModalOpen(true)}
+                className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button-sm hover:bg-primary-hover shadow-none cursor-pointer disabled:opacity-50"
+              >
+                {confirmingEmail ? "Confirming..." : "Confirm Email Sent"}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Conditional Status Banners */}
       {po.supplierApprovedBy && (
         <div className="p-3.5 rounded-inner border border-status-green-fg/20 bg-status-green-bg text-status-green-fg flex items-center justify-between flex-wrap gap-2 type-caption">
@@ -176,11 +266,10 @@ function PODetailsBody({
 
       {po.adminNotes && !po.supplierApprovedBy && (
         <div
-          className={`p-3.5 rounded-inner border space-y-1 ${
-            po.status === "Cancelled"
-              ? "border-notice-danger-border bg-notice-danger-bg text-notice-danger-text"
-              : "border-border bg-page text-ink"
-          }`}
+          className={`p-3.5 rounded-inner border space-y-1 ${po.status === "Cancelled"
+            ? "border-notice-danger-border bg-notice-danger-bg text-notice-danger-text"
+            : "border-border bg-page text-ink"
+            }`}
         >
           <div className="flex items-center gap-2 type-label-field">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -263,9 +352,8 @@ function PODetailsBody({
                           {!isPending && (
                             <>
                               <td
-                                className={`py-3 px-3 text-right tabular-nums align-top whitespace-nowrap ${
-                                  received > 0 ? "text-ink" : "text-ink-disabled"
-                                }`}
+                                className={`py-3 px-3 text-right tabular-nums align-top whitespace-nowrap ${received > 0 ? "text-ink" : "text-ink-disabled"
+                                  }`}
                               >
                                 {received.toLocaleString()}
                               </td>
@@ -373,8 +461,8 @@ function PODetailsBody({
                   {po.totalAmount > 0
                     ? fmtCurrency(po.totalAmount)
                     : isApproved
-                    ? "₱0.00"
-                    : "Pending Confirmation"}
+                      ? "₱0.00"
+                      : "Pending Confirmation"}
                 </span>
               </div>
             </div>
@@ -465,8 +553,9 @@ function PODetailsBody({
           {!isAdmin && isPending && onApproveWithForm && (
             <Button
               type="button"
+              disabled={isEmailPending}
               onClick={() => onApproveWithForm(po)}
-              className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer"
+              className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Approve Order
             </Button>
@@ -483,6 +572,26 @@ function PODetailsBody({
           )}
         </div>
       )}
+
+      <ActionConfirmModal
+        open={confirmEmailModalOpen}
+        title="Confirm Purchase Order Sent"
+        subtitle={`Purchase Order Number: ${po.poNumber}`}
+        description={`Have you sent the email with ${po.poNumber}.pdf attached to ${po.supplierEmail || po.supplierName} in Gmail? Confirming will unlock Approve Order so you can confirm the order when the supplier replies.`}
+        confirmLabel="Confirm Sent"
+        submitting={confirmingEmail}
+        onCancel={() => setConfirmEmailModalOpen(false)}
+        onConfirm={async () => {
+          if (!onConfirmEmailSent) return;
+          setConfirmEmailModalOpen(false);
+          setConfirmingEmail(true);
+          try {
+            await onConfirmEmailSent(po);
+          } finally {
+            setConfirmingEmail(false);
+          }
+        }}
+      />
     </div>
   );
 }

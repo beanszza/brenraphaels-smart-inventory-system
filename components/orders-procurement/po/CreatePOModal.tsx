@@ -501,7 +501,8 @@ function POFormBody({
         expectedArrivalDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         paymentType: "Cash",
         requestedBy: staff.name,
-        initialStatus: "Draft",
+        initialStatus: "Pending Approval",
+        emailConfirmed: false,
         items: activeRows.map((row) => ({
           itemId: row.itemId,
           poItemQuantity: parseFloat(row.orderQty),
@@ -597,10 +598,12 @@ function POFormBody({
     try {
       const res = await procurement.setOrderStatus(createdOrder.poId, {
         status: "Pending Approval",
+        emailConfirmed: true,
       });
       const updatedOrder: PurchaseOrderPO = res.data?.data || {
         ...createdOrder,
         status: "Pending Approval",
+        emailConfirmed: true,
       };
       setIsConfirmedSent(true);
       onSuccess(updatedOrder);
@@ -617,17 +620,13 @@ function POFormBody({
   };
 
   const handleCancelOrCloseWhileWaiting = async () => {
-    const unsentOrder = createdOrder && !isConfirmedSent ? createdOrder : null;
+    const pendingOrder = createdOrder && !isConfirmedSent ? createdOrder : null;
     setIsReviewing(false);
     setCreatedOrder(null);
     setIsConfirmedSent(false);
-    if (unsentOrder?.poId) {
-      try {
-        await procurement.discardDraftOrder(unsentOrder.poId);
-      } catch (e) {
-        console.error("Failed to discard unsent draft PO:", e);
-      }
-      onDraftDiscarded?.(unsentOrder.poNumber);
+    if (pendingOrder) {
+      // Keep the PO in Pending Approval (no Draft rollback); user can confirm email send later from PO Details
+      onSuccess({ ...pendingOrder, status: "Pending Approval", emailConfirmed: false });
     }
     onClose();
   };
@@ -724,10 +723,11 @@ function POFormBody({
           <div className="p-3.5 rounded-inner bg-notice-warning-bg border border-notice-warning-border type-body-secondary text-notice-warning-text flex items-start gap-2.5">
             <Mail className="w-4 h-4 text-warning shrink-0 mt-0.5" />
             <span>
-              Gmail draft opened in a new tab — <strong>not sent yet</strong>. Your PDF (
-              <strong>{createdOrder.poNumber}.pdf</strong>) has been downloaded. This Purchase
-              Order will only move to <strong>Pending Approval</strong> after you click{" "}
-              <strong>Done</strong>. Closing rolls it back so you can try again.
+              <strong>{createdOrder.poNumber}</strong> is now in <strong>Pending Approval</strong>,
+              and your PDF (<strong>{createdOrder.poNumber}.pdf</strong>) has been downloaded.
+              Please confirm after sending the email in Gmail by clicking <strong>Done</strong>. If
+              you close this screen before confirming, you will still be prompted to confirm sending
+              the email before you can approve this order.
             </span>
           </div>
 
@@ -1334,7 +1334,7 @@ function POFormBody({
         open={confirmDoneOpen}
         title="Confirm Purchase Order Sent"
         subtitle={`Purchase Order Number: ${createdOrder?.poNumber || "—"}`}
-        description={`Have you sent the email with ${createdOrder?.poNumber || "the Purchase Order"}.pdf attached in Gmail? Confirming will move ${createdOrder?.poNumber || "this order"} to Pending Approval.`}
+        description={`Have you sent the email with ${createdOrder?.poNumber || "the Purchase Order"}.pdf attached in Gmail? Confirming will unlock Approve Order once the supplier replies.`}
         confirmLabel="Confirm Sent"
         submitting={submitting}
         onCancel={() => setConfirmDoneOpen(false)}
@@ -1363,10 +1363,10 @@ function POFormBody({
 
       <ActionConfirmModal
         open={confirmDiscardWaitingOpen}
-        title="Cancel & Discard Draft Purchase Order?"
+        title="Leave Without Confirming Email?"
         subtitle={createdOrder?.poNumber ? `Purchase Order Number: ${createdOrder.poNumber}` : undefined}
-        description={`Are you sure you want to close without confirming Gmail send? ${createdOrder?.poNumber || "This draft Purchase Order"} will be rolled back and its items will remain available on the Purchase Requisition.`}
-        confirmLabel="Discard Draft"
+        description={`${createdOrder?.poNumber || "This Purchase Order"} will remain in Pending Approval, but you will not be able to approve the order until you confirm that the email has been sent to the supplier.`}
+        confirmLabel="Leave for Now"
         cancelLabel="Stay"
         submitting={submitting}
         onCancel={() => setConfirmDiscardWaitingOpen(false)}
