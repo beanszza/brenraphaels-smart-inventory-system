@@ -41,6 +41,8 @@ beforeEach(async () => {
     await prisma.inventoryLots.create({ data: { LotId: id, LotCode: `LOT-${id}`, ItemId: 1, LocationId: id, SourceType: "Opening", ReceivedDate: new Date(), IsExpiryEstimated: false, QuantityReceived: id === 1 ? 10 : 100, QuantityRemaining: id === 1 ? 10 : 100, ReservedQuantity: id === 1 ? 3 : 0, UomId: 1, UnitCost: 10, Status: "Active", IsOpeningBalance: true } });
   }
   await prisma.finishedProducts.create({ data: { ProductId: 1, ItemId: 1, Sku: "UBE-250", Variant: "250g", SellingPrice: 100 } });
+  // The shop sells only a Size's own lots, the ones its production batches made.
+  for (const lotId of [1, 2]) await linkSizeToLot(1, lotId);
 });
 it("refuses missing, incorrect and POS credentials, and fails closed without a configured key", async () => {
   for (const credential of [null, "incorrect", process.env.SCMS_API_KEY ?? "pos-key"]) expect((await GET(request("productId=1", credential))).status).toBe(401);
@@ -158,9 +160,6 @@ it("validates malformed JSON, operations, references and quantities", async () =
 });
 it("never offers another Size's lots when finished products share one Item", async () => {
   await prisma.finishedProducts.create({ data: { ProductId: 2, ItemId: 1, Sku: "UBE-500", Variant: "500g", SellingPrice: 200 } });
-  // Unlinked opening stock cannot be assigned to one of several Sizes by guessing.
-  expect(await (await GET(request())).json()).toMatchObject({ available: 0 });
-  for (const id of [1, 2]) await linkSizeToLot(id, id);
   expect(await (await GET(request())).json()).toMatchObject({ available: 7 });
   expect(await (await GET(request("productId=2"))).json()).toMatchObject({ available: 0 });
   expect((await move("reserve", "wrong-size", "line", 1, 2)).status).toBe(409);
@@ -171,6 +170,7 @@ it("allocates across lots and restores both exactly once after packing", async (
     LotId: 3, LotCode: "LOT-3", ItemId: 1, LocationId: 1, SourceType: "Opening", ReceivedDate: new Date(),
     IsExpiryEstimated: false, QuantityReceived: 5, QuantityRemaining: 5, UomId: 1, UnitCost: 10, Status: "Active", IsOpeningBalance: true,
   } });
+  await linkSizeToLot(1, 3);
   await prisma.inventories.update({ where: { ItemId_LocationId: { ItemId: 1, LocationId: 1 } }, data: { CurrentStock: 15 } });
   expect((await move("reserve", "large", "line", 10)).status).toBe(200);
   expect(await (await GET(request())).json()).toMatchObject({ available: 2, reserved: 13, quantity: 15 });
@@ -223,9 +223,30 @@ it("protects other Sizes' reservations when aggregate inventory is shared", asyn
     IsExpiryEstimated: false, QuantityReceived: 5, QuantityRemaining: 5, ReservedQuantity: 4,
     UomId: 1, UnitCost: 10, Status: "Active", IsOpeningBalance: true,
   } });
-  await linkSizeToLot(1, 1); await linkSizeToLot(2, 3);
+  await linkSizeToLot(2, 3);
   expect(await (await GET(request())).json()).toMatchObject({ available: 3 });
   expect((await move("reserve")).status).toBe(409);
   expect((await move("reserve", "fits", "line", 3)).status).toBe(200);
   expect(await (await GET(request("productId=2"))).json()).toMatchObject({ available: 0 });
+});
+
+async function extraLot(lotId: number, code: string, quantity = 20) {
+  await prisma.inventoryLots.create({ data: {
+    LotId: lotId, LotCode: code, ItemId: 1, LocationId: 1, SourceType: "Opening", ReceivedDate: new Date(),
+    IsExpiryEstimated: false, QuantityReceived: quantity, QuantityRemaining: quantity, UomId: 1, UnitCost: 10, Status: "Active", IsOpeningBalance: true,
+  } });
+  await prisma.inventories.update({ where: { ItemId_LocationId: { ItemId: 1, LocationId: 1 } }, data: { CurrentStock: 10 + quantity } });
+}
+it("never sells unlinked opening stock, even when the Item has one Size", async () => {
+  await extraLot(3, "OPENING-3");
+  expect(await (await GET(request())).json()).toMatchObject({ quantity: 10, available: 7 });
+  expect((await move("reserve", "too-many", "line", 8)).status).toBe(409);
+});
+it("never sells the seeded test lots, even when they are linked to the Size", async () => {
+  for (const [lotId, code] of [[3, "LOT-UJH-2026-01"], [4, "LOT-UBH-2026-02"]] as const) { await extraLot(lotId, code); await linkSizeToLot(1, lotId); }
+  await prisma.inventories.update({ where: { ItemId_LocationId: { ItemId: 1, LocationId: 1 } }, data: { CurrentStock: 50 } });
+  expect(await (await GET(request())).json()).toMatchObject({ quantity: 10, available: 7 });
+  expect((await move("reserve", "too-many", "line", 8)).status).toBe(409);
+  await prisma.inventoryLots.updateMany({ where: { LotId: 1 }, data: { QuantityRemaining: 0 } });
+  expect(await (await GET(request())).json()).toMatchObject({ available: 0 });
 });

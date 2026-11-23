@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { StockRefusal } from "./stock";
+import { StockRefusal, stockAvailability, warehouse } from "./stock";
+import { isSeededTestLot } from "./test-lots";
 
-/** Lots seeded for testing; the tab never counts them. */
-const SEEDED_TEST_LOT_PREFIXES = ["LOT-UJH-2026-", "LOT-UBH-2026-"];
 const COUNTED_LOT_STATUSES = ["Available", "Active"];
 
 /** The lot fields sizeFigures reads, so the tab and the shop inventory read select the same ones. */
@@ -12,14 +11,14 @@ type BatchLot = { LotCode: string; QuantityRemaining: unknown; ReservedQuantity:
 
 /**
  * What the Finished Goods tab shows for one Size: the lots its production batches made, in any location, still
- * Active or Available, less the seeded test lots. The tab and CREOMS both use this, so their numbers cannot differ.
+ * Active or Available, less the seeded test lots. The shop and CREOMS count the same lots, but only in the shop Warehouse.
  */
 export function sizeFigures(batches: { InventoryLots: BatchLot }[] | undefined): { quantity: number; reserved: number } {
   let quantity = 0, reserved = 0;
   const seen = new Set<number>();
   for (const batch of batches ?? []) {
     const lot = batch.InventoryLots;
-    const seeded = !!lot && SEEDED_TEST_LOT_PREFIXES.some(prefix => lot.LotCode.startsWith(prefix));
+    const seeded = !!lot && isSeededTestLot(lot.LotCode);
     if (lot && !seeded && COUNTED_LOT_STATUSES.includes(lot.Status) && !seen.has(lot.LotId)) {
       seen.add(lot.LotId);
       quantity += Number(lot.QuantityRemaining || 0);
@@ -37,8 +36,8 @@ export function productIds(raw: string | null): number[] {
   return [...new Set(ids)];
 }
 
-/** Read-only stock per Size for CREOMS's Stock page. A Size the IMS does not know is left out. */
-export async function readInventory(ids: number[]) {
+/** The Finished Goods tab's figures per Size, in any location. A Size the IMS does not know is left out. */
+export async function readTabFigures(ids: number[]) {
   const rows = await prisma.finishedProducts.findMany({
     where: { ProductId: { in: ids } },
     select: {
@@ -47,10 +46,28 @@ export async function readInventory(ids: number[]) {
     },
     orderBy: { ProductId: "asc" },
   });
-  return {
-    products: rows.map(row => {
-      const { quantity, reserved } = sizeFigures(row.ProductionBatches);
-      return { productId: row.ProductId, quantity, reserved, available: Math.max(0, quantity - reserved) };
-    }),
-  };
+  return rows.map(row => ({ productId: row.ProductId, ...sizeFigures(row.ProductionBatches) }));
+}
+
+/**
+ * Read-only stock per Size for CREOMS's Stock page: what the shop can sell from the shop Warehouse, by the same rule as
+ * checkout (stockAvailability), so CREOMS and the shop can never disagree. A Size the IMS does not know is left out; one
+ * it no longer sells has nothing to sell.
+ */
+export async function readInventory(ids: number[]) {
+  return prisma.$transaction(async tx => {
+    const warehouseId = await warehouse(tx);
+    const rows = await tx.finishedProducts.findMany({ where: { ProductId: { in: ids } }, select: { ProductId: true }, orderBy: { ProductId: "asc" } });
+    const products = [];
+    for (const { ProductId: productId } of rows) {
+      try {
+        const { quantity, reserved, available } = await stockAvailability(tx, productId, warehouseId);
+        products.push({ productId, quantity: quantity.toNumber(), reserved: reserved.toNumber(), available: available.toNumber() });
+      } catch (error) {
+        if (!(error instanceof StockRefusal) || error.status !== 404) throw error;
+        products.push({ productId, quantity: 0, reserved: 0, available: 0 });
+      }
+    }
+    return { products };
+  }, { isolationLevel: "RepeatableRead" });
 }

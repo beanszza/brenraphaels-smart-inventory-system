@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { SEEDED_TEST_LOT_PREFIXES } from "./test-lots";
 
 export class StockRefusal extends Error {
   constructor(public status: number, public code: string, message: string) { super(message); }
@@ -27,21 +28,25 @@ export async function warehouse(tx: Prisma.TransactionClient) {
 export async function sellableLots(tx: Prisma.TransactionClient, id: number, warehouseId: number) {
   const product = await tx.finishedProducts.findUnique({ where: { ProductId: id }, include: { Items: true } });
   if (!product?.Items.IsActive) throw new StockRefusal(404, "product_not_found", "This product Size is unavailable.");
-  const variants = await tx.finishedProducts.count({ where: { ItemId: product.ItemId } });
   const lots = await tx.inventoryLots.findMany({
     where: {
       ItemId: product.ItemId, LocationId: warehouseId,
       Status: { in: ["Active", "Available"] }, QuantityRemaining: { gt: 0 },
       OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
-      // Shared Items do not imply shared Sizes. Unlinked opening stock is safe only for a single Size.
-      ...(variants > 1 ? { ProductionBatches: { some: { ProductId: id } } } : {}),
+      // Only this Size's own lots, the ones its production batches made, as on the Finished Goods tab. Unlinked
+      // opening stock is never sold, and neither are the seeded test lots.
+      ProductionBatches: { some: { ProductId: id } },
+      NOT: SEEDED_TEST_LOT_PREFIXES.map(prefix => ({ LotCode: { startsWith: prefix } })),
     },
     orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
   });
   return { product, lots };
 }
 
-/** Both lot availability and reconciled Item inventory bound what checkout may promise. */
+/**
+ * The one rule for what the shop may sell of a Size: its own lots in the shop Warehouse, less every reservation, bounded by
+ * the reconciled Item inventory. The shop catalog, checkout and CREOMS's Stock page all read it.
+ */
 export async function stockAvailability(tx: Prisma.TransactionClient, id: number, warehouseId: number) {
   const { product, lots } = await sellableLots(tx, id, warehouseId);
   const inventory = await tx.inventories.findUnique({

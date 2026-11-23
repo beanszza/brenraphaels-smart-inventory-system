@@ -25,6 +25,9 @@ beforeAll(async()=>{
     await db.finishedProducts.create({data:{ProductId:id,ItemId:id,Sku:`DEMO-${id}`,Variant:'100g',SellingPrice:100}});
     await db.inventories.create({data:{ItemId:id,LocationId:1000,CurrentStock:20}});
     await db.inventoryLots.create({data:{LotId:id,ItemId:id,LocationId:1000,LotCode:`DEMO-${id}`,SourceType:'Opening',ReceivedDate:new Date(),IsExpiryEstimated:false,QuantityReceived:20,QuantityRemaining:20,UomId:1,UnitCost:0,Status:'Active',IsOpeningBalance:true}});
+    // The shop sells only a Size's own lots, made by its production batches.
+    const recipe=await db.recipes.create({data:{ProductId:id,OutputQuantity:1,Notes:'',IsActive:true}});
+    await db.productionBatches.create({data:{RecipeId:recipe.RecipeId,ProductId:id,BatchMultiplier:1,EstimatedQuantity:20,ActualQuantity:20,ProductionDate:new Date(),Stage:'Done',QualityStatus:'Passed',RejectionReason:'',ImageUrl:'',Notes:'',FgLotId:id,Status:'Completed'}});
   }
   let dropDeductReply=true;
   server=createServer(async(req,res)=>{
