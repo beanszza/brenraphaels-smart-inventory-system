@@ -6,7 +6,7 @@ import { loadProcurementScreen, requisitionSupplies, procurementRecipes } from "
 import { supplierItemsByItem, supplierItemsBySupplier } from "@/app/actions/orders/catalog";
 import { PRTab } from "@/components/orders-procurement/pr/PRTab";
 import { PRDetailsModal } from "@/components/orders-procurement/pr/PRDetailsModal";
-import { CreatePRModal } from "@/components/orders-procurement/pr/CreatePRForm";
+import { CreatePRModal, CreatePRForm } from "@/components/orders-procurement/pr/CreatePRForm";
 import { POTab } from "@/components/orders-procurement/po/POTab";
 import { DeliveryTab } from "@/components/orders-procurement/delivery/DeliveryTab";
 import type { PurchaseRequisition, PurchaseOrderPO, Delivery } from "@/components/orders-procurement/types";
@@ -136,4 +136,57 @@ it("renders Low/Medium/High priority options and custom Other purpose input (50-
   expect(html).not.toContain('<option value="Urgent">');
   expect(html).toContain("Custom rush request");
   expect(html).toContain("19/50");
+});
+
+it("renders remodeled full-page CreatePRForm with all PR fields and Requisition summary card", () => {
+  const html = renderToStaticMarkup(
+    <CreatePRForm
+      initialSupplies={[
+        {
+          itemId: 1,
+          itemCode: "SPL-2026-0001",
+          itemName: "Purple yam (ube)",
+          uomName: "kg",
+          currentStock: 12,
+          purchaseUomId: 1,
+        },
+      ]}
+      initialData={{
+        prId: 7,
+        prNumber: "PR-2026-0018",
+        department: "Inventory",
+        requestedBy: "Vince Neil Madeja",
+        requestDate: "2026-11-23",
+        requiredDate: "2026-11-30",
+        status: "Draft",
+        requestType: "Stock Replenishment",
+        purpose: "Stock Replenishment",
+        priority: "High",
+        notes: "Restock note",
+        items: [
+          {
+            prItemId: 0,
+            itemId: 1,
+            itemCode: "SPL-2026-0001",
+            itemName: "Purple yam (ube)",
+            uomName: "kg",
+            actualInventory: 12,
+            requestedQuantity: 50,
+          },
+        ],
+      }}
+    />
+  );
+
+  expect(html).toContain("Purchase requisitions");
+  expect(html).toContain("New purchase requisition");
+  expect(html).toContain("Requisition details");
+  expect(html).toContain("Requested items");
+  expect(html).toContain("Requisition summary");
+  expect(html).toContain("PR-2026-0018");
+  expect(html).toContain("Purple yam (ube)");
+  expect(html).toContain("SPL-2026-0001");
+  expect(html).toContain("Save as Draft");
+  expect(html).toContain("Submit for Approval");
+  expect(html).toContain("1 item");
 });

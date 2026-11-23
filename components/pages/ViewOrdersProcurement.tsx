@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { PRTab } from "@/components/orders-procurement/pr/PRTab";
+import { CreatePRForm } from "@/components/orders-procurement/pr/CreatePRForm";
 import { POTab } from "@/components/orders-procurement/po/POTab";
 import { CreatePOModal } from "@/components/orders-procurement/po/CreatePOModal";
 import { DeliveryTab } from "@/components/orders-procurement/delivery/DeliveryTab";
@@ -15,6 +16,28 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
   const [notice, setNotice] = useState("");
   const [mainTab, setMainTab] = useState<"pr" | "po" | "delivery">("pr");
 
+  // Full-page Purchase Requisition form state (create / edit / prefill)
+  const [prFormState, setPrFormState] = useState<{
+    isEdit: boolean;
+    initialData?: PurchaseRequisition;
+  } | null>(null);
+
+  // Check for prefilled PR data from Inventory "Order Now" or Production Shortfall
+  useEffect(() => {
+    const rawPrefill = sessionStorage.getItem("prefill_pr");
+    if (rawPrefill) {
+      try {
+        const parsed = JSON.parse(rawPrefill);
+        sessionStorage.removeItem("prefill_pr");
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setMainTab("pr");
+        setPrFormState({ isEdit: false, initialData: parsed as PurchaseRequisition });
+      } catch (e) {
+        console.error("Failed to parse prefill_pr:", e);
+      }
+    }
+  }, []);
+
   // Cross-tab PO creation — triggered from PR details "Create PO" button
   const [createPOFromPR, setCreatePOFromPR] = useState<number | undefined>(undefined);
   const [showCreatePO, setShowCreatePO] = useState(false);
@@ -24,6 +47,25 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
     setShowCreatePO(true);
     setMainTab("po");
   };
+
+  if (prFormState) {
+    return (
+      <div className="page-container px-4 sm:px-8 w-full min-h-full animate-page-in">
+        <CreatePRForm
+          key={prFormState.initialData?.prId ?? "new"}
+          embedded
+          isEdit={prFormState.isEdit}
+          initialData={prFormState.initialData}
+          onClose={() => setPrFormState(null)}
+          onSuccess={() => {
+            setPrFormState(null);
+            setNotice("Purchase requisition saved successfully.");
+            router.refresh();
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
@@ -76,7 +118,14 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
       </div>
 
       {/* MAIN TAB 1: PRODUCT REQUISITION */}
-      {mainTab === "pr" && <PRTab initialRequisitions={data.requisitions} onCreatePo={handleCreatePoFromPR} />}
+      {mainTab === "pr" && (
+        <PRTab
+          initialRequisitions={data.requisitions}
+          onCreatePo={handleCreatePoFromPR}
+          onCreateNew={() => setPrFormState({ isEdit: false })}
+          onEditPr={(pr) => setPrFormState({ isEdit: true, initialData: pr })}
+        />
+      )}
 
       {/* MAIN TAB 2: PRODUCT ORDER (new PO approval workflow) */}
       {mainTab === "po" && <POTab initialOrders={data.orders} />}

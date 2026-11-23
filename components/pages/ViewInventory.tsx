@@ -341,6 +341,12 @@ export default function ViewInventory({
       ],
     };
 
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("prefill_pr", JSON.stringify(initialPR));
+      router.push("/orders-procurement");
+      return;
+    }
+
     setSelectedPRData(initialPR as PurchaseRequisition);
     setIsCreatePROpen(true);
   };

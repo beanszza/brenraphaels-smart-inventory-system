@@ -1,19 +1,18 @@
 "use client";
 
 import { listRequisitions, createRequisition, updateRequisition } from "@/app/actions/orders/requisitions";
-
 import { requisitionSupplies } from "@/app/actions/orders/screens";
 import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Trash2, Calendar } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import { PurchaseRequisition, PRItem } from "../types";
 import { useStaff } from "@/context/StaffContext";
 import { normalizePrPriority } from "@/lib/orders/requisition-lifecycle";
@@ -33,15 +32,6 @@ export const PR_PURPOSE_CHOICES = [
   "Other",
 ] as const;
 
-export interface CreatePRModalProps {
-  open: boolean;
-  onClose: () => void;
-  onSuccess?: () => void;
-  initialSupplies?: SupplyOption[];
-  initialData?: PurchaseRequisition;
-  isEdit?: boolean;
-}
-
 export interface SupplyOption {
   itemId: number;
   itemCode: string;
@@ -51,14 +41,66 @@ export interface SupplyOption {
   purchaseUomId: number;
 }
 
-export function CreatePRModal({
-  open,
-  onClose,
-  onSuccess,
+export interface CreatePRFormProps {
+  initialSupplies?: SupplyOption[];
+  initialData?: PurchaseRequisition;
+  isEdit?: boolean;
+  onClose?: () => void;
+  onSuccess?: () => void;
+  /** When true, omits outer page-container padding (e.g. when embedded inside ViewOrdersProcurement). */
+  embedded?: boolean;
+}
+
+export interface CreatePRModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
+  initialSupplies?: SupplyOption[];
+  initialData?: PurchaseRequisition;
+  isEdit?: boolean;
+}
+
+function formatSummaryDate(raw?: string | null): string {
+  if (!raw) return "Not set";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function resolveInitialPurpose(raw?: string | null) {
+  const val = (raw ?? "").trim();
+  if (!val) return { choice: PR_PURPOSE_CHOICES[0] as string, custom: "" };
+  if ((PR_PURPOSE_CHOICES as readonly string[]).includes(val) && val !== "Other") {
+    return { choice: val, custom: "" };
+  }
+  return { choice: "Other", custom: val === "Other" ? "" : val.slice(0, PURPOSE_OTHER_MAX) };
+}
+
+interface PRFormBodyProps {
+  active: boolean;
+  initialSupplies?: SupplyOption[];
+  initialData?: PurchaseRequisition;
+  isEdit?: boolean;
+  onCancel: () => void;
+  onSuccess?: () => void;
+  variant: "page" | "modal";
+  embedded?: boolean;
+}
+
+function PRFormBody({
+  active,
   initialSupplies,
   initialData,
   isEdit = false,
-}: CreatePRModalProps) {
+  onCancel,
+  onSuccess,
+  variant,
+  embedded = false,
+}: PRFormBodyProps) {
   const router = useRouter();
   const staff = useStaff();
 
@@ -97,24 +139,17 @@ export function CreatePRModal({
   const [requestedBy, setRequestedBy] = useState(
     initialData?.requestedBy && initialData.requestedBy !== "Unauthenticated"
       ? initialData.requestedBy
-      : ""
+      : defaultAccountName || "Inventory Manager"
   );
 
-  const resolveInitialPurpose = (raw?: string | null) => {
-    const val = (raw ?? "").trim();
-    if (!val) return { choice: PR_PURPOSE_CHOICES[0] as string, custom: "" };
-    if ((PR_PURPOSE_CHOICES as readonly string[]).includes(val) && val !== "Other") {
-      return { choice: val, custom: "" };
-    }
-    return { choice: "Other", custom: val === "Other" ? "" : val.slice(0, PURPOSE_OTHER_MAX) };
-  };
-
   const initialPurpose = resolveInitialPurpose(initialData?.purpose || initialData?.requestType);
-  const [department, setDepartment] = useState(initialData?.department || "");
+  const [department, setDepartment] = useState(initialData?.department || detectedDepartment);
   const [purposeChoice, setPurposeChoice] = useState<string>(initialPurpose.choice);
   const [customPurpose, setCustomPurpose] = useState<string>(initialPurpose.custom);
   const [customPurposeWarning, setCustomPurposeWarning] = useState("");
-  const [priority, setPriority] = useState(initialData?.priority ? normalizePrPriority(initialData.priority) : "Low");
+  const [priority, setPriority] = useState(
+    initialData?.priority ? normalizePrPriority(initialData.priority) : "Low"
+  );
   const [requiredDate, setRequiredDate] = useState(
     initialData?.requiredDate
       ? new Date(initialData.requiredDate).toISOString().split("T")[0]
@@ -122,7 +157,7 @@ export function CreatePRModal({
   );
   const [statusText, setStatusText] = useState(initialData?.status || "Draft");
 
-  // Items table (starts completely empty when creating new)
+  // Items table
   const [items, setItems] = useState<PRItem[]>(
     initialData?.items?.map((it) => ({
       ...it,
@@ -132,92 +167,89 @@ export function CreatePRModal({
 
   // Notes
   const [notes, setNotes] = useState(initialData?.notes || "");
-  const [itemSearch, setItemSearch] = useState("");
 
-  // Validation & Modal State
+  // Validation & Confirmation State
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isReviewing, setIsReviewing] = useState(false);
-  const [reviewAction, setReviewAction] = useState<"draft" | "submit">("submit");
+  const [pendingAction, setPendingAction] = useState<"draft" | "submit">("submit");
   const [submitting, setSubmitting] = useState(false);
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
 
-  // Reset or populate on open
+  // Reset or populate when active / initialData changes
   useEffect(() => {
-    if (open) {
-      if (initialData) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        if (initialData.prNumber) setPrNumber(initialData.prNumber);
-        if (initialData.requestDate) {
-          setRequestDate(
-            new Date(initialData.requestDate).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })
-          );
-        }
-        setRequestedBy(
-          initialData.requestedBy && initialData.requestedBy !== "Unauthenticated"
-            ? initialData.requestedBy
-            : defaultAccountName || ""
-        );
-        setDepartment(initialData.department || "");
-        const nextPurpose = resolveInitialPurpose(initialData.purpose || initialData.requestType);
-        setPurposeChoice(nextPurpose.choice);
-        setCustomPurpose(nextPurpose.custom);
-        setCustomPurposeWarning("");
-        setPriority(initialData.priority ? normalizePrPriority(initialData.priority) : "Low");
-        setRequiredDate(
-          initialData.requiredDate
-            ? new Date(initialData.requiredDate).toISOString().split("T")[0]
-            : ""
-        );
-        setStatusText(initialData.status || "Draft");
-        setNotes(initialData.notes || "");
-        setItems(
-          initialData.items?.map((it) => ({
-            ...it,
-            requestedQuantity: it.requestedQuantity || 1,
-          })) || []
-        );
-        setErrors({});
-      } else {
-        // Default purpose and priority to match the first dropdown options
+    if (!active) return;
+    if (initialData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (initialData.prNumber) setPrNumber(initialData.prNumber);
+      if (initialData.requestDate) {
         setRequestDate(
-          new Date().toLocaleDateString("en-US", {
+          new Date(initialData.requestDate).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
           })
         );
-        setRequestedBy(defaultAccountName || "Inventory Manager");
-        setDepartment(detectedDepartment);
-        setPurposeChoice(PR_PURPOSE_CHOICES[0]);
-        setCustomPurpose("");
-        setCustomPurposeWarning("");
-        setPriority("Low");
-        setRequiredDate("");
-        setStatusText("Draft");
-        setNotes("");
-        setItems([]);
-        setErrors({});
       }
+      setRequestedBy(
+        initialData.requestedBy && initialData.requestedBy !== "Unauthenticated"
+          ? initialData.requestedBy
+          : defaultAccountName || "Inventory Manager"
+      );
+      setDepartment(initialData.department || detectedDepartment);
+      const nextPurpose = resolveInitialPurpose(initialData.purpose || initialData.requestType);
+      setPurposeChoice(nextPurpose.choice);
+      setCustomPurpose(nextPurpose.custom);
+      setCustomPurposeWarning("");
+      setPriority(initialData.priority ? normalizePrPriority(initialData.priority) : "Low");
+      setRequiredDate(
+        initialData.requiredDate
+          ? new Date(initialData.requiredDate).toISOString().split("T")[0]
+          : ""
+      );
+      setStatusText(initialData.status || "Draft");
+      setNotes(initialData.notes || "");
+      setItems(
+        initialData.items?.map((it) => ({
+          ...it,
+          requestedQuantity: it.requestedQuantity || 1,
+        })) || []
+      );
+      setErrors({});
+    } else {
+      setRequestDate(
+        new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      );
+      setRequestedBy(defaultAccountName || "Inventory Manager");
+      setDepartment(detectedDepartment);
+      setPurposeChoice(PR_PURPOSE_CHOICES[0]);
+      setCustomPurpose("");
+      setCustomPurposeWarning("");
+      setPriority("Low");
+      setRequiredDate("");
+      setStatusText("Draft");
+      setNotes("");
+      setItems([]);
+      setErrors({});
     }
-  }, [open, initialData, defaultAccountName, detectedDepartment]);
+  }, [active, initialData, defaultAccountName, detectedDepartment]);
 
-  // Fetch supplies and next PR number
+  // Fetch supplies and next PR number preview
   useEffect(() => {
-    if (!open || initialSupplies) return;
+    if (!active || initialSupplies) return;
 
     const fetchSuppliesAndNumber = async () => {
       try {
         setLoadingSupplies(true);
         const [itemsRes, prRes] = await Promise.all([
-          actionResponse(requisitionSupplies()), actionResponse(listRequisitions()),
+          actionResponse(requisitionSupplies()),
+          actionResponse(listRequisitions()),
         ]);
         setSuppliesList(itemsRes.data.data);
 
-        // Preview PR number if creating new
         if (!initialData?.prNumber) {
           if (prRes.data?.success) {
             const list: { prNumber?: string }[] = prRes.data.data || [];
@@ -236,21 +268,24 @@ export function CreatePRModal({
             setPrNumber(`PR-${year}-${nextSeq}`);
           }
         }
-      } catch (err) {
-        setErrors(prev => ({ ...prev, submit: "Supplies could not be loaded. Close and reopen the form to retry." }));
+      } catch {
+        setErrors((prev) => ({
+          ...prev,
+          submit: "Supplies could not be loaded. Reload the page to retry.",
+        }));
       } finally {
         setLoadingSupplies(false);
       }
     };
 
     fetchSuppliesAndNumber();
-  }, [open, initialData, initialSupplies]);
+  }, [active, initialData, initialSupplies]);
 
   // Add Item (prevents duplicates)
   const handleAddItem = () => {
     if (uniqueSupplies.length === 0) return;
     const unused = uniqueSupplies.find((s) => !items.some((it) => it.itemId === s.itemId));
-    if (!unused) return; // All supplies already added
+    if (!unused) return;
     setItems((prev) => [
       ...prev,
       {
@@ -318,7 +353,10 @@ export function CreatePRModal({
     if (!requestedBy.trim()) newErrors.requestedBy = "Requester name is required.";
     if (!department.trim()) newErrors.department = "Department is required.";
     if (!resolvedPurpose) {
-      newErrors.purpose = purposeChoice === "Other" ? "Please specify a purpose (max 50 characters)." : "Purpose is required.";
+      newErrors.purpose =
+        purposeChoice === "Other"
+          ? "Please specify a purpose (max 50 characters)."
+          : "Purpose is required.";
     } else if (purposeChoice === "Other" && resolvedPurpose.length > PURPOSE_OTHER_MAX) {
       newErrors.purpose = `Purpose cannot exceed ${PURPOSE_OTHER_MAX} characters.`;
     }
@@ -362,7 +400,7 @@ export function CreatePRModal({
     return items.every((it) => it.itemId > 0 && it.requestedQuantity > 0);
   }, [requestedBy, department, resolvedPurpose, purposeChoice, priority, requiredDate, items]);
 
-  // Execution
+  // Save / Submit execution (unchanged backend actions)
   const executeSave = async (submitForApproval: boolean) => {
     try {
       setSubmitting(true);
@@ -383,9 +421,10 @@ export function CreatePRModal({
         items: items.map((it) => ({
           itemId: it.itemId,
           requestedQuantity: it.requestedQuantity,
-          purchaseUomId: it.purchaseUomId || 1, // Fallback if missing
+          purchaseUomId: it.purchaseUomId || 1,
           estimatedUnitPrice: it.estimatedUnitPrice || 0,
-          suggestedSupplierId: (it as { suggestedSupplierId?: number | null }).suggestedSupplierId || null,
+          suggestedSupplierId:
+            (it as { suggestedSupplierId?: number | null }).suggestedSupplierId || null,
         })),
       };
 
@@ -406,279 +445,219 @@ export function CreatePRModal({
       const e = err as { response?: { data?: { message?: string } }; message?: string };
       setErrors((prev) => ({
         ...prev,
-        submit: e?.response?.data?.message || e?.message || "An error occurred while saving the requisition.",
+        submit:
+          e?.response?.data?.message ||
+          e?.message ||
+          "An error occurred while saving the requisition.",
       }));
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleRequestAction = (action: "draft" | "submit") => {
+    if (!validateForm()) return;
+    setPendingAction(action);
+    setConfirmSaveOpen(true);
+  };
+
+  const handleRequestCancel = () => {
+    if (variant === "modal") {
+      onCancel();
+      return;
+    }
+    setConfirmDiscardOpen(true);
+  };
+
+  const containerClasses =
+    variant === "page"
+      ? embedded
+        ? "flex flex-col min-h-[calc(100vh-110px)] space-y-5 animate-page-in"
+        : "page-container px-4 sm:px-8 w-full flex flex-col min-h-[calc(100vh-80px)] space-y-5 animate-page-in"
+      : "space-y-4";
+
   return (
     <>
-      <ModalWrapper
-        open={open}
-        title={isReviewing ? "Review Purchase Requisition" : (isEdit ? "Edit Purchase Requisition" : "Create Purchase Requisition")}
-        onClose={() => {
-          setIsReviewing(false);
-          onClose();
-        }}
-        size="max-w-[640px]"
-      >
-        {isReviewing ? (
-          /* Review Step */
-          <div className="space-y-4">
-            <div className="p-3.5 rounded-card bg-surface-muted border border-divider type-caption text-text-muted">
-              Please review the details below before {reviewAction === "submit" ? "submitting for approval" : "saving as draft"}.
-            </div>
+      <div className={containerClasses}>
+        {/* Top Back Link & Page Title (Page Mode) */}
+        {variant === "page" && (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={handleRequestCancel}
+              className="inline-flex items-center gap-1 type-body text-ink-muted hover:text-ink transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Purchase requisitions</span>
+            </button>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider type-caption">
-              <div>
-                <span className="text-text-muted block type-caption mb-1">Department</span>
-                <span className="font-semibold text-text-primary">{department}</span>
-              </div>
-              <div>
-                <span className="text-text-muted block type-caption mb-1">Requested By</span>
-                <span className="font-semibold text-text-primary">{requestedBy}</span>
-              </div>
-              <div>
-                <span className="text-text-muted block type-caption mb-1">Purpose</span>
-                <span className="font-semibold text-text-primary">{resolvedPurpose}</span>
-              </div>
-              <div>
-                <span className="text-text-muted block type-caption mb-1">Priority</span>
-                <span className="font-semibold text-text-primary">{priority}</span>
-              </div>
-              <div>
-                <span className="text-text-muted block type-caption mb-1">Required Date</span>
-                <span className="font-semibold text-text-primary">{requiredDate}</span>
-              </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="type-page-title text-ink">
+                {isEdit ? "Edit purchase requisition" : "New purchase requisition"}
+              </h1>
+              {isEdit && <StatusBadge status={statusText} />}
             </div>
-
-            {notes && (
-              <div className="p-4 rounded-card bg-surface-muted border border-divider type-caption">
-                <span className="text-text-muted block type-caption mb-1">Notes</span>
-                <span className="font-medium text-text-primary leading-relaxed">{notes}</span>
-              </div>
-            )}
-
-            <div className="border border-divider rounded-card overflow-x-auto bg-surface shadow-card">
-              <table className="w-full">
-                <thead className="bg-surface-muted border-b border-divider text-text-muted uppercase table-head-row type-table-header">
-                  <tr>
-                    <th className="table-th px-4 py-2.5 text-left font-semibold">ITEM NAME</th>
-                    <th className="table-th px-4 py-2.5 text-left font-semibold">Unit of Measure</th>
-                    <th className="table-th px-4 py-2.5 text-right font-semibold">QUANTITY</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-divider">
-                  {items.map((item, idx) => {
-                    const sup = uniqueSupplies.find((s) => s.itemId === item.itemId);
-                    return (
-                      <tr key={idx} className="table-row hover:bg-hover transition-colors">
-                        <td className="table-td px-4 py-2.5 font-medium text-text-primary">
-                          {item.itemName || sup?.itemName}
-                        </td>
-                        <td className="table-td px-4 py-2.5 text-text-muted">
-                          {item.uomName || sup?.uomName || "Unit"}
-                        </td>
-                        <td className="table-td px-4 py-2.5 text-right font-semibold text-text-primary">
-                          {item.requestedQuantity}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Review Footer Buttons */}
-            <div className="flex justify-end gap-3 pt-5 border-t border-divider mt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsReviewing(false)}
-                disabled={submitting}
-                className="rounded-control px-5 py-2.5 h-auto type-label-button cursor-pointer border-divider bg-surface hover:bg-hover text-text-primary"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Edit
-              </Button>
-              <Button
-                type="button"
-                disabled={submitting}
-                onClick={() => setConfirmSaveOpen(true)}
-                className="rounded-control px-6 py-2.5 h-auto type-label-button shadow-sm bg-button-primary text-button-primary-foreground hover:bg-button-primary-hover cursor-pointer disabled:opacity-50"
-              >
-                {submitting ? "Submitting..." : `Confirm & ${reviewAction === "submit" ? "Submit" : "Save"}`}
-              </Button>
-            </div>
+            <p className="type-body text-ink-muted">
+              Request raw materials, ingredients, or tools to replenish warehouse stock.
+            </p>
           </div>
-        ) : (
-          /* Main Form Step */
-          <div className="space-y-4">
-            {errors.submit && (
-              <div role="alert" className="rounded-control border border-status-red/30 bg-status-red/10 p-3 type-caption text-status-red flex items-center justify-between animate-in fade-in-50">
-                <span role="alert" className="font-medium">{errors.submit}</span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setErrors((prev) => {
-                      const c = { ...prev };
-                      delete c.submit;
-                      return c;
-                    })
-                  }
-                  className="font-semibold underline ml-2 shrink-0 cursor-pointer"
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
-            {/* Top Form Fields: Clean, modern 3-column responsive grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider">
-              {/* PR Number */}
-              <div>
-                <label className="mb-1.5 block type-label font-semibold text-text-primary">
-                  Purchase Requisition Number
-                </label>
-                <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted select-all">
-                  {prNumber || "PR-XXXX-XXXX"}
+        )}
+
+        {/* Submit / Load Error Alert */}
+        {errors.submit && (
+          <div
+            role="alert"
+            className="rounded-control border border-status-red-border bg-status-red-bg p-3 type-caption text-status-red flex items-center justify-between animate-in fade-in-50"
+          >
+            <span role="alert" className="font-medium">
+              {errors.submit}
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                setErrors((prev) => {
+                  const c = { ...prev };
+                  delete c.submit;
+                  return c;
+                })
+              }
+              className="font-semibold underline ml-2 shrink-0 cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* Main 2-Column Layout (Matching Figma Form · New purchase requisition) */}
+        <div
+          className={
+            variant === "page"
+              ? "grid grid-cols-1 lg:grid-cols-12 gap-5 items-start flex-1"
+              : "space-y-4"
+          }
+        >
+          {/* Left Column: Requisition Details, Requested Items, Notes */}
+          <div className={variant === "page" ? "lg:col-span-8 space-y-5" : "space-y-4"}>
+            {/* Card 1: Requisition details */}
+            <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+              <h2 className="type-card-title text-ink">Requisition details</h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Purchase Requisition Number */}
+                <div>
+                  <label className="mb-1.5 block type-label text-ink">
+                    Purchase Requisition Number
+                  </label>
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle type-body text-ink-secondary select-all">
+                    {prNumber || "PR-XXXX-XXXX"}
+                  </div>
                 </div>
-              </div>
 
-              {/* Request Date */}
-              <div>
-                <label className="mb-1.5 block type-label font-semibold text-text-primary">
-                  Request Date
-                </label>
-                <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted">
-                  {requestDate}
+                {/* Request Date */}
+                <div>
+                  <label className="mb-1.5 block type-label text-ink">Request Date</label>
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle type-body text-ink-secondary">
+                    {requestDate}
+                  </div>
                 </div>
-              </div>
 
-              {/* Required Date */}
-              <div>
-                <label className={`mb-1.5 block type-label font-semibold ${errors.requiredDate ? "text-status-red" : "text-text-primary"}`}>
-                  Required Date <span className="text-status-red">*</span>
-                </label>
-                <div className="relative">
-                  <Input
-                    type="date"
-                    min={todayDate}
-                    max={maxFutureDate}
-                    value={requiredDate}
-                    onChange={(e) => {
-                      const nextVal = e.target.value;
-                      setRequiredDate(nextVal);
-                      const errMsg = nextVal ? getFutureDateError(nextVal, "Required date", { allowToday: false }) : "";
-                      setErrors((prev) => {
-                        const c = { ...prev };
-                        if (errMsg) c.requiredDate = errMsg;
-                        else delete c.requiredDate;
-                        return c;
-                      });
-                    }}
-                    className={`w-full h-10 rounded-control border ${
-                      errors.requiredDate ? "!border-status-red focus-visible:!ring-status-red" : "border-divider"
-                    } bg-surface px-3.5 py-2 pr-10 type-body text-text-primary transition-colors cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
-                  />
-                  <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
-                </div>
-                {errors.requiredDate && (
-                  <p className="mt-1 type-caption font-medium text-status-red animate-in fade-in-50">{errors.requiredDate}</p>
-                )}
-              </div>
-
-              {/* Requested By (Read-Only from Account) */}
-              <div>
-                <label className="mb-1.5 block type-label font-semibold text-text-primary">
-                  Requested By
-                </label>
-                <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted select-none">
-                  {requestedBy || "Loading..."}
-                </div>
-              </div>
-
-              {/* Department (Read-Only from Account) */}
-              <div>
-                <label className="mb-1.5 block type-label font-semibold text-text-primary">
-                  Department
-                </label>
-                <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted select-none">
-                  {department || "Inventory"}
-                </div>
-              </div>
-
-              {/* Priority (Fixed in Row 2 so Purpose "Other" never pushes it down) */}
-              <div>
-                <label className="mb-1.5 block type-label font-semibold text-text-primary">
-                  Priority <span className="text-status-red">*</span>
-                </label>
-                <select
-                  value={priority}
-                  onChange={(e) => setPriority(normalizePrPriority(e.target.value))}
-                  className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 py-2 type-body text-text-primary transition-colors cursor-pointer focus:ring-1 focus:ring-accent"
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                </select>
-              </div>
-
-              {/* Purpose (Dropdown Selection + Other Textbox in dedicated bottom row) */}
-              <div className="sm:col-span-2 lg:col-span-3">
-                <div className={`grid grid-cols-1 gap-3.5 ${purposeChoice === "Other" ? "sm:grid-cols-2" : ""}`}>
-                  <div>
-                    <label className={`mb-1.5 block type-label font-semibold ${errors.purpose ? "text-status-red" : "text-text-primary"}`}>
-                      Purpose <span className="text-status-red">*</span>
-                    </label>
-                    <select
-                      value={purposeChoice}
+                {/* Required Date */}
+                <div>
+                  <label
+                    className={`mb-1.5 block type-label ${
+                      errors.requiredDate ? "text-destructive" : "text-ink"
+                    }`}
+                  >
+                    Required Date <span className="text-destructive">*</span>
+                  </label>
+                  <div className="relative">
+                    <Input
+                      type="date"
+                      min={todayDate}
+                      max={maxFutureDate}
+                      value={requiredDate}
                       onChange={(e) => {
-                        const next = e.target.value;
-                        setPurposeChoice(next);
-                        if (next !== "Other") {
-                          setCustomPurpose("");
-                          setCustomPurposeWarning("");
-                        }
+                        const nextVal = e.target.value;
+                        setRequiredDate(nextVal);
+                        const errMsg = nextVal
+                          ? getFutureDateError(nextVal, "Required date", { allowToday: false })
+                          : "";
                         setErrors((prev) => {
                           const c = { ...prev };
-                          delete c.purpose;
+                          if (errMsg) c.requiredDate = errMsg;
+                          else delete c.requiredDate;
                           return c;
                         });
                       }}
-                      className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 py-2 type-body text-text-primary transition-colors cursor-pointer focus:ring-1 focus:ring-accent"
-                    >
-                      {PR_PURPOSE_CHOICES.map((choice) => (
-                        <option key={choice} value={choice}>
-                          {choice}
-                        </option>
-                      ))}
-                    </select>
+                      className={`w-full h-10 rounded-control border ${
+                        errors.requiredDate
+                          ? "!border-destructive focus-visible:!ring-destructive"
+                          : "border-input"
+                      } bg-surface px-3.5 py-2 pr-10 type-body text-ink shadow-none transition-colors cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                    />
+                    <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted pointer-events-none" />
                   </div>
-                  {purposeChoice === "Other" && (
+                  {errors.requiredDate && (
+                    <p className="mt-1 type-caption font-medium text-destructive animate-in fade-in-50">
+                      {errors.requiredDate}
+                    </p>
+                  )}
+                </div>
+
+                {/* Requested By (Read-Only from Account) */}
+                <div>
+                  <label className="mb-1.5 block type-label text-ink">Requested By</label>
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle type-body text-ink-secondary select-none">
+                    {requestedBy || "Loading..."}
+                  </div>
+                </div>
+
+                {/* Department (Read-Only from Account) */}
+                <div>
+                  <label className="mb-1.5 block type-label text-ink">Department</label>
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle type-body text-ink-secondary select-none">
+                    {department || "Inventory"}
+                  </div>
+                </div>
+
+                {/* Priority */}
+                <div>
+                  <label className="mb-1.5 block type-label text-ink">
+                    Priority <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    value={priority}
+                    onChange={(e) => setPriority(normalizePrPriority(e.target.value))}
+                    className="w-full h-10 rounded-control border border-input bg-surface px-3.5 py-2 type-body text-ink transition-colors cursor-pointer focus:ring-1 focus:ring-ring focus:outline-none"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                  </select>
+                </div>
+
+                {/* Purpose (+ Specify Reason when "Other") */}
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <div
+                    className={`grid grid-cols-1 gap-4 ${
+                      purposeChoice === "Other" ? "sm:grid-cols-2" : ""
+                    }`}
+                  >
                     <div>
-                      <div className="mb-1.5 flex items-center justify-between">
-                        <label className={`block type-label font-semibold ${errors.purpose ? "text-status-red" : "text-text-primary"}`}>
-                          Specify Reason <span className="text-status-red">*</span>
-                        </label>
-                        <span className={`type-caption ${customPurpose.length >= PURPOSE_OTHER_MAX ? "font-medium text-status-amber" : "text-text-muted"}`}>
-                          {customPurpose.length}/{PURPOSE_OTHER_MAX}
-                        </span>
-                      </div>
-                      <Input
-                        type="text"
-                        value={customPurpose}
+                      <label
+                        className={`mb-1.5 block type-label ${
+                          errors.purpose ? "text-destructive" : "text-ink"
+                        }`}
+                      >
+                        Purpose <span className="text-destructive">*</span>
+                      </label>
+                      <select
+                        value={purposeChoice}
                         onChange={(e) => {
-                          const raw = e.target.value;
-                          const exceeded = raw.length > PURPOSE_OTHER_MAX;
-                          const val = raw.slice(0, PURPOSE_OTHER_MAX);
-                          setCustomPurpose(val);
-                          if (exceeded) {
-                            setCustomPurposeWarning(`Purpose is limited to ${PURPOSE_OTHER_MAX} characters.`);
-                          } else if (val.length === PURPOSE_OTHER_MAX) {
-                            setCustomPurposeWarning(`Maximum limit of ${PURPOSE_OTHER_MAX} characters reached.`);
-                          } else {
+                          const next = e.target.value;
+                          setPurposeChoice(next);
+                          if (next !== "Other") {
+                            setCustomPurpose("");
                             setCustomPurposeWarning("");
                           }
                           setErrors((prev) => {
@@ -687,81 +666,176 @@ export function CreatePRModal({
                             return c;
                           });
                         }}
-                        placeholder="Enter custom purpose (max 50 chars)..."
-                        aria-invalid={!!errors.purpose}
-                        className={`w-full h-10 rounded-control border ${
-                          errors.purpose ? "!border-status-red focus-visible:!ring-status-red" : "border-divider"
-                        } bg-surface px-3.5 py-2 type-body text-text-primary transition-colors`}
-                      />
-                      {errors.purpose ? (
-                        <p className="mt-1 type-caption font-medium text-status-red animate-in fade-in-50">{errors.purpose}</p>
-                      ) : customPurposeWarning ? (
-                        <p className="mt-1 type-caption font-medium text-status-amber animate-in fade-in-50">{customPurposeWarning}</p>
-                      ) : null}
+                        className="w-full h-10 rounded-control border border-input bg-surface px-3.5 py-2 type-body text-ink transition-colors cursor-pointer focus:ring-1 focus:ring-ring focus:outline-none"
+                      >
+                        {PR_PURPOSE_CHOICES.map((choice) => (
+                          <option key={choice} value={choice}>
+                            {choice}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  )}
+
+                    {purposeChoice === "Other" && (
+                      <div>
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <label
+                            className={`block type-label ${
+                              errors.purpose ? "text-destructive" : "text-ink"
+                            }`}
+                          >
+                            Specify Reason <span className="text-destructive">*</span>
+                          </label>
+                          <span
+                            className={`type-caption tabular-nums ${
+                              customPurpose.length >= PURPOSE_OTHER_MAX
+                                ? "font-medium text-status-amber"
+                                : "text-ink-muted"
+                            }`}
+                          >
+                            {customPurpose.length}/{PURPOSE_OTHER_MAX}
+                          </span>
+                        </div>
+                        <Input
+                          type="text"
+                          value={customPurpose}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const exceeded = raw.length > PURPOSE_OTHER_MAX;
+                            const val = raw.slice(0, PURPOSE_OTHER_MAX);
+                            setCustomPurpose(val);
+                            if (exceeded) {
+                              setCustomPurposeWarning(
+                                `Purpose is limited to ${PURPOSE_OTHER_MAX} characters.`
+                              );
+                            } else if (val.length === PURPOSE_OTHER_MAX) {
+                              setCustomPurposeWarning(
+                                `Maximum limit of ${PURPOSE_OTHER_MAX} characters reached.`
+                              );
+                            } else {
+                              setCustomPurposeWarning("");
+                            }
+                            setErrors((prev) => {
+                              const c = { ...prev };
+                              delete c.purpose;
+                              return c;
+                            });
+                          }}
+                          placeholder="Enter custom purpose (max 50 chars)..."
+                          aria-invalid={!!errors.purpose}
+                          className={`w-full h-10 rounded-control border ${
+                            errors.purpose
+                              ? "!border-destructive focus-visible:!ring-destructive"
+                              : "border-input"
+                          } bg-surface px-3.5 py-2 type-body text-ink shadow-none transition-colors`}
+                        />
+                        {errors.purpose ? (
+                          <p className="mt-1 type-caption font-medium text-destructive animate-in fade-in-50">
+                            {errors.purpose}
+                          </p>
+                        ) : customPurposeWarning ? (
+                          <p className="mt-1 type-caption font-medium text-status-amber animate-in fade-in-50">
+                            {customPurposeWarning}
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Requested Supplies & Ingredients Section */}
-            <div className="space-y-2 pt-2">
-              <div className="flex items-center justify-between">
-                <label className="type-label font-semibold text-text-primary">
-                  Requested Items <span className="text-status-red">*</span>
-                </label>
-                <span className="type-caption text-text-muted">
+            {/* Card 2: Requested items */}
+            <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <h2 className="type-card-title text-ink">
+                    Requested items <span className="text-destructive">*</span>
+                  </h2>
+                  <p className="mt-0.5 type-caption text-ink-muted">
+                    Select raw materials, ingredients, or supplies and enter the quantity to order.
+                  </p>
+                </div>
+                <span className="type-caption font-medium text-ink-muted tabular-nums">
                   {items.length} item(s) selected
                 </span>
               </div>
 
               {errors.items && (
-                <p className="type-caption text-status-red">{errors.items}</p>
+                <p className="type-caption font-medium text-destructive">{errors.items}</p>
               )}
 
-              <div className="overflow-x-auto rounded-card border border-divider bg-surface shadow-card">
-                <table className="w-full">
-                  <thead className="border-b border-divider bg-surface-muted uppercase text-text-muted table-head-row type-table-header">
-                    <tr>
-                      <th className="table-th px-3 py-2.5 text-left font-semibold">SUPPLY NAME</th>
-                      <th className="table-th px-3 py-2.5 text-left font-semibold">SUPPLY NO.</th>
-                      <th className="table-th px-3 py-2.5 text-left font-semibold">Unit of Measure</th>
-                      <th className="table-th px-3 py-2.5 text-right font-semibold">ACTUAL INVENTORY</th>
-                      <th className="table-th px-3 py-2.5 text-right font-semibold">QUANTITY (TO ORDER)</th>
-                      <th className="table-th px-3 py-2.5 text-center font-semibold w-10"></th>
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full min-w-[640px] border-collapse">
+                  <thead>
+                    <tr className="border-b border-divider">
+                      <th className="pb-2.5 pt-1 pr-3 type-table-header text-ink-muted text-left whitespace-nowrap">
+                        Supply Name
+                      </th>
+                      <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted text-left whitespace-nowrap">
+                        Supply No.
+                      </th>
+                      <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted text-left whitespace-nowrap">
+                        Unit of Measure
+                      </th>
+                      <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted text-right whitespace-nowrap">
+                        Actual Inventory
+                      </th>
+                      <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted text-right whitespace-nowrap">
+                        Quantity (To Order)
+                      </th>
+                      <th className="pb-2.5 pt-1 pl-2 w-9" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-divider">
                     {items.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="table-td px-4 py-8 text-center text-text-muted type-body">
-                          No items added yet. Click &quot;+ Add Item&quot; below to add raw materials or ingredients.
+                        <td
+                          colSpan={6}
+                          className="py-8 text-center type-body text-ink-muted"
+                        >
+                          No items added yet. Click &quot;+ Add item&quot; below to add raw materials or supplies.
                         </td>
                       </tr>
                     ) : (
                       items.map((item, idx) => {
-                        const selectedSupply = uniqueSupplies.find((s) => s.itemId === item.itemId);
-                        const supplyNo = item.itemCode || selectedSupply?.itemCode || (item.itemId ? `SPL-${item.itemId}` : "—");
-                        const actualInv = selectedSupply ? selectedSupply.currentStock : (item.actualInventory || 0);
+                        const selectedSupply = uniqueSupplies.find(
+                          (s) => s.itemId === item.itemId
+                        );
+                        const supplyNo =
+                          item.itemCode ||
+                          selectedSupply?.itemCode ||
+                          (item.itemId ? `SPL-${item.itemId}` : "—");
+                        const actualInv = selectedSupply
+                          ? selectedSupply.currentStock
+                          : item.actualInventory || 0;
+                        const qtyError = errors[`item_qty_${idx}`];
 
                         return (
-                          <tr key={idx} className="table-row hover:bg-hover transition-colors">
+                          <tr key={idx} className="group">
                             {/* Supply Name (Dropdown) */}
-                            <td className="table-td px-3 py-2 min-w-[200px]">
+                            <td className="py-2.5 pr-3 min-w-[220px]">
                               <select
+                                aria-label={`Supply item row ${idx + 1}`}
                                 value={item.itemId || ""}
-                                onChange={(e) => handleSelectSupply(idx, Number(e.target.value))}
-                                className="w-full rounded-control border border-divider bg-surface px-2.5 py-1.5 type-body text-text-primary focus:ring-1 focus:ring-accent"
+                                onChange={(e) =>
+                                  handleSelectSupply(idx, Number(e.target.value))
+                                }
+                                className="h-9 w-full rounded-control border border-input bg-surface px-3 type-body text-ink focus:ring-1 focus:ring-ring focus:outline-none"
                               >
                                 {uniqueSupplies.map((sup) => {
-                                  const isAlreadySelected = items.some((other, otherIdx) => otherIdx !== idx && other.itemId === sup.itemId);
+                                  const isAlreadySelected = items.some(
+                                    (other, otherIdx) =>
+                                      otherIdx !== idx && other.itemId === sup.itemId
+                                  );
                                   return (
                                     <option
                                       key={sup.itemId}
                                       value={sup.itemId}
                                       disabled={isAlreadySelected}
                                     >
-                                      {sup.itemName} {isAlreadySelected ? "(already added)" : ""}
+                                      {sup.itemName}{" "}
+                                      {isAlreadySelected ? "(already added)" : ""}
                                     </option>
                                   );
                                 })}
@@ -769,41 +843,52 @@ export function CreatePRModal({
                             </td>
 
                             {/* Supply No. */}
-                            <td className="table-td px-3 py-2 text-text-muted whitespace-nowrap">
+                            <td className="py-2.5 px-3 type-body text-ink-secondary whitespace-nowrap tabular-nums">
                               {supplyNo}
                             </td>
 
                             {/* Unit of Measure */}
-                            <td className="table-td px-3 py-2 text-text-muted whitespace-nowrap">
+                            <td className="py-2.5 px-3 type-body text-ink-secondary whitespace-nowrap">
                               {item.uomName || selectedSupply?.uomName || "Unit"}
                             </td>
 
                             {/* Actual Inventory */}
-                            <td className="table-td px-3 py-2 text-right text-text-muted whitespace-nowrap">
+                            <td className="py-2.5 px-3 type-body text-ink-secondary text-right whitespace-nowrap tabular-nums">
                               {Number(actualInv).toLocaleString()}
                             </td>
 
                             {/* Quantity (To Order) */}
-                            <td className="table-td px-3 py-2 text-right w-36">
+                            <td className="py-2.5 px-3 text-right w-36">
                               <Input
+                                aria-label={`Quantity row ${idx + 1}`}
                                 type="number"
                                 min={1}
                                 step="any"
                                 value={item.requestedQuantity || ""}
-                                onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                                className="h-8 w-28 text-right type-body font-semibold border-divider bg-surface text-text-primary ml-auto rounded-control"
+                                onChange={(e) =>
+                                  handleQuantityChange(idx, e.target.value)
+                                }
+                                className={`h-9 w-28 text-right type-body font-semibold ${
+                                  qtyError ? "border-destructive" : "border-input"
+                                } bg-surface text-ink ml-auto rounded-control shadow-none focus:ring-1 focus:ring-ring tabular-nums`}
                               />
+                              {qtyError && (
+                                <p className="mt-1 type-caption text-destructive text-right">
+                                  {qtyError}
+                                </p>
+                              )}
                             </td>
 
                             {/* Remove Row */}
-                            <td className="table-td px-2 py-2 text-center">
+                            <td className="py-2.5 pl-2 text-right">
                               <button
                                 type="button"
                                 onClick={() => handleRemoveItem(idx)}
-                                className="p-1 rounded-control text-text-muted hover:text-status-red hover:bg-hover transition-colors cursor-pointer"
+                                className="p-1.5 rounded-control text-ink-muted hover:text-destructive hover:bg-subtle transition-colors cursor-pointer"
                                 title="Remove"
+                                aria-label="Remove item"
                               >
-                                <Trash2 size={15} />
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </td>
                           </tr>
@@ -814,118 +899,203 @@ export function CreatePRModal({
                 </table>
               </div>
 
-              <button
-                type="button"
-                onClick={handleAddItem}
-                disabled={loadingSupplies || uniqueSupplies.length === 0 || items.length >= uniqueSupplies.length}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 type-caption font-semibold text-text-primary bg-surface border border-divider rounded-control hover:bg-hover transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Plus size={14} /> Add Item
-              </button>
-            </div>
-
-            {/* Bottom Section: Notes (Optional) on bottom left */}
-            <div className="flex flex-col sm:flex-row justify-start pt-3 border-t border-divider">
-              <div className="w-full sm:w-1/2 lg:w-5/12 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="type-label font-semibold text-text-primary">
-                    Notes <span className="text-text-muted font-normal">(Optional)</span>
-                  </label>
-                  <span className="type-caption text-text-muted">{notes.length}/300</span>
-                </div>
-                <Textarea
-                  rows={3}
-                  maxLength={300}
-                  placeholder="Enter additional notes (optional)..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full rounded-control border border-divider bg-surface px-3 py-2 type-body text-text-primary focus:ring-1 focus:ring-accent resize-none"
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={handleAddItem}
+                  disabled={
+                    loadingSupplies ||
+                    uniqueSupplies.length === 0 ||
+                    items.length >= uniqueSupplies.length
+                  }
+                  className="inline-flex items-center gap-1.5 type-label-button text-primary hover:text-primary-hover transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                </Textarea>
+                  <Plus className="w-4 h-4" />
+                  <span>Add item</span>
+                </button>
               </div>
             </div>
 
-            {/* Modal Footer: Matching Resources & Suppliers Modals */}
-            <div className="flex flex-wrap justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
-              <ModalCloseButton
-                type="button"
-                variant="outline"
-                fallbackOnClose={onClose}
-                className="rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button text-text-primary hover:bg-hover transition-colors cursor-pointer"
-              >
-                Cancel
-              </ModalCloseButton>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={submitting || !isFormValid}
-                onClick={() => {
-                  if (validateForm()) {
-                    setReviewAction("draft");
-                    setIsReviewing(true);
-                  }
-                }}
-                className="rounded-control border border-divider bg-surface px-5 py-2.5 type-label-button text-text-primary hover:bg-hover transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-              >
-                Save as Draft
-              </Button>
-              <Button
-                type="button"
-                disabled={submitting || !isFormValid}
-                onClick={() => {
-                  if (validateForm()) {
-                    setReviewAction("submit");
-                    setIsReviewing(true);
-                  }
-                }}
-                className="rounded-control bg-button-primary text-button-primary-foreground px-5 py-2.5 type-label-button hover:bg-button-primary-hover transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-              >
-                Submit for Approval
-              </Button>
+            {/* Card 3: Notes (Optional) */}
+            <div className="rounded-card border border-border bg-surface p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="type-card-title text-ink">
+                  Notes <span className="type-caption font-normal text-ink-muted">(Optional)</span>
+                </h2>
+                <span className="type-caption text-ink-muted tabular-nums">
+                  {notes.length}/300
+                </span>
+              </div>
+              <Textarea
+                rows={3}
+                maxLength={300}
+                placeholder="Enter additional notes (optional)..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full rounded-control border border-input bg-surface px-3.5 py-2.5 type-body text-ink shadow-none focus:ring-1 focus:ring-ring resize-none"
+              />
             </div>
           </div>
-        )}
-      </ModalWrapper>
 
+          {/* Right Column: Requisition Summary Card (Page Mode) */}
+          {variant === "page" && (
+            <div className="lg:col-span-4 space-y-5 lg:sticky lg:top-6">
+              <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+                <h2 className="type-card-title text-ink">Requisition summary</h2>
+
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-3 type-body">
+                    <span className="text-ink-muted">Requisition No.</span>
+                    <span className="font-medium text-ink tabular-nums">
+                      {prNumber || "Assigned on save"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 type-body">
+                    <span className="text-ink-muted">Status</span>
+                    <span className="font-medium text-ink">{statusText}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 type-body">
+                    <span className="text-ink-muted">Request Date</span>
+                    <span className="font-medium text-ink">{requestDate}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 type-body">
+                    <span className="text-ink-muted">Required Date</span>
+                    <span className="font-medium text-ink">
+                      {formatSummaryDate(requiredDate)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 type-body">
+                    <span className="text-ink-muted">Requested By</span>
+                    <span className="font-medium text-ink truncate max-w-[190px]">
+                      {requestedBy || "—"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 type-body">
+                    <span className="text-ink-muted">Department</span>
+                    <span className="font-medium text-ink">{department || "Inventory"}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 type-body">
+                    <span className="text-ink-muted">Priority</span>
+                    <span className="font-medium text-ink">{priority}</span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3 type-body">
+                    <span className="text-ink-muted shrink-0">Purpose</span>
+                    <span className="font-medium text-ink text-right break-words">
+                      {resolvedPurpose || "—"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
+                  <span className="type-label text-ink">Total items requested</span>
+                  <span className="type-card-title text-primary tabular-nums">
+                    {items.length} {items.length === 1 ? "item" : "items"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Action Bar */}
+        <div
+          className={
+            variant === "page"
+              ? "sticky bottom-0 z-10 -mx-4 sm:-mx-8 mt-6 border-t border-divider bg-surface px-4 sm:px-8 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+              : "flex flex-wrap justify-end gap-3 pt-5 pb-3 border-t border-divider mt-4"
+          }
+        >
+          {variant === "page" && (
+            <p className="type-caption text-ink-muted">
+              Submitted requisitions are sent to Admin for approval before a Purchase Order can be created.
+            </p>
+          )}
+          <div className="flex flex-wrap items-center gap-2.5 ml-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleRequestCancel}
+              disabled={submitting}
+              className="rounded-control border border-border bg-surface px-5 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={submitting || !isFormValid}
+              onClick={() => handleRequestAction("draft")}
+              className="rounded-control border border-border bg-surface px-5 h-9 type-label-button text-ink hover:bg-subtle shadow-none disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            >
+              Save as Draft
+            </Button>
+            <Button
+              type="button"
+              disabled={submitting || !isFormValid}
+              onClick={() => handleRequestAction("submit")}
+              className="rounded-control bg-primary text-on-brand px-5 h-9 type-label-button hover:bg-primary-hover shadow-none disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {submitting ? "Submitting..." : "Submit for Approval"}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Discard Confirmation Modal */}
+      <ActionConfirmModal
+        open={confirmDiscardOpen}
+        title="Discard Unsaved Changes?"
+        subtitle={prNumber && prNumber !== "Assigned on save" ? `Requisition: ${prNumber}` : undefined}
+        description="Are you sure you want to leave this page? Any unsaved changes to this purchase requisition will be lost."
+        confirmLabel="Discard & Leave"
+        cancelLabel="Stay"
+        onCancel={() => setConfirmDiscardOpen(false)}
+        onConfirm={() => {
+          setConfirmDiscardOpen(false);
+          onCancel();
+        }}
+      />
+
+      {/* Save / Submit Confirmation Modal */}
       <ActionConfirmModal
         open={confirmSaveOpen}
-        title={reviewAction === "submit" ? "Submit Purchase Requisition" : "Save Purchase Requisition Draft"}
+        title={
+          pendingAction === "submit"
+            ? "Submit Purchase Requisition"
+            : "Save Purchase Requisition Draft"
+        }
         subtitle={`Requisition No: ${prNumber || "PR-XXXX-XXXX"} • ${items.length} item(s)`}
         description={
-          reviewAction === "submit"
+          pendingAction === "submit"
             ? `Are you sure you want to submit ${prNumber || "this purchase requisition"} for approval?`
             : `Are you sure you want to save ${prNumber || "this purchase requisition"} as a draft?`
         }
-        confirmLabel={reviewAction === "submit" ? "Confirm & Submit" : "Confirm & Save"}
+        confirmLabel={pendingAction === "submit" ? "Confirm & Submit" : "Confirm & Save"}
         submitting={submitting}
         onCancel={() => setConfirmSaveOpen(false)}
         onConfirm={async () => {
           setConfirmSaveOpen(false);
-          await executeSave(reviewAction === "submit");
+          await executeSave(pendingAction === "submit");
         }}
       />
     </>
   );
 }
 
-export interface CreatePRFormProps {
-  initialSupplies?: SupplyOption[];
-  initialData?: PurchaseRequisition;
-  isEdit?: boolean;
-  onClose?: () => void;
-  onSuccess?: () => void;
-}
-
+/**
+ * Full-page Purchase Requisition form (matching Figma Form · New purchase requisition).
+ */
 export function CreatePRForm({
   initialSupplies,
   initialData,
   isEdit = false,
   onClose,
   onSuccess,
+  embedded = false,
 }: CreatePRFormProps) {
   const router = useRouter();
 
-  const handleClose = () => {
+  const handleCancel = () => {
     if (onClose) onClose();
     else router.push("/orders-procurement");
   };
@@ -936,13 +1106,46 @@ export function CreatePRForm({
   };
 
   return (
-    <CreatePRModal
-      open={true}
-      onClose={handleClose}
-      onSuccess={handleSuccess}
+    <PRFormBody
+      active={true}
       initialSupplies={initialSupplies}
       initialData={initialData}
       isEdit={isEdit}
+      onCancel={handleCancel}
+      onSuccess={handleSuccess}
+      variant="page"
+      embedded={embedded}
     />
+  );
+}
+
+/**
+ * Backward-compatible modal wrapper for tests or modal triggers.
+ */
+export function CreatePRModal({
+  open,
+  onClose,
+  onSuccess,
+  initialSupplies,
+  initialData,
+  isEdit = false,
+}: CreatePRModalProps) {
+  return (
+    <ModalWrapper
+      open={open}
+      title={isEdit ? "Edit Purchase Requisition" : "Create Purchase Requisition"}
+      onClose={onClose}
+      size="max-w-[780px]"
+    >
+      <PRFormBody
+        active={open}
+        initialSupplies={initialSupplies}
+        initialData={initialData}
+        isEdit={isEdit}
+        onCancel={onClose}
+        onSuccess={onSuccess}
+        variant="modal"
+      />
+    </ModalWrapper>
   );
 }

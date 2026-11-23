@@ -25,7 +25,7 @@ import { PurchaseRequisition, PRStatus } from "../types";
 import { PRTable } from "./PRTable";
 import { PRDetailsModal } from "./PRDetailsModal";
 import { PRActionModal, PRActionType } from "./PRActionModal";
-import { CreatePRModal } from "./CreatePRForm";
+import { CreatePRForm } from "./CreatePRForm";
 import Pagination from "@/components/Pagination";
 import { useStaff } from "@/context/StaffContext";
 import { isAdminStaff } from "@/lib/auth-roles";
@@ -42,7 +42,17 @@ const STATUS_TABS: (PRStatus | "All")[] = [
   "Closed",
 ];
 
-export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions: PurchaseRequisition[]; onCreatePo?: (prId: number) => void }) {
+export function PRTab({
+  initialRequisitions,
+  onCreatePo,
+  onCreateNew,
+  onEditPr,
+}: {
+  initialRequisitions: PurchaseRequisition[];
+  onCreatePo?: (prId: number) => void;
+  onCreateNew?: () => void;
+  onEditPr?: (pr: PurchaseRequisition) => void;
+}) {
   const router = useRouter();
   const staff = useStaff();
   const isAdmin = isAdminStaff(staff);
@@ -195,7 +205,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
           {!isAdmin && (
             <Button
               type="button"
-              onClick={() => setOpenCreateModal(true)}
+              onClick={() => (onCreateNew ? onCreateNew() : setOpenCreateModal(true))}
               className="flex items-center justify-center gap-1.5 rounded-control bg-primary px-3.5 py-2 type-label-button text-on-brand hover:bg-primary-hover transition-colors h-9 shadow-none cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Create Purchase Requisition
@@ -320,7 +330,7 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
             isAdmin={isAdmin}
             isRequestsTab={activeTab === "Requests"}
             onView={(pr) => setSelectedPR(pr)}
-            onEdit={(pr) => setEditingPR(pr)}
+            onEdit={(pr) => (onEditPr ? onEditPr(pr) : setEditingPR(pr))}
             onCancel={(pr) => setActionModal({ pr, type: "cancel" })}
             onApprove={(pr) => setActionModal({ pr, type: "approve" })}
             onReject={(pr) => setActionModal({ pr, type: "reject" })}
@@ -380,10 +390,10 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
         />
       )}
 
-      {/* Create PR Modal */}
-      {openCreateModal && (
-        <CreatePRModal
-          open={openCreateModal}
+      {/* Standalone fallback if PRTab is rendered outside ViewOrdersProcurement */}
+      {!onCreateNew && openCreateModal && (
+        <CreatePRForm
+          embedded
           initialData={prefillPR || undefined}
           isEdit={false}
           onClose={() => {
@@ -399,10 +409,9 @@ export function PRTab({ initialRequisitions, onCreatePo }: { initialRequisitions
         />
       )}
 
-      {/* Edit PR Modal */}
-      {editingPR && (
-        <CreatePRModal
-          open={!!editingPR}
+      {!onEditPr && editingPR && (
+        <CreatePRForm
+          embedded
           initialData={editingPR}
           isEdit={true}
           onClose={() => setEditingPR(null)}
