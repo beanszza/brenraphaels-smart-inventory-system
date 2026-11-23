@@ -133,3 +133,26 @@ export async function notificationLiveUrl(userId: string): Promise<string> {
   address.searchParams.set("ticket", ticket);
   return address.toString();
 }
+
+/** A single-use pass for the Staff stock channel CREOMS also listens on; the browser never holds the Caller key. */
+export async function staffStockLiveUrl(userId: string): Promise<string> {
+  const { base, key } = gateway();
+  const response = await fetch(`${base}/live-tickets`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, channel: "staff-stock" }),
+    redirect: "error",
+    cache: "no-store",
+    signal: AbortSignal.timeout(READ_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`Staff stock live ticket refused: ${response.status}`);
+  const body: unknown = await response.json();
+  if (!body || typeof body !== "object" || !("ticket" in body) || typeof body.ticket !== "string" || !body.ticket) {
+    throw new Error("Invalid staff stock live ticket");
+  }
+  const url = new URL(`${base}/notifications/stock/staff/live`);
+  if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error("Invalid gateway URL");
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  url.searchParams.set("ticket", body.ticket);
+  return url.toString();
+}
