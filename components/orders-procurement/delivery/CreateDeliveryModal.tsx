@@ -8,10 +8,19 @@ import { procurement } from "@/lib/orders/client";
 import { uploadDeliveryAttachmentDirect } from "@/app/actions/orders/delivery-files";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { AlertCircle, ArrowLeft, Calendar, Upload, Trash2, FileText } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Calendar,
+  Check,
+  ChevronDown,
+  FileText,
+  Hash,
+  Search,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { SearchInput } from "@/components/shared/SearchInput";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
@@ -494,336 +503,520 @@ export function CreateDeliveryModal({
     }
   };
 
+  const validScheduledCount = items.filter(
+    (i) => i.availableToSchedule > 0 && i.orderQuantity > 0 && i.orderQuantity <= i.availableToSchedule
+  ).length;
+
+  const footerHelperText = !selectedPoId
+    ? "Step 1 of 2 · Select a purchase order to continue."
+    : !attachmentFile
+      ? `Step 2 of 2 · ${validScheduledCount} item${validScheduledCount === 1 ? "" : "s"} ready · Upload proof of receipt to continue.`
+      : `Step 2 of 2 · ${validScheduledCount} item${validScheduledCount === 1 ? "" : "s"} ready · Proof attached.`;
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   return (
     <>
       <ModalWrapper
         open={open}
-        title="Create Delivery Order"
+        title="Create delivery order"
+        subtitle={
+          selectedPoId
+            ? "Review purchase order items, specify shipment quantities, and attach proof of receipt."
+            : "Assign a delivery number and select an eligible purchase order to schedule."
+        }
         onClose={onClose}
-        size="max-w-[640px]"
+        maxWidthPx={selectedPoId ? 720 : 580}
+        bodyClassName="min-h-0 w-full min-w-0 flex-1 flex flex-col overflow-hidden p-0"
       >
-        <form onSubmit={(e) => { e.preventDefault(); setConfirmModal(true); }} className="space-y-4">
-          {error && (
-            <div className="p-3.5 rounded-card border border-status-red bg-status-red-bg text-status-red type-caption flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <div className="flex-1 font-medium">{error}</div>
-            </div>
-          )}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setConfirmModal(true);
+          }}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+              {/* Scrollable Body — Clean white surface matching Figma Page 3 */}
+              <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-surface px-6 py-5 space-y-4">
+                {error && (
+                  <div className="p-3.5 rounded-inner border border-notice-danger-border bg-notice-danger-bg text-notice-danger-text type-caption flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-destructive" />
+                    <div className="flex-1 font-medium">{error}</div>
+                  </div>
+                )}
 
-          {/* Top Form Fields Card: Clean responsive grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider">
-            {/* Delivery Number */}
-            <div>
-              <label className="mb-1.5 block type-label font-semibold text-text-primary">
-                Delivery Number
-              </label>
-              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted select-all">
-                {deliveryNumber}
-              </div>
-            </div>
+                {/* Phase 1 Top 2-Column Row: Delivery Number & Purchase Order */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Delivery Number */}
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-1.5 type-label-field text-ink-strong">
+                      <span>Delivery number</span>
+                      <span className="type-caption text-ink-disabled">(auto-assigned)</span>
+                    </label>
+                    <div className="flex items-center gap-2 h-9.5 px-3 rounded-control border border-input bg-page type-body font-medium text-ink select-all">
+                      <Hash className="w-3.5 h-3.5 text-ink-disabled shrink-0" />
+                      <span>{deliveryNumber}</span>
+                    </div>
+                  </div>
 
-            {/* Purchase Order Selector */}
-            <div>
-              <label className={`mb-1.5 block type-label font-semibold ${fieldErrors.poId ? "text-status-red" : "text-text-primary"}`}>
-                Purchase Order <span className="text-status-red">*</span>
-              </label>
-              {initialPo ? (
-                <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-primary">
-                  {initialPo.poNumber}
+                  {/* Purchase Order Selector */}
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="delivery-po-select"
+                      className={`flex items-center gap-1 type-label-field ${
+                        fieldErrors.poId ? "text-destructive" : "text-ink-strong"
+                      }`}
+                    >
+                      <span>Purchase order</span>
+                      <span className="text-destructive">*</span>
+                    </label>
+                    {initialPo ? (
+                      <div className="flex items-center h-9.5 px-3 rounded-control border border-input bg-page type-body font-medium text-ink">
+                        {initialPo.poNumber}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="relative">
+                          <select
+                            id="delivery-po-select"
+                            value={selectedPoId ?? ""}
+                            onChange={(e) =>
+                              handlePoSelectionChange(Number(e.target.value) || null)
+                            }
+                            disabled={loadingPOs}
+                            className={`w-full h-9.5 appearance-none rounded-control border ${
+                              fieldErrors.poId
+                                ? "border-destructive focus:ring-destructive"
+                                : "border-input focus:border-primary focus:ring-focus/30"
+                            } bg-surface pl-3 pr-8 type-body text-ink focus:outline-none focus:ring-2 transition-colors cursor-pointer disabled:opacity-60`}
+                          >
+                            <option value="">
+                              {loadingPOs ? "Loading purchase orders..." : "Select purchase order..."}
+                            </option>
+                            {orderedPOs.map((p) => (
+                              <option key={p.poId} value={p.poId}>
+                                {p.poNumber}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="w-4 h-4 text-ink-muted pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" />
+                        </div>
+                        {fieldErrors.poId && (
+                          <p className="type-caption font-medium text-destructive animate-in fade-in-50">
+                            {fieldErrors.poId}
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <>
-                  <select
-                    value={selectedPoId ?? ""}
-                    onChange={(e) =>
-                      handlePoSelectionChange(Number(e.target.value) || null)
-                    }
-                    disabled={loadingPOs}
-                    className={`w-full h-10 rounded-control border ${
-                      fieldErrors.poId ? "border-status-red focus:ring-status-red" : "border-divider"
-                    } bg-surface px-3 py-2 type-body text-text-primary focus:outline-none focus:ring-1 focus:ring-primary`}
-                  >
-                    <option value="">Select Purchase Order...</option>
-                    {orderedPOs.map((p) => (
-                      <option key={p.poId} value={p.poId}>
-                        {p.poNumber}
-                      </option>
-                    ))}
-                  </select>
-                  {fieldErrors.poId && (
-                    <p className="mt-1 type-caption font-medium text-status-red animate-in fade-in-50">
-                      {fieldErrors.poId}
+
+                {/* Phase 1 Empty State vs Phase 2 PO Details */}
+                {!selectedPoId ? (
+                  <div className="rounded-inner border border-dashed border-input bg-page py-9 px-6 text-center flex flex-col items-center justify-center gap-2">
+                    <div className="size-10 rounded-pill bg-status-purple-bg text-status-purple-fg flex items-center justify-center type-label-field font-semibold">
+                      PO
+                    </div>
+                    <p className="type-body-strong text-ink">
+                      No purchase order selected yet
                     </p>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* If NO PO is selected, show instructional prompt */}
-          {!selectedPoId ? (
-            <div className="py-12 text-center type-body text-text-muted border border-dashed border-divider rounded-card bg-surface">
-              Please select a Purchase Order above to view items and configure delivery order.
-            </div>
-          ) : (
-            <>
-              {/* PO Details Summary Card */}
-              {currentPO && (
-                <div className="rounded-card border border-divider bg-surface-muted p-3.5 type-caption grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <span className="text-text-muted block type-caption">Supplier:</span>
-                    <span className="font-semibold text-text-primary type-body">{currentPO.supplierName || "—"}</span>
-                  </div>
-                  <div>
-                    <span className="text-text-muted block type-caption">Purchase Order Status / Date:</span>
-                    <span className="font-medium text-text-primary type-body">
-                      {currentPO.status} {currentPO.orderDate ? `• ${new Date(currentPO.orderDate).toLocaleDateString()}` : ""}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-text-muted block type-caption">Total Purchase Order Amount:</span>
-                    <span className="font-semibold text-text-primary type-body">
-                      {currentPO.totalAmount ? `₱${Number(currentPO.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Table 1: PO Items Reference (Read-Only Reference) */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block type-label font-semibold text-text-primary">
-                    Purchase Order Items Reference
-                  </label>
-                  <span className="type-caption text-text-muted">Read-only Purchase Order reference</span>
-                </div>
-
-                {loadingItems ? (
-                  <div className="py-6 text-center type-body text-text-muted rounded-card border border-divider bg-surface">
-                    <Skeleton className="h-16 w-full" />
-                  </div>
-                ) : items.length === 0 ? (
-                  <div className="py-6 text-center type-body text-text-muted rounded-card border border-divider bg-surface">
-                    No items found for this purchase order.
+                    <p className="type-body-secondary text-ink-muted max-w-sm">
+                      Choose an eligible purchase order above to view items and schedule delivery.
+                    </p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-card border border-divider">
-                    <table className="w-full type-table-cell text-left">
-                      <thead>
-                        <tr className="border-b border-divider bg-surface-muted text-text-muted font-semibold type-table-header table-head-row">
-                          <th className="table-th px-3 py-2.5 w-10 text-center">#</th>
-                          <th className="table-th px-3 py-2.5">Supply</th>
-                          <th className="table-th px-3 py-2.5">Supply No</th>
-                          <th className="table-th px-3 py-2.5">Unit of Measure</th>
-                          <th className="table-th px-3 py-2.5 text-right">Purchase Order Quantity</th>
-                          <th className="table-th px-3 py-2.5 text-right">Previously Received</th>
-                          <th className="table-th px-3 py-2.5 text-right">Already Scheduled</th>
-                          <th className="table-th px-3 py-2.5 text-right font-semibold text-text-primary">Available to Schedule</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-divider">
-                        {items.map((item, idx) => (
-                          <tr key={`ref-${item.poItemId || idx}`} className="hover:bg-surface-hover table-row">
-                            <td className="table-td px-3 py-2.5 text-center text-text-muted">{idx + 1}</td>
-                            <td className="table-td px-3 py-2.5 font-medium text-text-primary">{item.itemName}</td>
-                            <td className="table-td px-3 py-2.5 type-caption font-semibold text-text-muted">
-                              {item.itemCode || `SPL-${String(item.itemId || idx + 1).padStart(4, "0")}`}
-                            </td>
-                            <td className="table-td px-3 py-2.5 text-text-muted">{item.purchaseUomName}</td>
-                            <td className="table-td px-3 py-2.5 text-right text-text-muted">{item.poOrderedQuantity}</td>
-                            <td className="table-td px-3 py-2.5 text-right text-text-muted">{item.poTotalReceivedQuantity}</td>
-                            <td className="table-td px-3 py-2.5 text-right text-text-muted">{item.alreadyScheduledQuantity}</td>
-                            <td className="table-td px-3 py-2.5 text-right font-semibold text-text-primary">
-                              {item.availableToSchedule}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-
-              {/* Table 2: Actual Order Quantity */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <label className="block type-label font-semibold text-text-primary">
-                      Order Quantities <span className="text-status-red">*</span>
-                    </label>
-                    <span className="type-caption text-text-muted">
-                      Specify quantity being ordered for this shipment
-                    </span>
-                  </div>
-                  <SearchInput
-                    containerClassName="w-60 flex-none h-9"
-                    placeholder="Search items..."
-                    value={itemSearch}
-                    onChange={(e) => setItemSearch(e.target.value)}
-                    className="type-body"
-                  />
-                </div>
-
-                {items.length > 0 && (
-                  <div className="overflow-x-auto rounded-card border border-divider">
-                    <table className="w-full type-table-cell text-left">
-                      <thead>
-                        <tr className="border-b border-divider bg-surface-muted text-text-muted font-semibold type-table-header table-head-row">
-                          <th className="table-th px-3.5 py-2.5">Ingredient / Supply</th>
-                          <th className="table-th px-3.5 py-2.5">Supply No</th>
-                          <th className="table-th px-3.5 py-2.5">Unit of Measure</th>
-                          <th className="table-th px-3.5 py-2.5 text-right">Purchase Order Quantity</th>
-                          <th className="table-th px-3.5 py-2.5 text-right font-medium">Left to Order</th>
-                          <th className="table-th px-3.5 py-2.5 text-right w-44 font-semibold text-text-primary">Quantity to Order</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-divider">
-                        {items
-                          .filter((item) =>
-                            !itemSearch ||
-                            item.itemName.toLowerCase().includes(itemSearch.toLowerCase()) ||
-                            item.itemCode.toLowerCase().includes(itemSearch.toLowerCase())
-                          )
-                          .map((item) => {
-                          const isExhausted = item.availableToSchedule <= 0;
-                          const err = validationErrors[item.poItemId];
-
-                          return (
-                            <tr
-                              key={`order-${item.poItemId}`}
-                              className={`hover:bg-surface-hover transition-colors table-row ${
-                                isExhausted ? "opacity-50 bg-surface-muted/20" : ""
-                              }`}
-                            >
-                              <td className="table-td px-3.5 py-2.5 font-medium text-text-primary">
-                                {item.itemName}
-                              </td>
-                              <td className="table-td px-3.5 py-2.5 type-caption font-semibold text-text-muted">
-                                {item.itemCode || `SPL-${String(item.itemId || 0).padStart(4, "0")}`}
-                              </td>
-                              <td className="table-td px-3.5 py-2.5 text-text-muted">
-                                {item.purchaseUomName}
-                              </td>
-                              <td className="table-td px-3.5 py-2.5 text-right text-text-muted">
-                                {item.poOrderedQuantity}
-                              </td>
-                              <td className="table-td px-3.5 py-2.5 text-right font-medium text-text-primary">
-                                {item.availableToSchedule}
-                              </td>
-                              <td className="table-td px-3.5 py-2.5 text-right">
-                                {isExhausted ? (
-                                  <span className="type-caption text-text-muted italic">
-                                    Fully Scheduled
-                                  </span>
-                                ) : (
-                                  <div className="space-y-1">
-                                    <div className="flex items-center justify-end gap-1.5">
-                                      <Input
-                                        type="number"
-                                        min="0.01"
-                                        max={item.availableToSchedule}
-                                        step="any"
-                                        value={item.orderQuantity === 0 ? "" : item.orderQuantity}
-                                        onChange={(e) =>
-                                          handleQuantityChange(item.poItemId, e.target.value)
-                                        }
-                                        className={`w-28 text-right type-body rounded-control h-8 px-2 bg-surface text-text-primary ${
-                                          err
-                                            ? "border-status-red focus-visible:ring-status-red"
-                                            : "border-divider"
-                                        }`}
-                                      />
-                                      <span className="type-caption text-text-muted w-8 text-left truncate">
-                                        {item.purchaseUomName}
-                                      </span>
-                                    </div>
-                                    {err && (
-                                      <p className="type-caption text-status-red text-right font-medium animate-in fade-in-50">
-                                        {err}
-                                      </p>
-                                    )}
-                                  </div>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-
-              {/* Payment Type & Planned Dispatch Date */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider">
-                <div>
-                  <label className="mb-1.5 block type-label font-semibold text-text-primary">
-                    Payment Type <span className="text-status-red">*</span>
-                  </label>
-                  <select
-                    value={paymentType}
-                    onChange={(e) => setPaymentType(e.target.value)}
-                    className="w-full h-10 rounded-control border border-divider bg-surface px-3 py-2 type-body text-text-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="Payable">Payable</option>
-                    <option value="Paid">Paid</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block type-label font-semibold text-text-primary">
-                    Planned Dispatch Date <span className="text-status-red">*</span>
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type="date"
-                      min={getTodayDateString()}
-                      max={getMaxFutureDateString()}
-                      value={plannedDispatchDate}
-                      onChange={(e) => setPlannedDispatchDate(e.target.value)}
-                      className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 py-2 pr-10 type-body text-text-primary cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                    />
-                    <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 4: Proof of Receipt / Attachment (Required + Photo Preview) */}
-              <div>
-                <label className="mb-1.5 block type-label font-semibold text-text-primary flex items-center justify-between">
-                  <span>
-                    Proof of Receipt / Attachment <span className="text-status-red">*</span>
-                  </span>
-                  {!attachmentFile && (
-                    <span className="type-caption text-status-red font-normal">
-                      Required to schedule delivery
-                    </span>
-                  )}
-                </label>
-                <div className="rounded-card border border-dashed border-divider bg-surface p-4 transition-colors">
-                  {attachmentFile ? (
-                    <div className="space-y-3">
-                      <div className="relative flex flex-col items-center justify-center p-3 bg-surface-muted rounded-control border border-divider">
-                        {attachmentPreviewUrl ? (
-                          <img
-                            src={attachmentPreviewUrl}
-                            alt="Proof of receipt"
-                            className="max-h-56 rounded-control object-contain border border-divider shadow-xs"
-                          />
-                        ) : (
-                          <div className="flex items-center gap-2.5 p-4 type-body font-medium text-text-primary">
-                            <FileText className="w-8 h-8 text-text-muted shrink-0" />
-                            <span className="truncate">{attachmentFileName || "Uploaded document"}</span>
+                  <div className="space-y-4">
+                    {/* PO Summary Strip */}
+                    {currentPO && (
+                      <div className="rounded-inner border border-topbar bg-page px-4 py-3 grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
+                        <div>
+                          <span className="block type-caption text-ink-muted">Supplier</span>
+                          <span className="block type-body-strong text-ink mt-0.5">
+                            {currentPO.supplierName || "—"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="block type-caption text-ink-muted">
+                            Status &amp; order date
+                          </span>
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-pill type-badge bg-status-purple-bg text-status-purple-fg">
+                              {currentPO.status}
+                            </span>
+                            {currentPO.orderDate && (
+                              <span className="type-caption text-ink-muted">
+                                {new Date(currentPO.orderDate).toLocaleDateString()}
+                              </span>
+                            )}
                           </div>
-                        )}
-                        <p className="mt-2 type-caption text-text-muted truncate max-w-xs text-center">
-                          {attachmentFileName}
-                        </p>
+                        </div>
+                        <div className="sm:text-right">
+                          <span className="block type-caption text-ink-muted">
+                            Total PO amount
+                          </span>
+                          <span className="block type-body-strong text-ink mt-0.5 tabular-nums">
+                            {currentPO.totalAmount
+                              ? `₱${Number(currentPO.totalAmount).toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                })}`
+                              : "—"}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex justify-end gap-2">
-                        <label className="cursor-pointer type-caption font-semibold px-3 py-1.5 rounded-control border border-divider bg-surface hover:bg-surface-hover text-text-primary transition-colors flex items-center gap-1.5">
-                          <Upload className="w-3.5 h-3.5" />
-                          Change File
+                    )}
+
+                    {/* Table 1: Purchase Order Items Reference (Read-Only) */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="type-label-field text-ink-strong">
+                          Purchase order items reference
+                        </label>
+                        <span className="type-caption text-ink-disabled">
+                          Read-only PO balance
+                        </span>
+                      </div>
+
+                      {loadingItems ? (
+                        <div className="p-4 rounded-inner border border-input bg-surface">
+                          <Skeleton className="h-16 w-full" />
+                        </div>
+                      ) : items.length === 0 ? (
+                        <div className="py-6 text-center type-body-secondary text-ink-muted rounded-inner border border-input bg-surface">
+                          No items found for this purchase order.
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto rounded-inner border border-input bg-surface">
+                          <table className="w-full type-table-cell text-left border-collapse">
+                            <thead>
+                              <tr className="border-b border-topbar bg-page text-ink-muted type-table-header">
+                                <th className="py-2.5 px-3 w-9 text-center font-medium">#</th>
+                                <th className="py-2.5 px-3 font-medium">Supply</th>
+                                <th className="py-2.5 px-3 font-medium">Supply no.</th>
+                                <th className="py-2.5 px-3 font-medium">UOM</th>
+                                <th className="py-2.5 px-3 text-right font-medium">Ordered</th>
+                                <th className="py-2.5 px-3 text-right font-medium">Received</th>
+                                <th className="py-2.5 px-3 text-right font-medium">Scheduled</th>
+                                <th className="py-2.5 px-3 text-right font-semibold text-ink-strong">
+                                  Available
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-divider">
+                              {items.map((item, idx) => (
+                                <tr
+                                  key={`ref-${item.poItemId || idx}`}
+                                  className="hover:bg-page transition-colors"
+                                >
+                                  <td className="py-2.5 px-3 text-center text-ink-muted">
+                                    {idx + 1}
+                                  </td>
+                                  <td className="py-2.5 px-3 font-medium text-ink">
+                                    {item.itemName}
+                                  </td>
+                                  <td className="py-2.5 px-3 type-caption text-ink-muted">
+                                    {item.itemCode ||
+                                      `SPL-${String(item.itemId || idx + 1).padStart(4, "0")}`}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-ink-muted">
+                                    {item.purchaseUomName}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right tabular-nums text-ink-muted">
+                                    {item.poOrderedQuantity}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right tabular-nums text-ink-muted">
+                                    {item.poTotalReceivedQuantity}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right tabular-nums text-ink-muted">
+                                    {item.alreadyScheduledQuantity}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-ink">
+                                    {item.availableToSchedule}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Table 2: Order Quantities */}
+                    <div className="space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <label className="flex items-center gap-1 type-label-field text-ink-strong">
+                            <span>Order quantities</span>
+                            <span className="text-destructive">*</span>
+                          </label>
+                          <span className="type-caption text-ink-muted">
+                            Specify quantity being scheduled for this shipment
+                          </span>
+                        </div>
+                        <div className="relative w-full sm:w-52">
+                          <Search className="w-3.5 h-3.5 text-ink-disabled pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            placeholder="Search items..."
+                            value={itemSearch}
+                            onChange={(e) => setItemSearch(e.target.value)}
+                            className="w-full h-8.5 rounded-control border border-input bg-surface pl-8 pr-3 type-body-secondary text-ink placeholder:text-ink-disabled focus:outline-none focus:border-primary focus:ring-2 focus:ring-focus/30 transition-colors"
+                          />
+                        </div>
+                      </div>
+
+                      {items.length > 0 && (
+                        <div className="overflow-x-auto rounded-inner border border-input bg-surface">
+                          <table className="w-full type-table-cell text-left border-collapse">
+                            <thead>
+                              <tr className="border-b border-topbar bg-page text-ink-muted type-table-header">
+                                <th className="py-2.5 px-3 font-medium">Ingredient / Supply</th>
+                                <th className="py-2.5 px-3 font-medium">Supply no.</th>
+                                <th className="py-2.5 px-3 text-right font-medium">PO qty</th>
+                                <th className="py-2.5 px-3 text-right font-medium">
+                                  Left to order
+                                </th>
+                                <th className="py-2.5 px-3 text-right w-40 font-semibold text-ink-strong">
+                                  Quantity to order
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-divider">
+                              {items
+                                .filter(
+                                  (item) =>
+                                    !itemSearch ||
+                                    item.itemName
+                                      .toLowerCase()
+                                      .includes(itemSearch.toLowerCase()) ||
+                                    item.itemCode
+                                      .toLowerCase()
+                                      .includes(itemSearch.toLowerCase())
+                                )
+                                .map((item) => {
+                                  const isExhausted = item.availableToSchedule <= 0;
+                                  const err = validationErrors[item.poItemId];
+
+                                  return (
+                                    <tr
+                                      key={`order-${item.poItemId}`}
+                                      className={`transition-colors ${
+                                        isExhausted
+                                          ? "opacity-55 bg-page"
+                                          : "hover:bg-page"
+                                      }`}
+                                    >
+                                      <td className="py-2.5 px-3 font-medium text-ink">
+                                        {item.itemName}
+                                      </td>
+                                      <td className="py-2.5 px-3 type-caption text-ink-muted">
+                                        {item.itemCode ||
+                                          `SPL-${String(item.itemId || 0).padStart(4, "0")}`}
+                                      </td>
+                                      <td className="py-2.5 px-3 text-right tabular-nums text-ink-muted">
+                                        {item.poOrderedQuantity}
+                                      </td>
+                                      <td className="py-2.5 px-3 text-right tabular-nums font-medium text-ink">
+                                        {item.availableToSchedule}
+                                      </td>
+                                      <td className="py-2.5 px-3 text-right">
+                                        {isExhausted ? (
+                                          <span className="type-caption text-ink-disabled">
+                                            Fully scheduled
+                                          </span>
+                                        ) : (
+                                          <div className="inline-flex flex-col items-end gap-1">
+                                            <div
+                                              className={`flex items-center justify-between gap-2 h-8.5 w-32 px-2.5 rounded-control border bg-surface transition-colors focus-within:ring-2 ${
+                                                err
+                                                  ? "border-destructive bg-notice-danger-bg focus-within:ring-destructive/25"
+                                                  : "border-input focus-within:border-primary focus-within:ring-focus/30"
+                                              }`}
+                                            >
+                                              <input
+                                                type="number"
+                                                min="0.01"
+                                                max={item.availableToSchedule}
+                                                step="any"
+                                                aria-label={`Quantity to order for ${item.itemName}`}
+                                                value={
+                                                  item.orderQuantity === 0
+                                                    ? ""
+                                                    : item.orderQuantity
+                                                }
+                                                onChange={(e) =>
+                                                  handleQuantityChange(
+                                                    item.poItemId,
+                                                    e.target.value
+                                                  )
+                                                }
+                                                className="w-full bg-transparent type-body-secondary text-ink tabular-nums focus:outline-none"
+                                              />
+                                              <span className="type-caption text-ink-disabled shrink-0 select-none">
+                                                {item.purchaseUomName}
+                                              </span>
+                                            </div>
+                                            {err && (
+                                              <p className="type-caption text-destructive text-right font-medium animate-in fade-in-50">
+                                                {err}
+                                              </p>
+                                            )}
+                                          </div>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Payment Type (Page 3 Pill Chips) & Planned Dispatch Date */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
+                      {/* Payment Type Pill Selector */}
+                      <div className="space-y-1.5">
+                        <label className="flex items-center gap-1 type-label-field text-ink-strong">
+                          <span>Payment type</span>
+                          <span className="text-destructive">*</span>
+                        </label>
+                        <div className="flex items-center gap-2 min-h-9.5" role="radiogroup" aria-label="Payment type">
+                          {(["Payable", "Paid"] as const).map((option) => {
+                            const selected = paymentType === option;
+                            return (
+                              <button
+                                key={option}
+                                type="button"
+                                role="radio"
+                                aria-checked={selected}
+                                onClick={() => setPaymentType(option)}
+                                className={`h-8 rounded-pill border type-label-button-sm inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                  selected
+                                    ? "bg-status-purple-bg border-focus text-status-purple-fg pl-2.5 pr-3"
+                                    : "bg-surface border-input text-ink hover:bg-page px-3"
+                                }`}
+                              >
+                                {selected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                                <span>{option}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Planned Dispatch Date */}
+                      <div className="space-y-1.5">
+                        <label
+                          htmlFor="planned-dispatch-date"
+                          className="flex items-center gap-1 type-label-field text-ink-strong"
+                        >
+                          <span>Planned Dispatch Date</span>
+                          <span className="text-destructive">*</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="planned-dispatch-date"
+                            type="date"
+                            min={getTodayDateString()}
+                            max={getMaxFutureDateString()}
+                            value={plannedDispatchDate}
+                            onChange={(e) => setPlannedDispatchDate(e.target.value)}
+                            className="w-full h-9.5 rounded-control border border-input bg-surface px-3 pr-9 type-body text-ink cursor-pointer focus:outline-none focus:border-primary focus:ring-2 focus:ring-focus/30 transition-colors [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                          />
+                          <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Proof of Receipt / Attachment */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="flex items-center gap-1 type-label-field text-ink-strong">
+                          <span>Proof of receipt / attachment</span>
+                          <span className="text-destructive">*</span>
+                        </label>
+                        {!attachmentFile ? (
+                          <span className="type-caption text-destructive">
+                            Required to schedule delivery
+                          </span>
+                        ) : (
+                          <span className="type-caption text-ink-disabled">
+                            JPG, PNG, or PDF up to 10 MB
+                          </span>
+                        )}
+                      </div>
+
+                      {attachmentFile ? (
+                        <div className="rounded-inner border border-input bg-page p-3 space-y-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="size-9 rounded-control bg-status-purple-bg text-status-purple-fg flex items-center justify-center shrink-0">
+                                <FileText className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="type-body-secondary font-medium text-ink truncate">
+                                  {attachmentFileName || "Uploaded document"}
+                                </p>
+                                <p className="type-caption text-ink-muted">
+                                  {formatFileSize(attachmentFile.size)} · Ready to upload
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <label className="cursor-pointer h-8 px-2.5 rounded-control border border-border bg-surface hover:bg-subtle type-caption font-medium text-ink transition-colors inline-flex items-center gap-1.5">
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>Change</span>
+                                <input
+                                  type="file"
+                                  accept="image/*,application/pdf"
+                                  onChange={handleFileUpload}
+                                  className="hidden"
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAttachmentFile(null);
+                                  setAttachmentFileName("");
+                                  if (attachmentPreviewUrl) {
+                                    URL.revokeObjectURL(attachmentPreviewUrl);
+                                  }
+                                  setAttachmentPreviewUrl("");
+                                }}
+                                className="h-8 px-2.5 rounded-control border border-notice-danger-border bg-surface text-destructive hover:bg-notice-danger-bg type-caption font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Remove</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {attachmentPreviewUrl && (
+                            <div className="flex justify-center rounded-control border border-topbar bg-surface p-2">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={attachmentPreviewUrl}
+                                alt="Proof of receipt"
+                                className="max-h-48 rounded-control object-contain"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center rounded-inner border border-dashed border-input bg-page py-5 px-4 text-center hover:border-primary hover:bg-tint-selected/40 transition-colors cursor-pointer">
+                          <div className="size-9 rounded-pill border border-input bg-surface flex items-center justify-center text-ink-muted mb-2">
+                            <Upload className="w-4 h-4" />
+                          </div>
+                          <span className="type-body-secondary font-medium text-ink">
+                            Click to upload receipt or proof photo
+                          </span>
+                          <span className="type-caption text-ink-muted mt-0.5">
+                            JPG, PNG, or PDF up to 10 MB
+                          </span>
                           <input
                             type="file"
                             accept="image/*,application/pdf"
@@ -831,63 +1024,44 @@ export function CreateDeliveryModal({
                             className="hidden"
                           />
                         </label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAttachmentFile(null);
-                            setAttachmentFileName("");
-                            if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
-                            setAttachmentPreviewUrl("");
-                          }}
-                          className="type-caption font-semibold px-3 py-1.5 rounded-control border border-status-red text-status-red hover:bg-status-red-bg transition-colors flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Remove
-                        </button>
-                      </div>
+                      )}
                     </div>
-                  ) : (
-                    <label className="flex flex-col items-center justify-center cursor-pointer py-4 hover:bg-surface-hover rounded-control transition-colors">
-                      <Upload className="w-6 h-6 text-text-muted mb-2" />
-                      <span className="type-body font-medium text-text-primary">
-                        Click to upload receipt or proof photo <span className="text-status-red">*</span>
-                      </span>
-                      <span className="type-caption text-text-muted mt-0.5">
-                        JPG, PNG, PDF up to 8MB
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer — Figma Page 3 Tinted Bar */}
+              <div className="flex shrink-0 items-center justify-between gap-3 border-t border-topbar bg-page px-6 py-3.5">
+                <span className="type-caption text-ink-muted">
+                  {footerHelperText}
+                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <ModalCloseButton
+                    type="button"
+                    variant="outline"
+                    disabled={submitting}
+                    fallbackOnClose={onClose}
+                    className="h-9.5 rounded-control border border-border bg-surface px-3.5 type-label-button-sm text-ink hover:bg-subtle transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    Close
+                  </ModalCloseButton>
+                  <Button
+                    type="submit"
+                    disabled={
+                      submitting ||
+                      !selectedPoId ||
+                      hasErrors ||
+                      !hasAnyOrderQty ||
+                      !attachmentFile ||
+                      !plannedDispatchDate
+                    }
+                    className="h-9.5 rounded-control bg-primary text-on-brand px-4 type-label-button-sm hover:bg-primary-hover transition-colors disabled:opacity-45 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {submitting ? "Scheduling..." : "Schedule order"}
+                  </Button>
                 </div>
               </div>
-            </>
-          )}
-
-          {/* Footer Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
-            <ModalCloseButton
-              type="button"
-              variant="outline"
-              disabled={submitting}
-              fallbackOnClose={onClose}
-              className="rounded-control border border-divider bg-surface px-5 py-2.5 h-auto type-label-button font-semibold text-text-primary hover:bg-surface-hover transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              Close
-            </ModalCloseButton>
-            <Button
-              type="submit"
-              disabled={submitting || !selectedPoId || hasErrors || !hasAnyOrderQty || !attachmentFile || !plannedDispatchDate}
-              className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 h-auto type-label-button font-semibold hover:bg-button-primary-hover transition-colors shadow-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-            >
-              {submitting ? "Scheduling..." : "Schedule Order"}
-            </Button>
-          </div>
-        </form>
+            </form>
       </ModalWrapper>
 
       {/* Discard Confirmation when changing selected PO */}
@@ -899,83 +1073,130 @@ export function CreateDeliveryModal({
         />
       )}
 
-      {/* Review Modal for Submission using Radix Dialog */}
-      <Dialog open={confirmModal} onOpenChange={(open) => { if (!open) setConfirmModal(false); }} confirmOnClose={false}>
-        <DialogContent className="sm:max-w-[640px] bg-surface border-divider p-6 shadow-modal rounded-card">
-          <DialogHeader>
-            <DialogTitle className="type-card-title font-semibold text-text-primary">Review Delivery Schedule</DialogTitle>
-            <DialogDescription className="type-body text-text-muted">
-              Please review the details below before scheduling this delivery.
+      {/* Review Modal for Submission — Matched to Figma Page 3 Shell */}
+      <Dialog
+        open={confirmModal}
+        onOpenChange={(open) => {
+          if (!open) setConfirmModal(false);
+        }}
+        confirmOnClose={false}
+      >
+        <DialogContent className="sm:max-w-[580px] bg-surface border-0 p-0 shadow-modal rounded-modal overflow-hidden gap-0">
+          <DialogHeader className="border-b border-topbar bg-surface pt-5 pr-12 pb-4 pl-6 space-y-0.5 text-left">
+            <DialogTitle className="type-modal-title text-ink">
+              Review delivery schedule
+            </DialogTitle>
+            <DialogDescription className="type-body-secondary text-ink-muted">
+              Verify the shipment details below before confirming this delivery order.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 type-body text-text-primary mt-4">
-            <div className="grid grid-cols-2 gap-4 bg-surface-muted p-4 rounded-control border border-divider">
+          <div className="px-6 py-5 space-y-4 bg-surface max-h-[65dvh] overflow-y-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-page p-4 rounded-inner border border-topbar">
               <div>
-                <span className="text-text-muted block type-caption mb-1">Delivery No</span>
-                <span className="font-semibold type-body text-text-primary">{deliveryNumber}</span>
+                <span className="text-ink-muted block type-caption">Delivery no.</span>
+                <span className="font-semibold type-body text-ink block mt-0.5">
+                  {deliveryNumber}
+                </span>
               </div>
               <div>
-                <span className="text-text-muted block type-caption mb-1">Purchase Order</span>
-                <span className="font-semibold type-body text-text-primary">{currentPO?.poNumber || "—"}</span>
+                <span className="text-ink-muted block type-caption">Purchase order</span>
+                <span className="font-semibold type-body text-ink block mt-0.5">
+                  {currentPO?.poNumber || "—"}
+                </span>
               </div>
               <div>
-                <span className="text-text-muted block type-caption mb-1">Supplier</span>
-                <span className="font-semibold type-body text-text-primary">{currentPO?.supplierName || "—"}</span>
+                <span className="text-ink-muted block type-caption">Supplier</span>
+                <span className="font-semibold type-body text-ink block mt-0.5 truncate">
+                  {currentPO?.supplierName || "—"}
+                </span>
               </div>
               <div>
-                <span className="text-text-muted block type-caption mb-1">Payment Type</span>
-                <span className="font-semibold type-body text-text-primary">{paymentType || "—"}</span>
+                <span className="text-ink-muted block type-caption">Payment type</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-pill type-badge bg-status-purple-bg text-status-purple-fg mt-1">
+                  {paymentType || "—"}
+                </span>
               </div>
               <div>
-                <span className="text-text-muted block type-caption mb-1">Planned Dispatch Date</span>
-                <span className="font-semibold type-body text-text-primary">{plannedDispatchDate || "—"}</span>
+                <span className="text-ink-muted block type-caption">Planned dispatch</span>
+                <span className="font-semibold type-body text-ink block mt-0.5">
+                  {plannedDispatchDate || "—"}
+                </span>
+              </div>
+              <div>
+                <span className="text-ink-muted block type-caption">Attachment</span>
+                <span className="font-medium type-body-secondary text-primary block mt-0.5 truncate">
+                  {attachmentFileName || "—"}
+                </span>
               </div>
             </div>
 
-            <div className="mt-4 border border-divider rounded-control overflow-hidden bg-surface">
-              <table className="w-full type-table-cell">
-                <thead className="bg-surface-muted border-b border-divider table-head-row">
+            <div className="border border-input rounded-inner overflow-hidden bg-surface">
+              <table className="w-full type-table-cell border-collapse">
+                <thead className="bg-page border-b border-topbar">
                   <tr>
-                    <th className="table-th px-3 py-2.5 text-left font-semibold text-text-muted type-table-header">ITEM NAME</th>
-                    <th className="table-th px-3 py-2.5 text-left font-semibold text-text-muted type-table-header">SUPPLY NO</th>
-                    <th className="table-th px-3 py-2.5 text-left font-semibold text-text-muted type-table-header">Unit of Measure</th>
-                    <th className="table-th px-3 py-2.5 text-right font-semibold text-text-muted type-table-header">DELIVERY QTY</th>
+                    <th className="py-2.5 px-3 text-left font-medium text-ink-muted type-table-header">
+                      Item name
+                    </th>
+                    <th className="py-2.5 px-3 text-left font-medium text-ink-muted type-table-header">
+                      Supply no.
+                    </th>
+                    <th className="py-2.5 px-3 text-left font-medium text-ink-muted type-table-header">
+                      UOM
+                    </th>
+                    <th className="py-2.5 px-3 text-right font-semibold text-ink-strong type-table-header">
+                      Delivery qty
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-divider">
-                  {items.filter(item => item.orderQuantity > 0).map((item, idx) => (
-                    <tr key={idx} className="hover:bg-surface-hover table-row">
-                      <td className="table-td px-3 py-2.5 font-medium text-text-primary">{item.itemName}</td>
-                      <td className="table-td px-3 py-2.5 text-text-muted">{item.itemCode}</td>
-                      <td className="table-td px-3 py-2.5 text-text-muted">{item.purchaseUomName || "Unit"}</td>
-                      <td className="table-td px-3 py-2.5 text-right font-semibold text-text-primary">{item.orderQuantity}</td>
-                    </tr>
-                  ))}
+                  {items
+                    .filter((item) => item.orderQuantity > 0)
+                    .map((item, idx) => (
+                      <tr key={idx} className="hover:bg-page transition-colors">
+                        <td className="py-2.5 px-3 font-medium text-ink">
+                          {item.itemName}
+                        </td>
+                        <td className="py-2.5 px-3 type-caption text-ink-muted">
+                          {item.itemCode}
+                        </td>
+                        <td className="py-2.5 px-3 text-ink-muted">
+                          {item.purchaseUomName || "Unit"}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-semibold tabular-nums text-ink">
+                          {item.orderQuantity}
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-divider">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setConfirmModal(false)}
-              disabled={submitting}
-              className="rounded-control px-5 py-2.5 h-auto type-label-button font-semibold cursor-pointer border-divider bg-surface text-text-primary hover:bg-surface-hover"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Edit
-            </Button>
-            <Button
-              type="button"
-              disabled={submitting}
-              onClick={() => setFinalConfirmOpen(true)}
-              className="rounded-control px-6 py-2.5 h-auto type-label-button font-semibold shadow-sm bg-button-primary text-text-inverse hover:bg-button-primary-hover cursor-pointer"
-            >
-              {submitting ? "Scheduling..." : "Confirm & Schedule Delivery"}
-            </Button>
+          <div className="flex items-center justify-between gap-3 px-6 py-3.5 bg-page border-t border-topbar">
+            <span className="type-caption text-ink-muted">
+              No changes are saved until you confirm.
+            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConfirmModal(false)}
+                disabled={submitting}
+                className="h-9.5 rounded-control px-3.5 type-label-button-sm cursor-pointer border border-border bg-surface text-ink hover:bg-subtle"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back to edit
+              </Button>
+              <Button
+                type="button"
+                disabled={submitting}
+                onClick={() => setFinalConfirmOpen(true)}
+                className="h-9.5 rounded-control px-4 type-label-button-sm bg-primary text-on-brand hover:bg-primary-hover cursor-pointer"
+              >
+                {submitting ? "Scheduling..." : "Confirm & schedule"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

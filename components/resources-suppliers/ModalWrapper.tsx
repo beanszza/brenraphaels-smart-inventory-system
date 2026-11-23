@@ -8,9 +8,12 @@ import { ModalCloseProvider } from "@/components/shared/ModalCloseContext";
 interface ModalWrapperProps {
   open: boolean;
   title: string;
+  subtitle?: string;
   onClose: () => void;
   children: ReactNode;
   size?: string;
+  maxWidthPx?: number;
+  bodyClassName?: string;
   confirmOnClose?: boolean;
   confirmMessage?: string;
 }
@@ -23,9 +26,12 @@ const widths: Record<string, number> = {
 export default function ModalWrapper({
   open,
   title,
+  subtitle,
   onClose,
   children,
   size,
+  maxWidthPx,
+  bodyClassName,
   confirmOnClose = true,
   confirmMessage = "Are you sure you want to close? Any unsaved changes will be discarded.",
 }: ModalWrapperProps) {
@@ -57,11 +63,14 @@ export default function ModalWrapper({
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
             onFocusOutside={(e) => { if (showCloseConfirm) e.preventDefault(); }}
-            style={{ maxWidth: widths[size ?? ""] ?? 900, width: "100%" }}
-            className="fixed left-1/2 top-1/2 z-[201] flex max-h-[90dvh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-modal border border-border bg-surface shadow-modal outline-none"
+            style={{ maxWidth: maxWidthPx ?? widths[size ?? ""] ?? 900, width: "100%" }}
+            className="fixed left-1/2 top-1/2 z-[201] flex max-h-[90dvh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-modal border border-border bg-surface shadow-modal outline-none transition-[max-width] duration-200"
           >
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-divider px-6 py-5">
-              <Dialog.Title className="type-modal-title text-ink">{title}</Dialog.Title>
+            <div className={`flex shrink-0 ${subtitle ? "items-start border-topbar pt-5 pr-4.5 pb-4 pl-6" : "items-center border-divider px-6 py-5"} justify-between gap-3 border-b`}>
+              <div className={subtitle ? "space-y-0.5" : undefined}>
+                <Dialog.Title className="type-modal-title text-ink">{title}</Dialog.Title>
+                {subtitle && <p className="type-body-secondary text-ink-muted">{subtitle}</p>}
+              </div>
               <button
                 type="button"
                 onClick={handleRequestClose}
@@ -74,7 +83,7 @@ export default function ModalWrapper({
               </button>
             </div>
             <ModalCloseProvider value={handleRequestClose}>
-              <div className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-6 py-5">{children}</div>
+              <div className={bodyClassName ?? "min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-6 py-5"}>{children}</div>
             </ModalCloseProvider>
           </Dialog.Content>
         </Dialog.Portal>
