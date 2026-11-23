@@ -22,11 +22,11 @@ import { OrdersSkeleton } from "@/components/orders-procurement/OrdersSkeleton";
 import { procurement } from "@/lib/orders/client";
 import { PurchaseOrderPO, POStatus } from "../types";
 import { POTable } from "./POTable";
-import { PODetailsModal } from "./PODetailsModal";
+import { PODetailsView } from "./PODetailsModal";
 import { POApprovalModal } from "./POApprovalModal";
 import { PurchaseOrderPrintDocument } from "./PurchaseOrderPrintDocument";
 import { POActionModal, POActionType } from "./POActionModal";
-import { CreatePOModal } from "./CreatePOModal";
+import { CreatePOForm } from "./CreatePOModal";
 import { CreateDeliveryModal } from "../delivery/CreateDeliveryModal";
 import Pagination from "@/components/Pagination";
 import { useStaff } from "@/context/StaffContext";
@@ -166,6 +166,116 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
     setNotice("Purchase order updated successfully.");
     fetchOrders();
   };
+
+  // Full-page Create / Edit Purchase Order view (matching Figma Form · New purchase order)
+  if (openCreateModal || editingPO) {
+    const isEditMode = !!editingPO;
+    return (
+      <CreatePOForm
+        embedded
+        isEdit={isEditMode}
+        initialPo={editingPO}
+        onClose={() => {
+          setOpenCreateModal(false);
+          setEditingPO(null);
+        }}
+        onDraftDiscarded={(poNumber) => {
+          setOpenCreateModal(false);
+          setEditingPO(null);
+          fetchOrders();
+          if (poNumber) {
+            setNotice(`${poNumber} was not sent. You can create and send it again.`);
+          }
+        }}
+        onSuccess={(saved) => {
+          setOpenCreateModal(false);
+          setEditingPO(null);
+          fetchOrders();
+          setActiveTab("Pending Approval");
+          if (saved?.poNumber) {
+            setNotice(`${saved.poNumber} marked as sent — awaiting supplier confirmation.`);
+          }
+        }}
+      />
+    );
+  }
+
+  // Full-page Purchase Order Details view (matching Figma Purchase order · PO-2026-0151)
+  if (selectedPO) {
+    const latestPo = orders.find((o) => o.poId === selectedPO.poId) || selectedPO;
+    return (
+      <>
+        <PODetailsView
+          embedded
+          po={latestPo}
+          isAdmin={isAdmin}
+          onClose={() => setSelectedPO(null)}
+          onPrint={(po) => setPrintingPO(po)}
+          onApproveWithForm={(po) => {
+            setApprovingPO(po);
+          }}
+          onCancel={(po) => {
+            setActionModal({ po, type: "cancel", returnToDetails: true });
+          }}
+          onCreateDelivery={(po) => {
+            setDeliveryPO(po);
+          }}
+        />
+
+        {approvingPO && (
+          <POApprovalModal
+            po={approvingPO}
+            onClose={() => setApprovingPO(null)}
+            onSuccess={(updated) => {
+              setApprovingPO(null);
+              setSelectedPO(updated);
+              setNotice(`Purchase Order ${updated.poNumber} confirmed and moved to Approved.`);
+              setActiveTab("Approved");
+              fetchOrders();
+            }}
+          />
+        )}
+
+        {printingPO && (
+          <PurchaseOrderPrintDocument
+            po={printingPO}
+            onClose={() => setPrintingPO(null)}
+          />
+        )}
+
+        {actionModal && (
+          <POActionModal
+            actionType={actionModal.type}
+            poNumber={actionModal.po.poNumber}
+            onClose={() => {
+              setActionModal(null);
+            }}
+            onConfirm={async (notes) => {
+              const { po, type } = actionModal;
+              if (type === "cancel") {
+                await handleStatusUpdate(po.poId, "Cancelled", notes);
+                setSelectedPO(null);
+              }
+              setActionModal(null);
+            }}
+          />
+        )}
+
+        {deliveryPO && (
+          <CreateDeliveryModal
+            open={!!deliveryPO}
+            initialPo={deliveryPO}
+            onClose={() => setDeliveryPO(null)}
+            onSuccess={() => {
+              setDeliveryPO(null);
+              setSelectedPO(null);
+              fetchOrders();
+            }}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="space-y-5 animate-page-in">
@@ -317,26 +427,6 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
         </div>
       )}
 
-      {/* Purchase Order Details Modal */}
-      <PODetailsModal
-        po={selectedPO}
-        isAdmin={isAdmin}
-        onClose={() => setSelectedPO(null)}
-        onPrint={(po) => setPrintingPO(po)}
-        onApproveWithForm={(po) => {
-          setSelectedPO(null);
-          setApprovingPO(po);
-        }}
-        onCancel={(po) => {
-          setSelectedPO(null);
-          setActionModal({ po, type: "cancel", returnToDetails: true });
-        }}
-        onCreateDelivery={(po) => {
-          setSelectedPO(null);
-          setDeliveryPO(po);
-        }}
-      />
-
       {/* Supplier Approval Modal */}
       {approvingPO && (
         <POApprovalModal
@@ -376,53 +466,6 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
               await handleStatusUpdate(po.poId, "Cancelled", notes);
             }
             setActionModal(null);
-          }}
-        />
-      )}
-
-      {/* Create Purchase Order Modal */}
-      {openCreateModal && (
-        <CreatePOModal
-          open={openCreateModal}
-          onClose={() => setOpenCreateModal(false)}
-          onDraftDiscarded={(poNumber) => {
-            fetchOrders();
-            if (poNumber) {
-              setNotice(`${poNumber} was not sent. You can create and send it again.`);
-            }
-          }}
-          onSuccess={(created) => {
-            setOpenCreateModal(false);
-            fetchOrders();
-            setActiveTab("Pending Approval");
-            if (created?.poNumber) {
-              setNotice(`${created.poNumber} marked as sent — awaiting supplier confirmation.`);
-            }
-          }}
-        />
-      )}
-
-      {/* Resend / Edit Draft Purchase Order Modal */}
-      {editingPO && (
-        <CreatePOModal
-          open={!!editingPO}
-          isEdit
-          initialPo={editingPO}
-          onClose={() => setEditingPO(null)}
-          onDraftDiscarded={(poNumber) => {
-            setEditingPO(null);
-            fetchOrders();
-            if (poNumber) {
-              setNotice(`${poNumber} was not sent. You can create and send it again.`);
-            }
-          }}
-          onSuccess={(updated) => {
-            setEditingPO(null);
-            fetchOrders();
-            setActiveTab("Pending Approval");
-            if (updated?.poNumber) {
-              setNotice(`${updated.poNumber} marked as sent — awaiting supplier confirmation.`);
-            }
           }}
         />
       )}

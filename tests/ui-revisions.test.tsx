@@ -144,12 +144,18 @@ describe("Modal layout, typography, and date bounds", () => {
     expect(approvalHtml).not.toContain("Expected Arrival Date");
   });
 
-  it("renders updated CreatePOModal search bar and removes Back to Requisitions copy", () => {
+  it("renders redesigned single-page CreatePOModal with no abbreviations and no Save as draft or Add item", () => {
     const html = renderToStaticMarkup(
       <CreatePOModal open onClose={() => { }} onSuccess={() => { }} />
     );
-    expect(html).toContain('placeholder="Search requisitions..."');
-    expect(html).toContain("bg-surface");
+    expect(html).toContain("Purchase order details");
+    expect(html).toContain("Purchase Order Number");
+    expect(html).toContain("Select Purchase Requisition");
+    expect(html).toContain("Supplier information");
+    expect(html).toContain("Notes");
+    expect(html).toContain("Send order");
+    expect(html).not.toContain("Save as draft");
+    expect(html).not.toContain("Add item");
     expect(html).not.toContain("Back to Requisitions");
     expect(html).not.toContain(">ACTION<");
   });

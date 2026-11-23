@@ -2,9 +2,11 @@
 
 import React from "react";
 import {
-  Calendar,
+  ChevronLeft,
   AlertCircle,
   CheckCircle2,
+  Printer,
+  PackageCheck,
 } from "lucide-react";
 import { PurchaseOrderPO } from "../types";
 import { Button } from "@/components/ui/button";
@@ -12,7 +14,7 @@ import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 
-interface PODetailsModalProps {
+export interface PODetailsProps {
   po: PurchaseOrderPO | null;
   isAdmin?: boolean;
   onClose: () => void;
@@ -23,14 +25,22 @@ interface PODetailsModalProps {
   onCreateDelivery?: (po: PurchaseOrderPO) => void;
 }
 
-export function PODetailsModal({
+interface PODetailsBodyProps extends PODetailsProps {
+  variant: "page" | "modal";
+  embedded?: boolean;
+}
+
+function PODetailsBody({
   po,
   isAdmin = false,
   onClose,
   onApproveWithForm,
+  onPrint,
   onCancel,
   onCreateDelivery,
-}: PODetailsModalProps) {
+  variant,
+  embedded = false,
+}: PODetailsBodyProps) {
   if (!po) return null;
 
   const isPending = po.status === "Pending Approval";
@@ -58,246 +68,445 @@ export function PODetailsModal({
       minimumFractionDigits: 2,
     }).format(n);
 
+  const contactSummary =
+    [po.supplierContactPerson, po.supplierPhone || po.supplierEmail].filter(Boolean).join(" · ") ||
+    "—";
+
+  const containerClasses =
+    variant === "page"
+      ? embedded
+        ? "space-y-5 pb-10 animate-page-in"
+        : "page-container px-4 sm:px-8 w-full space-y-5 pb-10 animate-page-in"
+      : "space-y-5";
+
   return (
-    <ModalWrapper
-      open={!!po}
-      title={`Purchase Order Details — ${po.poNumber}`}
-      onClose={onClose}
-      size="max-w-[640px]"
-    >
-      <div className="space-y-6">
-        {/* Top Header: Status and Order Date */}
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-3">
-            <StatusBadge status={po.status} />
-          </div>
-          <div className="type-caption text-text-muted">
-            Order Date: <span className="font-medium text-text-primary">{fmt(po.orderDate)}</span>
-          </div>
-        </div>
-
-        {/* Supplier Approval Confirmation Box */}
-        {po.supplierApprovedBy && (
-          <div className="p-3.5 rounded-card border border-status-green bg-status-green-bg text-status-green flex items-center justify-between flex-wrap gap-2 type-caption">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-status-green shrink-0" />
-              <span>
-                <strong>Supplier Approved by:</strong> {po.supplierApprovedBy}
-              </span>
-            </div>
-            {po.supplierApprovedDate && (
-              <span className="text-text-muted">
-                Date: {fmt(po.supplierApprovedDate)}
-              </span>
-            )}
-          </div>
+    <div className={containerClasses}>
+      {/* Top Header (Matches Figma: Purchase order · PO-2026-0151) */}
+      <div className="space-y-2">
+        {variant === "page" && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center gap-1 type-breadcrumb text-ink-muted hover:text-ink transition-colors cursor-pointer"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span>Purchase orders</span>
+          </button>
         )}
 
-        {/* Cancellation or Admin Notes */}
-        {po.adminNotes && !po.supplierApprovedBy && (
-          <div className={`p-4 rounded-card border space-y-1.5 ${
-            po.status === "Cancelled"
-              ? "border-status-red bg-status-red-bg text-status-red"
-              : "border-divider bg-surface-muted text-text-primary"
-          }`}>
-            <div className="flex items-center gap-2 type-label font-semibold">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>
-                {po.status === "Cancelled" ? "Cancellation Reason:" : "Notes / Remarks:"}
-              </span>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2.5">
+              {variant === "page" && (
+                <h1 className="type-page-title text-ink tabular-nums">{po.poNumber}</h1>
+              )}
+              <StatusBadge status={po.status} />
             </div>
-            <p className="type-body pl-6 whitespace-pre-wrap leading-relaxed opacity-95">{po.adminNotes}</p>
-          </div>
-        )}
-
-        {/* 3-Column Info Details */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-card bg-surface-muted border border-divider">
-          {/* Purchase Order Number */}
-          <div>
-            <label className="mb-1.5 block type-label font-semibold text-text-primary">
-              Purchase Order Number
-            </label>
-            <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted select-all">
-              {po.poNumber}
-            </div>
-          </div>
-
-          {/* Purchase Requisition Reference */}
-          <div>
-            <label className="mb-1.5 block type-label font-semibold text-text-primary">
-              Purchase Requisition Reference
-            </label>
-            <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-primary select-all font-semibold">
-              {po.prNumber || "—"}
-            </div>
-          </div>
-
-          {/* Supplier */}
-          <div>
-            <label className="mb-1.5 block type-label font-semibold text-text-primary">
-              Supplier / Vendor
-            </label>
-            <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-primary font-semibold">
-              {po.supplierName}
-            </div>
-          </div>
-
-          {/* Order Date */}
-          <div>
-            <label className="mb-1.5 block type-label font-semibold text-text-primary">
-              Order Date
-            </label>
-            <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted">
-              {fmt(po.orderDate)}
-            </div>
-          </div>
-
-          {/* Expected Arrival Date */}
-          <div>
-            <label className="mb-1.5 block type-label font-semibold text-text-primary">
-              Expected Arrival Date
-            </label>
-            <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted">
-              <Calendar className="w-3.5 h-3.5 mr-2 text-text-muted" />
+            <p className="type-body-secondary text-ink-muted">
+              {po.supplierName || "—"} &middot; ordered {fmt(po.orderDate)} &middot; expected{" "}
               {fmt(po.expectedArrivalDate)}
-            </div>
+            </p>
           </div>
 
-          {/* Requested By */}
-          <div>
-            <label className="mb-1.5 block type-label font-semibold text-text-primary">
-              Requested By
-            </label>
-            <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface type-body text-text-muted">
-              {po.requestedBy}
-            </div>
-          </div>
-        </div>
+          {/* Header Action Buttons (Page Mode — matches Figma top-right action bar) */}
+          {variant === "page" && (
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {!isAdmin && isCancellable && onCancel && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onCancel(po)}
+                  className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-destructive hover:bg-notice-danger-bg shadow-none cursor-pointer"
+                >
+                  Cancel Purchase Order
+                </Button>
+              )}
 
-        {/* Ordered Particulars Table */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="type-table-header font-semibold text-text-primary">
-              Ordered Particulars
-            </label>
-            <span className="type-caption text-text-muted">
-              {po.items?.length || 0} item(s) listed
-            </span>
-          </div>
+              {onPrint && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onPrint(po)}
+                  className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print
+                </Button>
+              )}
 
-          <div className="overflow-x-auto rounded-card border border-divider bg-surface">
-            <table className="w-full type-table-cell">
-              <thead className="border-b border-divider bg-surface-muted uppercase text-text-muted table-head-row type-table-header">
-                <tr>
-                  <th className="table-th px-4 py-2.5 text-left font-semibold">PARTICULARS</th>
-                  <th className="table-th px-4 py-2.5 text-left font-semibold">Unit of Measure</th>
-                  <th className="table-th px-4 py-2.5 text-right font-semibold">ORDER QUANTITY</th>
-                  {!isPending && (
-                    <>
-                      <th className="table-th px-4 py-2.5 text-right font-semibold">UNIT PRICE</th>
-                      <th className="table-th px-4 py-2.5 text-right font-semibold">TOTAL AMOUNT</th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-divider">
-                {po.items && po.items.length > 0 ? (
-                  po.items.map((item, idx) => {
-                    const unitPrice = item.unitPrice || (item.poItemQuantity > 0 ? item.totalPrice / item.poItemQuantity : 0);
-                    return (
-                      <tr key={idx} className="hover:bg-surface-hover transition-colors table-row">
-                        <td className="table-td px-4 py-3 font-semibold text-text-primary uppercase">
-                          {item.itemName}
-                        </td>
-                        <td className="table-td px-4 py-3 text-text-muted">
-                          {item.purchaseUomName || "Unit"}
-                        </td>
-                        <td className="table-td px-4 py-3 text-right font-semibold text-text-primary">
-                          {Number(item.poItemQuantity).toLocaleString()}
-                        </td>
-                        {!isPending && (
-                          <>
-                            <td className="table-td px-4 py-3 text-right text-text-muted">
-                              {unitPrice > 0 ? fmtCurrency(unitPrice) : "Pending Confirmation"}
-                            </td>
-                            <td className="table-td px-4 py-3 text-right font-semibold text-text-primary">
-                              {item.totalPrice > 0 ? fmtCurrency(Number(item.totalPrice)) : "—"}
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={isPending ? 3 : 5} className="px-4 py-8 text-center type-body text-text-muted">
-                      No items in this purchase order.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              {!isAdmin && isPending && onApproveWithForm && (
+                <Button
+                  type="button"
+                  onClick={() => onApproveWithForm(po)}
+                  className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer"
+                >
+                  Approve Order
+                </Button>
+              )}
 
-          {/* Total Amount Summary (hidden while Pending Approval before supplier confirmation) */}
-          {!isPending && (
-            <div className="flex items-center justify-end">
-              <div className="rounded-card border border-divider bg-surface-muted px-5 py-3 text-right min-w-[220px]">
-                <p className="type-caption text-text-muted mb-1">TOTAL AMOUNT DUE</p>
-                <p className="type-section-title font-semibold text-text-primary">
-                  {po.totalAmount > 0 ? fmtCurrency(po.totalAmount) : (isApproved ? "₱0.00" : "Pending Confirmation")}
-                </p>
-              </div>
+              {canScheduleDelivery && (
+                <Button
+                  type="button"
+                  onClick={() => onCreateDelivery?.(po)}
+                  className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <PackageCheck className="w-4 h-4" />
+                  Schedule Delivery
+                </Button>
+              )}
             </div>
           )}
         </div>
+      </div>
 
-        {/* Modal Footer Actions: Styled matching Resources & Suppliers */}
-        <div className="flex items-center justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2 flex-wrap">
+      {/* Conditional Status Banners */}
+      {po.supplierApprovedBy && (
+        <div className="p-3.5 rounded-inner border border-status-green-fg/20 bg-status-green-bg text-status-green-fg flex items-center justify-between flex-wrap gap-2 type-caption">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>
+              <strong>Supplier Approved by:</strong> {po.supplierApprovedBy}
+            </span>
+          </div>
+          {po.supplierApprovedDate && (
+            <span className="font-medium">Date: {fmt(po.supplierApprovedDate)}</span>
+          )}
+        </div>
+      )}
+
+      {po.adminNotes && !po.supplierApprovedBy && (
+        <div
+          className={`p-3.5 rounded-inner border space-y-1 ${
+            po.status === "Cancelled"
+              ? "border-notice-danger-border bg-notice-danger-bg text-notice-danger-text"
+              : "border-border bg-page text-ink"
+          }`}
+        >
+          <div className="flex items-center gap-2 type-label-field">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>
+              {po.status === "Cancelled" ? "Cancellation Reason:" : "Notes / Remarks:"}
+            </span>
+          </div>
+          <p className="type-body-secondary pl-6 whitespace-pre-wrap leading-relaxed">
+            {po.adminNotes}
+          </p>
+        </div>
+      )}
+
+      {/* Main Two-Column Body (Matches Figma: Left = Items + Order details, Right = Summary + Activity) */}
+      <div
+        className={
+          variant === "page"
+            ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-5 items-start"
+            : "space-y-5"
+        }
+      >
+        {/* Left Column */}
+        <div className="min-w-0 space-y-5">
+          {/* Card 1: Items */}
+          <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="type-subsection text-ink">Items</h2>
+              <span className="type-caption text-ink-muted tabular-nums">
+                {po.items?.length || 0} item(s) listed
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full type-table-cell border-collapse">
+                <thead>
+                  <tr className="border-b border-divider">
+                    <th className="pb-2.5 pt-1 pr-3 text-left type-table-header text-ink-muted">
+                      Item
+                    </th>
+                    <th className="pb-2.5 pt-1 px-3 text-right type-table-header text-ink-muted whitespace-nowrap">
+                      Ordered
+                    </th>
+                    {!isPending && (
+                      <>
+                        <th className="pb-2.5 pt-1 px-3 text-right type-table-header text-ink-muted whitespace-nowrap">
+                          Received
+                        </th>
+                        <th className="pb-2.5 pt-1 px-3 text-right type-table-header text-ink-muted whitespace-nowrap">
+                          Remaining
+                        </th>
+                        <th className="pb-2.5 pt-1 px-3 text-right type-table-header text-ink-muted whitespace-nowrap">
+                          UNIT PRICE
+                        </th>
+                        <th className="pb-2.5 pt-1 pl-3 text-right type-table-header text-ink-muted whitespace-nowrap">
+                          Total
+                        </th>
+                      </>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-divider">
+                  {po.items && po.items.length > 0 ? (
+                    po.items.map((item, idx) => {
+                      const ordered = Number(item.poItemQuantity || 0);
+                      const received = Number(item.receivedQuantity || 0);
+                      const remaining = Math.max(0, ordered - received);
+                      const unitPrice =
+                        item.unitPrice || (ordered > 0 ? item.totalPrice / ordered : 0);
+                      return (
+                        <tr key={idx} className="hover:bg-page transition-colors">
+                          <td className="py-3 pr-3 align-top">
+                            <div className="font-medium text-ink">{item.itemName}</div>
+                            <div className="type-caption text-ink-muted">
+                              {item.purchaseUomName || "Unit"}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-right font-medium text-ink tabular-nums align-top whitespace-nowrap">
+                            {ordered.toLocaleString()}
+                          </td>
+                          {!isPending && (
+                            <>
+                              <td
+                                className={`py-3 px-3 text-right tabular-nums align-top whitespace-nowrap ${
+                                  received > 0 ? "text-ink" : "text-ink-disabled"
+                                }`}
+                              >
+                                {received.toLocaleString()}
+                              </td>
+                              <td className="py-3 px-3 text-right font-medium text-ink tabular-nums align-top whitespace-nowrap">
+                                {remaining.toLocaleString()}
+                              </td>
+                              <td className="py-3 px-3 text-right text-ink-secondary tabular-nums align-top whitespace-nowrap">
+                                {unitPrice > 0 ? fmtCurrency(unitPrice) : "Pending Confirmation"}
+                              </td>
+                              <td className="py-3 pl-3 text-right font-semibold text-ink tabular-nums align-top whitespace-nowrap">
+                                {item.totalPrice > 0 ? fmtCurrency(Number(item.totalPrice)) : "—"}
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={isPending ? 2 : 6}
+                        className="py-8 text-center type-body-secondary text-ink-muted"
+                      >
+                        No items in this purchase order.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Card 2: Order details (3-column × 2-row metadata grid matching Figma) */}
+          <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+            <h2 className="type-subsection text-ink">Order details</h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+              <div>
+                <div className="type-caption text-ink-muted mb-1">Supplier</div>
+                <div className="type-body-secondary font-medium text-ink">
+                  {po.supplierName || "—"}
+                </div>
+              </div>
+
+              <div>
+                <div className="type-caption text-ink-muted mb-1">Contact</div>
+                <div className="type-body-secondary font-medium text-ink break-words">
+                  {contactSummary}
+                </div>
+              </div>
+
+              <div>
+                <div className="type-caption text-ink-muted mb-1">Purchase Requisition</div>
+                <div className="type-body-secondary font-medium text-primary tabular-nums">
+                  {po.prNumber || "—"}
+                </div>
+              </div>
+
+              <div>
+                <div className="type-caption text-ink-muted mb-1">Order Date</div>
+                <div className="type-body-secondary font-medium text-ink">
+                  {fmt(po.orderDate)}
+                </div>
+              </div>
+
+              <div>
+                <div className="type-caption text-ink-muted mb-1">Created by</div>
+                <div className="type-body-secondary font-medium text-ink">
+                  {po.requestedBy || "—"}
+                </div>
+              </div>
+
+              <div>
+                <div className="type-caption text-ink-muted mb-1">Expected Arrival Date</div>
+                <div className="type-body-secondary font-medium text-ink">
+                  {fmt(po.expectedArrivalDate)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Summary + Activity */}
+        <div className="space-y-5">
+          {/* Card 1: Summary (hidden while Pending Approval before supplier confirmation) */}
+          {!isPending && (
+            <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+              <h2 className="type-subsection text-ink">Summary</h2>
+
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-3 type-body-secondary">
+                  <span className="text-ink-muted">
+                    Subtotal &middot; {po.items?.length || 0}{" "}
+                    {(po.items?.length || 0) === 1 ? "item" : "items"}
+                  </span>
+                  <span className="font-medium text-ink tabular-nums">
+                    {po.totalAmount > 0 ? fmtCurrency(po.totalAmount) : "₱0.00"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
+                <span className="type-subsection text-ink">TOTAL AMOUNT DUE</span>
+                <span className="type-modal-title text-ink tabular-nums">
+                  {po.totalAmount > 0
+                    ? fmtCurrency(po.totalAmount)
+                    : isApproved
+                    ? "₱0.00"
+                    : "Pending Confirmation"}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Card 2: Activity Timeline (Matches Figma right-rail Activity card) */}
+          <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+            <h2 className="type-subsection text-ink">Activity</h2>
+
+            <div className="space-y-3.5">
+              {po.supplierApprovedBy && (
+                <div className="flex items-start gap-2.5">
+                  <span className="mt-1.5 h-2 w-2 rounded-pill bg-success shrink-0" />
+                  <div className="min-w-0">
+                    <div className="type-body-secondary font-medium text-ink">
+                      Supplier confirmed order
+                    </div>
+                    <div className="type-caption text-ink-muted">
+                      {fmt(po.supplierApprovedDate)} &middot; {po.supplierApprovedBy}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {po.status === "Cancelled" && (
+                <div className="flex items-start gap-2.5">
+                  <span className="mt-1.5 h-2 w-2 rounded-pill bg-destructive shrink-0" />
+                  <div className="min-w-0">
+                    <div className="type-body-secondary font-medium text-ink">
+                      Purchase order cancelled
+                    </div>
+                    <div className="type-caption text-ink-muted">
+                      {po.adminNotes || "Order was cancelled"}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-start gap-2.5">
+                <span className="mt-1.5 h-2 w-2 rounded-pill bg-info shrink-0" />
+                <div className="min-w-0">
+                  <div className="type-body-secondary font-medium text-ink">
+                    Order emailed to supplier
+                  </div>
+                  <div className="type-caption text-ink-muted break-all">
+                    {fmt(po.orderDate)} &middot; {po.supplierEmail || po.supplierName}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5">
+                <span className="mt-1.5 h-2 w-2 rounded-pill bg-primary shrink-0" />
+                <div className="min-w-0">
+                  <div className="type-body-secondary font-medium text-ink">Order created</div>
+                  <div className="type-caption text-ink-muted">
+                    {fmt(po.orderDate)} &middot; by {po.requestedBy || "—"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal Footer Actions (Modal Mode Only — preserves backward compatibility) */}
+      {variant === "modal" && (
+        <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-divider flex-wrap">
           {!isAdmin && isCancellable && onCancel && (
             <Button
               type="button"
               variant="outline"
               onClick={() => onCancel(po)}
-              className="rounded-control border border-status-red text-status-red hover:bg-status-red-bg px-5 py-2.5 h-auto type-label-button font-semibold transition-colors cursor-pointer"
+              className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-destructive hover:bg-notice-danger-bg shadow-none cursor-pointer"
             >
               Cancel Purchase Order
             </Button>
           )}
 
-          {/* Close Button */}
           <ModalCloseButton
             type="button"
             variant="outline"
             fallbackOnClose={onClose}
-            className="rounded-control border border-divider bg-surface px-5 py-2.5 h-auto type-label-button font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+            className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
           >
             Close
           </ModalCloseButton>
 
-          {/* IMS Manager: Approve Order (Far Right!) */}
           {!isAdmin && isPending && onApproveWithForm && (
             <Button
               type="button"
               onClick={() => onApproveWithForm(po)}
-              className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 h-auto type-label-button font-semibold hover:bg-button-primary-hover transition-colors shadow-sm cursor-pointer"
+              className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer"
             >
               Approve Order
             </Button>
           )}
 
-          {/* IMS Manager: Schedule Delivery only while PO still has unscheduled balance (Far Right) */}
           {canScheduleDelivery && (
             <Button
               type="button"
               onClick={() => onCreateDelivery?.(po)}
-              className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 h-auto type-label-button font-semibold hover:bg-button-primary-hover transition-colors shadow-sm cursor-pointer"
+              className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer"
             >
               Schedule Delivery
             </Button>
           )}
         </div>
-      </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Full-page Purchase Order details view matching Figma "Purchase order · PO-2026-0151".
+ */
+export function PODetailsView(props: PODetailsProps & { embedded?: boolean }) {
+  return <PODetailsBody {...props} variant="page" />;
+}
+
+/**
+ * Backward-compatible modal wrapper for tests or modal triggers.
+ */
+export function PODetailsModal(props: PODetailsProps) {
+  if (!props.po) return null;
+  return (
+    <ModalWrapper
+      open={!!props.po}
+      title={`Purchase Order Details — ${props.po.poNumber}`}
+      onClose={props.onClose}
+      size="max-w-[760px]"
+    >
+      <PODetailsBody {...props} variant="modal" />
     </ModalWrapper>
   );
 }

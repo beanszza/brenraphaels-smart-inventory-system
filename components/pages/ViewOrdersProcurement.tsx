@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { PRTab } from "@/components/orders-procurement/pr/PRTab";
 import { CreatePRForm } from "@/components/orders-procurement/pr/CreatePRForm";
 import { POTab } from "@/components/orders-procurement/po/POTab";
-import { CreatePOModal } from "@/components/orders-procurement/po/CreatePOModal";
+import { CreatePOForm } from "@/components/orders-procurement/po/CreatePOModal";
 import { DeliveryTab } from "@/components/orders-procurement/delivery/DeliveryTab";
 
 import type { PurchaseRequisition, PurchaseOrderPO, Delivery } from "@/components/orders-procurement/types";
@@ -60,6 +60,39 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
           onSuccess={() => {
             setPrFormState(null);
             setNotice("Purchase requisition saved successfully.");
+            router.refresh();
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (showCreatePO) {
+    return (
+      <div className="page-container px-4 sm:px-8 w-full min-h-full animate-page-in">
+        <CreatePOForm
+          embedded
+          initialPrId={createPOFromPR}
+          onClose={() => {
+            setShowCreatePO(false);
+            setCreatePOFromPR(undefined);
+          }}
+          onDraftDiscarded={(poNumber) => {
+            setShowCreatePO(false);
+            setCreatePOFromPR(undefined);
+            router.refresh();
+            if (poNumber) {
+              setNotice(`${poNumber} was not sent. You can create and send it again.`);
+            }
+          }}
+          onSuccess={(created) => {
+            setShowCreatePO(false);
+            setCreatePOFromPR(undefined);
+            setNotice(
+              created?.poNumber
+                ? `${created.poNumber} marked as sent — awaiting supplier confirmation.`
+                : "Purchase order saved successfully."
+            );
             router.refresh();
           }}
         />
@@ -132,16 +165,6 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
 
       {/* MAIN TAB 3: DELIVERY */}
       {mainTab === "delivery" && <DeliveryTab initialDeliveries={data.deliveries} />}
-
-      {/* Global CreatePO Modal — opened from PR details "Create PO" button */}
-      {showCreatePO && (
-        <CreatePOModal
-          open={showCreatePO}
-          initialPrId={createPOFromPR}
-          onClose={() => { setShowCreatePO(false); setCreatePOFromPR(undefined); }}
-          onSuccess={() => { setShowCreatePO(false); setCreatePOFromPR(undefined); setNotice("Purchase order saved successfully."); router.refresh(); }}
-        />
-      )}
     </div>
   );
 }
