@@ -81,6 +81,38 @@ it("never differs from what the shop and checkout read", async () => {
   expect(products).toEqual([{ productId: 1, quantity: 30, reserved: 4, available: 26 }, { productId: 2, quantity: 0, reserved: 0, available: 0 }]);
 });
 
+it("counts a one-Size Item's produced stock in the shop Warehouse, never its branch stock, and agrees with checkout", async () => {
+  await prisma.items.create({ data: { ItemId: 2, ItemName: "Halaya", UomId: 1, StockUomId: 1, CategoryId: 1, MinStockLevel: 0, MaxStockLevel: 100, IsActive: true } });
+  await prisma.finishedProducts.create({ data: { ProductId: 3, ItemId: 2, Sku: "UBH-500", Variant: "500g", SellingPrice: 399 } });
+  await prisma.inventories.createMany({ data: [{ ItemId: 2, LocationId: 1, CurrentStock: 10 }, { ItemId: 2, LocationId: 2, CurrentStock: 67 }] });
+  const lot = (LotId: number, LocationId: number, quantity: number) => prisma.inventoryLots.create({ data: {
+    LotId, LotCode: `UBH-${LotId}`, ItemId: 2, LocationId, SourceType: "Production", ReceivedDate: new Date(), IsExpiryEstimated: false,
+    QuantityReceived: quantity, QuantityRemaining: quantity, ReservedQuantity: 0, UomId: 1, UnitCost: 10, Status: "Active", IsOpeningBalance: false,
+  } });
+  await lot(20, 1, 10);
+  await lot(21, 2, 67);
+  const { products } = await (await GET(request("productIds=3"))).json();
+  expect(products).toEqual([{ productId: 3, quantity: 10, reserved: 0, available: 10 }]);
+  const shop = await (await stockGET(new Request("https://ims.test/api/shop/stock?productId=3", { headers: { Authorization: `Bearer ${key}` } }))).json();
+  expect(shop).toMatchObject({ quantity: 10, reserved: 0, available: 10 });
+});
+
+it("answers many Sizes in one read", async () => {
+  for (let id = 10; id < 60; id++) {
+    await prisma.items.create({ data: { ItemId: id, ItemName: `Item ${id}`, UomId: 1, StockUomId: 1, CategoryId: 1, MinStockLevel: 0, MaxStockLevel: 100, IsActive: true } });
+    await prisma.finishedProducts.create({ data: { ProductId: id, ItemId: id, Sku: `SKU-${id}`, Variant: "1", SellingPrice: 1 } });
+    await prisma.inventories.create({ data: { ItemId: id, LocationId: 1, CurrentStock: id } });
+    await prisma.inventoryLots.create({ data: {
+      LotId: id, LotCode: `L-${id}`, ItemId: id, LocationId: 1, SourceType: "Production", ReceivedDate: new Date(), IsExpiryEstimated: false,
+      QuantityReceived: id, QuantityRemaining: id, ReservedQuantity: 1, UomId: 1, UnitCost: 1, Status: "Active", IsOpeningBalance: false,
+    } });
+  }
+  const ids = Array.from({ length: 50 }, (_, i) => i + 10);
+  const { products } = await (await GET(request(`productIds=${ids.join(",")}`))).json();
+  expect(products).toHaveLength(50);
+  expect(products[5]).toEqual({ productId: 15, quantity: 15, reserved: 1, available: 14 });
+});
+
 it("cannot answer without a configured shop Warehouse", async () => {
   vi.stubEnv("IMS_SHOP_WAREHOUSE_ID", "");
   expect((await GET(request())).status).toBe(503);
