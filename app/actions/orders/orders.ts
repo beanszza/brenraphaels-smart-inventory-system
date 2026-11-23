@@ -288,9 +288,6 @@ export async function approvePurchaseOrder(idInput: string | number, body: Appro
     if (order.Status !== "Pending Approval" && order.Status !== "PendingApproval" && order.Status !== "Draft") {
       return fail(`Only pending purchase orders can be approved. Current status: ${order.Status}.`);
     }
-    if (order.ProofImageUrl === "EMAIL_PENDING") {
-      return fail("Please confirm that the Purchase Order email has been sent to the supplier before approving this order.");
-    }
 
     if (!body.confirmedItems || body.confirmedItems.length === 0) {
       return fail("Purchase order must have at least one confirmed item.");

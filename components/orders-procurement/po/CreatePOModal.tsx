@@ -666,14 +666,16 @@ function POFormBody({
       {/* Page Header & Back Breadcrumb (Page Mode) */}
       {variant === "page" && (
         <div className="space-y-1.5">
-          <button
-            type="button"
-            onClick={handleCloseAction}
-            className="inline-flex items-center gap-1 type-breadcrumb text-ink-muted hover:text-ink transition-colors cursor-pointer"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Purchase orders</span>
-          </button>
+          {!createdOrder && (
+            <button
+              type="button"
+              onClick={handleCloseAction}
+              className="inline-flex items-center gap-1 type-breadcrumb text-ink-muted hover:text-ink transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Purchase orders</span>
+            </button>
+          )}
 
           <h1 className="type-page-title text-ink">
             {createdOrder
@@ -791,29 +793,8 @@ function POFormBody({
             </ol>
           </div>
 
-          {/* Footer Action Buttons */}
+          {/* Footer Action Buttons (no Close/Back — user must confirm Gmail send with Done) */}
           <div className="flex flex-wrap items-center justify-end gap-2.5 pt-4 border-t border-divider">
-            {variant === "modal" ? (
-              <ModalCloseButton
-                type="button"
-                variant="outline"
-                disabled={submitting}
-                fallbackOnClose={handleCancelOrCloseWhileWaiting}
-                className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
-              >
-                Close
-              </ModalCloseButton>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={submitting}
-                onClick={() => setConfirmDiscardWaitingOpen(true)}
-                className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
-              >
-                Close
-              </Button>
-            )}
             <a
               href={gmailComposeUrl}
               target="_blank"

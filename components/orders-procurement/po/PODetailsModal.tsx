@@ -176,14 +176,8 @@ function PODetailsBody({
               {!isAdmin && isPending && onApproveWithForm && (
                 <Button
                   type="button"
-                  disabled={isEmailPending}
-                  title={
-                    isEmailPending
-                      ? "Confirm that the email was sent to the supplier before approving this order"
-                      : undefined
-                  }
                   onClick={() => onApproveWithForm(po)}
-                  className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer"
                 >
                   Approve Order
                 </Button>
@@ -203,113 +197,6 @@ function PODetailsBody({
           )}
         </div>
       </div>
-
-      {/* Clean Gmail Send Confirmation Card (shown in upper part when Pending Approval PO wasn't confirmed via Done yet) */}
-      {!isAdmin && isEmailPending && (
-        <div className="rounded-card border border-border bg-surface p-5 space-y-5">
-          {/* Summary Card (2x2) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-inner bg-page border border-divider">
-            <div>
-              <span className="text-ink-muted block type-caption mb-1">Purchase Order Number</span>
-              <span className="type-body-strong text-ink tabular-nums">{po.poNumber}</span>
-            </div>
-            <div>
-              <span className="text-ink-muted block type-caption mb-1">Supplier</span>
-              <span className="type-body-strong text-ink">{po.supplierName || "—"}</span>
-            </div>
-            <div>
-              <span className="text-ink-muted block type-caption mb-1">Recipient Email</span>
-              <span className="type-body-strong text-ink break-all">
-                {po.supplierEmail || "No email registered"}
-              </span>
-            </div>
-            <div>
-              <span className="text-ink-muted block type-caption mb-1">Contact person</span>
-              <span className="type-body-strong text-ink">
-                {po.supplierContactPerson || po.supplierName || "—"}
-              </span>
-            </div>
-          </div>
-
-          {/* Items Table */}
-          <div className="table-card">
-            <table className="w-full type-table-cell">
-              <thead className="table-head-row border-b border-divider">
-                <tr>
-                  <th className="table-th text-left">Item</th>
-                  <th className="table-th text-left">Unit</th>
-                  <th className="table-th text-right">Order Quantity</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-divider">
-                {(po.items || []).map((row, idx) => (
-                  <tr key={idx} className="hover:bg-page table-row">
-                    <td className="table-td font-medium text-ink">{row.itemName}</td>
-                    <td className="table-td text-ink-muted">{row.purchaseUomName || "Unit"}</td>
-                    <td className="table-td text-right font-semibold text-ink tabular-nums">
-                      {Number(row.poItemQuantity).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Next Steps in Gmail */}
-          <div className="p-4 rounded-inner bg-page border border-divider type-body-secondary space-y-2">
-            <span className="type-subsection text-ink block">Next steps in Gmail</span>
-            <ol className="list-decimal list-inside space-y-1 text-ink-secondary">
-              <li>
-                Attach the downloaded <strong className="text-ink">{po.poNumber}.pdf</strong> in the
-                opened Gmail tab.
-              </li>
-              <li>Review the formal email message and supplier questionnaire.</li>
-              <li>
-                Click <strong className="text-ink">Send</strong> in Gmail, then click{" "}
-                <strong className="text-ink">Done</strong> below.
-              </li>
-            </ol>
-          </div>
-
-          {/* Footer Action Buttons */}
-          <div className="flex flex-wrap items-center justify-end gap-2.5 pt-4 border-t border-divider">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={confirmingEmail}
-              onClick={onClose}
-              className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
-            >
-              Close
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={confirmingEmail}
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  window.open(buildGmailUrl(), "_blank", "noopener,noreferrer");
-                }
-                void downloadPurchaseOrderPdf(po);
-              }}
-              className="inline-flex items-center justify-center gap-2 rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
-            >
-              <Mail className="w-4 h-4 text-primary" />
-              Edit Gmail
-            </Button>
-            {onConfirmEmailSent && (
-              <Button
-                type="button"
-                disabled={confirmingEmail}
-                onClick={() => setConfirmEmailModalOpen(true)}
-                className="rounded-control bg-primary text-on-brand px-5 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer disabled:opacity-50"
-              >
-                {confirmingEmail ? "Confirming..." : "Done"}
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Conditional Status Banners */}
       {po.supplierApprovedBy && (
@@ -500,64 +387,35 @@ function PODetailsBody({
 
         {/* Right Column: Summary + Activity */}
         <div className="space-y-5">
-          {/* Card 1: Summary (always visible; shows Pending Confirmation before supplier pricing is finalized) */}
-          <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
-            <h2 className="type-subsection text-ink">Summary</h2>
+          {/* Card 1: Summary (hidden while Pending Approval before supplier confirmation) */}
+          {!isPending && (
+            <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+              <h2 className="type-subsection text-ink">Summary</h2>
 
-            {isPending ? (
-              <>
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between gap-3 type-body-secondary">
-                    <span className="text-ink-muted">Items</span>
-                    <span className="font-medium text-ink tabular-nums">
-                      {po.items?.length || 0}{" "}
-                      {(po.items?.length || 0) === 1 ? "item" : "items"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 type-body-secondary">
-                    <span className="text-ink-muted">Total quantity</span>
-                    <span className="font-medium text-ink tabular-nums">
-                      {(po.items || [])
-                        .reduce((sum, i) => sum + Number(i.poItemQuantity || 0), 0)
-                        .toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
-                  <span className="type-subsection text-ink">Total</span>
-                  <span className="type-body-secondary font-medium text-ink-muted">
-                    Pending Confirmation
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-3 type-body-secondary">
+                  <span className="text-ink-muted">
+                    Subtotal &middot; {po.items?.length || 0}{" "}
+                    {(po.items?.length || 0) === 1 ? "item" : "items"}
+                  </span>
+                  <span className="font-medium text-ink tabular-nums">
+                    {po.totalAmount > 0 ? fmtCurrency(po.totalAmount) : "₱0.00"}
                   </span>
                 </div>
-              </>
-            ) : (
-              <>
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between gap-3 type-body-secondary">
-                    <span className="text-ink-muted">
-                      Subtotal &middot; {po.items?.length || 0}{" "}
-                      {(po.items?.length || 0) === 1 ? "item" : "items"}
-                    </span>
-                    <span className="font-medium text-ink tabular-nums">
-                      {po.totalAmount > 0 ? fmtCurrency(po.totalAmount) : "₱0.00"}
-                    </span>
-                  </div>
-                </div>
+              </div>
 
-                <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
-                  <span className="type-subsection text-ink">TOTAL AMOUNT DUE</span>
-                  <span className="type-modal-title text-ink tabular-nums">
-                    {po.totalAmount > 0
-                      ? fmtCurrency(po.totalAmount)
-                      : isApproved
-                        ? "₱0.00"
-                        : "Pending Confirmation"}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
+              <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
+                <span className="type-subsection text-ink">TOTAL AMOUNT DUE</span>
+                <span className="type-modal-title text-ink tabular-nums">
+                  {po.totalAmount > 0
+                    ? fmtCurrency(po.totalAmount)
+                    : isApproved
+                      ? "₱0.00"
+                      : "Pending Confirmation"}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Card 2: Activity Timeline (Matches Figma right-rail Activity card) */}
           <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
@@ -644,9 +502,8 @@ function PODetailsBody({
           {!isAdmin && isPending && onApproveWithForm && (
             <Button
               type="button"
-              disabled={isEmailPending}
               onClick={() => onApproveWithForm(po)}
-              className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer"
             >
               Approve Order
             </Button>
