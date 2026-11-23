@@ -8,6 +8,7 @@ import { ModalCloseProvider } from "@/components/shared/ModalCloseContext";
 interface ModalWrapperProps {
   open: boolean;
   title: string;
+  titleBadge?: ReactNode;
   subtitle?: string;
   onClose: () => void;
   children: ReactNode;
@@ -26,6 +27,7 @@ const widths: Record<string, number> = {
 export default function ModalWrapper({
   open,
   title,
+  titleBadge,
   subtitle,
   onClose,
   children,
@@ -67,8 +69,11 @@ export default function ModalWrapper({
             className="fixed left-1/2 top-1/2 z-[201] flex max-h-[90dvh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-modal border border-border bg-surface shadow-modal outline-none transition-[max-width] duration-200"
           >
             <div className={`flex shrink-0 ${subtitle ? "items-start border-topbar pt-5 pr-4.5 pb-4 pl-6" : "items-center border-divider px-6 py-5"} justify-between gap-3 border-b`}>
-              <div className={subtitle ? "space-y-0.5" : undefined}>
-                <Dialog.Title className="type-modal-title text-ink">{title}</Dialog.Title>
+              <div className={subtitle ? "space-y-1" : undefined}>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Dialog.Title className="type-modal-title text-ink">{title}</Dialog.Title>
+                  {titleBadge}
+                </div>
                 {subtitle && <p className="type-body-secondary text-ink-muted">{subtitle}</p>}
               </div>
               <button
