@@ -24,7 +24,7 @@ import { PurchaseOrderPO, POStatus } from "../types";
 import { POTable } from "./POTable";
 import { PODetailsView } from "./PODetailsModal";
 import { POApprovalModal } from "./POApprovalModal";
-import { PurchaseOrderPrintDocument } from "./PurchaseOrderPrintDocument";
+import { downloadPurchaseOrderPdf } from "./downloadPurchaseOrderPdf";
 import { POActionModal, POActionType } from "./POActionModal";
 import { CreatePOForm } from "./CreatePOModal";
 import { CreateDeliveryModal } from "../delivery/CreateDeliveryModal";
@@ -100,7 +100,6 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
   // Modals state
   const [selectedPO, setSelectedPO] = useState<PurchaseOrderPO | null>(null);
   const [approvingPO, setApprovingPO] = useState<PurchaseOrderPO | null>(null);
-  const [printingPO, setPrintingPO] = useState<PurchaseOrderPO | null>(null);
   const [actionModal, setActionModal] = useState<{ po: PurchaseOrderPO; type: POActionType; returnToDetails?: boolean } | null>(null);
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [editingPO, setEditingPO] = useState<PurchaseOrderPO | null>(null);
@@ -215,7 +214,9 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           po={latestPo}
           isAdmin={isAdmin}
           onClose={() => setSelectedPO(null)}
-          onPrint={(po) => setPrintingPO(po)}
+          onPrint={(po) => {
+            void downloadPurchaseOrderPdf(po);
+          }}
           onConfirmEmailSent={async (po) => {
             const res = await procurement.setOrderStatus(po.poId, {
               status: "Pending Approval",
@@ -250,13 +251,6 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
               setActiveTab("Approved");
               fetchOrders();
             }}
-          />
-        )}
-
-        {printingPO && (
-          <PurchaseOrderPrintDocument
-            po={printingPO}
-            onClose={() => setPrintingPO(null)}
           />
         )}
 
@@ -454,14 +448,6 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
             setActiveTab("Approved");
             fetchOrders();
           }}
-        />
-      )}
-
-      {/* Printable Document Modal */}
-      {printingPO && (
-        <PurchaseOrderPrintDocument
-          po={printingPO}
-          onClose={() => setPrintingPO(null)}
         />
       )}
 

@@ -720,17 +720,6 @@ function POFormBody({
       {createdOrder ? (
         /* Post-Submit Waiting for Gmail Send View */
         <div className="rounded-card border border-border bg-surface p-5 space-y-5 max-w-3xl">
-          <div className="p-3.5 rounded-inner bg-notice-warning-bg border border-notice-warning-border type-body-secondary text-notice-warning-text flex items-start gap-2.5">
-            <Mail className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-            <span>
-              <strong>{createdOrder.poNumber}</strong> is now in <strong>Pending Approval</strong>,
-              and your PDF (<strong>{createdOrder.poNumber}.pdf</strong>) has been downloaded.
-              Please confirm after sending the email in Gmail by clicking <strong>Done</strong>. If
-              you close this screen before confirming, you will still be prompted to confirm sending
-              the email before you can approve this order.
-            </span>
-          </div>
-
           {/* Summary Card (2x2) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-inner bg-page border border-divider">
             <div>

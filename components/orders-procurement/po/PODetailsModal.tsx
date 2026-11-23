@@ -204,45 +204,107 @@ function PODetailsBody({
         </div>
       </div>
 
-      {/* Email Send Confirmation Banner (shown when PO is Pending Approval but Gmail send wasn't confirmed yet) */}
+      {/* Clean Gmail Send Confirmation Card (shown in upper part when Pending Approval PO wasn't confirmed via Done yet) */}
       {!isAdmin && isEmailPending && (
-        <div className="p-4 rounded-card border border-notice-warning-border bg-notice-warning-bg text-notice-warning-text flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-start gap-2.5 type-body-secondary">
-            <Mail className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+        <div className="rounded-card border border-border bg-surface p-5 space-y-5">
+          {/* Summary Card (2x2) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-inner bg-page border border-divider">
             <div>
-              <p className="font-semibold text-notice-warning-text">
-                Email confirmation pending — Approve Order is locked
-              </p>
-              <p className="type-caption mt-0.5">
-                You have not confirmed sending <strong>{po.poNumber}.pdf</strong> to{" "}
-                <strong>{po.supplierEmail || po.supplierName}</strong> in Gmail yet. Confirm once
-                sent to unlock order approval.
-              </p>
+              <span className="text-ink-muted block type-caption mb-1">Purchase Order Number</span>
+              <span className="type-body-strong text-ink tabular-nums">{po.poNumber}</span>
+            </div>
+            <div>
+              <span className="text-ink-muted block type-caption mb-1">Supplier</span>
+              <span className="type-body-strong text-ink">{po.supplierName || "—"}</span>
+            </div>
+            <div>
+              <span className="text-ink-muted block type-caption mb-1">Recipient Email</span>
+              <span className="type-body-strong text-ink break-all">
+                {po.supplierEmail || "No email registered"}
+              </span>
+            </div>
+            <div>
+              <span className="text-ink-muted block type-caption mb-1">Contact person</span>
+              <span className="type-body-strong text-ink">
+                {po.supplierContactPerson || po.supplierName || "—"}
+              </span>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+
+          {/* Items Table */}
+          <div className="table-card">
+            <table className="w-full type-table-cell">
+              <thead className="table-head-row border-b border-divider">
+                <tr>
+                  <th className="table-th text-left">Item</th>
+                  <th className="table-th text-left">Unit</th>
+                  <th className="table-th text-right">Order Quantity</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-divider">
+                {(po.items || []).map((row, idx) => (
+                  <tr key={idx} className="hover:bg-page table-row">
+                    <td className="table-td font-medium text-ink">{row.itemName}</td>
+                    <td className="table-td text-ink-muted">{row.purchaseUomName || "Unit"}</td>
+                    <td className="table-td text-right font-semibold text-ink tabular-nums">
+                      {Number(row.poItemQuantity).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Next Steps in Gmail */}
+          <div className="p-4 rounded-inner bg-page border border-divider type-body-secondary space-y-2">
+            <span className="type-subsection text-ink block">Next steps in Gmail</span>
+            <ol className="list-decimal list-inside space-y-1 text-ink-secondary">
+              <li>
+                Attach the downloaded <strong className="text-ink">{po.poNumber}.pdf</strong> in the
+                opened Gmail tab.
+              </li>
+              <li>Review the formal email message and supplier questionnaire.</li>
+              <li>
+                Click <strong className="text-ink">Send</strong> in Gmail, then click{" "}
+                <strong className="text-ink">Done</strong> below.
+              </li>
+            </ol>
+          </div>
+
+          {/* Footer Action Buttons */}
+          <div className="flex flex-wrap items-center justify-end gap-2.5 pt-4 border-t border-divider">
             <Button
               type="button"
               variant="outline"
+              disabled={confirmingEmail}
+              onClick={onClose}
+              className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
+            >
+              Close
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={confirmingEmail}
               onClick={() => {
                 if (typeof window !== "undefined") {
                   window.open(buildGmailUrl(), "_blank", "noopener,noreferrer");
                 }
                 void downloadPurchaseOrderPdf(po);
               }}
-              className="rounded-control border border-border bg-surface px-3.5 h-9 type-label-button-sm text-ink hover:bg-subtle shadow-none cursor-pointer inline-flex items-center gap-1.5"
+              className="inline-flex items-center justify-center gap-2 rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
             >
-              <Mail className="w-3.5 h-3.5 text-primary" />
-              Open Gmail &amp; PDF
+              <Mail className="w-4 h-4 text-primary" />
+              Edit Gmail
             </Button>
             {onConfirmEmailSent && (
               <Button
                 type="button"
                 disabled={confirmingEmail}
                 onClick={() => setConfirmEmailModalOpen(true)}
-                className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button-sm hover:bg-primary-hover shadow-none cursor-pointer disabled:opacity-50"
+                className="rounded-control bg-primary text-on-brand px-5 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer disabled:opacity-50"
               >
-                {confirmingEmail ? "Confirming..." : "Confirm Email Sent"}
+                {confirmingEmail ? "Confirming..." : "Done"}
               </Button>
             )}
           </div>
