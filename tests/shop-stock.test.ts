@@ -237,10 +237,25 @@ async function extraLot(lotId: number, code: string, quantity = 20) {
   } });
   await prisma.inventories.update({ where: { ItemId_LocationId: { ItemId: 1, LocationId: 1 } }, data: { CurrentStock: 10 + quantity } });
 }
-it("never sells unlinked opening stock, even when the Item has one Size", async () => {
+it("sells produced stock in the shop Warehouse with no batch record when the Item has one Size", async () => {
+  await extraLot(3, "UBH-261115-04");
+  expect(await (await GET(request())).json()).toMatchObject({ quantity: 30, reserved: 3, available: 27 });
+  expect((await move("reserve", "factory", "line", 20)).status).toBe(200);
+  expect(await (await GET(request())).json()).toMatchObject({ available: 7 });
+});
+it("never sells unlinked stock of an Item several Sizes share, nor stock sent to a branch", async () => {
   await extraLot(3, "OPENING-3");
+  await prisma.finishedProducts.create({ data: { ProductId: 2, ItemId: 1, Sku: "UBE-500", Variant: "500g", SellingPrice: 200 } });
   expect(await (await GET(request())).json()).toMatchObject({ quantity: 10, available: 7 });
+  expect(await (await GET(request("productId=2"))).json()).toMatchObject({ quantity: 0, available: 0 });
   expect((await move("reserve", "too-many", "line", 8)).status).toBe(409);
+  await prisma.finishedProducts.delete({ where: { ProductId: 2 } });
+  await prisma.productionBatches.deleteMany({ where: { FgLotId: 1 } });
+  await prisma.inventoryLots.update({ where: { LotId: 3 }, data: { QuantityRemaining: 0 } });
+  // Lot 2 sits at the branch (location 2): produced for this Size, but distributed, so the shop never counts it.
+  expect(await (await GET(request())).json()).toMatchObject({ available: 7 });
+  await prisma.inventoryLots.update({ where: { LotId: 1 }, data: { QuantityRemaining: 0 } });
+  expect(await (await GET(request())).json()).toMatchObject({ quantity: 0, available: 0 });
 });
 it("never sells the seeded test lots, even when they are linked to the Size", async () => {
   for (const [lotId, code] of [[3, "LOT-UJH-2026-01"], [4, "LOT-UBH-2026-02"]] as const) { await extraLot(lotId, code); await linkSizeToLot(1, lotId); }

@@ -25,27 +25,58 @@ export async function warehouse(tx: Prisma.TransactionClient) {
   return id;
 }
 
+/** The lots the shop may count for an Item in the shop Warehouse, before deciding which Size each belongs to. */
+export const candidateLotWhere = (itemIds: number[], warehouseId: number): Prisma.InventoryLotsWhereInput => ({
+  ItemId: { in: itemIds }, LocationId: warehouseId,
+  Status: { in: ["Active", "Available"] }, QuantityRemaining: { gt: 0 },
+  OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
+  NOT: SEEDED_TEST_LOT_PREFIXES.map(prefix => ({ LotCode: { startsWith: prefix } })),
+});
+
+/**
+ * Whether a lot in the shop Warehouse belongs to this Size: one its production batch made, or, for an Item with only one
+ * Size, produced stock with no batch record (the Factory's lots). An unlinked lot of an Item shared by several Sizes cannot
+ * be told apart, so it is never sold. Stock sent to branches is never in the shop Warehouse, so it never counts.
+ */
+export function belongsToSize(lot: { ProductionBatches: { ProductId: number }[] }, sizeId: number, oneSize: boolean): boolean {
+  if (lot.ProductionBatches.length === 0) return oneSize;
+  return lot.ProductionBatches.some(batch => batch.ProductId === sizeId);
+}
+
+type FigureLot = { QuantityRemaining: Prisma.Decimal; ReservedQuantity: Prisma.Decimal };
+
+/** The shop's figures for one Size from its lots, bounded by the reconciled Item inventory less every reservation of the Item. */
+export function sizeAvailability(lots: FigureLot[], currentStock: Prisma.Decimal.Value | null | undefined, itemReserved: Prisma.Decimal.Value | null | undefined) {
+  let quantity = new Prisma.Decimal(0), reserved = new Prisma.Decimal(0), available = new Prisma.Decimal(0);
+  for (const lot of lots) {
+    quantity = quantity.plus(lot.QuantityRemaining);
+    reserved = reserved.plus(lot.ReservedQuantity);
+    available = available.plus(Prisma.Decimal.max(0, lot.QuantityRemaining.minus(lot.ReservedQuantity)));
+  }
+  const reconciled = Prisma.Decimal.max(0, currentStock ?? 0);
+  quantity = Prisma.Decimal.min(quantity, reconciled);
+  available = Prisma.Decimal.min(available, Prisma.Decimal.max(0, reconciled.minus(itemReserved ?? 0)));
+  return { quantity, reserved, available };
+}
+
 export async function sellableLots(tx: Prisma.TransactionClient, id: number, warehouseId: number) {
   const product = await tx.finishedProducts.findUnique({ where: { ProductId: id }, include: { Items: true } });
   if (!product?.Items.IsActive) throw new StockRefusal(404, "product_not_found", "This product Size is unavailable.");
-  const lots = await tx.inventoryLots.findMany({
-    where: {
-      ItemId: product.ItemId, LocationId: warehouseId,
-      Status: { in: ["Active", "Available"] }, QuantityRemaining: { gt: 0 },
-      OR: [{ ExpiryDate: null }, { ExpiryDate: { gt: new Date() } }],
-      // Only this Size's own lots, the ones its production batches made, as on the Finished Goods tab. Unlinked
-      // opening stock is never sold, and neither are the seeded test lots.
-      ProductionBatches: { some: { ProductId: id } },
-      NOT: SEEDED_TEST_LOT_PREFIXES.map(prefix => ({ LotCode: { startsWith: prefix } })),
-    },
-    orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
-  });
-  return { product, lots };
+  const [candidates, sizes] = await Promise.all([
+    tx.inventoryLots.findMany({
+      where: candidateLotWhere([product.ItemId], warehouseId),
+      include: { ProductionBatches: { select: { ProductId: true } } },
+      orderBy: [{ ExpiryDate: "asc" }, { LotId: "asc" }],
+    }),
+    tx.finishedProducts.count({ where: { ItemId: product.ItemId } }),
+  ]);
+  return { product, lots: candidates.filter(lot => belongsToSize(lot, id, sizes === 1)) };
 }
 
 /**
- * The one rule for what the shop may sell of a Size: its own lots in the shop Warehouse, less every reservation, bounded by
- * the reconciled Item inventory. The shop catalog, checkout and CREOMS's Stock page all read it.
+ * The one rule for what the shop may sell of a Size: what was produced of it and is still in the shop Warehouse (never
+ * stock sent to branches), less every reservation, bounded by the reconciled Item inventory. The shop catalog, checkout
+ * and CREOMS's Stock page all read it.
  */
 export async function stockAvailability(tx: Prisma.TransactionClient, id: number, warehouseId: number) {
   const { product, lots } = await sellableLots(tx, id, warehouseId);
@@ -56,16 +87,7 @@ export async function stockAvailability(tx: Prisma.TransactionClient, id: number
   const totals = await tx.inventoryLots.aggregate({
     where: { ItemId: product.ItemId, LocationId: warehouseId }, _sum: { ReservedQuantity: true },
   });
-  let quantity = new Prisma.Decimal(0), reserved = new Prisma.Decimal(0), available = new Prisma.Decimal(0);
-  for (const lot of lots) {
-    quantity = quantity.plus(lot.QuantityRemaining);
-    reserved = reserved.plus(lot.ReservedQuantity);
-    available = available.plus(Prisma.Decimal.max(0, lot.QuantityRemaining.minus(lot.ReservedQuantity)));
-  }
-  const reconciled = Prisma.Decimal.max(0, inventory?.CurrentStock ?? 0);
-  quantity = Prisma.Decimal.min(quantity, reconciled);
-  available = Prisma.Decimal.min(available, Prisma.Decimal.max(0, reconciled.minus(totals._sum.ReservedQuantity ?? 0)));
-  return { product, lots, quantity, reserved, available };
+  return { product, lots, ...sizeAvailability(lots, inventory?.CurrentStock, totals._sum.ReservedQuantity) };
 }
 
 export async function readStock(id: number) {

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { StockRefusal, stockAvailability, warehouse } from "./stock";
+import { StockRefusal, belongsToSize, candidateLotWhere, sizeAvailability, warehouse } from "./stock";
 import { isSeededTestLot } from "./test-lots";
 
 const COUNTED_LOT_STATUSES = ["Available", "Active"];
@@ -51,23 +51,34 @@ export async function readTabFigures(ids: number[]) {
 
 /**
  * Read-only stock per Size for CREOMS's Stock page: what the shop can sell from the shop Warehouse, by the same rule as
- * checkout (stockAvailability), so CREOMS and the shop can never disagree. A Size the IMS does not know is left out; one
- * it no longer sells has nothing to sell.
+ * checkout (belongsToSize and sizeAvailability), so CREOMS and the shop can never disagree. A Size the IMS does not know
+ * is left out; one it no longer sells has nothing to sell. A handful of reads for the whole list, so 200 Sizes answer fast.
  */
 export async function readInventory(ids: number[]) {
   return prisma.$transaction(async tx => {
     const warehouseId = await warehouse(tx);
-    const rows = await tx.finishedProducts.findMany({ where: { ProductId: { in: ids } }, select: { ProductId: true }, orderBy: { ProductId: "asc" } });
-    const products = [];
-    for (const { ProductId: productId } of rows) {
-      try {
-        const { quantity, reserved, available } = await stockAvailability(tx, productId, warehouseId);
-        products.push({ productId, quantity: quantity.toNumber(), reserved: reserved.toNumber(), available: available.toNumber() });
-      } catch (error) {
-        if (!(error instanceof StockRefusal) || error.status !== 404) throw error;
-        products.push({ productId, quantity: 0, reserved: 0, available: 0 });
-      }
-    }
+    const rows = await tx.finishedProducts.findMany({
+      where: { ProductId: { in: ids } }, select: { ProductId: true, ItemId: true, Items: { select: { IsActive: true } } }, orderBy: { ProductId: "asc" },
+    });
+    const itemIds = [...new Set(rows.map(row => row.ItemId))];
+    const [lots, sizeCounts, inventories, reservedByItem] = await Promise.all([
+      tx.inventoryLots.findMany({
+        where: candidateLotWhere(itemIds, warehouseId),
+        select: { ItemId: true, QuantityRemaining: true, ReservedQuantity: true, ProductionBatches: { select: { ProductId: true } } },
+      }),
+      tx.finishedProducts.groupBy({ by: ["ItemId"], where: { ItemId: { in: itemIds } }, _count: { _all: true } }),
+      tx.inventories.findMany({ where: { ItemId: { in: itemIds }, LocationId: warehouseId }, select: { ItemId: true, CurrentStock: true } }),
+      tx.inventoryLots.groupBy({ by: ["ItemId"], where: { ItemId: { in: itemIds }, LocationId: warehouseId }, _sum: { ReservedQuantity: true } }),
+    ]);
+    const sizesOf = new Map(sizeCounts.map(entry => [entry.ItemId, entry._count._all]));
+    const stockOf = new Map(inventories.map(entry => [entry.ItemId, entry.CurrentStock]));
+    const heldOf = new Map(reservedByItem.map(entry => [entry.ItemId, entry._sum.ReservedQuantity]));
+    const products = rows.map(({ ProductId: productId, ItemId: itemId, Items: item }) => {
+      if (!item.IsActive) return { productId, quantity: 0, reserved: 0, available: 0 };
+      const own = lots.filter(lot => lot.ItemId === itemId && belongsToSize(lot, productId, sizesOf.get(itemId) === 1));
+      const { quantity, reserved, available } = sizeAvailability(own, stockOf.get(itemId), heldOf.get(itemId));
+      return { productId, quantity: quantity.toNumber(), reserved: reserved.toNumber(), available: available.toNumber() };
+    });
     return { products };
   }, { isolationLevel: "RepeatableRead" });
 }
