@@ -500,35 +500,64 @@ function PODetailsBody({
 
         {/* Right Column: Summary + Activity */}
         <div className="space-y-5">
-          {/* Card 1: Summary (hidden while Pending Approval before supplier confirmation) */}
-          {!isPending && (
-            <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
-              <h2 className="type-subsection text-ink">Summary</h2>
+          {/* Card 1: Summary (always visible; shows Pending Confirmation before supplier pricing is finalized) */}
+          <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+            <h2 className="type-subsection text-ink">Summary</h2>
 
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between gap-3 type-body-secondary">
-                  <span className="text-ink-muted">
-                    Subtotal &middot; {po.items?.length || 0}{" "}
-                    {(po.items?.length || 0) === 1 ? "item" : "items"}
-                  </span>
-                  <span className="font-medium text-ink tabular-nums">
-                    {po.totalAmount > 0 ? fmtCurrency(po.totalAmount) : "₱0.00"}
+            {isPending ? (
+              <>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted">Items</span>
+                    <span className="font-medium text-ink tabular-nums">
+                      {po.items?.length || 0}{" "}
+                      {(po.items?.length || 0) === 1 ? "item" : "items"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted">Total quantity</span>
+                    <span className="font-medium text-ink tabular-nums">
+                      {(po.items || [])
+                        .reduce((sum, i) => sum + Number(i.poItemQuantity || 0), 0)
+                        .toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
+                  <span className="type-subsection text-ink">Total</span>
+                  <span className="type-body-secondary font-medium text-ink-muted">
+                    Pending Confirmation
                   </span>
                 </div>
-              </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted">
+                      Subtotal &middot; {po.items?.length || 0}{" "}
+                      {(po.items?.length || 0) === 1 ? "item" : "items"}
+                    </span>
+                    <span className="font-medium text-ink tabular-nums">
+                      {po.totalAmount > 0 ? fmtCurrency(po.totalAmount) : "₱0.00"}
+                    </span>
+                  </div>
+                </div>
 
-              <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
-                <span className="type-subsection text-ink">TOTAL AMOUNT DUE</span>
-                <span className="type-modal-title text-ink tabular-nums">
-                  {po.totalAmount > 0
-                    ? fmtCurrency(po.totalAmount)
-                    : isApproved
-                      ? "₱0.00"
-                      : "Pending Confirmation"}
-                </span>
-              </div>
-            </div>
-          )}
+                <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
+                  <span className="type-subsection text-ink">TOTAL AMOUNT DUE</span>
+                  <span className="type-modal-title text-ink tabular-nums">
+                    {po.totalAmount > 0
+                      ? fmtCurrency(po.totalAmount)
+                      : isApproved
+                        ? "₱0.00"
+                        : "Pending Confirmation"}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Card 2: Activity Timeline (Matches Figma right-rail Activity card) */}
           <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
