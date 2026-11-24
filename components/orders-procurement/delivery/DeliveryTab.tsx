@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useMemo, useTransition } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { OrdersSkeleton } from "@/components/orders-procurement/OrdersSkeleton";
 import { Plus, RefreshCw, History } from "lucide-react";
 import {
@@ -51,7 +52,6 @@ export function DeliveryTab({
 
   const deliveries = initialDeliveries;
   const [loading, startRefresh] = useTransition();
-  const [notice, setNotice] = useState("");
   const [activeTab, setActiveTab] = useState<string>("All");
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("");
@@ -141,7 +141,7 @@ export function DeliveryTab({
         onClose={() => setOpenCreateModal(false)}
         onSuccess={() => {
           setOpenCreateModal(false);
-          setNotice("Saved successfully.");
+          toast.success("Saved successfully.");
           fetchDeliveries();
         }}
       />
@@ -157,7 +157,7 @@ export function DeliveryTab({
         onClose={() => setArriveDelivery(null)}
         onSuccess={() => {
           setArriveDelivery(null);
-          setNotice("Saved successfully.");
+          toast.success("Saved successfully.");
           fetchDeliveries();
         }}
       />
@@ -189,7 +189,7 @@ export function DeliveryTab({
             onSuccess={() => {
               setCancelDelivery(null);
               setSelectedDelivery(null);
-              setNotice("Saved successfully.");
+              toast.success("Saved successfully.");
               fetchDeliveries();
             }}
           />
@@ -200,11 +200,6 @@ export function DeliveryTab({
 
   return (
     <div className="space-y-5 animate-page-in">
-      {notice && (
-        <p role="status" className="rounded-control bg-subtle border border-border p-3 type-body text-primary">
-          {notice}
-        </p>
-      )}
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -362,7 +357,7 @@ export function DeliveryTab({
           }}
           onSuccess={() => {
             setCancelDelivery(null);
-            setNotice("Saved successfully.");
+            toast.success("Saved successfully.");
             fetchDeliveries();
           }}
         />

@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Plus,
   RefreshCw,
@@ -90,7 +91,6 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
   const isAdmin = isAdminStaff(staff);
   const orders = initialOrders.map(mapPO);
   const [loading, startRefresh] = useTransition();
-  const [notice, setNotice] = useState("");
   const [activeTab, setActiveTab] = useState<string>("All");
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("");
@@ -163,7 +163,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
       status,
       adminNotes: adminNotes || null,
     });
-    setNotice("Purchase order updated successfully.");
+    toast.success("Purchase order updated successfully.");
     fetchOrders();
   };
 
@@ -184,7 +184,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           setEditingPO(null);
           fetchOrders();
           if (poNumber) {
-            setNotice(`${poNumber} was not sent. You can create and send it again.`);
+            toast.info(`${poNumber} was not sent. You can create and send it again.`);
           }
         }}
         onSuccess={(saved) => {
@@ -193,7 +193,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           fetchOrders();
           setActiveTab("Pending Approval");
           if (saved?.poNumber) {
-            setNotice(
+            toast.success(
               saved.emailConfirmed === false
                 ? `${saved.poNumber} saved in Pending Approval — open it to confirm Gmail send before approving.`
                 : `${saved.poNumber} marked as sent — awaiting supplier confirmation.`
@@ -214,7 +214,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
         onSuccess={(updated) => {
           setApprovingPO(null);
           setSelectedPO(updated);
-          setNotice(`Purchase Order ${updated.poNumber} confirmed and moved to Approved.`);
+          toast.success(`Purchase Order ${updated.poNumber} confirmed and moved to Approved.`);
           setActiveTab("Approved");
           fetchOrders();
         }}
@@ -233,7 +233,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
         onSuccess={() => {
           setDeliveryPO(null);
           setSelectedPO(null);
-          setNotice("Delivery order scheduled successfully.");
+          toast.success("Delivery order scheduled successfully.");
           fetchOrders();
         }}
       />
@@ -262,7 +262,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
               ? mapPO(res.data.data)
               : { ...po, status: "Pending Approval", emailConfirmed: true };
             setSelectedPO(updated);
-            setNotice(`${po.poNumber} email send confirmed — you can now confirm the order when the supplier replies.`);
+            toast.success(`${po.poNumber} email send confirmed — you can now confirm the order when the supplier replies.`);
             fetchOrders();
           }}
           onApproveWithForm={(po) => {
@@ -299,12 +299,6 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
 
   return (
     <div className="space-y-5 animate-page-in">
-      {notice && (
-        <p role="status" className="rounded-control bg-subtle border border-border p-3 type-body text-primary">
-          {notice}
-        </p>
-      )}
-
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -485,11 +479,11 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
           setDiscardSubmitting(true);
           try {
             await procurement.discardDraftOrder(po.poId);
-            setNotice(`${po.poNumber} was not sent. Draft discarded — you can create and send it again.`);
+            toast.info(`${po.poNumber} was not sent. Draft discarded — you can create and send it again.`);
             setDiscardingPO(null);
             fetchOrders();
           } catch (e: unknown) {
-            setNotice(e instanceof Error ? e.message : "Failed to discard draft purchase order.");
+            toast.error(e instanceof Error ? e.message : "Failed to discard draft purchase order.");
             setDiscardingPO(null);
           } finally {
             setDiscardSubmitting(false);

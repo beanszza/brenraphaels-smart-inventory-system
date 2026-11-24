@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { PRTab } from "@/components/orders-procurement/pr/PRTab";
 import { CreatePRForm } from "@/components/orders-procurement/pr/CreatePRForm";
@@ -28,7 +29,6 @@ export default function OrdersProcurementPage({
   const router = useRouter();
   const staff = useStaff();
   const isAdmin = isAdminStaff(staff);
-  const [notice, setNotice] = useState("");
   const [mainTab, setMainTab] = useState<"pr" | "po" | "delivery">("pr");
 
   // Full-page Purchase Requisition form state (create / edit / prefill)
@@ -85,7 +85,7 @@ export default function OrdersProcurementPage({
       status,
       adminNotes: notes || null,
     });
-    setNotice("Status updated successfully.");
+    toast.success("Status updated successfully.");
     setViewingPrId(null);
     router.refresh();
   };
@@ -153,7 +153,7 @@ export default function OrdersProcurementPage({
           onClose={() => setPrFormState(null)}
           onSuccess={() => {
             setPrFormState(null);
-            setNotice("Purchase requisition saved successfully.");
+            toast.success("Purchase requisition saved successfully.");
             router.refresh();
           }}
         />
@@ -176,13 +176,13 @@ export default function OrdersProcurementPage({
             setCreatePOFromPR(undefined);
             router.refresh();
             if (poNumber) {
-              setNotice(`${poNumber} was not sent. You can create and send it again.`);
+              toast.info(`${poNumber} was not sent. You can create and send it again.`);
             }
           }}
           onSuccess={(created) => {
             setShowCreatePO(false);
             setCreatePOFromPR(undefined);
-            setNotice(
+            toast.success(
               created?.poNumber
                 ? `${created.poNumber} marked as sent — awaiting supplier confirmation.`
                 : "Purchase order saved successfully."
@@ -203,7 +203,7 @@ export default function OrdersProcurementPage({
           onClose={() => setShowCreateDelivery(false)}
           onSuccess={() => {
             setShowCreateDelivery(false);
-            setNotice("Delivery order scheduled successfully.");
+            toast.success("Delivery order scheduled successfully.");
             router.refresh();
           }}
         />
@@ -237,7 +237,7 @@ export default function OrdersProcurementPage({
           onSuccess={() => {
             setArrivingDeliveryState(null);
             setViewingDeliveryId(null);
-            setNotice("Delivery arrival confirmed successfully.");
+            toast.success("Delivery arrival confirmed successfully.");
             router.refresh();
           }}
         />
@@ -279,7 +279,7 @@ export default function OrdersProcurementPage({
             onSuccess={() => {
               setCancellingDelivery(null);
               setViewingDeliveryId(null);
-              setNotice("Delivery order cancelled successfully.");
+              toast.success("Delivery order cancelled successfully.");
               router.refresh();
             }}
           />
@@ -290,7 +290,6 @@ export default function OrdersProcurementPage({
 
   return (
     <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
-      {notice && <p role="status" className="type-body text-primary">{notice}</p>}
       {/* Page Header */}
       <PageHeader
         title="Orders & Procurement"
@@ -299,13 +298,13 @@ export default function OrdersProcurementPage({
 
       {/* 3 Main Process Tabs */}
       <div className="border-b border-divider">
-        <div className="flex items-center gap-2 overflow-x-auto">
+        <div className="flex items-center gap-2 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             type="button"
             onClick={() => setMainTab("pr")}
             className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ${
               mainTab === "pr"
-                ? "border-primary text-primary -mb-px"
+                ? "border-primary text-primary"
                 : "border-transparent text-ink-muted hover:text-ink"
             }`}
           >
@@ -317,7 +316,7 @@ export default function OrdersProcurementPage({
             onClick={() => setMainTab("po")}
             className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ${
               mainTab === "po"
-                ? "border-primary text-primary -mb-px"
+                ? "border-primary text-primary"
                 : "border-transparent text-ink-muted hover:text-ink"
             }`}
           >
@@ -329,7 +328,7 @@ export default function OrdersProcurementPage({
             onClick={() => setMainTab("delivery")}
             className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ${
               mainTab === "delivery"
-                ? "border-primary text-primary -mb-px"
+                ? "border-primary text-primary"
                 : "border-transparent text-ink-muted hover:text-ink"
             }`}
           >

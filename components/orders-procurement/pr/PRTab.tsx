@@ -6,6 +6,7 @@ import { procurement } from "@/lib/orders/client";
 
 import React, { useState, useEffect, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Plus,
   RefreshCw,
@@ -68,7 +69,6 @@ export function PRTab({
     [isAdmin]
   );
   const [loading, startRefresh] = useTransition();
-  const [notice, setNotice] = useState("");
   const [activeTab, setActiveTab] = useState<string>("All");
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("");
@@ -166,7 +166,7 @@ export function PRTab({
       status,
       adminNotes: notes || null,
     });
-    setNotice("Status updated successfully.");
+    toast.success("Status updated successfully.");
     fetchRequisitions();
   };
 
@@ -221,7 +221,6 @@ export function PRTab({
 
   return (
     <div className="space-y-5 animate-page-in">
-      {notice && <p role="status" className="rounded-control bg-subtle border border-border p-3 type-body text-primary">{notice}</p>}
       {/* Top Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -433,7 +432,7 @@ export function PRTab({
           onSuccess={() => {
             setOpenCreateModal(false);
             setPrefillPR(null);
-            setNotice("Saved successfully.");
+            toast.success("Saved successfully.");
             fetchRequisitions();
           }}
         />
@@ -447,7 +446,7 @@ export function PRTab({
           onClose={() => setEditingPR(null)}
           onSuccess={() => {
             setEditingPR(null);
-            setNotice("Saved successfully.");
+            toast.success("Saved successfully.");
             fetchRequisitions();
           }}
         />
