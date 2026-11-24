@@ -314,7 +314,7 @@ export function DeliveryTab({
 
         <SearchInput
           containerClassName="flex-none w-full sm:w-[300px] h-[38px]"
-          placeholder="Search delivery, PO, or carrier..."
+          placeholder="Search delivery, purchase order, or supplier..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);

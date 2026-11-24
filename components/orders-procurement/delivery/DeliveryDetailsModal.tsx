@@ -65,35 +65,62 @@ function DeliveryDetailsBody({
 
   const [resolvedReceiptUrl, setResolvedReceiptUrl] = useState<string>("");
   const [resolvedArrivalUrl, setResolvedArrivalUrl] = useState<string>("");
+  const [resolvingReceipt, setResolvingReceipt] = useState(false);
+  const [resolvingArrival, setResolvingArrival] = useState(false);
+  const [receiptImgError, setReceiptImgError] = useState(false);
+  const [arrivalImgError, setArrivalImgError] = useState(false);
 
   useEffect(() => {
     let active = true;
+    setReceiptImgError(false);
+    setArrivalImgError(false);
+
     if (receiptProofSrc) {
       if (receiptProofSrc.startsWith("data:") || receiptProofSrc.startsWith("http")) {
         setResolvedReceiptUrl(receiptProofSrc);
+        setResolvingReceipt(false);
       } else if (isFileId(receiptProofSrc)) {
+        setResolvedReceiptUrl("");
+        setResolvingReceipt(true);
         resolveDeliveryAttachment(receiptProofSrc)
           .then((res) => {
             if (active && res.data?.url) setResolvedReceiptUrl(res.data.url);
           })
-          .catch(() => {});
+          .catch(() => {})
+          .finally(() => {
+            if (active) setResolvingReceipt(false);
+          });
+      } else {
+        setResolvedReceiptUrl("");
+        setResolvingReceipt(false);
       }
     } else {
       setResolvedReceiptUrl("");
+      setResolvingReceipt(false);
     }
 
     if (arrivalProofSrc) {
       if (arrivalProofSrc.startsWith("data:") || arrivalProofSrc.startsWith("http")) {
         setResolvedArrivalUrl(arrivalProofSrc);
+        setResolvingArrival(false);
       } else if (isFileId(arrivalProofSrc)) {
+        setResolvedArrivalUrl("");
+        setResolvingArrival(true);
         resolveDeliveryAttachment(arrivalProofSrc)
           .then((res) => {
             if (active && res.data?.url) setResolvedArrivalUrl(res.data.url);
           })
-          .catch(() => {});
+          .catch(() => {})
+          .finally(() => {
+            if (active) setResolvingArrival(false);
+          });
+      } else {
+        setResolvedArrivalUrl("");
+        setResolvingArrival(false);
       }
     } else {
       setResolvedArrivalUrl("");
+      setResolvingArrival(false);
     }
 
     return () => {
@@ -120,8 +147,16 @@ function DeliveryDetailsBody({
   const steps = ["Scheduled", "Arrived", "Received (Goods Receipt Note)"];
   const currentStepIdx = isCancelled ? -1 : delivery.grnNumber ? 2 : isArrived ? 1 : 0;
 
-  const displayReceiptSrc = resolvedReceiptUrl || receiptProofSrc;
-  const displayArrivalSrc = resolvedArrivalUrl || arrivalProofSrc;
+  const isRenderableUrl = (src: string) =>
+    Boolean(src) &&
+    (src.startsWith("data:") || src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/"));
+  const isPdfSrc = (src: string) =>
+    src.startsWith("data:application/pdf") || /\.pdf($|\?)/i.test(src);
+
+  const displayReceiptUrl = isRenderableUrl(resolvedReceiptUrl) ? resolvedReceiptUrl : "";
+  const displayArrivalUrl = isRenderableUrl(resolvedArrivalUrl) ? resolvedArrivalUrl : "";
+  const canPreviewReceiptImg = Boolean(displayReceiptUrl) && !isPdfSrc(displayReceiptUrl) && !receiptImgError;
+  const canPreviewArrivalImg = Boolean(displayArrivalUrl) && !isPdfSrc(displayArrivalUrl) && !arrivalImgError;
 
   const totalShipmentQty =
     delivery.items?.reduce((sum, it) => sum + (Number(it.declaredQuantity) || 0), 0) || 0;
@@ -300,24 +335,28 @@ function DeliveryDetailsBody({
               {fmtDate(delivery.scheduledDate)}
             </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="block type-label-field text-ink-strong">Actual Arrival</label>
-            <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary">
-              {fmtDate(delivery.actualArrivalDate)}
+          {delivery.actualArrivalDate && (
+            <div className="space-y-1.5">
+              <label className="block type-label-field text-ink-strong">Actual Arrival</label>
+              <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary">
+                {fmtDate(delivery.actualArrivalDate)}
+              </div>
             </div>
-          </div>
+          )}
           <div className="space-y-1.5">
             <label className="block type-label-field text-ink-strong">Received By</label>
             <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
               {delivery.receivedBy || (isArrived ? "Vince Neil Madeja" : "Pending Arrival")}
             </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="block type-label-field text-ink-strong">Goods Receipt Note</label>
-            <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary">
-              {delivery.grnNumber || (isArrived ? "Ready for Goods Receipt Note" : "—")}
+          {delivery.grnNumber && (
+            <div className="space-y-1.5">
+              <label className="block type-label-field text-ink-strong">Goods Receipt Note</label>
+              <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary">
+                {delivery.grnNumber}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
@@ -382,22 +421,23 @@ function DeliveryDetailsBody({
       </section>
 
       {/* Document Proofs & Attachments Card */}
-      {(displayReceiptSrc || displayArrivalSrc) && (
+      {(receiptProofSrc || arrivalProofSrc) && (
         <section className="rounded-card border border-border bg-surface p-5 space-y-3">
           <h2 className="type-subsection text-ink">Document proofs &amp; attachments</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {displayReceiptSrc && (
+            {receiptProofSrc && (
               <div className="rounded-inner border border-border bg-page p-3.5 flex items-center gap-3.5">
-                <div className="size-13 rounded-control border border-border bg-surface overflow-hidden flex items-center justify-center shrink-0">
-                  {displayReceiptSrc.startsWith("data:image/") ||
-                  displayReceiptSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ||
-                  displayReceiptSrc.includes("/files/") ? (
+                <div className="size-16 rounded-control border border-border bg-surface overflow-hidden flex items-center justify-center shrink-0">
+                  {resolvingReceipt ? (
+                    <div className="size-full bg-subtle animate-pulse" />
+                  ) : canPreviewReceiptImg ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={displayReceiptSrc}
+                      src={displayReceiptUrl}
                       alt="Receipt Proof"
+                      onError={() => setReceiptImgError(true)}
                       onClick={() =>
-                        setPreviewImage({ title: "Receipt Proof", src: displayReceiptSrc })
+                        setPreviewImage({ title: "Receipt Proof", src: displayReceiptUrl })
                       }
                       className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                     />
@@ -410,38 +450,47 @@ function DeliveryDetailsBody({
                     Schedule / Receipt Proof
                   </p>
                   <p className="type-caption text-ink-muted">
-                    Uploaded when scheduling delivery
+                    {resolvingReceipt ? "Loading attachment..." : "Uploaded when scheduling delivery"}
                   </p>
-                  {(displayReceiptSrc.startsWith("data:image/") ||
-                    displayReceiptSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ||
-                    displayReceiptSrc.includes("/files/")) && (
+                  {canPreviewReceiptImg ? (
                     <button
                       type="button"
                       onClick={() =>
-                        setPreviewImage({ title: "Receipt Proof", src: displayReceiptSrc })
+                        setPreviewImage({ title: "Receipt Proof", src: displayReceiptUrl })
                       }
                       className="type-caption font-medium text-primary hover:underline inline-flex items-center gap-1 cursor-pointer pt-0.5"
                     >
                       <span>View full image</span>
                       <ExternalLink className="w-3 h-3" />
                     </button>
-                  )}
+                  ) : displayReceiptUrl ? (
+                    <a
+                      href={displayReceiptUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="type-caption font-medium text-primary hover:underline inline-flex items-center gap-1 cursor-pointer pt-0.5"
+                    >
+                      <span>Open attachment</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : null}
                 </div>
               </div>
             )}
 
-            {displayArrivalSrc && (
+            {arrivalProofSrc && (
               <div className="rounded-inner border border-border bg-page p-3.5 flex items-center gap-3.5">
-                <div className="size-13 rounded-control border border-border bg-surface overflow-hidden flex items-center justify-center shrink-0">
-                  {displayArrivalSrc.startsWith("data:image/") ||
-                  displayArrivalSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ||
-                  displayArrivalSrc.includes("/files/") ? (
+                <div className="size-16 rounded-control border border-border bg-surface overflow-hidden flex items-center justify-center shrink-0">
+                  {resolvingArrival ? (
+                    <div className="size-full bg-subtle animate-pulse" />
+                  ) : canPreviewArrivalImg ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={displayArrivalSrc}
+                      src={displayArrivalUrl}
                       alt="Arrival Proof"
+                      onError={() => setArrivalImgError(true)}
                       onClick={() =>
-                        setPreviewImage({ title: "Arrival Proof", src: displayArrivalSrc })
+                        setPreviewImage({ title: "Arrival Proof", src: displayArrivalUrl })
                       }
                       className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                     />
@@ -453,21 +502,31 @@ function DeliveryDetailsBody({
                   <p className="type-body-secondary font-medium text-ink truncate">
                     Arrival Proof Photo
                   </p>
-                  <p className="type-caption text-ink-muted">Uploaded upon delivery arrival</p>
-                  {(displayArrivalSrc.startsWith("data:image/") ||
-                    displayArrivalSrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ||
-                    displayArrivalSrc.includes("/files/")) && (
+                  <p className="type-caption text-ink-muted">
+                    {resolvingArrival ? "Loading attachment..." : "Uploaded upon delivery arrival"}
+                  </p>
+                  {canPreviewArrivalImg ? (
                     <button
                       type="button"
                       onClick={() =>
-                        setPreviewImage({ title: "Arrival Proof", src: displayArrivalSrc })
+                        setPreviewImage({ title: "Arrival Proof", src: displayArrivalUrl })
                       }
                       className="type-caption font-medium text-primary hover:underline inline-flex items-center gap-1 cursor-pointer pt-0.5"
                     >
                       <span>View full image</span>
                       <ExternalLink className="w-3 h-3" />
                     </button>
-                  )}
+                  ) : displayArrivalUrl ? (
+                    <a
+                      href={displayArrivalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="type-caption font-medium text-primary hover:underline inline-flex items-center gap-1 cursor-pointer pt-0.5"
+                    >
+                      <span>Open attachment</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : null}
                 </div>
               </div>
             )}
@@ -509,10 +568,12 @@ function DeliveryDetailsBody({
             <span className="text-ink-muted">Planned Dispatch</span>
             <span className="font-medium text-ink">{fmtDate(delivery.scheduledDate)}</span>
           </div>
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-ink-muted">Actual Arrival</span>
-            <span className="font-medium text-ink">{fmtDate(delivery.actualArrivalDate)}</span>
-          </div>
+          {delivery.actualArrivalDate && (
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-ink-muted">Actual Arrival</span>
+              <span className="font-medium text-ink">{fmtDate(delivery.actualArrivalDate)}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-3">
             <span className="text-ink-muted">Received By</span>
             <span className="font-medium text-ink text-right truncate max-w-[170px]">

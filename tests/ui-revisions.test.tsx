@@ -14,6 +14,7 @@ import { PODetailsModal } from "@/components/orders-procurement/po/PODetailsModa
 import { POApprovalModal } from "@/components/orders-procurement/po/POApprovalModal";
 import { POTable } from "@/components/orders-procurement/po/POTable";
 import { DeliveryDetailsModal, DeliveryDetailsView } from "@/components/orders-procurement/delivery/DeliveryDetailsModal";
+import { DeliveryTable } from "@/components/orders-procurement/delivery/DeliveryTable";
 import { MarkArrivedView } from "@/components/orders-procurement/delivery/MarkArrivedModal";
 import DiscrepancyDetailsModal from "@/components/receiving/DiscrepancyDetailsModal";
 import InventoryTable from "@/components/inventory/InventoryTable";
@@ -426,7 +427,28 @@ describe("Modal layout, typography, and date bounds", () => {
     expect(detailsPageHtml).toContain("Shipment Quantity");
     expect(detailsPageHtml).toContain("Cancel Delivery");
     expect(detailsPageHtml).toContain("Confirm Arrival");
+    expect(detailsPageHtml).not.toContain("Actual Arrival");
+    expect(detailsPageHtml).not.toContain(">Goods Receipt Note<");
     expect(detailsPageHtml).not.toContain("font-mono");
+
+    const arrivedDelivery = {
+      ...sampleDelivery,
+      status: "Arrived",
+      actualArrivalDate: "2026-11-15",
+      receivedBy: "Vince Neil Madeja",
+    } as unknown as Delivery;
+
+    const arrivedDetailsHtml = renderToStaticMarkup(
+      <DeliveryDetailsView delivery={arrivedDelivery} poTotalAmount={1340} onClose={() => { }} />
+    );
+    expect(arrivedDetailsHtml).toContain("Actual Arrival");
+    expect(arrivedDetailsHtml).not.toContain(">Goods Receipt Note<");
+
+    const tableHtml = renderToStaticMarkup(
+      <DeliveryTable deliveries={[sampleDelivery]} onView={() => { }} />
+    );
+    expect(tableHtml).not.toContain(">Carrier<");
+    expect(tableHtml).not.toContain("In-House");
 
     const arrivePageHtml = renderToStaticMarkup(
       <MarkArrivedView

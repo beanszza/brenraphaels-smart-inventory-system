@@ -49,7 +49,6 @@ export function DeliveryTable({
             <th className="sticky left-0 z-20 bg-surface pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap min-w-[150px]">Delivery No.</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Purchase Order Ref.</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Supplier</th>
-            <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Carrier</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Expected Date</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Items</th>
             <th className="pb-2.5 pt-1 pr-4 type-table-header text-ink-muted text-left whitespace-nowrap">Status</th>
@@ -59,7 +58,7 @@ export function DeliveryTable({
         <tbody className="divide-y divide-divider">
           {deliveries.length === 0 ? (
             <tr>
-              <td colSpan={8} className="py-12 text-center type-body text-ink-muted">
+              <td colSpan={7} className="py-12 text-center type-body text-ink-muted">
                 No delivery shipments found.
               </td>
             </tr>
@@ -116,9 +115,6 @@ export function DeliveryTable({
                   </td>
                   <td className="py-3 pr-4 type-body text-ink whitespace-nowrap max-w-[200px] truncate" title={delivery.supplierName}>
                     {delivery.supplierName || "—"}
-                  </td>
-                  <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
-                    {delivery.carrier || "In-House"}
                   </td>
                   <td className="py-3 pr-4 type-body text-ink whitespace-nowrap">
                     {fmtDate(delivery.expectedArrivalDate || delivery.scheduledDate)}

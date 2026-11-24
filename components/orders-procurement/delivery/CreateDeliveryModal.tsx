@@ -10,7 +10,6 @@ import { uploadDeliveryAttachmentDirect } from "@/app/actions/orders/delivery-fi
 import React, { useState, useEffect, useMemo } from "react";
 import {
   AlertCircle,
-  ArrowLeft,
   Calendar,
   ChevronDown,
   ChevronLeft,
@@ -24,7 +23,6 @@ import { Button } from "@/components/ui/button";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ConfirmModal from "@/components/ConfirmModal";
 import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 import { PurchaseOrderPO, Delivery } from "../types";
@@ -88,8 +86,8 @@ function CreateDeliveryBody({
   const [selectedPoId, setSelectedPoId] = useState<number | null>(initialPo?.poId ?? null);
   const [pendingPoId, setPendingPoId] = useState<number | null>(null);
   const [confirmPoChange, setConfirmPoChange] = useState(false);
-  const [confirmModal, setConfirmModal] = useState(false);
   const [finalConfirmOpen, setFinalConfirmOpen] = useState(false);
+  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
   const [itemSearch, setItemSearch] = useState("");
 
   const [loadingPOs, setLoadingPOs] = useState(false);
@@ -1050,128 +1048,22 @@ function CreateDeliveryBody({
         />
       )}
 
-      {/* Review Modal for Submission */}
-      <Dialog
-        open={confirmModal}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) setConfirmModal(false);
+      {/* Close Confirmation when leaving New Delivery Order page */}
+      <ActionConfirmModal
+        open={confirmCloseOpen}
+        title="Discard Delivery Order?"
+        subtitle={`Delivery Number: ${deliveryNumber}`}
+        description="Are you sure you want to close this form? Any unsaved delivery details will be discarded."
+        confirmLabel="Yes, Close"
+        cancelLabel="Stay on Page"
+        onCancel={() => setConfirmCloseOpen(false)}
+        onConfirm={() => {
+          setConfirmCloseOpen(false);
+          onClose();
         }}
-        confirmOnClose={false}
-      >
-        <DialogContent className="sm:max-w-[580px] bg-surface border-0 p-0 shadow-modal rounded-modal overflow-hidden gap-0">
-          <DialogHeader className="border-b border-topbar bg-surface pt-5 pr-12 pb-4 pl-6 space-y-0.5 text-left">
-            <DialogTitle className="type-modal-title text-ink">Review delivery schedule</DialogTitle>
-            <DialogDescription className="type-body-secondary text-ink-muted">
-              Verify the shipment details below before confirming this delivery order.
-            </DialogDescription>
-          </DialogHeader>
+      />
 
-          <div className="px-6 py-5 space-y-4 bg-surface max-h-[65dvh] overflow-y-auto">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-page p-4 rounded-inner border border-topbar">
-              <div>
-                <span className="text-ink-muted block type-caption">Delivery Number</span>
-                <span className="font-semibold type-body text-ink block mt-0.5">
-                  {deliveryNumber}
-                </span>
-              </div>
-              <div>
-                <span className="text-ink-muted block type-caption">Purchase Order</span>
-                <span className="font-semibold type-body text-ink block mt-0.5">
-                  {currentPO?.poNumber || "—"}
-                </span>
-              </div>
-              <div>
-                <span className="text-ink-muted block type-caption">Supplier</span>
-                <span className="font-semibold type-body text-ink block mt-0.5 truncate">
-                  {currentPO?.supplierName || "—"}
-                </span>
-              </div>
-              <div>
-                <span className="text-ink-muted block type-caption">Payment Type</span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-pill type-badge bg-status-purple-bg text-status-purple-fg mt-1">
-                  {paymentType || "—"}
-                </span>
-              </div>
-              <div>
-                <span className="text-ink-muted block type-caption">Planned Dispatch</span>
-                <span className="font-semibold type-body text-ink block mt-0.5">
-                  {plannedDispatchDate || "—"}
-                </span>
-              </div>
-              <div>
-                <span className="text-ink-muted block type-caption">Attachment</span>
-                <span className="font-medium type-body-secondary text-primary block mt-0.5 truncate">
-                  {attachmentFileName || "—"}
-                </span>
-              </div>
-            </div>
-
-            <div className="border border-input rounded-inner overflow-hidden bg-surface">
-              <table className="w-full type-table-cell border-collapse">
-                <thead className="bg-page border-b border-topbar">
-                  <tr>
-                    <th className="py-2 px-3 text-left font-medium text-ink-muted type-table-header">
-                      Item Name
-                    </th>
-                    <th className="py-2 px-3 text-left font-medium text-ink-muted type-table-header">
-                      Supply Number
-                    </th>
-                    <th className="py-2 px-3 text-left font-medium text-ink-muted type-table-header">
-                      Unit of Measure
-                    </th>
-                    <th className="py-2 px-3 text-right font-semibold text-ink-strong type-table-header">
-                      Delivery Quantity
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-divider">
-                  {items
-                    .filter((item) => item.orderQuantity > 0)
-                    .map((item, idx) => (
-                      <tr key={idx} className="hover:bg-page transition-colors">
-                        <td className="py-2 px-3 font-medium text-ink">{item.itemName}</td>
-                        <td className="py-2 px-3 type-caption text-ink-muted">{item.itemCode}</td>
-                        <td className="py-2 px-3 text-ink-muted">
-                          {item.purchaseUomName || "Unit"}
-                        </td>
-                        <td className="py-2 px-3 text-right font-semibold tabular-nums text-ink">
-                          {item.orderQuantity}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-3 px-6 py-3.5 bg-page border-t border-topbar">
-            <span className="type-caption text-ink-muted">
-              No changes are saved until you confirm.
-            </span>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setConfirmModal(false)}
-                disabled={submitting}
-                className="h-9.5 rounded-control px-3.5 type-label-button-sm cursor-pointer border border-border bg-surface text-ink hover:bg-subtle"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back to edit
-              </Button>
-              <Button
-                type="button"
-                disabled={submitting}
-                onClick={() => setFinalConfirmOpen(true)}
-                className="h-9.5 rounded-control px-4 type-label-button-sm bg-primary text-on-brand hover:bg-primary-hover cursor-pointer"
-              >
-                {submitting ? "Scheduling..." : "Confirm & schedule"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
+      {/* Single Confirmation Modal for Scheduling */}
       <ActionConfirmModal
         open={finalConfirmOpen}
         title="Schedule Delivery Order"
@@ -1182,7 +1074,6 @@ function CreateDeliveryBody({
         onCancel={() => setFinalConfirmOpen(false)}
         onConfirm={() => {
           setFinalConfirmOpen(false);
-          setConfirmModal(false);
           void handleSubmit();
         }}
       />
@@ -1199,7 +1090,7 @@ function CreateDeliveryBody({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            setConfirmModal(true);
+            setFinalConfirmOpen(true);
           }}
           className={containerClasses}
         >
@@ -1207,7 +1098,7 @@ function CreateDeliveryBody({
           <div className="space-y-1.5">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => setConfirmCloseOpen(true)}
               className="inline-flex items-center gap-1 type-breadcrumb text-ink-muted hover:text-ink transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -1233,7 +1124,7 @@ function CreateDeliveryBody({
                 type="button"
                 variant="outline"
                 disabled={submitting}
-                onClick={onClose}
+                onClick={() => setConfirmCloseOpen(true)}
                 className="h-9.5 rounded-control border border-border bg-surface px-4 type-label-button text-ink hover:bg-subtle transition-colors disabled:opacity-50 shadow-none cursor-pointer"
               >
                 Close
@@ -1272,7 +1163,7 @@ function CreateDeliveryBody({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            setConfirmModal(true);
+            setFinalConfirmOpen(true);
           }}
           className="flex min-h-0 flex-1 flex-col"
         >
