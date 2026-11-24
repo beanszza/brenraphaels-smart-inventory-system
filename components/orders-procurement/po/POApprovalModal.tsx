@@ -11,7 +11,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import { PurchaseOrderPO } from "../types";
 import { approvePurchaseOrder } from "@/app/actions/orders/orders";
 import { actionResponse } from "@/lib/resources/action-response";
-import { getTodayDateString } from "@/lib/date-limits";
+import { getFutureDateError, getMaxFutureDateString, getTodayDateString } from "@/lib/date-limits";
 
 export interface POApprovalModalProps {
   po: PurchaseOrderPO | null;
@@ -62,18 +62,25 @@ function POApprovalBody({
   const handleQuantityChange = (index: number, value: string) => {
     const clean = value.replace(/[-+e]/gi, "");
     const num = parseFloat(clean);
+    const nextQty = isNaN(num) ? 0 : Math.max(0, num);
+    const sentQty = items[index]?.sentQuantity ?? 0;
     setItems((prev) => {
       const copy = [...prev];
       copy[index] = {
         ...copy[index],
-        confirmedQuantity: isNaN(num) ? 0 : Math.max(0, num),
+        confirmedQuantity: nextQty,
       };
       return copy;
     });
     setErrors((prev) => {
-      if (!prev[`qty_${index}`]) return prev;
       const copy = { ...prev };
-      delete copy[`qty_${index}`];
+      if (nextQty <= 0) {
+        copy[`qty_${index}`] = "Must be greater than 0.";
+      } else if (nextQty > sentQty) {
+        copy[`qty_${index}`] = `Cannot exceed sent quantity (${sentQty}).`;
+      } else {
+        delete copy[`qty_${index}`];
+      }
       return copy;
     });
   };
@@ -101,11 +108,18 @@ function POApprovalBody({
     return items.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
   }, [items]);
 
-  const hasMissingPriceOrQty = useMemo(() => {
+  const hasInvalidPriceOrQty = useMemo(() => {
     return items.some(
-      (item) => !(Number(item.confirmedQuantity) > 0) || !(Number(item.totalPrice) > 0)
+      (item) =>
+        !(Number(item.confirmedQuantity) > 0) ||
+        Number(item.confirmedQuantity) > Number(item.sentQuantity) ||
+        !(Number(item.totalPrice) > 0)
     );
   }, [items]);
+
+  const hasInvalidDate = useMemo(() => {
+    return Boolean(getFutureDateError(supplierApprovedDate, "Approval date", { allowToday: true }));
+  }, [supplierApprovedDate]);
 
   const hasPartialFulfillment = useMemo(() => {
     return items.some((item) => item.confirmedQuantity < item.sentQuantity);
@@ -117,13 +131,18 @@ function POApprovalBody({
     if (!supplierApprovedBy.trim()) {
       newErrors.supplierApprovedBy = "Supplier Representative name is required.";
     }
-    if (!supplierApprovedDate) {
-      newErrors.supplierApprovedDate = "Approval date is required.";
+    const dateErr = getFutureDateError(supplierApprovedDate, "Approval date", {
+      allowToday: true,
+    });
+    if (dateErr) {
+      newErrors.supplierApprovedDate = dateErr;
     }
 
     items.forEach((item, idx) => {
       if (item.confirmedQuantity <= 0) {
         newErrors[`qty_${idx}`] = "Must be greater than 0.";
+      } else if (item.confirmedQuantity > item.sentQuantity) {
+        newErrors[`qty_${idx}`] = `Cannot exceed sent quantity (${item.sentQuantity}).`;
       }
       if (item.totalPrice <= 0) {
         newErrors[`price_${idx}`] = "Must be greater than ₱0.00.";
@@ -165,10 +184,10 @@ function POApprovalBody({
       const message =
         err && typeof err === "object" && "response" in err
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
-            "An unexpected error occurred during confirmation."
+          "An unexpected error occurred during confirmation."
           : err instanceof Error
-          ? err.message
-          : "An unexpected error occurred during confirmation.";
+            ? err.message
+            : "An unexpected error occurred during confirmation.";
       setErrors((prev) => ({
         ...prev,
         submit: message,
@@ -182,10 +201,10 @@ function POApprovalBody({
 
   const formattedOrderDate = po.orderDate
     ? new Date(po.orderDate).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
     : "—";
 
   const containerClasses =
@@ -197,9 +216,9 @@ function POApprovalBody({
 
   return (
     <div className={containerClasses}>
-      {/* Page Header (Page Mode — matches CreatePOForm) */}
+      {/* Page Header (Page Mode — with Close & Confirm Order buttons in top right) */}
       {variant === "page" && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <button
             type="button"
             onClick={() => setConfirmCloseOpen(true)}
@@ -209,11 +228,39 @@ function POApprovalBody({
             <span>{po.poNumber}</span>
           </button>
 
-          <h1 className="type-page-title text-ink">Confirm order</h1>
-          <p className="type-body text-ink-muted">
-            Enter the confirmed accommodated quantities, total prices, and authorized supplier
-            representative details from the supplier&apos;s reply.
-          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <h1 className="type-page-title text-ink">Confirm order</h1>
+              <p className="type-body text-ink-muted">
+                Enter the confirmed accommodated quantities, total prices, and authorized supplier
+                representative details from the supplier&apos;s reply.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={() => setConfirmCloseOpen(true)}
+                className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
+              >
+                Close
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  if (validate()) {
+                    setConfirmApproveOpen(true);
+                  }
+                }}
+                disabled={submitting || hasInvalidPriceOrQty || hasInvalidDate}
+                className="rounded-control bg-primary text-on-brand px-5 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? "Confirming..." : "Confirm Order"}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -260,9 +307,8 @@ function POApprovalBody({
                       });
                     }
                   }}
-                  className={`h-9 type-body-secondary bg-surface rounded-control text-ink shadow-none ${
-                    errors.supplierApprovedBy ? "!border-destructive" : "border-input"
-                  }`}
+                  className={`h-9 type-body-secondary bg-surface rounded-control text-ink shadow-none ${errors.supplierApprovedBy ? "!border-destructive" : "border-input"
+                    }`}
                 />
                 {errors.supplierApprovedBy && (
                   <p className="type-caption text-destructive mt-1">{errors.supplierApprovedBy}</p>
@@ -276,28 +322,37 @@ function POApprovalBody({
                 <div className="relative">
                   <Input
                     type="date"
-                    max={getTodayDateString()}
+                    min={getTodayDateString()}
+                    max={getMaxFutureDateString()}
                     value={supplierApprovedDate}
-                    aria-invalid={!!errors.supplierApprovedDate}
+                    aria-invalid={!!errors.supplierApprovedDate || hasInvalidDate}
                     onChange={(e) => {
-                      setSupplierApprovedDate(e.target.value);
-                      if (errors.supplierApprovedDate) {
-                        setErrors((p) => {
-                          const c = { ...p };
-                          delete c.supplierApprovedDate;
-                          return c;
-                        });
-                      }
+                      const nextVal = e.target.value;
+                      setSupplierApprovedDate(nextVal);
+                      const errMsg = getFutureDateError(nextVal, "Approval date", {
+                        allowToday: true,
+                      });
+                      setErrors((p) => {
+                        const c = { ...p };
+                        if (errMsg) c.supplierApprovedDate = errMsg;
+                        else delete c.supplierApprovedDate;
+                        return c;
+                      });
                     }}
                     className={`h-9 type-body-secondary bg-surface rounded-control pr-9 cursor-pointer text-ink shadow-none [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer ${
-                      errors.supplierApprovedDate ? "!border-destructive" : "border-input"
+                      errors.supplierApprovedDate || hasInvalidDate
+                        ? "!border-destructive"
+                        : "border-input"
                     }`}
                   />
                   <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted pointer-events-none" />
                 </div>
-                {errors.supplierApprovedDate && (
-                  <p className="type-caption text-destructive mt-1">
-                    {errors.supplierApprovedDate}
+                {(errors.supplierApprovedDate || hasInvalidDate) && (
+                  <p role="alert" className="type-caption font-medium text-destructive mt-1">
+                    {errors.supplierApprovedDate ||
+                      getFutureDateError(supplierApprovedDate, "Approval date", {
+                        allowToday: true,
+                      })}
                   </p>
                 )}
               </div>
@@ -334,6 +389,10 @@ function POApprovalBody({
 
                 {items.map((item, idx) => {
                   const isReduced = item.confirmedQuantity < item.sentQuantity;
+                  const isExceeded = item.confirmedQuantity > item.sentQuantity;
+                  const liveQtyError =
+                    errors[`qty_${idx}`] ||
+                    (isExceeded ? `Cannot exceed sent quantity (${item.sentQuantity}).` : "");
                   return (
                     <div key={idx} className="space-y-1">
                       <div className="grid grid-cols-[minmax(0,2.2fr)_minmax(0,0.85fr)_minmax(0,1fr)_minmax(0,1.2fr)] gap-3 items-center">
@@ -354,12 +413,15 @@ function POApprovalBody({
                           <Input
                             type="number"
                             min={1}
+                            max={item.sentQuantity}
                             step="any"
                             value={item.confirmedQuantity || ""}
-                            aria-invalid={!!errors[`qty_${idx}`]}
+                            aria-invalid={!!liveQtyError}
                             onChange={(e) => handleQuantityChange(idx, e.target.value)}
                             className={`h-9 w-full text-right font-semibold type-body-secondary bg-surface rounded-control shadow-none tabular-nums ${
-                              errors[`qty_${idx}`] ? "!border-destructive" : "border-input"
+                              liveQtyError
+                                ? "!border-destructive focus-visible:!ring-destructive"
+                                : "border-input"
                             } ${isReduced ? "text-status-amber-fg" : "text-ink"}`}
                           />
                         </div>
@@ -379,9 +441,9 @@ function POApprovalBody({
                           />
                         </div>
                       </div>
-                      {(errors[`qty_${idx}`] || errors[`price_${idx}`]) && (
-                        <p className="type-caption text-destructive text-right">
-                          {errors[`qty_${idx}`] || errors[`price_${idx}`]}
+                      {(liveQtyError || errors[`price_${idx}`]) && (
+                        <p role="alert" className="type-caption font-medium text-destructive text-right">
+                          {liveQtyError || errors[`price_${idx}`]}
                         </p>
                       )}
                     </div>
@@ -461,19 +523,19 @@ function POApprovalBody({
         </div>
       </div>
 
-      {/* Bottom Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-divider">
-        {hasMissingPriceOrQty ? (
-          <span className="type-caption text-destructive font-medium">
-            Enter a confirmed quantity and total price greater than ₱0.00 for every item to confirm.
-          </span>
-        ) : (
-          <span className="type-caption text-ink-muted">
-            Confirming finalizes pricing and moves this Purchase Order to Approved.
-          </span>
-        )}
-        <div className="flex items-center justify-end gap-2.5 ml-auto">
-          {variant === "modal" ? (
+      {/* Bottom Action Bar (Modal mode only — in Page mode, Close & Confirm Order sit in the top-right header) */}
+      {variant === "modal" && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-divider">
+          {hasInvalidPriceOrQty ? (
+            <span className="type-caption text-destructive font-medium">
+              Enter a confirmed quantity and total price greater than ₱0.00 for every item to confirm.
+            </span>
+          ) : (
+            <span className="type-caption text-ink-muted">
+              Confirming finalizes pricing and moves this Purchase Order to Approved.
+            </span>
+          )}
+          <div className="flex items-center justify-end gap-2.5 ml-auto">
             <ModalCloseButton
               type="button"
               variant="outline"
@@ -483,31 +545,21 @@ function POApprovalBody({
             >
               Close
             </ModalCloseButton>
-          ) : (
             <Button
               type="button"
-              variant="outline"
-              disabled={submitting}
-              onClick={() => setConfirmCloseOpen(true)}
-              className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
+              onClick={() => {
+                if (validate()) {
+                  setConfirmApproveOpen(true);
+                }
+              }}
+              disabled={submitting || hasInvalidPriceOrQty || hasInvalidDate}
+              className="rounded-control bg-primary text-on-brand px-5 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Close
+              {submitting ? "Confirming..." : "Confirm Order"}
             </Button>
-          )}
-          <Button
-            type="button"
-            onClick={() => {
-              if (validate()) {
-                setConfirmApproveOpen(true);
-              }
-            }}
-            disabled={submitting || hasMissingPriceOrQty}
-            className="rounded-control bg-primary text-on-brand px-5 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitting ? "Confirming..." : "Confirm Order"}
-          </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       <ActionConfirmModal
         open={confirmApproveOpen}

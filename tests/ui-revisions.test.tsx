@@ -8,12 +8,13 @@ import {
 } from "@/lib/date-limits";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { CreatePRModal } from "@/components/orders-procurement/pr/CreatePRForm";
-import { CreateDeliveryModal } from "@/components/orders-procurement/delivery/CreateDeliveryModal";
+import { CreateDeliveryModal, CreateDeliveryForm } from "@/components/orders-procurement/delivery/CreateDeliveryModal";
 import { CreatePOModal } from "@/components/orders-procurement/po/CreatePOModal";
 import { PODetailsModal } from "@/components/orders-procurement/po/PODetailsModal";
 import { POApprovalModal } from "@/components/orders-procurement/po/POApprovalModal";
 import { POTable } from "@/components/orders-procurement/po/POTable";
-import { DeliveryDetailsModal } from "@/components/orders-procurement/delivery/DeliveryDetailsModal";
+import { DeliveryDetailsModal, DeliveryDetailsView } from "@/components/orders-procurement/delivery/DeliveryDetailsModal";
+import { MarkArrivedView } from "@/components/orders-procurement/delivery/MarkArrivedModal";
 import DiscrepancyDetailsModal from "@/components/receiving/DiscrepancyDetailsModal";
 import InventoryTable from "@/components/inventory/InventoryTable";
 import CategoryModal from "@/components/resources-suppliers/CategoryModal";
@@ -140,7 +141,8 @@ describe("Modal layout, typography, and date bounds", () => {
       <POApprovalModal po={po} onClose={() => { }} onSuccess={() => { }} />
     );
     expect(approvalHtml).not.toContain("font-mono");
-    expect(approvalHtml).toContain(`max="${getTodayDateString()}"`);
+    expect(approvalHtml).toContain(`min="${getTodayDateString()}"`);
+    expect(approvalHtml).toContain(`max="${getMaxFutureDateString()}"`);
     expect(approvalHtml).not.toContain("Expected Arrival Date");
   });
 
@@ -356,6 +358,91 @@ describe("Modal layout, typography, and date bounds", () => {
     expect(deliveryDetailsHtml).toContain("Cancel Delivery");
     expect(deliveryDetailsHtml.indexOf("Cancel Delivery")).toBeLessThan(deliveryDetailsHtml.indexOf(">Close<"));
     expect(deliveryDetailsHtml.indexOf(">Close<")).toBeLessThan(deliveryDetailsHtml.indexOf("Confirm Arrival"));
+  });
+
+  it("renders full-page CreateDeliveryForm, DeliveryDetailsView, and MarkArrivedView matching Figma Delivery · Full-Page Redesign with no abbreviations", () => {
+    const samplePo = {
+      poId: 22,
+      poNumber: "PO-2026-0022",
+      supplierId: 1,
+      supplierName: "Sugar and Sweets Serbisyo",
+      orderDate: "2026-11-24",
+      status: "Approved",
+      paymentType: "Payable",
+      totalAmount: 1000,
+      items: [],
+    } as unknown as PurchaseOrderPO;
+
+    const createPageHtml = renderToStaticMarkup(
+      <CreateDeliveryForm initialPo={samplePo} onClose={() => { }} onSuccess={() => { }} />
+    );
+    expect(createPageHtml).toContain("New delivery order");
+    expect(createPageHtml).toContain("Delivery details");
+    expect(createPageHtml).toContain("Delivery summary");
+    expect(createPageHtml).toContain("Total Purchase Order Amount");
+    expect(createPageHtml).toContain("₱1,000.00");
+    expect(createPageHtml).toContain('id="delivery-payment-type"');
+    expect(createPageHtml).toContain("Planned Dispatch Date");
+    expect(createPageHtml).not.toContain("font-mono");
+
+    const sampleDelivery = {
+      deliveryId: 6,
+      deliveryNumber: "DLV-2026-0006",
+      poId: 16,
+      poNumber: "PO-2026-0016",
+      supplierId: 2,
+      supplierName: "Jo Ann Inc.",
+      paymentType: "Payable",
+      receivingLocationName: "Commissary (Receiving Bay)",
+      status: "Scheduled",
+      scheduledDate: "2026-11-12",
+      items: [
+        {
+          poItemId: 1,
+          itemId: 9,
+          itemName: "Nestea",
+          itemCode: "SPL-2026-0009",
+          poOrderedQuantity: 67,
+          declaredQuantity: 67,
+          purchaseUomName: "bottle",
+        },
+      ],
+    } as unknown as Delivery;
+
+    const detailsPageHtml = renderToStaticMarkup(
+      <DeliveryDetailsView
+        delivery={sampleDelivery}
+        poTotalAmount={1340}
+        onClose={() => { }}
+        onArrive={() => { }}
+        onCancel={() => { }}
+      />
+    );
+    expect(detailsPageHtml).toContain("DLV-2026-0006");
+    expect(detailsPageHtml).toContain("Delivery summary");
+    expect(detailsPageHtml).toContain("Total Purchase Order Amount");
+    expect(detailsPageHtml).toContain("₱1,340.00");
+    expect(detailsPageHtml).toContain("Unit of Measure");
+    expect(detailsPageHtml).toContain("Shipment Quantity");
+    expect(detailsPageHtml).toContain("Cancel Delivery");
+    expect(detailsPageHtml).toContain("Confirm Arrival");
+    expect(detailsPageHtml).not.toContain("font-mono");
+
+    const arrivePageHtml = renderToStaticMarkup(
+      <MarkArrivedView
+        delivery={sampleDelivery}
+        poTotalAmount={1340}
+        onClose={() => { }}
+        onSuccess={() => { }}
+      />
+    );
+    expect(arrivePageHtml).toContain("Confirm delivery arrival");
+    expect(arrivePageHtml).toContain("Arrival details");
+    expect(arrivePageHtml).toContain("Delivery summary");
+    expect(arrivePageHtml).toContain("Total Purchase Order Amount");
+    expect(arrivePageHtml).toContain("₱1,340.00");
+    expect(arrivePageHtml).toContain("Proceeds to Goods Receipt Note after arrival");
+    expect(arrivePageHtml).not.toContain("font-mono");
   });
 });
 

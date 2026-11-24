@@ -309,6 +309,9 @@ export async function approvePurchaseOrder(idInput: string | number, body: Appro
 
       const existingItem = order.PurchaseOrderItems.find((i) => i.ItemId === conf.itemId);
       if (existingItem) {
+        if (Number(conf.poItemQuantity) > Number(existingItem.PoItemQuantity) + 1e-6) {
+          return fail(`Confirmed quantity (${conf.poItemQuantity}) cannot exceed sent quantity (${Number(existingItem.PoItemQuantity)}).`);
+        }
         await tx.purchaseOrderItems.update({
           where: { PoItemId: existingItem.PoItemId },
           data: {
