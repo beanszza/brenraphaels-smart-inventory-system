@@ -179,7 +179,7 @@ function PODetailsBody({
                   onClick={() => onApproveWithForm(po)}
                   className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer"
                 >
-                  Approve Order
+                  Confirm Order
                 </Button>
               )}
 
@@ -198,21 +198,7 @@ function PODetailsBody({
         </div>
       </div>
 
-      {/* Conditional Status Banners */}
-      {po.supplierApprovedBy && (
-        <div className="p-3.5 rounded-inner border border-status-green-fg/20 bg-status-green-bg text-status-green-fg flex items-center justify-between flex-wrap gap-2 type-caption">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>
-              <strong>Supplier Approved by:</strong> {po.supplierApprovedBy}
-            </span>
-          </div>
-          {po.supplierApprovedDate && (
-            <span className="font-medium">Date: {fmt(po.supplierApprovedDate)}</span>
-          )}
-        </div>
-      )}
-
+      {/* Conditional Status Banners (Cancellation / Admin Notes only — Supplier approval is shown inside Summary) */}
       {po.adminNotes && !po.supplierApprovedBy && (
         <div
           className={`p-3.5 rounded-inner border space-y-1 ${po.status === "Cancelled"
@@ -387,35 +373,80 @@ function PODetailsBody({
 
         {/* Right Column: Summary + Activity */}
         <div className="space-y-5">
-          {/* Card 1: Summary (hidden while Pending Approval before supplier confirmation) */}
-          {!isPending && (
-            <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
-              <h2 className="type-subsection text-ink">Summary</h2>
+          {/* Card 1: Summary (always visible; includes Supplier Approved info for approved/later statuses) */}
+          <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+            <h2 className="type-subsection text-ink">Summary</h2>
 
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between gap-3 type-body-secondary">
-                  <span className="text-ink-muted">
-                    Subtotal &middot; {po.items?.length || 0}{" "}
-                    {(po.items?.length || 0) === 1 ? "item" : "items"}
-                  </span>
-                  <span className="font-medium text-ink tabular-nums">
-                    {po.totalAmount > 0 ? fmtCurrency(po.totalAmount) : "₱0.00"}
+            {isPending ? (
+              <>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted">Items</span>
+                    <span className="font-medium text-ink tabular-nums">
+                      {po.items?.length || 0}{" "}
+                      {(po.items?.length || 0) === 1 ? "item" : "items"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted">Total quantity</span>
+                    <span className="font-medium text-ink tabular-nums">
+                      {(po.items || [])
+                        .reduce((sum, i) => sum + Number(i.poItemQuantity || 0), 0)
+                        .toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
+                  <span className="type-subsection text-ink">Total</span>
+                  <span className="type-body-secondary font-medium text-ink-muted">
+                    Pending Confirmation
                   </span>
                 </div>
-              </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2.5">
+                  {po.supplierApprovedBy && (
+                    <div className="flex items-start justify-between gap-3 type-body-secondary">
+                      <span className="text-ink-muted shrink-0">Supplier Approved by</span>
+                      <span className="font-medium text-ink text-right break-words">
+                        {po.supplierApprovedBy}
+                      </span>
+                    </div>
+                  )}
+                  {po.supplierApprovedDate && (
+                    <div className="flex items-center justify-between gap-3 type-body-secondary">
+                      <span className="text-ink-muted">Approval Date</span>
+                      <span className="font-medium text-ink">
+                        {fmt(po.supplierApprovedDate)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted">
+                      Subtotal &middot; {po.items?.length || 0}{" "}
+                      {(po.items?.length || 0) === 1 ? "item" : "items"}
+                    </span>
+                    <span className="font-medium text-ink tabular-nums">
+                      {po.totalAmount > 0 ? fmtCurrency(po.totalAmount) : "₱0.00"}
+                    </span>
+                  </div>
+                </div>
 
-              <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
-                <span className="type-subsection text-ink">TOTAL AMOUNT DUE</span>
-                <span className="type-modal-title text-ink tabular-nums">
-                  {po.totalAmount > 0
-                    ? fmtCurrency(po.totalAmount)
-                    : isApproved
-                      ? "₱0.00"
-                      : "Pending Confirmation"}
-                </span>
-              </div>
-            </div>
-          )}
+                <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
+                  <span className="type-subsection text-ink">TOTAL AMOUNT DUE</span>
+                  <span className="type-modal-title text-ink tabular-nums">
+                    {po.totalAmount > 0
+                      ? fmtCurrency(po.totalAmount)
+                      : isApproved
+                        ? "₱0.00"
+                        : "Pending Confirmation"}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Card 2: Activity Timeline (Matches Figma right-rail Activity card) */}
           <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
@@ -505,7 +536,7 @@ function PODetailsBody({
               onClick={() => onApproveWithForm(po)}
               className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer"
             >
-              Approve Order
+              Confirm Order
             </Button>
           )}
 

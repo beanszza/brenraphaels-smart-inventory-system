@@ -23,7 +23,7 @@ import { procurement } from "@/lib/orders/client";
 import { PurchaseOrderPO, POStatus } from "../types";
 import { POTable } from "./POTable";
 import { PODetailsView } from "./PODetailsModal";
-import { POApprovalModal } from "./POApprovalModal";
+import { POApprovalView } from "./POApprovalModal";
 import { downloadPurchaseOrderPdf } from "./downloadPurchaseOrderPdf";
 import { POActionModal, POActionType } from "./POActionModal";
 import { CreatePOForm } from "./CreatePOModal";
@@ -204,6 +204,24 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
     );
   }
 
+  // Full-page Supplier Confirmation view (replaces old POApprovalModal)
+  if (approvingPO) {
+    return (
+      <POApprovalView
+        embedded
+        po={approvingPO}
+        onClose={() => setApprovingPO(null)}
+        onSuccess={(updated) => {
+          setApprovingPO(null);
+          setSelectedPO(updated);
+          setNotice(`Purchase Order ${updated.poNumber} confirmed and moved to Approved.`);
+          setActiveTab("Approved");
+          fetchOrders();
+        }}
+      />
+    );
+  }
+
   // Full-page Purchase Order Details view (matching Figma Purchase order · PO-2026-0151)
   if (selectedPO) {
     const latestPo = orders.find((o) => o.poId === selectedPO.poId) || selectedPO;
@@ -226,7 +244,7 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
               ? mapPO(res.data.data)
               : { ...po, status: "Pending Approval", emailConfirmed: true };
             setSelectedPO(updated);
-            setNotice(`${po.poNumber} email send confirmed — you can now approve the order when the supplier replies.`);
+            setNotice(`${po.poNumber} email send confirmed — you can now confirm the order when the supplier replies.`);
             fetchOrders();
           }}
           onApproveWithForm={(po) => {
@@ -239,20 +257,6 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
             setDeliveryPO(po);
           }}
         />
-
-        {approvingPO && (
-          <POApprovalModal
-            po={approvingPO}
-            onClose={() => setApprovingPO(null)}
-            onSuccess={(updated) => {
-              setApprovingPO(null);
-              setSelectedPO(updated);
-              setNotice(`Purchase Order ${updated.poNumber} confirmed and moved to Approved.`);
-              setActiveTab("Approved");
-              fetchOrders();
-            }}
-          />
-        )}
 
         {actionModal && (
           <POActionModal
@@ -435,20 +439,6 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
             embedded
           />
         </div>
-      )}
-
-      {/* Supplier Approval Modal */}
-      {approvingPO && (
-        <POApprovalModal
-          po={approvingPO}
-          onClose={() => setApprovingPO(null)}
-          onSuccess={(updated) => {
-            setApprovingPO(null);
-            setNotice(`Purchase Order ${updated.poNumber} confirmed and moved to Approved.`);
-            setActiveTab("Approved");
-            fetchOrders();
-          }}
-        />
       )}
 
       {/* Action Confirmation Modal (Cancel only) */}

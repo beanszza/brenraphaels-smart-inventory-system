@@ -198,8 +198,8 @@ describe("Modal layout, typography, and date bounds", () => {
     expect(pendingHtml).not.toContain("TOTAL AMOUNT DUE");
     expect(pendingHtml).not.toContain("Download Purchase Order");
     expect(pendingHtml).toContain("Cancel Purchase Order");
-    expect(pendingHtml).toContain("Approve Order");
-    expect(pendingHtml.indexOf("Cancel Purchase Order")).toBeLessThan(pendingHtml.indexOf("Approve Order"));
+    expect(pendingHtml).toContain("Confirm Order");
+    expect(pendingHtml.indexOf("Cancel Purchase Order")).toBeLessThan(pendingHtml.indexOf("Confirm Order"));
 
     const approvedPo = {
       ...pendingPo,
