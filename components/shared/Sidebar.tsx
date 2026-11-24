@@ -48,7 +48,7 @@ export function Sidebar({ modules, staff }: { modules: Module[]; staff: Staff })
       <aside className="fixed left-0 top-0 h-full w-(--sidebar-width) flex flex-col border-r border-divider bg-page text-ink z-50 transition-all duration-300 shadow-xl md:shadow-none animate-in slide-in-from-left duration-300">
         <SidebarEnterpriseHeader isMobile={isMobile} />
 
-        <SidebarContent className="px-3 py-3 overflow-y-auto sidebar-scrollbar">
+        <SidebarContent className="px-3 py-4 overflow-y-auto sidebar-scrollbar">
           <SidebarGroup className="p-0">
             <SidebarGroupContent>
               {!mounted ? (
@@ -59,8 +59,8 @@ export function Sidebar({ modules, staff }: { modules: Module[]; staff: Staff })
                     <React.Fragment key={group.label}>
                       <li
                         aria-hidden
-                        className={`pb-1 pl-2.5 type-nav-group text-ink-muted list-none ${
-                          index === 0 ? "pt-1" : "pt-3.5"
+                        className={`pb-1.5 pl-2.5 type-nav-group text-ink-muted list-none ${
+                          index === 0 ? "pt-1" : "pt-4.5"
                         }`}
                       >
                         {group.label}
