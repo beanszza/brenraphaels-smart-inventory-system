@@ -248,6 +248,7 @@ export async function scheduleTransfer(body: any = {}) {
       data: {
         TransferNumber: transferNumber,
         RequestId: str.RequestId,
+        ...(str.BranchRequestId ? { BranchRequestId: str.BranchRequestId } : {}),
         ProductId: Number(productId),
         SourceLocationId: commissary.LocationId,
         DestLocationId: str.ToLocationId,

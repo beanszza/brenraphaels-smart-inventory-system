@@ -7,10 +7,12 @@ import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId, validateInput, saved } from "@/lib/stock-transfer/operations";
 import { dispatchTransferManifestToPos } from "@/lib/pos/client";
 import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
+import { ensureBranchRequestColumns } from "@/lib/stock-transfer/ensure-branch-request-tables";
 import { isAdminStaff } from "@/lib/auth-roles";
 import { getTodayDateString } from "@/lib/date-limits";
 
 export async function dispatchTransfer(idInput: number, body: any = {}) {
+  await ensureBranchRequestColumns();
   await ensureUbeJamHavaneroStock();
   const staff = await requireModule("Stock Transfer");
   return mutate(staff, async (tx) => {
@@ -67,7 +69,12 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
         FinishedProducts: { include: { Items: true } },
         Locations_StockTransfers_SourceLocationIdToLocations: true,
         Locations_StockTransfers_DestLocationIdToLocations: true,
-        StockTransferRequests: true,
+        BranchRequests: true,
+        StockTransferRequests: {
+          include: {
+            BranchRequests: true,
+          },
+        },
       },
     });
 
@@ -278,6 +285,30 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
       }
     }
 
+    // 5. Link POS stockRequestId safely (POS enforces 1 manifest per stockRequestId;
+    // attach stockRequestId on first dispatched delivery and omit on subsequent split transfers)
+    const linkedBranchReq =
+      transfer.BranchRequests ?? transfer.StockTransferRequests?.BranchRequests ?? null;
+    let posStockRequestId: string | undefined;
+    if (linkedBranchReq) {
+      if (!linkedBranchReq.PosManifestLinked) {
+        posStockRequestId = linkedBranchReq.RequestNumber;
+        await tx.branchRequests.update({
+          where: { BranchRequestId: linkedBranchReq.BranchRequestId },
+          data: { PosManifestLinked: true },
+        });
+      }
+      await tx.branchRequestItems.updateMany({
+        where: {
+          BranchRequestId: linkedBranchReq.BranchRequestId,
+          ProductId: transfer.ProductId,
+        },
+        data: {
+          DispatchedQuantity: { increment: transferQty },
+        },
+      });
+    }
+
     const destBranchName =
       transfer.Locations_StockTransfers_DestLocationIdToLocations?.LocationName || "Store Branch";
 
@@ -303,6 +334,7 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
         try {
           await dispatchTransferManifestToPos({
             transferId: unifiedNumber,
+            ...(posStockRequestId ? { stockRequestId: posStockRequestId } : {}),
             sourceLocation: {
               locationId: "999",
               locationName:

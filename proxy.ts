@@ -19,6 +19,8 @@ function isExternalIntegrationPath(pathname: string): boolean {
     pathname === "/api/shop/products" ||
     pathname === "/api/shop/inventory" ||
     pathname === "/api/pos/locations/sync" ||
+    pathname === "/api/pos/stock-requests" ||
+    pathname.startsWith("/api/pos/stock-requests/") ||
     pathname === "/api/scms/locations/sync" ||
     pathname.startsWith("/api/scms/transfers/") ||
     (pathname.startsWith("/api/StockTransfers/") && pathname.endsWith("/status"))

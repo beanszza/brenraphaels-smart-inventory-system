@@ -11,9 +11,12 @@ import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
 import { resolveStaffName } from "@/lib/orders/dto";
 import { isAdminStaff } from "@/lib/auth-roles";
 import { getFutureDateError } from "@/lib/date-limits";
+import { computeBranchRequestAllocation } from "@/lib/stock-transfer/branch-request-math";
+import { ensureBranchRequestColumns } from "@/lib/stock-transfer/ensure-branch-request-tables";
 
 export async function listRequests(query = "") {
   await requireModule("Stock Transfer");
+  await ensureBranchRequestColumns();
   await ensureUbeJamHavaneroStock();
   return read(async () => {
     const searchParams = new URLSearchParams(query);
@@ -48,6 +51,12 @@ export async function listRequests(query = "") {
         where,
         include: {
           Locations: true,
+          BranchRequests: {
+            select: {
+              BranchRequestId: true,
+              RequestNumber: true,
+            },
+          },
           StockTransferRequestItems: {
             include: {
               FinishedProducts: {
@@ -134,6 +143,8 @@ export async function listRequests(query = "") {
       return {
         requestId: req.RequestId,
         requestNumber: req.RequestNumber,
+        branchRequestId: req.BranchRequestId ?? null,
+        branchRequestNumber: req.BranchRequests?.RequestNumber ?? null,
         toLocationId: req.ToLocationId,
         toLocationName: req.Locations?.LocationName || "",
         requestedBy: resolveName(req.RequestedBy),
@@ -243,6 +254,7 @@ export async function getNextRequestNumber() {
 }
 
 export async function createRequest(body: any = {}) {
+  await ensureBranchRequestColumns();
   await ensureUbeJamHavaneroStock();
   const staff = await requireModule("Stock Transfer");
   return mutate(staff, async (tx) => {
@@ -250,7 +262,7 @@ export async function createRequest(body: any = {}) {
       return refuse("Admin accounts have view and approval access only and cannot create stock transfer requests.");
     }
     validateInput(body);
-    const { toLocationId, requiredDate, priority = "Normal", reason, items } = body;
+    const { toLocationId, requiredDate, priority = "Normal", reason, items, branchRequestId } = body;
 
     if (!toLocationId || !items || !Array.isArray(items) || items.length === 0) {
       return refuse("Destination location and at least one item are required.");
@@ -272,6 +284,61 @@ export async function createRequest(body: any = {}) {
         return refuse("Duplicate products are not allowed in the same stock transfer request.");
       }
       seenProductIds.add(pid);
+    }
+
+    // Optional link to an approved POS Branch Stock Request: validate remaining allocatable qty
+    let linkedBranchRequestId: number | null = null;
+    if (branchRequestId !== undefined && branchRequestId !== null && branchRequestId !== "") {
+      const parsedBrId = Number(branchRequestId);
+      if (!Number.isSafeInteger(parsedBrId) || parsedBrId <= 0) {
+        return refuse("Invalid branch stock request reference.");
+      }
+
+      const branchReq = await tx.branchRequests.findUnique({
+        where: { BranchRequestId: parsedBrId },
+        include: {
+          BranchRequestItems: true,
+          StockTransferRequests: {
+            include: {
+              StockTransferRequestItems: true,
+              StockTransfers: true,
+            },
+          },
+        },
+      });
+
+      if (!branchReq) {
+        return refuse("Linked branch stock request not found.");
+      }
+      if (branchReq.Status === "Submitted" || branchReq.Status === "Pending" || branchReq.Status === "Rejected") {
+        return refuse(`Branch stock request ${branchReq.RequestNumber} is not approved for transfer.`);
+      }
+      if (Number(toLocationId) !== branchReq.BranchId) {
+        return refuse("Destination branch must match the linked branch stock request.");
+      }
+
+      const alloc = computeBranchRequestAllocation(
+        branchReq.Status,
+        branchReq.BranchRequestItems,
+        branchReq.StockTransferRequests
+      );
+      const remainingByProd = new Map(alloc.items.map((a) => [a.productId, a.remainingQuantity]));
+
+      for (const itm of items) {
+        const pid = Number(itm.productId);
+        const qty = Number(itm.requestedQuantity);
+        const rem = remainingByProd.get(pid);
+        if (rem === undefined) {
+          return refuse(`Selected product is not part of branch stock request ${branchReq.RequestNumber}.`);
+        }
+        if (qty > rem) {
+          return refuse(
+            `Requested quantity (${qty}) exceeds remaining approved quantity (${rem}) for branch stock request ${branchReq.RequestNumber}.`
+          );
+        }
+      }
+
+      linkedBranchRequestId = parsedBrId;
     }
 
     // Identify Commissary source locations
@@ -457,6 +524,7 @@ export async function createRequest(body: any = {}) {
       data: {
         RequestNumber: requestNumber,
         ToLocationId: Number(toLocationId),
+        ...(linkedBranchRequestId ? { BranchRequestId: linkedBranchRequestId } : {}),
         RequestedBy: staff.username,
         RequestDate: new Date(),
         RequiredDate: new Date(requiredDate),

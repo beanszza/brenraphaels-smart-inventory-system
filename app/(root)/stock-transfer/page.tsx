@@ -5,5 +5,11 @@ export default async function StockTransferPage({ searchParams }: { searchParams
   await requireModule("Stock Transfer");
   const data = await loadStockTransferScreen();
   const params = await searchParams;
-  return <StockTransferModule {...data} activeMainTab={params?.tab === "locations" ? "locations" : "transfers"} />;
+  const activeMainTab =
+    params?.tab === "locations"
+      ? "locations"
+      : params?.tab === "branch-requests"
+      ? "branch-requests"
+      : "transfers";
+  return <StockTransferModule {...data} activeMainTab={activeMainTab} />;
 }

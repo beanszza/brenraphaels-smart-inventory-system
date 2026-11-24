@@ -76,6 +76,11 @@ export function STRDetailsModal({
               Stock Transfer Request Details
             </h2>
             <StatusBadge status={hasScheduledTransfer && request.status === "Approved" ? "Scheduled" : request.status} />
+            {request.branchRequestNumber && (
+              <span className="px-2.5 py-0.5 rounded-full bg-status-purple-bg text-primary type-caption font-semibold">
+                POS: {request.branchRequestNumber}
+              </span>
+            )}
           </div>
           <button
             type="button"

@@ -38,6 +38,7 @@ export interface PosBranchLocationDto {
 
 export interface PosTransferManifestDto {
   transferId: string;
+  stockRequestId?: string;
   sourceLocation: {
     locationId: string;
     locationName: string;
@@ -56,4 +57,36 @@ export interface PosTransferManifestDto {
     batchNumber?: string;
     expirationDate?: string;
   }[];
+}
+
+export interface PosStockRequestItemDto {
+  sku: string;
+  productId?: string | null;
+  productName: string;
+  variationName: string;
+  quantity: number;
+  currentStock: number;
+}
+
+export interface PosStockRequestDto {
+  requestId: string;
+  branch: {
+    branchId: string;
+    branchName: string;
+  };
+  items: PosStockRequestItemDto[];
+  notes: string;
+  requestedBy: string;
+  requestedByName: string;
+  requestedAt: string;
+}
+
+export interface PosStockRequestDecisionDto {
+  status: "Approved" | "Rejected";
+  approvedQuantity?: number;
+  remarks?: string;
+  imsRequestId?: string;
+  decidedBy: string;
+  decidedByName: string;
+  decidedAt: string;
 }

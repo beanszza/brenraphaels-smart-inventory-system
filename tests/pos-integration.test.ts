@@ -7,6 +7,7 @@ describe("POS integration security & proxy exemptions", () => {
   it("exempts inbound POS integration routes from browser session checks", () => {
     const endpoints = [
       "https://localhost:3003/api/pos/locations/sync",
+      "https://localhost:3003/api/pos/stock-requests",
       "https://localhost:3003/api/scms/locations/sync",
       "https://localhost:3003/api/scms/transfers/TRANS-2026-0001/receive-confirmation",
       "https://localhost:3003/api/StockTransfers/TRANS-2026-0001/status",

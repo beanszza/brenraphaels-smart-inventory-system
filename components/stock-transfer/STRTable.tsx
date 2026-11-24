@@ -88,7 +88,14 @@ export function STRTable({
                 >
                   {/* Request No */}
                   <td className="sticky left-0 z-10 bg-surface group-hover:bg-page transition-colors py-3 pr-4 type-body font-medium text-primary whitespace-nowrap">
-                    <span className="hover:underline">{req.requestNumber}</span>
+                    <div className="flex flex-col">
+                      <span className="hover:underline">{req.requestNumber}</span>
+                      {req.branchRequestNumber && (
+                        <span className="type-caption text-ink-muted font-normal">
+                          POS: {req.branchRequestNumber}
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   {/* Destination */}

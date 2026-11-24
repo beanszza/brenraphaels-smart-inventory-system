@@ -17,3 +17,12 @@ export async function notifyRequester(username: string, decision: "approved" | "
     body: `${record} was ${decision}.`, link: link(),
   });
 }
+
+export function notifyBranchStockRequestReceived(requestNumber: string, branchName: string, itemSummary: string) {
+  return notifyModule("Stock Transfer", {
+    type: "branch-stock-request",
+    title: "New Branch Stock Request",
+    body: `${branchName} requested ${itemSummary} (${requestNumber}).`,
+    link: `${appOrigin()}/stock-transfer?tab=branch-requests`,
+  });
+}

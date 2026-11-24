@@ -52,6 +52,8 @@ export interface STRTransferRef {
 export interface StockTransferRequest {
   requestId: number;
   requestNumber: string;
+  branchRequestId?: number | null;
+  branchRequestNumber?: string | null;
   toLocationId: number;
   toLocationName: string;
   requestedBy: string;
@@ -122,3 +124,75 @@ export interface DashboardMetrics {
 }
 
 export type STRActionType = "approve" | "reject" | "cancel";
+
+export type BranchRequestSubtab = "requests" | "approved" | "rejected" | "completed";
+
+export interface BranchStockRequestItem {
+  branchRequestItemId: number;
+  productId: number;
+  sku: string;
+  productName: string;
+  variationName: string;
+  branchCurrentStock: number;
+  imsAvailableStock: number;
+  requestedQuantity: number;
+  approvedQuantity: number;
+  allocatedQuantity: number;
+  remainingQuantity: number;
+  scheduledQuantity: number;
+  dispatchedQuantity: number;
+  receivedQuantity: number;
+}
+
+export interface BranchLinkedStr {
+  requestId: number;
+  requestNumber: string;
+  status: string;
+  quantity: number;
+  createdAt: string;
+}
+
+export interface BranchStockRequest {
+  branchRequestId: number;
+  imsRequestId: string;
+  requestNumber: string;
+  branchId: number;
+  branchName: string;
+  requestDate: string;
+  status: string;
+  subtab: BranchRequestSubtab;
+  transferStage: "Unscheduled" | "Pending Schedule" | "Scheduled" | "In Transit" | "Delivered";
+  requestedBy: string;
+  requestedByName: string;
+  notes: string;
+  decidedBy: string | null;
+  decidedByName: string | null;
+  decidedAt: string | null;
+  decisionRemarks: string;
+  fulfilledAt: string | null;
+  posSyncStatus: string;
+  posSyncError: string | null;
+  posManifestLinked: boolean;
+  totalRequested: number;
+  totalApproved: number;
+  totalAllocated: number;
+  totalRemaining: number;
+  totalScheduled: number;
+  totalDispatched: number;
+  totalReceived: number;
+  items: BranchStockRequestItem[];
+  linkedStrs: BranchLinkedStr[];
+}
+
+export interface CreateSTRPrefill {
+  branchRequestId: number;
+  branchRequestNumber: string;
+  branchId: number;
+  branchName: string;
+  productId: number;
+  productName: string;
+  variationName: string;
+  sku: string;
+  approvedQuantity: number;
+  remainingQuantity: number;
+}

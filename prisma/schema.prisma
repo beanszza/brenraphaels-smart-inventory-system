@@ -54,6 +54,11 @@ model BranchRequestItems {
   BranchRequestItemId Int              @id(map: "PK_BranchRequestItems") @default(autoincrement())
   BranchRequestId     Int
   ProductId           Int
+  Sku                 String           @default("") @db.VarChar(128)
+  ProductName         String           @default("") @db.VarChar(256)
+  VariationName       String           @default("") @db.VarChar(256)
+  PosProductId        String?          @db.VarChar(128)
+  BranchCurrentStock  Int              @default(0)
   RequestedQuantity   Decimal          @db.Decimal(18, 3)
   ApprovedQuantity    Decimal          @db.Decimal(18, 3)
   DispatchedQuantity  Decimal          @db.Decimal(18, 3)
@@ -67,20 +72,31 @@ model BranchRequestItems {
 }
 
 model BranchRequests {
-  BranchRequestId    Int                  @id(map: "PK_BranchRequests") @default(autoincrement())
-  RequestNumber      String               @unique(map: "IX_BranchRequests_RequestNumber")
-  BranchId           Int
-  RequestDate        DateTime             @db.Timestamptz(6)
-  RequiredDate       DateTime?            @db.Timestamptz(6)
-  Status             String
-  RequestedBy        String
-  ApprovedBy         String?
-  Notes              String?
-  BranchRequestItems BranchRequestItems[]
-  Locations          Locations            @relation(fields: [BranchId], references: [LocationId], onUpdate: NoAction, map: "FK_BranchRequests_Locations_BranchId")
-  StockTransfers     StockTransfers[]
+  BranchRequestId       Int                     @id(map: "PK_BranchRequests") @default(autoincrement())
+  RequestNumber         String                  @unique(map: "IX_BranchRequests_RequestNumber")
+  BranchId              Int
+  BranchName            String                  @default("") @db.VarChar(256)
+  RequestDate           DateTime                @db.Timestamptz(6)
+  RequiredDate          DateTime?               @db.Timestamptz(6)
+  Status                String
+  RequestedBy           String
+  RequestedByName       String                  @default("") @db.VarChar(256)
+  ApprovedBy            String?
+  DecidedByName         String?                 @db.VarChar(256)
+  DecidedAt             DateTime?               @db.Timestamptz(6)
+  DecisionRemarks       String?                 @db.VarChar(500)
+  Notes                 String?
+  FulfilledAt           DateTime?               @db.Timestamptz(6)
+  PosSyncStatus         String                  @default("Synced") @db.VarChar(32)
+  PosSyncError          String?
+  PosManifestLinked     Boolean                 @default(false)
+  BranchRequestItems    BranchRequestItems[]
+  Locations             Locations               @relation(fields: [BranchId], references: [LocationId], onUpdate: NoAction, map: "FK_BranchRequests_Locations_BranchId")
+  StockTransfers        StockTransfers[]
+  StockTransferRequests StockTransferRequests[]
 
   @@index([BranchId], map: "IX_BranchRequests_BranchId")
+  @@index([Status], map: "IX_BranchRequests_Status")
 }
 
 model BranchReturnItems {
@@ -1056,6 +1072,7 @@ model StockTransferRequests {
   RequestId            Int                          @id(map: "PK_StockTransferRequests") @default(autoincrement())
   RequestNumber        String                       @unique(map: "IX_StockTransferRequests_RequestNumber")
   ToLocationId         Int
+  BranchRequestId      Int?
   RequestedBy          String
   RequestDate          DateTime                     @default(now()) @db.Timestamptz(6)
   RequiredDate         DateTime                     @db.Date
@@ -1069,10 +1086,12 @@ model StockTransferRequests {
   UpdatedAt            DateTime                     @default(now()) @updatedAt @db.Timestamptz(6)
 
   Locations            Locations                    @relation("StockTransferRequests_ToLocationIdToLocations", fields: [ToLocationId], references: [LocationId], onDelete: Restrict, onUpdate: NoAction, map: "FK_StockTransferRequests_Locations_ToLocationId")
+  BranchRequests       BranchRequests?              @relation(fields: [BranchRequestId], references: [BranchRequestId], onDelete: SetNull, onUpdate: NoAction, map: "FK_StockTransferRequests_BranchRequests_BranchRequestId")
   StockTransferRequestItems StockTransferRequestItems[]
   StockTransfers       StockTransfers[]
 
   @@index([ToLocationId], map: "IX_StockTransferRequests_ToLocationId")
+  @@index([BranchRequestId], map: "IX_StockTransferRequests_BranchRequestId")
   @@index([Status], map: "IX_StockTransferRequests_Status")
 }
 

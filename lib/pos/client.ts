@@ -1,4 +1,9 @@
-import { SyncProductDto, PosBranchLocationDto, PosTransferManifestDto } from "./types";
+import {
+  SyncProductDto,
+  PosBranchLocationDto,
+  PosTransferManifestDto,
+  PosStockRequestDecisionDto,
+} from "./types";
 
 export function getPosApiBaseUrl(): string {
   const url = process.env.POS_API_BASE_URL || "https://api-pos-sb5g.onrender.com";
@@ -232,6 +237,83 @@ export async function dispatchTransferManifestToPos(
     return {
       success: false,
       message: error?.message || "Failed to reach POS transfer service.",
+    };
+  }
+}
+
+/**
+ * Sends an Approve or Reject decision for a branch stock request back to POS.
+ * PUT /api-pos/stock-requests/{requestId}/status
+ * Retries on 5xx / timeout via posFetchWithRetry; stops immediately on 4xx (including 409 Conflict).
+ */
+export async function sendStockRequestDecisionToPos(
+  requestId: string,
+  dto: PosStockRequestDecisionDto
+): Promise<{
+  success: boolean;
+  status: number;
+  message: string;
+  conflict?: boolean;
+  data?: any;
+}> {
+  if (process.env.NODE_ENV === "test" || process.env.VITEST) {
+    return {
+      success: true,
+      status: 200,
+      message: "Skipped POS stock request decision call in test environment.",
+      data: { requestId, status: dto.status },
+    };
+  }
+
+  const baseUrl = getPosApiBaseUrl();
+  const url = `${baseUrl}/api-pos/stock-requests/${encodeURIComponent(requestId)}/status`;
+
+  try {
+    const res = await posFetchWithRetry(url, {
+      method: "PUT",
+      headers: posRequestHeaders(),
+      body: JSON.stringify(dto),
+    });
+
+    const responseText = await res.text();
+    let parsed: any;
+    try {
+      parsed = JSON.parse(responseText);
+    } catch {
+      parsed = { message: responseText };
+    }
+
+    if (res.status === 409) {
+      return {
+        success: false,
+        status: 409,
+        conflict: true,
+        message: parsed?.message || "POS has already moved this stock request to another state.",
+        data: parsed,
+      };
+    }
+
+    if (!res.ok) {
+      return {
+        success: false,
+        status: res.status,
+        message: parsed?.message || `POS responded with HTTP ${res.status}: ${res.statusText}`,
+        data: parsed,
+      };
+    }
+
+    return {
+      success: true,
+      status: res.status,
+      message: parsed?.message || `Stock request ${requestId} marked ${dto.status} in POS.`,
+      data: parsed?.data || parsed,
+    };
+  } catch (error: any) {
+    console.error(`[POS-STOCK-REQUEST-DECISION-ERROR] Failed to send decision for ${requestId} to POS:`, error);
+    return {
+      success: false,
+      status: 0,
+      message: error?.message || "Failed to reach POS stock request service.",
     };
   }
 }

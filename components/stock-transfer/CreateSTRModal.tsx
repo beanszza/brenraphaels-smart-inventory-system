@@ -11,7 +11,7 @@ import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, AlertCircle, Package, Calendar } from "lucide-react";
-import { FinishedProductOption, LocationOption } from "./types";
+import { FinishedProductOption, LocationOption, CreateSTRPrefill } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ interface CreateSTRModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  prefill?: CreateSTRPrefill | null;
 }
 
 export interface AllocatedLotItem {
@@ -58,7 +59,7 @@ interface NewItemRow {
   notes: string;
 }
 
-export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps) {
+export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: CreateSTRModalProps) {
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<FinishedProductOption[]>([]);
   const [locations, setLocations] = useState<LocationOption[]>([]);
@@ -120,6 +121,30 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
           (l) => !l.isSystemLocation && !l.locationName.toLowerCase().includes("factory")
         );
         setLocations(destinations);
+      }
+
+      // Apply Branch Stock Request prefill when launched via "Transfer Now"
+      if (prefill) {
+        const loadedProducts: FinishedProductOption[] = prodRes.data?.success ? prodRes.data.data || [] : [];
+        const matchedProd = loadedProducts.find((p) => p.productId === prefill.productId);
+        setToLocationId(String(prefill.branchId));
+        setReasonChoice("Branch Replenishment");
+        setItems([
+          {
+            productId: prefill.productId,
+            productName: matchedProd?.itemName || prefill.productName,
+            variant: matchedProd?.variant || prefill.variationName,
+            sku: matchedProd?.sku || prefill.sku,
+            requestedQuantity: prefill.remainingQuantity,
+            availableQuantity: 0,
+            allocatedLots: [],
+            lotCode: "",
+            lotExpiry: "",
+            isChecking: true,
+            notes: `POS Branch Request ${prefill.branchRequestNumber}`,
+          },
+        ]);
+        await checkAvailability(0, prefill.productId, prefill.remainingQuantity);
       }
 
       setPrerequisitesReady(true);
@@ -302,6 +327,12 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
         );
         return;
       }
+      if (prefill && row.requestedQuantity > prefill.remainingQuantity) {
+        setFormError(
+          `Requested quantity (${row.requestedQuantity}) exceeds the remaining approved quantity (${prefill.remainingQuantity}) for branch request ${prefill.branchRequestNumber}.`
+        );
+        return;
+      }
     }
 
     setShowSubmitConfirm(true);
@@ -314,6 +345,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
       const effectiveReason = reasonChoice === "Other" ? customReason.trim() : reasonChoice;
       const payload = {
         requestNumber: requestNumber || undefined,
+        ...(prefill ? { branchRequestId: prefill.branchRequestId } : {}),
         toLocationId: parseInt(toLocationId, 10),
         requiredDate,
         priority,
@@ -362,6 +394,16 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
             Retry loading products and destinations
           </button>
         )}
+        {prefill && (
+          <div className="rounded-control bg-status-purple-bg px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-primary">
+            <span className="type-body-secondary font-semibold">
+              Fulfilling Branch Stock Request {prefill.branchRequestNumber} · {prefill.branchName}
+            </span>
+            <span className="type-caption font-semibold tabular-nums">
+              {prefill.remainingQuantity} of {prefill.approvedQuantity} pcs remaining
+            </span>
+          </div>
+        )}
         {formError && (
           <div className="rounded-control border border-destructive/40 bg-destructive/10 p-3.5 type-caption text-destructive flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -386,7 +428,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
             <label className="block type-label-field text-ink">
               Destination Branch <span className="text-destructive">*</span>
             </label>
-            <Select value={toLocationId} onValueChange={setToLocationId}>
+            <Select value={toLocationId} onValueChange={setToLocationId} disabled={Boolean(prefill)}>
               <SelectTrigger className="w-full h-10 px-3.5 rounded-control border-border bg-surface type-body text-ink">
                 <SelectValue placeholder="Select Destination Branch" />
               </SelectTrigger>
@@ -485,16 +527,18 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
               <Package className="w-4 h-4 text-ink-muted" />
               Finished Products to Transfer ({items.length})
             </h3>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addItemRow}
-              disabled={products.length > 0 && items.length >= products.length}
-              className="flex items-center gap-1.5 px-3.5 h-9 rounded-control border-border bg-surface type-label-button-sm text-ink hover:bg-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" /> Add Product
-            </Button>
+            {!prefill && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addItemRow}
+                disabled={products.length > 0 && items.length >= products.length}
+                className="flex items-center gap-1.5 px-3.5 h-9 rounded-control border-border bg-surface type-label-button-sm text-ink hover:bg-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Product
+              </Button>
+            )}
           </div>
 
           <div className="table-card shadow-card">
@@ -524,6 +568,7 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                           <Select
                             value={row.productId ? String(row.productId) : ""}
                             onValueChange={(val) => handleProductChange(idx, val)}
+                            disabled={Boolean(prefill)}
                           >
                             <SelectTrigger className="h-9 rounded-control border-border bg-surface type-body-secondary font-medium text-ink w-full">
                               <SelectValue placeholder="Select Finished Product" />
@@ -609,12 +654,23 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                           <Input
                             type="number"
                             min="1"
-                            max={row.availableQuantity > 0 ? row.availableQuantity : undefined}
+                            max={
+                              prefill
+                                ? Math.min(
+                                    prefill.remainingQuantity,
+                                    row.availableQuantity > 0 ? row.availableQuantity : prefill.remainingQuantity
+                                  )
+                                : row.availableQuantity > 0
+                                ? row.availableQuantity
+                                : undefined
+                            }
                             step="1"
                             value={row.requestedQuantity}
                             onChange={(e) => handleQuantityChange(idx, e.target.value)}
                             className={`h-9 rounded-control border bg-surface type-body-secondary text-ink font-semibold w-24 ${
-                              isInsufficient ? "border-destructive text-destructive focus-visible:ring-destructive" : "border-border"
+                              isInsufficient || (prefill && typeof row.requestedQuantity === "number" && row.requestedQuantity > prefill.remainingQuantity)
+                                ? "border-destructive text-destructive focus-visible:ring-destructive"
+                                : "border-border"
                             }`}
                           />
                           {isInsufficient && (
@@ -622,6 +678,14 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                               Exceeds stock ({row.availableQuantity})
                             </p>
                           )}
+                          {!isInsufficient &&
+                            prefill &&
+                            typeof row.requestedQuantity === "number" &&
+                            row.requestedQuantity > prefill.remainingQuantity && (
+                              <p className="type-caption text-destructive font-semibold mt-1">
+                                Exceeds remaining ({prefill.remainingQuantity})
+                              </p>
+                            )}
                         </td>
 
                         <td className="px-2 py-3 text-center">
@@ -666,7 +730,8 @@ export function CreateSTRModal({ open, onClose, onSuccess }: CreateSTRModalProps
                   typeof row.requestedQuantity !== "number" ||
                   row.requestedQuantity <= 0 ||
                   row.availableQuantity <= 0 ||
-                  row.requestedQuantity > row.availableQuantity
+                  row.requestedQuantity > row.availableQuantity ||
+                  Boolean(prefill && row.requestedQuantity > prefill.remainingQuantity)
               )
             }
             className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed h-10 cursor-pointer"

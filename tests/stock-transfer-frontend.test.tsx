@@ -6,24 +6,26 @@ import AnalyticsPage from "@/app/(root)/distribution-analytics/page";
 import { allRows } from "@/lib/stock-transfer/screen-data";
 import { TransferSkeleton } from "@/components/stock-transfer/TransferSkeleton";
 
-const fake = vi.hoisted(() => ({ guard: vi.fn(), requests: vi.fn(), transfers: vi.fn(), locations: vi.fn(),
+const fake = vi.hoisted(() => ({ guard: vi.fn(), requests: vi.fn(), branchRequests: vi.fn(), transfers: vi.fn(), locations: vi.fn(),
   metrics: vi.fn(), stats: vi.fn() }));
 vi.mock("@/lib/portal/staff", () => ({ requireModule: fake.guard }));
 vi.mock("@/app/actions/stock-transfer/requests", () => ({ listRequests: fake.requests }));
+vi.mock("@/app/actions/stock-transfer/branch-requests", () => ({ listBranchRequests: fake.branchRequests }));
 vi.mock("@/app/actions/stock-transfer/transfers", () => ({ listTransfers: fake.transfers }));
 vi.mock("@/app/actions/stock-transfer/locations", () => ({ listLocations: fake.locations }));
 vi.mock("@/app/actions/stock-transfer/request-dashboard", () => ({ requestDashboard: fake.metrics }));
 vi.mock("@/app/actions/stock-transfer/transfer-dashboard", () => ({ transferDashboard: fake.stats }));
-vi.mock("@/components/stock-transfer/StockTransferModule", () => ({ default: ({ requests, locations, activeMainTab }: {
-  requests: { requestNumber: string }[]; locations: { locationName: string }[]; activeMainTab: string;
-}) => <div>{activeMainTab} {requests.map(r => r.requestNumber).join(",")} {locations.map(l => l.locationName).join(",")}</div> }));
+vi.mock("@/components/stock-transfer/StockTransferModule", () => ({ default: ({ requests, locations, branchRequests, activeMainTab }: {
+  requests: { requestNumber: string }[]; locations: { locationName: string }[]; branchRequests?: { requestNumber: string }[]; activeMainTab: string;
+}) => <div>{activeMainTab} {requests.map(r => r.requestNumber).join(",")} {locations.map(l => l.locationName).join(",")} {(branchRequests || []).map(b => b.requestNumber).join(",")}</div> }));
 vi.mock("@/components/pages/ViewDistribution", () => ({ default: ({ transfers, stats }: {
   transfers: { transferNumber: string }[]; stats: { total: number };
 }) => <div>{transfers.map(t => t.transferNumber).join(",")} total: {stats.total}</div> }));
-const readers = () => [fake.requests, fake.transfers, fake.locations, fake.metrics, fake.stats];
+const readers = () => [fake.requests, fake.branchRequests, fake.transfers, fake.locations, fake.metrics, fake.stats];
 beforeEach(() => {
   vi.resetAllMocks();
   fake.requests.mockResolvedValue({ success: true, data: [{ requestNumber: "STR-persisted" }] });
+  fake.branchRequests.mockResolvedValue({ success: true, data: [{ requestNumber: "SR-000123" }] });
   fake.transfers.mockResolvedValue({ success: true, data: [{ transferNumber: "STF-persisted" }] });
   fake.locations.mockResolvedValue({ success: true, data: [{ locationName: "Branch persisted" }] });
   fake.metrics.mockResolvedValue({ success: true, data: { totalRequests: 25, pendingApproval: 2, approvedRequests: 3,
@@ -41,6 +43,10 @@ it("server loads persisted requests and location URL tab", async () => {
   expect(html).toContain("locations STR-persisted Branch persisted");
   expect(fake.guard).toHaveBeenCalledWith("Stock Transfer");
   expect(fake.transfers).not.toHaveBeenCalled();
+});
+it("server loads branch-requests URL tab with persisted POS branch requests", async () => {
+  const html = renderToStaticMarkup(await StockTransferPage({ searchParams: Promise.resolve({ tab: "branch-requests" }) }));
+  expect(html).toContain("branch-requests STR-persisted Branch persisted SR-000123");
 });
 it("defaults unknown tabs to transfers", async () => {
   expect(renderToStaticMarkup(await StockTransferPage({ searchParams: Promise.resolve({ tab: "unknown" }) }))).toContain("transfers STR-persisted");

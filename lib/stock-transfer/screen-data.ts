@@ -1,10 +1,16 @@
 import { listRequests } from "@/app/actions/stock-transfer/requests";
+import { listBranchRequests } from "@/app/actions/stock-transfer/branch-requests";
 import { listTransfers } from "@/app/actions/stock-transfer/transfers";
 import { requestDashboard } from "@/app/actions/stock-transfer/request-dashboard";
 import { transferDashboard } from "@/app/actions/stock-transfer/transfer-dashboard";
 import { listLocations } from "@/app/actions/stock-transfer/locations";
 import type { ResourceResult } from "@/lib/resources/result";
-import type { StockTransferRequest, StockTransfer, DashboardMetrics } from "@/components/stock-transfer/types";
+import type {
+  StockTransferRequest,
+  StockTransfer,
+  DashboardMetrics,
+  BranchStockRequest,
+} from "@/components/stock-transfer/types";
 
 export interface TransferLocation {
   locationId: number; locationName: string; locationType: string;
@@ -34,13 +40,16 @@ async function locations(): Promise<TransferLocation[]> {
   return data;
 }
 export async function loadStockTransferScreen() {
-  const [requests, metrics, initialLocations] = await Promise.all([
-    allRows<StockTransferRequest>(listRequests), requestDashboard(), locations(),
+  const [requests, metrics, initialLocations, branchRequests] = await Promise.all([
+    allRows<StockTransferRequest>(listRequests),
+    requestDashboard(),
+    locations(),
+    allRows<BranchStockRequest>(listBranchRequests),
   ]);
   const data = checked(metrics);
   if (!["totalRequests", "pendingApproval", "approvedRequests", "dispatchedTransfers", "scheduledTransfers"].every(key => typeof data[key] === "number"))
     throw new Error("Stock Transfer metrics could not be loaded. Please retry.");
-  return { requests, metrics: data as DashboardMetrics, locations: initialLocations };
+  return { requests, metrics: data as DashboardMetrics, locations: initialLocations, branchRequests };
 }
 export type StockTransferScreen = Awaited<ReturnType<typeof loadStockTransferScreen>>;
 export async function loadDistributionScreen() {
