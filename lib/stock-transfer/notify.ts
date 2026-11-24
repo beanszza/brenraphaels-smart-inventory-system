@@ -23,6 +23,6 @@ export function notifyBranchStockRequestReceived(requestNumber: string, branchNa
     type: "branch-stock-request",
     title: "New Branch Stock Request",
     body: `${branchName} requested ${itemSummary} (${requestNumber}).`,
-    link: `${appOrigin()}/stock-transfer?tab=branch-requests`,
+    link: `${appOrigin()}/branch-requests`,
   });
 }

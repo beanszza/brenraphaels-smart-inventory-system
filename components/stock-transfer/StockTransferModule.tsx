@@ -3,10 +3,6 @@ import { actionResponse } from "@/lib/resources/action-response";
 import { listTransfers, getTransfer } from "@/app/actions/stock-transfer/transfers";
 import { cancelRequest } from "@/app/actions/stock-transfer/request-cancel";
 import { reviewRequest } from "@/app/actions/stock-transfer/request-status";
-import {
-  reviewBranchRequest,
-  retryBranchRequestPosSync,
-} from "@/app/actions/stock-transfer/branch-requests";
 
 import type { StockTransferScreen } from "@/lib/stock-transfer/screen-data";
 import Link from "next/link";
@@ -22,15 +18,11 @@ import {
   StockTransferRequest,
   StockTransfer,
   STRActionType,
-  BranchStockRequest,
   CreateSTRPrefill,
 } from "./types";
 import StockTransferSummaryCards from "./StockTransferSummaryCards";
 import { STRTable } from "./STRTable";
 import { LocationsTab } from "./LocationsTab";
-import { BranchRequestsTab } from "./BranchRequestsTab";
-import { BranchRequestActionModal, type BranchRequestActionType } from "./BranchRequestActionModal";
-import { BranchRequestDetailsModal } from "./BranchRequestDetailsModal";
 import { STRDetailsModal } from "./STRDetailsModal";
 import { CreateSTRModal } from "./CreateSTRModal";
 import { ScheduleTransferModal } from "./ScheduleTransferModal";
@@ -54,14 +46,16 @@ export default function StockTransferModule({
   requests,
   metrics,
   locations,
-  branchRequests = [],
   activeMainTab,
-}: StockTransferScreen & { activeMainTab: "transfers" | "branch-requests" | "locations" }) {
+  initialCreateStrPrefill = null,
+}: StockTransferScreen & {
+  activeMainTab: "transfers" | "locations";
+  initialCreateStrPrefill?: CreateSTRPrefill | null;
+}) {
   const router = useRouter();
   const isAdmin = useIsAdmin();
   const isImsManager = useIsImsManager();
   const canOperate = !isAdmin;
-  const canReviewBranchRequests = isAdmin || isImsManager || canOperate;
   const [loading, startTransition] = useTransition();
   const refreshAll = () => startTransition(() => router.refresh());
 
@@ -80,8 +74,10 @@ export default function StockTransferModule({
   const pageSize = 10;
 
   // Modal Visibility States
-  const [openCreateSTR, setOpenCreateSTR] = useState(false);
-  const [createStrPrefill, setCreateStrPrefill] = useState<CreateSTRPrefill | null>(null);
+  const [openCreateSTR, setOpenCreateSTR] = useState(Boolean(initialCreateStrPrefill));
+  const [createStrPrefill, setCreateStrPrefill] = useState<CreateSTRPrefill | null>(
+    initialCreateStrPrefill
+  );
   const [scheduleTargetReq, setScheduleTargetReq] = useState<StockTransferRequest | null>(null);
   const [selectedSTRForDetails, setSelectedSTRForDetails] = useState<StockTransferRequest | null>(null);
   const [dispatchTargetTransfer, setDispatchTargetTransfer] = useState<StockTransfer | null>(null);
@@ -91,79 +87,23 @@ export default function StockTransferModule({
     type: STRActionType;
   } | null>(null);
 
-  // Branch Stock Request Modal States
-  const [selectedBranchReq, setSelectedBranchReq] = useState<BranchStockRequest | null>(null);
-  const [branchReqAction, setBranchReqAction] = useState<{
-    request: BranchStockRequest;
-    type: BranchRequestActionType;
-  } | null>(null);
-
-  const pendingBranchReqCount = useMemo(
-    () => branchRequests.filter((r) => r.subtab === "requests").length,
-    [branchRequests]
-  );
-
-  const handleBranchRequestActionConfirm = async (payload: {
-    approvedQuantity?: number;
-    remarks?: string;
-  }) => {
-    if (!branchReqAction) return;
-    const { request, type } = branchReqAction;
-    const res = await actionResponse(
-      reviewBranchRequest(request.branchRequestId, {
-        action: type === "approve" ? "Approve" : "Reject",
-        approvedQuantity: payload.approvedQuantity,
-        remarks: payload.remarks,
-      })
-    );
-    if (!res.data?.success) {
-      throw new Error(res.data?.message || "Unable to update branch stock request.");
+  React.useEffect(() => {
+    if (initialCreateStrPrefill && canOperate) {
+      setCreateStrPrefill(initialCreateStrPrefill);
+      setOpenCreateSTR(true);
     }
-    toast.success(
-      res.data?.message ||
-        (type === "approve"
-          ? `Approved ${request.requestNumber} and notified POS.`
-          : `Rejected ${request.requestNumber} and notified POS.`)
-    );
-    refreshAll();
-  };
+  }, [initialCreateStrPrefill, canOperate]);
 
-  const handleRetryBranchSync = async (req: BranchStockRequest) => {
-    startTransition(async () => {
-      try {
-        const res = await actionResponse(retryBranchRequestPosSync(req.branchRequestId));
-        if (!res.data?.success) {
-          toast.error(res.data?.message || "Unable to sync decision to POS.");
-          return;
-        }
-        toast.success(res.data?.message || `Synced ${req.requestNumber} to POS.`);
-        router.refresh();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Unable to sync decision to POS.");
-      }
-    });
-  };
-
-  const handleTransferNow = (req: BranchStockRequest) => {
-    const primaryItem = req.items[0];
-    if (!primaryItem || req.totalRemaining <= 0) {
-      toast.error("No remaining approved quantity available to transfer.");
-      return;
+  const closeCreateSTR = (submitted = false) => {
+    const hadPrefill = Boolean(createStrPrefill);
+    setOpenCreateSTR(false);
+    setCreateStrPrefill(null);
+    if (hadPrefill) {
+      startTransition(() => router.replace("/stock-transfer"));
     }
-    setCreateStrPrefill({
-      branchRequestId: req.branchRequestId,
-      branchRequestNumber: req.requestNumber,
-      branchId: req.branchId,
-      branchName: req.branchName,
-      productId: primaryItem.productId,
-      productName: primaryItem.productName,
-      variationName: primaryItem.variationName,
-      sku: primaryItem.sku,
-      approvedQuantity: primaryItem.approvedQuantity,
-      remainingQuantity: primaryItem.remainingQuantity,
-    });
-    startTransition(() => router.push("/stock-transfer"));
-    setOpenCreateSTR(true);
+    if (submitted) {
+      refreshAll();
+    }
   };
 
   // Compute status counts for tab badges
@@ -308,7 +248,7 @@ export default function StockTransferModule({
               </Button>
             )}
 
-            {canOperate && activeMainTab !== "branch-requests" && (
+            {canOperate && (
               <Button
                 type="button"
                 onClick={() => {
@@ -349,23 +289,6 @@ export default function StockTransferModule({
 
           <button
             type="button"
-            onClick={() => startTransition(() => router.push("/stock-transfer?tab=branch-requests"))}
-            className={`flex items-center gap-2 px-4 py-2.5 type-label-tab border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
-              activeMainTab === "branch-requests"
-                ? "border-primary text-primary"
-                : "border-transparent text-ink-muted hover:text-ink"
-            }`}
-          >
-            <span>BRANCH REQUESTS</span>
-            {pendingBranchReqCount > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full type-caption tabular-nums bg-status-purple-bg text-primary font-semibold">
-                {pendingBranchReqCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
             onClick={() => startTransition(() => router.push("/stock-transfer?tab=locations"))}
             className={`flex items-center gap-2 px-4 py-2.5 type-label-tab border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeMainTab === "locations"
@@ -381,18 +304,6 @@ export default function StockTransferModule({
       {/* Content based on Primary Tab */}
       {activeMainTab === "locations" ? (
         <LocationsTab locations={locations} loading={loading} onRefresh={refreshAll} />
-      ) : activeMainTab === "branch-requests" ? (
-        <BranchRequestsTab
-          branchRequests={branchRequests}
-          loading={loading}
-          canReview={canReviewBranchRequests}
-          canTransfer={canOperate}
-          onView={(req) => setSelectedBranchReq(req)}
-          onApprove={(req) => setBranchReqAction({ request: req, type: "approve" })}
-          onReject={(req) => setBranchReqAction({ request: req, type: "reject" })}
-          onTransferNow={handleTransferNow}
-          onRetrySync={handleRetryBranchSync}
-        />
       ) : (
         <div className="space-y-4">
           {/* Sub-status Tabs Row (Admin Requests tab + Status Tabs) */}
@@ -490,14 +401,8 @@ export default function StockTransferModule({
       {openCreateSTR && <CreateSTRModal
         open
         prefill={createStrPrefill}
-        onClose={() => {
-          setOpenCreateSTR(false);
-          setCreateStrPrefill(null);
-        }}
-        onSuccess={() => {
-          setCreateStrPrefill(null);
-          refreshAll();
-        }}
+        onClose={() => closeCreateSTR(false)}
+        onSuccess={() => closeCreateSTR(true)}
       />}
 
       {/* 2. Schedule Transfer Modal */}
@@ -549,29 +454,6 @@ export default function StockTransferModule({
           requestNumber={strAction.request.requestNumber}
           onConfirm={handleSTRActionConfirm}
           onClose={() => setStrAction(null)}
-        />
-      )}
-
-      {/* 6. Branch Stock Request Details Modal */}
-      <BranchRequestDetailsModal
-        request={selectedBranchReq}
-        open={Boolean(selectedBranchReq)}
-        canReview={canReviewBranchRequests}
-        canTransfer={canOperate}
-        onClose={() => setSelectedBranchReq(null)}
-        onApprove={(req) => setBranchReqAction({ request: req, type: "approve" })}
-        onReject={(req) => setBranchReqAction({ request: req, type: "reject" })}
-        onTransferNow={handleTransferNow}
-        onRetrySync={handleRetryBranchSync}
-      />
-
-      {/* 7. Branch Stock Request Approve / Reject Confirmation Modal (reuses ActionConfirmModal) */}
-      {branchReqAction && (
-        <BranchRequestActionModal
-          actionType={branchReqAction.type}
-          request={branchReqAction.request}
-          onConfirm={handleBranchRequestActionConfirm}
-          onClose={() => setBranchReqAction(null)}
         />
       )}
     </div>

@@ -16,6 +16,7 @@ import {
   Package,
   Wrench,
   SlidersHorizontal,
+  ArrowLeftRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Module } from "@/lib/portal/config";
@@ -73,6 +74,7 @@ export const navGroups: NavGroup[] = [
       { name: "Goods Receiving",      href: "/goods-receiving",     icon: PackageCheck, module: "Goods Receiving" },
       { name: "Production & Quality", href: "/production-quality",  icon: Building2, module: "Production & Quality" },
       { name: "Stock Transfer",       href: "/stock-transfer",      icon: Truck, module: "Stock Transfer" },
+      { name: "Branch Requests",      href: "/branch-requests",     icon: ArrowLeftRight, module: "Stock Transfer" },
     ],
   },
 ];

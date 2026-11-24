@@ -107,6 +107,7 @@ export async function mutate(
   if (savedResult.audit) await recordAudit(staff, { ...savedResult.audit, version: savedResult.audit.version ?? auditVersion(savedResult.result) });
   if (savedResult.after) await savedResult.after().catch((error) => console.error("Notification could not be sent", error));
   revalidatePath("/stock-transfer");
+  revalidatePath("/branch-requests");
   revalidatePath("/inventory");
   revalidatePath("/distribution-analytics");
   return savedResult.result;

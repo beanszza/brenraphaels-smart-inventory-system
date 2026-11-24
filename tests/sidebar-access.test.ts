@@ -130,6 +130,7 @@ describe("Owning Module of a page address", () => {
     ["/resources-suppliers/logs", "Resources & Suppliers"],
     ["/traceability", "Inventory"],
     ["/stock-transfer", "Stock Transfer"],
+    ["/branch-requests", "Stock Transfer"],
     ["/distribution-analytics", "Stock Transfer"],
     ["/distribution", "Stock Transfer"],
   ])("%s belongs to %s", (path, module) => {

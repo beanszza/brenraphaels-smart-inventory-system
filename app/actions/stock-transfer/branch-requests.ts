@@ -351,6 +351,7 @@ export async function reviewBranchRequest(
       .catch((e) => console.error("[POS-SYNC-STATUS-UPDATE-ERROR]", e));
 
     revalidatePath("/stock-transfer");
+    revalidatePath("/branch-requests");
 
     if (!syncRes.success) {
       return resourceResult({
@@ -409,6 +410,7 @@ export async function retryBranchRequestPosSync(idInput: number) {
     });
 
     revalidatePath("/stock-transfer");
+    revalidatePath("/branch-requests");
 
     if (!syncRes.success) {
       return resourceResult({

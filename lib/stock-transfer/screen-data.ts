@@ -10,6 +10,7 @@ import type {
   StockTransfer,
   DashboardMetrics,
   BranchStockRequest,
+  CreateSTRPrefill,
 } from "@/components/stock-transfer/types";
 
 export interface TransferLocation {
@@ -40,18 +41,43 @@ async function locations(): Promise<TransferLocation[]> {
   return data;
 }
 export async function loadStockTransferScreen() {
-  const [requests, metrics, initialLocations, branchRequests] = await Promise.all([
+  const [requests, metrics, initialLocations] = await Promise.all([
     allRows<StockTransferRequest>(listRequests),
     requestDashboard(),
     locations(),
-    allRows<BranchStockRequest>(listBranchRequests),
   ]);
   const data = checked(metrics);
   if (!["totalRequests", "pendingApproval", "approvedRequests", "dispatchedTransfers", "scheduledTransfers"].every(key => typeof data[key] === "number"))
     throw new Error("Stock Transfer metrics could not be loaded. Please retry.");
-  return { requests, metrics: data as DashboardMetrics, locations: initialLocations, branchRequests };
+  return { requests, metrics: data as DashboardMetrics, locations: initialLocations };
 }
 export type StockTransferScreen = Awaited<ReturnType<typeof loadStockTransferScreen>>;
+
+export async function loadBranchRequestsScreen() {
+  const branchRequests = await allRows<BranchStockRequest>(listBranchRequests);
+  return { branchRequests };
+}
+export type BranchRequestsScreen = Awaited<ReturnType<typeof loadBranchRequestsScreen>>;
+
+export async function loadBranchRequestPrefill(branchRequestId: number): Promise<CreateSTRPrefill | null> {
+  if (!Number.isSafeInteger(branchRequestId) || branchRequestId <= 0) return null;
+  const rows = await allRows<BranchStockRequest>(listBranchRequests);
+  const req = rows.find((r) => r.branchRequestId === branchRequestId);
+  const primaryItem = req?.items?.[0];
+  if (!req || !primaryItem || req.subtab !== "approved" || req.totalRemaining <= 0) return null;
+  return {
+    branchRequestId: req.branchRequestId,
+    branchRequestNumber: req.requestNumber,
+    branchId: req.branchId,
+    branchName: req.branchName,
+    productId: primaryItem.productId,
+    productName: primaryItem.productName,
+    variationName: primaryItem.variationName,
+    sku: primaryItem.sku,
+    approvedQuantity: primaryItem.approvedQuantity,
+    remainingQuantity: primaryItem.remainingQuantity,
+  };
+}
 export async function loadDistributionScreen() {
   const [transfers, initialLocations, stats] = await Promise.all([
     allRows<StockTransfer>(listTransfers), locations(), transferDashboard(),
