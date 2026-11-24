@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Eye, CheckCircle, Receipt, Ban, MoreHorizontal } from "lucide-react";
+import { Eye, CheckCircle, Ban, MoreHorizontal } from "lucide-react";
 import { Delivery } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import {
@@ -84,13 +84,6 @@ export function DeliveryTable({
                   label: "Mark Arrived",
                   icon: <CheckCircle className="w-4 h-4 text-ink" />,
                   onClick: () => onArrive(delivery),
-                });
-              }
-              if (isArrived && !delivery.grnNumber && onCreateGrn) {
-                actions.push({
-                  label: "Create Goods Receipt Note",
-                  icon: <Receipt className="w-4 h-4 text-ink" />,
-                  onClick: () => onCreateGrn(delivery),
                 });
               }
               if (isCancellable && onCancel) {

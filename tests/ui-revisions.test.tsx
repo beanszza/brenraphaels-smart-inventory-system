@@ -443,12 +443,14 @@ describe("Modal layout, typography, and date bounds", () => {
     );
     expect(arrivedDetailsHtml).toContain("Actual Arrival");
     expect(arrivedDetailsHtml).not.toContain(">Goods Receipt Note<");
+    expect(arrivedDetailsHtml).not.toContain("Create Goods Receipt Note");
 
     const tableHtml = renderToStaticMarkup(
-      <DeliveryTable deliveries={[sampleDelivery]} onView={() => { }} />
+      <DeliveryTable deliveries={[sampleDelivery, arrivedDelivery]} onView={() => { }} onCreateGrn={() => { }} />
     );
     expect(tableHtml).not.toContain(">Carrier<");
     expect(tableHtml).not.toContain("In-House");
+    expect(tableHtml).not.toContain("Create Goods Receipt Note");
 
     const arrivePageHtml = renderToStaticMarkup(
       <MarkArrivedView

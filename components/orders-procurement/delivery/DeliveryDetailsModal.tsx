@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import { Delivery } from "../types";
-import CreateGrnModal from "@/components/receiving/CreateGrnModal";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { downloadDeliveryReportPdf } from "./downloadDeliveryReportPdf";
 import { isFileId } from "@/lib/files";
@@ -44,10 +43,8 @@ function DeliveryDetailsBody({
   onClose,
   onArrive,
   onCancel,
-  onGrnCreated,
   variant,
 }: DeliveryDetailsBodyProps) {
-  const [showCreateGrnModal, setShowCreateGrnModal] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ title: string; src: string } | null>(null);
 
@@ -230,16 +227,6 @@ function DeliveryDetailsBody({
           className="h-9 rounded-control bg-primary text-on-brand px-4 type-label-button-sm hover:bg-primary-hover transition-colors shadow-none cursor-pointer"
         >
           Confirm Arrival
-        </Button>
-      )}
-
-      {!isAdmin && isArrived && !delivery.grnNumber && (
-        <Button
-          type="button"
-          onClick={() => setShowCreateGrnModal(true)}
-          className="h-9 rounded-control bg-primary text-on-brand px-4 type-label-button-sm hover:bg-primary-hover transition-colors shadow-none cursor-pointer"
-        >
-          Create Goods Receipt Note
         </Button>
       )}
     </div>
@@ -639,19 +626,6 @@ function DeliveryDetailsBody({
           </div>,
           document.body
         )}
-
-      {showCreateGrnModal && (
-        <CreateGrnModal
-          open={showCreateGrnModal}
-          initialDeliveryId={delivery.deliveryId}
-          onClose={() => setShowCreateGrnModal(false)}
-          onSuccess={() => {
-            setShowCreateGrnModal(false);
-            onClose();
-            onGrnCreated?.();
-          }}
-        />
-      )}
     </>
   );
 

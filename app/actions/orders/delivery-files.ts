@@ -140,12 +140,54 @@ export async function resolveDeliveryAttachment(ref: string | null | undefined) 
     return resourceResult({ success: true, data: { url: null } });
   }
 
+  // Try direct gateway view with retry so transient cold-start/timeout errors don't silently drop images
+  let lastError: string | null = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const viewed = await filesGateway.view(trimmed, staff.id) as
+        | ({ url?: string; downloadUrl?: string; signedUrl?: string; contentType?: string; variants?: Array<{ status?: string; url?: string | null }> } & Record<string, unknown>)
+        | null;
+
+      if (viewed) {
+        const candidateUrl =
+          viewed.url ||
+          viewed.downloadUrl ||
+          viewed.signedUrl ||
+          viewed.variants?.find((v) => v.status === "ready" && v.url)?.url ||
+          null;
+
+        if (candidateUrl && candidateUrl !== FILE_PLACEHOLDER && !candidateUrl.includes("file-placeholder")) {
+          return resourceResult({
+            success: true,
+            data: { url: candidateUrl, contentType: viewed.contentType ?? null },
+          });
+        }
+        lastError = `File ${trimmed} returned no URL (status=${String(viewed.status ?? "unknown")})`;
+      } else {
+        lastError = `File ${trimmed} not found (404)`;
+      }
+    } catch (error: unknown) {
+      lastError = error instanceof Error ? error.message : String(error);
+      console.error(`Failed to resolve delivery attachment (attempt ${attempt}):`, error);
+    }
+    if (attempt < 2) {
+      await new Promise((r) => setTimeout(r, 300));
+    }
+  }
+
+  // Fallback to resolveFile helper
   try {
     const resolved = await resolveFile(filesGateway, staff, trimmed);
-    const url = resolved.url !== FILE_PLACEHOLDER && !resolved.url.includes("file-placeholder") ? resolved.url : null;
-    return resourceResult({ success: true, data: { url } });
-  } catch (error) {
+    const url =
+      resolved?.url && resolved.url !== FILE_PLACEHOLDER && !resolved.url.includes("file-placeholder")
+        ? resolved.url
+        : null;
+    return resourceResult({ success: true, data: { url, reason: url ? undefined : lastError } });
+  } catch (error: unknown) {
     console.error("Failed to resolve delivery attachment:", error);
-    return resourceResult({ success: true, data: { url: null } });
+    return resourceResult({
+      success: true,
+      data: { url: null, reason: lastError || (error instanceof Error ? error.message : String(error)) },
+    });
   }
 }
