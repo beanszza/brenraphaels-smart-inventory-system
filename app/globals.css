@@ -296,6 +296,36 @@ body {
 
 nav::-webkit-scrollbar { display: none; }
 
+/* Seamless sidebar scrollbar: hidden at rest, subtle ultra-thin thumb only while hovering */
+.sidebar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.sidebar-scrollbar:hover {
+  scrollbar-color: rgba(110, 102, 128, 0.22) transparent;
+}
+.dark .sidebar-scrollbar:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+.sidebar-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(110, 102, 128, 0.22);
+}
+.dark .sidebar-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
 @utility custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(110, 102, 128, 0.25) transparent;
