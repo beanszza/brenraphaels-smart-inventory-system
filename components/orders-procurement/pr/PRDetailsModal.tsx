@@ -17,6 +17,7 @@ export interface PRDetailsProps {
   onApprove?: (pr: PurchaseRequisition) => void;
   onReject?: (pr: PurchaseRequisition) => void;
   onReturn?: (pr: PurchaseRequisition) => void;
+  onCancel?: (pr: PurchaseRequisition) => void;
   onCreatePo?: (pr: PurchaseRequisition) => void;
 }
 
@@ -43,6 +44,7 @@ function PRDetailsBody({
   onApprove,
   onReject,
   onReturn,
+  onCancel,
   onCreatePo,
   variant,
   embedded = false,
@@ -466,6 +468,18 @@ function PRDetailsBody({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 ml-auto">
+          {/* Staff Cancel action — shown ONLY on Pending Approval */}
+          {!isAdmin && isPending && onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onCancel(pr)}
+              className="rounded-control border border-border bg-surface px-5 h-9 type-label-button text-destructive hover:bg-notice-danger-bg shadow-none cursor-pointer"
+            >
+              Cancel Requisition
+            </Button>
+          )}
+
           {variant === "modal" ? (
             <ModalCloseButton
               type="button"

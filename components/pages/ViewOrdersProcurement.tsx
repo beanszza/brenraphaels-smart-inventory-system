@@ -88,6 +88,7 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
           onApprove={(pr) => setPrActionModal({ pr, type: "approve" })}
           onReject={(pr) => setPrActionModal({ pr, type: "reject" })}
           onReturn={(pr) => setPrActionModal({ pr, type: "return" })}
+          onCancel={(pr) => setPrActionModal({ pr, type: "cancel" })}
           onCreatePo={(pr) => handleCreatePoFromPR(pr.prId)}
         />
 

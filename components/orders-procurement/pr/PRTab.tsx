@@ -184,6 +184,7 @@ export function PRTab({
           onApprove={(pr) => setActionModal({ pr, type: "approve" })}
           onReject={(pr) => setActionModal({ pr, type: "reject" })}
           onReturn={(pr) => setActionModal({ pr, type: "return" })}
+          onCancel={(pr) => setActionModal({ pr, type: "cancel" })}
           onCreatePo={
             onCreatePo
               ? (pr) => {

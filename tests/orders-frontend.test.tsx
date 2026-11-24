@@ -103,19 +103,27 @@ it("removes Converted to PO tab, sorts High priority PRs on top, and exposes Exp
   expect(tabHtml.indexOf("PR-HIGH")).toBeLessThan(tabHtml.indexOf("PR-LOW"));
 
   const approvedViewHtml = renderToStaticMarkup(
-    <PRDetailsView pr={highPr} onClose={() => {}} onCreatePo={() => {}} />
+    <PRDetailsView pr={highPr} onClose={() => {}} onCancel={() => {}} onCreatePo={() => {}} />
   );
   expect(approvedViewHtml).toContain("Purchase requisitions");
   expect(approvedViewHtml).toContain("Requisition details");
   expect(approvedViewHtml).toContain("Requisition summary");
   expect(approvedViewHtml).toContain("Export");
   expect(approvedViewHtml).toContain("Create Purchase Order");
+  expect(approvedViewHtml).not.toContain("Cancel Requisition");
 
   const pendingPr = { ...highPr, status: "Pending Approval" } as unknown as PurchaseRequisition;
+  const staffPendingViewHtml = renderToStaticMarkup(
+    <PRDetailsView pr={pendingPr} isAdmin={false} onClose={() => {}} onCancel={() => {}} />
+  );
+  expect(staffPendingViewHtml).not.toContain(">Export<");
+  expect(staffPendingViewHtml).toContain("Cancel Requisition");
+
   const pendingViewHtml = renderToStaticMarkup(
-    <PRDetailsView pr={pendingPr} isAdmin onClose={() => {}} onApprove={() => {}} onReject={() => {}} onReturn={() => {}} />
+    <PRDetailsView pr={pendingPr} isAdmin onClose={() => {}} onApprove={() => {}} onReject={() => {}} onReturn={() => {}} onCancel={() => {}} />
   );
   expect(pendingViewHtml).not.toContain(">Export<");
+  expect(pendingViewHtml).not.toContain("Cancel Requisition");
   expect(pendingViewHtml).toContain("Approve");
   expect(pendingViewHtml).toContain("Return for Revision");
   expect(pendingViewHtml).toContain("Reject");
