@@ -5,14 +5,21 @@ import React, { useState, useEffect } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { PRTab } from "@/components/orders-procurement/pr/PRTab";
 import { CreatePRForm } from "@/components/orders-procurement/pr/CreatePRForm";
+import { PRDetailsView } from "@/components/orders-procurement/pr/PRDetailsModal";
+import { PRActionModal, type PRActionType } from "@/components/orders-procurement/pr/PRActionModal";
 import { POTab } from "@/components/orders-procurement/po/POTab";
 import { CreatePOForm } from "@/components/orders-procurement/po/CreatePOModal";
 import { DeliveryTab } from "@/components/orders-procurement/delivery/DeliveryTab";
+import { procurement } from "@/lib/orders/client";
+import { useStaff } from "@/context/StaffContext";
+import { isAdminStaff } from "@/lib/auth-roles";
 
 import type { PurchaseRequisition, PurchaseOrderPO, Delivery } from "@/components/orders-procurement/types";
 
 export default function OrdersProcurementPage({ data }: { data: { requisitions: PurchaseRequisition[]; orders: PurchaseOrderPO[]; deliveries: Delivery[] } }) {
   const router = useRouter();
+  const staff = useStaff();
+  const isAdmin = isAdminStaff(staff);
   const [notice, setNotice] = useState("");
   const [mainTab, setMainTab] = useState<"pr" | "po" | "delivery">("pr");
 
@@ -20,6 +27,13 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
   const [prFormState, setPrFormState] = useState<{
     isEdit: boolean;
     initialData?: PurchaseRequisition;
+  } | null>(null);
+
+  // Full-page Purchase Requisition view state (all PR sub-tabs)
+  const [viewingPrId, setViewingPrId] = useState<number | null>(null);
+  const [prActionModal, setPrActionModal] = useState<{
+    pr: PurchaseRequisition;
+    type: PRActionType;
   } | null>(null);
 
   // Check for prefilled PR data from Inventory "Order Now" or Production Shortfall
@@ -43,10 +57,62 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
   const [showCreatePO, setShowCreatePO] = useState(false);
 
   const handleCreatePoFromPR = (prId: number) => {
+    setViewingPrId(null);
     setCreatePOFromPR(prId);
     setShowCreatePO(true);
     setMainTab("po");
   };
+
+  const handlePrStatusUpdate = async (prId: number, status: string, notes?: string) => {
+    await procurement.setRequisitionStatus(prId, {
+      status,
+      adminNotes: notes || null,
+    });
+    setNotice("Status updated successfully.");
+    setViewingPrId(null);
+    router.refresh();
+  };
+
+  const viewingPR = viewingPrId
+    ? data.requisitions.find((r) => r.prId === viewingPrId) ?? null
+    : null;
+
+  if (viewingPR) {
+    return (
+      <div className="page-container px-4 sm:px-8 w-full min-h-full animate-page-in">
+        <PRDetailsView
+          embedded
+          pr={viewingPR}
+          isAdmin={isAdmin}
+          onClose={() => setViewingPrId(null)}
+          onApprove={(pr) => setPrActionModal({ pr, type: "approve" })}
+          onReject={(pr) => setPrActionModal({ pr, type: "reject" })}
+          onReturn={(pr) => setPrActionModal({ pr, type: "return" })}
+          onCreatePo={(pr) => handleCreatePoFromPR(pr.prId)}
+        />
+
+        {prActionModal && (
+          <PRActionModal
+            actionType={prActionModal.type}
+            prNumber={prActionModal.pr.prNumber}
+            onClose={() => setPrActionModal(null)}
+            onConfirm={async (notes) => {
+              const { pr, type } = prActionModal;
+              if (type === "approve") {
+                await handlePrStatusUpdate(pr.prId, "Approved", notes);
+              } else if (type === "reject") {
+                await handlePrStatusUpdate(pr.prId, "Rejected", notes);
+              } else if (type === "return") {
+                await handlePrStatusUpdate(pr.prId, "Returned", notes);
+              } else if (type === "cancel") {
+                await handlePrStatusUpdate(pr.prId, "Cancelled", notes);
+              }
+            }}
+          />
+        )}
+      </div>
+    );
+  }
 
   if (prFormState) {
     return (
@@ -157,6 +223,7 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
           onCreatePo={handleCreatePoFromPR}
           onCreateNew={() => setPrFormState({ isEdit: false })}
           onEditPr={(pr) => setPrFormState({ isEdit: true, initialData: pr })}
+          onViewPr={(pr) => setViewingPrId(pr.prId)}
         />
       )}
 

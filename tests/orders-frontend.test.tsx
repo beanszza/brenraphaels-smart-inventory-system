@@ -5,7 +5,7 @@ import { allPages, resultData } from "@/lib/orders/screen-data";
 import { loadProcurementScreen, requisitionSupplies, procurementRecipes } from "@/app/actions/orders/screens";
 import { supplierItemsByItem, supplierItemsBySupplier } from "@/app/actions/orders/catalog";
 import { PRTab } from "@/components/orders-procurement/pr/PRTab";
-import { PRDetailsModal } from "@/components/orders-procurement/pr/PRDetailsModal";
+import { PRDetailsModal, PRDetailsView } from "@/components/orders-procurement/pr/PRDetailsModal";
 import { CreatePRModal, CreatePRForm } from "@/components/orders-procurement/pr/CreatePRForm";
 import { POTab } from "@/components/orders-procurement/po/POTab";
 import { DeliveryTab } from "@/components/orders-procurement/delivery/DeliveryTab";
@@ -86,7 +86,7 @@ it("shows backend approval and delivery statuses in the matching tabs", () => {
   expect(html).not.toContain(">PendingApproval<");
 });
 
-it("removes Converted to PO tab, sorts High priority PRs on top, and exposes full report download on Closed PRs", () => {
+it("removes Converted to PO tab, sorts High priority PRs on top, and exposes Export only on Approved PRs", () => {
   const lowPr = {
     prId: 10, prNumber: "PR-LOW", requestDate: "2026-10-24", requiredDate: "2026-11-01",
     requestedBy: "staff", department: "Inventory", status: "Approved", priority: "Low",
@@ -102,17 +102,36 @@ it("removes Converted to PO tab, sorts High priority PRs on top, and exposes ful
   expect(tabHtml).not.toContain("Converted to PO");
   expect(tabHtml.indexOf("PR-HIGH")).toBeLessThan(tabHtml.indexOf("PR-LOW"));
 
+  const approvedViewHtml = renderToStaticMarkup(
+    <PRDetailsView pr={highPr} onClose={() => {}} onCreatePo={() => {}} />
+  );
+  expect(approvedViewHtml).toContain("Purchase requisitions");
+  expect(approvedViewHtml).toContain("Requisition details");
+  expect(approvedViewHtml).toContain("Requisition summary");
+  expect(approvedViewHtml).toContain("Export");
+  expect(approvedViewHtml).toContain("Create Purchase Order");
+
+  const pendingPr = { ...highPr, status: "Pending Approval" } as unknown as PurchaseRequisition;
+  const pendingViewHtml = renderToStaticMarkup(
+    <PRDetailsView pr={pendingPr} isAdmin onClose={() => {}} onApprove={() => {}} onReject={() => {}} onReturn={() => {}} />
+  );
+  expect(pendingViewHtml).not.toContain(">Export<");
+  expect(pendingViewHtml).toContain("Approve");
+  expect(pendingViewHtml).toContain("Return for Revision");
+  expect(pendingViewHtml).toContain("Reject");
+
   const closedPr = { ...highPr, status: "Closed", isFullyConvertedToPo: true } as unknown as PurchaseRequisition;
   const closedModalHtml = renderToStaticMarkup(
     <PRDetailsModal pr={closedPr} onClose={() => {}} onCreatePo={() => {}} />
   );
-  expect(closedModalHtml).toContain("Download Full Report (PDF)");
+  expect(closedModalHtml).not.toContain(">Export<");
   expect(closedModalHtml).not.toContain("Create Purchase Order");
 
   const convertedPr = { ...highPr, status: "Approved", isFullyConvertedToPo: true } as unknown as PurchaseRequisition;
   const convertedModalHtml = renderToStaticMarkup(
     <PRDetailsModal pr={convertedPr} onClose={() => {}} onCreatePo={() => {}} />
   );
+  expect(convertedModalHtml).toContain("Export");
   expect(convertedModalHtml).not.toContain("Create Purchase Order");
 });
 

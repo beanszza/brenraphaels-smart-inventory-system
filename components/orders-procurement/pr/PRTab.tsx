@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { PurchaseRequisition, PRStatus } from "../types";
 import { PRTable } from "./PRTable";
-import { PRDetailsModal } from "./PRDetailsModal";
+import { PRDetailsView } from "./PRDetailsModal";
 import { PRActionModal, PRActionType } from "./PRActionModal";
 import { CreatePRForm } from "./CreatePRForm";
 import Pagination from "@/components/Pagination";
@@ -47,11 +47,13 @@ export function PRTab({
   onCreatePo,
   onCreateNew,
   onEditPr,
+  onViewPr,
 }: {
   initialRequisitions: PurchaseRequisition[];
   onCreatePo?: (prId: number) => void;
   onCreateNew?: () => void;
   onEditPr?: (pr: PurchaseRequisition) => void;
+  onViewPr?: (pr: PurchaseRequisition) => void;
 }) {
   const router = useRouter();
   const staff = useStaff();
@@ -168,6 +170,53 @@ export function PRTab({
     fetchRequisitions();
   };
 
+
+  // Standalone inline fallback when PRTab is rendered without ViewOrdersProcurement's onViewPr
+  if (!onViewPr && selectedPR) {
+    const latestPr = requisitions.find((r) => r.prId === selectedPR.prId) || selectedPR;
+    return (
+      <>
+        <PRDetailsView
+          embedded
+          pr={latestPr}
+          isAdmin={isAdmin}
+          onClose={() => setSelectedPR(null)}
+          onApprove={(pr) => setActionModal({ pr, type: "approve" })}
+          onReject={(pr) => setActionModal({ pr, type: "reject" })}
+          onReturn={(pr) => setActionModal({ pr, type: "return" })}
+          onCreatePo={
+            onCreatePo
+              ? (pr) => {
+                  setSelectedPR(null);
+                  onCreatePo(pr.prId);
+                }
+              : undefined
+          }
+        />
+
+        {actionModal && (
+          <PRActionModal
+            actionType={actionModal.type}
+            prNumber={actionModal.pr.prNumber}
+            onClose={() => setActionModal(null)}
+            onConfirm={async (notes) => {
+              const { pr, type } = actionModal;
+              if (type === "approve") {
+                await handleStatusUpdate(pr.prId, "Approved", notes);
+              } else if (type === "reject") {
+                await handleStatusUpdate(pr.prId, "Rejected", notes);
+              } else if (type === "return") {
+                await handleStatusUpdate(pr.prId, "Returned", notes);
+              } else if (type === "cancel") {
+                await handleStatusUpdate(pr.prId, "Cancelled", notes);
+              }
+              setSelectedPR(null);
+            }}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="space-y-5 animate-page-in">
@@ -329,7 +378,7 @@ export function PRTab({
             requisitions={paginatedList}
             isAdmin={isAdmin}
             isRequestsTab={activeTab === "Requests"}
-            onView={(pr) => setSelectedPR(pr)}
+            onView={(pr) => (onViewPr ? onViewPr(pr) : setSelectedPR(pr))}
             onEdit={(pr) => (onEditPr ? onEditPr(pr) : setEditingPR(pr))}
             onCancel={(pr) => setActionModal({ pr, type: "cancel" })}
             onApprove={(pr) => setActionModal({ pr, type: "approve" })}
@@ -347,26 +396,6 @@ export function PRTab({
           />
         </div>
       )}
-
-      {/* PR Details / Review Modal */}
-      <PRDetailsModal
-        pr={selectedPR}
-        isAdmin={isAdmin}
-        onClose={() => setSelectedPR(null)}
-        onApprove={(pr) => {
-          setSelectedPR(null);
-          setActionModal({ pr, type: "approve" });
-        }}
-        onReject={(pr) => {
-          setSelectedPR(null);
-          setActionModal({ pr, type: "reject" });
-        }}
-        onReturn={(pr) => {
-          setSelectedPR(null);
-          setActionModal({ pr, type: "return" });
-        }}
-        onCreatePo={onCreatePo ? (pr) => { setSelectedPR(null); onCreatePo(pr.prId); } : undefined}
-      />
 
       {/* Action Confirmation Modal */}
       {actionModal && (
