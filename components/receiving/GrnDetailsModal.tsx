@@ -39,6 +39,22 @@ function formatDisplayDate(raw?: string | null): string {
   });
 }
 
+function formatGrnStatusLabel(status?: string | null): string {
+  if (!status) return "—";
+  switch (status) {
+    case "QaPending":
+      return "Pending QA";
+    case "QaCompleted":
+      return "Completed";
+    case "PartiallyPutAway":
+      return "Partially Put Away";
+    case "FullyPutAway":
+      return "Fully Put Away";
+    default:
+      return status;
+  }
+}
+
 function GrnDetailsBody({
   grn,
   onClose,
@@ -254,7 +270,7 @@ function GrnDetailsBody({
         <div
           className={
             variant === "page"
-              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start"
+              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start"
               : "space-y-5"
           }
         >
@@ -446,26 +462,26 @@ function GrnDetailsBody({
                 <table className="w-full type-table-cell text-left border-collapse">
                   <thead>
                     <tr className="border-b border-divider">
-                      <th className="pb-2.5 pt-1 pr-3 type-table-header text-ink-muted font-medium whitespace-nowrap">
-                        Item Name
+                      <th className="pb-2.5 pt-1 pr-2 type-table-header text-ink-muted font-medium whitespace-nowrap">
+                        Item
                       </th>
-                      <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted font-medium whitespace-nowrap">
-                        Unit of Measure
+                      <th className="pb-2.5 pt-1 px-2 type-table-header text-ink-muted font-medium whitespace-nowrap">
+                        Unit
                       </th>
-                      <th className="pb-2.5 pt-1 px-3 text-right type-table-header text-ink-muted font-medium whitespace-nowrap">
+                      <th className="pb-2.5 pt-1 px-2 text-right type-table-header text-ink-muted font-medium whitespace-nowrap">
                         Ordered
                       </th>
-                      <th className="pb-2.5 pt-1 px-3 text-right type-table-header text-ink-muted font-medium whitespace-nowrap">
-                        Accepted Qty
+                      <th className="pb-2.5 pt-1 px-2 text-right type-table-header text-ink-muted font-medium whitespace-nowrap">
+                        Accepted
                       </th>
-                      <th className="pb-2.5 pt-1 px-3 text-center type-table-header text-ink-muted font-medium whitespace-nowrap">
+                      <th className="pb-2.5 pt-1 px-2 text-center type-table-header text-ink-muted font-medium whitespace-nowrap">
                         Variance
                       </th>
-                      <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted font-medium whitespace-nowrap">
-                        Supplier Lot #
+                      <th className="pb-2.5 pt-1 px-2 type-table-header text-ink-muted font-medium whitespace-nowrap">
+                        Lot #
                       </th>
                       {hasAnyExpiry && (
-                        <th className="pb-2.5 pt-1 pl-3 text-right type-table-header text-ink-muted font-medium whitespace-nowrap">
+                        <th className="pb-2.5 pt-1 pl-2 text-right type-table-header text-ink-muted font-medium whitespace-nowrap">
                           Expiry Date
                         </th>
                       )}
@@ -502,38 +518,38 @@ function GrnDetailsBody({
                             key={item.grnItemId ?? `${item.itemId}-${idx}`}
                             className="hover:bg-page transition-colors"
                           >
-                            <td className="py-3 pr-3 font-medium text-ink whitespace-nowrap">
+                            <td className="py-3 pr-2 font-medium text-ink leading-snug">
                               {item.itemName}
                             </td>
-                            <td className="py-3 px-3 text-ink-secondary whitespace-nowrap">
+                            <td className="py-3 px-2 text-ink-secondary whitespace-nowrap">
                               {item.purchaseUomName}
                             </td>
-                            <td className="py-3 px-3 text-right text-ink-secondary tabular-nums whitespace-nowrap">
+                            <td className="py-3 px-2 text-right text-ink-secondary tabular-nums whitespace-nowrap">
                               {Number(item.orderedQuantity || 0).toLocaleString()}
                             </td>
-                            <td className="py-3 px-3 text-right font-semibold text-ink tabular-nums whitespace-nowrap">
+                            <td className="py-3 px-2 text-right font-semibold text-ink tabular-nums whitespace-nowrap">
                               {Number(item.deliveredQuantity || 0).toLocaleString()}
                             </td>
-                            <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <td className="py-3 px-2 text-center whitespace-nowrap">
                               {isShort ? (
-                                <span className="inline-flex items-center rounded-pill bg-status-red-bg px-2.5 py-0.5 type-badge text-status-red-fg">
+                                <span className="inline-flex items-center rounded-pill bg-status-red-bg px-2 py-0.5 type-badge text-status-red-fg">
                                   Short ({displayVarianceQty})
                                 </span>
                               ) : isOver ? (
-                                <span className="inline-flex items-center rounded-pill bg-status-green-bg px-2.5 py-0.5 type-badge text-status-green-fg">
+                                <span className="inline-flex items-center rounded-pill bg-status-green-bg px-2 py-0.5 type-badge text-status-green-fg">
                                   Over (+{displayVarianceQty})
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center rounded-pill bg-status-green-bg px-2.5 py-0.5 type-badge text-status-green-fg">
+                                <span className="inline-flex items-center rounded-pill bg-status-green-bg px-2 py-0.5 type-badge text-status-green-fg">
                                   Match
                                 </span>
                               )}
                             </td>
-                            <td className="py-3 px-3 text-ink-secondary whitespace-nowrap tabular-nums">
+                            <td className="py-3 px-2 text-ink-secondary whitespace-nowrap tabular-nums">
                               {item.supplierLotCode || "—"}
                             </td>
                             {hasAnyExpiry && (
-                              <td className="py-3 pl-3 text-right text-ink-secondary whitespace-nowrap">
+                              <td className="py-3 pl-2 text-right text-ink-secondary whitespace-nowrap">
                                 {item.expiryDate
                                   ? formatDisplayDate(item.expiryDate)
                                   : "No Expiry"}
@@ -583,7 +599,7 @@ function GrnDetailsBody({
                   </div>
                   <div className="flex items-center justify-between gap-3 type-body-secondary">
                     <span className="text-ink-muted">Status</span>
-                    <span className="font-medium text-ink">{grn.status}</span>
+                    <span className="font-medium text-ink">{formatGrnStatusLabel(grn.status)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3 type-body-secondary">
                     <span className="text-ink-muted">Delivery No.</span>

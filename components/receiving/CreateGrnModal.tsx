@@ -1172,25 +1172,25 @@ function CreateGrnBody({
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="border-b border-divider">
-                <th className="pb-2.5 pt-1 pr-3 type-table-header text-ink-muted font-medium whitespace-nowrap">
-                  Item Description
+                <th className="pb-2.5 pt-1 pr-2 type-table-header text-ink-muted font-medium whitespace-nowrap">
+                  Item
                 </th>
-                <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted font-medium text-right whitespace-nowrap">
+                <th className="pb-2.5 pt-1 px-2 type-table-header text-ink-muted font-medium text-right whitespace-nowrap">
                   Declared
                 </th>
-                <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted font-medium text-right whitespace-nowrap">
-                  Actual Received
+                <th className="pb-2.5 pt-1 px-2 type-table-header text-ink-muted font-medium text-right whitespace-nowrap">
+                  Actual
                 </th>
                 {showExpiryCol && (
-                  <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted font-medium whitespace-nowrap">
+                  <th className="pb-2.5 pt-1 px-2 type-table-header text-ink-muted font-medium whitespace-nowrap">
                     Expiry Date <span className="text-destructive">*</span>
                   </th>
                 )}
-                <th className="pb-2.5 pt-1 px-3 type-table-header text-ink-muted font-medium text-center whitespace-nowrap">
+                <th className="pb-2.5 pt-1 px-2 type-table-header text-ink-muted font-medium text-center whitespace-nowrap">
                   Variance
                 </th>
-                <th className="pb-2.5 pt-1 pl-3 type-table-header text-ink-muted font-medium text-right whitespace-nowrap">
-                  Batch Actions
+                <th className="pb-2.5 pt-1 pl-2 type-table-header text-ink-muted font-medium text-right whitespace-nowrap">
+                  Batch
                 </th>
               </tr>
             </thead>
@@ -1204,16 +1204,16 @@ function CreateGrnBody({
                 return (
                   <React.Fragment key={item.deliveryItemId}>
                     <tr className="hover:bg-page transition-colors">
-                      <td className="py-3 pr-3 align-middle">
-                        <div className="type-body-secondary font-medium text-ink whitespace-nowrap">
+                      <td className="py-3 pr-2 align-middle min-w-[110px]">
+                        <div className="type-body-secondary font-medium text-ink leading-snug">
                           {item.itemName}
                         </div>
                         <div className="type-caption text-ink-muted">{item.uom}</div>
                       </td>
-                      <td className="py-3 px-3 text-right type-body-secondary font-semibold text-ink-secondary tabular-nums whitespace-nowrap align-middle">
+                      <td className="py-3 px-2 text-right type-body-secondary font-semibold text-ink-secondary tabular-nums whitespace-nowrap align-middle">
                         {item.declared}
                       </td>
-                      <td className="py-3 px-3 text-right align-middle">
+                      <td className="py-3 px-2 text-right align-middle">
                         <div className="flex flex-col items-end">
                           <input
                             type="number"
@@ -1230,11 +1230,11 @@ function CreateGrnBody({
                               if (e.key === "-" || e.key === "e") e.preventDefault();
                             }}
                             onChange={(e) => updateBatchQuantity(itemIndex, 0, e.target.value)}
-                            className={`h-9 w-24 rounded-control border ${
+                            className={`h-9 w-20 rounded-control border ${
                               fieldErrors[`qty_${itemIndex}_0`]
                                 ? "!border-destructive text-destructive focus:ring-destructive"
                                 : "border-border"
-                            } bg-surface px-2.5 text-right type-body-secondary font-semibold text-ink tabular-nums focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring`}
+                            } bg-surface px-2 text-right type-body-secondary font-semibold text-ink tabular-nums focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring`}
                           />
                           {fieldErrors[`qty_${itemIndex}_0`] && (
                             <span className="type-caption text-destructive font-medium mt-0.5 whitespace-nowrap">
@@ -1244,10 +1244,10 @@ function CreateGrnBody({
                         </div>
                       </td>
                       {showExpiryCol && (
-                        <td className="py-3 px-3 align-middle">
+                        <td className="py-3 px-2 align-middle">
                           {item.hasExpiry ? (
                             <div className="flex flex-col">
-                              <div className="relative w-36">
+                              <div className="relative w-[132px]">
                                 <input
                                   type="date"
                                   aria-label={`Expiry date for ${item.itemName} batch 1`}
@@ -1259,9 +1259,9 @@ function CreateGrnBody({
                                     fieldErrors[`expiry_${itemIndex}_0`]
                                       ? "!border-destructive text-destructive focus:ring-destructive"
                                       : "border-border"
-                                  } bg-surface pl-2.5 pr-8 type-body-secondary text-ink focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                                  } bg-surface pl-2 pr-7 type-caption text-ink focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
                                 />
-                                <Calendar className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
+                                <Calendar className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
                               </div>
                               {fieldErrors[`expiry_${itemIndex}_0`] && (
                                 <span className="type-caption text-destructive font-medium mt-0.5 whitespace-nowrap">
@@ -1276,28 +1276,28 @@ function CreateGrnBody({
                           )}
                         </td>
                       )}
-                      <td className="py-3 px-3 text-center whitespace-nowrap align-middle">
+                      <td className="py-3 px-2 text-center whitespace-nowrap align-middle">
                         {variance === null ? (
                           <span className="type-caption text-ink-muted">—</span>
                         ) : variance === 0 ? (
-                          <span className="inline-flex items-center rounded-pill bg-status-green-bg px-2.5 py-0.5 type-badge text-status-green-fg">
+                          <span className="inline-flex items-center rounded-pill bg-status-green-bg px-2 py-0.5 type-badge text-status-green-fg">
                             Match
                           </span>
                         ) : variance < 0 ? (
-                          <span className="inline-flex items-center rounded-pill bg-status-red-bg px-2.5 py-0.5 type-badge text-status-red-fg">
+                          <span className="inline-flex items-center rounded-pill bg-status-red-bg px-2 py-0.5 type-badge text-status-red-fg">
                             Short {Math.abs(variance)}
                           </span>
                         ) : (
-                          <span className="inline-flex items-center rounded-pill bg-status-amber-bg px-2.5 py-0.5 type-badge text-status-amber-fg">
+                          <span className="inline-flex items-center rounded-pill bg-status-amber-bg px-2 py-0.5 type-badge text-status-amber-fg">
                             Over +{variance}
                           </span>
                         )}
                       </td>
-                      <td className="py-3 pl-3 text-right whitespace-nowrap align-middle">
+                      <td className="py-3 pl-2 text-right whitespace-nowrap align-middle">
                         <button
                           type="button"
                           onClick={() => addBatch(itemIndex)}
-                          className="inline-flex items-center gap-1 rounded-control border border-border bg-surface px-2.5 h-8 type-caption font-medium text-primary hover:bg-subtle transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded-control border border-border bg-surface px-2 h-8 type-caption font-medium text-primary hover:bg-subtle transition-colors cursor-pointer"
                         >
                           <Plus className="w-3.5 h-3.5 shrink-0" />
                           <span>Add Batch</span>
@@ -1309,16 +1309,16 @@ function CreateGrnBody({
                       const batchIndex = subIdx + 1;
                       return (
                         <tr key={batch.id} className="bg-page/70">
-                          <td className="py-2.5 pr-3 pl-5 align-middle">
+                          <td className="py-2.5 pr-2 pl-4 align-middle">
                             <div className="flex items-center gap-2 type-caption font-medium text-ink-secondary">
                               <span className="w-1.5 h-1.5 rounded-pill bg-primary/60" />
                               <span>Batch #{batchIndex + 1}</span>
                             </div>
                           </td>
-                          <td className="py-2.5 px-3 text-right type-caption text-ink-muted align-middle">
+                          <td className="py-2.5 px-2 text-right type-caption text-ink-muted align-middle">
                             —
                           </td>
-                          <td className="py-2.5 px-3 text-right align-middle">
+                          <td className="py-2.5 px-2 text-right align-middle">
                             <div className="flex flex-col items-end">
                               <input
                                 type="number"
@@ -1335,11 +1335,11 @@ function CreateGrnBody({
                                 onChange={(e) =>
                                   updateBatchQuantity(itemIndex, batchIndex, e.target.value)
                                 }
-                                className={`h-9 w-24 rounded-control border ${
+                                className={`h-9 w-20 rounded-control border ${
                                   fieldErrors[`qty_${itemIndex}_${batchIndex}`]
                                     ? "!border-destructive text-destructive focus:ring-destructive"
                                     : "border-border"
-                                } bg-surface px-2.5 text-right type-body-secondary font-semibold text-ink tabular-nums focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring`}
+                                } bg-surface px-2 text-right type-body-secondary font-semibold text-ink tabular-nums focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring`}
                               />
                               {fieldErrors[`qty_${itemIndex}_${batchIndex}`] && (
                                 <span className="type-caption text-destructive font-medium mt-0.5 whitespace-nowrap">
@@ -1349,10 +1349,10 @@ function CreateGrnBody({
                             </div>
                           </td>
                           {showExpiryCol && (
-                            <td className="py-2.5 px-3 align-middle">
+                            <td className="py-2.5 px-2 align-middle">
                               {item.hasExpiry ? (
                                 <div className="flex flex-col">
-                                  <div className="relative w-36">
+                                  <div className="relative w-[132px]">
                                     <input
                                       type="date"
                                       aria-label={`Expiry date for ${item.itemName} batch ${batchIndex + 1}`}
@@ -1366,9 +1366,9 @@ function CreateGrnBody({
                                         fieldErrors[`expiry_${itemIndex}_${batchIndex}`]
                                           ? "!border-destructive text-destructive focus:ring-destructive"
                                           : "border-border"
-                                      } bg-surface pl-2.5 pr-8 type-body-secondary text-ink focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                                      } bg-surface pl-2 pr-7 type-caption text-ink focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
                                     />
-                                    <Calendar className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
+                                    <Calendar className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
                                   </div>
                                   {fieldErrors[`expiry_${itemIndex}_${batchIndex}`] && (
                                     <span className="type-caption text-destructive font-medium mt-0.5 whitespace-nowrap">
@@ -1383,10 +1383,10 @@ function CreateGrnBody({
                               )}
                             </td>
                           )}
-                          <td className="py-2.5 px-3 text-center type-caption text-ink-muted align-middle">
+                          <td className="py-2.5 px-2 text-center type-caption text-ink-muted align-middle">
                             —
                           </td>
-                          <td className="py-2.5 pl-3 text-right align-middle">
+                          <td className="py-2.5 pl-2 text-right align-middle">
                             <button
                               type="button"
                               onClick={() => removeBatch(itemIndex, batchIndex)}
@@ -1479,7 +1479,7 @@ function CreateGrnBody({
         <div
           className={
             variant === "page"
-              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start"
+              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start"
               : "space-y-4"
           }
         >
@@ -2070,27 +2070,27 @@ function CreateGrnBody({
           )}
         </div>
 
-        {/* Bottom Action Bar (Non-sticky — Matching CreatePRForm) */}
+        {/* Bottom Action Bar (Non-sticky — Single-row right-aligned buttons matching Figma) */}
         <div
           className={
             variant === "page"
-              ? "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-divider pt-4"
+              ? "flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-t border-divider pt-4"
               : "flex flex-wrap items-center justify-between gap-3 border-t border-divider pt-4"
           }
         >
           {variant === "page" && (
-            <p className="type-caption text-ink-muted">
+            <p className="type-caption text-ink-muted min-w-0 lg:max-w-[280px] xl:max-w-[340px]">
               Signing off posts the GRN, completes QA review, and releases accepted units for
               Stock-In.
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-2.5 ml-auto">
+          <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 ml-auto">
             {variant === "modal" ? (
               <ModalNativeCloseButton
                 fallbackOnClose={onClose}
                 disabled={submitting}
-                className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                className="rounded-control border border-border bg-surface px-3.5 h-9 type-label-button-sm text-ink hover:bg-subtle disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 Cancel
               </ModalNativeCloseButton>
@@ -2100,7 +2100,7 @@ function CreateGrnBody({
                 variant="outline"
                 onClick={handleRequestClose}
                 disabled={submitting}
-                className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
+                className="rounded-control border border-border bg-surface px-3.5 h-9 type-label-button-sm text-ink hover:bg-subtle shadow-none cursor-pointer"
               >
                 Cancel
               </Button>
@@ -2112,7 +2112,7 @@ function CreateGrnBody({
                 variant="outline"
                 disabled={submitting}
                 onClick={() => setShowRejectModal(true)}
-                className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-destructive hover:bg-notice-danger-bg shadow-none cursor-pointer"
+                className="rounded-control border border-border bg-surface px-3.5 h-9 type-label-button-sm text-destructive hover:bg-notice-danger-bg shadow-none cursor-pointer"
               >
                 Reject Entire Shipment
               </Button>
@@ -2123,19 +2123,19 @@ function CreateGrnBody({
               variant="outline"
               disabled={!isReadyToSignOff || submitting}
               onClick={handleExportGrnReport}
-              className="rounded-control border border-border bg-surface px-4 h-9 type-label-button-sm text-ink hover:bg-subtle shadow-none disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+              className="rounded-control border border-border bg-surface px-3.5 h-9 type-label-button-sm text-ink hover:bg-subtle shadow-none disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5"
             >
               <Download className="w-4 h-4 text-primary" />
-              <span>Export Goods Receipt Note</span>
+              <span>Export GRN</span>
             </Button>
 
             <Button
               type="button"
               disabled={submitting || !isReadyToSignOff}
               onClick={handlePromptSignOff}
-              className="rounded-control bg-primary text-on-brand px-5 h-9 type-label-button hover:bg-primary-hover shadow-none disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button-sm hover:bg-primary-hover shadow-none disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
-              {submitting ? "Signing Off..." : "Confirm & Sign Off Quality Assurance Review"}
+              {submitting ? "Signing Off..." : "Confirm & Sign Off QA Review"}
             </Button>
           </div>
         </div>
