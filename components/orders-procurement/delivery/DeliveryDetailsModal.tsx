@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AlertCircle, Check, ChevronLeft, FileText, Download, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
@@ -49,6 +50,15 @@ function DeliveryDetailsBody({
   const [showCreateGrnModal, setShowCreateGrnModal] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ title: string; src: string } | null>(null);
+
+  useEffect(() => {
+    if (!previewImage) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPreviewImage(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [previewImage]);
 
   const receiptProofSrc = delivery?.scheduledAttachment || delivery?.attachmentUrl || "";
   const arrivalProofSrc = delivery?.arrivalAttachment || "";
@@ -529,39 +539,45 @@ function DeliveryDetailsBody({
 
   const renderOverlays = () => (
     <>
-      {/* Full Image Lightbox Modal */}
-      {previewImage && (
-        <div
-          onClick={() => setPreviewImage(null)}
-          className="font-sans fixed inset-0 z-50 bg-scrim flex items-center justify-center p-4"
-        >
+      {/* Full Image Lightbox Modal (portaled to document.body to stay above sticky header/sidebar) */}
+      {previewImage &&
+        typeof document !== "undefined" &&
+        createPortal(
           <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-surface border border-border rounded-modal overflow-hidden max-w-2xl w-full shadow-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={previewImage.title}
+            onClick={() => setPreviewImage(null)}
+            className="font-sans fixed inset-0 z-[300] bg-scrim flex items-center justify-center p-4"
           >
-            <div className="flex items-center justify-between border-b border-topbar px-5 py-3.5">
-              <h5 className="type-subsection text-ink">{previewImage.title}</h5>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setPreviewImage(null)}
-                className="h-8 px-3 type-caption rounded-control cursor-pointer border-border bg-surface text-ink hover:bg-subtle"
-              >
-                Close Preview
-              </Button>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-surface border border-border rounded-modal overflow-hidden max-w-2xl w-full shadow-modal"
+            >
+              <div className="flex items-center justify-between border-b border-topbar px-5 py-3.5">
+                <h5 className="type-subsection text-ink">{previewImage.title}</h5>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPreviewImage(null)}
+                  className="h-8 px-3 type-caption rounded-control cursor-pointer border-border bg-surface text-ink hover:bg-subtle"
+                >
+                  Close Preview
+                </Button>
+              </div>
+              <div className="flex items-center justify-center bg-page p-4 max-h-[75vh] overflow-auto">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewImage.src}
+                  alt={previewImage.title}
+                  className="max-h-[70vh] max-w-full object-contain rounded-control"
+                />
+              </div>
             </div>
-            <div className="flex items-center justify-center bg-page p-4 max-h-[70vh] overflow-auto">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={previewImage.src}
-                alt={previewImage.title}
-                className="max-h-[65vh] max-w-full object-contain rounded-control"
-              />
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {showCreateGrnModal && (
         <CreateGrnModal
