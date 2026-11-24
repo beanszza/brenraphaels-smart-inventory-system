@@ -67,7 +67,7 @@ async function call(method: string, path: string, actor: string, body?: unknown)
     },
     body: body === undefined ? undefined : JSON.stringify(body),
     cache: "no-store",
-    signal: AbortSignal.timeout(5_000),
+    signal: AbortSignal.timeout(20_000),
   });
 }
 

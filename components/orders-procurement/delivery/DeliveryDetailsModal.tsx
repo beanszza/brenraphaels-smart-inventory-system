@@ -10,7 +10,7 @@ import { Delivery } from "../types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { downloadDeliveryReportPdf } from "./downloadDeliveryReportPdf";
 import { isFileId } from "@/lib/files";
-import { resolveDeliveryAttachment } from "@/app/actions/orders/delivery-files";
+import { resolveDeliveryAttachments } from "@/app/actions/orders/delivery-files";
 
 export interface DeliveryDetailsModalProps {
   delivery: Delivery | null;
@@ -72,52 +72,53 @@ function DeliveryDetailsBody({
     setReceiptImgError(false);
     setArrivalImgError(false);
 
-    if (receiptProofSrc) {
-      if (receiptProofSrc.startsWith("data:") || receiptProofSrc.startsWith("http")) {
-        setResolvedReceiptUrl(receiptProofSrc);
-        setResolvingReceipt(false);
-      } else if (isFileId(receiptProofSrc)) {
-        setResolvedReceiptUrl("");
-        setResolvingReceipt(true);
-        resolveDeliveryAttachment(receiptProofSrc)
-          .then((res) => {
-            if (active && res.data?.url) setResolvedReceiptUrl(res.data.url);
-          })
-          .catch(() => {})
-          .finally(() => {
-            if (active) setResolvingReceipt(false);
-          });
-      } else {
-        setResolvedReceiptUrl("");
-        setResolvingReceipt(false);
-      }
+    const needsReceiptResolve = Boolean(receiptProofSrc && isFileId(receiptProofSrc));
+    const needsArrivalResolve = Boolean(arrivalProofSrc && isFileId(arrivalProofSrc));
+
+    if (!needsReceiptResolve) {
+      setResolvedReceiptUrl(
+        receiptProofSrc && (receiptProofSrc.startsWith("data:") || receiptProofSrc.startsWith("http"))
+          ? receiptProofSrc
+          : ""
+      );
+      setResolvingReceipt(false);
     } else {
       setResolvedReceiptUrl("");
-      setResolvingReceipt(false);
+      setResolvingReceipt(true);
     }
 
-    if (arrivalProofSrc) {
-      if (arrivalProofSrc.startsWith("data:") || arrivalProofSrc.startsWith("http")) {
-        setResolvedArrivalUrl(arrivalProofSrc);
-        setResolvingArrival(false);
-      } else if (isFileId(arrivalProofSrc)) {
-        setResolvedArrivalUrl("");
-        setResolvingArrival(true);
-        resolveDeliveryAttachment(arrivalProofSrc)
-          .then((res) => {
-            if (active && res.data?.url) setResolvedArrivalUrl(res.data.url);
-          })
-          .catch(() => {})
-          .finally(() => {
-            if (active) setResolvingArrival(false);
-          });
-      } else {
-        setResolvedArrivalUrl("");
-        setResolvingArrival(false);
-      }
+    if (!needsArrivalResolve) {
+      setResolvedArrivalUrl(
+        arrivalProofSrc && (arrivalProofSrc.startsWith("data:") || arrivalProofSrc.startsWith("http"))
+          ? arrivalProofSrc
+          : ""
+      );
+      setResolvingArrival(false);
     } else {
       setResolvedArrivalUrl("");
-      setResolvingArrival(false);
+      setResolvingArrival(true);
+    }
+
+    if (needsReceiptResolve || needsArrivalResolve) {
+      resolveDeliveryAttachments({
+        receipt: needsReceiptResolve ? receiptProofSrc : null,
+        arrival: needsArrivalResolve ? arrivalProofSrc : null,
+      })
+        .then((res) => {
+          if (!active) return;
+          if (needsReceiptResolve && res.data?.receiptUrl) {
+            setResolvedReceiptUrl(res.data.receiptUrl);
+          }
+          if (needsArrivalResolve && res.data?.arrivalUrl) {
+            setResolvedArrivalUrl(res.data.arrivalUrl);
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (!active) return;
+          setResolvingReceipt(false);
+          setResolvingArrival(false);
+        });
     }
 
     return () => {
