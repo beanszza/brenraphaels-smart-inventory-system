@@ -12,11 +12,11 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/shared/SearchInput";
-import { Delivery, DeliveryStatus } from "../types";
+import { Delivery, DeliveryStatus, PurchaseOrderPO } from "../types";
 import { DeliveryTable } from "./DeliveryTable";
-import { CreateDeliveryModal } from "./CreateDeliveryModal";
-import { DeliveryDetailsModal } from "./DeliveryDetailsModal";
-import { MarkArrivedModal } from "./MarkArrivedModal";
+import { CreateDeliveryForm } from "./CreateDeliveryModal";
+import { DeliveryDetailsView } from "./DeliveryDetailsModal";
+import { MarkArrivedView } from "./MarkArrivedModal";
 import { CancelDeliveryModal } from "./CancelDeliveryModal";
 import Pagination from "@/components/Pagination";
 import { useStaff } from "@/context/StaffContext";
@@ -30,7 +30,21 @@ const STATUS_TABS: (DeliveryStatus | "All")[] = [
   "Cancelled",
 ];
 
-export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery[] }) {
+interface DeliveryTabProps {
+  initialDeliveries: Delivery[];
+  orders?: PurchaseOrderPO[];
+  onCreateDelivery?: () => void;
+  onViewDelivery?: (delivery: Delivery) => void;
+  onArriveDelivery?: (delivery: Delivery) => void;
+}
+
+export function DeliveryTab({
+  initialDeliveries,
+  orders = [],
+  onCreateDelivery,
+  onViewDelivery,
+  onArriveDelivery,
+}: DeliveryTabProps) {
   const router = useRouter();
   const staff = useStaff();
   const isAdmin = isAdminStaff(staff);
@@ -49,14 +63,13 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
     return Array.from(suppliers).sort();
   }, [deliveries]);
 
-  // Modals state
+  // Local fallback states when DeliveryTab is rendered standalone without ViewOrdersProcurement callbacks
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [arriveDelivery, setArriveDelivery] = useState<Delivery | null>(null);
   const [cancelDelivery, setCancelDelivery] = useState<{ delivery: Delivery; returnToDetails?: boolean } | null>(null);
 
   const fetchDeliveries = () => startRefresh(() => router.refresh());
-
 
   // Counts per tab
   const counts = useMemo(() => {
@@ -112,9 +125,86 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
     router.push(`/goods-receiving?deliveryId=${d.deliveryId}&poId=${d.poId}`);
   };
 
+  const resolvePoTotalAmount = (d: Delivery | null): number | null => {
+    if (!d || !orders.length) return null;
+    const matched = orders.find(
+      (o) => (d.poId && o.poId === d.poId) || (d.poNumber && o.poNumber === d.poNumber)
+    );
+    return matched ? Number(matched.totalAmount ?? 0) : null;
+  };
+
+  // Full-page inline fallbacks when rendered standalone
+  if (openCreateModal) {
+    return (
+      <CreateDeliveryForm
+        embedded
+        onClose={() => setOpenCreateModal(false)}
+        onSuccess={() => {
+          setOpenCreateModal(false);
+          setNotice("Saved successfully.");
+          fetchDeliveries();
+        }}
+      />
+    );
+  }
+
+  if (arriveDelivery) {
+    return (
+      <MarkArrivedView
+        embedded
+        delivery={arriveDelivery}
+        poTotalAmount={resolvePoTotalAmount(arriveDelivery)}
+        onClose={() => setArriveDelivery(null)}
+        onSuccess={() => {
+          setArriveDelivery(null);
+          setNotice("Saved successfully.");
+          fetchDeliveries();
+        }}
+      />
+    );
+  }
+
+  if (selectedDelivery) {
+    return (
+      <>
+        <DeliveryDetailsView
+          embedded
+          delivery={selectedDelivery}
+          isAdmin={isAdmin}
+          poTotalAmount={resolvePoTotalAmount(selectedDelivery)}
+          onClose={() => setSelectedDelivery(null)}
+          onArrive={(d) => {
+            setSelectedDelivery(null);
+            setArriveDelivery(d);
+          }}
+          onCancel={(d) => {
+            setCancelDelivery({ delivery: d, returnToDetails: true });
+          }}
+          onGrnCreated={fetchDeliveries}
+        />
+        {cancelDelivery && (
+          <CancelDeliveryModal
+            delivery={cancelDelivery.delivery}
+            onClose={() => setCancelDelivery(null)}
+            onSuccess={() => {
+              setCancelDelivery(null);
+              setSelectedDelivery(null);
+              setNotice("Saved successfully.");
+              fetchDeliveries();
+            }}
+          />
+        )}
+      </>
+    );
+  }
+
   return (
     <div className="space-y-5 animate-page-in">
-      {notice && <p role="status" className="rounded-control bg-subtle border border-border p-3 type-body text-primary">{notice}</p>}
+      {notice && (
+        <p role="status" className="rounded-control bg-subtle border border-border p-3 type-body text-primary">
+          {notice}
+        </p>
+      )}
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -150,7 +240,7 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
           {!isAdmin && (
             <Button
               type="button"
-              onClick={() => setOpenCreateModal(true)}
+              onClick={() => (onCreateDelivery ? onCreateDelivery() : setOpenCreateModal(true))}
               className="flex items-center justify-center gap-1.5 rounded-control bg-primary px-3.5 py-2 type-label-button text-on-brand hover:bg-primary-hover transition-colors h-9 shadow-none cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Create Delivery Order
@@ -240,8 +330,12 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
         <div className="rounded-card border border-border bg-surface p-5">
           <DeliveryTable
             deliveries={paginatedList}
-            onView={(d) => setSelectedDelivery(d)}
-            onArrive={!isAdmin ? (d) => setArriveDelivery(d) : undefined}
+            onView={(d) => (onViewDelivery ? onViewDelivery(d) : setSelectedDelivery(d))}
+            onArrive={
+              !isAdmin
+                ? (d) => (onArriveDelivery ? onArriveDelivery(d) : setArriveDelivery(d))
+                : undefined
+            }
             onCancel={!isAdmin ? (d) => setCancelDelivery({ delivery: d }) : undefined}
             onCreateGrn={!isAdmin ? (d) => handleCreateGrn(d) : undefined}
           />
@@ -254,50 +348,6 @@ export function DeliveryTab({ initialDeliveries }: { initialDeliveries: Delivery
             embedded
           />
         </div>
-      )}
-
-      {/* CREATE DELIVERY MODAL */}
-      {openCreateModal && (
-        <CreateDeliveryModal
-          open={openCreateModal}
-          onClose={() => setOpenCreateModal(false)}
-          onSuccess={() => {
-            setOpenCreateModal(false);
-            setNotice("Saved successfully.");
-            fetchDeliveries();
-          }}
-        />
-      )}
-
-      {/* DELIVERY DETAILS MODAL */}
-      {selectedDelivery && (
-        <DeliveryDetailsModal
-        delivery={selectedDelivery}
-        isAdmin={isAdmin}
-          onClose={() => setSelectedDelivery(null)}
-          onArrive={(d) => {
-            setSelectedDelivery(null);
-            setArriveDelivery(d);
-          }}
-          onCancel={(d) => {
-            setSelectedDelivery(null);
-            setCancelDelivery({ delivery: d, returnToDetails: true });
-          }}
-          onGrnCreated={fetchDeliveries}
-        />
-      )}
-
-      {/* MARK AS ARRIVED MODAL */}
-      {arriveDelivery && (
-        <MarkArrivedModal
-          delivery={arriveDelivery}
-          onClose={() => setArriveDelivery(null)}
-          onSuccess={() => {
-            setArriveDelivery(null);
-            setNotice("Saved successfully.");
-            fetchDeliveries();
-          }}
-        />
       )}
 
       {/* CANCEL DELIVERY MODAL */}

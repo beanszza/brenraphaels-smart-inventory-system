@@ -10,13 +10,21 @@ import { PRActionModal, type PRActionType } from "@/components/orders-procuremen
 import { POTab } from "@/components/orders-procurement/po/POTab";
 import { CreatePOForm } from "@/components/orders-procurement/po/CreatePOModal";
 import { DeliveryTab } from "@/components/orders-procurement/delivery/DeliveryTab";
+import { CreateDeliveryForm } from "@/components/orders-procurement/delivery/CreateDeliveryModal";
+import { DeliveryDetailsView } from "@/components/orders-procurement/delivery/DeliveryDetailsModal";
+import { MarkArrivedView } from "@/components/orders-procurement/delivery/MarkArrivedModal";
+import { CancelDeliveryModal } from "@/components/orders-procurement/delivery/CancelDeliveryModal";
 import { procurement } from "@/lib/orders/client";
 import { useStaff } from "@/context/StaffContext";
 import { isAdminStaff } from "@/lib/auth-roles";
 
 import type { PurchaseRequisition, PurchaseOrderPO, Delivery } from "@/components/orders-procurement/types";
 
-export default function OrdersProcurementPage({ data }: { data: { requisitions: PurchaseRequisition[]; orders: PurchaseOrderPO[]; deliveries: Delivery[] } }) {
+export default function OrdersProcurementPage({
+  data,
+}: {
+  data: { requisitions: PurchaseRequisition[]; orders: PurchaseOrderPO[]; deliveries: Delivery[] };
+}) {
   const router = useRouter();
   const staff = useStaff();
   const isAdmin = isAdminStaff(staff);
@@ -35,6 +43,15 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
     pr: PurchaseRequisition;
     type: PRActionType;
   } | null>(null);
+
+  // Full-page Delivery states
+  const [showCreateDelivery, setShowCreateDelivery] = useState(false);
+  const [viewingDeliveryId, setViewingDeliveryId] = useState<number | null>(null);
+  const [arrivingDeliveryState, setArrivingDeliveryState] = useState<{
+    deliveryId: number;
+    returnToDetails: boolean;
+  } | null>(null);
+  const [cancellingDelivery, setCancellingDelivery] = useState<Delivery | null>(null);
 
   // Check for prefilled PR data from Inventory "Order Now" or Production Shortfall
   useEffect(() => {
@@ -71,6 +88,16 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
     setNotice("Status updated successfully.");
     setViewingPrId(null);
     router.refresh();
+  };
+
+  const resolvePoTotalAmount = (delivery: Delivery | null): number | null => {
+    if (!delivery) return null;
+    const matched = data.orders.find(
+      (o) =>
+        (delivery.poId && o.poId === delivery.poId) ||
+        (delivery.poNumber && o.poNumber === delivery.poNumber)
+    );
+    return matched ? Number(matched.totalAmount ?? 0) : null;
   };
 
   const viewingPR = viewingPrId
@@ -167,6 +194,100 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
     );
   }
 
+  // Full-page Create Delivery Order view
+  if (showCreateDelivery) {
+    return (
+      <div className="page-container px-4 sm:px-8 w-full min-h-full animate-page-in">
+        <CreateDeliveryForm
+          embedded
+          onClose={() => setShowCreateDelivery(false)}
+          onSuccess={() => {
+            setShowCreateDelivery(false);
+            setNotice("Delivery order scheduled successfully.");
+            router.refresh();
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Full-page Confirm Delivery Arrival view
+  const arrivingDelivery = arrivingDeliveryState
+    ? data.deliveries.find((d) => d.deliveryId === arrivingDeliveryState.deliveryId) ?? null
+    : null;
+
+  if (arrivingDelivery && arrivingDeliveryState) {
+    return (
+      <div className="page-container px-4 sm:px-8 w-full min-h-full animate-page-in">
+        <MarkArrivedView
+          embedded
+          delivery={arrivingDelivery}
+          poTotalAmount={resolvePoTotalAmount(arrivingDelivery)}
+          backLabel={
+            arrivingDeliveryState.returnToDetails
+              ? arrivingDelivery.deliveryNumber
+              : "Delivery shipments"
+          }
+          onClose={() => {
+            if (arrivingDeliveryState.returnToDetails) {
+              setViewingDeliveryId(arrivingDelivery.deliveryId);
+            }
+            setArrivingDeliveryState(null);
+          }}
+          onSuccess={() => {
+            setArrivingDeliveryState(null);
+            setViewingDeliveryId(null);
+            setNotice("Delivery arrival confirmed successfully.");
+            router.refresh();
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Full-page Delivery Order Details view
+  const viewingDelivery = viewingDeliveryId
+    ? data.deliveries.find((d) => d.deliveryId === viewingDeliveryId) ?? null
+    : null;
+
+  if (viewingDelivery) {
+    return (
+      <div className="page-container px-4 sm:px-8 w-full min-h-full animate-page-in">
+        <DeliveryDetailsView
+          embedded
+          delivery={viewingDelivery}
+          isAdmin={isAdmin}
+          poTotalAmount={resolvePoTotalAmount(viewingDelivery)}
+          onClose={() => setViewingDeliveryId(null)}
+          onArrive={(d) => {
+            setViewingDeliveryId(null);
+            setArrivingDeliveryState({ deliveryId: d.deliveryId, returnToDetails: true });
+          }}
+          onCancel={(d) => {
+            setCancellingDelivery(d);
+          }}
+          onGrnCreated={() => {
+            setViewingDeliveryId(null);
+            router.refresh();
+          }}
+        />
+
+        {cancellingDelivery && (
+          <CancelDeliveryModal
+            delivery={cancellingDelivery}
+            onClose={() => setCancellingDelivery(null)}
+            onSuccess={() => {
+              setCancellingDelivery(null);
+              setViewingDeliveryId(null);
+              setNotice("Delivery order cancelled successfully.");
+              router.refresh();
+            }}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
       {notice && <p role="status" className="type-body text-primary">{notice}</p>}
@@ -232,7 +353,17 @@ export default function OrdersProcurementPage({ data }: { data: { requisitions: 
       {mainTab === "po" && <POTab initialOrders={data.orders} />}
 
       {/* MAIN TAB 3: DELIVERY */}
-      {mainTab === "delivery" && <DeliveryTab initialDeliveries={data.deliveries} />}
+      {mainTab === "delivery" && (
+        <DeliveryTab
+          initialDeliveries={data.deliveries}
+          orders={data.orders}
+          onCreateDelivery={() => setShowCreateDelivery(true)}
+          onViewDelivery={(d) => setViewingDeliveryId(d.deliveryId)}
+          onArriveDelivery={(d) =>
+            setArrivingDeliveryState({ deliveryId: d.deliveryId, returnToDetails: false })
+          }
+        />
+      )}
     </div>
   );
 }

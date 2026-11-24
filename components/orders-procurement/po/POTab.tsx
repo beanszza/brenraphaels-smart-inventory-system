@@ -27,7 +27,7 @@ import { POApprovalView } from "./POApprovalModal";
 import { downloadPurchaseOrderPdf } from "./downloadPurchaseOrderPdf";
 import { POActionModal, POActionType } from "./POActionModal";
 import { CreatePOForm } from "./CreatePOModal";
-import { CreateDeliveryModal } from "../delivery/CreateDeliveryModal";
+import { CreateDeliveryForm } from "../delivery/CreateDeliveryModal";
 import Pagination from "@/components/Pagination";
 import { useStaff } from "@/context/StaffContext";
 import { isAdminStaff } from "@/lib/auth-roles";
@@ -222,6 +222,24 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
     );
   }
 
+  // Full-page Create Delivery Order view (triggered from PO Details "Schedule Delivery")
+  if (deliveryPO) {
+    return (
+      <CreateDeliveryForm
+        embedded
+        initialPo={deliveryPO}
+        backLabel={deliveryPO.poNumber}
+        onClose={() => setDeliveryPO(null)}
+        onSuccess={() => {
+          setDeliveryPO(null);
+          setSelectedPO(null);
+          setNotice("Delivery order scheduled successfully.");
+          fetchOrders();
+        }}
+      />
+    );
+  }
+
   // Full-page Purchase Order Details view (matching Figma Purchase order · PO-2026-0151)
   if (selectedPO) {
     const latestPo = orders.find((o) => o.poId === selectedPO.poId) || selectedPO;
@@ -272,19 +290,6 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
                 setSelectedPO(null);
               }
               setActionModal(null);
-            }}
-          />
-        )}
-
-        {deliveryPO && (
-          <CreateDeliveryModal
-            open={!!deliveryPO}
-            initialPo={deliveryPO}
-            onClose={() => setDeliveryPO(null)}
-            onSuccess={() => {
-              setDeliveryPO(null);
-              setSelectedPO(null);
-              fetchOrders();
             }}
           />
         )}
@@ -458,19 +463,6 @@ export function POTab({ initialOrders }: { initialOrders: PurchaseOrderPO[] }) {
               await handleStatusUpdate(po.poId, "Cancelled", notes);
             }
             setActionModal(null);
-          }}
-        />
-      )}
-
-      {/* Create Delivery Modal */}
-      {deliveryPO && (
-        <CreateDeliveryModal
-          open={!!deliveryPO}
-          initialPo={deliveryPO}
-          onClose={() => setDeliveryPO(null)}
-          onSuccess={() => {
-            setDeliveryPO(null);
-            fetchOrders();
           }}
         />
       )}
