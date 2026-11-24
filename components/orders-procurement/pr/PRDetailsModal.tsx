@@ -122,7 +122,9 @@ function PRDetailsBody({
               </p>
             </div>
 
-            {(isApproved || (!isAdmin && isPending && onCancel)) && (
+            {(isApproved ||
+              (!isAdmin && isPending && onCancel) ||
+              (isAdmin && isPending && (onReturn || onReject || onApprove))) && (
               <div className="flex flex-wrap items-center gap-2 shrink-0">
                 {!isAdmin && isPending && onCancel && (
                   <Button
@@ -133,6 +135,42 @@ function PRDetailsBody({
                   >
                     Cancel Requisition
                   </Button>
+                )}
+
+                {isAdmin && isPending && (
+                  <>
+                    {onReturn && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onReturn(pr)}
+                        className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
+                      >
+                        Return for Revision
+                      </Button>
+                    )}
+
+                    {onReject && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onReject(pr)}
+                        className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-destructive hover:bg-notice-danger-bg shadow-none cursor-pointer"
+                      >
+                        Reject
+                      </Button>
+                    )}
+
+                    {onApprove && (
+                      <Button
+                        type="button"
+                        onClick={() => onApprove(pr)}
+                        className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer"
+                      >
+                        Approve
+                      </Button>
+                    )}
+                  </>
                 )}
 
                 {isApproved && (
@@ -513,8 +551,8 @@ function PRDetailsBody({
             </Button>
           )}
 
-          {/* Admin Operations for Pending PRs */}
-          {isAdmin && isPending && (
+          {/* Modal-only Admin Operations for Pending PRs (Page Mode renders them in the top-right header bar) */}
+          {variant === "modal" && isAdmin && isPending && (
             <>
               {onReturn && (
                 <Button
