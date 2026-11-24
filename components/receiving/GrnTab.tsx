@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
-import React, { useState, useMemo, useTransition } from "react";
+import React, { useState, useEffect, useMemo, useTransition } from "react";
 import { RefreshCw, Plus, History } from "lucide-react";
 import {
   Select,
@@ -16,13 +16,14 @@ import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/shared/SearchInput";
 import GrnTable from "./GrnTable";
 import PendingReceivingTable from "./PendingReceivingTable";
+import { CreateGrnForm } from "./CreateGrnModal";
+import { GrnDetailsView } from "./GrnDetailsModal";
+import { useReceivingFullPage } from "./ReceivingFullPageContext";
 import Pagination from "@/components/Pagination";
 import { useStaff } from "@/context/StaffContext";
 import { isQaStaff, isAdminStaff } from "@/lib/auth-roles";
 import { GRN, ArrivedDelivery } from "./types";
 
-const CreateGrnModal = dynamic(() => import("./CreateGrnModal"), { ssr: false });
-const GrnDetailsModal = dynamic(() => import("./GrnDetailsModal"), { ssr: false });
 const DeliveryDetailsModal = dynamic(() => import("./DeliveryDetailsModal"), { ssr: false });
 
 type SubTab = "pending" | "posted";
@@ -64,15 +65,21 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
     );
   }, [initialDeliveries, postedGrns]);
 
-  // Modals
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  // Full-page Create GRN / View GRN state
+  const { setFullPageActive } = useReceivingFullPage();
+  const [createPageOpen, setCreatePageOpen] = useState(false);
   const [targetDeliveryId, setTargetDeliveryId] = useState<number | undefined>(undefined);
   const [selectedGrn, setSelectedGrn] = useState<GRN | null>(null);
-  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [detailsPageOpen, setDetailsPageOpen] = useState(false);
 
   // Delivery details modal
   const [viewDelivery, setViewDelivery] = useState<ArrivedDelivery | null>(null);
   const [deliveryDetailsOpen, setDeliveryDetailsOpen] = useState(false);
+
+  useEffect(() => {
+    setFullPageActive(createPageOpen || (detailsPageOpen && !!selectedGrn));
+    return () => setFullPageActive(false);
+  }, [createPageOpen, detailsPageOpen, selectedGrn, setFullPageActive]);
 
   const fetchData = () => startRefresh(() => router.refresh());
 
@@ -168,13 +175,59 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
 
   const handleCreateGrn = (deliveryId?: number) => {
     setTargetDeliveryId(deliveryId);
-    setCreateModalOpen(true);
+    setDetailsPageOpen(false);
+    setCreatePageOpen(true);
   };
 
   const handleSelectGrn = (grn: GRN) => {
     setSelectedGrn(grn);
-    setDetailsModalOpen(true);
+    setCreatePageOpen(false);
+    setDetailsPageOpen(true);
   };
+
+  // Full-page Unified Create GRN + QA view (matching Figma Form · New goods receipt note 142:21)
+  if (createPageOpen) {
+    return (
+      <CreateGrnForm
+        embedded
+        initialDeliveryId={targetDeliveryId}
+        initialDeliveries={pendingDeliveries}
+        initialReceipts={initialReceipts}
+        onClose={() => {
+          setCreatePageOpen(false);
+          setTargetDeliveryId(undefined);
+        }}
+        onSuccess={(grn) => {
+          fetchData();
+          setCreatePageOpen(false);
+          setTargetDeliveryId(undefined);
+          setActiveSubTab("posted");
+          setSelectedGrn(grn);
+          setDetailsPageOpen(true);
+        }}
+      />
+    );
+  }
+
+  // Full-page GRN Details view (matching CreateGrnForm & Figma 142:433)
+  if (detailsPageOpen && selectedGrn) {
+    const latestGrn =
+      initialReceipts.find((r) => r.grnId === selectedGrn.grnId) || selectedGrn;
+    return (
+      <GrnDetailsView
+        embedded
+        grn={latestGrn}
+        onClose={() => {
+          setDetailsPageOpen(false);
+          setSelectedGrn(null);
+        }}
+        onUpdated={() => {
+          fetchData();
+        }}
+        onPosted={onPosted}
+      />
+    );
+  }
 
   return (
     <div className="space-y-5 animate-page-in">
@@ -353,39 +406,6 @@ export default function GrnTab({ initialReceipts, initialDeliveries }: GrnTabPro
           delivery={viewDelivery}
           onClose={() => setDeliveryDetailsOpen(false)}
           onCreateGrn={(deliveryId) => handleCreateGrn(deliveryId)}
-        />
-      )}
-
-      {/* Create / Count GRN Modal */}
-      {createModalOpen && (
-        <CreateGrnModal
-          open={createModalOpen}
-          initialDeliveryId={targetDeliveryId}
-          initialDeliveries={pendingDeliveries}
-          initialReceipts={initialReceipts}
-          onClose={() => {
-            setCreateModalOpen(false);
-            setTargetDeliveryId(undefined);
-          }}
-          onSuccess={(grn) => {
-            fetchData();
-            setActiveSubTab("posted");
-            setSelectedGrn(grn);
-            setDetailsModalOpen(true);
-          }}
-        />
-      )}
-
-      {/* GRN Details Modal */}
-      {detailsModalOpen && (
-        <GrnDetailsModal
-          open={detailsModalOpen}
-          grn={selectedGrn}
-          onClose={() => setDetailsModalOpen(false)}
-          onUpdated={() => {
-            fetchData();
-          }}
-          onPosted={onPosted}
         />
       )}
     </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { History } from "lucide-react";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { ReceivingFullPageProvider } from "@/components/receiving/ReceivingFullPageContext";
 
 export type ReceivingTab = "grn" | "discrepancies" | "stockin" | "rtv" | "loss";
 export type ReceivingCounts = Record<ReceivingTab, number>;
@@ -38,8 +39,8 @@ export default function ViewGoodsReceiving({
     return true;
   });
 
-  return (
-    <div className="page-container px-4 sm:px-8 w-full min-h-full space-y-5 animate-page-in">
+  const header = (
+    <>
       <PageHeader
         title="Goods Receiving & Inbound Logistics"
         description={
@@ -80,7 +81,8 @@ export default function ViewGoodsReceiving({
           </div>
         )}
       </div>
-      {children}
-    </div>
+    </>
   );
+
+  return <ReceivingFullPageProvider header={header}>{children}</ReceivingFullPageProvider>;
 }
