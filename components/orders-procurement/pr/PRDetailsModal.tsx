@@ -122,18 +122,31 @@ function PRDetailsBody({
               </p>
             </div>
 
-            {isApproved && (
-              <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleExportPdf}
-                  disabled={exporting}
-                  className="rounded-control border border-border bg-surface px-4 h-9 type-label-button-sm text-ink hover:bg-subtle shadow-none cursor-pointer inline-flex items-center gap-1.5"
-                >
-                  <Download className="w-4 h-4 text-primary" />
-                  <span>{exporting ? "Exporting..." : "Export"}</span>
-                </Button>
+            {(isApproved || (!isAdmin && isPending && onCancel)) && (
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                {!isAdmin && isPending && onCancel && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onCancel(pr)}
+                    className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-destructive hover:bg-notice-danger-bg shadow-none cursor-pointer"
+                  >
+                    Cancel Requisition
+                  </Button>
+                )}
+
+                {isApproved && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleExportPdf}
+                    disabled={exporting}
+                    className="rounded-control border border-border bg-surface px-4 h-9 type-label-button-sm text-ink hover:bg-subtle shadow-none cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <Download className="w-4 h-4 text-primary" />
+                    <span>{exporting ? "Exporting..." : "Export"}</span>
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -468,8 +481,8 @@ function PRDetailsBody({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 ml-auto">
-          {/* Staff Cancel action — shown ONLY on Pending Approval */}
-          {!isAdmin && isPending && onCancel && (
+          {/* Modal-only Cancel action (Page Mode renders Cancel in the top header bar, matching PODetailsView) */}
+          {variant === "modal" && !isAdmin && isPending && onCancel && (
             <Button
               type="button"
               variant="outline"
