@@ -167,8 +167,8 @@ function SWODetailsBody({
   const containerClasses =
     variant === "page"
       ? embedded
-        ? "space-y-5 pb-10 animate-page-in"
-        : "page-container px-4 sm:px-8 w-full space-y-5 pb-10 animate-page-in"
+        ? "space-y-6 pb-12 animate-page-in"
+        : "page-container px-4 sm:px-8 w-full space-y-6 pb-12 animate-page-in"
       : "space-y-5";
 
   return (
@@ -176,7 +176,7 @@ function SWODetailsBody({
       <div className={containerClasses}>
         {/* Top Back Link, SWO Number + Status Badge & Top-Right Actions (Page Mode) */}
         {variant === "page" && (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <button
               type="button"
               onClick={onClose}
@@ -201,7 +201,7 @@ function SWODetailsBody({
               </div>
 
               {/* Top-Right Action Buttons (Close, Remove Items in Inventory, PDF Export, Cancel, Reject, Approve) */}
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                 <Button
                   type="button"
                   variant="outline"
@@ -329,65 +329,74 @@ function SWODetailsBody({
           </div>
         )}
 
-        {/* Main 2-Column Layout */}
+        {/* Main 2-Column Layout (Matching Figma Page 2 New Purchase Order spacing & structure) */}
         <div
           className={
             variant === "page"
-              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start"
-              : "space-y-5"
+              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start"
+              : "space-y-6"
           }
         >
-          {/* Left Column: Write-off details, Write-off items, General remarks */}
-          <div className="min-w-0 space-y-5">
-            {/* Card 1: Write-off details */}
-            <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+          {/* Left Column: Write-off details & Write-off items */}
+          <div className="min-w-0 space-y-6">
+            {/* Card 1: Write-off details (2-column spacious grid) */}
+            <div className="rounded-card border border-border bg-surface p-6 space-y-5">
               <h2 className="type-subsection text-ink">Write-off details</h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                     Write-Off Number
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary font-semibold text-ink select-all tabular-nums">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary font-semibold text-ink select-all tabular-nums">
                     {swo.swoNumber}
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                     Request Date
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary text-ink-secondary">
                     {fmtDate(swo.requestedAt)}
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                     Requested By
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
                     {swo.requestedByName || swo.requestedBy}
                   </div>
                 </div>
 
+                <div>
+                  <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
+                    Status
+                  </label>
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary text-ink-secondary">
+                    {swo.status}
+                  </div>
+                </div>
+
                 {(swo.approvedByName || swo.approvedBy) && (
-                  <div className={swo.removedByName || swo.removedBy ? "" : "sm:col-span-3 lg:col-span-1"}>
-                    <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <div className={swo.removedByName || swo.removedBy ? "" : "sm:col-span-2"}>
+                    <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                       Approved By
                     </label>
-                    <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
+                    <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
                       {swo.approvedByName || swo.approvedBy} ({fmtDate(swo.approvedAt)})
                     </div>
                   </div>
                 )}
 
                 {(swo.removedByName || swo.removedBy) && (
-                  <div className="sm:col-span-2">
-                    <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <div>
+                    <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                       Removed From Inventory By
                     </label>
-                    <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
+                    <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
                       {swo.removedByName || swo.removedBy} ({fmtDateTime(swo.removedAt)})
                     </div>
                   </div>
@@ -396,11 +405,11 @@ function SWODetailsBody({
             </div>
 
             {/* Card 2: Write-off items */}
-            <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+            <div className="rounded-card border border-border bg-surface p-6 space-y-5">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <h2 className="type-subsection text-ink">Write-off items</h2>
-                  <p className="mt-0.5 type-caption text-ink-muted">
+                  <p className="mt-1 type-caption text-ink-muted">
                     Inventory items, batches / lots, reasons, and evidence recorded for write-off.
                   </p>
                 </div>
@@ -409,22 +418,23 @@ function SWODetailsBody({
                 </span>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {swo.items.map((item, idx) => {
                   const isFinishedGood =
                     (item.itemType || "").toLowerCase().includes("finished") ||
                     Boolean(item.variantName) ||
                     Boolean(item.productId);
                   const line = item.lines[0];
+                  const fullWidthLotRow = !isFinishedGood && item.hasExpiry;
 
                   return (
                     <div
                       key={item.writeOffItemId}
-                      className="rounded-inner border border-border bg-surface p-4 space-y-3.5"
+                      className="rounded-inner border border-border bg-surface p-5 space-y-5"
                     >
                       {/* Item Sub-Card Header */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-divider">
-                        <div className="flex flex-wrap items-center gap-2 min-w-0">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-3.5 border-b border-divider">
+                        <div className="flex flex-wrap items-center gap-2.5 min-w-0">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-pill bg-status-purple-bg text-primary type-badge-compact font-semibold">
                             Item {idx + 1}
                           </span>
@@ -441,73 +451,60 @@ function SWODetailsBody({
                         )}
                       </div>
 
-                      {/* Row 1: Item Identity */}
-                      <div
-                        className={`grid grid-cols-1 ${
-                          isFinishedGood ? "sm:grid-cols-2" : "sm:grid-cols-3"
-                        } gap-3`}
-                      >
-                        <div>
-                          <label className="mb-1.5 block type-label-field text-ink">
-                            Item Type
-                          </label>
-                          <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary font-medium text-ink truncate">
-                            {item.itemType}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="mb-1.5 block type-label-field text-ink">
-                            Item Name
-                          </label>
-                          <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary font-medium text-ink truncate">
-                            {item.itemName}
-                            {item.variantName ? ` — ${item.variantName}` : ""}
-                          </div>
-                        </div>
-
-                        {!isFinishedGood && (
-                          <div>
-                            <label className="mb-1.5 block type-label-field text-ink">
-                              Unit of Measurement
-                            </label>
-                            <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
-                              {item.uomName || "—"}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Row 2 & 3: Lot Details */}
+                      {/* Spacious 2-Column Fields Grid per Lot */}
                       {item.lines.map((lotLine) => {
                         const isLotExpired =
                           lotLine.expiryDate &&
                           new Date(lotLine.expiryDate).getTime() < new Date(swo.requestedAt).getTime();
 
                         return (
-                          <div key={lotLine.lineId} className="space-y-3">
-                            <div
-                              className={`grid grid-cols-1 sm:grid-cols-2 ${
-                                item.hasExpiry
-                                  ? "lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]"
-                                  : "lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,1fr)]"
-                              } gap-3`}
-                            >
+                          <div key={lotLine.lineId} className="space-y-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
                               <div>
-                                <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                                <label className="mb-2 block type-label-field text-ink">
+                                  Item Type
+                                </label>
+                                <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary font-medium text-ink truncate">
+                                  {item.itemType}
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="mb-2 block type-label-field text-ink">
+                                  Item Name
+                                </label>
+                                <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary font-medium text-ink truncate">
+                                  {item.itemName}
+                                  {item.variantName ? ` — ${item.variantName}` : ""}
+                                </div>
+                              </div>
+
+                              <div className={fullWidthLotRow ? "sm:col-span-2" : ""}>
+                                <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                                   Batch / Lot Number
                                 </label>
-                                <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary font-semibold text-ink tabular-nums truncate">
+                                <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary font-semibold text-ink tabular-nums truncate">
                                   {lotLine.lotCode}
                                 </div>
                               </div>
 
+                              {!isFinishedGood && (
+                                <div>
+                                  <label className="mb-2 block type-label-field text-ink">
+                                    Unit of Measurement
+                                  </label>
+                                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
+                                    {item.uomName || "—"}
+                                  </div>
+                                </div>
+                              )}
+
                               {item.hasExpiry && (
                                 <div>
-                                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                                  <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                                     Expiration Date
                                   </label>
-                                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary">
+                                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary">
                                     <span
                                       className={
                                         isLotExpired
@@ -522,30 +519,28 @@ function SWODetailsBody({
                               )}
 
                               <div>
-                                <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                                <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                                   Available Quantity
                                 </label>
-                                <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary tabular-nums truncate">
+                                <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary text-ink-secondary tabular-nums truncate">
                                   {lotLine.availableBefore.toLocaleString()} {item.uomName}
                                 </div>
                               </div>
 
                               <div>
-                                <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                                <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                                   Affected Quantity
                                 </label>
-                                <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary font-semibold text-ink tabular-nums truncate">
+                                <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary font-semibold text-ink tabular-nums truncate">
                                   {lotLine.quantity.toLocaleString()} {item.uomName}
                                 </div>
                               </div>
-                            </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
-                                <label className="mb-1.5 block type-label-field text-ink">
+                                <label className="mb-2 block type-label-field text-ink">
                                   Write-Off Reason
                                 </label>
-                                <div className="flex items-center min-h-9 px-3 py-1.5 rounded-control border border-border bg-page type-body-secondary text-ink">
+                                <div className="flex items-center min-h-10 px-3.5 py-2 rounded-control border border-border bg-page type-body-secondary text-ink">
                                   {lotLine.reason === "Other" && lotLine.reasonOther
                                     ? `Other (${lotLine.reasonOther})`
                                     : lotLine.reason}
@@ -553,10 +548,10 @@ function SWODetailsBody({
                               </div>
 
                               <div>
-                                <label className="mb-1.5 block type-label-field text-ink">
+                                <label className="mb-2 block type-label-field text-ink">
                                   Disposition Method
                                 </label>
-                                <div className="flex items-center min-h-9 px-3 py-1.5 rounded-control border border-border bg-page type-body-secondary text-ink">
+                                <div className="flex items-center min-h-10 px-3.5 py-2 rounded-control border border-border bg-page type-body-secondary text-ink">
                                   {lotLine.disposition === "Other" && lotLine.dispositionOther
                                     ? `Other (${lotLine.dispositionOther})`
                                     : lotLine.disposition}
@@ -564,11 +559,11 @@ function SWODetailsBody({
                               </div>
                             </div>
 
-                            <div>
-                              <label className="mb-1.5 block type-label-field text-ink">
+                            <div className="pt-1 border-t border-divider">
+                              <label className="mb-2 pt-3 block type-label-field text-ink">
                                 Item Remarks
                               </label>
-                              <div className="min-h-14 px-3 py-2 rounded-control border border-border bg-page type-body-secondary text-ink whitespace-pre-wrap leading-relaxed">
+                              <div className="min-h-14 px-3.5 py-2.5 rounded-control border border-border bg-page type-body-secondary text-ink whitespace-pre-wrap leading-relaxed">
                                 {lotLine.remarks || "—"}
                               </div>
                             </div>
@@ -577,12 +572,12 @@ function SWODetailsBody({
                       })}
 
                       {/* Supporting Evidence Photos */}
-                      <div className="space-y-2 pt-1">
+                      <div className="space-y-2">
                         <label className="block type-label-field text-ink">
                           Item Supporting Evidence
                         </label>
                         {item.photos && item.photos.length > 0 ? (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {item.photos.map((p) => {
                               const url = photoUrls[p.photoId] || (p.fileId.startsWith("data:image/") ? p.fileId : "");
                               return (
@@ -590,9 +585,9 @@ function SWODetailsBody({
                                   key={p.photoId}
                                   type="button"
                                   onClick={() => url && setPreviewUrl(url)}
-                                  className="group flex items-center gap-2.5 p-2 rounded-control border border-border bg-page hover:border-primary transition-colors text-left cursor-pointer"
+                                  className="group flex items-center gap-3 p-2.5 rounded-control border border-border bg-page hover:border-primary transition-colors text-left cursor-pointer"
                                 >
-                                  <div className="size-11 rounded-sm border border-border bg-surface overflow-hidden flex items-center justify-center shrink-0">
+                                  <div className="size-12 rounded-sm border border-border bg-surface overflow-hidden flex items-center justify-center shrink-0">
                                     {url ? (
                                       /* eslint-disable-next-line @next/next/no-img-element */
                                       <img
@@ -628,30 +623,32 @@ function SWODetailsBody({
               </div>
             </div>
 
-            {/* Card 3: General remarks */}
-            <div className="rounded-card border border-border bg-surface p-5 space-y-3">
-              <h2 className="type-subsection text-ink">General remarks</h2>
-              <div
-                className={`w-full rounded-control border border-border bg-page px-3 py-2.5 type-body-secondary leading-relaxed whitespace-pre-wrap ${
-                  swo.generalRemarks && swo.generalRemarks.trim()
-                    ? "text-ink"
-                    : "text-ink-muted"
-                }`}
-              >
-                {swo.generalRemarks && swo.generalRemarks.trim()
-                  ? swo.generalRemarks
-                  : "No general remarks provided."}
+            {/* Modal-only General remarks */}
+            {variant === "modal" && (
+              <div className="rounded-card border border-border bg-surface p-6 space-y-3">
+                <h2 className="type-subsection text-ink">General remarks</h2>
+                <div
+                  className={`w-full rounded-control border border-border bg-page px-3.5 py-2.5 type-body-secondary leading-relaxed whitespace-pre-wrap ${
+                    swo.generalRemarks && swo.generalRemarks.trim()
+                      ? "text-ink"
+                      : "text-ink-muted"
+                  }`}
+                >
+                  {swo.generalRemarks && swo.generalRemarks.trim()
+                    ? swo.generalRemarks
+                    : "No general remarks provided."}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Right Column: Write-off Summary Card (Page Mode) */}
+          {/* Right Column: Write-off Summary + General Remarks (Matching Figma Page 2 New Purchase Order right rail) */}
           {variant === "page" && (
-            <div className="space-y-5">
-              <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+            <div className="space-y-6">
+              <div className="rounded-card border border-border bg-surface p-6 space-y-4">
                 <h2 className="type-subsection text-ink">Write-off summary</h2>
 
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3 type-body-secondary">
                     <span className="text-ink-muted">Write-Off No.</span>
                     <span className="font-medium text-ink tabular-nums">{swo.swoNumber}</span>
@@ -718,11 +715,27 @@ function SWODetailsBody({
                   </div>
                 </div>
 
-                <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
+                <div className="border-t border-divider pt-3.5 flex items-center justify-between gap-3">
                   <span className="type-subsection text-ink">Total items to write off</span>
                   <span className="type-card-title text-primary tabular-nums text-right">
                     {summaryTotalLabel}
                   </span>
+                </div>
+              </div>
+
+              {/* General Remarks Card in Right Rail (Matching PO "Notes to supplier" card) */}
+              <div className="rounded-card border border-border bg-surface p-6 space-y-3.5">
+                <h2 className="type-subsection text-ink">General remarks</h2>
+                <div
+                  className={`w-full rounded-control border border-border bg-page px-3.5 py-2.5 type-body-secondary leading-relaxed whitespace-pre-wrap ${
+                    swo.generalRemarks && swo.generalRemarks.trim()
+                      ? "text-ink"
+                      : "text-ink-muted"
+                  }`}
+                >
+                  {swo.generalRemarks && swo.generalRemarks.trim()
+                    ? swo.generalRemarks
+                    : "No general remarks provided."}
                 </div>
               </div>
             </div>

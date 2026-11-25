@@ -670,8 +670,8 @@ function SWOFormBody({
   const containerClasses =
     variant === "page"
       ? embedded
-        ? "space-y-5 pb-10 animate-page-in"
-        : "page-container px-4 sm:px-8 w-full space-y-5 pb-10 animate-page-in"
+        ? "space-y-6 pb-12 animate-page-in"
+        : "page-container px-4 sm:px-8 w-full space-y-6 pb-12 animate-page-in"
       : "space-y-5";
 
   return (
@@ -679,7 +679,7 @@ function SWOFormBody({
       <div className={containerClasses}>
         {/* Top Back Link, Page Title & Top-Right Action Buttons (Page Mode) */}
         {variant === "page" && (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <button
               type="button"
               onClick={handleRequestCancel}
@@ -697,7 +697,7 @@ function SWOFormBody({
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                 <Button
                   type="button"
                   variant="outline"
@@ -744,58 +744,67 @@ function SWOFormBody({
           </div>
         )}
 
-        {/* Main 2-Column Layout (Matching Figma Stock Write-Off · Redesign & PR Redesign) */}
+        {/* Main 2-Column Layout (Matching Figma Page 2 New Purchase Order spacing & structure) */}
         <div
           className={
             variant === "page"
-              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start"
-              : "space-y-5"
+              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start"
+              : "space-y-6"
           }
         >
-          {/* Left Column: Write-off details, Write-off items, General remarks */}
-          <div className="min-w-0 space-y-5">
-            {/* Card 1: Write-off details */}
-            <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+          {/* Left Column: Write-off details & Write-off items */}
+          <div className="min-w-0 space-y-6">
+            {/* Card 1: Write-off details (2x2 symmetrical grid matching PO Supplier & delivery) */}
+            <div className="rounded-card border border-border bg-surface p-6 space-y-5">
               <h2 className="type-subsection text-ink">Write-off details</h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                     Write-Off Number
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary select-all tabular-nums">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary text-ink-secondary select-all tabular-nums">
                     {swoPreviewNumber}
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                     Request Date
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary text-ink-secondary">
                     {requestDateDisplay}
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                     Requested By
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary select-none truncate">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary text-ink-secondary select-none truncate">
                     {staff.name || staff.username}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
+                    Status
+                  </label>
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary text-ink-secondary select-none">
+                    Pending Submission
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Card 2: Write-off items */}
-            <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+            <div className="rounded-card border border-border bg-surface p-6 space-y-5">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <h2 className="type-subsection text-ink">
                     Write-off items <span className="text-destructive">*</span>
                   </h2>
-                  <p className="mt-0.5 type-caption text-ink-muted">
+                  <p className="mt-1 type-caption text-ink-muted">
                     Select inventory items, batch / lot, and condition to write off (up to {SWO_MAX_ITEMS} items per request).
                   </p>
                 </div>
@@ -808,7 +817,7 @@ function SWOFormBody({
                 <p className="type-caption font-medium text-destructive">{errors.formError}</p>
               )}
 
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {items.map((draftItem, itemIdx) => {
                   const itemErr = errors.items[itemIdx] || { lots: {} };
                   const selectedItemOpt = itemsByKey.get(draftItem.itemKey);
@@ -855,15 +864,16 @@ function SWOFormBody({
 
                   const showExpiryField =
                     hasExpiry && (!selectedLotOpt || Boolean(selectedLotOpt.expiryDate));
+                  const fullWidthLotRow = !isFinishedGood && showExpiryField;
 
                   return (
                     <div
                       key={itemIdx}
-                      className="rounded-inner border border-border bg-surface p-4 space-y-3.5"
+                      className="rounded-inner border border-border bg-surface p-5 space-y-5"
                     >
                       {/* Item Sub-Card Header */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-divider">
-                        <div className="flex flex-wrap items-center gap-2 min-w-0">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-3.5 border-b border-divider">
+                        <div className="flex flex-wrap items-center gap-2.5 min-w-0">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-pill bg-status-purple-bg text-primary type-badge-compact font-semibold">
                             Item {itemIdx + 1}
                           </span>
@@ -894,16 +904,12 @@ function SWOFormBody({
                         </div>
                       </div>
 
-                      {/* Row 1: Item Type, Item Name, (Unit of Measurement for non-finished goods) */}
-                      <div
-                        className={`grid grid-cols-1 ${
-                          isFinishedGood ? "sm:grid-cols-2" : "sm:grid-cols-3"
-                        } gap-3`}
-                      >
+                      {/* Spacious 2-Column Fields Grid (Matching Figma Page 2 New Purchase Order) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5 items-start">
                         {/* Item Type */}
                         <div className="min-w-0">
                           <label
-                            className={`mb-1.5 block type-label-field ${
+                            className={`mb-2 block type-label-field ${
                               itemErr.itemType ? "text-destructive" : "text-ink"
                             }`}
                           >
@@ -914,7 +920,7 @@ function SWOFormBody({
                               aria-label={`Item ${itemIdx + 1} type`}
                               value={draftItem.itemType}
                               onChange={(e) => handleItemTypeChange(itemIdx, e.target.value)}
-                              className={`w-full h-9 appearance-none rounded-control border bg-surface pl-3 pr-8 type-body-secondary ${
+                              className={`w-full h-10 appearance-none rounded-control border bg-surface pl-3.5 pr-9 type-body-secondary ${
                                 draftItem.itemType ? "text-ink" : "text-ink-muted"
                               } focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none cursor-pointer transition-colors truncate ${
                                 itemErr.itemType ? "border-destructive" : "border-border"
@@ -927,10 +933,10 @@ function SWOFormBody({
                                 </option>
                               ))}
                             </select>
-                            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                           </div>
                           {itemErr.itemType && (
-                            <p className="mt-1 type-caption text-destructive font-medium">
+                            <p className="mt-1.5 type-caption text-destructive font-medium">
                               {itemErr.itemType}
                             </p>
                           )}
@@ -939,7 +945,7 @@ function SWOFormBody({
                         {/* Item Name */}
                         <div className="min-w-0">
                           <label
-                            className={`mb-1.5 block type-label-field ${
+                            className={`mb-2 block type-label-field ${
                               itemErr.itemId ? "text-destructive" : "text-ink"
                             }`}
                           >
@@ -951,7 +957,7 @@ function SWOFormBody({
                               value={draftItem.itemKey}
                               disabled={!draftItem.itemType}
                               onChange={(e) => handleItemKeyChange(itemIdx, e.target.value)}
-                              className={`w-full h-9 appearance-none rounded-control border bg-surface pl-3 pr-8 type-body-secondary ${
+                              className={`w-full h-10 appearance-none rounded-control border bg-surface pl-3.5 pr-9 type-body-secondary ${
                                 draftItem.itemKey ? "text-ink" : "text-ink-muted"
                               } focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors truncate ${
                                 itemErr.itemId ? "border-destructive" : "border-border"
@@ -970,40 +976,19 @@ function SWOFormBody({
                                 </option>
                               ))}
                             </select>
-                            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                           </div>
                           {itemErr.itemId && (
-                            <p className="mt-1 type-caption text-destructive font-medium">
+                            <p className="mt-1.5 type-caption text-destructive font-medium">
                               {itemErr.itemId}
                             </p>
                           )}
                         </div>
 
-                        {/* Unit of Measurement (non-finished goods) */}
-                        {!isFinishedGood && (
-                          <div className="min-w-0">
-                            <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
-                              Unit of Measurement
-                            </label>
-                            <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
-                              {selectedItemOpt?.uomName || "—"}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Row 2: Batch / Lot Number, Expiration Date, Available Quantity, Affected Quantity */}
-                      <div
-                        className={`grid grid-cols-1 sm:grid-cols-2 ${
-                          showExpiryField
-                            ? "lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]"
-                            : "lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,1fr)]"
-                        } gap-3 items-start`}
-                      >
-                        {/* Batch / Lot Number */}
-                        <div className="min-w-0">
+                        {/* Batch / Lot Number (Full-width when both UOM and Expiry are shown so all pairs stay balanced) */}
+                        <div className={`min-w-0 ${fullWidthLotRow ? "sm:col-span-2" : ""}`}>
                           <label
-                            className={`mb-1.5 block type-label-field whitespace-nowrap ${
+                            className={`mb-2 block type-label-field whitespace-nowrap ${
                               lotErr.lotId ? "text-destructive" : "text-ink"
                             }`}
                           >
@@ -1024,7 +1009,7 @@ function SWOFormBody({
                                     : {}),
                                 });
                               }}
-                              className={`w-full h-9 appearance-none rounded-control border bg-surface pl-3 pr-8 type-body-secondary tabular-nums ${
+                              className={`w-full h-10 appearance-none rounded-control border bg-surface pl-3.5 pr-9 type-body-secondary tabular-nums ${
                                 draftLot.lotId ? "text-ink" : "text-ink-muted"
                               } focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors truncate ${
                                 lotErr.lotId ? "border-destructive" : "border-border"
@@ -1033,7 +1018,7 @@ function SWOFormBody({
                               <option value="">
                                 {!selectedItemOpt
                                   ? "Select item first"
-                                  : "Select batch / lot"}
+                                  : "Select batch / lot number"}
                               </option>
                               {lotOptions.map((l) => {
                                 const usedElsewhere =
@@ -1051,22 +1036,34 @@ function SWOFormBody({
                                 );
                               })}
                             </select>
-                            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                           </div>
                           {lotErr.lotId && (
-                            <p className="mt-1 type-caption text-destructive font-medium">
+                            <p className="mt-1.5 type-caption text-destructive font-medium">
                               {lotErr.lotId}
                             </p>
                           )}
                         </div>
 
+                        {/* Unit of Measurement (non-finished goods) */}
+                        {!isFinishedGood && (
+                          <div className="min-w-0">
+                            <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
+                              Unit of Measurement
+                            </label>
+                            <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
+                              {selectedItemOpt?.uomName || "—"}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Expiration Date */}
                         {showExpiryField && (
                           <div className="min-w-0">
-                            <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                            <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                               Expiration Date
                             </label>
-                            <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary">
+                            <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary">
                               <span
                                 className={
                                   selectedLotOpt?.isExpired
@@ -1082,10 +1079,10 @@ function SWOFormBody({
 
                         {/* Available Quantity */}
                         <div className="min-w-0">
-                          <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                          <label className="mb-2 block type-label-field text-ink whitespace-nowrap">
                             Available Quantity
                           </label>
-                          <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary tabular-nums truncate">
+                          <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-page type-body-secondary text-ink-secondary tabular-nums truncate">
                             {selectedLotOpt
                               ? `${selectedLotOpt.availableQuantity.toLocaleString()}${
                                   isFinishedGood ? "" : ` ${selectedLotOpt.uomName}`
@@ -1093,9 +1090,9 @@ function SWOFormBody({
                               : "—"}
                           </div>
                           {selectedLotOpt && selectedLotOpt.reservedQuantity > 0 && (
-                            <p className="mt-1 type-caption text-ink-muted leading-tight">
+                            <p className="mt-1.5 type-caption text-ink-muted">
                               {selectedLotOpt.reservedQuantity}
-                              {isFinishedGood ? "" : ` ${selectedLotOpt.uomName}`} reserved excl.
+                              {isFinishedGood ? "" : ` ${selectedLotOpt.uomName}`} reserved excluded
                             </p>
                           )}
                         </div>
@@ -1103,7 +1100,7 @@ function SWOFormBody({
                         {/* Affected Quantity */}
                         <div className="min-w-0">
                           <label
-                            className={`mb-1.5 block type-label-field whitespace-nowrap ${
+                            className={`mb-2 block type-label-field whitespace-nowrap ${
                               quantityErrorMsg ? "text-destructive" : "text-ink"
                             }`}
                           >
@@ -1120,7 +1117,7 @@ function SWOFormBody({
                                 : "any"
                             }
                             disabled={!selectedLotOpt}
-                            placeholder="Enter qty"
+                            placeholder="Enter quantity"
                             value={draftLot.quantity}
                             onChange={(e) =>
                               handleLotChange(itemIdx, lotIdx, {
@@ -1128,25 +1125,22 @@ function SWOFormBody({
                               })
                             }
                             aria-invalid={!!quantityErrorMsg}
-                            className={`h-9 rounded-control bg-surface px-3 type-body-secondary font-semibold text-ink tabular-nums shadow-none focus:ring-1 focus:ring-ring ${
+                            className={`h-10 rounded-control bg-surface px-3.5 type-body-secondary font-semibold text-ink tabular-nums shadow-none focus:ring-1 focus:ring-ring ${
                               quantityErrorMsg ? "border-destructive" : "border-border"
                             }`}
                           />
                           {quantityErrorMsg && (
-                            <p className="mt-1 type-caption text-destructive font-medium leading-tight">
+                            <p className="mt-1.5 type-caption text-destructive font-medium leading-tight">
                               {quantityErrorMsg}
                             </p>
                           )}
                         </div>
-                      </div>
 
-                      {/* Row 3: Write-Off Reason & Disposition Method */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {/* Write-Off Reason */}
-                        <div className="space-y-2 min-w-0">
+                        <div className="space-y-2.5 min-w-0">
                           <div>
                             <label
-                              className={`mb-1.5 block type-label-field ${
+                              className={`mb-2 block type-label-field ${
                                 lotErr.reason ? "text-destructive" : "text-ink"
                               }`}
                             >
@@ -1161,7 +1155,7 @@ function SWOFormBody({
                                     reason: e.target.value,
                                   })
                                 }
-                                className={`w-full h-9 appearance-none rounded-control border bg-surface pl-3 pr-8 type-body-secondary ${
+                                className={`w-full h-10 appearance-none rounded-control border bg-surface pl-3.5 pr-9 type-body-secondary ${
                                   draftLot.reason ? "text-ink" : "text-ink-muted"
                                 } focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none cursor-pointer transition-colors truncate ${
                                   lotErr.reason ? "border-destructive" : "border-border"
@@ -1174,10 +1168,10 @@ function SWOFormBody({
                                   </option>
                                 ))}
                               </select>
-                              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+                              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                             </div>
                             {lotErr.reason && (
-                              <p className="mt-1 type-caption text-destructive font-medium">
+                              <p className="mt-1.5 type-caption text-destructive font-medium">
                                 {lotErr.reason}
                               </p>
                             )}
@@ -1196,12 +1190,12 @@ function SWOFormBody({
                                   })
                                 }
                                 aria-invalid={!!lotErr.reasonOther}
-                                className={`h-9 rounded-control bg-surface px-3 type-body-secondary text-ink shadow-none ${
+                                className={`h-10 rounded-control bg-surface px-3.5 type-body-secondary text-ink shadow-none ${
                                   lotErr.reasonOther ? "border-destructive" : "border-border"
                                 }`}
                               />
                               {lotErr.reasonOther && (
-                                <p className="mt-1 type-caption text-destructive font-medium">
+                                <p className="mt-1.5 type-caption text-destructive font-medium">
                                   {lotErr.reasonOther}
                                 </p>
                               )}
@@ -1210,10 +1204,10 @@ function SWOFormBody({
                         </div>
 
                         {/* Disposition Method */}
-                        <div className="space-y-2 min-w-0">
+                        <div className="space-y-2.5 min-w-0">
                           <div>
                             <label
-                              className={`mb-1.5 block type-label-field ${
+                              className={`mb-2 block type-label-field ${
                                 lotErr.disposition ? "text-destructive" : "text-ink"
                               }`}
                             >
@@ -1228,7 +1222,7 @@ function SWOFormBody({
                                     disposition: e.target.value,
                                   })
                                 }
-                                className={`w-full h-9 appearance-none rounded-control border bg-surface pl-3 pr-8 type-body-secondary ${
+                                className={`w-full h-10 appearance-none rounded-control border bg-surface pl-3.5 pr-9 type-body-secondary ${
                                   draftLot.disposition ? "text-ink" : "text-ink-muted"
                                 } focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none cursor-pointer transition-colors truncate ${
                                   lotErr.disposition ? "border-destructive" : "border-border"
@@ -1241,10 +1235,10 @@ function SWOFormBody({
                                   </option>
                                 ))}
                               </select>
-                              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+                              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                             </div>
                             {lotErr.disposition && (
-                              <p className="mt-1 type-caption text-destructive font-medium">
+                              <p className="mt-1.5 type-caption text-destructive font-medium">
                                 {lotErr.disposition}
                               </p>
                             )}
@@ -1263,12 +1257,12 @@ function SWOFormBody({
                                   })
                                 }
                                 aria-invalid={!!lotErr.dispositionOther}
-                                className={`h-9 rounded-control bg-surface px-3 type-body-secondary text-ink shadow-none ${
+                                className={`h-10 rounded-control bg-surface px-3.5 type-body-secondary text-ink shadow-none ${
                                   lotErr.dispositionOther ? "border-destructive" : "border-border"
                                 }`}
                               />
                               {lotErr.dispositionOther && (
-                                <p className="mt-1 type-caption text-destructive font-medium">
+                                <p className="mt-1.5 type-caption text-destructive font-medium">
                                   {lotErr.dispositionOther}
                                 </p>
                               )}
@@ -1277,9 +1271,9 @@ function SWOFormBody({
                         </div>
                       </div>
 
-                      {/* Row 4: Item Remarks */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
+                      {/* Item Remarks */}
+                      <div className="pt-1 border-t border-divider">
+                        <div className="flex items-center justify-between mb-2 pt-3">
                           <label
                             className={`type-label-field ${
                               lotErr.remarks ? "text-destructive" : "text-ink"
@@ -1303,19 +1297,19 @@ function SWOFormBody({
                             })
                           }
                           aria-invalid={!!lotErr.remarks}
-                          className={`w-full rounded-control bg-surface px-3 py-2 type-body-secondary text-ink shadow-none focus:ring-1 focus:ring-ring resize-none ${
+                          className={`w-full rounded-control bg-surface px-3.5 py-2.5 type-body-secondary text-ink shadow-none focus:ring-1 focus:ring-ring resize-none ${
                             lotErr.remarks ? "border-destructive" : "border-border"
                           }`}
                         />
                         {lotErr.remarks && (
-                          <p className="mt-1 type-caption text-destructive font-medium">
+                          <p className="mt-1.5 type-caption text-destructive font-medium">
                             {lotErr.remarks}
                           </p>
                         )}
                       </div>
 
-                      {/* Row 5: Item Supporting Evidence (Compact dashed strip) */}
-                      <div className="space-y-1.5 pt-1">
+                      {/* Item Supporting Evidence (Compact dashed strip) */}
+                      <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <label className="type-label-field text-ink">
                             Item Supporting Evidence{" "}
@@ -1327,8 +1321,8 @@ function SWOFormBody({
                         </div>
 
                         {draftItem.photos.length > 0 ? (
-                          <div className="rounded-control border border-dashed border-border bg-page p-3 space-y-3">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                          <div className="rounded-control border border-dashed border-border bg-page p-3.5 space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                               {draftItem.photos.map((p, pIdx) => (
                                 <div
                                   key={pIdx}
@@ -1376,13 +1370,13 @@ function SWOFormBody({
                             )}
                           </div>
                         ) : (
-                          <label className="flex items-center justify-center gap-3 rounded-control border border-dashed border-border bg-page px-4 py-3.5 cursor-pointer hover:bg-subtle transition-colors">
+                          <label className="flex items-center justify-center gap-3 rounded-control border border-dashed border-border bg-page px-4 py-4 cursor-pointer hover:bg-subtle transition-colors">
                             <Upload className="w-4 h-4 text-ink-muted shrink-0" />
                             <div className="text-left">
                               <div className="type-body-secondary font-medium text-ink">
                                 Click to upload item condition photo
                               </div>
-                              <div className="type-caption text-ink-muted">
+                              <div className="type-caption text-ink-muted mt-0.5">
                                 JPG, PNG, WebP up to 10 MB · Up to {SWO_MAX_PHOTOS_PER_ITEM} photos per item
                               </div>
                             </div>
@@ -1410,7 +1404,7 @@ function SWOFormBody({
                 })}
               </div>
 
-              {/* Add Another Item Button (Matching PR Redesign "+ Add item") */}
+              {/* Add Another Item Button (Matching Page 2 "+ Add item") */}
               <div className="pt-1">
                 <button
                   type="button"
@@ -1424,40 +1418,42 @@ function SWOFormBody({
               </div>
             </div>
 
-            {/* Card 3: General remarks (Full width of left column) */}
-            <div className="rounded-card border border-border bg-surface p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="type-subsection text-ink">
-                  General remarks{" "}
-                  <span className="type-caption font-normal text-ink-muted">(Optional)</span>
-                </h2>
-                <span className="type-caption text-ink-muted tabular-nums">
-                  {generalRemarks.length}/{SWO_GENERAL_REMARKS_MAX}
-                </span>
+            {/* Modal-only General remarks (In Page mode, sits cleanly in right column matching PO Notes card) */}
+            {variant === "modal" && (
+              <div className="rounded-card border border-border bg-surface p-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="type-subsection text-ink">
+                    General remarks{" "}
+                    <span className="type-caption font-normal text-ink-muted">(Optional)</span>
+                  </h2>
+                  <span className="type-caption text-ink-muted tabular-nums">
+                    {generalRemarks.length}/{SWO_GENERAL_REMARKS_MAX}
+                  </span>
+                </div>
+                <Textarea
+                  rows={3}
+                  maxLength={SWO_GENERAL_REMARKS_MAX}
+                  placeholder="Enter additional remarks (optional)..."
+                  value={generalRemarks}
+                  onChange={(e) => setGeneralRemarks(e.target.value)}
+                  className="w-full rounded-control border border-border bg-surface px-3.5 py-2.5 type-body-secondary text-ink shadow-none focus:ring-1 focus:ring-ring resize-none"
+                />
+                {errors.generalRemarks && (
+                  <p className="type-caption text-destructive font-medium">
+                    {errors.generalRemarks}
+                  </p>
+                )}
               </div>
-              <Textarea
-                rows={3}
-                maxLength={SWO_GENERAL_REMARKS_MAX}
-                placeholder="Enter additional remarks (optional)..."
-                value={generalRemarks}
-                onChange={(e) => setGeneralRemarks(e.target.value)}
-                className="w-full rounded-control border border-border bg-surface px-3 py-2.5 type-body-secondary text-ink shadow-none focus:ring-1 focus:ring-ring resize-none"
-              />
-              {errors.generalRemarks && (
-                <p className="type-caption text-destructive font-medium">
-                  {errors.generalRemarks}
-                </p>
-              )}
-            </div>
+            )}
           </div>
 
-          {/* Right Column: Write-off Summary Card (Page Mode) */}
+          {/* Right Column: Write-off Summary + General Remarks (Matching Figma Page 2 New Purchase Order right rail) */}
           {variant === "page" && (
-            <div className="space-y-5">
-              <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+            <div className="space-y-6">
+              <div className="rounded-card border border-border bg-surface p-6 space-y-4">
                 <h2 className="type-subsection text-ink">Write-off summary</h2>
 
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3 type-body-secondary">
                     <span className="text-ink-muted">Write-Off No.</span>
                     <span className="font-medium text-ink tabular-nums">
@@ -1510,12 +1506,38 @@ function SWOFormBody({
                   </div>
                 </div>
 
-                <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
+                <div className="border-t border-divider pt-3.5 flex items-center justify-between gap-3">
                   <span className="type-subsection text-ink">Total items to write off</span>
                   <span className="type-card-title text-primary tabular-nums text-right">
                     {summaryTotalLabel}
                   </span>
                 </div>
+              </div>
+
+              {/* General Remarks Card in Right Rail (Matching PO "Notes to supplier" card) */}
+              <div className="rounded-card border border-border bg-surface p-6 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <h2 className="type-subsection text-ink">
+                    General remarks{" "}
+                    <span className="type-caption font-normal text-ink-muted">(Optional)</span>
+                  </h2>
+                  <span className="type-caption text-ink-muted tabular-nums">
+                    {generalRemarks.length}/{SWO_GENERAL_REMARKS_MAX}
+                  </span>
+                </div>
+                <Textarea
+                  rows={4}
+                  maxLength={SWO_GENERAL_REMARKS_MAX}
+                  placeholder="Enter additional remarks (optional)..."
+                  value={generalRemarks}
+                  onChange={(e) => setGeneralRemarks(e.target.value)}
+                  className="w-full rounded-control border border-border bg-surface px-3.5 py-2.5 type-body-secondary text-ink shadow-none focus:ring-1 focus:ring-ring resize-none"
+                />
+                {errors.generalRemarks && (
+                  <p className="type-caption text-destructive font-medium">
+                    {errors.generalRemarks}
+                  </p>
+                )}
               </div>
             </div>
           )}
