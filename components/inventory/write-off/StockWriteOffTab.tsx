@@ -19,9 +19,9 @@ import { useIsAdmin, useIsImsManager } from "@/context/StaffContext";
 import { inventory } from "@/lib/inventory/client";
 import { SWO_REASONS } from "@/lib/inventory/write-off-validation";
 import { SWOTable } from "./SWOTable";
-import { SWODetailsModal } from "./SWODetailsModal";
+import { SWODetailsView } from "./SWODetailsModal";
 import { SWOActionModal, type SWOActionType } from "./SWOActionModal";
-import { CreateSWOModal } from "./CreateSWOModal";
+import { CreateSWOForm } from "./CreateSWOModal";
 import type { InventoryItem } from "@/components/inventory/types";
 import type { LotItem } from "@/components/lots/types";
 import type { StockWriteOffDto, SwoStatus } from "./types";
@@ -157,6 +157,56 @@ export function StockWriteOffTab({
     }
     refreshData();
   };
+
+  // Full-page Create Stock Write-Off view (replaces modal, matching CreatePRForm)
+  if (openCreateModal) {
+    return (
+      <CreateSWOForm
+        embedded
+        onClose={() => setOpenCreateModal(false)}
+        onSuccess={(msg) => {
+          setOpenCreateModal(false);
+          toast.success(msg || "Stock Write-Off request submitted.");
+          refreshData();
+        }}
+        initialWriteOffs={initialWriteOffs}
+        initialInventories={initialInventories}
+        initialLots={initialLots}
+        initialCategories={initialCategories}
+      />
+    );
+  }
+
+  // Full-page Stock Write-Off Details / Admin Review view (replaces modal, matching PRDetailsView)
+  if (selectedSWO) {
+    const latestSwo =
+      initialWriteOffs.find((w) => w.writeOffId === selectedSWO.writeOffId) || selectedSWO;
+    return (
+      <>
+        <SWODetailsView
+          embedded
+          swo={latestSwo}
+          isAdmin={isAdmin}
+          isImsManager={isImsManager}
+          isRequestsTab={activeTab === "Requests"}
+          onClose={() => setSelectedSWO(null)}
+          onApprove={(swo) => setActionModal({ swo, type: "approve" })}
+          onReject={(swo) => setActionModal({ swo, type: "reject" })}
+          onCancel={(swo) => setActionModal({ swo, type: "cancel" })}
+          onRemoveFromInventory={(swo) => setActionModal({ swo, type: "remove" })}
+        />
+
+        {actionModal && (
+          <SWOActionModal
+            actionType={actionModal.type}
+            writeOff={actionModal.swo}
+            onClose={() => setActionModal(null)}
+            onConfirm={handleConfirmAction}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="space-y-5 animate-page-in">
@@ -345,31 +395,6 @@ export function StockWriteOffTab({
         />
       </div>
 
-      {/* Details / Review Modal */}
-      <SWODetailsModal
-        swo={selectedSWO}
-        isAdmin={isAdmin}
-        isImsManager={isImsManager}
-        isRequestsTab={activeTab === "Requests"}
-        onClose={() => setSelectedSWO(null)}
-        onApprove={(swo) => {
-          setSelectedSWO(null);
-          setActionModal({ swo, type: "approve" });
-        }}
-        onReject={(swo) => {
-          setSelectedSWO(null);
-          setActionModal({ swo, type: "reject" });
-        }}
-        onCancel={(swo) => {
-          setSelectedSWO(null);
-          setActionModal({ swo, type: "cancel" });
-        }}
-        onRemoveFromInventory={(swo) => {
-          setSelectedSWO(null);
-          setActionModal({ swo, type: "remove" });
-        }}
-      />
-
       {/* Confirmation Action Modal (Approve / Reject / Cancel / Remove Items in Inventory) */}
       {actionModal && (
         <SWOActionModal
@@ -377,23 +402,6 @@ export function StockWriteOffTab({
           writeOff={actionModal.swo}
           onClose={() => setActionModal(null)}
           onConfirm={handleConfirmAction}
-        />
-      )}
-
-      {/* Create Stock Write-Off Modal */}
-      {openCreateModal && (
-        <CreateSWOModal
-          open={openCreateModal}
-          onClose={() => setOpenCreateModal(false)}
-          onSuccess={(msg) => {
-            setOpenCreateModal(false);
-            toast.success(msg || "Stock Write-Off request submitted.");
-            refreshData();
-          }}
-          initialWriteOffs={initialWriteOffs}
-          initialInventories={initialInventories}
-          initialLots={initialLots}
-          initialCategories={initialCategories}
         />
       )}
     </div>

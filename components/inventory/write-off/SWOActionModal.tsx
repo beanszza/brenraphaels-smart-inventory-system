@@ -90,7 +90,7 @@ export function SWOActionModal({
   if (!mounted) return null;
 
   return createPortal(
-    <div className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-scrim animate-in fade-in duration-150">
+    <div className="font-sans fixed inset-0 z-[100050] flex items-center justify-center p-4 bg-scrim animate-in fade-in duration-150">
       <div
         role="dialog"
         aria-modal="true"

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { AlertCircle, Download, Image as ImageIcon } from "lucide-react";
+import { createPortal } from "react-dom";
+import { AlertCircle, ChevronLeft, Download, Image as ImageIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
 import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
@@ -10,7 +11,7 @@ import { downloadStockWriteOffPdf } from "./downloadStockWriteOffPdf";
 import { inventory } from "@/lib/inventory/client";
 import type { StockWriteOffDto } from "./types";
 
-interface SWODetailsModalProps {
+export interface SWODetailsProps {
   swo: StockWriteOffDto | null;
   isAdmin: boolean;
   isImsManager: boolean;
@@ -22,7 +23,12 @@ interface SWODetailsModalProps {
   onRemoveFromInventory?: (swo: StockWriteOffDto) => void;
 }
 
-export function SWODetailsModal({
+interface SWODetailsBodyProps extends SWODetailsProps {
+  variant: "page" | "modal";
+  embedded?: boolean;
+}
+
+function SWODetailsBody({
   swo,
   isAdmin,
   isImsManager,
@@ -32,7 +38,9 @@ export function SWODetailsModal({
   onReject,
   onCancel,
   onRemoveFromInventory,
-}: SWODetailsModalProps) {
+  variant,
+  embedded = false,
+}: SWODetailsBodyProps) {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<Record<number, string>>({});
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -61,6 +69,15 @@ export function SWODetailsModal({
       active = false;
     };
   }, [swo]);
+
+  useEffect(() => {
+    if (!previewUrl) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPreviewUrl(null);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [previewUrl]);
 
   if (!swo) return null;
 
@@ -102,44 +119,201 @@ export function SWODetailsModal({
     }
   };
 
-  return (
-    <ModalWrapper
-      open={!!swo}
-      title={
-        canAdminReview
-          ? `Review Stock Write-Off — ${swo.swoNumber}`
-          : `Stock Write-Off Details — ${swo.swoNumber}`
+  const totalLotsCount = swo.items.reduce((acc, it) => acc + it.lines.length, 0);
+  const totalPhotosCount = swo.items.reduce((acc, it) => acc + (it.photos?.length || 0), 0);
+
+  const distinctReasons = Array.from(
+    new Set(
+      swo.items.flatMap((it) =>
+        it.lines.map((l) =>
+          l.reason === "Other" && l.reasonOther ? `Other (${l.reasonOther})` : l.reason
+        )
+      )
+    )
+  );
+
+  const distinctDispositions = Array.from(
+    new Set(
+      swo.items.flatMap((it) =>
+        it.lines.map((l) =>
+          l.disposition === "Other" && l.dispositionOther
+            ? `Other (${l.dispositionOther})`
+            : l.disposition
+        )
+      )
+    )
+  );
+
+  const summaryTotalLabel = (() => {
+    const itemCount = swo.items.length;
+    const itemWord = itemCount === 1 ? "item" : "items";
+    if (itemCount === 1 && swo.items[0].lines[0]) {
+      const qty = swo.items[0].lines.reduce((s, l) => s + Number(l.quantity || 0), 0);
+      return `${itemCount} ${itemWord} (${qty.toLocaleString()} ${swo.items[0].uomName})`;
+    }
+    if (itemCount > 1) {
+      const sameUom = swo.items.every((it) => it.uomName === swo.items[0].uomName);
+      if (sameUom) {
+        const sum = swo.items.reduce(
+          (s, it) => s + it.lines.reduce((ls, l) => ls + Number(l.quantity || 0), 0),
+          0
+        );
+        return `${itemCount} ${itemWord} (${sum.toLocaleString()} ${swo.items[0].uomName})`;
       }
-      onClose={onClose}
-      size="max-w-5xl"
-      confirmOnClose={false}
-    >
-      <div className="space-y-6">
-        {/* Top Header Row with Status Badge */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
-          <div className="flex items-center gap-3">
-            <SWOStatusBadge status={swo.status} />
-            {(isRejected || isCancelled) && (
-              <span className="type-caption font-semibold text-destructive">
-                SWO No. {swo.swoNumber} is permanently retired and cannot be reused.
-              </span>
-            )}
+    }
+    return `${itemCount} ${itemWord}`;
+  })();
+
+  const containerClasses =
+    variant === "page"
+      ? embedded
+        ? "space-y-5 pb-10 animate-page-in"
+        : "page-container px-4 sm:px-8 w-full space-y-5 pb-10 animate-page-in"
+      : "space-y-5";
+
+  return (
+    <>
+      <div className={containerClasses}>
+        {/* Top Back Link, SWO Number + Status Badge & Top-Right Actions (Page Mode) */}
+        {variant === "page" && (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center gap-1 type-breadcrumb text-ink-muted hover:text-ink transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Stock write-offs</span>
+            </button>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="type-page-title text-ink tabular-nums">{swo.swoNumber}</h1>
+                  <SWOStatusBadge status={swo.status} />
+                </div>
+                <p className="type-body text-ink-muted">
+                  {canAdminReview ? "Review stock write-off request" : "Stock write-off details"} &middot;{" "}
+                  {swo.items.length} {swo.items.length === 1 ? "item" : "items"} &middot;{" "}
+                  {totalLotsCount} {totalLotsCount === 1 ? "lot" : "lots"}
+                  {isApproved && isImsManager ? " · Ready for inventory removal" : ""}
+                </p>
+              </div>
+
+              {/* Top-Right Action Buttons (Close, Remove Items in Inventory, PDF Export, Cancel, Reject, Approve) */}
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
+                >
+                  Close
+                </Button>
+
+                {/* Download PDF Report — STRICTLY when Removed */}
+                {isRemoved && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleDownloadPdf}
+                    disabled={downloadingPdf}
+                    className="rounded-control border border-border bg-surface px-4 h-9 type-label-button-sm text-ink hover:bg-subtle shadow-none inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-primary" />
+                    <span>{downloadingPdf ? "Generating PDF..." : "Download SWO Report (PDF)"}</span>
+                  </Button>
+                )}
+
+                {/* IMS Manager: Cancel Request while Pending Approval */}
+                {isImsManager && isPending && onCancel && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onCancel(swo)}
+                    className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-destructive hover:bg-notice-danger-bg shadow-none cursor-pointer"
+                  >
+                    Cancel Request
+                  </Button>
+                )}
+
+                {/* IMS Manager: Remove Items in Inventory when Approved (with confirmation modal) */}
+                {isImsManager && isApproved && onRemoveFromInventory && (
+                  <Button
+                    type="button"
+                    onClick={() => onRemoveFromInventory(swo)}
+                    className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer"
+                  >
+                    Remove Items in Inventory
+                  </Button>
+                )}
+
+                {/* Admin (Requests tab only): Reject & Approve when Pending Approval */}
+                {canAdminReview && (
+                  <>
+                    {onReject && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onReject(swo)}
+                        className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-destructive hover:bg-notice-danger-bg shadow-none cursor-pointer"
+                      >
+                        Reject
+                      </Button>
+                    )}
+                    {onApprove && (
+                      <Button
+                        type="button"
+                        onClick={() => onApprove(swo)}
+                        className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none cursor-pointer"
+                      >
+                        Approve
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground font-medium">
-            {swo.items.length} Item(s)
+        )}
+
+        {/* Modal-only compact header bar */}
+        {variant === "modal" && (
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-divider">
+            <div className="flex items-center gap-3">
+              <SWOStatusBadge status={swo.status} />
+              {(isRejected || isCancelled) && (
+                <span className="type-caption font-semibold text-destructive">
+                  SWO No. {swo.swoNumber} is permanently retired and cannot be reused.
+                </span>
+              )}
+            </div>
+            <div className="type-caption text-ink-muted font-medium">
+              {swo.items.length} Item(s)
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Permanently Retired Notice (Page Mode) */}
+        {variant === "page" && (isRejected || isCancelled) && (
+          <div className="p-3.5 rounded-inner border border-notice-danger-border bg-notice-danger-bg text-notice-danger-text type-caption font-medium flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>
+              SWO No. {swo.swoNumber} is permanently retired and cannot be reused.
+            </span>
+          </div>
+        )}
 
         {/* Rejection / Cancellation / Approval Feedback Banner */}
         {(swo.rejectionReason || swo.cancelReason || swo.approvalNotes) && (
           <div
-            className={`p-4 rounded-control border space-y-1.5 ${
+            className={`p-4 rounded-inner border space-y-1.5 ${
               isRejected || isCancelled
-                ? "border-status-red-border bg-status-red-bg text-status-red"
-                : "border-border bg-subtle text-ink"
+                ? "border-notice-danger-border bg-notice-danger-bg text-notice-danger-text"
+                : "border-border bg-page text-ink"
             }`}
           >
-            <div className="flex items-center gap-2 type-caption font-semibold">
+            <div className="flex items-center gap-2 type-label-field font-semibold">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>
                 {isRejected
@@ -149,348 +323,553 @@ export function SWODetailsModal({
                   : `Approval Notes from ${swo.approvedByName || swo.approvedBy || "Admin"} (${fmtDateTime(swo.approvedAt)}):`}
               </span>
             </div>
-            <p className="type-caption pl-6 whitespace-pre-wrap leading-relaxed opacity-95">
+            <p className="type-body-secondary pl-6 whitespace-pre-wrap leading-relaxed opacity-95">
               {swo.rejectionReason || swo.cancelReason || swo.approvalNotes}
             </p>
           </div>
         )}
 
-        {/* Section 1: Stock Write-Off Information (Clean Grid Card matching CreateSWOModal) */}
-        <div className="space-y-2.5">
-          <h3 className="type-card-title text-ink">
-            Stock Write-Off Information
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-4 rounded-inner bg-subtle border border-border">
-            <div>
-              <label className="mb-1.5 block type-label text-ink">
-                Write-Off Number
-              </label>
-              <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-surface type-body font-semibold text-ink select-all">
-                {swo.swoNumber}
-              </div>
-            </div>
+        {/* Main 2-Column Layout */}
+        <div
+          className={
+            variant === "page"
+              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start"
+              : "space-y-5"
+          }
+        >
+          {/* Left Column: Write-off details, Write-off items, General remarks */}
+          <div className="min-w-0 space-y-5">
+            {/* Card 1: Write-off details */}
+            <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+              <h2 className="type-subsection text-ink">Write-off details</h2>
 
-            <div>
-              <label className="mb-1.5 block type-label text-ink">
-                Request Date
-              </label>
-              <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-surface type-body text-ink-muted">
-                {fmtDate(swo.requestedAt)}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block type-label text-ink">
-                Requested By
-              </label>
-              <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-surface type-body text-ink-muted">
-                {swo.requestedByName || swo.requestedBy}
-              </div>
-            </div>
-
-            {(swo.approvedByName || swo.approvedBy) && (
-              <div>
-                <label className="mb-1.5 block type-label text-ink">
-                  Approved By
-                </label>
-                <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-surface type-body text-ink-muted">
-                  {swo.approvedByName || swo.approvedBy} ({fmtDate(swo.approvedAt)})
-                </div>
-              </div>
-            )}
-
-            {(swo.removedByName || swo.removedBy) && (
-              <div className="sm:col-span-2">
-                <label className="mb-1.5 block type-label text-ink">
-                  Removed From Inventory By
-                </label>
-                <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-surface type-body text-ink-muted">
-                  {swo.removedByName || swo.removedBy} ({fmtDateTime(swo.removedAt)})
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Section 2: Write-Off Items (Clean Item Cards matching CreateSWOModal layout) */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="type-card-title text-ink">
-              Write-Off Items
-            </h3>
-          </div>
-
-          {swo.items.map((item, idx) => {
-            const isFinishedGood =
-              (item.itemType || "").toLowerCase().includes("finished") ||
-              Boolean(item.variantName) ||
-              Boolean(item.productId);
-            const line = item.lines[0];
-
-            return (
-              <div
-                key={item.writeOffItemId}
-                className="rounded-card border border-border bg-surface p-5 space-y-4"
-              >
-                {/* Item Card Header */}
-                <div className="flex items-center justify-between pb-3 border-b border-divider">
-                  <h4 className="type-subsection font-semibold text-ink">
-                    Item {idx + 1}
-                  </h4>
-                </div>
-
-                {/* Sub-section 1: Item Details */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  <div>
-                    <label className="mb-1.5 block type-label text-ink">
-                      Item Type
-                    </label>
-                    <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body font-medium text-ink">
-                      {item.itemType}
-                    </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                <div>
+                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                    Write-Off Number
+                  </label>
+                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary font-semibold text-ink select-all tabular-nums">
+                    {swo.swoNumber}
                   </div>
-
-                  <div className={isFinishedGood ? "sm:col-span-2" : ""}>
-                    <label className="mb-1.5 block type-label text-ink">
-                      Item Name
-                    </label>
-                    <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body font-medium text-ink">
-                      {item.itemName}
-                      {item.variantName ? ` — ${item.variantName}` : ""}
-                    </div>
-                  </div>
-
-                  {!isFinishedGood && (
-                    <div>
-                      <label className="mb-1.5 block type-label text-ink">
-                        Unit of Measurement
-                      </label>
-                      <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body text-ink">
-                        {item.uomName || "—"}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                {/* Sub-section 2: Batch / Lot & Write-Off Details (1 Lot) */}
-                {line && (
-                  <div className="space-y-3.5 pt-1">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                      <div>
-                        <label className="mb-1.5 block type-label text-ink">
-                          Batch / Lot Number
-                        </label>
-                        <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body font-semibold text-ink">
-                          {line.lotCode}
-                        </div>
-                      </div>
+                <div>
+                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                    Request Date
+                  </label>
+                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary">
+                    {fmtDate(swo.requestedAt)}
+                  </div>
+                </div>
 
-                      {item.hasExpiry && (
-                        <div>
-                          <label className="mb-1.5 block type-label text-ink">
-                            Expiration Date
-                          </label>
-                          <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body text-ink">
-                            {fmtDate(line.expiryDate)}
-                          </div>
-                        </div>
-                      )}
+                <div>
+                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                    Requested By
+                  </label>
+                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
+                    {swo.requestedByName || swo.requestedBy}
+                  </div>
+                </div>
 
-                      <div>
-                        <label className="mb-1.5 block type-label text-ink">
-                          Available Quantity
-                        </label>
-                        <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body text-ink tabular-nums">
-                          {line.availableBefore} {item.uomName}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="mb-1.5 block type-label text-ink">
-                          Affected Quantity
-                        </label>
-                        <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body font-semibold text-ink tabular-nums">
-                          {line.quantity} {item.uomName}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      <div>
-                        <label className="mb-1.5 block type-label text-ink">
-                          Write-Off Reason
-                        </label>
-                        <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body text-ink">
-                          {line.reason === "Other" && line.reasonOther
-                            ? `Other (${line.reasonOther})`
-                            : line.reason}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="mb-1.5 block type-label text-ink">
-                          Disposition Method
-                        </label>
-                        <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle/40 type-body text-ink">
-                          {line.disposition === "Other" && line.dispositionOther
-                            ? `Other (${line.dispositionOther})`
-                            : line.disposition}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block type-label text-ink">
-                        Item Remarks
-                      </label>
-                      <div className="min-h-20 p-3 rounded-control border border-border bg-subtle/40 type-body text-ink whitespace-pre-wrap leading-relaxed">
-                        {line.remarks || "—"}
-                      </div>
+                {(swo.approvedByName || swo.approvedBy) && (
+                  <div className={swo.removedByName || swo.removedBy ? "" : "sm:col-span-3 lg:col-span-1"}>
+                    <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                      Approved By
+                    </label>
+                    <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
+                      {swo.approvedByName || swo.approvedBy} ({fmtDate(swo.approvedAt)})
                     </div>
                   </div>
                 )}
 
-                {/* Sub-section 3: Item Supporting Evidence (Photos) */}
-                <div className="space-y-2 pt-1 border-t border-divider">
-                  <label className="block type-label text-ink">
-                    Item Supporting Evidence
-                  </label>
-                  {item.photos && item.photos.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {item.photos.map((p) => {
-                        const url = photoUrls[p.photoId] || p.fileId;
+                {(swo.removedByName || swo.removedBy) && (
+                  <div className="sm:col-span-2">
+                    <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                      Removed From Inventory By
+                    </label>
+                    <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
+                      {swo.removedByName || swo.removedBy} ({fmtDateTime(swo.removedAt)})
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Card 2: Write-off items */}
+            <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <h2 className="type-subsection text-ink">Write-off items</h2>
+                  <p className="mt-0.5 type-caption text-ink-muted">
+                    Inventory items, batches / lots, reasons, and evidence recorded for write-off.
+                  </p>
+                </div>
+                <span className="type-caption font-medium text-ink-muted tabular-nums whitespace-nowrap">
+                  {swo.items.length} {swo.items.length === 1 ? "item" : "items"} listed · {totalLotsCount} {totalLotsCount === 1 ? "lot" : "lots"}
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {swo.items.map((item, idx) => {
+                  const isFinishedGood =
+                    (item.itemType || "").toLowerCase().includes("finished") ||
+                    Boolean(item.variantName) ||
+                    Boolean(item.productId);
+                  const line = item.lines[0];
+
+                  return (
+                    <div
+                      key={item.writeOffItemId}
+                      className="rounded-inner border border-border bg-surface p-4 space-y-3.5"
+                    >
+                      {/* Item Sub-Card Header */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-divider">
+                        <div className="flex flex-wrap items-center gap-2 min-w-0">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-pill bg-status-purple-bg text-primary type-badge-compact font-semibold">
+                            Item {idx + 1}
+                          </span>
+                          <span className="type-caption font-medium text-ink-secondary truncate">
+                            {item.itemName}
+                            {item.variantName ? ` — ${item.variantName}` : ""}
+                            {line ? ` · ${line.lotCode}` : ""}
+                          </span>
+                        </div>
+                        {line && (
+                          <span className="type-caption font-semibold text-ink tabular-nums shrink-0">
+                            {line.quantity.toLocaleString()} {item.uomName} to write off
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Row 1: Item Identity */}
+                      <div
+                        className={`grid grid-cols-1 ${
+                          isFinishedGood ? "sm:grid-cols-2" : "sm:grid-cols-3"
+                        } gap-3`}
+                      >
+                        <div>
+                          <label className="mb-1.5 block type-label-field text-ink">
+                            Item Type
+                          </label>
+                          <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary font-medium text-ink truncate">
+                            {item.itemType}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="mb-1.5 block type-label-field text-ink">
+                            Item Name
+                          </label>
+                          <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary font-medium text-ink truncate">
+                            {item.itemName}
+                            {item.variantName ? ` — ${item.variantName}` : ""}
+                          </div>
+                        </div>
+
+                        {!isFinishedGood && (
+                          <div>
+                            <label className="mb-1.5 block type-label-field text-ink">
+                              Unit of Measurement
+                            </label>
+                            <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
+                              {item.uomName || "—"}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Row 2 & 3: Lot Details */}
+                      {item.lines.map((lotLine) => {
+                        const isLotExpired =
+                          lotLine.expiryDate &&
+                          new Date(lotLine.expiryDate).getTime() < new Date(swo.requestedAt).getTime();
+
                         return (
-                          <div
-                            key={p.photoId}
-                            onClick={() => url && setPreviewUrl(url)}
-                            className="group relative rounded-control border border-border overflow-hidden bg-subtle cursor-pointer hover:border-ink transition-all aspect-video flex flex-col items-center justify-center p-2"
-                          >
-                            {url ? (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img
-                                src={url}
-                                alt={p.fileName || "Evidence photo"}
-                                className="h-full w-full object-contain rounded-control"
-                              />
-                            ) : (
-                              <div className="flex items-center gap-2 type-caption text-ink-muted">
-                                <ImageIcon className="w-4 h-4" />
-                                <span>{p.fileName}</span>
+                          <div key={lotLine.lineId} className="space-y-3">
+                            <div
+                              className={`grid grid-cols-1 sm:grid-cols-2 ${
+                                item.hasExpiry
+                                  ? "lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]"
+                                  : "lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,1fr)]"
+                              } gap-3`}
+                            >
+                              <div>
+                                <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                                  Batch / Lot Number
+                                </label>
+                                <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary font-semibold text-ink tabular-nums truncate">
+                                  {lotLine.lotCode}
+                                </div>
                               </div>
-                            )}
-                            <span className="absolute bottom-1 right-1 type-caption font-semibold bg-surface/80 px-1.5 py-0.5 rounded-pill text-ink backdrop-blur-xs">
-                              Click to view
-                            </span>
+
+                              {item.hasExpiry && (
+                                <div>
+                                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                                    Expiration Date
+                                  </label>
+                                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary">
+                                    <span
+                                      className={
+                                        isLotExpired
+                                          ? "font-semibold text-destructive"
+                                          : "text-ink-secondary"
+                                      }
+                                    >
+                                      {fmtDate(lotLine.expiryDate)}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+
+                              <div>
+                                <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                                  Available Quantity
+                                </label>
+                                <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary tabular-nums truncate">
+                                  {lotLine.availableBefore.toLocaleString()} {item.uomName}
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                                  Affected Quantity
+                                </label>
+                                <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary font-semibold text-ink tabular-nums truncate">
+                                  {lotLine.quantity.toLocaleString()} {item.uomName}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="mb-1.5 block type-label-field text-ink">
+                                  Write-Off Reason
+                                </label>
+                                <div className="flex items-center min-h-9 px-3 py-1.5 rounded-control border border-border bg-page type-body-secondary text-ink">
+                                  {lotLine.reason === "Other" && lotLine.reasonOther
+                                    ? `Other (${lotLine.reasonOther})`
+                                    : lotLine.reason}
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="mb-1.5 block type-label-field text-ink">
+                                  Disposition Method
+                                </label>
+                                <div className="flex items-center min-h-9 px-3 py-1.5 rounded-control border border-border bg-page type-body-secondary text-ink">
+                                  {lotLine.disposition === "Other" && lotLine.dispositionOther
+                                    ? `Other (${lotLine.dispositionOther})`
+                                    : lotLine.disposition}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="mb-1.5 block type-label-field text-ink">
+                                Item Remarks
+                              </label>
+                              <div className="min-h-14 px-3 py-2 rounded-control border border-border bg-page type-body-secondary text-ink whitespace-pre-wrap leading-relaxed">
+                                {lotLine.remarks || "—"}
+                              </div>
+                            </div>
                           </div>
                         );
                       })}
+
+                      {/* Supporting Evidence Photos */}
+                      <div className="space-y-2 pt-1">
+                        <label className="block type-label-field text-ink">
+                          Item Supporting Evidence
+                        </label>
+                        {item.photos && item.photos.length > 0 ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                            {item.photos.map((p) => {
+                              const url = photoUrls[p.photoId] || (p.fileId.startsWith("data:image/") ? p.fileId : "");
+                              return (
+                                <button
+                                  key={p.photoId}
+                                  type="button"
+                                  onClick={() => url && setPreviewUrl(url)}
+                                  className="group flex items-center gap-2.5 p-2 rounded-control border border-border bg-page hover:border-primary transition-colors text-left cursor-pointer"
+                                >
+                                  <div className="size-11 rounded-sm border border-border bg-surface overflow-hidden flex items-center justify-center shrink-0">
+                                    {url ? (
+                                      /* eslint-disable-next-line @next/next/no-img-element */
+                                      <img
+                                        src={url}
+                                        alt={p.fileName || "Evidence photo"}
+                                        className="h-full w-full object-cover"
+                                      />
+                                    ) : (
+                                      <ImageIcon className="w-4 h-4 text-ink-muted" />
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="type-caption font-medium text-ink truncate">
+                                      {p.fileName || "Evidence photo"}
+                                    </div>
+                                    <div className="type-caption text-primary group-hover:underline">
+                                      Click to preview
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="type-caption text-ink-muted">
+                            No supporting evidence photos attached for this item.
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <p className="type-caption text-ink-muted italic">
-                      No supporting evidence photos attached for this item.
-                    </p>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Card 3: General remarks */}
+            <div className="rounded-card border border-border bg-surface p-5 space-y-3">
+              <h2 className="type-subsection text-ink">General remarks</h2>
+              <div
+                className={`w-full rounded-control border border-border bg-page px-3 py-2.5 type-body-secondary leading-relaxed whitespace-pre-wrap ${
+                  swo.generalRemarks && swo.generalRemarks.trim()
+                    ? "text-ink"
+                    : "text-ink-muted"
+                }`}
+              >
+                {swo.generalRemarks && swo.generalRemarks.trim()
+                  ? swo.generalRemarks
+                  : "No general remarks provided."}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Write-off Summary Card (Page Mode) */}
+          {variant === "page" && (
+            <div className="space-y-5">
+              <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+                <h2 className="type-subsection text-ink">Write-off summary</h2>
+
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted">Write-Off No.</span>
+                    <span className="font-medium text-ink tabular-nums">{swo.swoNumber}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted">Status</span>
+                    <span className="font-medium text-ink">{swo.status}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted">Request Date</span>
+                    <span className="font-medium text-ink">{fmtDate(swo.requestedAt)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted">Requested By</span>
+                    <span className="font-medium text-ink truncate max-w-[180px]">
+                      {swo.requestedByName || swo.requestedBy}
+                    </span>
+                  </div>
+                  {(swo.approvedByName || swo.approvedBy) && (
+                    <div className="flex items-center justify-between gap-3 type-body-secondary">
+                      <span className="text-ink-muted">Approved By</span>
+                      <span className="font-medium text-ink truncate max-w-[180px]">
+                        {swo.approvedByName || swo.approvedBy}
+                      </span>
+                    </div>
                   )}
+                  {(swo.removedByName || swo.removedBy) && (
+                    <div className="flex items-center justify-between gap-3 type-body-secondary">
+                      <span className="text-ink-muted">Removed By</span>
+                      <span className="font-medium text-ink truncate max-w-[180px]">
+                        {swo.removedByName || swo.removedBy}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted">Items Listed</span>
+                    <span className="font-medium text-ink tabular-nums">
+                      {swo.items.length} {swo.items.length === 1 ? "item" : "items"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted">Batches / Lots</span>
+                    <span className="font-medium text-ink tabular-nums">
+                      {totalLotsCount} {totalLotsCount === 1 ? "lot" : "lots"}
+                    </span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted shrink-0">Primary Reason</span>
+                    <span className="font-medium text-ink text-right break-words">
+                      {distinctReasons.join(", ") || "—"}
+                    </span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted shrink-0">Disposition</span>
+                    <span className="font-medium text-ink text-right break-words">
+                      {distinctDispositions.join(", ") || "—"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 type-body-secondary">
+                    <span className="text-ink-muted">Evidence Photos</span>
+                    <span className="font-medium text-ink tabular-nums">
+                      {totalPhotosCount} attached
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
+                  <span className="type-subsection text-ink">Total items to write off</span>
+                  <span className="type-card-title text-primary tabular-nums text-right">
+                    {summaryTotalLabel}
+                  </span>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          )}
         </div>
 
-        {/* Bottom Actions Row */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-divider">
-          <div className="type-caption text-ink-muted">
-            Last updated: {fmtDateTime(swo.updatedAt)}
+        {/* Bottom Metadata Bar (Page Mode keeps only Last Updated; Modal Mode keeps footer buttons) */}
+        {variant === "page" ? (
+          <div className="border-t border-divider pt-4">
+            <div className="type-caption text-ink-muted">
+              Last updated: {fmtDateTime(swo.updatedAt)}
+            </div>
           </div>
-
-          <div className="flex items-center gap-2.5">
-            <ModalCloseButton
-              type="button"
-              variant="outline"
-              fallbackOnClose={onClose}
-              className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors cursor-pointer"
-            >
-              Close
-            </ModalCloseButton>
-
-            {/* Download PDF Report — STRICTLY in Removed tab only */}
-            {isRemoved && (
-              <Button
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-divider">
+            <div className="type-caption text-ink-muted">
+              Last updated: {fmtDateTime(swo.updatedAt)}
+            </div>
+            <div className="flex items-center gap-2.5">
+              <ModalCloseButton
                 type="button"
                 variant="outline"
-                onClick={handleDownloadPdf}
-                disabled={downloadingPdf}
-                className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors inline-flex items-center gap-2 cursor-pointer"
+                fallbackOnClose={onClose}
+                className="rounded-control border border-border bg-surface px-5 h-9 type-label-button text-ink hover:bg-subtle shadow-none cursor-pointer"
               >
-                <Download className="w-4 h-4" />
-                {downloadingPdf ? "Generating PDF..." : "Download SWO Report (PDF)"}
-              </Button>
-            )}
-
-            {/* IMS Manager: Cancel while Pending Approval */}
-            {isImsManager && isPending && onCancel && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onCancel(swo)}
-                className="rounded-control border border-status-red-border bg-surface px-5 py-2.5 type-label-button text-status-red hover:bg-status-red-bg transition-colors cursor-pointer"
-              >
-                Cancel Request
-              </Button>
-            )}
-
-            {/* IMS Manager: Remove Items from Inventory when Approved (NO ICON as requested) */}
-            {isImsManager && isApproved && onRemoveFromInventory && (
-              <Button
-                type="button"
-                onClick={() => onRemoveFromInventory(swo)}
-                className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs cursor-pointer"
-              >
-                Remove Items in Inventory
-              </Button>
-            )}
-
-            {/* Admin (Requests tab only): Reject & Approve when Pending Approval */}
-            {canAdminReview && (
-              <>
-                {onReject && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onReject(swo)}
-                    className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors cursor-pointer"
-                  >
-                    Reject
-                  </Button>
-                )}
-                {onApprove && (
-                  <Button
-                    type="button"
-                    onClick={() => onApprove(swo)}
-                    className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs cursor-pointer"
-                  >
-                    Approve
-                  </Button>
-                )}
-              </>
-            )}
+                Close
+              </ModalCloseButton>
+              {isRemoved && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleDownloadPdf}
+                  disabled={downloadingPdf}
+                  className="rounded-control border border-border bg-surface px-5 h-9 type-label-button text-ink hover:bg-subtle inline-flex items-center gap-2 cursor-pointer"
+                >
+                  <Download className="w-4 h-4" />
+                  {downloadingPdf ? "Generating PDF..." : "Download SWO Report (PDF)"}
+                </Button>
+              )}
+              {isImsManager && isPending && onCancel && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onCancel(swo)}
+                  className="rounded-control border border-border bg-surface px-5 h-9 type-label-button text-destructive hover:bg-notice-danger-bg cursor-pointer"
+                >
+                  Cancel Request
+                </Button>
+              )}
+              {isImsManager && isApproved && onRemoveFromInventory && (
+                <Button
+                  type="button"
+                  onClick={() => onRemoveFromInventory(swo)}
+                  className="rounded-control bg-primary text-on-brand px-5 h-9 type-label-button hover:bg-primary-hover cursor-pointer"
+                >
+                  Remove Items in Inventory
+                </Button>
+              )}
+              {canAdminReview && (
+                <>
+                  {onReject && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onReject(swo)}
+                      className="rounded-control border border-border bg-surface px-5 h-9 type-label-button text-destructive hover:bg-notice-danger-bg cursor-pointer"
+                    >
+                      Reject
+                    </Button>
+                  )}
+                  {onApprove && (
+                    <Button
+                      type="button"
+                      onClick={() => onApprove(swo)}
+                      className="rounded-control bg-primary text-on-brand px-5 h-9 type-label-button hover:bg-primary-hover cursor-pointer"
+                    >
+                      Approve
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Lightbox for Photo Preview */}
-      {previewUrl && (
-        <div
-          onClick={() => setPreviewUrl(null)}
-          className="fixed inset-0 z-[350] bg-scrim flex items-center justify-center p-4 cursor-zoom-out"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewUrl}
-            alt="Evidence preview"
-            className="max-h-[85vh] max-w-[90vw] rounded-modal border border-border shadow-modal object-contain bg-surface"
-          />
-        </div>
-      )}
+      {/* Lightbox for Photo Preview (Portaled to document.body with Escape support) */}
+      {previewUrl &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Evidence photo preview"
+            onClick={() => setPreviewUrl(null)}
+            className="fixed inset-0 z-[100060] bg-scrim flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-150"
+          >
+            <button
+              type="button"
+              onClick={() => setPreviewUrl(null)}
+              aria-label="Close preview"
+              className="fixed top-4 right-4 p-2 rounded-pill bg-surface/90 text-ink border border-border hover:bg-surface transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewUrl}
+              alt="Evidence preview"
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[85vh] max-w-[90vw] rounded-modal border border-border shadow-modal object-contain bg-surface cursor-default"
+            />
+          </div>,
+          document.body
+        )}
+    </>
+  );
+}
+
+/**
+ * Full-page Stock Write-Off Details / Admin Review view matching Figma Stock Write-Off · Redesign.
+ */
+export function SWODetailsView(props: SWODetailsProps & { embedded?: boolean }) {
+  return <SWODetailsBody {...props} variant="page" />;
+}
+
+/**
+ * Backward-compatible modal wrapper for Stock Write-Off Details.
+ */
+export function SWODetailsModal(props: SWODetailsProps) {
+  if (!props.swo) return null;
+  const canAdminReview =
+    props.isAdmin && Boolean(props.isRequestsTab) && props.swo.status === "Pending Approval";
+
+  return (
+    <ModalWrapper
+      open={!!props.swo}
+      title={
+        canAdminReview
+          ? `Review Stock Write-Off — ${props.swo.swoNumber}`
+          : `Stock Write-Off Details — ${props.swo.swoNumber}`
+      }
+      onClose={props.onClose}
+      size="max-w-5xl"
+      confirmOnClose={false}
+    >
+      <SWODetailsBody {...props} variant="modal" />
     </ModalWrapper>
   );
 }
