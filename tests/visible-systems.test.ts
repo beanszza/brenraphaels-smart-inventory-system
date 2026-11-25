@@ -26,7 +26,7 @@ describe("module switcher entries a person sees", () => {
   const shown = (allowed: string[] | null) => visibleSystems(systems, allowed).map((s) => s.fullName);
 
   it("shows the Portal, CREOMS and IMS to someone granted CREOMS and IMS", () => {
-    expect(shown(["CRMS", "IMS"])).toEqual(["Enterprise Portal", "CREOMS", "Inventory Management"]);
+    expect(shown(["CRMS", "IMS"])).toEqual(["Enterprise Portal", "Customer Relation and Ecommerce Ordering Management System", "Inventory Management"]);
   });
 
   it("offers no E-Commerce Storefront, which the Portal never grants", () => {
@@ -34,9 +34,9 @@ describe("module switcher entries a person sees", () => {
     expect(systems.every((s) => s.portal || s.portalName)).toBe(true);
   });
 
-  it("names CREOMS as the Portal home does, without the retired marketing Module", () => {
+  it("gives CREOMS its full name, without the retired marketing Module", () => {
     const creoms = systems.find((s) => s.portalName === "CRMS")!;
-    expect(creoms.fullName).toBe("CREOMS");
+    expect(creoms.fullName).toBe("Customer Relation and Ecommerce Ordering Management System");
     expect(creoms.desc).not.toMatch(/marketing/i);
   });
 });
