@@ -51,7 +51,7 @@ export default function ViewGoodsReceiving({
       />
       <div className="flex items-center justify-between border-b border-divider gap-2">
         <nav aria-label="Goods Receiving" className="min-w-0">
-          <div className="flex items-center gap-2 overflow-x-auto">
+          <div className="flex items-center gap-2 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {visibleTabs.map(([id, label]) => (
               <Link
                 key={id}
@@ -60,7 +60,7 @@ export default function ViewGoodsReceiving({
                 aria-current={activeTab === id ? "page" : undefined}
                 className={`flex items-center gap-2 px-4 py-2.5 type-label-tab font-semibold uppercase border-b-2 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-2 focus-visible:outline-primary ${
                   activeTab === id
-                    ? "border-primary text-primary -mb-px"
+                    ? "border-primary text-primary"
                     : "border-transparent text-ink-muted hover:text-ink"
                 }`}
               >
