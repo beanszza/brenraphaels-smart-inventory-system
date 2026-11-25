@@ -125,8 +125,12 @@ export async function resolveFile(port: FilesPort, staff: Staff, ref: string | n
   try {
     const file = await port.view(id, staff.id);
     if (!file) return placeholder;
-    const variant = file.variants?.find(item => item.name === preferredVariant && item.status === "ready" && item.url);
-    return { kind: "file", url: variant?.url || file.url, private: file.visibility === "private" };
+    const viewed = file as typeof file & { downloadUrl?: string; signedUrl?: string };
+    const variant = viewed.variants?.find(item => item.name === preferredVariant && item.status === "ready" && item.url);
+    const fallbackVariant = viewed.variants?.find(item => item.status === "ready" && item.url);
+    const resolvedUrl = variant?.url || viewed.url || viewed.downloadUrl || viewed.signedUrl || fallbackVariant?.url;
+    if (!resolvedUrl) return placeholder;
+    return { kind: "file", url: resolvedUrl, private: file.visibility === "private" };
   } catch {
     return placeholder;
   }

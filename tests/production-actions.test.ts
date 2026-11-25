@@ -164,7 +164,7 @@ const mutations: Case[] = [
   { name: "review QA", run: () => production.reviewProductionQa({ batchId: 1, acceptedQuantity: 8, rejectedQuantity: 2, acceptedReason: "Good", rejectedReason: "Damaged" }), statuses: { productionBatches: "For QA" }, target: "quality-inspection", change: "created" },
   { name: "create product", run: () => production.createFinishedProduct({ productName: "Jam", sellingPrice: 100 }), target: "finished-product", change: "created" },
   { name: "edit product", run: () => production.updateFinishedProduct(1, { productName: "Jam", sellingPrice: 100 }), target: "finished-product" },
-  { name: "delete product", run: () => production.deleteFinishedProduct(1), target: "finished-product", change: "deleted" },
+  { name: "delete product", run: () => production.deleteFinishedProduct(1), target: "finished-product", change: "deleted", shortfall: true },
   { name: "create recipe", run: () => recipes.createRecipe(recipeInput), target: "recipe", change: "created" },
   { name: "edit recipe", run: () => recipes.updateRecipe(1, { notes: "Changed" }), target: "recipe" },
   { name: "delete recipe", run: () => recipes.deleteRecipe(1), target: "recipe", change: "deleted" },
@@ -341,4 +341,10 @@ it("clears an uploaded batch image through the file service", async () => {
   expect(fake.fileAccess).toHaveBeenCalledWith("unlink", FILE,
     { system: "IMS", entityType: "production-batch", entityId: "1", role: "batch image" }, "actor-id");
   expect(fake.committed).toContainEqual({ model: "productionBatches", data: { ImageUrl: "" } });
+});
+
+it("refuses to delete a finished product that still has stock in inventory", async () => {
+  // fake.lotsEmpty is false by default, so inventoryLots returns QuantityRemaining: 10
+  await expect(production.deleteFinishedProduct(1)).rejects.toThrow(/in inventory/i);
+  expect(fake.committed).toHaveLength(0);
 });

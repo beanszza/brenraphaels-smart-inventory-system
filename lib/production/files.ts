@@ -41,5 +41,9 @@ export async function resolveImage(staff: Staff, target: FileTarget, id: number,
   if (currentRef && currentRef.startsWith("data:image/")) {
     return { kind: "file" as const, url: currentRef, private: false as const };
   }
+  const first = await resolveFile(filesGateway, staff, currentRef, variant);
+  if (first.kind === "file" || !currentRef?.trim()) return first;
+  // Retry once on transient file-storage gateway failure/cold start
+  await new Promise((r) => setTimeout(r, 250));
   return resolveFile(filesGateway, staff, currentRef, variant);
 }

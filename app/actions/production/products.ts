@@ -14,6 +14,8 @@ import {
   parseVariantComponents,
 } from "@/lib/production/sku";
 import { ensureUbeJamHavaneroStock } from "@/lib/inventory/seed-stock";
+import { isFileId, resolveFile, FILE_PLACEHOLDER } from "@/lib/files";
+import { filesGateway } from "@/lib/gateway/files";
 
 export async function listProductFormLookups() {
   await requireModule("Production & Quality");
@@ -86,7 +88,7 @@ export async function listProductFormLookups() {
 }
 
 export async function listFinishedProducts() {
-  await requireModule("Production & Quality");
+  const staff = await requireModule("Production & Quality");
   await ensureUbeJamHavaneroStock();
   return read(async () => {
     const products = await prisma.finishedProducts.findMany({
@@ -95,6 +97,13 @@ export async function listFinishedProducts() {
           include: {
             Category: true,
             Uom: true,
+            Inventories: {
+              select: { CurrentStock: true },
+            },
+            InventoryLots: {
+              where: { QuantityRemaining: { gt: 0 } },
+              select: { QuantityRemaining: true },
+            },
           },
         },
       },
@@ -110,10 +119,62 @@ export async function listFinishedProducts() {
       }
     }
 
+    // Batch-resolve unique file-storage UUIDs on the server so photos load immediately without N client calls
+    const uniqueFileIds = Array.from(
+      new Set(
+        products
+          .map((fp) => {
+            const nameKey = (fp.Items?.ItemName || "").trim().toLowerCase();
+            return (fp.ImageUrl || (nameKey ? sharedPhotoByProduct.get(nameKey) : "") || "").trim();
+          })
+          .filter((ref) => Boolean(ref) && isFileId(ref))
+      )
+    );
+
+    const resolvedUrlByFileId = new Map<string, string>();
+    if (uniqueFileIds.length > 0) {
+      await Promise.all(
+        uniqueFileIds.map(async (fileId) => {
+          let resolved = await resolveFile(filesGateway, staff, fileId);
+          if (resolved.kind !== "file") {
+            await new Promise((r) => setTimeout(r, 200));
+            resolved = await resolveFile(filesGateway, staff, fileId);
+          }
+          if (
+            resolved.kind === "file" &&
+            resolved.url &&
+            resolved.url !== FILE_PLACEHOLDER &&
+            !resolved.url.includes("file-placeholder")
+          ) {
+            resolvedUrlByFileId.set(fileId, resolved.url);
+          }
+        })
+      );
+    }
+
     const response = products.map((fp) => {
       const parsed = parseVariantComponents(fp.Variant, fp.Items?.Uom?.Abbreviation);
       const nameKey = (fp.Items?.ItemName || "").trim().toLowerCase();
       const effectiveImage = fp.ImageUrl || (nameKey ? sharedPhotoByProduct.get(nameKey) : undefined);
+      const trimmedRef = effectiveImage?.trim() || "";
+      const resolvedImageUrl =
+        trimmedRef && isFileId(trimmedRef)
+          ? resolvedUrlByFileId.get(trimmedRef)
+          : trimmedRef.startsWith("http://") ||
+              trimmedRef.startsWith("https://") ||
+              trimmedRef.startsWith("data:image/")
+            ? trimmedRef
+            : undefined;
+
+      const invStock = (fp.Items?.Inventories ?? []).reduce(
+        (sum: number, row: { CurrentStock?: unknown }) => sum + (Number(row.CurrentStock) || 0),
+        0
+      );
+      const lotStock = (fp.Items?.InventoryLots ?? []).reduce(
+        (sum: number, row: { QuantityRemaining?: unknown }) => sum + (Number(row.QuantityRemaining) || 0),
+        0
+      );
+      const currentStock = Math.max(invStock, lotStock);
 
       return {
         productId: fp.ProductId,
@@ -128,6 +189,8 @@ export async function listFinishedProducts() {
         minStockLevel: Number(fp.Items?.MinStockLevel ?? 10),
         maxStockLevel: Number(fp.Items?.MaxStockLevel ?? 100),
         imageUrl: effectiveImage || undefined,
+        resolvedImageUrl,
+        currentStock,
         productCode: fp.Items?.ItemCode || "",
         categoryName: fp.Items?.Category?.CategoryName || "Finished Goods",
         uomName: parsed.uom,

@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Plus, Trash2, Image as ImageIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import * as Dialog from "@radix-ui/react-dialog";
+import { Plus, Trash2, Image as ImageIcon, Package, Upload, Check, X, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { actionResponse } from "@/lib/resources/action-response";
 import {
@@ -21,23 +20,16 @@ import {
   type VariantContentUom,
   type VariantPackagingType,
 } from "@/lib/production/sku";
-import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
-import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
 import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 import { FinishedProductItem } from "./types";
 
-const CONTENT_UOM_OPTIONS: { value: VariantContentUom; label: string }[] = [
-  { value: "ML", label: "Milliliter (mL)" },
-  { value: "G", label: "Gram (g)" },
-  { value: "KG", label: "Kilogram (kg)" },
-  { value: "L", label: "Liter (L)" },
-];
 const PACKAGING_TYPES: VariantPackagingType[] = ["Jar", "Container", "Pouch"];
 
 interface VariantRow {
   id: string;
   existingProductId?: number;
   existingSku?: string;
+  existingStock?: number;
   contentSize: string;
   contentUom: VariantContentUom;
   packagingType: VariantPackagingType;
@@ -81,12 +73,12 @@ export default function AddFinishedProductModal({
     {
       id: "var-1",
       contentSize: "250",
-      contentUom: "" as any,
+      contentUom: "ML",
       packagingType: "Jar",
-      sellingPrice: "",
+      sellingPrice: "0",
       minStockLevel: "10",
       maxStockLevel: "100",
-      variantName: composeVariantName("250", "", "Jar"),
+      variantName: composeVariantName("250", "ML", "Jar"),
       isActive: true,
     },
   ]);
@@ -120,11 +112,12 @@ export default function AddFinishedProductModal({
     async function load() {
       try {
         const res = await actionResponse(listProductFormLookups());
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const payload: any = (res.data as any)?.data || res.data;
         if (isMounted && payload?.defaultCategoryId) {
           setDefaultCategoryId(payload.defaultCategoryId);
         }
-      } catch (err: any) {
+      } catch (err) {
         console.warn("Could not load product lookups:", err);
       }
     }
@@ -141,7 +134,6 @@ export default function AddFinishedProductModal({
 
     if (editingItem) {
       const targetNameKey = (editingItem.itemName || "").trim().toLowerCase();
-      // Gather all variants belonging to this product name (sorted by productId ascending)
       const matchingProductVariants = allProductsRef.current
         .filter((p) => (p.itemName || "").trim().toLowerCase() === targetNameKey)
         .sort((a, b) => a.productId - b.productId);
@@ -159,11 +151,11 @@ export default function AddFinishedProductModal({
         rawImg.startsWith("http://") ||
         rawImg.startsWith("https://") ||
         rawImg.startsWith("data:image/");
+      const initialPreview = editingItem.resolvedImageUrl?.trim() || (isDirectUrl ? rawImg : "");
 
-      setPhotoPreview(isDirectUrl ? rawImg : "");
+      setPhotoPreview(initialPreview);
 
-      // Resolve actual image URL from file storage when stored as a fileId (or missing)
-      if (!isDirectUrl) {
+      if (!initialPreview) {
         resolveProductionImage("product", editingItem.productId, "medium").then((resolvedUrl) => {
           if (isMounted && resolvedUrl && resolvedUrl !== FILE_PLACEHOLDER) {
             setPhotoPreview(resolvedUrl);
@@ -180,7 +172,7 @@ export default function AddFinishedProductModal({
           const priceVal =
             item.sellingPrice !== undefined && item.sellingPrice > 0
               ? String(item.sellingPrice)
-              : "";
+              : "0";
           const minVal =
             item.minStockLevel !== undefined && item.minStockLevel > 0
               ? String(item.minStockLevel)
@@ -194,6 +186,7 @@ export default function AddFinishedProductModal({
             id: `existing-${item.productId}`,
             existingProductId: item.productId,
             existingSku: item.sku,
+            existingStock: Number(item.currentStock) || 0,
             contentSize: sizeVal,
             contentUom: uomVal,
             packagingType: pkgVal,
@@ -217,7 +210,7 @@ export default function AddFinishedProductModal({
           contentSize: "250",
           contentUom: "ML",
           packagingType: "Jar",
-          sellingPrice: "",
+          sellingPrice: "0",
           minStockLevel: "10",
           maxStockLevel: "100",
           variantName: composeVariantName("250", "ML", "Jar"),
@@ -237,13 +230,13 @@ export default function AddFinishedProductModal({
       {
         id: `var-${Date.now()}-${prev.length + 1}`,
         contentSize: "350",
-        contentUom: "" as any,
+        contentUom: "ML",
         packagingType: "Jar",
-        sellingPrice: "",
+        sellingPrice: "0",
         minStockLevel: "10",
         maxStockLevel: "100",
-        variantName: composeVariantName("350", "", "Jar"),
-        isActive: isActive,
+        variantName: composeVariantName("350", "ML", "Jar"),
+        isActive,
       },
     ]);
   };
@@ -282,7 +275,6 @@ export default function AddFinishedProductModal({
   const handleVariantStatusChange = (id: string, nextActive: boolean) => {
     setVariants((prev) => {
       const updated = prev.map((v) => (v.id === id ? { ...v, isActive: nextActive } : v));
-      // Sync top-level status indicator if all variants share the same state
       const anyActive = updated.some((v) => v.isActive);
       setIsActive(anyActive);
       return updated;
@@ -325,18 +317,12 @@ export default function AddFinishedProductModal({
       return;
     }
 
-    // Validate variants
     const seenVariantNames = new Set<string>();
     for (let i = 0; i < variants.length; i++) {
       const v = variants[i];
       const numericSize = parseFloat(v.contentSize);
       if (!v.contentSize.trim() || isNaN(numericSize) || numericSize <= 0) {
         toast.error(`Variant ${i + 1} requires a valid Content Size (e.g. 250, 350).`);
-        return;
-      }
-      const priceNum = parseFloat(v.sellingPrice);
-      if (!v.sellingPrice.trim() || isNaN(priceNum) || priceNum <= 0) {
-        toast.error(`Variant ${i + 1} requires a valid Selling Price greater than 0.`);
         return;
       }
       const minStockNum = parseFloat(v.minStockLevel);
@@ -372,7 +358,6 @@ export default function AddFinishedProductModal({
       setSubmitting(true);
 
       if (isEditing && editingItem) {
-        // ── EDIT FLOW (Updates all existing variants of the product + creates any newly added variants) ──
         const existingVariantRows = variants.filter((v) => Boolean(v.existingProductId));
         const newVariantRows = variants.filter((v) => !v.existingProductId);
 
@@ -385,7 +370,7 @@ export default function AddFinishedProductModal({
               contentSize: v.contentSize.trim(),
               contentUom: v.contentUom,
               packagingType: v.packagingType,
-              sellingPrice: parseFloat(v.sellingPrice) || 0,
+              // Omit sellingPrice on edit so existing DB/POS price is preserved untouched
               minStockLevel: parseFloat(v.minStockLevel) || 10,
               maxStockLevel: parseFloat(v.maxStockLevel) || 100,
               sku: v.existingSku,
@@ -412,7 +397,7 @@ export default function AddFinishedProductModal({
                 packagingType: v.packagingType,
                 minStockLevel: parseFloat(v.minStockLevel) || 10,
                 maxStockLevel: parseFloat(v.maxStockLevel) || 100,
-                sellingPrice: parseFloat(v.sellingPrice) || 0,
+                sellingPrice: 0,
               })),
             })
           );
@@ -421,23 +406,21 @@ export default function AddFinishedProductModal({
           }
         }
 
-        // Upload photo before closing modal so user sees updated thumbnail immediately
         if (photoFile) {
           try {
             await uploadProductionImage("product", editingItem.productId, photoFile);
-          } catch (photoErr: any) {
-            toast.error(photoErr?.message || "Product updated, but photo upload failed.");
+          } catch (photoErr: unknown) {
+            const msg = photoErr instanceof Error ? photoErr.message : "Product updated, but photo upload failed.";
+            toast.error(msg);
           }
         }
 
-        // Automatically sync with POS in background (using SCMS variant prices as source of truth)
-        syncProductCatalogToPos(trimmedName, { isNewCreation: false }).catch(() => { });
+        syncProductCatalogToPos(trimmedName, { isNewCreation: false }).catch(() => {});
 
         toast.success("Finished product updated successfully!");
         onSuccess();
         onClose();
       } else {
-        // ── CREATE FLOW ──
         const payload = {
           productName: trimmedName,
           categoryId: defaultCategoryId,
@@ -451,7 +434,7 @@ export default function AddFinishedProductModal({
               packagingType: v.packagingType,
               minStockLevel: parseFloat(v.minStockLevel) || 10,
               maxStockLevel: parseFloat(v.maxStockLevel) || 100,
-              sellingPrice: parseFloat(v.sellingPrice) || 0,
+              sellingPrice: 0,
             };
           }),
         };
@@ -462,403 +445,441 @@ export default function AddFinishedProductModal({
         }
 
         const createdVariants = res.data?.data?.variants || [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const createdIds = createdVariants.map((v: any) => v.productId).filter(Boolean);
 
-        // Upload photo once to the first variant (productImage.save automatically shares it across all variants of the product)
         if (photoFile && createdIds.length > 0) {
           try {
             await uploadProductionImage("product", createdIds[0], photoFile);
-          } catch (photoErr: any) {
-            toast.error(photoErr?.message || "Product created, but photo upload failed.");
+          } catch (photoErr: unknown) {
+            const msg = photoErr instanceof Error ? photoErr.message : "Product created, but photo upload failed.";
+            toast.error(msg);
           }
         }
 
-        // Automatically sync newly created product to POS with initial price 0
-        syncProductCatalogToPos(trimmedName, { isNewCreation: true }).catch(() => { });
+        syncProductCatalogToPos(trimmedName, { isNewCreation: true }).catch(() => {});
 
         toast.success("Finished product created successfully!");
         onSuccess();
         onClose();
       }
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to save finished product");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save finished product";
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
   };
 
+  if (!open) return null;
+
   return (
-    <ModalWrapper
+    <Dialog.Root
       open={open}
-      title={isEditing ? "Edit Finished Product" : "Add Finished Product"}
-      onClose={onClose}
-      size="max-w-[560px]"
+      onOpenChange={(next) => {
+        if (!next && !submitting) onClose();
+      }}
     >
-      <form onSubmit={handlePromptSubmit} className="space-y-6">
-        {/* ── Section 1: Product Information ── */}
-        <div className="space-y-4">
-          <div className="border-b border-divider pb-2 flex items-center justify-between">
-            <div>
-              <h3 className="type-table-header uppercase text-text-primary">
-                Product Information
-              </h3>
-              <p className="type-caption text-text-muted mt-0.5">
-                Basic product details and catalog classification
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[100020] bg-scrim animate-in fade-in duration-150" />
+        <Dialog.Content
+          aria-describedby={undefined}
+          onInteractOutside={(e) => {
+            if (submitting) e.preventDefault();
+          }}
+          className="fixed left-1/2 top-1/2 z-[100021] flex max-h-[88vh] w-[calc(100%-2rem)] max-w-[600px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-modal border border-border bg-surface shadow-modal outline-none animate-in fade-in zoom-in-95 duration-150"
+        >
+          <Dialog.Title className="sr-only">
+            {isEditing ? "Edit finished product" : "New finished product"}
+          </Dialog.Title>
+
+          {/* ── Sticky Header (Supplier-inspired clean header) ── */}
+          <div className="flex items-start justify-between gap-3 border-b border-topbar bg-surface px-6 pt-5 pb-4 shrink-0">
+            <div className="min-w-0">
+              <h2 className="type-modal-title text-ink">
+                {isEditing ? "Edit finished product" : "New finished product"}
+              </h2>
+              <p className="mt-0.5 type-body-secondary text-ink-muted">
+                {isEditing
+                  ? "Update product details, photo, status, and packaging variants."
+                  : "Add a finished product you produce and configure its packaging variants."}
               </p>
             </div>
-            <span className="type-caption font-semibold bg-surface-secondary px-2.5 py-1 rounded-control border border-divider text-text-primary">
-              Category: Finished Product
-            </span>
+            <button
+              type="button"
+              onClick={() => {
+                if (!submitting) onClose();
+              }}
+              aria-label="Close"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control text-ink-muted hover:bg-subtle hover:text-ink transition-colors cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Product Name */}
-            <div className={isEditing ? "" : "md:col-span-2"}>
-              <label className="mb-1.5 block type-table-header text-text-primary">
-                Product Name <span className="text-status-danger">*</span>
-              </label>
-              <Input
-                type="text"
-                placeholder="e.g. Ube Halaya"
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                aria-invalid={Boolean(duplicateProductNameError)}
-                className={`w-full rounded-control border ${duplicateProductNameError
-                    ? "!border-status-danger focus-visible:!ring-status-danger"
-                    : "border-divider"
-                  } bg-surface text-text-primary px-3 py-2 type-body`}
-                required
-              />
-              {duplicateProductNameError && (
-                <p className="mt-1.5 type-caption font-medium text-status-danger">
-                  {duplicateProductNameError}
-                </p>
-              )}
-            </div>
-
-            {/* Status (Shown ONLY when editing) */}
-            {isEditing && (
-              <div>
-                <label className="mb-1.5 block type-table-header text-text-primary">
-                  Status
-                </label>
-                <select
-                  value={isActive ? "true" : "false"}
-                  onChange={(e) => handleTopLevelStatusChange(e.target.value === "true")}
-                  className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-body h-9"
-                >
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
-                </select>
-              </div>
-            )}
-
-            {/* Product Description */}
-            <div className="md:col-span-2">
-              <label className="mb-1.5 block type-table-header text-text-primary">
-                Product Description
-              </label>
-              <textarea
-                rows={2}
-                placeholder="Detailed description of finished product, ingredients summary, or production notes..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-body focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand"
-              />
-            </div>
-
-            {/* Optional Photo Upload (1 per product) */}
-            <div className="md:col-span-2">
-              <label className="mb-1.5 block type-table-header text-text-primary">
-                Product Photo <span className="text-text-muted font-normal">(Optional — Shared across product variants)</span>
-              </label>
-              <div className="flex items-center gap-4">
-                {photoPreview ? (
-                  <div className="relative w-14 h-14 rounded-control overflow-hidden border border-divider shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+          {/* ── Form with Scrollable Body + Sticky Footer ── */}
+          <form onSubmit={handlePromptSubmit} className="flex min-h-0 flex-1 flex-col">
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5 space-y-[18px]">
+              {/* Product Name (+ Status in Edit mode) */}
+              <div className={isEditing ? "grid grid-cols-1 sm:grid-cols-2 gap-3.5" : ""}>
+                <div>
+                  <label className="mb-1.5 block type-label-field text-ink-strong">
+                    Product name <span className="text-destructive">*</span>
+                  </label>
+                  <div className="relative">
+                    <Package className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
+                    <input
+                      type="text"
+                      placeholder="e.g. Ube Halaya Smooth"
+                      value={productName}
+                      onChange={(e) => setProductName(e.target.value)}
+                      aria-invalid={Boolean(duplicateProductNameError)}
+                      className={`h-10 w-full rounded-control border ${
+                        duplicateProductNameError
+                          ? "border-destructive focus:ring-destructive"
+                          : "border-input focus:border-primary"
+                      } bg-surface pl-9 pr-3 type-body text-ink placeholder:text-ink-disabled focus:outline-none focus:ring-2 focus:ring-focus/30 transition-colors`}
+                      required
+                    />
                   </div>
-                ) : (
-                  <div className="w-14 h-14 rounded-control border border-dashed border-divider bg-surface-secondary/50 flex items-center justify-center shrink-0 text-text-muted">
-                    <ImageIcon className="w-6 h-6" />
+                  {duplicateProductNameError && (
+                    <p className="mt-1.5 type-caption font-medium text-destructive">
+                      {duplicateProductNameError}
+                    </p>
+                  )}
+                </div>
+
+                {isEditing && (
+                  <div>
+                    <label className="mb-1.5 block type-label-field text-ink-strong">Status</label>
+                    <div className="relative">
+                      <select
+                        value={isActive ? "true" : "false"}
+                        onChange={(e) => handleTopLevelStatusChange(e.target.value === "true")}
+                        className="h-10 w-full appearance-none rounded-control border border-input bg-surface pl-3 pr-9 type-body text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus/30 transition-colors cursor-pointer"
+                      >
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
+                    </div>
                   </div>
                 )}
-                <div>
-                  <input
-                    type="file"
-                    id="product-photo-upload"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handlePhotoSelect}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="product-photo-upload"
-                    className="inline-flex items-center gap-1.5 rounded-control border border-divider bg-surface px-4 py-2 type-caption font-semibold text-text-primary hover:bg-surface-hover cursor-pointer transition-colors shadow-xs"
+              </div>
+
+              {/* Description (optional) */}
+              <div>
+                <label className="mb-1.5 block type-label-field text-ink-strong">
+                  Description <span className="font-normal text-ink-disabled">(optional)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Ingredients summary, flavor notes, or production instructions..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full rounded-control border border-input bg-surface px-3 py-2.5 type-body text-ink placeholder:text-ink-disabled focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus/30 transition-colors resize-none"
+                />
+              </div>
+
+              {/* Product Photo (clean inline row — Supplier-inspired) */}
+              <div>
+                <label className="mb-2 block type-label-field text-ink-strong">
+                  Product photo{" "}
+                  <span className="font-normal text-ink-disabled">(optional · shared across variants)</span>
+                </label>
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-inner border border-input bg-page">
+                    {photoPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={photoPreview} alt="Preview" className="h-full w-full object-cover" />
+                    ) : (
+                      <ImageIcon className="h-5 w-5 text-ink-disabled" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <input
+                      type="file"
+                      id="product-photo-upload"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="product-photo-upload"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-surface px-3.5 type-label-button-sm text-ink hover:bg-subtle cursor-pointer transition-colors"
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      {photoFile || photoPreview ? "Change photo" : "Upload photo"}
+                    </label>
+                    <p className="mt-1 type-caption text-ink-muted">
+                      JPG, PNG, or WebP up to 10 MB · saved in File Storage
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-divider" />
+
+              {/* Packaging Variants Section */}
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="type-subsection text-ink">Packaging variants</h3>
+                    <p className="mt-0.5 type-caption text-ink-muted">
+                      Variant name and SKU are generated automatically.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddVariant}
+                    className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-control bg-tint-selected px-3 type-label-button-sm text-primary hover:bg-tint-soft transition-colors cursor-pointer"
                   >
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    {photoFile || photoPreview ? "Change Photo" : "Upload Photo"}
-                  </label>
-                  <p className="type-caption text-text-muted mt-1">
-                    JPG, PNG, or WebP up to 10MB
-                  </p>
+                    <Plus className="h-3.5 w-3.5" />
+                    Add variant
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {variants.map((v, index) => {
+                    const composedVariantName = composeVariantName(
+                      v.contentSize,
+                      v.contentUom,
+                      v.packagingType
+                    );
+                    const previewSku = v.existingSku
+                      ? v.existingSku
+                      : buildBaseVariantSku(productName || "PRD", composedVariantName);
+                    const uomSuffix = (v.contentUom || "ML").toLowerCase() === "ml" ? "mL" : v.contentUom || "mL";
+
+                    return (
+                      <div
+                        key={v.id}
+                        className="rounded-inner border border-input bg-page p-4 space-y-3.5"
+                      >
+                        {/* Variant Header Row */}
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="type-label-field font-semibold text-ink">
+                              Variant {index + 1}
+                            </span>
+                            <span className="type-body-secondary text-ink-muted truncate">
+                              · {composedVariantName}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {isEditing && v.existingProductId && (
+                              <span
+                                className={`rounded-pill px-2.5 py-0.5 type-badge ${
+                                  (v.existingStock ?? 0) > 0
+                                    ? "bg-status-green-bg text-status-green-fg"
+                                    : "bg-status-gray-bg text-status-gray-fg"
+                                }`}
+                              >
+                                {v.existingStock ?? 0} in stock
+                              </span>
+                            )}
+                            {isEditing && v.existingProductId && variants.length > 1 && (
+                              <div className="relative">
+                                <select
+                                  aria-label={`Variant ${index + 1} Status`}
+                                  value={v.isActive ? "true" : "false"}
+                                  onChange={(e) =>
+                                    handleVariantStatusChange(v.id, e.target.value === "true")
+                                  }
+                                  className="h-7 appearance-none rounded-control border border-input bg-surface pl-2.5 pr-7 type-caption font-medium text-ink focus:border-primary focus:outline-none cursor-pointer"
+                                >
+                                  <option value="true">Active</option>
+                                  <option value="false">Inactive</option>
+                                </select>
+                                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-ink-muted" />
+                              </div>
+                            )}
+                            {!v.existingProductId && variants.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveVariant(v.id)}
+                                className="inline-flex h-7 items-center gap-1 rounded-control px-2 type-caption font-medium text-destructive hover:bg-notice-danger-bg transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Packaging Type — Supplier-style selectable pill chips */}
+                        <div>
+                          <label className="mb-1.5 block type-label-field text-ink-strong">
+                            Packaging type <span className="text-destructive">*</span>
+                          </label>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {PACKAGING_TYPES.map((pkg) => {
+                              const selected = v.packagingType === pkg;
+                              return (
+                                <button
+                                  key={pkg}
+                                  type="button"
+                                  onClick={() => handleUpdateVariantField(v.id, "packagingType", pkg)}
+                                  aria-pressed={selected}
+                                  className={`inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 type-label-button-sm transition-colors cursor-pointer ${
+                                    selected
+                                      ? "border-border-selected bg-tint-selected text-primary"
+                                      : "border-input bg-surface text-ink-strong hover:bg-subtle"
+                                  }`}
+                                >
+                                  {selected && <Check className="h-3.5 w-3.5 stroke-[2.4]" />}
+                                  {pkg}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Row 1: Content Size + Variant SKU (auto) */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          <div>
+                            <label className="mb-1.5 block type-label-field text-ink-strong">
+                              Content size <span className="text-destructive">*</span>
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min="1"
+                                step="any"
+                                placeholder="e.g. 250"
+                                value={v.contentSize}
+                                onChange={(e) =>
+                                  handleUpdateVariantField(v.id, "contentSize", e.target.value)
+                                }
+                                className="h-10 w-full rounded-control border border-input bg-surface pl-3 pr-11 type-body text-ink tabular-nums placeholder:text-ink-disabled focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus/30 transition-colors"
+                                required
+                              />
+                              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 type-body-secondary text-ink-muted">
+                                {uomSuffix}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="mb-1.5 block type-label-field text-ink-strong">
+                              Variant SKU
+                            </label>
+                            <input
+                              type="text"
+                              value={previewSku}
+                              readOnly
+                              disabled
+                              className="h-10 w-full rounded-control border border-input bg-subtle/60 px-3 type-body text-ink-muted tabular-nums cursor-not-allowed"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Row 2: Min Stock Level + Max Stock Level */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          <div>
+                            <label className="mb-1.5 block type-label-field text-ink-strong">
+                              Min stock level <span className="text-destructive">*</span>
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min="1"
+                                step="any"
+                                placeholder="10"
+                                value={v.minStockLevel}
+                                onChange={(e) =>
+                                  handleUpdateVariantField(v.id, "minStockLevel", e.target.value)
+                                }
+                                className="h-10 w-full rounded-control border border-input bg-surface pl-3 pr-14 type-body text-ink tabular-nums placeholder:text-ink-disabled focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus/30 transition-colors"
+                                required
+                              />
+                              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 type-body-secondary text-ink-muted">
+                                units
+                              </span>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="mb-1.5 block type-label-field text-ink-strong">
+                              Max stock level <span className="text-destructive">*</span>
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min="1"
+                                step="any"
+                                placeholder="100"
+                                value={v.maxStockLevel}
+                                onChange={(e) =>
+                                  handleUpdateVariantField(v.id, "maxStockLevel", e.target.value)
+                                }
+                                className="h-10 w-full rounded-control border border-input bg-surface pl-3 pr-14 type-body text-ink tabular-nums placeholder:text-ink-disabled focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus/30 transition-colors"
+                                required
+                              />
+                              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 type-body-secondary text-ink-muted">
+                                units
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* ── Section 2: Product Variants ── */}
-        <div className="space-y-4 pt-2">
-          <div className="flex items-center justify-between border-b border-divider pb-2">
-            <div>
-              <h3 className="type-table-header uppercase text-text-primary">
-                Product Variants
-              </h3>
-              <p className="type-caption text-text-muted mt-0.5">
-                Configure Content Size and Packaging Type to auto-generate Variant Name &amp; SKU
+            {/* ── Sticky Footer (Supplier-inspired #fafafa bar) ── */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-topbar bg-page px-6 py-3.5 shrink-0">
+              <p className="type-caption text-ink-muted">
+                {isEditing
+                  ? "Updates sync to POS. Existing prices are preserved."
+                  : "Add a recipe next so this product can be produced."}
               </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAddVariant}
-              className="rounded-control border border-divider bg-surface px-3.5 py-1.5 type-caption font-semibold text-text-primary hover:bg-surface-hover cursor-pointer gap-1.5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Variant
-            </Button>
-          </div>
-
-          <div className="space-y-3">
-            {variants.map((v, index) => {
-              const composedVariantName = composeVariantName(
-                v.contentSize,
-                v.contentUom,
-                v.packagingType
-              );
-              const previewSku = v.existingSku
-                ? v.existingSku
-                : buildBaseVariantSku(productName || "PRD", composedVariantName);
-
-              return (
-                <div
-                  key={v.id}
-                  className="p-4 rounded-control border border-divider bg-surface-secondary/40 space-y-3 transition-all"
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!submitting) onClose();
+                  }}
+                  disabled={submitting}
+                  className="h-9 rounded-control border border-border bg-surface px-4 type-label-button text-ink hover:bg-subtle transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="type-table-header text-text-primary flex items-center gap-1.5">
-                      <span className="w-5 h-5 rounded-full bg-brand-light text-brand flex items-center justify-center type-caption font-semibold">
-                        {index + 1}
-                      </span>
-                      Variant {index + 1}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {isEditing && v.existingProductId && variants.length > 1 && (
-                        <select
-                          aria-label={`Variant ${index + 1} Status`}
-                          value={v.isActive ? "true" : "false"}
-                          onChange={(e) =>
-                            handleVariantStatusChange(v.id, e.target.value === "true")
-                          }
-                          className="rounded-control border border-divider bg-surface text-text-primary px-2.5 py-1 type-caption font-medium h-7"
-                        >
-                          <option value="true">Active</option>
-                          <option value="false">Inactive</option>
-                        </select>
-                      )}
-                      {!v.existingProductId && variants.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveVariant(v.id)}
-                          className="type-caption h-7 text-status-danger hover:bg-status-danger/10 cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Remove
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting || Boolean(duplicateProductNameError)}
+                  className="h-9 rounded-control bg-primary px-4 type-label-button text-on-brand hover:bg-primary-hover transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? "Saving..." : isEditing ? "Save changes" : "Save product"}
+                </button>
+              </div>
+            </div>
+          </form>
 
-                  {/* Row 1: Variant Name (Auto, Read-Only) & Variant SKU (Auto, Read-Only) */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1.5 block type-table-header text-text-primary">
-                        Variant Name <span className="text-text-muted font-normal">(Auto-generated)</span>
-                      </label>
-                      <Input
-                        type="text"
-                        value={composedVariantName}
-                        readOnly
-                        disabled
-                        className="w-full rounded-control border border-divider bg-surface-secondary/60 text-text-primary px-3 py-2 type-body font-semibold cursor-not-allowed"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block type-table-header text-text-primary">
-                        Variant SKU <span className="text-text-muted font-normal">(Unique)</span>
-                      </label>
-                      <Input
-                        type="text"
-                        value={previewSku}
-                        readOnly
-                        disabled
-                        className="w-full rounded-control border border-divider bg-surface-secondary/60 text-text-muted px-3 py-2 type-body cursor-not-allowed"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Row 2: Content Size, Packaging Type */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {/* Content Size */}
-                    <div>
-                      <label className="mb-1.5 block type-table-header text-text-primary">
-                        Content Size <span className="text-status-danger">*</span>
-                      </label>
-                      <Input
-                        type="number"
-                        min="1"
-                        step="any"
-                        placeholder="e.g. 250, 350"
-                        value={v.contentSize}
-                        onChange={(e) =>
-                          handleUpdateVariantField(v.id, "contentSize", e.target.value)
-                        }
-                        className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-body"
-                        required
-                      />
-                    </div>
-
-                    {/* Packaging Type (Jar, Container, Pouch) */}
-                    <div>
-                      <label className="mb-1.5 block type-table-header text-text-primary">
-                        Packaging Type <span className="text-status-danger">*</span>
-                      </label>
-                      <select
-                        value={v.packagingType}
-                        onChange={(e) =>
-                          handleUpdateVariantField(v.id, "packagingType", e.target.value)
-                        }
-                        className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-body h-9"
-                      >
-                        {PACKAGING_TYPES.map((pkg) => (
-                          <option key={pkg} value={pkg}>
-                            {pkg}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Row 3: Selling Price (Per Variant) */}
-                  <div>
-                    <label className="mb-1.5 block type-table-header text-text-primary">
-                      Selling Price (₱) <span className="text-status-danger">*</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 type-body text-text-muted">
-                        ₱
-                      </span>
-                      <Input
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={v.sellingPrice}
-                        onChange={(e) =>
-                          handleUpdateVariantField(v.id, "sellingPrice", e.target.value)
-                        }
-                        className="w-full rounded-control border border-divider bg-surface text-text-primary pl-7 pr-3 py-2 type-body font-semibold tabular-nums"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Row 4: Min Stock Level & Max Stock Level (Per Variant, matches SupplyModal) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1.5 block type-table-header text-text-primary">
-                        Min Stock Level <span className="text-status-danger">*</span>
-                      </label>
-                      <Input
-                        type="number"
-                        min="1"
-                        step="any"
-                        placeholder="e.g. 10"
-                        value={v.minStockLevel}
-                        onChange={(e) =>
-                          handleUpdateVariantField(v.id, "minStockLevel", e.target.value)
-                        }
-                        className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-body"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block type-table-header text-text-primary">
-                        Max Stock Level <span className="text-status-danger">*</span>
-                      </label>
-                      <Input
-                        type="number"
-                        min="1"
-                        step="any"
-                        placeholder="e.g. 100"
-                        value={v.maxStockLevel}
-                        onChange={(e) =>
-                          handleUpdateVariantField(v.id, "maxStockLevel", e.target.value)
-                        }
-                        className="w-full rounded-control border border-divider bg-surface text-text-primary px-3 py-2 type-body"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── Footer Actions (Exact SupplyModal pattern) ── */}
-        <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
-          <ModalCloseButton
-            type="button"
-            variant="outline"
-            fallbackOnClose={onClose}
-            disabled={submitting}
-            className="rounded-control border border-divider bg-surface px-5 py-2.5 type-body font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
-          >
-            Cancel
-          </ModalCloseButton>
-          <Button
-            type="submit"
-            disabled={submitting || Boolean(duplicateProductNameError)}
-            className="rounded-control bg-button-primary text-text-inverse px-5 py-2.5 type-body font-semibold hover:bg-button-primary-hover shadow-card transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitting ? "Saving..." : isEditing ? "Save Changes" : "Save Finished Product"}
-          </Button>
-        </div>
-      </form>
-
-      <ActionConfirmModal
-        open={confirmSaveOpen}
-        title={isEditing ? "Save Finished Product Changes" : "Create Finished Product"}
-        subtitle={`Product: ${productName.trim() || "—"} • ${variants.length} Variant(s)`}
-        description={
-          isEditing
-            ? `Are you sure you want to save the updates to "${productName.trim()}" and its ${variants.length} variant(s)?`
-            : `Are you sure you want to create "${productName.trim()}" with ${variants.length} variant(s)?`
-        }
-        confirmText={isEditing ? "Save Changes" : "Confirm & Create"}
-        loading={submitting}
-        loadingText="Saving..."
-        onConfirm={async () => {
-          await executeSaveProduct();
-          setConfirmSaveOpen(false);
-        }}
-        onClose={() => setConfirmSaveOpen(false)}
-      />
-    </ModalWrapper>
+          <ActionConfirmModal
+            open={confirmSaveOpen}
+            title={isEditing ? "Save Finished Product Changes" : "Create Finished Product"}
+            subtitle={`Product: ${productName.trim() || "—"} • ${variants.length} Variant(s)`}
+            description={
+              isEditing
+                ? `Are you sure you want to save the updates to "${productName.trim()}" and its ${variants.length} variant(s)?`
+                : `Are you sure you want to create "${productName.trim()}" with ${variants.length} variant(s)?`
+            }
+            confirmText={isEditing ? "Save Changes" : "Confirm & Create"}
+            loading={submitting}
+            loadingText="Saving..."
+            onConfirm={async () => {
+              await executeSaveProduct();
+              setConfirmSaveOpen(false);
+            }}
+            onClose={() => setConfirmSaveOpen(false)}
+          />
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

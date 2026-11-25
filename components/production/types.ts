@@ -282,6 +282,8 @@ export interface FinishedProductItem {
   minStockLevel?: number;
   maxStockLevel?: number;
   imageUrl?: string;
+  resolvedImageUrl?: string;
+  currentStock?: number;
   productCode?: string;
   categoryName?: string;
   uomName?: string;

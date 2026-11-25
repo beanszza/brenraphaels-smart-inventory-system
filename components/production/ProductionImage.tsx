@@ -13,9 +13,11 @@ export function ProductionImage({ kind, id, alt, className, version = 0, variant
     let current = true;
     resolveProductionImage(kind, id, variant).then(value => {
       if (!current) return;
+      // Only append cache-busting query param to plain URLs without existing query params
+      // so presigned/signed file-storage URLs are never invalidated.
       const resolved =
-        version > 0 && kind === "product" && value && value !== FILE_PLACEHOLDER && !value.startsWith("data:")
-          ? `${value}${value.includes("?") ? "&" : "?"}v=${version}`
+        version > 0 && kind === "product" && value && value !== FILE_PLACEHOLDER && !value.startsWith("data:") && !value.includes("?")
+          ? `${value}?v=${version}`
           : value;
       setUrl(resolved);
     });

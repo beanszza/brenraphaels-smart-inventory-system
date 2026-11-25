@@ -12,6 +12,11 @@ const pascalToKebabAliases = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "12mb",
+    },
+  },
   async rewrites() {
     const aliases = pascalToKebabAliases.flatMap(({ pascal, kebab }) => [
       // Exact match: /api/Items → /api/items

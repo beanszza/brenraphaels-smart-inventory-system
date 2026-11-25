@@ -78,7 +78,7 @@ it("displays Batch Number for In Progress / Completed requests and omits min-h-[
   expect(html).not.toContain("min-h-[280px]");
 });
 
-it("resolves file-storage UUIDs via ProductionImage and displays variant selling price in ConfigurationTab", () => {
+it("resolves file-storage UUIDs via ProductionImage and hides selling price in ConfigurationTab", () => {
   const uuid = "550e8400-e29b-41d4-a716-446655440000";
   const row: FinishedProductItem = {
     productId: 42,
@@ -93,6 +93,27 @@ it("resolves file-storage UUIDs via ProductionImage and displays variant selling
   };
   const html = renderToStaticMarkup(<ConfigurationTab initialRows={[row]} />);
   expect(html).not.toContain(`src="${uuid}"`);
-  expect(html).toContain("₱125.50");
-  expect(html).toContain("Price");
+  expect(html).not.toContain("₱125.50");
+  expect(html).not.toContain(">Price<");
+});
+
+it("renders server-resolved file-storage photo URLs directly in ConfigurationTab", () => {
+  const uuid = "550e8400-e29b-41d4-a716-446655440000";
+  const resolvedUrl = "https://storage.test/products/c2-green-tea.webp";
+  const row: FinishedProductItem = {
+    productId: 43,
+    itemId: 102,
+    itemName: "Ube Halaya",
+    sellingPrice: 250,
+    sku: "UBEH-250ML-JAR",
+    variant: "250mL Jar",
+    packagingType: "Jar",
+    imageUrl: uuid,
+    resolvedImageUrl: resolvedUrl,
+    currentStock: 0,
+    isActive: true,
+  };
+  const html = renderToStaticMarkup(<ConfigurationTab initialRows={[row]} />);
+  expect(html).toContain(`src="${resolvedUrl}"`);
+  expect(html).not.toContain("₱250.00");
 });

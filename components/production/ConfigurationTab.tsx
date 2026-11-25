@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   MoreHorizontal,
+  Eye,
   Pencil,
+  Trash2,
   RefreshCw,
   Plus,
 } from "lucide-react";
@@ -28,11 +30,15 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ProductionSkeleton } from "./ProductionSkeleton";
 import { FinishedProductItem } from "./types";
 import AddFinishedProductModal from "./AddFinishedProductModal";
+import FinishedProductDetailsModal from "./FinishedProductDetailsModal";
 import { ProductionImage } from "./ProductionImage";
+import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 import { listFinishedProducts as productionListFinishedProducts } from "@/app/actions/production/products";
+import { deleteFinishedProduct } from "@/app/actions/production/product-detail";
 import { syncAllFinishedProductsToPos } from "@/app/actions/production/pos-sync";
 import { actionResponse } from "@/lib/resources/action-response";
 import { parseVariantComponents } from "@/lib/production/sku";
+import { FILE_PLACEHOLDER } from "@/lib/files";
 import { toast } from "sonner";
 
 const PACKAGING_FILTERS = ["All", "Jar", "Container", "Pouch"] as const;
@@ -55,10 +61,16 @@ export default function ConfigurationTab({
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Inactive">("All");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Add / Edit Finished Product Modal
+  // View / Add / Edit Finished Product Modals
+  const [viewingItem, setViewingItem] = useState<FinishedProductItem | null>(null);
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isEditProductOpen, setIsEditProductOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FinishedProductItem | null>(null);
+
+  // Delete Finished Product Confirmation Modal
+  const [deletingItem, setDeletingItem] = useState<FinishedProductItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const hasMountedSyncRef = useRef(false);
 
@@ -94,16 +106,60 @@ export default function ConfigurationTab({
     }
   };
 
+  const handleOpenViewProduct = (prod: FinishedProductItem) => {
+    setViewingItem(prod);
+  };
+
   const handleOpenAddProduct = () => {
+    setViewingItem(null);
     setEditingItem(null);
     setIsEditProductOpen(false);
     setIsAddProductOpen(true);
   };
 
   const handleOpenEditProduct = (prod: FinishedProductItem) => {
+    setViewingItem(null);
     setEditingItem(prod);
     setIsAddProductOpen(false);
     setIsEditProductOpen(true);
+  };
+
+  const handleOpenDeleteProduct = (prod: FinishedProductItem) => {
+    setViewingItem(null);
+    setDeleteError(null);
+    setDeletingItem(prod);
+  };
+
+  const handleConfirmDeleteProduct = async () => {
+    if (!deletingItem) return;
+    if ((deletingItem.currentStock ?? 0) > 0) {
+      setDeleteError(
+        `Cannot delete "${deletingItem.itemName}" because it currently has ${deletingItem.currentStock} unit(s) in inventory.`
+      );
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      setDeleteError(null);
+      const res = await actionResponse(deleteFinishedProduct(deletingItem.productId));
+      if (!res.data?.success) {
+        const msg = res.data?.message || "Failed to delete finished product.";
+        setDeleteError(msg);
+        toast.error(msg);
+        return;
+      }
+      toast.success(`Deleted "${deletingItem.itemName}" (${deletingItem.variant || "Standard"}).`);
+      setDeletingItem(null);
+      fetchProducts(false);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg = e?.response?.data?.message || e?.message || "Failed to delete finished product.";
+      setDeleteError(msg);
+      toast.error(msg);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // Enrich rows with parsed variant fields if missing
@@ -178,7 +234,7 @@ export default function ConfigurationTab({
             Finished Products &amp; Variants
           </h2>
           <p className="mt-1 type-body text-text-muted">
-            Manage finished goods, content sizes, units of measurement, packaging types, prices, and SKUs
+            Manage finished goods, content sizes, units of measurement, packaging types, and SKUs
           </p>
         </div>
 
@@ -289,7 +345,6 @@ export default function ConfigurationTab({
                 <th className="table-th px-4 py-3">Variant</th>
                 <th className="table-th px-4 py-3">Packaging</th>
                 <th className="table-th px-4 py-3">Variant SKU</th>
-                <th className="table-th px-4 py-3 text-right whitespace-nowrap">Price</th>
                 <th className="table-th px-4 py-3 text-center">Status</th>
                 <th className="table-th w-16 px-4 py-3 text-center">Actions</th>
               </tr>
@@ -298,7 +353,7 @@ export default function ConfigurationTab({
               {paginatedProducts.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={8}
                     className="px-4 py-12 text-center type-body text-text-muted"
                   >
                     {searchQuery || productFilter !== "All" || packagingFilter !== "All" || statusFilter !== "All"
@@ -310,7 +365,7 @@ export default function ConfigurationTab({
                 paginatedProducts.map((product, index) => (
                   <tr
                     key={product.productId}
-                    onClick={() => handleOpenEditProduct(product)}
+                    onClick={() => handleOpenViewProduct(product)}
                     className="table-row group hover:bg-surface-secondary/50 transition-colors cursor-pointer"
                   >
                     {/* No. */}
@@ -321,24 +376,44 @@ export default function ConfigurationTab({
                     {/* Photo */}
                     <td className="w-16 px-4 py-3 text-center">
                       <div className="w-9 h-9 rounded-control border border-divider bg-surface-secondary/40 overflow-hidden flex items-center justify-center shrink-0 mx-auto">
-                        {product.imageUrl &&
-                          (product.imageUrl.startsWith("http://") ||
-                            product.imageUrl.startsWith("https://") ||
-                            product.imageUrl.startsWith("data:image/")) ? (
-                          <img
-                            src={product.imageUrl}
-                            alt={product.itemName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <ProductionImage
-                            kind="product"
-                            id={product.productId}
-                            alt={product.itemName}
-                            className="w-full h-full object-cover"
-                            version={photoVersion}
-                          />
-                        )}
+                        {(() => {
+                          const directUrl =
+                            product.resolvedImageUrl ||
+                            (product.imageUrl &&
+                            (product.imageUrl.startsWith("http://") ||
+                              product.imageUrl.startsWith("https://") ||
+                              product.imageUrl.startsWith("data:image/"))
+                              ? product.imageUrl
+                              : "");
+                          if (directUrl) {
+                            const finalSrc =
+                              photoVersion > 0 && !directUrl.startsWith("data:") && !directUrl.includes("?")
+                                ? `${directUrl}?v=${photoVersion}`
+                                : directUrl;
+                            return (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={finalSrc}
+                                alt={product.itemName}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  if (!e.currentTarget.src.endsWith(FILE_PLACEHOLDER)) {
+                                    e.currentTarget.src = FILE_PLACEHOLDER;
+                                  }
+                                }}
+                              />
+                            );
+                          }
+                          return (
+                            <ProductionImage
+                              kind="product"
+                              id={product.productId}
+                              alt={product.itemName}
+                              className="w-full h-full object-cover"
+                              version={photoVersion}
+                            />
+                          );
+                        })()}
                       </div>
                     </td>
 
@@ -364,14 +439,6 @@ export default function ConfigurationTab({
                       {product.sku || "—"}
                     </td>
 
-                    {/* Price */}
-                    <td className="px-4 py-3 table-td text-right font-semibold text-text-primary tabular-nums whitespace-nowrap">
-                      ₱{Number(product.sellingPrice ?? 0).toLocaleString("en-PH", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-
                     {/* Status */}
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <StatusBadge
@@ -379,7 +446,7 @@ export default function ConfigurationTab({
                       />
                     </td>
 
-                    {/* Actions: Edit Product */}
+                    {/* Actions: Edit / Delete Product */}
                     <td className="w-16 px-4 py-3 text-center relative whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center">
                         <DropdownMenu>
@@ -395,11 +462,25 @@ export default function ConfigurationTab({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44 rounded-control border border-divider bg-surface shadow-modal p-1.5 text-left z-[100]">
                             <DropdownMenuItem
+                              onClick={() => handleOpenViewProduct(product)}
+                              className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary focus:text-text-primary cursor-pointer rounded-control transition-colors outline-none"
+                            >
+                              <Eye size={14} className="shrink-0 text-text-muted" />
+                              <span>View Details</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               onClick={() => handleOpenEditProduct(product)}
                               className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-medium text-text-primary hover:bg-surface-secondary focus:bg-surface-secondary focus:text-text-primary cursor-pointer rounded-control transition-colors outline-none"
                             >
                               <Pencil size={14} className="shrink-0 text-text-muted" />
                               <span>Edit Product</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleOpenDeleteProduct(product)}
+                              className="flex w-full items-center gap-2.5 px-3 py-2 type-caption font-medium text-status-danger hover:bg-status-danger/10 focus:bg-status-danger/10 focus:text-status-danger cursor-pointer rounded-control transition-colors outline-none"
+                            >
+                              <Trash2 size={14} className="shrink-0" />
+                              <span>Delete Product</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -422,6 +503,17 @@ export default function ConfigurationTab({
         onPageChange={setCurrentPage}
       />
 
+      {/* View Finished Product Details Modal */}
+      <FinishedProductDetailsModal
+        open={Boolean(viewingItem)}
+        product={viewingItem}
+        allProducts={products}
+        photoVersion={photoVersion}
+        onClose={() => setViewingItem(null)}
+        onEdit={(prod) => handleOpenEditProduct(prod)}
+        onDelete={(prod) => handleOpenDeleteProduct(prod)}
+      />
+
       {/* Unified Add / Edit Finished Product Modal */}
       <AddFinishedProductModal
         open={isAddProductOpen || isEditProductOpen}
@@ -435,6 +527,41 @@ export default function ConfigurationTab({
         onSuccess={() => {
           fetchProducts(false);
           setPhotoVersion((v) => v + 1);
+        }}
+      />
+
+      {/* Delete Finished Product Confirmation Modal */}
+      <ActionConfirmModal
+        open={Boolean(deletingItem)}
+        title="Delete Finished Product"
+        subtitle={
+          deletingItem
+            ? `${deletingItem.itemName} • ${deletingItem.variant || "Standard"} (${deletingItem.sku || "No SKU"})`
+            : undefined
+        }
+        description={
+          deletingItem && (deletingItem.currentStock ?? 0) > 0 ? (
+            <>
+              Cannot delete <strong>{deletingItem.itemName}</strong> ({deletingItem.variant || "Standard"}) because it currently has{" "}
+              <strong>{deletingItem.currentStock}</strong> unit(s) in inventory. Clear or transfer all remaining stock first.
+            </>
+          ) : (
+            <>
+              Are you sure you want to delete <strong>{deletingItem?.itemName}</strong> ({deletingItem?.variant || "Standard"})? This action cannot be undone.
+            </>
+          )
+        }
+        confirmText="Delete Product"
+        loading={deleting}
+        loadingText="Deleting..."
+        confirmDisabled={Boolean(deletingItem && (deletingItem.currentStock ?? 0) > 0)}
+        errorMessage={deleteError}
+        onConfirm={handleConfirmDeleteProduct}
+        onClose={() => {
+          if (!deleting) {
+            setDeletingItem(null);
+            setDeleteError(null);
+          }
         }}
       />
     </div>

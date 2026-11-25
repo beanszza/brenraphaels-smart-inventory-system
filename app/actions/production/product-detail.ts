@@ -218,9 +218,39 @@ export async function deleteFinishedProduct(idInput: string | number) {
     const id = positiveId(idInput);
     const product = await tx.finishedProducts.findUnique({
       where: { ProductId: id },
+      include: { Items: true },
     });
     if (!product) {
       return refuse("Finished product variant not found.");
+    }
+
+    // Prevent deletion if this finished product still has stock in inventory (Inventories or active InventoryLots)
+    const [inventories, lots] = await Promise.all([
+      tx.inventories.findMany({
+        where: { ItemId: product.ItemId },
+        select: { CurrentStock: true },
+      }),
+      tx.inventoryLots.findMany({
+        where: { ItemId: product.ItemId, QuantityRemaining: { gt: 0 } },
+        select: { QuantityRemaining: true },
+      }),
+    ]);
+
+    const invStock = (inventories ?? []).reduce(
+      (sum: number, row: { CurrentStock?: unknown }) => sum + (Number(row.CurrentStock) || 0),
+      0
+    );
+    const lotStock = (lots ?? []).reduce(
+      (sum: number, row: { QuantityRemaining?: unknown }) => sum + (Number(row.QuantityRemaining) || 0),
+      0
+    );
+    const totalStock = Math.max(invStock, lotStock);
+
+    if (totalStock > 0) {
+      const label = [product.Items?.ItemName, product.Variant].filter(Boolean).join(" - ") || `Product #${id}`;
+      return refuse(
+        `Cannot delete "${label}" because it currently has ${totalStock} unit(s) in inventory. Clear or transfer all remaining stock first.`
+      );
     }
 
     const batches = await tx.productionBatches.findMany({ where: { ProductId: id }, select: { BatchId: true, ImageUrl: true } });
@@ -228,20 +258,35 @@ export async function deleteFinishedProduct(idInput: string | number) {
     await unlinkFile(filesGateway, staff, productImage, id, product.ImageUrl);
 
     // Safely delete or detach dependent records to prevent foreign key errors
-    await (tx as any).stockTransferRequestItems.deleteMany({ where: { ProductId: id } }).catch(() => { });
-    await (tx as any).stockTransfers.deleteMany({ where: { ProductId: id } }).catch(() => { });
-    await (tx as any).productionRequests.deleteMany({ where: { ProductId: id } }).catch(() => { });
-    await (tx as any).productionBatches.deleteMany({ where: { ProductId: id } }).catch(() => { });
-    await (tx as any).recipes.deleteMany({ where: { ProductId: id } }).catch(() => { });
+    await (tx as any).branchRequestItems?.deleteMany({ where: { ProductId: id } }).catch(() => { });
+    await (tx as any).branchReturnItems?.deleteMany({ where: { ProductId: id } }).catch(() => { });
+    await (tx as any).stockWriteOffItems?.deleteMany({ where: { ProductId: id } }).catch(() => { });
+    await (tx as any).stockTransferRequestItems?.deleteMany({ where: { ProductId: id } }).catch(() => { });
+    await (tx as any).stockTransfers?.deleteMany({ where: { ProductId: id } }).catch(() => { });
+    await (tx as any).productionRequests?.deleteMany({ where: { ProductId: id } }).catch(() => { });
+    await (tx as any).productionBatches?.deleteMany({ where: { ProductId: id } }).catch(() => { });
+    await (tx as any).recipes?.deleteMany({ where: { ProductId: id } }).catch(() => { });
 
     await tx.finishedProducts.delete({ where: { ProductId: id } });
+
+    // Deactivate orphaned Item record if no other finished products share it
+    const remainingSiblings = await tx.finishedProducts.count({
+      where: { ItemId: product.ItemId, ProductId: { not: id } },
+    });
+    if (remainingSiblings === 0) {
+      await tx.items.update({
+        where: { ItemId: product.ItemId },
+        data: { IsActive: false },
+      }).catch(() => { });
+    }
+
     return {
       result: resourceResult({ success: true, data: true }),
       audit: {
         module: "Production & Quality",
         action: "record.deleted",
-        target: { type: "finished-product", id: id, name: String(id) },
-        description: `${staff.name} deleted finished product (${String(id)})`,
+        target: { type: "finished-product", id: id, name: product.Items?.ItemName || String(id) },
+        description: `${staff.name} deleted finished product (${product.Items?.ItemName || String(id)})`,
       },
     };
   }, { module: "Production & Quality", action: "record.updated", target: { type: "operation", id: String(idInput), name: "deleteFinishedProduct" }, description: "Validation refused for deleteFinishedProduct", version: auditVersion([idInput]) });
