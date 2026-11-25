@@ -1451,8 +1451,8 @@ function CreateGrnBody({
   const containerClasses =
     variant === "page"
       ? embedded
-        ? "space-y-5 pb-10 animate-page-in"
-        : "page-container px-4 sm:px-8 w-full space-y-5 pb-10 animate-page-in"
+        ? "space-y-6 pb-12 animate-page-in"
+        : "page-container px-4 sm:px-8 w-full space-y-6 pb-12 animate-page-in"
       : "space-y-4";
 
   const qaOutcomeBadge = useMemo(() => {
@@ -1533,38 +1533,28 @@ function CreateGrnBody({
           </div>
         )}
 
-        {/* Main 2-Column Layout (Matching Figma Form · New goods receipt note 142:21) */}
+        {/* Main 2-Column Layout (Matching Figma Page 2 Form · New purchase order) */}
         <div
           className={
             variant === "page"
-              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start"
-              : "space-y-4"
+              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start"
+              : "space-y-5"
           }
         >
-          {/* Left Column: 5 Clean Cards */}
-          <div className="min-w-0 space-y-5">
-            {/* Card 1: Receipt & delivery details */}
-            <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+          {/* Left Column: Receipt Details, Physical Count, Receiving Check, QA Review */}
+          <div className="min-w-0 space-y-6">
+            {/* Card 1: Receipt & delivery details (2-column text boxes matching New PO) */}
+            <div className="rounded-card border border-border bg-surface p-6 space-y-5">
               <h2 className="type-subsection text-ink">Receipt &amp; delivery details</h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4 items-end">
                 {/* Goods Receipt Note No. */}
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                     Goods Receipt Note No.
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary select-all tabular-nums">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary select-all tabular-nums">
                     {activeGrn?.grnNumber || previewGrnNo}
-                  </div>
-                </div>
-
-                {/* Received Date */}
-                <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
-                    Received Date
-                  </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary">
-                    {todayDisplay}
                   </div>
                 </div>
 
@@ -1572,7 +1562,7 @@ function CreateGrnBody({
                 <div>
                   <label
                     className={`mb-1.5 block type-label-field whitespace-nowrap ${
-                      fieldErrors.delivery ? "text-destructive" : "text-ink"
+                      fieldErrors.delivery ? "text-destructive" : "text-ink-strong"
                     }`}
                   >
                     Select Delivery <span className="text-destructive">*</span>
@@ -1601,11 +1591,11 @@ function CreateGrnBody({
                         const target = deliveries.find((d) => d.deliveryId === id);
                         if (target) loadSource(target);
                       }}
-                      className={`w-full h-9 appearance-none rounded-control border ${
+                      className={`w-full h-10 appearance-none rounded-control border ${
                         fieldErrors.delivery
                           ? "!border-destructive focus:ring-destructive"
-                          : "border-border"
-                      } bg-surface pl-3 pr-9 py-1.5 type-body-secondary text-ink transition-colors cursor-pointer focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none`}
+                          : "border-input"
+                      } bg-surface pl-3.5 pr-9 py-2 type-body-secondary text-ink transition-colors cursor-pointer focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none`}
                     >
                       <option value="">
                         {deliveries.length === 0
@@ -1627,13 +1617,23 @@ function CreateGrnBody({
                   )}
                 </div>
 
+                {/* Received Date */}
+                <div>
+                  <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
+                    Received Date
+                  </label>
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary">
+                    {todayDisplay}
+                  </div>
+                </div>
+
                 {/* Supplier */}
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                     Supplier
                   </label>
                   <div
-                    className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate"
+                    className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary truncate"
                     title={selected?.supplierName || undefined}
                   >
                     {selected?.supplierName || "—"}
@@ -1642,20 +1642,20 @@ function CreateGrnBody({
 
                 {/* Purchase Order Ref. */}
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                     Purchase Order Ref.
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary tabular-nums">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary tabular-nums">
                     {selected?.poNumber || "—"}
                   </div>
                 </div>
 
                 {/* Carrier / Vehicle */}
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                     Carrier / Vehicle
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary truncate">
                     {selected?.carrier && selected.carrier !== "N/A" ? selected.carrier : "—"}
                   </div>
                 </div>
@@ -1683,7 +1683,7 @@ function CreateGrnBody({
             {selected && !loading && (
               <>
                 {/* Card 2: Physical count & expiry verification */}
-                <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+                <div className="rounded-card border border-border bg-surface p-6 space-y-5">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <h2 className="type-subsection text-ink">
@@ -1692,7 +1692,7 @@ function CreateGrnBody({
                           : "Physical count verification"}{" "}
                         <span className="text-destructive">*</span>
                       </h2>
-                      <p className="mt-0.5 type-caption text-ink-muted">
+                      <p className="mt-1 type-caption text-ink-muted">
                         {items.some((i) => i.hasExpiry)
                           ? 'Enter actual counts and expiry dates for each item. Click "+ Add Batch" if received across multiple lots or expiry dates.'
                           : 'Enter actual counts for each item. Click "+ Add Batch" if received across multiple lots.'}
@@ -1703,25 +1703,25 @@ function CreateGrnBody({
                     </span>
                   </div>
 
-                  <div className="space-y-5">
+                  <div className="space-y-6">
                     {renderItemTableSection(rawMaterials, "Raw Materials")}
                     {renderItemTableSection(toolsAndSupplies, "Tools and Supplies")}
                   </div>
                 </div>
 
                 {/* Card 3: Receiving check */}
-                <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+                <div className="rounded-card border border-border bg-surface p-6 space-y-4">
                   <div className="flex items-center justify-between gap-2">
                     <h2 className="type-subsection text-ink">Receiving check</h2>
                     <span className="type-caption text-ink-muted tabular-nums">
                       {verifiedChecksCount} / {receivingChecks.length} verified
                     </span>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-3.5 sm:grid-cols-2">
                     {receivingChecks.map(([key, label]) => (
                       <label
                         key={key}
-                        className="flex items-center gap-2.5 rounded-control border border-border bg-surface px-3.5 py-2.5 type-body-secondary text-ink cursor-pointer hover:bg-page transition-colors"
+                        className="flex items-center gap-3 rounded-control border border-input bg-surface px-4 py-3 type-body-secondary text-ink cursor-pointer hover:bg-page transition-colors"
                       >
                         <input
                           type="checkbox"
@@ -1738,13 +1738,13 @@ function CreateGrnBody({
                 </div>
 
                 {/* Card 4: Quality assurance review (UNIFIED ON SAME PAGE) */}
-                <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+                <div className="rounded-card border border-border bg-surface p-6 space-y-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <h2 className="type-subsection text-ink">
                         Quality assurance review <span className="text-destructive">*</span>
                       </h2>
-                      <p className="mt-0.5 type-caption text-ink-muted">
+                      <p className="mt-1 type-caption text-ink-muted">
                         Count what passed and what failed for each received batch. Passed units
                         proceed to Stock-In; rejected units automatically log a Discrepancy.
                       </p>
@@ -1756,7 +1756,7 @@ function CreateGrnBody({
                     </span>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {qaRows.map((qaRow) => {
                       const checksList = getQaChecks(qaRow);
                       const allChecked = checksList.every((c) => qaRow.checks[c.id]);
@@ -1822,9 +1822,9 @@ function CreateGrnBody({
 
                           {/* Item QA Accordion Body */}
                           {isExpanded && (
-                            <div className="p-4 space-y-4">
+                            <div className="p-5 space-y-5">
                               {!hasDelivered ? (
-                                <div className="rounded-control border border-dashed border-border bg-page px-4 py-3 type-caption text-ink-muted">
+                                <div className="rounded-control border border-dashed border-border bg-page px-4 py-3.5 type-caption text-ink-muted">
                                   Enter the{" "}
                                   <strong className="font-medium text-ink">Actual Received</strong>{" "}
                                   quantity for {qaRow.itemName}
@@ -1834,9 +1834,9 @@ function CreateGrnBody({
                               ) : (
                                 <>
                                   {/* 1. Accepted (Good) & Rejected (Bad) Split */}
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {/* Accepted Box */}
-                                    <div className="space-y-2.5 p-3.5 rounded-control border border-border bg-page">
+                                    <div className="space-y-3 p-4 rounded-control border border-border bg-page">
                                       <div>
                                         <label className="mb-1.5 block type-label-field text-ink">
                                           Accepted / Good (units){" "}
@@ -2016,36 +2016,38 @@ function CreateGrnBody({
                   </div>
                 </div>
 
-                {/* Card 5: Receiving gate notes */}
-                <div className="rounded-card border border-border bg-surface p-5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h2 className="type-subsection text-ink">
-                      Receiving gate notes{" "}
-                      <span className="type-caption font-normal text-ink-muted">(Optional)</span>
-                    </h2>
-                    <span className="type-caption text-ink-muted tabular-nums">
-                      {notes.length} chars
-                    </span>
+                {/* Card 5: Receiving gate notes (Modal mode keeps it inline; Page mode moves it to right rail matching New PO) */}
+                {variant === "modal" && (
+                  <div className="rounded-card border border-border bg-surface p-5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h2 className="type-subsection text-ink">
+                        Receiving gate notes{" "}
+                        <span className="type-caption font-normal text-ink-muted">(Optional)</span>
+                      </h2>
+                      <span className="type-caption text-ink-muted tabular-nums">
+                        {notes.length} chars
+                      </span>
+                    </div>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={3}
+                      className="w-full rounded-control border border-input bg-surface px-3 py-2.5 type-body-secondary text-ink focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                      placeholder="Document quantity differences, packaging condition, or gate inspection notes."
+                    />
                   </div>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
-                    className="w-full rounded-control border border-border bg-surface px-3 py-2.5 type-body-secondary text-ink focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring resize-none"
-                    placeholder="Document quantity differences, packaging condition, or gate inspection notes."
-                  />
-                </div>
+                )}
               </>
             )}
           </div>
 
-          {/* Right Column: Receipt Summary Card (Page Mode — Matching Requisition Summary) */}
+          {/* Right Column: Receipt Summary + Receiving Gate Notes (Matching Figma Page 2 Form · New purchase order) */}
           {variant === "page" && (
-            <div className="space-y-5 xl:sticky xl:top-5">
-              <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+            <div className="space-y-6 xl:sticky xl:top-5">
+              <div className="rounded-card border border-border bg-surface p-6 space-y-4">
                 <h2 className="type-subsection text-ink">Receipt summary</h2>
 
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3 type-body-secondary">
                     <span className="text-ink-muted">GRN No.</span>
                     <span className="font-medium text-ink tabular-nums">
@@ -2098,7 +2100,7 @@ function CreateGrnBody({
                   </div>
                 </div>
 
-                <div className="border-t border-divider pt-3 space-y-2">
+                <div className="border-t border-divider pt-3.5 space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <span className="type-subsection text-ink">Total items counted</span>
                     <span className="type-card-title text-primary tabular-nums">
@@ -2122,6 +2124,26 @@ function CreateGrnBody({
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Right Rail Card 2: Receiving gate notes (Matching Notes to supplier in New PO) */}
+              <div className="rounded-card border border-border bg-surface p-6 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <h2 className="type-subsection text-ink">
+                    Receiving gate notes{" "}
+                    <span className="type-caption font-normal text-ink-muted">(Optional)</span>
+                  </h2>
+                  <span className="type-caption text-ink-muted tabular-nums">
+                    {notes.length} chars
+                  </span>
+                </div>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-control border border-input bg-surface px-3.5 py-2.5 type-body-secondary text-ink focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                  placeholder="Document quantity differences, packaging condition, or gate inspection notes."
+                />
               </div>
             </div>
           )}

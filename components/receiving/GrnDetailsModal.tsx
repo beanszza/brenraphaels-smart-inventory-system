@@ -162,8 +162,8 @@ function GrnDetailsBody({
   const containerClasses =
     variant === "page"
       ? embedded
-        ? "space-y-5 pb-10 animate-page-in"
-        : "page-container px-4 sm:px-8 w-full space-y-5 pb-10 animate-page-in"
+        ? "space-y-6 pb-12 animate-page-in"
+        : "page-container px-4 sm:px-8 w-full space-y-6 pb-12 animate-page-in"
       : "space-y-5";
 
   const statusHelperText =
@@ -266,16 +266,16 @@ function GrnDetailsBody({
           </div>
         )}
 
-        {/* Main 2-Column Layout (Matching CreateGrnForm & Figma 142:433) */}
+        {/* Main 2-Column Layout (Matching CreateGrnForm & Figma Page 2 New PO) */}
         <div
           className={
             variant === "page"
-              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start"
+              ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start"
               : "space-y-5"
           }
         >
           {/* Left Column */}
-          <div className="min-w-0 space-y-5">
+          <div className="min-w-0 space-y-6">
             {/* Workflow Status Banner */}
             {(grn.status === "Received" || grn.status === "QaPending") && (
               <div className="rounded-inner border border-border bg-surface px-4 py-3.5 flex items-center gap-3">
@@ -323,44 +323,44 @@ function GrnDetailsBody({
               </div>
             )}
 
-            {/* Card 1: Receipt details (same 3-col read-only field grid as Create GRN) */}
-            <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+            {/* Card 1: Receipt details (2-column read-only text boxes matching Create GRN & New PO) */}
+            <div className="rounded-card border border-border bg-surface p-6 space-y-5">
               <h2 className="type-subsection text-ink">Receipt details</h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4 items-end">
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                     Goods Receipt Note No.
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary select-all tabular-nums">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary select-all tabular-nums">
                     {grn.grnNumber}
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                     Delivery No.
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary tabular-nums">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary tabular-nums">
                     {grn.deliveryNumber || "—"}
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                     Received Date
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary">
                     {formattedReceivedDate}
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                     Supplier
                   </label>
                   <div
-                    className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate"
+                    className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary truncate"
                     title={grn.supplierName}
                   >
                     {grn.supplierName || "—"}
@@ -368,29 +368,29 @@ function GrnDetailsBody({
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                     Receiving Bay
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary">
                     {grn.receivingBay || "Main Bay"}
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                  <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                     Received By
                   </label>
-                  <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
+                  <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary truncate">
                     {grn.receivedBy || "Warehouse Staff"}
                   </div>
                 </div>
 
                 {grn.poNumber && (
                   <div>
-                    <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                    <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                       Purchase Order Ref.
                     </label>
-                    <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary tabular-nums">
+                    <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary tabular-nums">
                       {grn.poNumber}
                     </div>
                   </div>
@@ -400,10 +400,10 @@ function GrnDetailsBody({
                   grn.postedBy !== "System" &&
                   grn.postedBy !== "Not Posted" && (
                     <div>
-                      <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                      <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                         Posted By
                       </label>
-                      <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
+                      <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary truncate">
                         {grn.postedBy}
                       </div>
                     </div>
@@ -411,10 +411,10 @@ function GrnDetailsBody({
 
                 {grn.carrier && grn.carrier !== "N/A" && (
                   <div>
-                    <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                    <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                       Carrier / Vehicle
                     </label>
-                    <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary truncate">
+                    <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary truncate">
                       {grn.carrier}
                     </div>
                   </div>
@@ -422,10 +422,10 @@ function GrnDetailsBody({
 
                 {grn.supplierDrNumber && grn.supplierDrNumber !== "N/A" && (
                   <div>
-                    <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                    <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                       Supplier DR #
                     </label>
-                    <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary tabular-nums">
+                    <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary tabular-nums">
                       {grn.supplierDrNumber}
                     </div>
                   </div>
@@ -433,10 +433,10 @@ function GrnDetailsBody({
 
                 {grn.supplierInvoiceNumber && grn.supplierInvoiceNumber !== "N/A" && (
                   <div>
-                    <label className="mb-1.5 block type-label-field text-ink whitespace-nowrap">
+                    <label className="mb-1.5 block type-label-field text-ink-strong whitespace-nowrap">
                       Supplier Invoice #
                     </label>
-                    <div className="flex items-center h-9 px-3 rounded-control border border-border bg-page type-body-secondary text-ink-secondary tabular-nums">
+                    <div className="flex items-center h-10 px-3.5 rounded-control border border-input bg-page type-body-secondary text-ink-secondary tabular-nums">
                       {grn.supplierInvoiceNumber}
                     </div>
                   </div>
@@ -445,7 +445,7 @@ function GrnDetailsBody({
             </div>
 
             {/* Card 2: Received line items */}
-            <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+            <div className="rounded-card border border-border bg-surface p-6 space-y-5">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <h2 className="type-subsection text-ink">Received line items</h2>
@@ -573,26 +573,28 @@ function GrnDetailsBody({
               </div>
             </div>
 
-            {/* Card 3: Receiving gate notes */}
-            <div className="rounded-card border border-border bg-surface p-5 space-y-3">
-              <h2 className="type-subsection text-ink">Receiving gate notes</h2>
-              <div
-                className={`w-full rounded-control border border-border bg-page px-3 py-2.5 type-body-secondary leading-relaxed whitespace-pre-wrap ${
-                  grn.notes && grn.notes.trim() ? "text-ink" : "text-ink-muted"
-                }`}
-              >
-                {grn.notes && grn.notes.trim() ? grn.notes : "No additional dock notes provided."}
+            {/* Card 3: Receiving gate notes (Modal mode keeps it inline; Page mode moves it to right rail matching Create GRN & New PO) */}
+            {variant === "modal" && (
+              <div className="rounded-card border border-border bg-surface p-5 space-y-3">
+                <h2 className="type-subsection text-ink">Receiving gate notes</h2>
+                <div
+                  className={`w-full rounded-control border border-input bg-page px-3.5 py-2.5 type-body-secondary leading-relaxed whitespace-pre-wrap ${
+                    grn.notes && grn.notes.trim() ? "text-ink" : "text-ink-muted"
+                  }`}
+                >
+                  {grn.notes && grn.notes.trim() ? grn.notes : "No additional dock notes provided."}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Right Column: Receipt Summary Card (Page Mode — Identical to CreateGrnForm) */}
+          {/* Right Column: Receipt Summary + Receiving Gate Notes (Page Mode — Identical to CreateGrnForm & New PO) */}
           {variant === "page" && (
-            <div className="space-y-5 xl:sticky xl:top-5">
-              <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+            <div className="space-y-6 xl:sticky xl:top-5">
+              <div className="rounded-card border border-border bg-surface p-6 space-y-4">
                 <h2 className="type-subsection text-ink">Receipt summary</h2>
 
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3 type-body-secondary">
                     <span className="text-ink-muted">GRN No.</span>
                     <span className="font-medium text-ink tabular-nums">{grn.grnNumber}</span>
@@ -635,12 +637,24 @@ function GrnDetailsBody({
                   </div>
                 </div>
 
-                <div className="border-t border-divider pt-3 flex items-center justify-between gap-3">
+                <div className="border-t border-divider pt-3.5 flex items-center justify-between gap-3">
                   <span className="type-subsection text-ink">Total accepted qty</span>
                   <span className="type-card-title text-primary tabular-nums">
                     {totalAcceptedQty.toLocaleString()}{" "}
                     {totalAcceptedQty === 1 ? "unit" : "units"}
                   </span>
+                </div>
+              </div>
+
+              {/* Right Rail Card 2: Receiving gate notes */}
+              <div className="rounded-card border border-border bg-surface p-6 space-y-3.5">
+                <h2 className="type-subsection text-ink">Receiving gate notes</h2>
+                <div
+                  className={`w-full rounded-control border border-input bg-page px-3.5 py-2.5 type-body-secondary leading-relaxed whitespace-pre-wrap ${
+                    grn.notes && grn.notes.trim() ? "text-ink" : "text-ink-muted"
+                  }`}
+                >
+                  {grn.notes && grn.notes.trim() ? grn.notes : "No additional dock notes provided."}
                 </div>
               </div>
             </div>
