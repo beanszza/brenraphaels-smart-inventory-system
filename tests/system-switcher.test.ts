@@ -8,7 +8,7 @@ describe("system switcher", () => {
     const names = systems.map((s) => s.fullName);
     expect(names).toEqual([
       "Enterprise Portal",
-      "Customer Relationship Management",
+      "Customer Relation and Ecommerce Ordering Management System",
       "Human Resource Management",
       "E-Commerce Storefront",
       "Point of Sale",
