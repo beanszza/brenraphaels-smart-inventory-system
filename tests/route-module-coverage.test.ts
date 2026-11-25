@@ -12,6 +12,7 @@ it("only Portal plumbing remains as route handlers", () => {
     "../app/api/portal/callback/route.ts",
     "../app/api/portal/login/route.ts",
     "../app/api/portal/logout/route.ts",
+    "../app/api/portal/systems/route.ts",
     "../app/api/pos/locations/sync/route.ts",
     "../app/api/pos/stock-requests/[requestId]/cancel/route.ts",
     "../app/api/pos/stock-requests/route.ts",

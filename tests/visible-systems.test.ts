@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { systems, visibleSystems } from "@/components/shared/SidebarNav";
 
-const names = (allowed: string[] | null) => visibleSystems(systems, allowed).filter((s) => s.fullName !== "E-Commerce Storefront").map((s) => s.portalName ?? "portal");
+const names = (allowed: string[] | null) => visibleSystems(systems, allowed).map((s) => s.portalName ?? "portal");
 
 describe("module switcher access", () => {
   it("always keeps the Enterprise Portal and the open System", () => {
@@ -19,5 +19,24 @@ describe("module switcher access", () => {
 
   it("ignores a grant for a System that does not exist", () => {
     expect(names(["NOPE"])).toHaveLength(2);
+  });
+});
+
+describe("module switcher entries a person sees", () => {
+  const shown = (allowed: string[] | null) => visibleSystems(systems, allowed).map((s) => s.fullName);
+
+  it("shows the Portal, CREOMS and IMS to someone granted CREOMS and IMS", () => {
+    expect(shown(["CRMS", "IMS"])).toEqual(["Enterprise Portal", "CREOMS", "Inventory Management"]);
+  });
+
+  it("offers no E-Commerce Storefront, which the Portal never grants", () => {
+    expect(systems.map((s) => s.fullName)).not.toContain("E-Commerce Storefront");
+    expect(systems.every((s) => s.portal || s.portalName)).toBe(true);
+  });
+
+  it("names CREOMS as the Portal home does, without the retired marketing Module", () => {
+    const creoms = systems.find((s) => s.portalName === "CRMS")!;
+    expect(creoms.fullName).toBe("CREOMS");
+    expect(creoms.desc).not.toMatch(/marketing/i);
   });
 });
