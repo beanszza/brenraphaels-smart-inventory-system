@@ -26,7 +26,7 @@ describe("module switcher entries a person sees", () => {
   const shown = (allowed: string[] | null) => visibleSystems(systems, allowed).map((s) => s.fullName);
 
   it("shows the Portal, CREOMS and IMS to someone granted CREOMS and IMS", () => {
-    expect(shown(["CRMS", "IMS"])).toEqual(["Enterprise Portal", "Customer Relation and Ecommerce Ordering Management System", "Inventory Management"]);
+    expect(shown(["CRMS", "IMS"])).toEqual(["Enterprise Portal", "Customer Relation and Ecommerce Ordering Management System", "Inventory Management System"]);
   });
 
   it("offers no E-Commerce Storefront, which the Portal never grants", () => {
