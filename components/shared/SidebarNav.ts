@@ -135,9 +135,9 @@ export const systems: SystemItem[] = [
     url: process.env.NEXT_PUBLIC_HOST_URL ?? "https://localhost:3000/",
   },
   {
-    fullName: "Customer Relation and Ecommerce Ordering Management System",
+    fullName: "CREOMS",
     portalName: "CRMS",
-    desc: "Contact profiles, tickets & marketing",
+    desc: "Customers, orders, tickets & feedback",
     icon: Building2,
     active: false,
     url: process.env.NEXT_PUBLIC_CRMS_URL ?? "https://localhost:3005/",
@@ -149,13 +149,6 @@ export const systems: SystemItem[] = [
     icon: Users2,
     active: false,
     url: process.env.NEXT_PUBLIC_HRMS_URL ?? "https://localhost:3001/",
-  },
-  {
-    fullName: "E-Commerce Storefront",
-    desc: "Online orders & products",
-    icon: ShoppingCart,
-    active: false,
-    url: process.env.NEXT_PUBLIC_OOS_URL ?? "https://localhost:3004/",
   },
   {
     fullName: "Point of Sale",
