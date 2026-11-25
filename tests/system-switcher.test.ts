@@ -8,7 +8,7 @@ describe("system switcher", () => {
     const names = systems.map((s) => s.fullName);
     expect(names).toEqual([
       "Enterprise Portal",
-      "CREOMS",
+      "Customer Relation and Ecommerce Ordering Management System",
       "Human Resource Management",
       "Point of Sale",
       "Inventory Management",
@@ -22,6 +22,6 @@ describe("system switcher", () => {
     vi.stubEnv("NEXT_PUBLIC_CRMS_URL", "https://crms.example.com/");
     vi.resetModules();
     const { systems } = await import("@/components/shared/SidebarNav");
-    expect(systems.find((s) => s.fullName === "CREOMS")?.url).toBe("https://crms.example.com/");
+    expect(systems.find((s) => s.fullName === "Customer Relation and Ecommerce Ordering Management System")?.url).toBe("https://crms.example.com/");
   });
 });
