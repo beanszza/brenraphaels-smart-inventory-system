@@ -71,10 +71,10 @@ export function SidebarEnterpriseHeader({
                         <SysIcon className="size-4 shrink-0" />
                       </div>
                       <div className="flex flex-col min-w-0 overflow-hidden flex-1 justify-center gap-0.5">
-                        <span className="font-semibold type-body-secondary truncate leading-tight text-ink">
+                        <span className="font-semibold type-body-secondary whitespace-normal break-words leading-tight text-ink">
                           {sys.fullName}
                         </span>
-                        <span className="type-caption text-ink-muted truncate leading-tight">
+                        <span className="type-caption text-ink-muted whitespace-normal break-words leading-tight">
                           {sys.desc}
                         </span>
                       </div>
