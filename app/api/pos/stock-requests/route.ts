@@ -186,17 +186,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Resolve branch in IMS Locations
+    // Resolve branch in IMS Locations.
+    // Match by exact branchName first among non-system/non-factory branches so POS branchId (e.g. "1"
+    // for Antipolo Store Branch) never collides with IMS's LocationId=1 Commissary/Factory row.
     const parsedBranchId = Number(branchIdRaw);
-    let location =
-      Number.isInteger(parsedBranchId) && parsedBranchId > 0
-        ? await prisma.locations.findUnique({ where: { LocationId: parsedBranchId } })
-        : null;
+    const isCommissaryOrFactory = (loc: { IsSystemLocation?: boolean | null; LocationName?: string | null }) => {
+      const lowerName = (loc.LocationName || "").toLowerCase();
+      return Boolean(loc.IsSystemLocation) || lowerName.includes("factory") || lowerName.includes("commissary");
+    };
+
+    let location = await prisma.locations.findFirst({
+      where: {
+        LocationName: { equals: branchName, mode: "insensitive" },
+        IsSystemLocation: false,
+      },
+    });
+
+    if (!location && Number.isInteger(parsedBranchId) && parsedBranchId > 0) {
+      const byId = await prisma.locations.findUnique({ where: { LocationId: parsedBranchId } });
+      if (byId && (!isCommissaryOrFactory(byId) || byId.LocationName.trim().toLowerCase() === branchName.toLowerCase())) {
+        location = byId;
+      }
+    }
 
     if (!location) {
       location = await prisma.locations.findFirst({
         where: { LocationName: { equals: branchName, mode: "insensitive" } },
       });
+    }
+
+    if (!location && Number.isInteger(parsedBranchId) && parsedBranchId > 0) {
+      location = await prisma.locations.findUnique({ where: { LocationId: parsedBranchId } });
     }
 
     if (!location) {

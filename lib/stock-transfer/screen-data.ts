@@ -61,15 +61,34 @@ export type BranchRequestsScreen = Awaited<ReturnType<typeof loadBranchRequestsS
 
 export async function loadBranchRequestPrefill(branchRequestId: number): Promise<CreateSTRPrefill | null> {
   if (!Number.isSafeInteger(branchRequestId) || branchRequestId <= 0) return null;
-  const rows = await allRows<BranchStockRequest>(listBranchRequests);
+  const [rows, activeLocations] = await Promise.all([
+    allRows<BranchStockRequest>(listBranchRequests),
+    locations(),
+  ]);
   const req = rows.find((r) => r.branchRequestId === branchRequestId);
   const primaryItem = req?.items?.[0];
   if (!req || !primaryItem || req.subtab !== "approved" || req.totalRemaining <= 0) return null;
+
+  // Prefer an active non-system destination matching branchName if req.branchId points to a
+  // system/factory location or doesn't exist in active destinations.
+  const destinations = activeLocations.filter(
+    (l) => !l.isSystemLocation && !l.locationName.toLowerCase().includes("factory")
+  );
+  const normalizedBranchName = req.branchName.trim().toLowerCase();
+  const byId = destinations.find((l) => l.locationId === req.branchId);
+  const byName = destinations.find((l) => l.locationName.trim().toLowerCase() === normalizedBranchName);
+  const resolvedLocation =
+    (byId && byId.locationName.trim().toLowerCase() === normalizedBranchName ? byId : null) ||
+    byName ||
+    byId ||
+    activeLocations.find((l) => l.locationName.trim().toLowerCase() === normalizedBranchName) ||
+    activeLocations.find((l) => l.locationId === req.branchId);
+
   return {
     branchRequestId: req.branchRequestId,
     branchRequestNumber: req.requestNumber,
-    branchId: req.branchId,
-    branchName: req.branchName,
+    branchId: resolvedLocation ? resolvedLocation.locationId : req.branchId,
+    branchName: req.branchName || resolvedLocation?.locationName || `Branch #${req.branchId}`,
     productId: primaryItem.productId,
     productName: primaryItem.productName,
     variationName: primaryItem.variationName,

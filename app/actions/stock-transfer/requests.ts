@@ -310,11 +310,30 @@ export async function createRequest(body: any = {}) {
       if (!branchReq) {
         return refuse("Linked branch stock request not found.");
       }
-      if (branchReq.Status === "Submitted" || branchReq.Status === "Pending" || branchReq.Status === "Rejected") {
+      if (
+        branchReq.Status === "Submitted" ||
+        branchReq.Status === "Pending" ||
+        branchReq.Status === "Rejected" ||
+        branchReq.Status === "Cancelled"
+      ) {
         return refuse(`Branch stock request ${branchReq.RequestNumber} is not approved for transfer.`);
       }
       if (Number(toLocationId) !== branchReq.BranchId) {
-        return refuse("Destination branch must match the linked branch stock request.");
+        const destLocation = await tx.locations.findUnique({
+          where: { LocationId: Number(toLocationId) },
+        });
+        const namesMatch =
+          Boolean(destLocation?.LocationName) &&
+          Boolean(branchReq.BranchName) &&
+          destLocation!.LocationName.trim().toLowerCase() === branchReq.BranchName!.trim().toLowerCase();
+        if (!namesMatch) {
+          return refuse("Destination branch must match the linked branch stock request.");
+        }
+        // Self-heal historical BranchRequests whose BranchId collided with a system/factory location
+        await tx.branchRequests.update({
+          where: { BranchRequestId: parsedBrId },
+          data: { BranchId: destLocation!.LocationId },
+        });
       }
 
       const alloc = computeBranchRequestAllocation(

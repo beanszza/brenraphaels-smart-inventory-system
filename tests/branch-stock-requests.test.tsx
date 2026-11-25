@@ -27,6 +27,11 @@ interface FakeBranchRow {
 const dbState = vi.hoisted(() => ({
   existingByNumber: new Map<string, FakeBranchRow>(),
   locationFound: true,
+  locationsList: [
+    { LocationId: 1, LocationName: "Main Commissary Factory", IsSystemLocation: true },
+    { LocationId: 4, LocationName: "TriNoma Bazaar", IsSystemLocation: false },
+    { LocationId: 12, LocationName: "Antipolo Store Branch", IsSystemLocation: false },
+  ] as Array<{ LocationId: number; LocationName: string; IsSystemLocation: boolean }>,
   productFound: true,
   fallbackProducts: [] as Array<{ ProductId: number; Sku: string; Variant: string; Items: { ItemName: string; ItemCode: string } }>,
   nextId: 551,
@@ -103,10 +108,25 @@ vi.mock("@/lib/prisma", () => ({
       },
     },
     locations: {
-      findUnique: async () =>
-        dbState.locationFound ? { LocationId: 4, LocationName: "TriNoma Bazaar" } : null,
-      findFirst: async () =>
-        dbState.locationFound ? { LocationId: 4, LocationName: "TriNoma Bazaar" } : null,
+      findUnique: async ({ where }: { where: { LocationId: number } }) => {
+        if (!dbState.locationFound) return null;
+        return dbState.locationsList.find((l) => l.LocationId === where.LocationId) ?? null;
+      },
+      findFirst: async ({
+        where,
+      }: {
+        where?: { LocationName?: { equals?: string }; IsSystemLocation?: boolean };
+      }) => {
+        if (!dbState.locationFound) return null;
+        const target = where?.LocationName?.equals?.toLowerCase();
+        return (
+          dbState.locationsList.find(
+            (l) =>
+              (!target || l.LocationName.toLowerCase() === target) &&
+              (where?.IsSystemLocation === undefined || l.IsSystemLocation === where.IsSystemLocation)
+          ) ?? null
+        );
+      },
     },
     finishedProducts: {
       findFirst: async () =>
@@ -524,5 +544,35 @@ describe("BranchRequestsTab rendering", () => {
       expect(html).toContain(text);
     }
     expect(html).not.toContain("New request");
+  });
+
+  it("matches POS branchId=1 (Antipolo Store Branch) by name instead of colliding with IMS LocationId=1 Commissary", async () => {
+    dbState.existingByNumber.clear();
+    dbState.locationFound = true;
+    dbState.productFound = true;
+    const res = await POST(
+      makePosRequest({
+        requestId: "SR-000006",
+        branch: { branchId: "1", branchName: "Antipolo Store Branch" },
+        requestedBy: "u_123",
+        requestedByName: "Branch Staff",
+        requestedAt: "2026-11-25T15:00:00Z",
+        notes: "Restock Toffee Jam",
+        items: [
+          {
+            productId: "SCM-PRD-0018",
+            sku: "UBE-HAL-250",
+            productName: "Ube Halaya",
+            variationName: "Pouch 250g",
+            quantity: 15,
+            currentStock: 0,
+          },
+        ],
+      })
+    );
+    expect(res.status).toBe(201);
+    const savedRow = dbState.existingByNumber.get("SR-000006");
+    expect(savedRow?.BranchId).toBe(12);
+    expect(savedRow?.BranchName).toBe("Antipolo Store Branch");
   });
 });

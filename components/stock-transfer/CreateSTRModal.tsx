@@ -95,7 +95,7 @@ export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: Cre
     if (open) {
       fetchPrerequisites();
     }
-  }, [open]);
+  }, [open, prefill?.branchRequestId]);
 
   async function fetchPrerequisites() {
     setPrerequisitesLoading(true);
@@ -114,20 +114,46 @@ export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: Cre
       if (prodRes.data?.success) {
         setProducts(prodRes.data.data || []);
       }
-      if (locRes.data?.success) {
-        // Exclude commissary / system locations from destination options
-        const allLocs: LocationOption[] = locRes.data.data || [];
-        const destinations = allLocs.filter(
-          (l) => !l.isSystemLocation && !l.locationName.toLowerCase().includes("factory")
-        );
-        setLocations(destinations);
-      }
+
+      const allLocs: LocationOption[] = locRes.data?.success ? locRes.data.data || [] : [];
+      const destinations = allLocs.filter(
+        (l) => !l.isSystemLocation && !l.locationName.toLowerCase().includes("factory")
+      );
 
       // Apply Branch Stock Request prefill when launched via "Transfer Now"
       if (prefill) {
+        const normalizedBranchName = prefill.branchName.trim().toLowerCase();
+        const exactIdInDest = destinations.find((l) => l.locationId === prefill.branchId);
+        const byNameInDest = destinations.find(
+          (l) => l.locationName.trim().toLowerCase() === normalizedBranchName
+        );
+        const inAllByName = allLocs.find(
+          (l) => l.locationName.trim().toLowerCase() === normalizedBranchName
+        );
+        const inAllById = allLocs.find((l) => l.locationId === prefill.branchId);
+
+        const resolvedLoc: LocationOption =
+          (exactIdInDest && exactIdInDest.locationName.trim().toLowerCase() === normalizedBranchName
+            ? exactIdInDest
+            : null) ||
+          byNameInDest ||
+          exactIdInDest ||
+          inAllByName ||
+          inAllById || {
+            locationId: prefill.branchId,
+            locationName: prefill.branchName,
+            locationType: "Branch",
+            isSystemLocation: false,
+          };
+
+        const finalLocations = destinations.some((l) => l.locationId === resolvedLoc.locationId)
+          ? destinations
+          : [resolvedLoc, ...destinations];
+        setLocations(finalLocations);
+
         const loadedProducts: FinishedProductOption[] = prodRes.data?.success ? prodRes.data.data || [] : [];
         const matchedProd = loadedProducts.find((p) => p.productId === prefill.productId);
-        setToLocationId(String(prefill.branchId));
+        setToLocationId(String(resolvedLoc.locationId));
         setReasonChoice("Branch Replenishment");
         setItems([
           {
@@ -145,6 +171,8 @@ export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: Cre
           },
         ]);
         await checkAvailability(0, prefill.productId, prefill.remainingQuantity);
+      } else {
+        setLocations(destinations);
       }
 
       setPrerequisitesReady(true);
@@ -428,9 +456,15 @@ export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: Cre
             <label className="block type-label-field text-ink">
               Destination Branch <span className="text-destructive">*</span>
             </label>
-            <Select value={toLocationId} onValueChange={setToLocationId} disabled={Boolean(prefill)}>
+            <Select
+              value={toLocationId}
+              onValueChange={(val) => {
+                if (val || !prefill) setToLocationId(val);
+              }}
+              disabled={Boolean(prefill)}
+            >
               <SelectTrigger className="w-full h-10 px-3.5 rounded-control border-border bg-surface type-body text-ink">
-                <SelectValue placeholder="Select Destination Branch" />
+                <SelectValue placeholder={prefill?.branchName || "Select Destination Branch"} />
               </SelectTrigger>
               <SelectContent className="bg-surface border-border text-ink">
                 {locations.map((loc) => (
@@ -746,10 +780,12 @@ export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: Cre
           open={showSubmitConfirm}
           title="Submit Stock Transfer Request"
           subtitle={requestNumber ? `Request No: ${requestNumber}` : undefined}
-          description={`Are you sure you want to submit stock transfer request ${requestNumber || ""} for ${items.length} product(s) to ${locations.find((l) => String(l.locationId) === toLocationId)?.locationName || "the branch"}? Once submitted, it will be routed to the Admin for approval.`}
+          description={`Are you sure you want to submit stock transfer request ${requestNumber || ""} for ${items.length} product(s) to ${locations.find((l) => String(l.locationId) === toLocationId)?.locationName || prefill?.branchName || "the branch"}? Once submitted, it will be routed to the Admin for approval.`}
           confirmText="Confirm & Submit"
           loading={loading}
-          onCancel={() => setShowSubmitConfirm(false)}
+          onCancel={() => {
+            if (!loading) setShowSubmitConfirm(false);
+          }}
           onConfirm={doSubmit}
         />
       )}
