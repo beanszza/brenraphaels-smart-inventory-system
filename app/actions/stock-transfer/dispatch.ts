@@ -69,10 +69,10 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
         FinishedProducts: { include: { Items: true } },
         Locations_StockTransfers_SourceLocationIdToLocations: true,
         Locations_StockTransfers_DestLocationIdToLocations: true,
-        BranchRequests: true,
+        BranchRequests: { include: { BranchRequestItems: true } },
         StockTransferRequests: {
           include: {
-            BranchRequests: true,
+            BranchRequests: { include: { BranchRequestItems: true } },
           },
         },
       },
@@ -290,7 +290,14 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
     const linkedBranchReq =
       transfer.BranchRequests ?? transfer.StockTransferRequests?.BranchRequests ?? null;
     let posStockRequestId: string | undefined;
+    let requestedSkuForPos: string | undefined;
     if (linkedBranchReq) {
+      const matchedBrItem = (linkedBranchReq.BranchRequestItems || []).find(
+        (i: any) => i.ProductId === transfer.ProductId
+      );
+      if (matchedBrItem?.Sku) {
+        requestedSkuForPos = matchedBrItem.Sku;
+      }
       if (!linkedBranchReq.PosManifestLinked) {
         posStockRequestId = linkedBranchReq.RequestNumber;
         await tx.branchRequests.update({
@@ -350,7 +357,7 @@ export async function dispatchTransfer(idInput: number, body: any = {}) {
             products: [
               {
                 productId: transfer.FinishedProducts?.Items?.ItemCode || `SCM-PRD-${transfer.ProductId}`,
-                sku: transfer.FinishedProducts?.Sku || `SKU-${transfer.ProductId}`,
+                sku: requestedSkuForPos || transfer.FinishedProducts?.Sku || `SKU-${transfer.ProductId}`,
                 productName: transfer.FinishedProducts?.Items?.ItemName || "Finished Product",
                 quantity: transferQty,
               },

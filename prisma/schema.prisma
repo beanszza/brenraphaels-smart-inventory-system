@@ -85,6 +85,10 @@ model BranchRequests {
   DecidedByName         String?                 @db.VarChar(256)
   DecidedAt             DateTime?               @db.Timestamptz(6)
   DecisionRemarks       String?                 @db.VarChar(500)
+  CancelledBy           String?                 @db.VarChar(128)
+  CancelledByName       String?                 @db.VarChar(256)
+  CancelledAt           DateTime?               @db.Timestamptz(6)
+  CancelReason          String?                 @db.VarChar(500)
   Notes                 String?
   FulfilledAt           DateTime?               @db.Timestamptz(6)
   PosSyncStatus         String                  @default("Synced") @db.VarChar(32)

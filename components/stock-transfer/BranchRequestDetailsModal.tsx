@@ -94,7 +94,27 @@ export function BranchRequestDetailsModal({
             <span className="type-caption text-ink-muted block mb-1">Branch Request Notes</span>
             <p className="type-body-secondary text-ink">{request.notes || "—"}</p>
           </div>
-          {request.decidedByName && (
+          {request.status === "Cancelled" && (
+            <div className="sm:col-span-3 pt-2 border-t border-divider space-y-1">
+              <div>
+                <span className="type-caption text-ink-muted">Cancelled by (POS): </span>
+                <span className="type-body-secondary font-medium text-ink">
+                  {request.cancelledByName || "Branch Staff"}
+                </span>
+                {request.cancelledAt && (
+                  <span className="type-caption text-ink-muted">
+                    {" "}on {new Date(request.cancelledAt).toLocaleString()}
+                  </span>
+                )}
+              </div>
+              {request.cancelReason && (
+                <p className="type-body-secondary text-ink-secondary italic">
+                  &ldquo;{request.cancelReason}&rdquo;
+                </p>
+              )}
+            </div>
+          )}
+          {request.decidedByName && request.status !== "Cancelled" && (
             <div className="sm:col-span-3 pt-2 border-t border-divider flex flex-wrap items-center justify-between gap-2">
               <div>
                 <span className="type-caption text-ink-muted">
@@ -155,10 +175,14 @@ export function BranchRequestDetailsModal({
                       {item.requestedQuantity}
                     </td>
                     <td className="px-4 py-3 text-right type-body tabular-nums font-semibold text-primary">
-                      {request.status === "Submitted" ? "—" : item.approvedQuantity}
+                      {request.status === "Submitted" || request.status === "Cancelled"
+                        ? "—"
+                        : item.approvedQuantity}
                     </td>
                     <td className="px-4 py-3 text-right type-body tabular-nums font-semibold text-ink">
-                      {request.status === "Submitted" || request.status === "Rejected"
+                      {request.status === "Submitted" ||
+                      request.status === "Rejected" ||
+                      request.status === "Cancelled"
                         ? "—"
                         : item.remainingQuantity}
                     </td>

@@ -90,3 +90,11 @@ export interface PosStockRequestDecisionDto {
   decidedByName: string;
   decidedAt: string;
 }
+
+export interface PosStockRequestCancelDto {
+  requestId: string;
+  reason?: string | null;
+  cancelledBy: string;
+  cancelledByName: string;
+  cancelledAt: string;
+}

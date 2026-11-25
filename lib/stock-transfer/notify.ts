@@ -26,3 +26,12 @@ export function notifyBranchStockRequestReceived(requestNumber: string, branchNa
     link: `${appOrigin()}/branch-requests`,
   });
 }
+
+export function notifyBranchStockRequestCancelled(requestNumber: string, branchName: string, reason?: string | null) {
+  return notifyModule("Stock Transfer", {
+    type: "branch-stock-request-cancelled",
+    title: "Branch Stock Request Cancelled",
+    body: `${branchName} cancelled ${requestNumber}${reason ? `: ${reason}` : "."}`,
+    link: `${appOrigin()}/branch-requests`,
+  });
+}

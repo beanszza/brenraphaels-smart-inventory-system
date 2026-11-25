@@ -1,4 +1,4 @@
-export type BranchRequestSubtab = "requests" | "approved" | "rejected" | "completed";
+export type BranchRequestSubtab = "requests" | "approved" | "rejected" | "cancelled" | "completed";
 
 export interface LinkedStrTransferLike {
   TransferId?: number;
@@ -144,6 +144,8 @@ export function computeBranchRequestAllocation(
     subtab = "requests";
   } else if (status === "Rejected") {
     subtab = "rejected";
+  } else if (status === "Cancelled") {
+    subtab = "cancelled";
   } else if (
     totalApproved > 0 &&
     totalRemaining === 0 &&

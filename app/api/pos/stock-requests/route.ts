@@ -12,6 +12,86 @@ function hasAngleBrackets(value: string): boolean {
   return /[<>]/.test(value);
 }
 
+function normalizeTokens(input: string): string[] {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+/**
+ * Matches an incoming POS item to an IMS FinishedProducts record.
+ * 1. Exact case-insensitive match on FinishedProducts.Sku
+ * 2. Synthetic SKU-<ProductId> fallback
+ * 3. Match via POS productId (Items.ItemCode / SCM-PRD-<id>) or exact Items.ItemName + variant/SKU tokens
+ *    (handles minor SKU format differences like UHJ-250G-CONTAINER vs UHJ-CON-250G while still rejecting unknown items)
+ */
+async function resolveFinishedProduct(
+  sku: string,
+  posProductId: string | null,
+  productName: string,
+  variationName: string
+) {
+  // 1. Canonical SKU match
+  const byExactSku = await prisma.finishedProducts.findFirst({
+    where: { Sku: { equals: sku, mode: "insensitive" } },
+    include: { Items: true },
+  });
+  if (byExactSku) return byExactSku;
+
+  // 2. Fallback for synthetic SKU-<id>
+  const synthSkuMatch = /^SKU-(\d+)$/i.exec(sku);
+  if (synthSkuMatch && typeof prisma.finishedProducts.findUnique === "function") {
+    const byId = await prisma.finishedProducts.findUnique({
+      where: { ProductId: Number(synthSkuMatch[1]) },
+      include: { Items: true },
+    });
+    if (byId) return byId;
+  }
+
+  // 3. Fallback via productId (ItemCode or SCM-PRD-XXXX) or exact ItemName + variant token match
+  if (typeof prisma.finishedProducts.findMany !== "function") return null;
+
+  const candidateOr: Array<Record<string, unknown>> = [];
+  if (posProductId) {
+    candidateOr.push({ Items: { ItemCode: { equals: posProductId, mode: "insensitive" } } });
+    const scmIdMatch = /^SCM-PRD-0*(\d+)$/i.exec(posProductId);
+    if (scmIdMatch) {
+      candidateOr.push({ ProductId: Number(scmIdMatch[1]) });
+    }
+  }
+  if (productName) {
+    candidateOr.push({ Items: { ItemName: { equals: productName, mode: "insensitive" } } });
+  }
+  if (candidateOr.length === 0) return null;
+
+  const candidates = await prisma.finishedProducts.findMany({
+    where: { OR: candidateOr },
+    include: { Items: true },
+  });
+  if (candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0];
+
+  // Score candidates by shared tokens between incoming (variationName + sku) and IMS (Variant + Sku)
+  const incomingTokens = new Set([
+    ...normalizeTokens(variationName),
+    ...normalizeTokens(sku),
+  ]);
+  let best = candidates[0];
+  let bestScore = -1;
+  for (const cand of candidates) {
+    const candTokens = normalizeTokens(`${cand.Variant || ""} ${cand.Sku || ""}`);
+    const score = candTokens.filter((t) => incomingTokens.has(t)).length;
+    if (score > bestScore) {
+      bestScore = score;
+      best = cand;
+    }
+  }
+  return bestScore > 0 ? best : null;
+}
+
 /**
  * POST /api/pos/stock-requests
  * Receives a branch stock replenishment request from POS (§3.1).
@@ -170,10 +250,15 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const matchedProduct = await prisma.finishedProducts.findFirst({
-        where: { Sku: { equals: sku, mode: "insensitive" } },
-        include: { Items: true },
-      });
+      const posProductId =
+        typeof it?.productId === "string" && it.productId.trim() ? it.productId.trim() : null;
+
+      const matchedProduct = await resolveFinishedProduct(
+        sku,
+        posProductId,
+        productName,
+        variationName
+      );
 
       if (!matchedProduct) {
         return NextResponse.json(
@@ -184,10 +269,11 @@ export async function POST(req: NextRequest) {
 
       resolvedItems.push({
         productId: matchedProduct.ProductId,
-        sku: matchedProduct.Sku || sku,
+        // Preserve the exact SKU POS sent so dispatch manifests match POS §3.3 validation
+        sku: sku || matchedProduct.Sku,
         productName: productName || matchedProduct.Items?.ItemName || "Finished Product",
         variationName: variationName || matchedProduct.Variant || "",
-        posProductId: typeof it?.productId === "string" && it.productId.trim() ? it.productId.trim() : null,
+        posProductId,
         quantity,
         currentStock,
       });

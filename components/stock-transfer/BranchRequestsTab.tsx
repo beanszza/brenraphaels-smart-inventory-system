@@ -24,6 +24,7 @@ const SUBTABS: Array<{ key: BranchRequestSubtab; label: string }> = [
   { key: "requests", label: "Requests" },
   { key: "approved", label: "Approved" },
   { key: "rejected", label: "Rejected" },
+  { key: "cancelled", label: "Cancelled" },
   { key: "completed", label: "Completed" },
 ];
 
@@ -34,6 +35,8 @@ const FOOTER_MESSAGES: Record<BranchRequestSubtab, string> = {
     "Click Transfer Now to open Create Stock Transfer Request pre-filled with remaining units. Cancelled or rejected STRs automatically release their quantity back here.",
   rejected:
     "Rejected requests are final in POS. The branch immediately sees your rejection remarks and can submit a fresh request if needed.",
+  cancelled:
+    "Requests cancelled by the branch in POS before IMS decided appear here. They are final and cannot be approved or transferred.",
   completed:
     "Branch requests move here automatically once 100% of approved units reach the Scheduled stage (or beyond) in Stock Transfers.",
 };
@@ -71,10 +74,25 @@ export function BranchRequestsTab({
       requests: 0,
       approved: 0,
       rejected: 0,
+      cancelled: 0,
       completed: 0,
     };
     for (const r of branchRequests) {
       map[r.subtab] = (map[r.subtab] || 0) + 1;
+    }
+    return map;
+  }, [branchRequests]);
+
+  // Count open requests (Requests + Approved) per (branchId, productId) so IMS staff
+  // clearly see when a branch has multiple open requests for the same item (§6.3 #8).
+  const openCountByBranchProduct = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of branchRequests) {
+      if (r.subtab !== "requests" && r.subtab !== "approved") continue;
+      const pid = r.items[0]?.productId;
+      if (!pid) continue;
+      const key = `${r.branchId}:${pid}`;
+      map.set(key, (map.get(key) || 0) + 1);
     }
     return map;
   }, [branchRequests]);
@@ -160,6 +178,8 @@ export function BranchRequestsTab({
               ? "No approved branch stock requests awaiting transfer."
               : activeSubtab === "rejected"
               ? "No rejected branch stock requests."
+              : activeSubtab === "cancelled"
+              ? "No cancelled branch stock requests."
               : "No completed branch stock requests yet."}
           </p>
         </div>
@@ -236,6 +256,23 @@ export function BranchRequestsTab({
                     </>
                   )}
 
+                  {activeSubtab === "cancelled" && (
+                    <>
+                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
+                        Req. Qty
+                      </th>
+                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
+                        Cancel Reason
+                      </th>
+                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
+                        Cancelled by
+                      </th>
+                      <th className="pl-3 py-2.5 text-right type-table-header text-ink-muted whitespace-nowrap">
+                        Status
+                      </th>
+                    </>
+                  )}
+
                   {activeSubtab === "completed" && (
                     <>
                       <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
@@ -269,6 +306,12 @@ export function BranchRequestsTab({
                     (s) => s.status === "Cancelled" || s.status === "Rejected"
                   );
                   const syncFailed = req.posSyncStatus === "Failed";
+                  const siblingOpenCount = first
+                    ? openCountByBranchProduct.get(`${req.branchId}:${first.productId}`) || 0
+                    : 0;
+                  const showMultiOpenHint =
+                    (activeSubtab === "requests" || activeSubtab === "approved") &&
+                    siblingOpenCount > 1;
 
                   return (
                     <tr
@@ -294,7 +337,14 @@ export function BranchRequestsTab({
                               {first.productName}
                               {first.variationName ? ` · ${first.variationName}` : ""}
                             </div>
-                            <div className="type-caption text-ink-muted">{first.sku}</div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="type-caption text-ink-muted">{first.sku}</span>
+                              {showMultiOpenHint && (
+                                <span className="px-1.5 py-0.5 rounded-full bg-status-purple-bg text-primary type-caption font-medium">
+                                  {siblingOpenCount} open for this item
+                                </span>
+                              )}
+                            </div>
                           </div>
                         ) : (
                           <span className="text-ink-muted">—</span>
@@ -489,6 +539,29 @@ export function BranchRequestsTab({
                               )}
                               <StatusBadge status="Rejected" />
                             </div>
+                          </td>
+                        </>
+                      )}
+
+                      {/* CANCELLED SUBTAB CELLS */}
+                      {activeSubtab === "cancelled" && (
+                        <>
+                          <td className="px-3 py-3.5 whitespace-nowrap type-body font-medium text-ink tabular-nums">
+                            {req.totalRequested} pcs
+                          </td>
+                          <td className="px-3 py-3.5 max-w-[300px]">
+                            <p className="type-body-secondary text-ink line-clamp-2">
+                              {req.cancelReason || "Cancelled by branch in POS."}
+                            </p>
+                          </td>
+                          <td className="px-3 py-3.5 whitespace-nowrap">
+                            <div className="type-body text-ink">{req.cancelledByName || "Branch Staff"}</div>
+                            <div className="type-caption text-ink-muted">
+                              {formatShortDate(req.cancelledAt || null)}
+                            </div>
+                          </td>
+                          <td className="pl-3 py-3.5 text-right whitespace-nowrap">
+                            <StatusBadge status="Cancelled" />
                           </td>
                         </>
                       )}

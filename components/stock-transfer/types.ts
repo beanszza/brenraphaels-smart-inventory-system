@@ -125,7 +125,7 @@ export interface DashboardMetrics {
 
 export type STRActionType = "approve" | "reject" | "cancel";
 
-export type BranchRequestSubtab = "requests" | "approved" | "rejected" | "completed";
+export type BranchRequestSubtab = "requests" | "approved" | "rejected" | "cancelled" | "completed";
 
 export interface BranchStockRequestItem {
   branchRequestItemId: number;
@@ -169,6 +169,10 @@ export interface BranchStockRequest {
   decidedByName: string | null;
   decidedAt: string | null;
   decisionRemarks: string;
+  cancelledBy?: string | null;
+  cancelledByName?: string | null;
+  cancelledAt?: string | null;
+  cancelReason?: string;
   fulfilledAt: string | null;
   posSyncStatus: string;
   posSyncError: string | null;

@@ -8,6 +8,7 @@ describe("POS integration security & proxy exemptions", () => {
     const endpoints = [
       "https://localhost:3003/api/pos/locations/sync",
       "https://localhost:3003/api/pos/stock-requests",
+      "https://localhost:3003/api/pos/stock-requests/SR-000123/cancel",
       "https://localhost:3003/api/scms/locations/sync",
       "https://localhost:3003/api/scms/transfers/TRANS-2026-0001/receive-confirmation",
       "https://localhost:3003/api/StockTransfers/TRANS-2026-0001/status",
@@ -15,7 +16,7 @@ describe("POS integration security & proxy exemptions", () => {
 
     for (const url of endpoints) {
       const req = new NextRequest(url, {
-        method: url.includes("status") ? "PUT" : "POST",
+        method: url.includes("status") || url.includes("cancel") ? "PUT" : "POST",
       });
       const res = proxy(req);
       // External routes should not return 401 session_ended

@@ -119,6 +119,10 @@ export async function listBranchRequests(query = "") {
         decidedByName: row.DecidedByName || row.ApprovedBy || null,
         decidedAt: safeIsoDate(row.DecidedAt),
         decisionRemarks: row.DecisionRemarks || "",
+        cancelledBy: row.CancelledBy || null,
+        cancelledByName: row.CancelledByName || row.CancelledBy || null,
+        cancelledAt: safeIsoDate(row.CancelledAt),
+        cancelReason: row.CancelReason || "",
         fulfilledAt: safeIsoDate(row.FulfilledAt),
         posSyncStatus: row.PosSyncStatus || "Synced",
         posSyncError: row.PosSyncError || null,
@@ -334,7 +338,11 @@ export async function reviewBranchRequest(
       message: string;
       conflict?: boolean;
     }>)();
+    const cancelledInPos =
+      Boolean(syncRes.conflict) && /cancel/i.test(syncRes.message || "");
     const nextSyncStatus = syncRes.success
+      ? "Synced"
+      : cancelledInPos
       ? "Synced"
       : syncRes.conflict
       ? "Conflict"
@@ -344,14 +352,33 @@ export async function reviewBranchRequest(
       .update({
         where: { BranchRequestId: updatedBranchReqId },
         data: {
+          ...(cancelledInPos
+            ? {
+                Status: "Cancelled",
+                CancelledAt: new Date(),
+                CancelReason: syncRes.message || "Cancelled by branch in POS.",
+              }
+            : {}),
           PosSyncStatus: nextSyncStatus,
-          PosSyncError: syncRes.success ? null : syncRes.message,
+          PosSyncError: syncRes.success || cancelledInPos ? null : syncRes.message,
         },
       })
       .catch((e) => console.error("[POS-SYNC-STATUS-UPDATE-ERROR]", e));
 
     revalidatePath("/stock-transfer");
     revalidatePath("/branch-requests");
+
+    if (cancelledInPos) {
+      return resourceResult({
+        success: false,
+        message: `POS reported this request was already cancelled by the branch (${syncRes.message}). Moved to Cancelled tab.`,
+        data: {
+          ...(result.data || {}),
+          status: "Cancelled",
+          posSyncStatus: "Synced",
+        },
+      });
+    }
 
     if (!syncRes.success) {
       return resourceResult({
