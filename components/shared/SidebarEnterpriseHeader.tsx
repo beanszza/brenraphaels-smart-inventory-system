@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BrandLockup } from "@/components/brand/brand-lockup";
-import { systems } from "./SidebarNav";
+import { useVisibleSystems } from "./use-visible-systems";
 
 export function SidebarEnterpriseHeader({
   isMobile,
@@ -23,6 +23,7 @@ export function SidebarEnterpriseHeader({
   isMobile: boolean;
   navigate?: (url: string) => void;
 }) {
+  const visibleSystems = useVisibleSystems();
   return (
     <SidebarHeader className="h-20 justify-center py-2 px-3 border-b border-divider">
       <div className="flex items-center justify-between gap-2">
@@ -45,7 +46,7 @@ export function SidebarEnterpriseHeader({
                 Select Enterprise Module
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="-mx-1.5 my-1 bg-divider" />
-              {systems.map((sys) => {
+              {visibleSystems.map((sys) => {
                 const SysIcon = sys.icon;
                 return (
                   <DropdownMenuItem
