@@ -12,6 +12,7 @@ import { listItemChoices } from "@/app/actions/receiving/lookups";
 import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useEffect, useState, useRef, useMemo } from "react";
+import { toast } from "sonner";
 import {
   ChevronDown,
   ChevronUp,
@@ -209,6 +210,17 @@ function CreateGrnBody({
   const categoryCacheRef = useRef<Record<number, { categoryName: string; hasExpiry: boolean }> | null>(
     null
   );
+  const errorAlertRef = useRef<HTMLDivElement | null>(null);
+
+  const showError = (message: string) => {
+    setError(message);
+    toast.error(message);
+    if (typeof window !== "undefined") {
+      requestAnimationFrame(() => {
+        errorAlertRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+  };
 
   // Receiving Check checkboxes
   const [verified, setVerified] = useState<Record<string, boolean>>({
@@ -283,18 +295,35 @@ function CreateGrnBody({
         });
     }
 
-    if (initialDeliveries && initialDeliveries.length > 0) {
+    if (initialDeliveries !== undefined) {
       setDeliveries(initialDeliveries);
       if (initialDeliveryId) {
         const target = initialDeliveries.find((d) => d.deliveryId === initialDeliveryId);
         if (target) loadSource(target);
       }
     } else {
-      receivingDeliveries(listDeliveriesForReceiving)
-        .then((arrived) => {
-          setDeliveries(arrived);
+      Promise.all([
+        receivingDeliveries(listDeliveriesForReceiving),
+        initialReceipts
+          ? Promise.resolve(initialReceipts)
+          : receiving
+              .listReceipts()
+              .then(({ data }) => (Array.isArray(data?.data) ? (data.data as GRN[]) : []))
+              .catch(() => [] as GRN[]),
+      ])
+        .then(([arrived, receipts]) => {
+          const postedDeliveryIds = new Set(
+            receipts
+              .filter((g) => g.status !== "Draft" && g.status !== "Cancelled")
+              .map((g) => g.deliveryId)
+          );
+          const pending = arrived.filter(
+            (d: ArrivedDelivery) =>
+              d.status === "Arrived" && !postedDeliveryIds.has(d.deliveryId)
+          );
+          setDeliveries(pending);
           if (initialDeliveryId) {
-            const target = arrived.find((d: ArrivedDelivery) => d.deliveryId === initialDeliveryId);
+            const target = pending.find((d: ArrivedDelivery) => d.deliveryId === initialDeliveryId);
             if (target) loadSource(target);
           }
         })
@@ -913,7 +942,7 @@ function CreateGrnBody({
       onSuccess(fullGrnRes.data?.data || rejectData.data);
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to reject shipment.");
+      showError(err.response?.data?.message || err.message || "Failed to reject shipment.");
       setShowRejectModal(false);
     } finally {
       setSubmitting(false);
@@ -938,12 +967,21 @@ function CreateGrnBody({
         ? existingGrnRes.data.data
         : [];
 
+      const completedGrn = existingGrns.find(
+        (g) =>
+          g.deliveryId === selected.deliveryId &&
+          ["QaCompleted", "PartiallyPutAway", "FullyPutAway", "Completed"].includes(g.status)
+      );
+      if (completedGrn) {
+        throw new Error(
+          `Delivery ${selected.deliveryNumber} already has completed GRN ${completedGrn.grnNumber}.`
+        );
+      }
+
       const postedGrn = existingGrns.find(
         (g) =>
           g.deliveryId === selected.deliveryId &&
-          g.status !== "Draft" &&
-          g.status !== "Cancelled" &&
-          g.status !== "Rejected"
+          (g.status === "QaPending" || g.status === "Received")
       );
 
       const requestItems = items.flatMap((i) =>
@@ -1105,7 +1143,7 @@ function CreateGrnBody({
       onSuccess(finalGrn);
       onClose();
     } catch (err: any) {
-      setError(
+      showError(
         err?.response?.data?.message ||
           err?.message ||
           "Failed to complete Goods Receipt Note Quality Assurance."
@@ -1418,17 +1456,36 @@ function CreateGrnBody({
       : "space-y-4";
 
   const qaOutcomeBadge = useMemo(() => {
-    if (countedQaRows.length === 0) {
-      return { label: "Awaiting counts", cls: "bg-status-gray-bg text-status-gray-fg" };
+    if (
+      countedQaRows.length === 0 ||
+      (countedQaRows.length < qaRows.length && totalRejectedUnits === 0)
+    ) {
+      return {
+        label: "Awaiting counts",
+        cls: "bg-status-gray-bg text-status-gray-fg",
+        textCls: "text-ink-muted",
+      };
     }
     if (isQaAllAccepted) {
-      return { label: "All Accepted", cls: "bg-status-green-bg text-status-green-fg" };
+      return {
+        label: "All Accepted",
+        cls: "bg-status-green-bg text-status-green-fg",
+        textCls: "text-status-green-fg",
+      };
     }
     if (isQaAllRejected) {
-      return { label: "All Rejected", cls: "bg-status-red-bg text-status-red-fg" };
+      return {
+        label: "All Rejected",
+        cls: "bg-status-red-bg text-status-red-fg",
+        textCls: "text-destructive",
+      };
     }
-    return { label: "Partial Accept", cls: "bg-status-amber-bg text-status-amber-fg" };
-  }, [countedQaRows.length, isQaAllAccepted, isQaAllRejected]);
+    return {
+      label: "Partial Accept",
+      cls: "bg-status-amber-bg text-status-amber-fg",
+      textCls: "text-status-amber-fg",
+    };
+  }, [countedQaRows.length, qaRows.length, totalRejectedUnits, isQaAllAccepted, isQaAllRejected]);
 
   return (
     <>
@@ -1461,6 +1518,7 @@ function CreateGrnBody({
         {/* Error Alert */}
         {error && (
           <div
+            ref={errorAlertRef}
             role="alert"
             className="rounded-control border border-notice-danger-border bg-notice-danger-bg px-4 py-3 type-caption text-notice-danger-text flex items-start justify-between gap-3"
           >
@@ -1549,7 +1607,11 @@ function CreateGrnBody({
                           : "border-border"
                       } bg-surface pl-3 pr-9 py-1.5 type-body-secondary text-ink transition-colors cursor-pointer focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none`}
                     >
-                      <option value="">Select Delivery</option>
+                      <option value="">
+                        {deliveries.length === 0
+                          ? "No arrived deliveries pending receiving"
+                          : "Select Delivery"}
+                      </option>
                       {deliveries.map((d) => (
                         <option key={d.deliveryId} value={d.deliveryId}>
                           {d.deliveryNumber}
@@ -1603,10 +1665,15 @@ function CreateGrnBody({
             {/* Empty state when no delivery chosen */}
             {!selected && !loading && (
               <div className="rounded-card border border-dashed border-border bg-surface p-10 text-center">
-                <p className="type-body-strong text-ink-secondary">No delivery selected</p>
+                <p className="type-body-strong text-ink-secondary">
+                  {deliveries.length === 0
+                    ? "No deliveries pending receiving"
+                    : "No delivery selected"}
+                </p>
                 <p className="mt-1 type-caption text-ink-muted">
-                  Choose an arrived delivery above to enter physical counts and complete Quality
-                  Assurance review.
+                  {deliveries.length === 0
+                    ? "All arrived deliveries already have a posted Goods Receipt Note. New arrived deliveries will appear here automatically."
+                    : "Choose an arrived delivery above to enter physical counts and complete Quality Assurance review."}
                 </p>
               </div>
             )}
@@ -2025,17 +2092,7 @@ function CreateGrnBody({
                   </div>
                   <div className="flex items-center justify-between gap-3 type-body-secondary">
                     <span className="text-ink-muted">QA Outcome</span>
-                    <span
-                      className={`font-medium ${
-                        countedQaRows.length === 0
-                          ? "text-ink-muted"
-                          : isQaAllAccepted
-                          ? "text-status-green-fg"
-                          : isQaAllRejected
-                          ? "text-destructive"
-                          : "text-status-amber-fg"
-                      }`}
-                    >
+                    <span className={`font-medium ${qaOutcomeBadge.textCls}`}>
                       {qaOutcomeBadge.label}
                     </span>
                   </div>
