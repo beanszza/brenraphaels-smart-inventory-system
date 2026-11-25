@@ -143,7 +143,7 @@ export const systems: SystemItem[] = [
     url: process.env.NEXT_PUBLIC_CRMS_URL ?? "https://localhost:3005/",
   },
   {
-    fullName: "Human Resource Management",
+    fullName: "Human Resource Management System",
     portalName: "HRMS",
     desc: "Staff directory & payroll",
     icon: Users2,
@@ -151,7 +151,7 @@ export const systems: SystemItem[] = [
     url: process.env.NEXT_PUBLIC_HRMS_URL ?? "https://localhost:3001/",
   },
   {
-    fullName: "Point of Sale",
+    fullName: "Point of Sale System",
     portalName: "POS",
     desc: "Retail & register checkout",
     icon: CreditCard,
@@ -159,7 +159,7 @@ export const systems: SystemItem[] = [
     url: process.env.NEXT_PUBLIC_POS_URL ?? "https://localhost:3002/",
   },
   {
-    fullName: "Inventory Management",
+    fullName: "Inventory Management System",
     portalName: "IMS",
     desc: "Inventory & logistics",
     icon: Truck,

@@ -9,11 +9,11 @@ describe("system switcher", () => {
     expect(names).toEqual([
       "Enterprise Portal",
       "Customer Relation and Ecommerce Ordering Management System",
-      "Human Resource Management",
-      "Point of Sale",
-      "Inventory Management",
+      "Human Resource Management System",
+      "Point of Sale System",
+      "Inventory Management System",
     ]);
-    expect(systems.filter((s) => s.active).map((s) => s.fullName)).toEqual(["Inventory Management"]);
+    expect(systems.filter((s) => s.active).map((s) => s.fullName)).toEqual(["Inventory Management System"]);
     for (const s of systems.filter((s) => !s.active)) expect(s.url).toMatch(/^https?:\/\//);
     expect(systems.find((s) => s.fullName === "Enterprise Portal")?.portal).toBe(true);
   });
