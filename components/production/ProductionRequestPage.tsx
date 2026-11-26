@@ -912,6 +912,27 @@ export default function ProductionRequestPage({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3.5 gap-y-3.5">
+            {/* 0. Production Request No. (Auto-generated on submit by server) */}
+            <div className="space-y-1.5">
+              <label className={`block ${isViewMode ? "type-caption font-medium text-ink-muted" : "type-label-field text-ink"}`}>
+                Production Request No.
+              </label>
+              {isViewMode ? (
+                <div className="type-body font-semibold text-ink tabular-nums">
+                  {initialRequest?.reqNumber || "—"}
+                </div>
+              ) : (
+                <Input
+                  type="text"
+                  value="Assigned on save"
+                  readOnly
+                  disabled
+                  tabIndex={-1}
+                  className="h-10 w-full rounded-control border-border bg-subtle px-3 py-2 type-body font-medium text-ink-muted cursor-not-allowed opacity-100 select-none shadow-none"
+                />
+              )}
+            </div>
+
             {/* 1. Finished Product */}
             <div className="space-y-1.5">
               <label className={`block ${isViewMode ? "type-caption font-medium text-ink-muted" : "type-label-field text-ink"}`}>
@@ -1238,8 +1259,8 @@ export default function ProductionRequestPage({
               )}
             </div>
 
-            {/* 8. Reason / Batch Purpose */}
-            <div className="space-y-1.5">
+            {/* 8. Reason / Batch Purpose (Full width below Required Date & Time) */}
+            <div className="sm:col-span-2 space-y-1.5">
               <label className={`block ${isViewMode ? "type-caption font-medium text-ink-muted" : "type-label-field text-ink"}`}>
                 Reason / Batch Purpose
               </label>
@@ -1356,6 +1377,12 @@ export default function ProductionRequestPage({
               </>
             ) : (
               <>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="type-body-secondary text-ink-muted">Request Number</span>
+                  <span className="type-body-secondary font-medium text-ink-muted">
+                    Assigned on save
+                  </span>
+                </div>
                 <div className="flex items-center justify-between gap-2">
                   <span className="type-body-secondary text-ink-muted">Finished Product</span>
                   <span className="type-body-secondary font-medium text-ink truncate max-w-[190px]">
