@@ -462,7 +462,10 @@ export default function AddFinishedProductModal({
                       type="text"
                       placeholder="e.g. Ube Halaya Smooth"
                       value={productName}
-                      onChange={(e) => setProductName(e.target.value)}
+                      onChange={(e) => {
+                        setProductName(e.target.value);
+                        setVariants((prev) => prev.map((v) => ({ ...v, existingSku: undefined })));
+                      }}
                       aria-invalid={Boolean(duplicateProductNameError)}
                       className={`h-10 w-full rounded-control border ${duplicateProductNameError
                         ? "border-destructive focus:ring-destructive"
