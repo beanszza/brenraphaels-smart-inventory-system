@@ -6,6 +6,7 @@ import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId, validateInput } from "@/lib/production/mutate";
 import { getLotItemAbbreviation } from "@/lib/inventory/lot-code";
+import { resolveFinishedGoodsLocation } from "@/lib/production/fg-location";
 export async function commitBatchInventory(idInput: string | number, body: any = {}) {
     const staff = await requireModule("Production & Quality");
     return mutate(staff, async (tx) => {
@@ -38,13 +39,8 @@ export async function commitBatchInventory(idInput: string | number, body: any =
         if (acceptedQty <= 0) {
             return refuse("No accepted quantity to commit to inventory.");
         }
-        // Find storage location
-        const fgLocation = locationIdInput
-            ? await tx.locations.findUnique({ where: { LocationId: locationIdInput } })
-            : await tx.locations.findFirst({
-                where: { IsActive: true },
-                orderBy: { LocationId: "asc" },
-            });
+        // Find storage location (prefers explicit locationId, then IMS_SHOP_WAREHOUSE_ID for CREOMS sync)
+        const fgLocation = await resolveFinishedGoodsLocation(tx, locationIdInput);
         if (!fgLocation) {
             return refuse("No active storage location found in the system.");
         }

@@ -8,6 +8,7 @@ import { isFileId } from "@/lib/files";
 import { notifyApprovalRequested } from "@/lib/production/notify";
 import { mutate, refuse, positiveId, validateInput } from "@/lib/production/mutate";
 import { getLotItemAbbreviation } from "@/lib/inventory/lot-code";
+import { resolveFinishedGoodsLocation } from "@/lib/production/fg-location";
 export async function packageBatch(idInput: string | number, body: any = {}) {
     const staff = await requireModule("Production & Quality");
     return mutate(staff, async (tx) => {
@@ -68,11 +69,8 @@ export async function packageBatch(idInput: string | number, body: any = {}) {
         const fgLotCode = `${itemAbbrev}-${yymmdd}-${String(seq.LastNumber).padStart(2, "0")}`;
         const reqQty = Number(batch.ProductionRequests?.Quantity || batch.EstimatedQuantity);
         const yieldPercentage = reqQty > 0 ? (finalQuantity / reqQty) * 100 : 100;
-        // Get location for Finished Goods lot creation (e.g. location 1 or system warehouse)
-        const defaultLocation = await tx.locations.findFirst({
-            where: { IsActive: true },
-            orderBy: { LocationId: "asc" },
-        });
+        // Get location for Finished Goods lot creation (prefers IMS_SHOP_WAREHOUSE_ID for CREOMS sync)
+        const defaultLocation = await resolveFinishedGoodsLocation(tx);
         const locationId = defaultLocation?.LocationId || 1;
         const result = await (async () => {
             // 1. Create or register InventoryLot for the Finished Goods Lot

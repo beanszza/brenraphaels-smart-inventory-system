@@ -7,6 +7,7 @@ import { requireModule } from "@/lib/portal/staff";
 import { resourceResult } from "@/lib/resources/result";
 import { mutate, refuse, positiveId, validateInput } from "@/lib/production/mutate";
 import { getLotItemAbbreviation } from "@/lib/inventory/lot-code";
+import { resolveFinishedGoodsLocation } from "@/lib/production/fg-location";
 export async function completeBatch(idInput: string | number, body: any = {}) {
     const staff = await requireModule("Production & Quality");
     return mutate(staff, async (tx) => {
@@ -38,10 +39,8 @@ export async function completeBatch(idInput: string | number, body: any = {}) {
         if (batch.Status === "Completed") {
             return refuse("Batch has already been completed.");
         }
-        // Determine FG location: look for LocationType === 'Finished Goods' or fallback to LocationId 4 or 1
-        const fgLocation = await tx.locations.findFirst({
-            where: { LocationType: { contains: "Finished Goods", mode: "insensitive" } },
-        });
+        // Determine FG location (prefers IMS_SHOP_WAREHOUSE_ID for CREOMS sync, then Finished Goods fallback)
+        const fgLocation = await resolveFinishedGoodsLocation(tx);
         const fgLocationId = fgLocation?.LocationId ?? 4;
         const itemId = batch.FinishedProducts.ItemId;
         const uomId = batch.FinishedProducts.Items.UomId;
