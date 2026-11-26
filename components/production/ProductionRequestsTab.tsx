@@ -9,6 +9,7 @@ import { ProductionActionModal } from "./ProductionActionModal";
 import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -23,8 +24,6 @@ import { SearchInput } from "@/components/shared/SearchInput";
 import Pagination from "@/components/Pagination";
 import { toast } from "sonner";
 import { ProductionRequestEntity } from "./types";
-import ProductionRequestModal from "./ProductionRequestModal";
-import PrSummaryModal from "./PrSummaryModal";
 import BatchLifecycleSummaryModal from "./BatchLifecycleSummaryModal";
 import { filterProductionRequests } from "@/lib/production/filters";
 
@@ -42,6 +41,7 @@ interface ProductionRequestsTabProps {
   initialRows: ProductionRequestEntity[];
   onNavigateToIssuance?: (prodReqId?: number) => void;
   onStartBatchAndTrack?: (batchId: number) => void;
+  onNavigateToRequest?: (prodReqId: number) => void;
   currentUser: string;
 }
 
@@ -49,6 +49,7 @@ export default function ProductionRequestsTab({
   initialRows,
   onNavigateToIssuance,
   onStartBatchAndTrack,
+  onNavigateToRequest,
   currentUser,
 }: ProductionRequestsTabProps) {
   const isAdmin = useIsAdmin();
@@ -89,9 +90,6 @@ export default function ProductionRequestsTab({
   }, [isAdmin, isHeadCook, activeTab]);
 
   // Modals state
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [selectedRequest, setSelectedRequest] = useState<ProductionRequestEntity | null>(null);
-  const [prSummaryData, setPrSummaryData] = useState<any | null>(null);
   const [summaryBatchId, setSummaryBatchId] = useState<number | null>(null);
   const [adminActionModal, setAdminActionModal] = useState<{
     open: boolean;
@@ -158,9 +156,12 @@ export default function ProductionRequestsTab({
     return visibleRequests.filter(r => matchesTab(r.status, activeTab));
   }, [visibleRequests, activeTab]);
 
-  const handleOpenNewModal = () => {
-    setSelectedRequest(null);
-    setIsModalOpen(true);
+  const openRequestDetail = (prodReqId: number) => {
+    if (onNavigateToRequest) {
+      onNavigateToRequest(prodReqId);
+    } else if (typeof window !== "undefined") {
+      window.location.href = `/production-quality/requests/${prodReqId}`;
+    }
   };
 
   const handleViewRequest = (req: ProductionRequestEntity) => {
@@ -173,8 +174,7 @@ export default function ProductionRequestsTab({
       setSummaryBatchId(batchId);
       return;
     }
-    setSelectedRequest(req);
-    setIsModalOpen(true);
+    openRequestDetail(req.prodReqId);
   };
 
   // Admin Accept / Reject with Confirmation
@@ -255,11 +255,13 @@ export default function ProductionRequestsTab({
         </div>
         {isImsManager && (
           <Button
-            onClick={handleOpenNewModal}
+            asChild
             className="flex items-center justify-center gap-1.5 rounded-control bg-primary px-3.5 py-2 type-label-button text-on-brand hover:bg-primary-hover transition-colors h-9 shadow-none cursor-pointer shrink-0"
           >
-            <Plus className="w-4 h-4" />
-            <span>New Production Request</span>
+            <Link href="/production-quality/requests/new">
+              <Plus className="w-4 h-4" />
+              <span>New Production Request</span>
+            </Link>
           </Button>
         )}
       </div>
@@ -459,10 +461,7 @@ export default function ProductionRequestsTab({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedRequest(req);
-                                setIsModalOpen(true);
-                              }}
+                              onClick={() => openRequestDetail(req.prodReqId)}
                               className="cursor-pointer type-body-secondary"
                             >
                               <Eye size={14} className="shrink-0" />
@@ -546,29 +545,6 @@ export default function ProductionRequestsTab({
           embedded
         />
       </div>
-
-      {/* Production Request Modal (Create / View) */}
-      <ProductionRequestModal
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={(created) => {
-          fetchRequests();
-          if (created && onNavigateToIssuance && created.status === "Approved") {
-            onNavigateToIssuance(created.prodReqId);
-          }
-        }}
-        initialRequest={selectedRequest}
-        onProceedToIssuance={(id) => onNavigateToIssuance && onNavigateToIssuance(id)}
-        onViewPrSummary={(data) => setPrSummaryData(data)}
-        onStartProduction={handleStartProduction}
-      />
-
-      {/* PR Summary Modal */}
-      <PrSummaryModal
-        open={Boolean(prSummaryData)}
-        onClose={() => setPrSummaryData(null)}
-        prData={prSummaryData}
-      />
 
       {/* Batch Lifecycle Summary & PDF Modal */}
       <BatchLifecycleSummaryModal

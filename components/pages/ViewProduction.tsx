@@ -144,6 +144,7 @@ export default function ProductionPage({ activeTab, initialRows, initialItems, i
         <ProductionRequestsTab initialRows={initialRows}
           onNavigateToIssuance={handleNavigateToIssuance}
           onStartBatchAndTrack={handleStartBatchAndTrack}
+          onNavigateToRequest={(prodReqId) => navigate(`/production-quality/requests/${prodReqId}`)}
           currentUser={staff.username}
         />
       )}

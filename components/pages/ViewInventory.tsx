@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/select";
 import { CreatePRModal } from "@/components/orders-procurement/pr/CreatePRForm";
 import { PurchaseRequisition } from "@/components/orders-procurement/types";
-import ProductionRequestModal from "@/components/production/ProductionRequestModal";
 import { useIsAdmin, useIsHeadCook, useIsImsManager } from "@/context/StaffContext";
 import { StockWriteOffTab } from "@/components/inventory/write-off/StockWriteOffTab";
 import type { StockWriteOffDto } from "@/components/inventory/write-off/types";
@@ -134,17 +133,6 @@ export default function ViewInventory({
   // PR Modal State (for "Order Now" action on Raw Materials / Tools)
   const [isCreatePROpen, setIsCreatePROpen] = useState(false);
   const [selectedPRData, setSelectedPRData] = useState<PurchaseRequisition | undefined>(undefined);
-
-  // Production Request Modal State (for "Produce Now" action on Finished Goods)
-  const [isProduceModalOpen, setIsProduceModalOpen] = useState(false);
-  const [producePrefill, setProducePrefill] = useState<{
-    productId?: number;
-    productName?: string;
-    variant?: string;
-    quantity?: number;
-    priority?: "Low" | "Medium" | "High";
-    reason?: string;
-  } | null>(null);
 
   // Category Tabs for Raw Materials and Tools
   const categoryTabs = useMemo(() => {
@@ -306,15 +294,14 @@ export default function ViewInventory({
     );
 
     if (section === "finished-products" || matchesCategory(item.categoryName, "Finished Goods")) {
-      setProducePrefill({
-        productId: item.productId,
-        productName: item.itemName,
-        variant: item.variantName || "Standard",
-        quantity: neededQty,
-        priority: "High",
-        reason: "Regular Stock Replenishment",
-      });
-      setIsProduceModalOpen(true);
+      const qs = new URLSearchParams();
+      if (item.productId) qs.set("productId", String(item.productId));
+      if (item.itemName) qs.set("productName", item.itemName);
+      qs.set("variant", item.variantName || "Standard");
+      qs.set("quantity", String(neededQty));
+      qs.set("priority", "High");
+      qs.set("reason", "Regular Stock Replenishment");
+      router.push(`/production-quality/requests/new?${qs.toString()}`);
       return;
     }
 
@@ -566,22 +553,6 @@ export default function ViewInventory({
           initialData={selectedPRData}
         />
       )}
-
-      {/* Production Request Modal triggered by Produce Now on Finished Goods */}
-      <ProductionRequestModal
-        open={isProduceModalOpen}
-        prefillData={producePrefill}
-        onClose={() => {
-          setIsProduceModalOpen(false);
-          setProducePrefill(null);
-        }}
-        onSuccess={() => {
-          setIsProduceModalOpen(false);
-          setProducePrefill(null);
-          toast.success("Production request submitted successfully.");
-          router.refresh();
-        }}
-      />
     </div>
   );
 }
