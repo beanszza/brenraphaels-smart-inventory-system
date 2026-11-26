@@ -78,6 +78,24 @@ export async function updateFinishedProduct(idInput: string | number, body: any 
       parsed.variantName.toLowerCase() !== previousParsed.variantName.toLowerCase() ||
       effectiveProductName.toLowerCase() !== (product.Items?.ItemName || "").trim().toLowerCase();
 
+    // One name + size + packaging may exist only once, so a rename or size change must not land on another product.
+    if (variantChanged) {
+      // A blank Variant is its own unlabelled default Size, never equal to a real size such as "250 Milliliters Jar".
+      const canonical = (variant?: string | null, fallbackUom?: string | null) => {
+        if (!(variant || "").trim()) return "";
+        const p = parseVariantComponents(variant, fallbackUom);
+        return composeVariantName(p.contentSize, p.uom, p.packagingType).toLowerCase();
+      };
+      const target = canonical(resolvedVariant, body.contentUom || product.Items?.Uom?.Abbreviation);
+      const sameName = await tx.finishedProducts.findMany({
+        where: { ProductId: { not: id }, Items: { ItemName: { equals: effectiveProductName, mode: "insensitive" } } },
+        select: { Variant: true },
+      });
+      if ((sameName ?? []).some((other) => canonical(other.Variant) === target)) {
+        return refuse(`"${effectiveProductName} · ${parsed.variantName}" already exists.`);
+      }
+    }
+
     if (variantChanged) {
       const baseSku = buildBaseVariantSku(effectiveProductName, resolvedVariant);
       updateData.Sku = await getUniqueVariantSku(tx, baseSku, id);

@@ -31,19 +31,9 @@ export const productImage: FileTarget = {
     });
     return sibling?.ImageUrl ?? null;
   },
+  // Only this product's photo changes; a same-named product without its own photo still shows this one via current().
   save: async (id, fileId) => {
-    const fp = await prisma.finishedProducts.findUnique({
-      where: { ProductId: id },
-      include: { Items: true },
-    });
     await prisma.finishedProducts.update({ where: { ProductId: id }, data: { ImageUrl: fileId } });
-    const prodName = fp?.Items?.ItemName?.trim();
-    if (prodName) {
-      await prisma.finishedProducts.updateMany({
-        where: { Items: { ItemName: { equals: prodName, mode: "insensitive" } } },
-        data: { ImageUrl: fileId },
-      });
-    }
   },
 };
 

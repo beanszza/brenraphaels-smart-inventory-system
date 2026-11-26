@@ -18,24 +18,17 @@ interface FinishedProductDetailsModalProps {
 export default function FinishedProductDetailsModal({
   open,
   product,
-  allProducts,
   onClose,
   onEdit,
   onDelete,
 }: FinishedProductDetailsModalProps) {
-  const productVariants = useMemo(() => {
-    if (!product) return [];
-    const key = (product.itemName || "").trim().toLowerCase();
-    const matches = allProducts
-      .filter((p) => (p.itemName || "").trim().toLowerCase() === key)
-      .sort((a, b) => a.productId - b.productId);
-    return matches.length > 0 ? matches : [product];
-  }, [product, allProducts]);
+  // Each finished product is one name + one size; other sizes with the same name are separate products.
+  const productVariants = useMemo(() => (product ? [product] : []), [product]);
 
   if (!open || !product) return null;
 
-  const totalStock = productVariants.reduce((sum, v) => sum + (Number(v.currentStock) || 0), 0);
-  const anyActive = productVariants.some((v) => v.isActive !== false);
+  const totalStock = Number(product.currentStock) || 0;
+  const anyActive = product.isActive !== false;
 
   return (
     <Dialog.Root
@@ -60,8 +53,7 @@ export default function FinishedProductDetailsModal({
                 <StatusBadge status={anyActive ? "Active" : "Inactive"} />
               </div>
               <p className="mt-0.5 type-body-secondary text-ink-muted">
-                {product.categoryName || "Finished Product"} · {productVariants.length}{" "}
-                {productVariants.length === 1 ? "packaging variant" : "packaging variants"} configured
+                {product.categoryName || "Finished Product"} · {product.variant || "Standard"}
               </p>
             </div>
 
@@ -87,10 +79,9 @@ export default function FinishedProductDetailsModal({
                   </p>
                 </div>
                 <div>
-                  <p className="type-caption font-medium text-ink-muted">Total Inventory Stock</p>
+                  <p className="type-caption font-medium text-ink-muted">Inventory Stock</p>
                   <p className="mt-0.5 type-body-strong text-ink tabular-nums">
-                    {totalStock} {totalStock === 1 ? "unit" : "units"} across {productVariants.length}{" "}
-                    {productVariants.length === 1 ? "variant" : "variants"}
+                    {totalStock} {totalStock === 1 ? "unit" : "units"}
                   </p>
                 </div>
               </div>

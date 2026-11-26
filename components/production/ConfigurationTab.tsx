@@ -228,10 +228,10 @@ export default function ConfigurationTab({
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="type-page-title text-text-primary">
-            Finished Products &amp; Variants
+            Finished Products
           </h2>
           <p className="mt-1 type-body text-text-muted">
-            Manage finished goods, content sizes, units of measurement, packaging types, and SKUs
+            Each row is one product with its own size, packaging, SKU and stock
           </p>
         </div>
 

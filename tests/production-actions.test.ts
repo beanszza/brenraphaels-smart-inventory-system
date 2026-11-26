@@ -15,6 +15,8 @@ const fake = vi.hoisted(() => ({
   committed: [] as { model: string; data: Record<string, unknown> }[],
   written: [] as AuditEventInput[], sent: [] as { ids: string[]; input: NotificationInput }[],
   existing: false, knownMissing: false, lotsEmpty: false, filePrivate: true, fileAccess: vi.fn(),
+  /** The Variant of the fake finished product, for the name + size duplicate rule. */
+  productVariant: "",
 }));
 const FILE = "3f2b8c1e-5a4d-4c6e-9b7a-1d2e3f4a5b6c";
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -80,7 +82,7 @@ vi.mock("@/lib/prisma", () => {
     BatchConsumptions: [], Recipes: recipe, FinishedProducts: product, ProductionRequests: request(),
     ProductionReqLotReservations: [reservation], MaterialIssuances: [], MaterialIssuanceScans: [{ LotId: 1, IsVerified: true }],
     Status: fake.statuses[name] || "In Production",
-    ...(name === "productionRequests" ? request() : name === "recipes" ? recipe : name === "items" ? item : name === "finishedProducts" ? product : name === "inventoryLots" ? lot : {}),
+    ...(name === "productionRequests" ? request() : name === "recipes" ? recipe : name === "items" ? item : name === "finishedProducts" ? { ...product, Variant: fake.productVariant } : name === "inventoryLots" ? lot : {}),
   });
   const model = (name: string) => ({
     findUnique: async () => fake.missing ? null : row(name),
@@ -125,7 +127,8 @@ vi.mock("@/lib/prisma", () => {
 
 beforeEach(() => {
   Object.assign(fake, { signed: true, decision: "allowed", open: false, commitFails: false, gatewayFails: false, missing: false,
-    statuses: {}, pending: [], committed: [], written: [], sent: [], existing: false, knownMissing: false, lotsEmpty: false, filePrivate: true });
+    statuses: {}, pending: [], committed: [], written: [], sent: [], existing: false, knownMissing: false, lotsEmpty: false, filePrivate: true,
+    productVariant: "" });
   fake.dataAccess.mockClear(); fake.fileAccess.mockClear();
   vi.stubEnv("IMS_DEV_BYPASS", "false"); vi.stubEnv("PORTAL_URL", "https://portal.test");
   vi.stubEnv("PORTAL_SYSTEM_SECRET", "test-secret"); vi.stubEnv("IMS_APP_URL", "https://localhost:3003");
@@ -341,6 +344,24 @@ it("clears an uploaded batch image through the file service", async () => {
   expect(fake.fileAccess).toHaveBeenCalledWith("unlink", FILE,
     { system: "IMS", entityType: "production-batch", entityId: "1", role: "batch image" }, "actor-id");
   expect(fake.committed).toContainEqual({ model: "productionBatches", data: { ImageUrl: "" } });
+});
+
+it("refuses an edit that would duplicate another product's name and size", async () => {
+  // The other "Jam Classic" product the fake returns is 500 Grams Container.
+  fake.productVariant = "500 Grams Container";
+  await expect(production.updateFinishedProduct(2, {
+    productName: "Jam Classic", contentSize: "500", contentUom: "G", packagingType: "Container",
+  })).rejects.toThrow(/already exists/i);
+  expect(fake.committed).toHaveLength(0);
+});
+
+it("allows an edit to a size the product name does not have yet", async () => {
+  fake.productVariant = "250 Grams Container";
+  const saved = await production.updateFinishedProduct(2, {
+    productName: "Jam Classic", contentSize: "500", contentUom: "G", packagingType: "Container",
+  }) as ResourceResult | { data: ResourceResult };
+  expect(("success" in saved ? saved : saved.data).success).toBe(true);
+  expect(fake.committed.some((write) => write.model === "finishedProducts" && write.data.Variant === "500 Grams Container")).toBe(true);
 });
 
 it("refuses to delete a finished product that still has stock in inventory", async () => {
