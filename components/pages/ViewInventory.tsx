@@ -212,7 +212,7 @@ export default function ViewInventory({
               isLowStock: variantStock <= minStock,
             });
           });
-        } else {
+        } else if (item.isActive !== false || (item.currentStock ?? 0) > 0) {
           rows.push({
             ...item,
             variantName: "Standard",

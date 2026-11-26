@@ -542,7 +542,6 @@ export default function AddFinishedProductModal({
                     const previewSku = v.existingSku
                       ? v.existingSku
                       : buildBaseVariantSku(productName || "PRD", composedVariantName);
-                    const uomSuffix = (v.contentUom || "ML").toLowerCase() === "ml" ? "mL" : v.contentUom || "mL";
 
                     return (
                       <div
@@ -627,13 +626,13 @@ export default function AddFinishedProductModal({
                           </div>
                         </div>
 
-                        {/* Row 1: Content Size + Variant SKU (auto) */}
+                        {/* Row 1: Content Size + UOM + Variant SKU (auto) */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                           <div>
                             <label className="mb-1.5 block type-label-field text-ink-strong">
-                              Content size <span className="text-destructive">*</span>
+                              Content size &amp; UOM <span className="text-destructive">*</span>
                             </label>
-                            <div className="relative">
+                            <div className="flex gap-2">
                               <input
                                 type="number"
                                 min="1"
@@ -643,12 +642,25 @@ export default function AddFinishedProductModal({
                                 onChange={(e) =>
                                   handleUpdateVariantField(v.id, "contentSize", e.target.value)
                                 }
-                                className="h-10 w-full rounded-control border border-input bg-surface pl-3 pr-11 type-body text-ink tabular-nums placeholder:text-ink-disabled focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus/30 transition-colors"
+                                className="h-10 min-w-0 flex-1 rounded-control border border-input bg-surface px-3 type-body text-ink tabular-nums placeholder:text-ink-disabled focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus/30 transition-colors"
                                 required
                               />
-                              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 type-body-secondary text-ink-muted">
-                                {uomSuffix}
-                              </span>
+                              <div className="relative shrink-0">
+                                <select
+                                  aria-label={`Variant ${index + 1} UOM`}
+                                  value={v.contentUom}
+                                  onChange={(e) =>
+                                    handleUpdateVariantField(v.id, "contentUom", e.target.value)
+                                  }
+                                  className="h-10 appearance-none rounded-control border border-input bg-surface pl-3 pr-8 type-body font-medium text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus/30 transition-colors cursor-pointer"
+                                >
+                                  <option value="G">Grams (g)</option>
+                                  <option value="ML">Milliliters (mL)</option>
+                                  {v.contentUom === "KG" && <option value="KG">Kilograms (kg)</option>}
+                                  {v.contentUom === "L" && <option value="L">Liters (L)</option>}
+                                </select>
+                                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-muted" />
+                              </div>
                             </div>
                           </div>
 
