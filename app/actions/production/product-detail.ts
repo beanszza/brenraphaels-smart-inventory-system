@@ -258,6 +258,7 @@ export async function deleteFinishedProduct(idInput: string | number) {
     await unlinkFile(filesGateway, staff, productImage, id, product.ImageUrl);
 
     // Safely delete or detach dependent records to prevent foreign key errors
+    await (tx as any).shopStockLines?.deleteMany({ where: { ProductId: id } }).catch(() => { });
     await (tx as any).branchRequestItems?.deleteMany({ where: { ProductId: id } }).catch(() => { });
     await (tx as any).branchReturnItems?.deleteMany({ where: { ProductId: id } }).catch(() => { });
     await (tx as any).stockWriteOffItems?.deleteMany({ where: { ProductId: id } }).catch(() => { });
