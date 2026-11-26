@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
-import { X, Calendar, Clock, Upload, AlertCircle, FileCheck } from "lucide-react";
+import { Calendar, Clock, Upload, AlertCircle, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 import { actionResponse } from "@/lib/resources/action-response";
 import { dispatchTransfer } from "@/app/actions/stock-transfer/dispatch";
@@ -10,7 +9,10 @@ import { uploadTransferAttachmentDirect } from "@/app/actions/stock-transfer/tra
 import { StockTransfer, StockTransferRequest } from "./types";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
+import { Button } from "@/components/ui/button";
+import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useOptionalStaff } from "@/context/StaffContext";
 import { StockTransferConfirmModal } from "./StockTransferConfirmModal";
 
@@ -25,6 +27,14 @@ interface DispatchTransferModalProps {
 const ALLOWED_FILE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".pdf"];
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
 
+function formatDateDisplay(dateStr: string | null | undefined) {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  return isNaN(d.getTime())
+    ? dateStr
+    : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
 export function DispatchTransferModal({
   transfer,
   request,
@@ -35,7 +45,6 @@ export function DispatchTransferModal({
   const staff = useOptionalStaff();
   const currentStaffName = staff?.name?.trim() || staff?.username?.trim() || "";
 
-  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -44,7 +53,6 @@ export function DispatchTransferModal({
   const [actualDispatchDate, setActualDispatchDate] = useState<string>("");
   const [actualDispatchTime, setActualDispatchTime] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [proofBase64, setProofBase64] = useState<string>("");
   const [dispatchRemarks, setDispatchRemarks] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,14 +64,7 @@ export function DispatchTransferModal({
   const maxDateStr = maxDate.toISOString().split("T")[0];
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
     if (open && transfer) {
-      const original = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-
       const now = new Date();
       const currentToday = now.toISOString().split("T")[0];
       const hours = String(now.getHours()).padStart(2, "0");
@@ -73,23 +74,16 @@ export function DispatchTransferModal({
       setActualDispatchDate(currentToday);
       setActualDispatchTime(timeStr);
       setSelectedFile(null);
-      setProofBase64("");
       setDispatchRemarks("");
       setError(null);
       setShowConfirm(false);
-
-      return () => {
-        document.body.style.overflow = original;
-      };
     }
   }, [open, transfer, currentStaffName]);
 
-  const { requestClose, confirmModal } = useConfirmedClose(onClose);
-
-  if (!open || !mounted || !transfer) return null;
+  if (!open || !transfer) return null;
 
   // Extract scheduled information from transfer.notes or fields
-  let scheduledInfo = {
+  const scheduledInfo = {
     transportProvider: transfer.courierName || "—",
     vehicleType: "—",
     plateNumber: transfer.vehiclePlate || "—",
@@ -115,12 +109,6 @@ export function DispatchTransferModal({
   } catch {
     // If not JSON, use raw values
   }
-
-  const formatDateDisplay = (dateStr: string | null | undefined) => {
-    if (!dateStr) return "—";
-    const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString("en-US");
-  };
 
   const handleDateChange = (val: string) => {
     if (val) {
@@ -150,7 +138,6 @@ export function DispatchTransferModal({
       return;
     }
     setSelectedFile(file);
-    setProofBase64("");
     setError(null);
   };
 
@@ -275,128 +262,141 @@ export function DispatchTransferModal({
           },
         ];
 
-  return createPortal(
-    <div className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-backdrop p-4 sm:p-6 animate-in fade-in duration-150">
-      {confirmModal}
-      <div
-        style={{ width: "100%", maxWidth: "960px" }}
-        className="w-full max-h-[92vh] bg-surface rounded-panel shadow-2xl border border-divider overflow-hidden flex flex-col text-text-primary shrink-0 relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-divider px-6 py-5">
-          <div>
-            <h2 className="type-modal-title text-text-primary">Dispatch Stock Transfer</h2>
-            <p className="text-xs text-text-muted mt-0.5">
-              Confirm the actual release of products from the commissary. Review the original stock transfer request and scheduled transportation details before recording the dispatch.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={requestClose}
-            className="rounded-control p-2 text-text-muted hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+  const reqNoDisplay = request?.requestNumber || transfer.requestNumber || transfer.transferNumber;
+  const destDisplay = request?.toLocationName || transfer.destLocationName || "—";
+  const vehicleDisplay =
+    scheduledInfo.vehicleType !== "—"
+      ? `${scheduledInfo.vehicleType} · ${scheduledInfo.plateNumber}`
+      : scheduledInfo.plateNumber;
+  const driverDisplay =
+    scheduledInfo.driverContact !== "—"
+      ? `${scheduledInfo.driverName} · ${scheduledInfo.driverContact}`
+      : scheduledInfo.driverName;
+  const bookingDisplay =
+    scheduledInfo.bookingReference !== "—" && scheduledInfo.transferFee !== "—"
+      ? `${scheduledInfo.bookingReference} · ${scheduledInfo.transferFee}`
+      : scheduledInfo.bookingReference !== "—"
+      ? scheduledInfo.bookingReference
+      : scheduledInfo.transferFee;
 
-        {/* Content Body */}
-        <form onSubmit={handlePreSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+  return (
+    <ModalWrapper
+      open={open}
+      title="Dispatch stock transfer"
+      titleBadge={<StatusBadge status="Scheduled" />}
+      subtitle={`${reqNoDisplay} · to ${destDisplay} · via ${scheduledInfo.transportProvider}`}
+      onClose={() => { if (!loading) onClose(); }}
+      maxWidthPx={900}
+      bodyClassName="flex min-h-0 flex-1 flex-col overflow-hidden"
+    >
+      <form onSubmit={handlePreSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden text-ink">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 space-y-4">
           {error && (
-            <div className="rounded-control border border-destructive/40 bg-destructive/10 p-3.5 text-xs text-destructive flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
+            <div className="rounded-control border border-notice-danger-border bg-notice-danger-bg px-3.5 py-2.5 type-body-secondary text-notice-danger-text flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-destructive" />
+              <span role="alert">{error}</span>
             </div>
           )}
 
-          {/* Stock Transfer Information */}
-          <div className="rounded-panel border border-divider bg-muted/20 p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="type-card-title text-text-primary">Stock Transfer Information</h3>
-              <span className="type-overline font-semibold uppercase tracking-wider text-text-muted bg-surface-hover px-2.5 py-1 rounded-full">
-                REQUEST INFORMATION · READ-ONLY
-              </span>
+          {/* Section 1: Scheduled transfer summary (2-col clean key-value card) */}
+          <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+            <div className="space-y-0.5">
+              <h3 className="type-subsection text-ink">Scheduled transfer summary</h3>
+              <p className="type-caption text-ink-muted">
+                Review the scheduled logistics before releasing stock.
+              </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Request Number</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">
-                  {request?.requestNumber || transfer.requestNumber || transfer.transferNumber}
-                </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+              <div className="space-y-0.5">
+                <span className="block type-caption font-medium text-ink-muted">Transport provider</span>
+                <p className="type-body font-medium text-ink">{scheduledInfo.transportProvider}</p>
               </div>
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Destination Branch</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">
-                  {request?.toLocationName || transfer.destLocationName || "—"}
-                </p>
+              <div className="space-y-0.5">
+                <span className="block type-caption font-medium text-ink-muted">Vehicle &amp; plate</span>
+                <p className="type-body font-medium text-ink">{vehicleDisplay}</p>
               </div>
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Required Date</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">
-                  {formatDateDisplay(request?.requiredDate || transfer.scheduledDate || transfer.transferDate)}
-                </p>
+              <div className="space-y-0.5">
+                <span className="block type-caption font-medium text-ink-muted">Driver &amp; contact</span>
+                <p className="type-body font-medium text-ink">{driverDisplay}</p>
               </div>
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Priority</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">
-                  {request?.priority || transfer.priority || "Medium"}
-                </p>
-              </div>
-              <div className="sm:col-span-2">
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Reason / Purpose</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">
-                  {request?.reason || "Branch Replenishment"}
-                </p>
+              <div className="space-y-0.5">
+                <span className="block type-caption font-medium text-ink-muted">Booking ref &amp; fee</span>
+                <p className="type-body font-medium text-ink">{bookingDisplay}</p>
               </div>
             </div>
           </div>
 
-          {/* Finished Products to Transfer */}
-          <div className="rounded-panel border border-divider bg-surface p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="type-card-title text-text-primary">Finished Products to Transfer</h3>
-              <span className="type-overline font-semibold uppercase tracking-wider text-text-muted bg-surface-hover px-2.5 py-1 rounded-full">
-                PRODUCT DETAILS · READ-ONLY
-              </span>
+          {/* Section 2: Finished products to dispatch (separate Lot & Expiry columns) */}
+          <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+            <div className="space-y-0.5">
+              <h3 className="type-subsection text-ink">
+                Finished products to dispatch ({displayItems.length})
+              </h3>
+              <p className="type-caption text-ink-muted">
+                Commissary stock will be deducted from these FEFO lots.
+              </p>
             </div>
-            <div className="overflow-x-auto rounded-control border border-divider">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-surface-hover border-b border-divider type-table-header font-semibold text-text-muted uppercase tracking-wider">
-                    <th className="py-2.5 px-4">Product & Variant</th>
-                    <th className="py-2.5 px-3">SKU</th>
-                    <th className="py-2.5 px-3">Commissary Stock</th>
-                    <th className="py-2.5 px-3">Expiry Date / Lot</th>
-                    <th className="py-2.5 px-4 text-right">Requested Qty</th>
+
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse">
+                <thead className="border-b border-divider">
+                  <tr className="whitespace-nowrap">
+                    <th className="pb-2.5 pr-3 type-caption font-medium text-ink-muted min-w-[200px]">Product &amp; variant</th>
+                    <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[105px]">SKU</th>
+                    <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[125px]">Commissary</th>
+                    <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[105px]">Lot</th>
+                    <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[105px]">Expiry date</th>
+                    <th className="pb-2.5 pl-2.5 text-right type-caption font-medium text-ink-muted min-w-[72px]">Req. qty</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-divider">
                   {displayItems.map((item, idx) => (
-                    <tr key={item.requestItemId || idx} className="hover:bg-surface-hover/10 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-text-primary">
-                        {item.productName}
-                        {item.variant ? <span className="block type-caption font-normal text-text-muted">{item.variant}</span> : null}
+                    <tr key={item.requestItemId || idx} className="align-middle">
+                      <td className="py-2.5 pr-3">
+                        <div className="type-body font-medium text-ink">{item.productName}</div>
+                        {item.variant && <div className="type-caption text-ink-secondary">{item.variant}</div>}
                       </td>
-                      <td className="py-3 px-3 font-mono type-caption text-text-muted">{item.sku || "—"}</td>
-                      <td className="py-3 px-3 font-medium text-text-primary">
-                        {item.availableQuantity ?? "—"}{" "}
-                        <span className="type-caption text-text-muted font-normal">(In Stock)</span>
+                      <td className="py-2.5 px-2.5 type-body-secondary text-ink-secondary whitespace-nowrap">
+                        {item.sku || "—"}
                       </td>
-                      <td className="py-3 px-3">
+                      <td className="py-2.5 px-2.5 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <span className="type-body text-ink tabular-nums">{item.availableQuantity ?? "—"}</span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-status-green-bg text-status-green-fg type-caption font-medium">
+                            In stock
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-2.5 whitespace-nowrap">
                         {item.suggestedLots && item.suggestedLots.length > 0 ? (
                           <div className="space-y-1">
                             {item.suggestedLots.map((lot, lIdx) => (
-                              <div key={lIdx} className="type-caption">
-                                <span className="font-semibold text-text-primary">{formatDateDisplay(lot.expiryDate)}</span>
-                                <span className="block type-caption text-text-muted font-mono">Lot: {lot.lotCode}</span>
+                              <div key={lIdx} className="type-body-secondary text-ink-secondary">
+                                {lot.lotCode.replace(/^FG-/i, "")}
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-text-muted">—</span>
+                          <span className="type-body-secondary text-ink-muted">—</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-right font-semibold text-text-primary type-table-cell">{item.requestedQuantity}</td>
+                      <td className="py-2.5 px-2.5 whitespace-nowrap">
+                        {item.suggestedLots && item.suggestedLots.length > 0 ? (
+                          <div className="space-y-1">
+                            {item.suggestedLots.map((lot, lIdx) => (
+                              <div key={lIdx} className="type-body text-ink">
+                                {formatDateDisplay(lot.expiryDate)}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="type-body-secondary text-ink-muted">—</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 pl-2.5 text-right type-body font-medium text-ink tabular-nums whitespace-nowrap">
+                        {item.requestedQuantity}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -404,66 +404,20 @@ export function DispatchTransferModal({
             </div>
           </div>
 
-          {/* Transportation Details */}
-          <div className="rounded-panel border border-divider bg-muted/20 p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="type-card-title text-text-primary">Transportation Details</h3>
-              <span className="type-overline font-semibold uppercase tracking-wider text-text-muted bg-surface-hover px-2.5 py-1 rounded-full">
-                SCHEDULED INFORMATION · READ-ONLY
-              </span>
+          {/* Section 3: Dispatch details & proof */}
+          <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+            <div className="space-y-0.5">
+              <h3 className="type-subsection text-ink">Dispatch details &amp; proof</h3>
+              <p className="type-caption text-ink-muted">
+                Record the actual release time and upload proof of dispatch.
+              </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Transport Provider</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.transportProvider}</p>
-              </div>
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Vehicle Type</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.vehicleType}</p>
-              </div>
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Plate Number</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.plateNumber}</p>
-              </div>
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Booking Reference</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.bookingReference}</p>
-              </div>
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Transfer Fee</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.transferFee}</p>
-              </div>
-            </div>
-          </div>
 
-          {/* Driver Information */}
-          <div className="rounded-panel border border-divider bg-muted/20 p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="type-card-title text-text-primary">Driver Information</h3>
-              <span className="type-overline font-semibold uppercase tracking-wider text-text-muted bg-surface-hover px-2.5 py-1 rounded-full">
-                SCHEDULED INFORMATION · READ-ONLY
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Driver Name</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.driverName}</p>
-              </div>
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Driver Contact Number</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">{scheduledInfo.driverContact}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Dispatch Details */}
-          <div className="rounded-panel border border-divider bg-surface p-5 space-y-4">
-            <h3 className="type-card-title text-text-primary">Dispatch Details</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Actual Dispatch Date */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-4">
+              {/* Actual dispatch date */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-text-primary">
-                  Actual Dispatch Date <span className="text-destructive">*</span>
+                <label className="block type-label-field text-ink-strong">
+                  Actual dispatch date <span className="text-destructive">*</span>
                 </label>
                 <div className="relative">
                   <Input
@@ -472,16 +426,16 @@ export function DispatchTransferModal({
                     max={maxDateStr}
                     value={actualDispatchDate}
                     onChange={(e) => handleDateChange(e.target.value)}
-                    className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 pr-10 text-xs text-text-primary cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    className="w-full h-10 rounded-control border-input bg-surface px-3 pr-10 type-body text-ink cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   />
-                  <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                  <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                 </div>
               </div>
 
-              {/* Actual Dispatch Time */}
+              {/* Actual dispatch time */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-text-primary">
-                  Actual Dispatch Time <span className="text-destructive">*</span>
+                <label className="block type-label-field text-ink-strong">
+                  Actual dispatch time <span className="text-destructive">*</span>
                 </label>
                 <div className="relative">
                   <Input
@@ -491,136 +445,129 @@ export function DispatchTransferModal({
                       setActualDispatchTime(e.target.value);
                       setError(null);
                     }}
-                    className="w-full h-10 rounded-control border border-divider bg-surface px-3.5 pr-10 text-xs text-text-primary cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    className="w-full h-10 rounded-control border-input bg-surface px-3 pr-10 type-body text-ink cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   />
-                  <Clock className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                  <Clock className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                 </div>
               </div>
 
-              {/* Released By (Locked to Current Account User) */}
+              {/* Released by (locked to current user) */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-text-primary">
-                  Released By <span className="text-destructive">*</span>
+                <label className="block type-label-field text-ink-strong">
+                  Released by <span className="text-destructive">*</span>
                 </label>
                 <Input
                   readOnly
                   disabled
                   value={currentStaffName}
-                  className="h-10 rounded-control bg-surface-hover border-divider text-text-primary font-medium text-xs cursor-not-allowed select-none disabled:opacity-100"
+                  className="h-10 px-3 rounded-control bg-page border-input type-body text-ink-secondary cursor-not-allowed select-none disabled:opacity-100"
                 />
               </div>
             </div>
-          </div>
 
-          {/* Dispatch Documents */}
-          <div className="rounded-panel border border-divider bg-surface p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="type-card-title text-text-primary">
-                Dispatch Documents <span className="text-destructive">*</span>
-              </h3>
-            </div>
-            <p className="text-xs text-text-muted">
-              Upload delivery receipts, loading photos, or signed dispatch documents.
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-divider hover:border-foreground/40 rounded-panel p-7 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-hover/20 transition-all group"
-            >
-              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2.5 text-text-muted group-hover:text-text-primary group-hover:scale-105 transition-all">
-                <Upload className="w-5 h-5" />
-              </div>
-              <p className="text-xs font-semibold text-text-primary">
-                Click to upload dispatch documents or proof photo
-              </p>
-              <p className="type-caption text-text-muted mt-0.5">
-                JPG, PNG, PDF up to 8MB
-              </p>
-            </div>
-            {selectedFile && (
-              <div className="flex items-center justify-between p-3.5 rounded-control border border-divider bg-surface">
-                <div className="flex items-center gap-2.5">
-                  <FileCheck className="w-5 h-5 text-success" />
-                  <div>
-                    <p className="text-xs font-semibold text-text-primary truncate max-w-[280px]">
-                      {selectedFile.name}
-                    </p>
-                    <p className="type-caption text-text-muted">
-                      {(selectedFile.size / 1024).toFixed(1)} KB
-                    </p>
-                  </div>
+            {/* Compact horizontal upload dropzone */}
+            <div className="space-y-2.5">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-inner border border-dashed border-input hover:border-primary/50 bg-surface hover:bg-page px-3.5 py-3 flex items-center gap-3 cursor-pointer transition-colors"
+              >
+                <Upload className="w-4.5 h-4.5 text-primary shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="type-body font-medium text-ink">
+                    Dispatch documents or proof photo <span className="text-destructive">*</span>
+                  </p>
+                  <p className="type-caption text-ink-muted">
+                    Delivery receipt, loading photo, or signed slip · JPG, PNG, PDF up to 8MB
+                  </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedFile(null);
-                    setProofBase64("");
-                  }}
-                  className="text-xs text-text-muted hover:text-destructive px-2 py-1 rounded-lg hover:bg-surface-hover transition-colors cursor-pointer"
-                >
-                  Remove
-                </button>
               </div>
-            )}
-          </div>
 
-          {/* Dispatch Remarks */}
-          <div className="rounded-panel border border-divider bg-surface p-5 space-y-2">
-            <h3 className="type-card-title text-text-primary">Dispatch Remarks</h3>
-            <Textarea
-              value={dispatchRemarks}
-              onChange={(e) => setDispatchRemarks(e.target.value)}
-              placeholder="Enter additional dispatch instructions or remarks (Optional)..."
-              maxLength={250}
-              rows={3}
-              className="rounded-control bg-surface border-divider text-text-primary text-xs"
-            />
-          </div>
+              {selectedFile && (
+                <div className="flex items-center justify-between px-3 py-2.5 rounded-control border border-border bg-page">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <FileCheck className="w-4 h-4 text-status-green-fg shrink-0" />
+                    <span className="type-body-secondary text-ink truncate">
+                      {selectedFile.name} · {(selectedFile.size / 1024).toFixed(1)} KB
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFile(null);
+                    }}
+                    className="type-body-secondary font-medium text-destructive hover:underline px-2 py-0.5 cursor-pointer shrink-0"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
 
-          {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-divider">
-            <button
+            {/* Dispatch remarks */}
+            <div className="space-y-1.5">
+              <label className="block type-label-field text-ink-strong">
+                Dispatch remarks <span className="type-body-secondary font-normal text-ink-disabled">(optional)</span>
+              </label>
+              <Textarea
+                value={dispatchRemarks}
+                onChange={(e) => setDispatchRemarks(e.target.value)}
+                placeholder="Additional dispatch instructions or notes..."
+                maxLength={250}
+                rows={2}
+                className="rounded-control bg-surface border-input type-body text-ink resize-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Pinned #fafafa Footer Bar */}
+        <div className="shrink-0 bg-page border-t border-topbar px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+          <p className="type-caption text-ink-muted">
+            Commissary stock deducts when you confirm dispatch.
+          </p>
+          <div className="flex items-center gap-2">
+            <ModalCloseButton
               type="button"
-              onClick={requestClose}
+              variant="outline"
               disabled={loading}
-              className="rounded-control border border-divider bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+              fallbackOnClose={onClose}
+              className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none transition-colors cursor-pointer"
             >
               Close
-            </button>
-            <button
+            </ModalCloseButton>
+            <Button
               type="submit"
               disabled={loading}
-              className="rounded-control bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              Confirm Dispatch
-            </button>
+              Confirm dispatch
+            </Button>
           </div>
-        </form>
+        </div>
+      </form>
 
-        {/* Confirmation Modal Overlay */}
-        {showConfirm && (
-          <StockTransferConfirmModal
-            open={showConfirm}
-            title="Dispatch Stock Transfer"
-            subtitle={`Request No: ${request?.requestNumber || transfer.requestNumber || transfer.transferNumber || `STR-${transfer.transferId}`}`}
-            description={`Are you sure you want to record the actual dispatch of ${transfer.transferQuantity} units to ${request?.toLocationName || transfer.destLocationName}? Commissary stock will be deducted accordingly.`}
-            confirmText={loading ? "Dispatching..." : "Confirm & Dispatch"}
-            loading={loading}
-            onCancel={() => {
-              if (!loading) setShowConfirm(false);
-            }}
-            onConfirm={handleExecuteDispatch}
-          />
-        )}
-      </div>
-    </div>,
-    document.body
+      {showConfirm && (
+        <StockTransferConfirmModal
+          open={showConfirm}
+          title="Dispatch Stock Transfer"
+          subtitle={`Request No: ${request?.requestNumber || transfer.requestNumber || transfer.transferNumber || `STR-${transfer.transferId}`}`}
+          description={`Are you sure you want to record the actual dispatch of ${transfer.transferQuantity} units to ${request?.toLocationName || transfer.destLocationName}? Commissary stock will be deducted accordingly.`}
+          confirmText={loading ? "Dispatching..." : "Confirm & Dispatch"}
+          loading={loading}
+          onCancel={() => {
+            if (!loading) setShowConfirm(false);
+          }}
+          onConfirm={handleExecuteDispatch}
+        />
+      )}
+    </ModalWrapper>
   );
 }

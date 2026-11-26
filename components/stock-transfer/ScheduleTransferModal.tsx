@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
-import { X, AlertCircle, Upload, FileCheck } from "lucide-react";
+import { AlertCircle, Upload, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 import { actionResponse } from "@/lib/resources/action-response";
 import { scheduleTransfer } from "@/app/actions/stock-transfer/transfers";
@@ -11,7 +10,10 @@ import { StockTransferRequest } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
+import { Button } from "@/components/ui/button";
+import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { ModalCloseButton } from "@/components/shared/ModalCloseContext";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransferConfirmModal } from "./StockTransferConfirmModal";
 
 interface ScheduleTransferModalProps {
@@ -53,20 +55,27 @@ const VEHICLE_TYPES = [
   "10-Wheeler Truck",
 ];
 
+function formatDateDisplay(dateStr: string | null | undefined) {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  return isNaN(d.getTime())
+    ? dateStr
+    : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
 export function ScheduleTransferModal({
   open,
   onClose,
   onSuccess,
   request,
 }: ScheduleTransferModalProps) {
-  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
   // Form State
-  const [transportProvider, setTransportProvider] = useState<string>("");
-  const [vehicleType, setVehicleType] = useState<string>("");
+  const [transportProvider, setTransportProvider] = useState<string>("Company-owned Vehicle");
+  const [vehicleType, setVehicleType] = useState<string>("Van");
   const [plateNumber, setPlateNumber] = useState<string>("");
   const [bookingReference, setBookingReference] = useState<string>("");
 
@@ -79,21 +88,12 @@ export function ScheduleTransferModal({
 
   // Document attachment
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
-  const [attachmentBase64, setAttachmentBase64] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [schedulingRemarks, setSchedulingRemarks] = useState<string>("");
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
     if (open && request) {
-      const original = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-
-      // Reset form fields
       setTransportProvider("Company-owned Vehicle");
       setVehicleType("Van");
       setPlateNumber("");
@@ -104,20 +104,13 @@ export function ScheduleTransferModal({
       setDriverContact("");
       setTransferFee("");
       setAttachmentFile(null);
-      setAttachmentBase64("");
       setSchedulingRemarks("");
       setFormError(null);
       setShowConfirm(false);
-
-      return () => {
-        document.body.style.overflow = original;
-      };
     }
   }, [open, request]);
 
-  const { requestClose, confirmModal } = useConfirmedClose(onClose);
-
-  if (!open || !mounted || !request) return null;
+  if (!open || !request) return null;
 
   const fullDriverName = [driverFirstName.trim(), driverMiddleName.trim(), driverLastName.trim()]
     .filter(Boolean)
@@ -141,7 +134,6 @@ export function ScheduleTransferModal({
       return;
     }
     setAttachmentFile(file);
-    setAttachmentBase64("");
     setFormError(null);
   };
 
@@ -150,7 +142,6 @@ export function ScheduleTransferModal({
     if (loading || !request) return;
     setFormError(null);
 
-    // Validations
     if (!transportProvider) {
       setFormError("Please select a transport provider.");
       return;
@@ -313,126 +304,97 @@ export function ScheduleTransferModal({
     }
   };
 
-  const formatDateDisplay = (dateStr: string | null | undefined) => {
-    if (!dateStr) return "—";
-    const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString("en-US");
-  };
-
   const totalRequestedQty = (request.items || []).reduce((sum, i) => sum + Number(i.requestedQuantity || 0), 0);
 
-  return createPortal(
-    <div className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-backdrop p-4 sm:p-6 animate-in fade-in duration-150">
-      {confirmModal}
-      <div
-        style={{ width: "100%", maxWidth: "920px" }}
-        className="w-full max-h-[92vh] bg-surface rounded-panel shadow-2xl border border-divider overflow-hidden flex flex-col text-text-primary shrink-0 relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-divider px-6 py-5">
-          <div>
-            <h2 className="type-modal-title text-text-primary">Schedule Stock Transfer</h2>
-            <p className="text-xs text-text-muted mt-0.5">
-              Set the transportation arrangements and delivery schedule for the approved stock transfer.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={requestClose}
-            className="rounded-control p-2 text-text-muted hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Form Body */}
-        <form onSubmit={handlePreSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+  return (
+    <ModalWrapper
+      open={open}
+      title="Schedule stock transfer"
+      titleBadge={<StatusBadge status="Approved" />}
+      subtitle={`${request.requestNumber} · to ${request.toLocationName || "—"} · required ${formatDateDisplay(request.requiredDate)}`}
+      onClose={() => { if (!loading) onClose(); }}
+      maxWidthPx={900}
+      bodyClassName="flex min-h-0 flex-1 flex-col overflow-hidden"
+    >
+      <form onSubmit={handlePreSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden text-ink">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 space-y-4">
           {formError && (
-            <div className="rounded-control border border-destructive/40 bg-destructive/10 p-3.5 text-xs text-destructive flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{formError}</span>
+            <div className="rounded-control border border-notice-danger-border bg-notice-danger-bg px-3.5 py-2.5 type-body-secondary text-notice-danger-text flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-destructive" />
+              <span role="alert">{formError}</span>
             </div>
           )}
 
-          {/* Stock Transfer Information */}
-          <div className="rounded-panel border border-divider bg-muted/20 p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="type-card-title text-text-primary">Stock Transfer Information</h3>
-              <span className="type-overline font-semibold uppercase tracking-wider text-text-muted bg-surface-hover px-2.5 py-1 rounded-full">
-                REQUEST INFORMATION · READ-ONLY
-              </span>
+          {/* Section 1: Finished products to transfer */}
+          <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+            <div className="space-y-0.5">
+              <h3 className="type-subsection text-ink">
+                Finished products to transfer ({request.items?.length || 0})
+              </h3>
+              <p className="type-caption text-ink-muted">
+                Approved items and assigned FEFO lots for this transfer.
+              </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Request Number</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">{request.requestNumber}</p>
-              </div>
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Destination Branch</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">{request.toLocationName || "—"}</p>
-              </div>
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Required Date</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">{formatDateDisplay(request.requiredDate)}</p>
-              </div>
-              <div>
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Priority</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">{request.priority || "Medium"}</p>
-              </div>
-              <div className="sm:col-span-2">
-                <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Reason / Purpose</span>
-                <p className="text-sm font-semibold text-text-primary mt-0.5">{request.reason || "Branch Replenishment"}</p>
-              </div>
-            </div>
-          </div>
 
-          {/* Finished Products to Transfer */}
-          <div className="rounded-panel border border-divider bg-surface p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="type-card-title text-text-primary">Finished Products to Transfer</h3>
-              <span className="type-overline font-semibold uppercase tracking-wider text-text-muted bg-surface-hover px-2.5 py-1 rounded-full">
-                PRODUCT DETAILS · READ-ONLY
-              </span>
-            </div>
-            <div className="overflow-x-auto rounded-control border border-divider">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-surface-hover border-b border-divider type-table-header font-semibold text-text-muted uppercase tracking-wider">
-                    <th className="py-2.5 px-4">Product & Variant</th>
-                    <th className="py-2.5 px-3">SKU</th>
-                    <th className="py-2.5 px-3">Commissary Stock</th>
-                    <th className="py-2.5 px-3">Expiry Date / Lot</th>
-                    <th className="py-2.5 px-4 text-right">Requested Qty</th>
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse">
+                <thead className="border-b border-divider">
+                  <tr className="whitespace-nowrap">
+                    <th className="pb-2.5 pr-3 type-caption font-medium text-ink-muted min-w-[200px]">Product &amp; variant</th>
+                    <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[105px]">SKU</th>
+                    <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[125px]">Commissary</th>
+                    <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[105px]">Lot</th>
+                    <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[105px]">Expiry date</th>
+                    <th className="pb-2.5 pl-2.5 text-right type-caption font-medium text-ink-muted min-w-[72px]">Req. qty</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-divider">
                   {(request.items || []).map((item, idx) => (
-                    <tr key={item.requestItemId || idx} className="hover:bg-surface-hover/10 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-text-primary">
-                        {item.productName}
-                        {item.variant ? <span className="block type-caption font-normal text-text-muted">{item.variant}</span> : null}
+                    <tr key={item.requestItemId || idx} className="align-middle">
+                      <td className="py-2.5 pr-3">
+                        <div className="type-body font-medium text-ink">{item.productName}</div>
+                        {item.variant && <div className="type-caption text-ink-secondary">{item.variant}</div>}
                       </td>
-                      <td className="py-3 px-3 font-mono type-caption text-text-muted">{item.sku || "—"}</td>
-                      <td className="py-3 px-3 font-medium text-text-primary">
-                        {item.availableQuantity ?? "—"}{" "}
-                        <span className="type-caption text-text-muted font-normal">(In Stock)</span>
+                      <td className="py-2.5 px-2.5 type-body-secondary text-ink-secondary whitespace-nowrap">
+                        {item.sku || "—"}
                       </td>
-                      <td className="py-3 px-3">
+                      <td className="py-2.5 px-2.5 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <span className="type-body text-ink tabular-nums">{item.availableQuantity ?? "—"}</span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-status-green-bg text-status-green-fg type-caption font-medium">
+                            In stock
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-2.5 whitespace-nowrap">
                         {item.suggestedLots && item.suggestedLots.length > 0 ? (
                           <div className="space-y-1">
                             {item.suggestedLots.map((lot, lIdx) => (
-                              <div key={lIdx} className="type-caption">
-                                <span className="font-semibold text-text-primary">{formatDateDisplay(lot.expiryDate)}</span>
-                                <span className="block type-caption text-text-muted font-mono">Lot: {lot.lotCode}</span>
+                              <div key={lIdx} className="type-body-secondary text-ink-secondary">
+                                {lot.lotCode.replace(/^FG-/i, "")}
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-text-muted">—</span>
+                          <span className="type-body-secondary text-ink-muted">—</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-right font-semibold text-text-primary type-table-cell">{item.requestedQuantity}</td>
+                      <td className="py-2.5 px-2.5 whitespace-nowrap">
+                        {item.suggestedLots && item.suggestedLots.length > 0 ? (
+                          <div className="space-y-1">
+                            {item.suggestedLots.map((lot, lIdx) => (
+                              <div key={lIdx} className="type-body text-ink">
+                                {formatDateDisplay(lot.expiryDate)}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="type-body-secondary text-ink-muted">—</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 pl-2.5 text-right type-body font-medium text-ink tabular-nums whitespace-nowrap">
+                        {item.requestedQuantity}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -440,22 +402,28 @@ export function ScheduleTransferModal({
             </div>
           </div>
 
-          {/* Transportation Details */}
-          <div className="rounded-panel border border-divider bg-surface p-5 space-y-4">
-            <h3 className="type-card-title text-text-primary">Transportation Details</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Transport Provider */}
+          {/* Section 2: Transportation & driver (2-column clean inputs) */}
+          <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+            <div className="space-y-0.5">
+              <h3 className="type-subsection text-ink">Transportation &amp; driver</h3>
+              <p className="type-caption text-ink-muted">
+                Log the courier, vehicle, and assigned driver details.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-4">
+              {/* Transport provider */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-text-primary">
-                  Transport Provider <span className="text-destructive">*</span>
+                <label className="block type-label-field text-ink-strong">
+                  Transport provider <span className="text-destructive">*</span>
                 </label>
                 <Select value={transportProvider} onValueChange={setTransportProvider}>
-                  <SelectTrigger className="h-10 rounded-control bg-surface border-divider text-text-primary">
-                    <SelectValue placeholder="Select Provider" />
+                  <SelectTrigger className="w-full h-10 px-3 rounded-control bg-surface border-input type-body text-ink">
+                    <SelectValue placeholder="Select provider" />
                   </SelectTrigger>
-                  <SelectContent className="bg-popover border-divider text-text-primary">
+                  <SelectContent className="bg-surface border-border text-ink">
                     {TRANSPORT_PROVIDERS.map((provider) => (
-                      <SelectItem key={provider} value={provider}>
+                      <SelectItem key={provider} value={provider} className="type-body">
                         {provider}
                       </SelectItem>
                     ))}
@@ -463,18 +431,18 @@ export function ScheduleTransferModal({
                 </Select>
               </div>
 
-              {/* Vehicle Type */}
+              {/* Vehicle type */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-text-primary">
-                  Vehicle Type <span className="text-destructive">*</span>
+                <label className="block type-label-field text-ink-strong">
+                  Vehicle type <span className="text-destructive">*</span>
                 </label>
                 <Select value={vehicleType} onValueChange={setVehicleType}>
-                  <SelectTrigger className="h-10 rounded-control bg-surface border-divider text-text-primary">
-                    <SelectValue placeholder="Select Vehicle Type" />
+                  <SelectTrigger className="w-full h-10 px-3 rounded-control bg-surface border-input type-body text-ink">
+                    <SelectValue placeholder="Select vehicle type" />
                   </SelectTrigger>
-                  <SelectContent className="bg-popover border-divider text-text-primary">
+                  <SelectContent className="bg-surface border-border text-ink">
                     {VEHICLE_TYPES.map((vType) => (
-                      <SelectItem key={vType} value={vType}>
+                      <SelectItem key={vType} value={vType} className="type-body">
                         {vType}
                       </SelectItem>
                     ))}
@@ -482,10 +450,10 @@ export function ScheduleTransferModal({
                 </Select>
               </div>
 
-              {/* Plate Number */}
+              {/* Plate number */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-text-primary">
-                  Plate Number <span className="text-destructive">*</span>
+                <label className="block type-label-field text-ink-strong">
+                  Plate number <span className="text-destructive">*</span>
                 </label>
                 <Input
                   value={plateNumber}
@@ -494,15 +462,15 @@ export function ScheduleTransferModal({
                     setPlateNumber(e.target.value.replace(/[^A-Za-z0-9\s\-]/g, "").slice(0, 10));
                     setFormError(null);
                   }}
-                  placeholder="Enter Plate Number"
-                  className="h-10 rounded-control bg-surface border-divider text-text-primary text-xs"
+                  placeholder="Enter plate number"
+                  className="h-10 px-3 rounded-control bg-surface border-input type-body text-ink"
                 />
               </div>
 
-              {/* Booking Reference */}
+              {/* Booking reference */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-text-primary">
-                  Booking Reference <span className="type-caption text-text-muted font-normal">(Optional)</span>
+                <label className="block type-label-field text-ink-strong">
+                  Booking reference <span className="type-body-secondary font-normal text-ink-disabled">(optional)</span>
                 </label>
                 <Input
                   value={bookingReference}
@@ -511,21 +479,15 @@ export function ScheduleTransferModal({
                     setBookingReference(e.target.value.replace(/[^A-Za-z0-9\-]/g, "").slice(0, 40));
                     setFormError(null);
                   }}
-                  placeholder="Enter Booking Reference"
-                  className="h-10 rounded-control bg-surface border-divider text-text-primary text-xs"
+                  placeholder="Enter booking reference"
+                  className="h-10 px-3 rounded-control bg-surface border-input type-body text-ink"
                 />
               </div>
-            </div>
-          </div>
 
-          {/* Driver & Delivery Information */}
-          <div className="rounded-panel border border-divider bg-surface p-5 space-y-4">
-            <h3 className="type-card-title text-text-primary">Driver & Delivery Information</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* First Name */}
+              {/* Driver first name */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-text-primary">
-                  First Name <span className="text-destructive">*</span>
+                <label className="block type-label-field text-ink-strong">
+                  Driver first name <span className="text-destructive">*</span>
                 </label>
                 <Input
                   value={driverFirstName}
@@ -534,32 +496,15 @@ export function ScheduleTransferModal({
                     setDriverFirstName(sanitizeNameInput(e.target.value));
                     setFormError(null);
                   }}
-                  placeholder="Enter First Name"
-                  className="h-10 rounded-control bg-surface border-divider text-text-primary text-xs"
+                  placeholder="Enter first name"
+                  className="h-10 px-3 rounded-control bg-surface border-input type-body text-ink"
                 />
               </div>
 
-              {/* Middle Name */}
+              {/* Driver last name */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-text-primary">
-                  Middle Name <span className="type-caption text-text-muted font-normal">(Optional)</span>
-                </label>
-                <Input
-                  value={driverMiddleName}
-                  maxLength={50}
-                  onChange={(e) => {
-                    setDriverMiddleName(sanitizeNameInput(e.target.value));
-                    setFormError(null);
-                  }}
-                  placeholder="Enter Middle Name"
-                  className="h-10 rounded-control bg-surface border-divider text-text-primary text-xs"
-                />
-              </div>
-
-              {/* Last Name */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-text-primary">
-                  Last Name <span className="text-destructive">*</span>
+                <label className="block type-label-field text-ink-strong">
+                  Driver last name <span className="text-destructive">*</span>
                 </label>
                 <Input
                   value={driverLastName}
@@ -568,17 +513,32 @@ export function ScheduleTransferModal({
                     setDriverLastName(sanitizeNameInput(e.target.value));
                     setFormError(null);
                   }}
-                  placeholder="Enter Last Name"
-                  className="h-10 rounded-control bg-surface border-divider text-text-primary text-xs"
+                  placeholder="Enter last name"
+                  className="h-10 px-3 rounded-control bg-surface border-input type-body text-ink"
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-              {/* Driver Contact Number */}
+              {/* Driver middle name */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-text-primary">
-                  Driver Contact Number <span className="text-destructive">*</span>
+                <label className="block type-label-field text-ink-strong">
+                  Driver middle name <span className="type-body-secondary font-normal text-ink-disabled">(optional)</span>
+                </label>
+                <Input
+                  value={driverMiddleName}
+                  maxLength={50}
+                  onChange={(e) => {
+                    setDriverMiddleName(sanitizeNameInput(e.target.value));
+                    setFormError(null);
+                  }}
+                  placeholder="Enter middle name"
+                  className="h-10 px-3 rounded-control bg-surface border-input type-body text-ink"
+                />
+              </div>
+
+              {/* Driver contact number */}
+              <div className="space-y-1.5">
+                <label className="block type-label-field text-ink-strong">
+                  Driver contact number <span className="text-destructive">*</span>
                 </label>
                 <Input
                   inputMode="numeric"
@@ -589,17 +549,17 @@ export function ScheduleTransferModal({
                     setFormError(null);
                   }}
                   placeholder="09XXXXXXXXX"
-                  className="h-10 rounded-control bg-surface border-divider text-text-primary text-xs"
+                  className="h-10 px-3 rounded-control bg-surface border-input type-body text-ink"
                 />
               </div>
 
-              {/* Transfer Fee */}
+              {/* Transfer fee */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-text-primary">
-                  Transfer Fee <span className="type-caption text-text-muted font-normal">(Optional)</span>
+                <label className="block type-label-field text-ink-strong">
+                  Transfer fee <span className="type-body-secondary font-normal text-ink-disabled">(optional)</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-xs text-text-muted font-semibold">₱</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 type-body text-ink-muted">₱</span>
                   <Input
                     type="number"
                     step="0.01"
@@ -609,123 +569,124 @@ export function ScheduleTransferModal({
                       setTransferFee(e.target.value);
                       setFormError(null);
                     }}
-                    placeholder="Enter Amount"
-                    className="h-10 pl-7 rounded-control bg-surface border-divider text-text-primary text-xs"
+                    placeholder="0.00"
+                    className="h-10 pl-7 pr-3 rounded-control bg-surface border-input type-body text-ink"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Proof of Booking / Transaction Receipt */}
-          <div className="rounded-panel border border-divider bg-surface p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="type-card-title text-text-primary">
-                Proof of Booking / Transaction Receipt <span className="text-destructive">*</span>
-              </h3>
-            </div>
-            <p className="text-xs text-text-muted">
-              Attach an image proof of receipt, Lalamove/Grab booking screenshot, or delivery transaction document.
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".jpg,.jpeg,.png,.pdf"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-divider hover:border-foreground/40 rounded-panel p-7 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-hover/20 transition-all group"
-            >
-              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2.5 text-text-muted group-hover:text-text-primary group-hover:scale-105 transition-all">
-                <Upload className="w-5 h-5" />
-              </div>
-              <p className="text-xs font-semibold text-text-primary">
-                Click to upload receipt or proof photo
-              </p>
-              <p className="type-caption text-text-muted mt-0.5">
-                JPG, PNG, PDF up to 8MB
+          {/* Section 3: Proof & remarks */}
+          <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+            <div className="space-y-0.5">
+              <h3 className="type-subsection text-ink">Proof &amp; remarks</h3>
+              <p className="type-caption text-ink-muted">
+                Attach booking confirmation and any scheduling instructions.
               </p>
             </div>
-            {attachmentFile && (
-              <div className="flex items-center justify-between p-3.5 rounded-control border border-divider bg-surface">
-                <div className="flex items-center gap-2.5">
-                  <FileCheck className="w-5 h-5 text-success" />
-                  <div>
-                    <p className="text-xs font-semibold text-text-primary truncate max-w-[280px]">
-                      {attachmentFile.name}
-                    </p>
-                    <p className="type-caption text-text-muted">
-                      {(attachmentFile.size / 1024).toFixed(1)} KB
-                    </p>
-                  </div>
+
+            <div className="space-y-2.5">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-inner border border-dashed border-input hover:border-primary/50 bg-surface hover:bg-page px-3.5 py-3 flex items-center gap-3 cursor-pointer transition-colors"
+              >
+                <Upload className="w-4.5 h-4.5 text-primary shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="type-body font-medium text-ink">
+                    Proof of booking / transaction receipt <span className="text-destructive">*</span>
+                  </p>
+                  <p className="type-caption text-ink-muted">
+                    Lalamove/Grab screenshot or delivery receipt · JPG, PNG, PDF up to 8MB
+                  </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setAttachmentFile(null);
-                    setAttachmentBase64("");
-                  }}
-                  className="text-xs text-text-muted hover:text-destructive px-2 py-1 rounded-lg hover:bg-surface-hover transition-colors cursor-pointer"
-                >
-                  Remove
-                </button>
               </div>
-            )}
-          </div>
 
-          {/* Scheduling Remarks */}
-          <div className="rounded-panel border border-divider bg-surface p-5 space-y-2">
-            <h3 className="type-card-title text-text-primary">Scheduling Remarks</h3>
-            <Textarea
-              value={schedulingRemarks}
-              onChange={(e) => setSchedulingRemarks(e.target.value)}
-              placeholder="Enter additional scheduling instructions or remarks (Optional)..."
-              maxLength={250}
-              rows={3}
-              className="rounded-control bg-surface border-divider text-text-primary text-xs"
-            />
-          </div>
+              {attachmentFile && (
+                <div className="flex items-center justify-between px-3 py-2.5 rounded-control border border-border bg-page">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <FileCheck className="w-4 h-4 text-status-green-fg shrink-0" />
+                    <span className="type-body-secondary text-ink truncate">
+                      {attachmentFile.name} · {(attachmentFile.size / 1024).toFixed(1)} KB
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAttachmentFile(null);
+                    }}
+                    className="type-body-secondary font-medium text-destructive hover:underline px-2 py-0.5 cursor-pointer shrink-0"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
 
-          {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-divider">
-            <button
+            <div className="space-y-1.5">
+              <label className="block type-label-field text-ink-strong">
+                Scheduling remarks <span className="type-body-secondary font-normal text-ink-disabled">(optional)</span>
+              </label>
+              <Textarea
+                value={schedulingRemarks}
+                onChange={(e) => setSchedulingRemarks(e.target.value)}
+                placeholder="Additional scheduling instructions or notes..."
+                maxLength={250}
+                rows={2}
+                className="rounded-control bg-surface border-input type-body text-ink resize-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Pinned #fafafa Footer Bar */}
+        <div className="shrink-0 bg-page border-t border-topbar px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+          <p className="type-caption text-ink-muted">
+            Scheduling marks this request as Scheduled.
+          </p>
+          <div className="flex items-center gap-2">
+            <ModalCloseButton
               type="button"
-              onClick={requestClose}
+              variant="outline"
               disabled={loading}
-              className="rounded-control border border-divider bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+              fallbackOnClose={onClose}
+              className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none transition-colors cursor-pointer"
             >
               Close
-            </button>
-            <button
+            </ModalCloseButton>
+            <Button
               type="submit"
               disabled={loading}
-              className="rounded-control bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              Confirm Schedule
-            </button>
+              Confirm schedule
+            </Button>
           </div>
-        </form>
+        </div>
+      </form>
 
-        {/* Confirmation Modal Overlay */}
-        {showConfirm && (
-          <StockTransferConfirmModal
-            open={showConfirm}
-            title="Schedule Stock Transfer"
-            subtitle={`Request No: ${request.requestNumber}`}
-            description={`Are you sure you want to schedule this transfer of ${totalRequestedQty} units to ${request.toLocationName} with driver ${fullDriverName} via ${transportProvider}?`}
-            confirmText={loading ? "Scheduling..." : "Confirm & Schedule"}
-            loading={loading}
-            onCancel={() => {
-              if (!loading) setShowConfirm(false);
-            }}
-            onConfirm={handleExecuteSchedule}
-          />
-        )}
-      </div>
-    </div>,
-    document.body
+      {showConfirm && (
+        <StockTransferConfirmModal
+          open={showConfirm}
+          title="Schedule Stock Transfer"
+          subtitle={`Request No: ${request.requestNumber}`}
+          description={`Are you sure you want to schedule this transfer of ${totalRequestedQty} units to ${request.toLocationName} with driver ${fullDriverName} via ${transportProvider}?`}
+          confirmText={loading ? "Scheduling..." : "Confirm & Schedule"}
+          loading={loading}
+          onCancel={() => {
+            if (!loading) setShowConfirm(false);
+          }}
+          onConfirm={handleExecuteSchedule}
+        />
+      )}
+    </ModalWrapper>
   );
 }

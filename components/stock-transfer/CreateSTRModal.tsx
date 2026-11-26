@@ -5,12 +5,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { createRequest, getNextRequestNumber } from "@/app/actions/stock-transfer/requests";
 import { suggestLots } from "@/app/actions/stock-transfer/lot-suggestions";
 import { listFinishedProducts } from "@/app/actions/stock-transfer/products";
-
 import { listLocations } from "@/app/actions/stock-transfer/locations";
 import { actionResponse } from "@/lib/resources/action-response";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, AlertCircle, Package, Calendar } from "lucide-react";
+import { Plus, Trash2, AlertCircle, Calendar } from "lucide-react";
 import { FinishedProductOption, LocationOption, CreateSTRPrefill } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -57,6 +56,13 @@ interface NewItemRow {
   lotExpiry?: string;
   isChecking: boolean;
   notes: string;
+}
+
+function formatExpiryDisplay(raw?: string | null): string {
+  if (!raw || raw === "No Expiry" || raw === "N/A") return "No expiry";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
 export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: CreateSTRModalProps) {
@@ -190,7 +196,6 @@ export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: Cre
         const totalAvail = res.data.data.totalAvailable || 0;
         const suggestedLots: any[] = res.data.data.suggestedLots || [];
 
-        // Identify lots allocated according to FEFO order
         const allocated: AllocatedLotItem[] = suggestedLots
           .filter((l) => Number(l.allocatedQuantity) > 0)
           .map((l) => ({
@@ -201,7 +206,6 @@ export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: Cre
             expiryDate: l.expiryDate || "No Expiry",
           }));
 
-        // If none allocated (e.g. qty is 0), fall back to first lot
         const finalAllocated: AllocatedLotItem[] = allocated.length > 0
           ? allocated
           : (suggestedLots[0] ? [{
@@ -407,185 +411,201 @@ export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: Cre
     <ModalWrapper
       open={open}
       title="Create Stock Transfer Request"
+      subtitle="Request finished goods replenishment from the commissary to a branch store."
       onClose={() => { if (!loading) onClose(); }}
-      size="max-w-5xl"
+      maxWidthPx={900}
+      bodyClassName="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <form onSubmit={handleSubmit} className="space-y-5 text-ink">
-        {prerequisitesLoading && (
-          <div role="status" aria-label="Loading products and destinations" className="space-y-3">
-            <Skeleton className="h-10 w-full rounded-control" />
-            <Skeleton className="h-10 w-full rounded-control" />
-          </div>
-        )}
-        {!prerequisitesLoading && !prerequisitesReady && (
-          <button type="button" onClick={fetchPrerequisites} className="type-caption underline text-ink cursor-pointer">
-            Retry loading products and destinations
-          </button>
-        )}
-        {prefill && (
-          <div className="rounded-control bg-status-purple-bg px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-primary">
-            <span className="type-body-secondary font-semibold">
-              Fulfilling Branch Stock Request {prefill.branchRequestNumber} · {prefill.branchName}
-            </span>
-            <span className="type-caption font-semibold tabular-nums">
-              {prefill.remainingQuantity} of {prefill.approvedQuantity} pcs remaining
-            </span>
-          </div>
-        )}
-        {formError && (
-          <div className="rounded-control border border-destructive/40 bg-destructive/10 p-3.5 type-caption text-destructive flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span role="alert">{formError}</span>
-          </div>
-        )}
-
-        {/* Form Top Grid - Request No, Destination, Required Date, Priority */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
-          {/* Request Number (Auto-assigned, visible immediately) */}
-          <div className="space-y-1.5">
-            <label className="block type-label-field text-ink">
-              Request Number
-            </label>
-            <div className="flex items-center h-10 px-3.5 rounded-control border border-border bg-subtle type-body-secondary font-mono font-semibold text-ink select-all">
-              {requestNumber || "Generating..."}
-            </div>
-          </div>
-
-          {/* Destination Branch */}
-          <div className="space-y-1.5">
-            <label className="block type-label-field text-ink">
-              Destination Branch <span className="text-destructive">*</span>
-            </label>
-            <Select
-              value={toLocationId}
-              onValueChange={(val) => {
-                if (val || !prefill) setToLocationId(val);
-              }}
-              disabled={Boolean(prefill)}
-            >
-              <SelectTrigger className="w-full h-10 px-3.5 rounded-control border-border bg-surface type-body text-ink">
-                <SelectValue placeholder={prefill?.branchName || "Select Destination Branch"} />
-              </SelectTrigger>
-              <SelectContent className="bg-surface border-border text-ink">
-                {locations.map((loc) => (
-                  <SelectItem key={loc.locationId} value={String(loc.locationId)} className="type-body">
-                    {loc.locationName} ({loc.locationType})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Required Fulfillment Date with far-right calendar icon */}
-          <div className="space-y-1.5">
-            <label className="block type-label-field text-ink">
-              Required Date <span className="text-destructive">*</span>
-            </label>
-            <div className="relative">
-              <Input
-                type="date"
-                min={getTodayDateString()}
-                max={getMaxFutureDateString()}
-                value={requiredDate}
-                onChange={(e) => setRequiredDate(e.target.value)}
-                className="w-full h-10 rounded-control border-border bg-surface px-3.5 pr-10 type-body text-ink cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-              />
-              <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
-            </div>
-          </div>
-
-          {/* Priority */}
-          <div className="space-y-1.5">
-            <label className="block type-label-field text-ink">
-              Priority
-            </label>
-            <Select value={priority} onValueChange={setPriority}>
-              <SelectTrigger className="w-full h-10 px-3.5 rounded-control border-border bg-surface type-body font-medium text-ink">
-                <SelectValue placeholder="Select Priority" />
-              </SelectTrigger>
-              <SelectContent className="bg-surface border-border">
-                <SelectItem value="Low" className="type-body">Low</SelectItem>
-                <SelectItem value="Medium" className="type-body">Medium</SelectItem>
-                <SelectItem value="High" className="type-body">High</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Reason / Purpose Dropdown */}
-          <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
-            <label className="block type-label-field text-ink">
-              Reason / Purpose <span className="text-destructive">*</span>
-            </label>
-            <Select
-              value={reasonChoice}
-              onValueChange={(val) => {
-                setReasonChoice(val);
-                setFormError(null);
-              }}
-            >
-              <SelectTrigger className="w-full h-10 px-3.5 rounded-control border-border bg-surface type-body text-ink">
-                <SelectValue placeholder="Select Reason" />
-              </SelectTrigger>
-              <SelectContent className="bg-surface border-border">
-                {STR_REASON_CHOICES.map((choice) => (
-                  <SelectItem key={choice} value={choice} className="type-body">
-                    {choice === "Other" ? "Other (Please specify)" : choice}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* If 'Other' chosen: Specify Reason field */}
-          {reasonChoice === "Other" && (
-            <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
-              <label className="block type-label-field text-ink">
-                Specify Reason <span className="text-destructive">*</span>
-              </label>
-              <Input
-                type="text"
-                placeholder="Please specify reason for stock transfer..."
-                value={customReason}
-                onChange={(e) => setCustomReason(e.target.value)}
-                className="h-10 rounded-control border-border bg-surface px-3.5 type-body text-ink"
-                maxLength={100}
-              />
+      <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden text-ink">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 space-y-4">
+          {prerequisitesLoading && (
+            <div role="status" aria-label="Loading products and destinations" className="space-y-3">
+              <Skeleton className="h-10 w-full rounded-control" />
+              <Skeleton className="h-10 w-full rounded-control" />
             </div>
           )}
-        </div>
+          {!prerequisitesLoading && !prerequisitesReady && (
+            <button type="button" onClick={fetchPrerequisites} className="type-caption underline text-ink cursor-pointer">
+              Retry loading products and destinations
+            </button>
+          )}
+          {prefill && (
+            <div className="rounded-control bg-status-purple-bg px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-primary">
+              <span className="type-body-secondary font-medium">
+                Fulfilling Branch Stock Request {prefill.branchRequestNumber} · {prefill.branchName}
+              </span>
+              <span className="type-caption font-medium tabular-nums">
+                {prefill.remainingQuantity} of {prefill.approvedQuantity} pcs remaining
+              </span>
+            </div>
+          )}
+          {formError && (
+            <div className="rounded-control border border-notice-danger-border bg-notice-danger-bg px-3.5 py-2.5 type-body-secondary text-notice-danger-text flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-destructive" />
+              <span role="alert">{formError}</span>
+            </div>
+          )}
 
-        {/* Dynamic Items Table */}
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between">
-            <h3 className="type-subsection text-ink flex items-center gap-2">
-              <Package className="w-4 h-4 text-ink-muted" />
-              Finished Products to Transfer ({items.length})
-            </h3>
-            {!prefill && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addItemRow}
-                disabled={products.length > 0 && items.length >= products.length}
-                className="flex items-center gap-1.5 px-3.5 h-9 rounded-control border-border bg-surface type-label-button-sm text-ink hover:bg-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" /> Add Product
-              </Button>
-            )}
+          {/* Section 1: Request details (2-column clean inputs inside bordered section card) */}
+          <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+            <div className="space-y-0.5">
+              <h3 className="type-subsection text-ink">Request details</h3>
+              <p className="type-caption text-ink-muted">
+                Select the destination branch, target date, and reason for transfer.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-4">
+              {/* Request number */}
+              <div className="space-y-1.5">
+                <label className="block type-label-field text-ink-strong">
+                  Request number
+                </label>
+                <div className="flex items-center h-10 px-3 rounded-control border border-input bg-page type-body text-ink-secondary select-all">
+                  {requestNumber || "Generating..."}
+                </div>
+              </div>
+
+              {/* Destination branch */}
+              <div className="space-y-1.5">
+                <label className="block type-label-field text-ink-strong">
+                  Destination branch <span className="text-destructive">*</span>
+                </label>
+                <Select
+                  value={toLocationId}
+                  onValueChange={(val) => {
+                    if (val || !prefill) setToLocationId(val);
+                  }}
+                  disabled={Boolean(prefill)}
+                >
+                  <SelectTrigger className="w-full h-10 px-3 rounded-control border-input bg-surface type-body text-ink">
+                    <SelectValue placeholder={prefill?.branchName || "Select Destination Branch"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-surface border-border text-ink">
+                    {locations.map((loc) => (
+                      <SelectItem key={loc.locationId} value={String(loc.locationId)} className="type-body">
+                        {loc.locationName} ({loc.locationType})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Required date */}
+              <div className="space-y-1.5">
+                <label className="block type-label-field text-ink-strong">
+                  Required date <span className="text-destructive">*</span>
+                </label>
+                <div className="relative">
+                  <Input
+                    type="date"
+                    min={getTodayDateString()}
+                    max={getMaxFutureDateString()}
+                    value={requiredDate}
+                    onChange={(e) => setRequiredDate(e.target.value)}
+                    className="w-full h-10 rounded-control border-input bg-surface px-3 pr-10 type-body text-ink cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                  <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+                </div>
+              </div>
+
+              {/* Priority */}
+              <div className="space-y-1.5">
+                <label className="block type-label-field text-ink-strong">
+                  Priority
+                </label>
+                <Select value={priority} onValueChange={setPriority}>
+                  <SelectTrigger className="w-full h-10 px-3 rounded-control border-input bg-surface type-body text-ink">
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-surface border-border">
+                    <SelectItem value="Low" className="type-body">Low</SelectItem>
+                    <SelectItem value="Medium" className="type-body">Medium</SelectItem>
+                    <SelectItem value="High" className="type-body">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Reason / Purpose */}
+              <div className={reasonChoice === "Other" ? "space-y-1.5" : "space-y-1.5 sm:col-span-2"}>
+                <label className="block type-label-field text-ink-strong">
+                  Reason / Purpose <span className="text-destructive">*</span>
+                </label>
+                <Select
+                  value={reasonChoice}
+                  onValueChange={(val) => {
+                    setReasonChoice(val);
+                    setFormError(null);
+                  }}
+                >
+                  <SelectTrigger className="w-full h-10 px-3 rounded-control border-input bg-surface type-body text-ink">
+                    <SelectValue placeholder="Select Reason" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-surface border-border">
+                    {STR_REASON_CHOICES.map((choice) => (
+                      <SelectItem key={choice} value={choice} className="type-body">
+                        {choice === "Other" ? "Other (Please specify)" : choice}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Custom Reason if Other */}
+              {reasonChoice === "Other" && (
+                <div className="space-y-1.5">
+                  <label className="block type-label-field text-ink-strong">
+                    Specify reason <span className="text-destructive">*</span>
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="Please specify reason for stock transfer..."
+                    value={customReason}
+                    onChange={(e) => setCustomReason(e.target.value)}
+                    className="h-10 rounded-control border-input bg-surface px-3 type-body text-ink"
+                    maxLength={100}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="table-card shadow-card">
-            <div className="overflow-x-auto table-scrollbar">
+          {/* Section 2: Finished products to transfer (wide roomy table with separate Lot & Expiry columns) */}
+          <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="space-y-0.5">
+                <h3 className="type-subsection text-ink">
+                  Finished products to transfer ({items.length})
+                </h3>
+                <p className="type-caption text-ink-muted">
+                  The lot that expires first (FEFO) is assigned automatically.
+                </p>
+              </div>
+              {!prefill && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addItemRow}
+                  disabled={products.length > 0 && items.length >= products.length}
+                  className="flex items-center gap-1.5 px-3 h-8 rounded-control border-border bg-surface type-label-button-sm text-primary hover:bg-subtle shadow-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add product
+                </Button>
+              )}
+            </div>
+
+            <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
-                <thead className="table-head-row border-b border-divider">
-                  <tr className="text-left whitespace-nowrap">
-                    <th className="table-th py-2.5 px-3 min-w-[220px]">Product &amp; Variant</th>
-                    <th className="table-th py-2.5 px-3 min-w-[100px] whitespace-nowrap">SKU</th>
-                    <th className="table-th py-2.5 px-3 min-w-[120px] whitespace-nowrap">Commissary Stock</th>
-                    <th className="table-th py-2.5 px-3 min-w-[190px]">Expiry Date &amp; Lots</th>
-                    <th className="table-th py-2.5 px-3 min-w-[96px] whitespace-nowrap">Quantity</th>
-                    <th className="table-th py-2.5 px-2 w-10 text-center"></th>
+                <thead className="border-b border-divider">
+                  <tr className="whitespace-nowrap">
+                    <th className="pb-2.5 pr-3 type-caption font-medium text-ink-muted min-w-[210px]">Product &amp; variant</th>
+                    <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[100px]">SKU</th>
+                    <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[125px]">Commissary</th>
+                    <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[105px]">Lot</th>
+                    <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[105px]">Expiry date</th>
+                    <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[84px]">Qty</th>
+                    <th className="pb-2.5 pl-1 w-8"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-divider">
@@ -597,14 +617,14 @@ export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: Cre
                       row.requestedQuantity > row.availableQuantity;
 
                     return (
-                      <tr key={idx} className="table-row hover:bg-subtle/40 transition-colors">
-                        <td className="px-3 py-3 table-td">
+                      <tr key={idx} className="align-middle">
+                        <td className="py-2.5 pr-3">
                           <Select
                             value={row.productId ? String(row.productId) : ""}
                             onValueChange={(val) => handleProductChange(idx, val)}
                             disabled={Boolean(prefill)}
                           >
-                            <SelectTrigger className="h-9 rounded-control border-border bg-surface type-body-secondary font-medium text-ink w-full">
+                            <SelectTrigger className="h-9 rounded-control border-input bg-surface type-body text-ink w-full">
                               <SelectValue placeholder="Select Finished Product" />
                             </SelectTrigger>
                             <SelectContent className="max-h-60 bg-surface border-border">
@@ -623,68 +643,74 @@ export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: Cre
                           </Select>
                         </td>
 
-                        <td className="px-3 py-3 table-td text-ink-muted whitespace-nowrap">
+                        <td className="py-2.5 px-2.5 type-body-secondary text-ink-secondary whitespace-nowrap">
                           {row.sku || "—"}
                         </td>
 
-                        <td className="px-3 py-3 table-td font-medium whitespace-nowrap">
+                        <td className="py-2.5 px-2.5 whitespace-nowrap">
                           {row.productId ? (
                             <div className="flex items-center gap-1.5">
-                              <span className="font-semibold text-ink">
+                              <span className="type-body text-ink tabular-nums">
                                 {row.availableQuantity}
                               </span>
                               {isInsufficient ? (
-                                <span className="type-caption text-destructive font-semibold">
-                                  (Shortage)
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-status-red-bg text-status-red-fg type-caption font-medium">
+                                  Shortage
                                 </span>
                               ) : (
-                                <span className="type-caption text-ink font-semibold">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-pill bg-status-green-bg text-status-green-fg type-caption font-medium">
                                   (In Stock)
                                 </span>
                               )}
                             </div>
                           ) : (
-                            <span className="text-ink-muted">—</span>
+                            <span className="type-body text-ink-muted">—</span>
                           )}
                         </td>
 
-                        <td className="px-3 py-3 table-td text-ink-muted">
+                        {/* Separate Lot column */}
+                        <td className="py-2.5 px-2.5 whitespace-nowrap">
                           {row.productId ? (
                             row.isChecking ? (
                               <Skeleton aria-label="Checking stock" className="h-4 w-16" />
                             ) : row.allocatedLots && row.allocatedLots.length > 0 ? (
-                              <div className="space-y-1.5 py-0.5">
+                              <div className="space-y-1">
                                 {row.allocatedLots.map((al, aIdx) => (
-                                  <div key={aIdx} className="space-y-0.5">
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      <span className="font-semibold text-ink type-caption">
-                                        {al.expiryDate && al.expiryDate !== "No Expiry" && al.expiryDate !== "N/A"
-                                          ? (() => {
-                                              try {
-                                                const d = new Date(al.expiryDate);
-                                                return isNaN(d.getTime()) ? al.expiryDate : d.toLocaleDateString();
-                                              } catch {
-                                                return al.expiryDate;
-                                              }
-                                            })()
-                                          : "No Expiry"}
-                                      </span>
-                                    </div>
-                                    <div className="type-caption text-ink-muted font-mono">
-                                      Lot: {al.lotCode}
-                                    </div>
+                                  <div key={aIdx} className="type-body-secondary text-ink-secondary">
+                                    {al.lotCode}
                                   </div>
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-ink-muted type-caption">No lot</span>
+                              <span className="type-body-secondary text-ink-muted">No lot</span>
                             )
                           ) : (
-                            <span className="text-ink-muted type-caption">—</span>
+                            <span className="type-body-secondary text-ink-muted">—</span>
                           )}
                         </td>
 
-                        <td className="px-3 py-3 table-td">
+                        {/* Separate Expiry date column */}
+                        <td className="py-2.5 px-2.5 whitespace-nowrap">
+                          {row.productId ? (
+                            row.isChecking ? (
+                              <Skeleton aria-label="Checking expiry" className="h-4 w-20" />
+                            ) : row.allocatedLots && row.allocatedLots.length > 0 ? (
+                              <div className="space-y-1">
+                                {row.allocatedLots.map((al, aIdx) => (
+                                  <div key={aIdx} className="type-body text-ink">
+                                    {formatExpiryDisplay(al.expiryDate)}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="type-body-secondary text-ink-muted">—</span>
+                            )
+                          ) : (
+                            <span className="type-body-secondary text-ink-muted">—</span>
+                          )}
+                        </td>
+
+                        <td className="py-2.5 px-2.5">
                           <Input
                             type="number"
                             min="1"
@@ -701,32 +727,33 @@ export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: Cre
                             step="1"
                             value={row.requestedQuantity}
                             onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                            className={`h-9 rounded-control border bg-surface type-body-secondary text-ink font-semibold w-24 ${
+                            className={`h-9 rounded-control border bg-surface type-body text-ink tabular-nums w-20 ${
                               isInsufficient || (prefill && typeof row.requestedQuantity === "number" && row.requestedQuantity > prefill.remainingQuantity)
                                 ? "border-destructive text-destructive focus-visible:ring-destructive"
-                                : "border-border"
+                                : "border-input"
                             }`}
                           />
                           {isInsufficient && (
-                            <p className="type-caption text-destructive font-semibold mt-1">
-                              Exceeds stock ({row.availableQuantity})
+                            <p className="type-caption text-destructive mt-1">
+                              Max {row.availableQuantity}
                             </p>
                           )}
                           {!isInsufficient &&
                             prefill &&
                             typeof row.requestedQuantity === "number" &&
                             row.requestedQuantity > prefill.remainingQuantity && (
-                              <p className="type-caption text-destructive font-semibold mt-1">
-                                Exceeds remaining ({prefill.remainingQuantity})
+                              <p className="type-caption text-destructive mt-1">
+                                Max {prefill.remainingQuantity}
                               </p>
                             )}
                         </td>
 
-                        <td className="px-2 py-3 text-center">
+                        <td className="py-2.5 pl-1 text-center">
                           <button
                             type="button"
                             onClick={() => removeItemRow(idx)}
                             disabled={items.length <= 1}
+                            aria-label="Remove product row"
                             className="p-1.5 rounded-control text-ink-muted hover:text-ink hover:bg-subtle disabled:opacity-30 transition-colors cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -741,37 +768,42 @@ export function CreateSTRModal({ open, onClose, onSuccess, prefill = null }: Cre
           </div>
         </div>
 
-        {/* Form Actions Footer (matching SupplierModal) */}
-        <div className="flex items-center justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
-          <ModalCloseButton
-            type="button"
-            variant="outline"
-            disabled={loading}
-            fallbackOnClose={onClose}
-            className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors h-10 cursor-pointer"
-          >
-            Cancel
-          </ModalCloseButton>
-          <Button
-            type="submit"
-            disabled={
-              loading ||
-              !prerequisitesReady ||
-              items.some(
-                (row) =>
-                  row.isChecking ||
-                  !row.productId ||
-                  typeof row.requestedQuantity !== "number" ||
-                  row.requestedQuantity <= 0 ||
-                  row.availableQuantity <= 0 ||
-                  row.requestedQuantity > row.availableQuantity ||
-                  Boolean(prefill && row.requestedQuantity > prefill.remainingQuantity)
-              )
-            }
-            className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed h-10 cursor-pointer"
-          >
-            {loading ? "Submitting..." : "Submit Request"}
-          </Button>
+        {/* Pinned #fafafa Footer Bar */}
+        <div className="shrink-0 bg-page border-t border-topbar px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+          <p className="type-caption text-ink-muted">
+            Submitted requests go to Admin for approval before scheduling.
+          </p>
+          <div className="flex items-center gap-2">
+            <ModalCloseButton
+              type="button"
+              variant="outline"
+              disabled={loading}
+              fallbackOnClose={onClose}
+              className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none transition-colors cursor-pointer"
+            >
+              Cancel
+            </ModalCloseButton>
+            <Button
+              type="submit"
+              disabled={
+                loading ||
+                !prerequisitesReady ||
+                items.some(
+                  (row) =>
+                    row.isChecking ||
+                    !row.productId ||
+                    typeof row.requestedQuantity !== "number" ||
+                    row.requestedQuantity <= 0 ||
+                    row.availableQuantity <= 0 ||
+                    row.requestedQuantity > row.availableQuantity ||
+                    Boolean(prefill && row.requestedQuantity > prefill.remainingQuantity)
+                )
+              }
+              className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {loading ? "Submitting..." : "Submit Request"}
+            </Button>
+          </div>
         </div>
       </form>
 

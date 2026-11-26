@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { AlertTriangle, AlertCircle } from "lucide-react";
+import React, { useState } from "react";
+import { AlertCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 import { STRActionType } from "./types";
 
 export type { STRActionType };
@@ -21,26 +21,21 @@ export function STRActionModal({
   onConfirm,
   onClose,
 }: STRActionModalProps) {
-  const [mounted, setMounted] = useState(false);
   const [reason, setReason] = useState("");
   const [error, setError] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const requiresReason = actionType === "reject" || actionType === "cancel";
 
   const getTitle = () => {
     switch (actionType) {
       case "approve":
-        return "Approve Stock Transfer Request";
+        return "Approve stock transfer request";
       case "reject":
-        return "Reject Stock Transfer Request";
+        return "Reject stock transfer request";
       case "cancel":
-        return "Cancel Stock Transfer Request";
+        return "Cancel stock transfer request";
     }
   };
 
@@ -55,6 +50,17 @@ export function STRActionModal({
     }
   };
 
+  const getConfirmLabel = () => {
+    switch (actionType) {
+      case "approve":
+        return "Approve";
+      case "reject":
+        return "Confirm rejection";
+      case "cancel":
+        return "Confirm cancellation";
+    }
+  };
+
   const handleConfirm = async () => {
     if (requiresReason && !reason.trim()) {
       setError(true);
@@ -66,100 +72,55 @@ export function STRActionModal({
     try {
       await onConfirm(reason.trim());
       onClose();
-    } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Unable to update request.");
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Unable to update request.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!mounted) return null;
-
-  return createPortal(
-    <div
-      className="font-sans fixed inset-0 z-[300] flex items-center justify-center p-4 bg-backdrop backdrop-blur-xs animate-in fade-in duration-150"
+  return (
+    <ActionConfirmModal
+      open={true}
+      title={getTitle()}
+      subtitle={`Stock Transfer Request No: ${requestNumber}`}
+      description={getDescription()}
+      confirmLabel={getConfirmLabel()}
+      cancelLabel="Cancel"
+      loading={loading}
+      errorMessage={submitError}
+      onClose={onClose}
+      onConfirm={handleConfirm}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={getTitle()}
-        className="w-full max-w-[480px] bg-surface rounded-panel shadow-modal border border-divider overflow-hidden flex flex-col p-6 text-text-primary shrink-0"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {submitError && <p role="alert" className="mb-3 type-body text-destructive">{submitError}</p>}
-        <div className="flex flex-col items-center justify-center text-center">
-          {/* Circular Alert Icon */}
-          <div className="w-12 h-12 rounded-full bg-surface-hover flex items-center justify-center mb-4 text-text-primary">
-            <AlertTriangle className="w-6 h-6 text-warning" />
-          </div>
-
-          {/* Title */}
-          <h2 className="type-modal-title text-text-primary mb-1">
-            {getTitle()}
-          </h2>
-
-          {/* Request Number Subtitle */}
-          <p className="type-caption font-semibold text-text-muted mb-3">
-            Stock Transfer Request No: {requestNumber}
-          </p>
-
-          {/* Message / Description */}
-          <p className="type-body text-text-muted mb-5 leading-relaxed">
-            {getDescription()}
-          </p>
-
-          {/* Required Reason Input */}
-          {requiresReason && (
-            <div className="w-full text-left space-y-1.5 mb-5">
-              <label className="type-caption font-semibold text-text-primary flex items-center gap-1">
-                Reason / Feedback Notes <span className="text-destructive">*</span>
-              </label>
-              <Textarea
-                rows={3}
-                placeholder={
-                  actionType === "reject"
-                    ? "Explain why this request is rejected (required)..."
-                    : "Please state the reason for cancellation (required)..."
-                }
-                value={reason}
-                onChange={(e) => {
-                  setReason(e.target.value);
-                  if (e.target.value.trim()) setError(false);
-                }}
-                className={`type-input resize-none bg-surface rounded-control p-3 text-text-primary ${
-                  error ? "border-destructive focus-visible:ring-destructive" : "border-divider"
-                }`}
-              />
-              {error && (
-                <p className="type-caption text-destructive flex items-center gap-1 mt-1 font-medium">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" /> Reason is required for this action.
-                </p>
-              )}
-            </div>
+      {requiresReason && (
+        <div className="space-y-1.5">
+          <label className="type-label-field text-ink-strong flex items-center gap-1">
+            Reason / Feedback notes <span className="text-destructive">*</span>
+          </label>
+          <Textarea
+            rows={3}
+            placeholder={
+              actionType === "reject"
+                ? "Explain why this request is rejected (required)..."
+                : "Please state the reason for cancellation (required)..."
+            }
+            value={reason}
+            aria-invalid={error}
+            onChange={(e) => {
+              setReason(e.target.value);
+              if (e.target.value.trim()) setError(false);
+            }}
+            className={`type-body resize-none bg-surface rounded-control p-3 text-ink border ${
+              error ? "!border-destructive focus-visible:!ring-destructive" : "border-input"
+            }`}
+          />
+          {error && (
+            <p role="alert" className="type-caption text-destructive flex items-center gap-1 mt-1 font-medium">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" /> Reason is required for this action.
+            </p>
           )}
-
-          {/* Uniform Action Buttons */}
-          <div className="flex justify-center gap-3 w-full">
-            <button
-              type="button"
-              onClick={() => { if (!loading) onClose(); }}
-              disabled={loading}
-              className="flex-1 px-5 py-2.5 type-button font-semibold text-text-primary border border-divider bg-surface hover:bg-surface-hover rounded-control transition-colors cursor-pointer disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={loading}
-              className="flex-1 px-5 py-2.5 type-button font-semibold text-primary-foreground bg-primary hover:bg-primary-hover rounded-control transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {loading ? "Processing..." : "Confirm"}
-            </button>
-          </div>
         </div>
-      </div>
-    </div>,
-    document.body
+      )}
+    </ActionConfirmModal>
   );
 }

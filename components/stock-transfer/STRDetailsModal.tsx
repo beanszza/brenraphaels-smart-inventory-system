@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { X, Calendar, MapPin, User, AlertCircle, CheckCircle, Package, Truck, FileText, ExternalLink } from "lucide-react";
+import React, { useState } from "react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { StockTransferRequest } from "./types";
-import { useConfirmedClose } from "@/components/shared/ModalCloseContext";
+import ModalWrapper from "@/components/resources-suppliers/ModalWrapper";
+import { Button } from "@/components/ui/button";
 import { resolveStaffName } from "@/lib/orders/dto";
 import { TransferProofThumbnail } from "./TransferProofThumbnail";
 
@@ -22,6 +22,13 @@ interface STRDetailsModalProps {
   onDispatch?: (req: StockTransferRequest, transferId?: number) => void;
 }
 
+function formatDateDisplay(raw?: string | null): string {
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
 export function STRDetailsModal({
   request,
   open,
@@ -34,503 +41,442 @@ export function STRDetailsModal({
   onCancel,
   onDispatch,
 }: STRDetailsModalProps) {
-  const [mounted, setMounted] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ title: string; src: string } | null>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (open) {
-      const original = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = original;
-      };
-    }
-  }, [open]);
-
-  const { requestClose, confirmModal } = useConfirmedClose(onClose);
-
-  if (!open || !mounted || !request) return null;
+  if (!open || !request) return null;
 
   const hasScheduledTransfer = request.transfers?.some((t) => t.status === "Scheduled") ?? false;
   const isFullyScheduledOrDispatched =
     request.status === "Scheduled" || request.status === "Dispatched" || hasScheduledTransfer;
+  const displayStatus = hasScheduledTransfer && request.status === "Approved" ? "Scheduled" : request.status;
+  const requesterName = resolveStaffName(request.requestedBy) || request.requestedBy;
 
-  return createPortal(
-    <div
-      className="font-sans fixed inset-0 z-[200] flex items-center justify-center bg-backdrop p-4 sm:p-6 animate-in fade-in duration-150"
-    >
-      {confirmModal}
-      <div
-        style={{ width: "100%", maxWidth: "1000px" }}
-        className="w-full max-h-[92vh] bg-surface rounded-panel shadow-2xl border border-divider overflow-hidden flex flex-col text-text-primary shrink-0"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-divider px-6 py-5">
-          <div className="flex items-center gap-2.5">
-            <h2 className="type-modal-title text-text-primary">
-              Stock Transfer Request Details
-            </h2>
-            <StatusBadge status={hasScheduledTransfer && request.status === "Approved" ? "Scheduled" : request.status} />
+  const showLogistics = Boolean(
+    (request.status === "Scheduled" ||
+      request.status === "Dispatched" ||
+      request.status === "Completed" ||
+      hasScheduledTransfer) &&
+      request.transfers &&
+      request.transfers.length > 0
+  );
+
+  let scheduledTransfer = null;
+  let schedMeta: Record<string, any> = {};
+  let dispatchMeta: Record<string, any> = {};
+  if (showLogistics) {
+    scheduledTransfer =
+      request.transfers?.find(
+        (t) => t.status === "Completed" || t.status === "Dispatched" || t.status === "Scheduled"
+      ) || request.transfers?.[0];
+    if (scheduledTransfer?.notes) {
+      const notesParts = scheduledTransfer.notes.split(" | ");
+      for (const part of notesParts) {
+        try {
+          const p = JSON.parse(part);
+          if (p.transportProvider || p.plateNumber || p.driverName || p.attachmentData || p.attachmentName) {
+            schedMeta = { ...schedMeta, ...p };
+          }
+          if (p.actualDispatchDate || p.proofDataUrl || p.proofFileName || p.releasedBy) {
+            dispatchMeta = { ...dispatchMeta, ...p };
+          }
+        } catch {
+          // ignore non-json note parts
+        }
+      }
+    }
+  }
+
+  const bookingProofSrc = scheduledTransfer?.proofOfReceipt || schedMeta.attachmentData || "";
+  const dispatchProofSrc = dispatchMeta.proofDataUrl || "";
+  const isNegativeStatus = request.status === "Cancelled" || request.status === "Rejected";
+
+  return (
+    <>
+      <ModalWrapper
+        open={open}
+        title={request.requestNumber}
+        titleBadge={
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={displayStatus} />
             {request.branchRequestNumber && (
-              <span className="px-2.5 py-0.5 rounded-full bg-status-purple-bg text-primary type-caption font-semibold">
+              <span className="px-2.5 py-0.5 rounded-pill bg-status-purple-bg text-primary type-caption font-medium">
                 POS: {request.branchRequestNumber}
               </span>
             )}
           </div>
-          <button
-            type="button"
-            onClick={requestClose}
-            className="rounded-control p-2 text-text-muted hover:bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Review Status Banner (Approved / Reviewed / Rejected) */}
-          {request.reviewedBy ? (
-            <div className="p-4 rounded-panel border border-divider bg-muted/20 space-y-1">
-              <div className="flex items-center justify-between text-xs flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-text-primary">
-                    {request.status === "Approved" ? "Approved by" : "Reviewed by"}:
-                  </span>
-                  <span className="text-text-primary font-semibold">
-                    {resolveStaffName(request.reviewedBy) || request.reviewedBy}
-                  </span>
-                  {request.reviewedAt && (
-                    <span className="text-text-muted">
-                      on {new Date(request.reviewedAt).toLocaleDateString()}
+        }
+        subtitle={`To ${request.toLocationName} · requested by ${requesterName} · ${formatDateDisplay(request.requestDate)}`}
+        onClose={onClose}
+        confirmOnClose={false}
+        maxWidthPx={960}
+        bodyClassName="flex min-h-0 flex-1 flex-col overflow-hidden"
+      >
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden text-ink">
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 space-y-4">
+            {/* Review / Approval / Rejection Status Banner */}
+            {request.reviewedBy ? (
+              <div
+                className={`rounded-inner px-3.5 py-2.5 flex items-start gap-2.5 type-body-secondary ${
+                  isNegativeStatus
+                    ? "bg-notice-danger-bg border border-notice-danger-border text-notice-danger-text"
+                    : "bg-status-green-bg text-status-green-fg"
+                }`}
+              >
+                {isNegativeStatus ? (
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-destructive" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <span>
+                    {request.status === "Rejected"
+                      ? "Rejected by"
+                      : request.status === "Approved" || request.status === "Scheduled" || request.status === "Dispatched" || request.status === "Completed"
+                      ? "Approved by"
+                      : "Reviewed by"}{" "}
+                    <span className="font-medium">
+                      {resolveStaffName(request.reviewedBy) || request.reviewedBy}
                     </span>
+                    {request.reviewedAt ? ` on ${formatDateDisplay(request.reviewedAt)}` : ""}
+                  </span>
+                  {request.adminNotes && (
+                    <span className="ml-1.5">— &ldquo;{request.adminNotes}&rdquo;</span>
                   )}
                 </div>
-                <StatusBadge status={request.status} />
               </div>
-              {request.adminNotes && (
-                <p className="text-xs text-text-muted pt-1 italic">
-                  "{request.adminNotes}"
-                </p>
-              )}
-            </div>
-          ) : (request.status === "Cancelled" || request.status === "Rejected") ? (
-            <div className="p-4 rounded-control border border-destructive/20 bg-destructive/5 space-y-1.5 text-destructive">
-              <div className="flex items-center gap-2 type-caption font-semibold">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{request.status === "Cancelled" ? "Cancellation Reason:" : "Rejection Reason:"}</span>
-              </div>
-              <p className="text-xs pl-6 text-text-muted italic">
-                {request.adminNotes || "No rejection or cancellation reason recorded."}
-              </p>
-            </div>
-          ) : null}
-
-          {/* Structured Read-only Form matching PR & PO Details Modals */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 p-4 rounded-panel bg-muted/20 border border-divider">
-            {/* Request Number */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
-                Request Number
-              </label>
-              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-muted select-all font-mono font-medium">
-                {request.requestNumber}
-              </div>
-            </div>
-
-            {/* Destination Branch */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
-                Destination Branch
-              </label>
-              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-primary font-semibold">
-                <MapPin className="w-3.5 h-3.5 mr-2 text-text-muted shrink-0" />
-                <span className="truncate">{request.toLocationName}</span>
-              </div>
-            </div>
-
-            {/* Requested By (Actual Full Name) */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
-                Requested By
-              </label>
-              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-primary font-semibold">
-                <User className="w-3.5 h-3.5 mr-2 text-text-muted shrink-0" />
-                <span>{resolveStaffName(request.requestedBy) || request.requestedBy}</span>
-              </div>
-            </div>
-
-            {/* Request Date */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
-                Request Date
-              </label>
-              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-muted">
-                <Calendar className="w-3.5 h-3.5 mr-2 text-text-muted shrink-0" />
-                <span>{new Date(request.requestDate).toLocaleDateString()}</span>
-              </div>
-            </div>
-
-            {/* Required Date */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
-                Required Date
-              </label>
-              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-muted">
-                <Calendar className="w-3.5 h-3.5 mr-2 text-text-muted shrink-0" />
-                <span>{new Date(request.requiredDate).toLocaleDateString()}</span>
-              </div>
-            </div>
-
-            {/* Priority */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
-                Priority
-              </label>
-              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-primary font-semibold">
-                <span className="px-2 py-0.5 rounded-control bg-surface type-caption font-semibold border border-divider">
-                  {request.priority}
-                </span>
-              </div>
-            </div>
-
-            {/* Reason / Purpose (Full Width) */}
-            <div className="col-span-full">
-              <label className="mb-1.5 block text-xs font-semibold text-text-primary">
-                Reason / Purpose
-              </label>
-              <div className="flex items-center h-10 px-3.5 rounded-control border border-divider bg-surface-hover text-xs text-text-primary font-medium">
-                {request.reason || "Branch Replenishment"}
-              </div>
-            </div>
-          </div>
-
-          {/* Scheduled Transportation Details Card */}
-          {Boolean(
-            (request.status === "Scheduled" || request.status === "Dispatched" || request.status === "Completed" || hasScheduledTransfer) &&
-            request.transfers && request.transfers.length > 0
-          ) && (() => {
-            const scheduledTransfer =
-              request.transfers?.find((t) => t.status === "Completed" || t.status === "Dispatched" || t.status === "Scheduled") ||
-              request.transfers?.[0];
-            let schedMeta: any = {};
-            let dispatchMeta: any = {};
-            if (scheduledTransfer?.notes) {
-              const notesParts = scheduledTransfer.notes.split(" | ");
-              for (const part of notesParts) {
-                try {
-                  const p = JSON.parse(part);
-                  if (p.transportProvider || p.plateNumber || p.driverName || p.attachmentData || p.attachmentName) {
-                    schedMeta = { ...schedMeta, ...p };
-                  }
-                  if (p.actualDispatchDate || p.proofDataUrl || p.proofFileName || p.releasedBy) {
-                    dispatchMeta = { ...dispatchMeta, ...p };
-                  }
-                } catch {
-                  // not json
-                }
-              }
-            }
-
-            const bookingProofSrc = scheduledTransfer?.proofOfReceipt || schedMeta.attachmentData || "";
-            const dispatchProofSrc = dispatchMeta.proofDataUrl || "";
-
-            return (
-              <div className="p-5 rounded-panel bg-muted/20 border border-divider space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Truck className="w-4 h-4 text-text-primary" />
-                    <h3 className="type-card-title text-text-primary">
-                      Scheduled Transportation & Driver Details
-                    </h3>
-                  </div>
-                  <span className="type-overline font-semibold uppercase tracking-wider text-text-muted bg-surface-hover px-2.5 py-1 rounded-full">
-                    {scheduledTransfer?.status.toUpperCase() || "SCHEDULED"}
-                  </span>
+            ) : isNegativeStatus ? (
+              <div className="rounded-inner border border-notice-danger-border bg-notice-danger-bg px-3.5 py-2.5 flex items-start gap-2.5 type-body-secondary text-notice-danger-text">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-destructive" />
+                <div className="min-w-0 flex-1">
+                  <span className="font-medium">
+                    {request.status === "Cancelled" ? "Cancellation reason:" : "Rejection reason:"}
+                  </span>{" "}
+                  <span>{request.adminNotes || "No rejection or cancellation reason recorded."}</span>
                 </div>
+              </div>
+            ) : null}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
-                  <div>
-                    <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Transport Provider</span>
-                    <p className="text-sm font-semibold text-text-primary mt-0.5">{schedMeta.transportProvider || scheduledTransfer?.courierName || "—"}</p>
-                  </div>
-                  <div>
-                    <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Vehicle Type & Plate</span>
-                    <p className="text-sm font-semibold text-text-primary mt-0.5">
-                      {schedMeta.vehicleType ? `${schedMeta.vehicleType} • ` : ""}
-                      {schedMeta.plateNumber || scheduledTransfer?.vehiclePlate || "—"}
+            {/* Section 1: Request details (clean 2-column typographic card) */}
+            <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+              <h3 className="type-subsection text-ink">Request details</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                <div className="space-y-0.5">
+                  <span className="block type-caption font-medium text-ink-muted">Destination branch</span>
+                  <p className="type-body font-medium text-ink">{request.toLocationName}</p>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="block type-caption font-medium text-ink-muted">Requested by</span>
+                  <p className="type-body font-medium text-ink">{requesterName}</p>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="block type-caption font-medium text-ink-muted">Request date · Required date</span>
+                  <p className="type-body font-medium text-ink">
+                    {formatDateDisplay(request.requestDate)} · {formatDateDisplay(request.requiredDate)}
+                  </p>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="block type-caption font-medium text-ink-muted">Priority · Reason</span>
+                  <p className="type-body font-medium text-ink">
+                    {request.priority || "Medium"} · {request.reason || "Branch Replenishment"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 2: Transportation & driver details + proofs */}
+            {showLogistics && scheduledTransfer && (
+              <div className="rounded-card border border-border bg-surface p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="space-y-0.5">
+                    <h3 className="type-subsection text-ink">Transportation &amp; driver details</h3>
+                    <p className="type-caption text-ink-muted">
+                      Scheduled courier, driver, and uploaded proof attachments.
                     </p>
                   </div>
-                  <div>
-                    <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Driver Name</span>
-                    <p className="text-sm font-semibold text-text-primary mt-0.5">{schedMeta.driverName || scheduledTransfer?.driverName || "—"}</p>
+                  <StatusBadge status={scheduledTransfer.status || "Scheduled"} />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                  <div className="space-y-0.5">
+                    <span className="block type-caption font-medium text-ink-muted">Transport provider</span>
+                    <p className="type-body font-medium text-ink">
+                      {schedMeta.transportProvider || scheduledTransfer.courierName || "—"}
+                    </p>
                   </div>
-                  <div>
-                    <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Driver Contact</span>
-                    <p className="text-sm font-semibold text-text-primary mt-0.5">{schedMeta.driverContact || "—"}</p>
+                  <div className="space-y-0.5">
+                    <span className="block type-caption font-medium text-ink-muted">Vehicle type &amp; plate</span>
+                    <p className="type-body font-medium text-ink">
+                      {schedMeta.vehicleType ? `${schedMeta.vehicleType} · ` : ""}
+                      {schedMeta.plateNumber || scheduledTransfer.vehiclePlate || "—"}
+                    </p>
                   </div>
-                  <div>
-                    <span className="type-overline font-semibold uppercase tracking-wider text-text-muted">Booking Reference / Fee</span>
-                    <p className="text-sm font-semibold text-text-primary mt-0.5">
-                      {schedMeta.bookingReference ? `Ref: ${schedMeta.bookingReference}` : ""}
-                      {schedMeta.transferFee ? ` (₱${Number(schedMeta.transferFee).toLocaleString()})` : (!schedMeta.bookingReference ? "—" : "")}
+                  <div className="space-y-0.5">
+                    <span className="block type-caption font-medium text-ink-muted">Driver &amp; contact</span>
+                    <p className="type-body font-medium text-ink">
+                      {schedMeta.driverName || scheduledTransfer.driverName || "—"}
+                      {schedMeta.driverContact ? ` · ${schedMeta.driverContact}` : ""}
+                    </p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className="block type-caption font-medium text-ink-muted">Booking ref &amp; fee</span>
+                    <p className="type-body font-medium text-ink">
+                      {schedMeta.bookingReference && schedMeta.transferFee
+                        ? `${schedMeta.bookingReference} · ₱${Number(schedMeta.transferFee).toLocaleString()}`
+                        : schedMeta.bookingReference
+                        ? schedMeta.bookingReference
+                        : schedMeta.transferFee
+                        ? `₱${Number(schedMeta.transferFee).toLocaleString()}`
+                        : "—"}
                     </p>
                   </div>
                 </div>
+
                 {schedMeta.remarks && (
-                  <div className="pt-2 border-t border-divider/50 text-xs text-text-muted">
-                    <strong className="text-text-primary">Logistics Instructions:</strong> {schedMeta.remarks}
-                  </div>
+                  <p className="type-body-secondary text-ink-secondary pt-2 border-t border-divider">
+                    <span className="font-medium text-ink">Logistics instructions:</span> {schedMeta.remarks}
+                  </p>
                 )}
 
-                {/* Document Proofs & Attachments */}
                 {(bookingProofSrc || dispatchProofSrc) && (
-                  <div className="pt-3 border-t border-divider/60 space-y-2.5">
-                    <h4 className="type-overline font-semibold uppercase tracking-wider text-text-muted">
-                      Document Proofs &amp; Attachments
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {bookingProofSrc && (
-                        <TransferProofThumbnail
-                          rawSrc={bookingProofSrc}
-                          title="Booking / Transaction Receipt"
-                          subtitle={schedMeta.attachmentName || "Uploaded when scheduling transfer"}
-                          onPreview={setPreviewImage}
-                          size="small"
-                        />
-                      )}
-
-                      {dispatchProofSrc && (
-                        <TransferProofThumbnail
-                          rawSrc={dispatchProofSrc}
-                          title="Dispatch Proof Photo"
-                          subtitle={dispatchMeta.proofFileName || "Uploaded upon transfer departure"}
-                          onPreview={setPreviewImage}
-                          size="small"
-                        />
-                      )}
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {bookingProofSrc && (
+                      <TransferProofThumbnail
+                        rawSrc={bookingProofSrc}
+                        title="Booking receipt"
+                        subtitle={schedMeta.attachmentName || "Uploaded when scheduling transfer"}
+                        onPreview={setPreviewImage}
+                        size="small"
+                      />
+                    )}
+                    {dispatchProofSrc && (
+                      <TransferProofThumbnail
+                        rawSrc={dispatchProofSrc}
+                        title="Dispatch proof"
+                        subtitle={dispatchMeta.proofFileName || "Uploaded upon transfer departure"}
+                        onPreview={setPreviewImage}
+                        size="small"
+                      />
+                    )}
                   </div>
                 )}
               </div>
-            );
-          })()}
+            )}
 
-          {/* Items Table */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="type-card-title text-text-primary flex items-center gap-2">
-                <Package className="w-4 h-4 text-text-muted" />
-                Requested Finished Products ({request.items?.length || 0})
-              </h3>
-            </div>
+            {/* Section 3: Requested finished products (separate Lot & Expiry columns) */}
+            <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
+              <div className="space-y-0.5">
+                <h3 className="type-subsection text-ink">
+                  Requested finished products ({request.items?.length || 0})
+                </h3>
+                <p className="type-caption text-ink-muted">
+                  Assigned FEFO lots and commissary stock status.
+                </p>
+              </div>
 
-            <div className="border border-divider rounded-panel overflow-hidden bg-surface shadow-xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-surface-hover text-text-muted font-semibold border-b border-divider">
-                    <tr>
-                      <th className="px-5 py-3.5">Product Name</th>
-                      <th className="px-5 py-3.5 whitespace-nowrap">SKU</th>
-                      <th className="px-5 py-3.5">Variant</th>
-                      <th className="px-5 py-3.5 text-right whitespace-nowrap">Req. Qty</th>
-                      <th className="px-5 py-3.5 text-right whitespace-nowrap">Commissary Stock</th>
-                      <th className="px-5 py-3.5 whitespace-nowrap">Expiry Date</th>
-                      <th className="px-5 py-3.5 whitespace-nowrap">Stock Status</th>
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse">
+                  <thead className="border-b border-divider">
+                    <tr className="whitespace-nowrap">
+                      <th className="pb-2.5 pr-3 type-caption font-medium text-ink-muted min-w-[175px]">Product</th>
+                      <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[100px]">SKU</th>
+                      <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[90px]">Variant</th>
+                      <th className="pb-2.5 px-2.5 text-right type-caption font-medium text-ink-muted min-w-[68px]">Req. qty</th>
+                      <th className="pb-2.5 px-2.5 text-right type-caption font-medium text-ink-muted min-w-[85px]">Commissary</th>
+                      <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[95px]">Lot</th>
+                      <th className="pb-2.5 px-2.5 type-caption font-medium text-ink-muted min-w-[105px]">Expiry date</th>
+                      <th className="pb-2.5 pl-2.5 type-caption font-medium text-ink-muted min-w-[88px]">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
-                    {request.items?.map((item, idx) => {
-                      const firstLot = item.suggestedLots?.[0];
-                      return (
-                        <tr key={idx} className="hover:bg-surface-hover/20 transition-colors">
-                          <td className="px-5 py-4 font-semibold text-text-primary">
-                            {item.productName}
-                          </td>
-                          <td className="px-5 py-4 text-text-muted whitespace-nowrap">
-                            {item.sku || "—"}
-                          </td>
-                          <td className="px-5 py-4 text-text-primary font-medium whitespace-nowrap">
-                            {item.variant || "Standard"}
-                          </td>
-                          <td className="px-5 py-4 text-right font-semibold text-text-primary type-table-cell">
-                            {item.requestedQuantity}
-                          </td>
-                          <td className="px-5 py-4 text-right font-medium text-text-primary">
-                            {item.availableQuantity}
-                          </td>
-                          <td className="px-5 py-4">
-                            {item.suggestedLots && item.suggestedLots.length > 0 ? (
-                              <div className="space-y-1.5 py-0.5">
-                                {item.suggestedLots.map((sl, slIdx) => (
-                                  <div key={slIdx} className="space-y-0.5">
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      <span className="font-semibold text-text-primary text-xs">
-                                        {sl.expiryDate
-                                          ? new Date(sl.expiryDate).toLocaleDateString()
-                                          : "No Expiry"}
-                                      </span>
-                                    </div>
-                                    {sl.lotCode && (
-                                      <div className="type-caption text-text-muted font-mono">
-                                        Lot: {sl.lotCode.replace(/^FG-/i, "")}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-text-muted text-xs">—</span>
-                            )}
-                          </td>
-                          <td className="px-5 py-4 whitespace-nowrap">
-                            {item.isInsufficient ? (
-                              <StatusBadge status="Shortage" className="gap-1">
-                                <AlertCircle className="w-3 h-3" /> Shortage
-                              </StatusBadge>
-                            ) : (
-                              <StatusBadge status="In Stock" className="gap-1">
-                                <CheckCircle className="w-3 h-3" /> In Stock
-                              </StatusBadge>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                  <tbody className="divide-y divide-divider">
+                    {request.items?.map((item, idx) => (
+                      <tr key={idx} className="align-middle">
+                        <td className="py-2.5 pr-3 type-body font-medium text-ink">
+                          {item.productName}
+                        </td>
+                        <td className="py-2.5 px-2.5 type-body-secondary text-ink-secondary whitespace-nowrap">
+                          {item.sku || "—"}
+                        </td>
+                        <td className="py-2.5 px-2.5 type-body text-ink-secondary whitespace-nowrap">
+                          {item.variant || "Standard"}
+                        </td>
+                        <td className="py-2.5 px-2.5 text-right type-body font-medium text-ink tabular-nums whitespace-nowrap">
+                          {item.requestedQuantity}
+                        </td>
+                        <td className="py-2.5 px-2.5 text-right type-body text-ink tabular-nums whitespace-nowrap">
+                          {item.availableQuantity}
+                        </td>
+                        <td className="py-2.5 px-2.5 whitespace-nowrap">
+                          {item.suggestedLots && item.suggestedLots.length > 0 ? (
+                            <div className="space-y-1">
+                              {item.suggestedLots.map((sl, slIdx) => (
+                                <div key={slIdx} className="type-body-secondary text-ink-secondary">
+                                  {sl.lotCode ? sl.lotCode.replace(/^FG-/i, "") : "—"}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="type-body-secondary text-ink-muted">—</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-2.5 whitespace-nowrap">
+                          {item.suggestedLots && item.suggestedLots.length > 0 ? (
+                            <div className="space-y-1">
+                              {item.suggestedLots.map((sl, slIdx) => (
+                                <div key={slIdx} className="type-body text-ink">
+                                  {sl.expiryDate ? formatDateDisplay(sl.expiryDate) : "No expiry"}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="type-body-secondary text-ink-muted">—</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 pl-2.5 whitespace-nowrap">
+                          {item.isInsufficient ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-pill bg-status-red-bg text-status-red-fg type-caption font-medium">
+                              Shortage
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-pill bg-status-green-bg text-status-green-fg type-caption font-medium">
+                              In stock
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 border-t border-divider px-6 py-4.5 bg-muted/10">
-          {isAdmin ? (
-            <>
-              <button
+          {/* Pinned #fafafa Footer Bar */}
+          <div className="shrink-0 bg-page border-t border-topbar px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+            <p className="type-caption text-ink-muted">
+              Read-only transfer details · actions reflect your role and request status.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
                 type="button"
-                onClick={requestClose}
-                className="rounded-control border border-divider bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+                variant="outline"
+                onClick={onClose}
+                className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-ink hover:bg-subtle shadow-none transition-colors cursor-pointer"
               >
                 Close
-              </button>
-              {request.status === "Pending Approval" && onReject && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onReject(request);
-                  }}
-                  className="rounded-control border border-divider bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
-                >
-                  Reject Request
-                </button>
-              )}
-              {request.status === "Pending Approval" && onApprove && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onApprove(request);
-                  }}
-                  className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm cursor-pointer"
-                >
-                  Approve Request
-                </button>
-              )}
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={requestClose}
-                className="rounded-control border border-divider bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
-              >
-                Close
-              </button>
+              </Button>
 
-              {!isFullyScheduledOrDispatched &&
-                (request.status === "Pending Approval" || request.status === "Approved") &&
-                (isImsManager || !isAdmin) &&
-                onCancel && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onCancel(request);
-                    }}
-                    className="rounded-control border border-divider bg-surface px-5 py-2.5 text-sm font-semibold text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
-                  >
-                    Cancel Request
-                  </button>
-                )}
+              {isAdmin ? (
+                <>
+                  {request.status === "Pending Approval" && onReject && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        onClose();
+                        onReject(request);
+                      }}
+                      className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-destructive hover:bg-notice-danger-bg shadow-none transition-colors cursor-pointer"
+                    >
+                      Reject request
+                    </Button>
+                  )}
+                  {request.status === "Pending Approval" && onApprove && (
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onApprove(request);
+                      }}
+                      className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none transition-colors cursor-pointer"
+                    >
+                      Approve request
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <>
+                  {!isFullyScheduledOrDispatched &&
+                    (request.status === "Pending Approval" || request.status === "Approved") &&
+                    (isImsManager || !isAdmin) &&
+                    onCancel && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          onClose();
+                          onCancel(request);
+                        }}
+                        className="rounded-control border border-border bg-surface px-4 h-9 type-label-button text-destructive hover:bg-notice-danger-bg shadow-none transition-colors cursor-pointer"
+                      >
+                        Cancel request
+                      </Button>
+                    )}
 
-              {hasScheduledTransfer && onDispatch && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onDispatch(request);
-                  }}
-                  className="rounded-control bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm cursor-pointer"
-                >
-                  Dispatch Transfer
-                </button>
-              )}
+                  {hasScheduledTransfer && onDispatch && (
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onDispatch(request);
+                      }}
+                      className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none transition-colors cursor-pointer"
+                    >
+                      Dispatch transfer
+                    </Button>
+                  )}
 
-              {!isFullyScheduledOrDispatched && request.status === "Approved" && onSchedule && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onSchedule(request);
-                  }}
-                  className="rounded-control bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm cursor-pointer"
-                >
-                  Schedule Transfer
-                </button>
+                  {!isFullyScheduledOrDispatched && request.status === "Approved" && onSchedule && (
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onSchedule(request);
+                      }}
+                      className="rounded-control bg-primary text-on-brand px-4 h-9 type-label-button hover:bg-primary-hover shadow-none transition-colors cursor-pointer"
+                    >
+                      Schedule transfer
+                    </Button>
+                  )}
+                </>
               )}
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
+      </ModalWrapper>
 
       {/* Full Image Lightbox Modal */}
       {previewImage && (
         <div
           onClick={() => setPreviewImage(null)}
-          className="font-sans fixed inset-0 z-[300] bg-black/70 flex items-center justify-center p-4"
+          className="font-sans fixed inset-0 z-[300] bg-scrim flex items-center justify-center p-4"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-surface text-text-primary rounded-panel max-w-2xl w-full border border-divider p-4 space-y-3 shadow-2xl animate-in fade-in zoom-in-95"
+            className="bg-surface text-ink rounded-modal max-w-2xl w-full border border-border p-4 space-y-3 shadow-modal animate-in fade-in zoom-in-95"
           >
-            <div className="flex items-center justify-between border-b border-divider pb-2">
-              <h5 className="type-caption font-semibold text-text-primary uppercase truncate pr-4">{previewImage.title}</h5>
-              <button
+            <div className="flex items-center justify-between border-b border-topbar pb-2.5">
+              <h5 className="type-subsection text-ink truncate pr-4">{previewImage.title}</h5>
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => setPreviewImage(null)}
-                className="h-7 px-3 text-xs rounded-lg border border-divider bg-surface text-text-primary hover:bg-surface-hover font-semibold transition-colors cursor-pointer"
+                className="h-8 px-3 rounded-control border-border bg-surface type-label-button-sm text-ink hover:bg-subtle shadow-none cursor-pointer"
               >
                 Close
-              </button>
+              </Button>
             </div>
-            <div className="flex items-center justify-center bg-muted/20 rounded-control p-2 max-h-[70vh] overflow-auto">
+            <div className="flex items-center justify-center bg-page rounded-control p-2 max-h-[70vh] overflow-auto">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={previewImage.src}
                 alt={previewImage.title}
-                className="max-h-[65vh] max-w-full object-contain rounded-lg"
+                className="max-h-[65vh] max-w-full object-contain rounded-control"
               />
             </div>
           </div>
         </div>
       )}
-    </div>,
-    document.body
+    </>
   );
 }

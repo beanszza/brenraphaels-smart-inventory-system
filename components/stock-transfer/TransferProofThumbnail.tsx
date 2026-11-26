@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FileText, ExternalLink } from "lucide-react";
+import { FileText } from "lucide-react";
 import { isFileId } from "@/lib/files";
 import { resolveTransferAttachment } from "@/app/actions/stock-transfer/transfer-files";
 
@@ -55,14 +55,15 @@ export function TransferProofThumbnail({
     displaySrc.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ||
     displaySrc.includes("/files/");
 
-  const boxSize = size === "small" ? "w-16 h-16" : "w-20 h-20";
+  const boxSize = size === "small" ? "size-10" : "size-14";
 
   return (
-    <div className="rounded-panel border border-divider bg-surface p-3 flex items-center gap-3">
+    <div className="rounded-control border border-input bg-page px-3 py-2.5 flex items-center gap-3">
       <div
-        className={`${boxSize} rounded-control border border-divider bg-surface-hover overflow-hidden flex items-center justify-center shrink-0`}
+        className={`${boxSize} rounded-control border border-border bg-surface overflow-hidden flex items-center justify-center shrink-0`}
       >
         {isImage ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={displaySrc}
             alt={title}
@@ -70,24 +71,24 @@ export function TransferProofThumbnail({
             className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
           />
         ) : (
-          <FileText className="w-6 h-6 text-text-muted" />
+          <FileText className="w-4 h-4 text-primary" />
         )}
       </div>
-      <div className="min-w-0 flex-1 space-y-1">
-        <p className="type-caption font-semibold text-text-primary truncate">{title}</p>
+      <div className="min-w-0 flex-1 space-y-0.5">
+        <p className="type-body-secondary font-medium text-ink truncate">{title}</p>
         {subtitle && (
-          <p className="type-caption text-text-muted truncate">{subtitle}</p>
-        )}
-        {isImage && onPreview && (
-          <button
-            type="button"
-            onClick={() => onPreview({ title, src: displaySrc })}
-            className="type-caption font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
-          >
-            <ExternalLink className="w-3 h-3" /> View Full Image
-          </button>
+          <p className="type-caption text-ink-muted truncate">{subtitle}</p>
         )}
       </div>
+      {isImage && onPreview && (
+        <button
+          type="button"
+          onClick={() => onPreview({ title, src: displaySrc })}
+          className="type-body-secondary font-medium text-primary hover:underline shrink-0 cursor-pointer"
+        >
+          Preview
+        </button>
+      )}
     </div>
   );
 }
