@@ -4,15 +4,12 @@ import React, { useMemo } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, Pencil, Trash2 } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { ProductionImage } from "./ProductionImage";
 import { FinishedProductItem } from "./types";
-import { FILE_PLACEHOLDER } from "@/lib/files";
 
 interface FinishedProductDetailsModalProps {
   open: boolean;
   product: FinishedProductItem | null;
   allProducts: FinishedProductItem[];
-  photoVersion?: number;
   onClose: () => void;
   onEdit: (product: FinishedProductItem) => void;
   onDelete: (product: FinishedProductItem) => void;
@@ -22,7 +19,6 @@ export default function FinishedProductDetailsModal({
   open,
   product,
   allProducts,
-  photoVersion = 0,
   onClose,
   onEdit,
   onDelete,
@@ -41,20 +37,6 @@ export default function FinishedProductDetailsModal({
   const totalStock = productVariants.reduce((sum, v) => sum + (Number(v.currentStock) || 0), 0);
   const anyActive = productVariants.some((v) => v.isActive !== false);
 
-  const directUrl =
-    product.resolvedImageUrl ||
-    (product.imageUrl &&
-    (product.imageUrl.startsWith("http://") ||
-      product.imageUrl.startsWith("https://") ||
-      product.imageUrl.startsWith("data:image/"))
-      ? product.imageUrl
-      : "");
-
-  const finalPhotoSrc =
-    directUrl && photoVersion > 0 && !directUrl.startsWith("data:") && !directUrl.includes("?")
-      ? `${directUrl}?v=${photoVersion}`
-      : directUrl;
-
   return (
     <Dialog.Root
       open={open}
@@ -72,30 +54,6 @@ export default function FinishedProductDetailsModal({
 
           {/* ── Sticky Header ── */}
           <div className="flex items-center gap-3.5 border-b border-topbar bg-surface px-6 py-4 shrink-0">
-            <div className="h-11 w-11 shrink-0 overflow-hidden rounded-inner border border-border bg-tint-selected flex items-center justify-center">
-              {finalPhotoSrc ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={finalPhotoSrc}
-                  alt={product.itemName}
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    if (!e.currentTarget.src.endsWith(FILE_PLACEHOLDER)) {
-                      e.currentTarget.src = FILE_PLACEHOLDER;
-                    }
-                  }}
-                />
-              ) : (
-                <ProductionImage
-                  kind="product"
-                  id={product.productId}
-                  alt={product.itemName}
-                  className="h-full w-full object-cover"
-                  version={photoVersion}
-                />
-              )}
-            </div>
-
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="type-modal-title text-ink truncate">{product.itemName}</h2>

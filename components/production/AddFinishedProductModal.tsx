@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, Trash2, Image as ImageIcon, Package, Upload, Check, X, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Package, Check, X, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { actionResponse } from "@/lib/resources/action-response";
 import {
@@ -11,8 +11,6 @@ import {
 } from "@/app/actions/production/products";
 import { updateFinishedProduct as productionUpdateFinishedProduct } from "@/app/actions/production/product-detail";
 import { syncProductCatalogToPos } from "@/app/actions/production/pos-sync";
-import { uploadProductionImage, resolveProductionImage } from "@/lib/production/image-client";
-import { FILE_PLACEHOLDER } from "@/lib/files";
 import {
   buildBaseVariantSku,
   composeVariantName,
@@ -63,10 +61,6 @@ export default function AddFinishedProductModal({
   const [productName, setProductName] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
-
-  // Product Photo (1 per product)
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string>("");
 
   // Product Variants
   const [variants, setVariants] = useState<VariantRow[]>([
@@ -130,7 +124,6 @@ export default function AddFinishedProductModal({
   // Reset or prefill form when modal opens
   useEffect(() => {
     if (!open) return;
-    let isMounted = true;
 
     if (editingItem) {
       const targetNameKey = (editingItem.itemName || "").trim().toLowerCase();
@@ -144,24 +137,6 @@ export default function AddFinishedProductModal({
       setProductName(editingItem.itemName || "");
       setDescription(editingItem.description || "");
       setIsActive(editingItem.isActive !== false);
-      setPhotoFile(null);
-
-      const rawImg = editingItem.imageUrl?.trim() || "";
-      const isDirectUrl =
-        rawImg.startsWith("http://") ||
-        rawImg.startsWith("https://") ||
-        rawImg.startsWith("data:image/");
-      const initialPreview = editingItem.resolvedImageUrl?.trim() || (isDirectUrl ? rawImg : "");
-
-      setPhotoPreview(initialPreview);
-
-      if (!initialPreview) {
-        resolveProductionImage("product", editingItem.productId, "medium").then((resolvedUrl) => {
-          if (isMounted && resolvedUrl && resolvedUrl !== FILE_PLACEHOLDER) {
-            setPhotoPreview(resolvedUrl);
-          }
-        });
-      }
 
       setVariants(
         sourceVariants.map((item) => {
@@ -202,8 +177,6 @@ export default function AddFinishedProductModal({
       setProductName("");
       setDescription("");
       setIsActive(true);
-      setPhotoFile(null);
-      setPhotoPreview("");
       setVariants([
         {
           id: `var-${Date.now()}-1`,
@@ -218,10 +191,6 @@ export default function AddFinishedProductModal({
         },
       ]);
     }
-
-    return () => {
-      isMounted = false;
-    };
   }, [open, editingItem]);
 
   const handleAddVariant = () => {
@@ -279,23 +248,6 @@ export default function AddFinishedProductModal({
       setIsActive(anyActive);
       return updated;
     });
-  };
-
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image file (JPG, PNG, WebP).");
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Image size must be under 10MB.");
-      return;
-    }
-    setPhotoFile(file);
-    const reader = new FileReader();
-    reader.onload = () => setPhotoPreview(reader.result as string);
-    reader.readAsDataURL(file);
   };
 
   const handlePromptSubmit = (e: React.FormEvent) => {
@@ -406,16 +358,7 @@ export default function AddFinishedProductModal({
           }
         }
 
-        if (photoFile) {
-          try {
-            await uploadProductionImage("product", editingItem.productId, photoFile);
-          } catch (photoErr: unknown) {
-            const msg = photoErr instanceof Error ? photoErr.message : "Product updated, but photo upload failed.";
-            toast.error(msg);
-          }
-        }
-
-        syncProductCatalogToPos(trimmedName, { isNewCreation: false }).catch(() => {});
+        syncProductCatalogToPos(trimmedName, { isNewCreation: false }).catch(() => { });
 
         toast.success("Finished product updated successfully!");
         onSuccess();
@@ -444,20 +387,7 @@ export default function AddFinishedProductModal({
           throw new Error(res.data?.message || "Failed to create product");
         }
 
-        const createdVariants = res.data?.data?.variants || [];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const createdIds = createdVariants.map((v: any) => v.productId).filter(Boolean);
-
-        if (photoFile && createdIds.length > 0) {
-          try {
-            await uploadProductionImage("product", createdIds[0], photoFile);
-          } catch (photoErr: unknown) {
-            const msg = photoErr instanceof Error ? photoErr.message : "Product created, but photo upload failed.";
-            toast.error(msg);
-          }
-        }
-
-        syncProductCatalogToPos(trimmedName, { isNewCreation: true }).catch(() => {});
+        syncProductCatalogToPos(trimmedName, { isNewCreation: true }).catch(() => { });
 
         toast.success("Finished product created successfully!");
         onSuccess();
@@ -501,7 +431,7 @@ export default function AddFinishedProductModal({
               </h2>
               <p className="mt-0.5 type-body-secondary text-ink-muted">
                 {isEditing
-                  ? "Update product details, photo, status, and packaging variants."
+                  ? "Update product details, status, and packaging variants."
                   : "Add a finished product you produce and configure its packaging variants."}
               </p>
             </div>
@@ -534,11 +464,10 @@ export default function AddFinishedProductModal({
                       value={productName}
                       onChange={(e) => setProductName(e.target.value)}
                       aria-invalid={Boolean(duplicateProductNameError)}
-                      className={`h-10 w-full rounded-control border ${
-                        duplicateProductNameError
-                          ? "border-destructive focus:ring-destructive"
-                          : "border-input focus:border-primary"
-                      } bg-surface pl-9 pr-3 type-body text-ink placeholder:text-ink-disabled focus:outline-none focus:ring-2 focus:ring-focus/30 transition-colors`}
+                      className={`h-10 w-full rounded-control border ${duplicateProductNameError
+                        ? "border-destructive focus:ring-destructive"
+                        : "border-input focus:border-primary"
+                        } bg-surface pl-9 pr-3 type-body text-ink placeholder:text-ink-disabled focus:outline-none focus:ring-2 focus:ring-focus/30 transition-colors`}
                       required
                     />
                   </div>
@@ -579,43 +508,6 @@ export default function AddFinishedProductModal({
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full rounded-control border border-input bg-surface px-3 py-2.5 type-body text-ink placeholder:text-ink-disabled focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus/30 transition-colors resize-none"
                 />
-              </div>
-
-              {/* Product Photo (clean inline row — Supplier-inspired) */}
-              <div>
-                <label className="mb-2 block type-label-field text-ink-strong">
-                  Product photo{" "}
-                  <span className="font-normal text-ink-disabled">(optional · shared across variants)</span>
-                </label>
-                <div className="flex items-center gap-3.5">
-                  <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-inner border border-input bg-page">
-                    {photoPreview ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={photoPreview} alt="Preview" className="h-full w-full object-cover" />
-                    ) : (
-                      <ImageIcon className="h-5 w-5 text-ink-disabled" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <input
-                      type="file"
-                      id="product-photo-upload"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={handlePhotoSelect}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="product-photo-upload"
-                      className="inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-surface px-3.5 type-label-button-sm text-ink hover:bg-subtle cursor-pointer transition-colors"
-                    >
-                      <Upload className="h-3.5 w-3.5" />
-                      {photoFile || photoPreview ? "Change photo" : "Upload photo"}
-                    </label>
-                    <p className="mt-1 type-caption text-ink-muted">
-                      JPG, PNG, or WebP up to 10 MB · saved in File Storage
-                    </p>
-                  </div>
-                </div>
               </div>
 
               {/* Divider */}
@@ -671,11 +563,10 @@ export default function AddFinishedProductModal({
                           <div className="flex items-center gap-2">
                             {isEditing && v.existingProductId && (
                               <span
-                                className={`rounded-pill px-2.5 py-0.5 type-badge ${
-                                  (v.existingStock ?? 0) > 0
-                                    ? "bg-status-green-bg text-status-green-fg"
-                                    : "bg-status-gray-bg text-status-gray-fg"
-                                }`}
+                                className={`rounded-pill px-2.5 py-0.5 type-badge ${(v.existingStock ?? 0) > 0
+                                  ? "bg-status-green-bg text-status-green-fg"
+                                  : "bg-status-gray-bg text-status-gray-fg"
+                                  }`}
                               >
                                 {v.existingStock ?? 0} in stock
                               </span>
@@ -723,11 +614,10 @@ export default function AddFinishedProductModal({
                                   type="button"
                                   onClick={() => handleUpdateVariantField(v.id, "packagingType", pkg)}
                                   aria-pressed={selected}
-                                  className={`inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 type-label-button-sm transition-colors cursor-pointer ${
-                                    selected
-                                      ? "border-border-selected bg-tint-selected text-primary"
-                                      : "border-input bg-surface text-ink-strong hover:bg-subtle"
-                                  }`}
+                                  className={`inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 type-label-button-sm transition-colors cursor-pointer ${selected
+                                    ? "border-border-selected bg-tint-selected text-primary"
+                                    : "border-input bg-surface text-ink-strong hover:bg-subtle"
+                                    }`}
                                 >
                                   {selected && <Check className="h-3.5 w-3.5 stroke-[2.4]" />}
                                   {pkg}

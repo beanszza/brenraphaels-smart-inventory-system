@@ -31,14 +31,12 @@ import { ProductionSkeleton } from "./ProductionSkeleton";
 import { FinishedProductItem } from "./types";
 import AddFinishedProductModal from "./AddFinishedProductModal";
 import FinishedProductDetailsModal from "./FinishedProductDetailsModal";
-import { ProductionImage } from "./ProductionImage";
 import ActionConfirmModal from "@/components/shared/ActionConfirmModal";
 import { listFinishedProducts as productionListFinishedProducts } from "@/app/actions/production/products";
 import { deleteFinishedProduct } from "@/app/actions/production/product-detail";
 import { syncAllFinishedProductsToPos } from "@/app/actions/production/pos-sync";
 import { actionResponse } from "@/lib/resources/action-response";
 import { parseVariantComponents } from "@/lib/production/sku";
-import { FILE_PLACEHOLDER } from "@/lib/files";
 import { toast } from "sonner";
 
 const PACKAGING_FILTERS = ["All", "Jar", "Container", "Pouch"] as const;
@@ -51,7 +49,6 @@ export default function ConfigurationTab({
   initialRows: FinishedProductItem[];
 }) {
   const [products, setProducts] = useState<FinishedProductItem[]>(initialRows);
-  const [photoVersion, setPhotoVersion] = useState(0);
   const [loading, setLoading] = useState(false);
 
   // Filters & Pagination (Uniform with Resources & Suppliers)
@@ -340,7 +337,6 @@ export default function ConfigurationTab({
             <thead className="border-b border-divider bg-surface-secondary">
               <tr className="table-head-row text-left whitespace-nowrap">
                 <th className="sticky left-0 z-20 bg-surface-secondary table-th w-14 px-4 py-3 text-center whitespace-nowrap border-r border-divider shadow-sticky">No.</th>
-                <th className="table-th w-16 px-4 py-3 text-center whitespace-nowrap">Photo</th>
                 <th className="table-th px-4 py-3 min-w-[180px] whitespace-nowrap">Product Name</th>
                 <th className="table-th px-4 py-3">Variant</th>
                 <th className="table-th px-4 py-3">Packaging</th>
@@ -353,7 +349,7 @@ export default function ConfigurationTab({
               {paginatedProducts.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={7}
                     className="px-4 py-12 text-center type-body text-text-muted"
                   >
                     {searchQuery || productFilter !== "All" || packagingFilter !== "All" || statusFilter !== "All"
@@ -371,50 +367,6 @@ export default function ConfigurationTab({
                     {/* No. */}
                     <td className="sticky left-0 z-10 bg-surface group-hover:bg-surface-secondary/50 w-14 px-4 py-3 table-td text-center text-text-muted whitespace-nowrap border-r border-divider shadow-sticky transition-colors">
                       {index + 1 + (safeCurrentPage - 1) * pageSize}
-                    </td>
-
-                    {/* Photo */}
-                    <td className="w-16 px-4 py-3 text-center">
-                      <div className="w-9 h-9 rounded-control border border-divider bg-surface-secondary/40 overflow-hidden flex items-center justify-center shrink-0 mx-auto">
-                        {(() => {
-                          const directUrl =
-                            product.resolvedImageUrl ||
-                            (product.imageUrl &&
-                            (product.imageUrl.startsWith("http://") ||
-                              product.imageUrl.startsWith("https://") ||
-                              product.imageUrl.startsWith("data:image/"))
-                              ? product.imageUrl
-                              : "");
-                          if (directUrl) {
-                            const finalSrc =
-                              photoVersion > 0 && !directUrl.startsWith("data:") && !directUrl.includes("?")
-                                ? `${directUrl}?v=${photoVersion}`
-                                : directUrl;
-                            return (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={finalSrc}
-                                alt={product.itemName}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  if (!e.currentTarget.src.endsWith(FILE_PLACEHOLDER)) {
-                                    e.currentTarget.src = FILE_PLACEHOLDER;
-                                  }
-                                }}
-                              />
-                            );
-                          }
-                          return (
-                            <ProductionImage
-                              kind="product"
-                              id={product.productId}
-                              alt={product.itemName}
-                              className="w-full h-full object-cover"
-                              version={photoVersion}
-                            />
-                          );
-                        })()}
-                      </div>
                     </td>
 
                     {/* Product Name */}
@@ -508,7 +460,6 @@ export default function ConfigurationTab({
         open={Boolean(viewingItem)}
         product={viewingItem}
         allProducts={products}
-        photoVersion={photoVersion}
         onClose={() => setViewingItem(null)}
         onEdit={(prod) => handleOpenEditProduct(prod)}
         onDelete={(prod) => handleOpenDeleteProduct(prod)}
@@ -526,7 +477,6 @@ export default function ConfigurationTab({
         }}
         onSuccess={() => {
           fetchProducts(false);
-          setPhotoVersion((v) => v + 1);
         }}
       />
 
