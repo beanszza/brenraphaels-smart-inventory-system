@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { pushStockToCreoms, type CreomsStockPush } from "@/lib/gateway/creoms";
 import { publishStockChanged } from "@/lib/gateway/notifications";
 import { readInventory, readTabFigures } from "./inventory";
@@ -102,24 +103,47 @@ const WRITES = new Set(["create", "createMany", "update", "updateMany", "upsert"
 const SETTLE_MS = 1_000;
 
 let timer: ReturnType<typeof setTimeout> | undefined;
-let running = false;
-let again = false;
+let inFlight: Promise<unknown> | null = null;
+let dirty = false;
+
+async function drain(run: () => Promise<unknown>): Promise<void> {
+  if (inFlight) {
+    await inFlight;
+    return;
+  }
+  if (!dirty) return;
+  inFlight = (async () => {
+    try {
+      while (dirty) {
+        dirty = false;
+        await run();
+      }
+    } finally {
+      inFlight = null;
+    }
+  })();
+  await inFlight;
+}
 
 /**
- * Called after any write that could change what Staff see. It waits for the writer to finish
- * and commit (a timer, never a poll), then publishes what changed. Failures are logged only.
+ * Called after any write that could change what Staff see. Inside a Next.js request / Server Action,
+ * it registers with `after()` so Vercel keeps the serverless function alive until the CREOMS push
+ * completes after the transaction commits. Outside a request scope (scripts/tests), it falls back
+ * to a short settle timer. Failures are logged only.
  */
 export function stockMayHaveChanged(run: () => Promise<unknown> = () => publishStockChanges()): void {
-  if (!process.env.IMS_GATEWAY_URL || !process.env.IMS_GATEWAY_CALLER_KEY) return;
+  const hasGateway = Boolean(process.env.IMS_GATEWAY_URL && process.env.IMS_GATEWAY_CALLER_KEY);
+  const hasCreoms = Boolean(process.env.CREOMS_URL && process.env.IMS_CREOMS_SECRET);
+  if (!hasGateway && !hasCreoms) return;
+  dirty = true;
+  try {
+    after(() => drain(run));
+    return;
+  } catch {
+    // Not inside a Next.js request scope (e.g. CLI scripts or standalone tests); use settle timer.
+  }
   clearTimeout(timer);
-  timer = setTimeout(async () => {
-    if (running) { again = true; return; }
-    running = true;
-    try { await run(); } finally {
-      running = false;
-      if (again) { again = false; stockMayHaveChanged(run); }
-    }
-  }, SETTLE_MS);
+  timer = setTimeout(() => { void drain(run); }, SETTLE_MS);
   timer.unref?.();
 }
 
