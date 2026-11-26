@@ -457,7 +457,7 @@ describe("PUT /api/pos/stock-requests/{requestId}/cancel contract (§3.6 & §6.3
 });
 
 describe("BranchRequestsTab rendering", () => {
-  it("renders all 5 subtabs (including Cancelled), Reject & Approve actions, and multi-open-request badge", () => {
+  it("renders all 5 subtabs (including Cancelled), single-line product row, and Reject & Approve actions", () => {
     const makeSample = (id: number, num: string, status: string, subtab: BranchStockRequest["subtab"]): BranchStockRequest => ({
       branchRequestId: id,
       imsRequestId: `br_${id}`,
@@ -536,7 +536,8 @@ describe("BranchRequestsTab rendering", () => {
       "Cancelled",
       "Completed",
       "SR-000123",
-      "2 open for this item",
+      "Ube Halaya · Pouch 250g",
+      "Ana Cruz",
       "TriNoma Bazaar",
       "Reject",
       "Approve",

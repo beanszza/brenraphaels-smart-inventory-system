@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Check, ArrowRight, RefreshCw, AlertCircle } from "lucide-react";
+import { Check, ArrowRight, RefreshCw } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { SearchInput } from "@/components/shared/SearchInput";
 import Pagination from "@/components/Pagination";
@@ -30,26 +30,25 @@ const SUBTABS: Array<{ key: BranchRequestSubtab; label: string }> = [
 
 const FOOTER_MESSAGES: Record<BranchRequestSubtab, string> = {
   requests:
-    "Incoming POS branch requests appear here automatically (read-only intake). Approving or rejecting immediately syncs the verdict back to POS.",
+    "Incoming POS branch requests appear here automatically (read-only intake). Click any row to inspect stock levels & SKU details, or approve/reject inline.",
   approved:
-    "Click Transfer Now to open Create Stock Transfer Request pre-filled with remaining units. Cancelled or rejected STRs automatically release their quantity back here.",
+    "Click Transfer Now to open Create Stock Transfer Request pre-filled with remaining units. Click any row to inspect linked STRs and fulfillment details.",
   rejected:
-    "Rejected requests are final in POS. The branch immediately sees your rejection remarks and can submit a fresh request if needed.",
+    "Rejected requests are final in POS. Click any row to view full rejection remarks and reviewer details.",
   cancelled:
-    "Requests cancelled by the branch in POS before IMS decided appear here. They are final and cannot be approved or transferred.",
+    "Requests cancelled by the branch in POS before IMS decided appear here. Click any row to view the cancellation reason.",
   completed:
     "Branch requests move here automatically once 100% of approved units reach the Scheduled stage (or beyond) in Stock Transfers.",
 };
 
-function formatShortDate(iso: string | null): string {
+function formatDisplayDate(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    year: "numeric",
   });
 }
 
@@ -83,20 +82,6 @@ export function BranchRequestsTab({
     return map;
   }, [branchRequests]);
 
-  // Count open requests (Requests + Approved) per (branchId, productId) so IMS staff
-  // clearly see when a branch has multiple open requests for the same item (§6.3 #8).
-  const openCountByBranchProduct = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const r of branchRequests) {
-      if (r.subtab !== "requests" && r.subtab !== "approved") continue;
-      const pid = r.items[0]?.productId;
-      if (!pid) continue;
-      const key = `${r.branchId}:${pid}`;
-      map.set(key, (map.get(key) || 0) + 1);
-    }
-    return map;
-  }, [branchRequests]);
-
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return branchRequests.filter((r) => {
@@ -126,7 +111,7 @@ export function BranchRequestsTab({
 
   return (
     <div className="space-y-4">
-      {/* 4 Subtabs + Search Row (Matching Figma Prototype) */}
+      {/* Subtabs + Search Row */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="overflow-x-auto custom-scrollbar">
           <div className="flex items-center gap-1 min-w-max">
@@ -185,35 +170,36 @@ export function BranchRequestsTab({
         </div>
       ) : (
         <div className="rounded-card border border-border bg-surface p-5 space-y-3.5">
-          <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full border-collapse text-left">
+          <div className="w-full overflow-x-auto lg:overflow-x-visible">
+            <table className="w-full table-fixed border-collapse text-left">
               <thead className="border-b border-divider">
                 <tr>
-                  <th className="py-2.5 pr-4 text-left type-table-header text-ink-muted whitespace-nowrap">
+                  <th className="w-[11%] pb-2.5 pt-1 pr-3 text-left type-table-header text-ink-muted whitespace-nowrap">
                     Request ID
                   </th>
-                  <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
+                  <th className="w-[17%] pb-2.5 pt-1 pr-3 text-left type-table-header text-ink-muted whitespace-nowrap">
                     Branch
                   </th>
-                  <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
-                    Product &amp; SKU
+                  <th
+                    className={`${
+                      activeSubtab === "completed" ? "w-[28%]" : "w-[22%]"
+                    } pb-2.5 pt-1 pr-3 text-left type-table-header text-ink-muted whitespace-nowrap`}
+                  >
+                    Product
                   </th>
 
                   {activeSubtab === "requests" && (
                     <>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
-                        Branch Stock
-                      </th>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
+                      <th className="w-[9%] pb-2.5 pt-1 pr-5 text-right type-table-header text-ink-muted whitespace-nowrap">
                         Req. Qty
                       </th>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
-                        Requested by
+                      <th className="w-[14%] pb-2.5 pt-1 pr-3 text-left type-table-header text-ink-muted whitespace-nowrap">
+                        Requested By
                       </th>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
+                      <th className="w-[10%] pb-2.5 pt-1 pr-3 text-left type-table-header text-ink-muted whitespace-nowrap">
                         Status
                       </th>
-                      <th className="pl-3 py-2.5 text-right type-table-header text-ink-muted whitespace-nowrap">
+                      <th className="w-[17%] pb-2.5 pt-1 text-right type-table-header text-ink-muted whitespace-nowrap">
                         Actions
                       </th>
                     </>
@@ -221,19 +207,16 @@ export function BranchRequestsTab({
 
                   {activeSubtab === "approved" && (
                     <>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
+                      <th className="w-[9%] pb-2.5 pt-1 pr-4 text-right type-table-header text-ink-muted whitespace-nowrap">
                         Approved
                       </th>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
-                        Transfer Progress
+                      <th className="w-[11%] pb-2.5 pt-1 pr-5 text-right type-table-header text-ink-muted whitespace-nowrap">
+                        Remaining
                       </th>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
-                        Linked STRs
-                      </th>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
+                      <th className="w-[11%] pb-2.5 pt-1 pr-3 text-left type-table-header text-ink-muted whitespace-nowrap">
                         Status
                       </th>
-                      <th className="pl-3 py-2.5 text-right type-table-header text-ink-muted whitespace-nowrap">
+                      <th className="w-[19%] pb-2.5 pt-1 text-right type-table-header text-ink-muted whitespace-nowrap">
                         Actions
                       </th>
                     </>
@@ -241,16 +224,16 @@ export function BranchRequestsTab({
 
                   {activeSubtab === "rejected" && (
                     <>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
+                      <th className="w-[10%] pb-2.5 pt-1 pr-5 text-right type-table-header text-ink-muted whitespace-nowrap">
                         Req. Qty
                       </th>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
-                        Rejection Remarks
+                      <th className="w-[16%] pb-2.5 pt-1 pr-3 text-left type-table-header text-ink-muted whitespace-nowrap">
+                        Rejected By
                       </th>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
-                        Rejected by
+                      <th className="w-[12%] pb-2.5 pt-1 pr-3 text-left type-table-header text-ink-muted whitespace-nowrap">
+                        Date
                       </th>
-                      <th className="pl-3 py-2.5 text-right type-table-header text-ink-muted whitespace-nowrap">
+                      <th className="w-[12%] pb-2.5 pt-1 text-right type-table-header text-ink-muted whitespace-nowrap">
                         Status
                       </th>
                     </>
@@ -258,16 +241,16 @@ export function BranchRequestsTab({
 
                   {activeSubtab === "cancelled" && (
                     <>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
+                      <th className="w-[10%] pb-2.5 pt-1 pr-5 text-right type-table-header text-ink-muted whitespace-nowrap">
                         Req. Qty
                       </th>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
-                        Cancel Reason
+                      <th className="w-[16%] pb-2.5 pt-1 pr-3 text-left type-table-header text-ink-muted whitespace-nowrap">
+                        Cancelled By
                       </th>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
-                        Cancelled by
+                      <th className="w-[12%] pb-2.5 pt-1 pr-3 text-left type-table-header text-ink-muted whitespace-nowrap">
+                        Date
                       </th>
-                      <th className="pl-3 py-2.5 text-right type-table-header text-ink-muted whitespace-nowrap">
+                      <th className="w-[12%] pb-2.5 pt-1 text-right type-table-header text-ink-muted whitespace-nowrap">
                         Status
                       </th>
                     </>
@@ -275,16 +258,13 @@ export function BranchRequestsTab({
 
                   {activeSubtab === "completed" && (
                     <>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
-                        Approved Qty
+                      <th className="w-[13%] pb-2.5 pt-1 pr-5 text-right type-table-header text-ink-muted whitespace-nowrap">
+                        Fulfilled Qty
                       </th>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
-                        Fulfilled via STRs
-                      </th>
-                      <th className="px-3 py-2.5 text-left type-table-header text-ink-muted whitespace-nowrap">
+                      <th className="w-[16%] pb-2.5 pt-1 pr-3 text-left type-table-header text-ink-muted whitespace-nowrap">
                         Transfer Stage
                       </th>
-                      <th className="pl-3 py-2.5 text-right type-table-header text-ink-muted whitespace-nowrap">
+                      <th className="w-[15%] pb-2.5 pt-1 text-right type-table-header text-ink-muted whitespace-nowrap">
                         Status
                       </th>
                     </>
@@ -295,23 +275,10 @@ export function BranchRequestsTab({
               <tbody className="divide-y divide-divider">
                 {paginated.map((req) => {
                   const first = req.items[0];
-                  const progressPct =
-                    req.totalApproved > 0
-                      ? Math.min(100, Math.round((req.totalAllocated / req.totalApproved) * 100))
-                      : 0;
-                  const activeStrs = req.linkedStrs.filter(
-                    (s) => s.status !== "Cancelled" && s.status !== "Rejected"
-                  );
-                  const cancelledStrs = req.linkedStrs.filter(
-                    (s) => s.status === "Cancelled" || s.status === "Rejected"
-                  );
+                  const productDisplay = first
+                    ? `${first.productName}${first.variationName ? ` · ${first.variationName}` : ""}`
+                    : "—";
                   const syncFailed = req.posSyncStatus === "Failed";
-                  const siblingOpenCount = first
-                    ? openCountByBranchProduct.get(`${req.branchId}:${first.productId}`) || 0
-                    : 0;
-                  const showMultiOpenHint =
-                    (activeSubtab === "requests" || activeSubtab === "approved") &&
-                    siblingOpenCount > 1;
 
                   return (
                     <tr
@@ -320,66 +287,43 @@ export function BranchRequestsTab({
                       className="group hover:bg-page transition-colors cursor-pointer"
                     >
                       {/* Request ID */}
-                      <td className="py-3.5 pr-4 type-body font-medium text-primary whitespace-nowrap">
+                      <td className="py-3.5 pr-3 type-body font-medium text-primary whitespace-nowrap tabular-nums">
                         <span className="group-hover:underline">{req.requestNumber}</span>
                       </td>
 
                       {/* Branch */}
-                      <td className="px-3 py-3.5 type-body text-ink whitespace-nowrap">
+                      <td
+                        className="py-3.5 pr-3 type-body text-ink truncate"
+                        title={req.branchName}
+                      >
                         {req.branchName}
                       </td>
 
-                      {/* Product & SKU */}
-                      <td className="px-3 py-3.5 min-w-[200px]">
-                        {first ? (
-                          <div>
-                            <div className="type-body text-ink">
-                              {first.productName}
-                              {first.variationName ? ` · ${first.variationName}` : ""}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="type-caption text-ink-muted">{first.sku}</span>
-                              {showMultiOpenHint && (
-                                <span className="px-1.5 py-0.5 rounded-full bg-status-purple-bg text-primary type-caption font-medium">
-                                  {siblingOpenCount} open for this item
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-ink-muted">—</span>
-                        )}
+                      {/* Product (strictly single-line) */}
+                      <td
+                        className="py-3.5 pr-3 type-body text-ink truncate"
+                        title={first ? `${productDisplay} (${first.sku})` : undefined}
+                      >
+                        {productDisplay}
                       </td>
 
                       {/* REQUESTS SUBTAB CELLS */}
                       {activeSubtab === "requests" && (
                         <>
-                          <td className="px-3 py-3.5 whitespace-nowrap">
-                            <span className="type-body-secondary font-medium text-status-amber-fg tabular-nums">
-                              {first ? `${first.branchCurrentStock} on-hand` : "—"}
-                            </span>
+                          <td className="py-3.5 pr-5 text-right type-body font-medium text-ink whitespace-nowrap tabular-nums">
+                            {req.totalRequested} pcs
                           </td>
-                          <td className="px-3 py-3.5 whitespace-nowrap">
-                            <div className="type-body font-semibold text-ink tabular-nums">
-                              {req.totalRequested} pcs
-                            </div>
-                            {first && (
-                              <div className="type-caption text-ink-muted tabular-nums">
-                                IMS: {first.imsAvailableStock} avail
-                              </div>
-                            )}
+                          <td
+                            className="py-3.5 pr-3 type-body text-ink truncate"
+                            title={req.requestedByName}
+                          >
+                            {req.requestedByName}
                           </td>
-                          <td className="px-3 py-3.5 whitespace-nowrap">
-                            <div className="type-body text-ink">{req.requestedByName}</div>
-                            <div className="type-caption text-ink-muted">
-                              {formatShortDate(req.requestDate)}
-                            </div>
-                          </td>
-                          <td className="px-3 py-3.5 whitespace-nowrap">
+                          <td className="py-3.5 pr-3 whitespace-nowrap">
                             <StatusBadge status="Submitted" />
                           </td>
                           <td
-                            className="pl-3 py-3.5 text-right whitespace-nowrap"
+                            className="py-3.5 text-right whitespace-nowrap"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {canReview ? (
@@ -387,14 +331,14 @@ export function BranchRequestsTab({
                                 <button
                                   type="button"
                                   onClick={() => onReject(req)}
-                                  className="h-8 px-3 rounded-control border border-border bg-surface type-label-button-sm text-destructive hover:bg-subtle transition-colors cursor-pointer"
+                                  className="h-8 px-2.5 rounded-control border border-input bg-surface type-label-button-sm text-destructive hover:bg-subtle transition-colors cursor-pointer"
                                 >
                                   Reject
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => onApprove(req)}
-                                  className="inline-flex items-center gap-1 h-8 px-3 rounded-control border border-border bg-surface type-label-button-sm text-ink hover:bg-subtle transition-colors cursor-pointer"
+                                  className="inline-flex items-center gap-1 h-8 px-2.5 rounded-control border border-input bg-surface type-label-button-sm text-ink hover:bg-subtle transition-colors cursor-pointer"
                                 >
                                   <Check className="w-3.5 h-3.5" />
                                   <span>Approve</span>
@@ -410,64 +354,17 @@ export function BranchRequestsTab({
                       {/* APPROVED SUBTAB CELLS */}
                       {activeSubtab === "approved" && (
                         <>
-                          <td className="px-3 py-3.5 whitespace-nowrap type-body font-semibold text-ink tabular-nums">
+                          <td className="py-3.5 pr-4 text-right type-body font-medium text-ink whitespace-nowrap tabular-nums">
                             {req.totalApproved} pcs
                           </td>
-                          <td className="px-3 py-3.5 min-w-[185px]">
-                            <div className="space-y-1.5">
-                              <div className="type-caption font-medium text-ink tabular-nums">
-                                {req.totalRemaining > 0 ? (
-                                  <>
-                                    {req.totalAllocated} / {req.totalApproved} transferred ·{" "}
-                                    <span className="text-primary font-semibold">
-                                      {req.totalRemaining} left
-                                    </span>
-                                  </>
-                                ) : (
-                                  <span className="text-primary font-semibold">
-                                    {req.totalAllocated} / {req.totalApproved} allocated · 0 left
-                                  </span>
-                                )}
-                              </div>
-                              <div className="h-1.5 w-40 rounded-full bg-status-purple-bg overflow-hidden">
-                                <div
-                                  className="h-full rounded-full bg-primary transition-all"
-                                  style={{ width: `${Math.max(progressPct > 0 ? 4 : 0, progressPct)}%` }}
-                                />
-                              </div>
-                            </div>
+                          <td className="py-3.5 pr-5 text-right type-body font-semibold text-primary whitespace-nowrap tabular-nums">
+                            {req.totalRemaining} pcs left
                           </td>
-                          <td className="px-3 py-3.5 max-w-[200px]">
-                            {activeStrs.length > 0 ? (
-                              <div className="space-y-0.5">
-                                {activeStrs.map((s) => (
-                                  <div key={s.requestId} className="type-caption text-ink-muted">
-                                    <span className="font-medium text-primary">{s.requestNumber}</span>{" "}
-                                    ({s.quantity} · {s.status})
-                                  </div>
-                                ))}
-                              </div>
-                            ) : cancelledStrs.length > 0 ? (
-                              <span className="type-caption text-ink-muted">
-                                {cancelledStrs[0].requestNumber} cancelled ({cancelledStrs[0].quantity}{" "}
-                                released)
-                              </span>
-                            ) : (
-                              <span className="type-caption text-ink-muted">None yet</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-3.5 whitespace-nowrap">
-                            <div className="flex flex-col items-start gap-1">
-                              <StatusBadge status="Approved" />
-                              {syncFailed && (
-                                <span className="inline-flex items-center gap-1 type-caption text-destructive">
-                                  <AlertCircle className="w-3 h-3" /> POS unsynced
-                                </span>
-                              )}
-                            </div>
+                          <td className="py-3.5 pr-3 whitespace-nowrap">
+                            <StatusBadge status="Approved" />
                           </td>
                           <td
-                            className="pl-3 py-3.5 text-right whitespace-nowrap"
+                            className="py-3.5 text-right whitespace-nowrap"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="inline-flex items-center justify-end gap-1.5">
@@ -475,10 +372,11 @@ export function BranchRequestsTab({
                                 <button
                                   type="button"
                                   onClick={() => onRetrySync(req)}
-                                  className="inline-flex items-center gap-1 h-8 px-2.5 rounded-control border border-border bg-surface type-caption text-ink hover:bg-subtle cursor-pointer"
-                                  title="Retry syncing approval decision to POS"
+                                  className="inline-flex items-center gap-1 h-8 px-2 rounded-control border border-input bg-surface type-caption text-destructive hover:bg-subtle cursor-pointer"
+                                  title="POS sync failed — click to retry"
                                 >
-                                  <RefreshCw className="w-3 h-3" /> Retry Sync
+                                  <RefreshCw className="w-3 h-3" />
+                                  <span>Sync</span>
                                 </button>
                               )}
                               {req.totalRemaining > 0 ? (
@@ -497,7 +395,7 @@ export function BranchRequestsTab({
                                   </span>
                                 )
                               ) : (
-                                <span className="inline-flex items-center h-8 px-3 rounded-control border border-border bg-subtle type-caption text-ink-muted">
+                                <span className="inline-flex items-center h-8 px-2.5 rounded-control border border-border bg-subtle type-caption text-ink-muted">
                                   Pending Schedule
                                 </span>
                               )}
@@ -509,32 +407,31 @@ export function BranchRequestsTab({
                       {/* REJECTED SUBTAB CELLS */}
                       {activeSubtab === "rejected" && (
                         <>
-                          <td className="px-3 py-3.5 whitespace-nowrap type-body font-medium text-ink tabular-nums">
+                          <td className="py-3.5 pr-5 text-right type-body font-medium text-ink whitespace-nowrap tabular-nums">
                             {req.totalRequested} pcs
                           </td>
-                          <td className="px-3 py-3.5 max-w-[300px]">
-                            <p className="type-body-secondary text-ink line-clamp-2">
-                              {req.decisionRemarks || "—"}
-                            </p>
+                          <td
+                            className="py-3.5 pr-3 type-body text-ink truncate"
+                            title={req.decidedByName || undefined}
+                          >
+                            {req.decidedByName || "—"}
                           </td>
-                          <td className="px-3 py-3.5 whitespace-nowrap">
-                            <div className="type-body text-ink">{req.decidedByName || "—"}</div>
-                            <div className="type-caption text-ink-muted">
-                              {formatShortDate(req.decidedAt)}
-                            </div>
+                          <td className="py-3.5 pr-3 type-body text-ink whitespace-nowrap">
+                            {formatDisplayDate(req.decidedAt)}
                           </td>
                           <td
-                            className="pl-3 py-3.5 text-right whitespace-nowrap"
+                            className="py-3.5 text-right whitespace-nowrap"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <div className="inline-flex items-center justify-end gap-2">
+                            <div className="inline-flex items-center justify-end gap-1.5">
                               {syncFailed && canReview && (
                                 <button
                                   type="button"
                                   onClick={() => onRetrySync(req)}
-                                  className="inline-flex items-center gap-1 h-7 px-2 rounded-control border border-border bg-surface type-caption text-ink hover:bg-subtle cursor-pointer"
+                                  className="inline-flex items-center gap-1 h-7 px-2 rounded-control border border-input bg-surface type-caption text-destructive hover:bg-subtle cursor-pointer"
+                                  title="POS sync failed — click to retry"
                                 >
-                                  <RefreshCw className="w-3 h-3" /> Retry Sync
+                                  <RefreshCw className="w-3 h-3" />
                                 </button>
                               )}
                               <StatusBadge status="Rejected" />
@@ -546,21 +443,19 @@ export function BranchRequestsTab({
                       {/* CANCELLED SUBTAB CELLS */}
                       {activeSubtab === "cancelled" && (
                         <>
-                          <td className="px-3 py-3.5 whitespace-nowrap type-body font-medium text-ink tabular-nums">
+                          <td className="py-3.5 pr-5 text-right type-body font-medium text-ink whitespace-nowrap tabular-nums">
                             {req.totalRequested} pcs
                           </td>
-                          <td className="px-3 py-3.5 max-w-[300px]">
-                            <p className="type-body-secondary text-ink line-clamp-2">
-                              {req.cancelReason || "Cancelled by branch in POS."}
-                            </p>
+                          <td
+                            className="py-3.5 pr-3 type-body text-ink truncate"
+                            title={req.cancelledByName || "Branch Staff"}
+                          >
+                            {req.cancelledByName || "Branch Staff"}
                           </td>
-                          <td className="px-3 py-3.5 whitespace-nowrap">
-                            <div className="type-body text-ink">{req.cancelledByName || "Branch Staff"}</div>
-                            <div className="type-caption text-ink-muted">
-                              {formatShortDate(req.cancelledAt || null)}
-                            </div>
+                          <td className="py-3.5 pr-3 type-body text-ink whitespace-nowrap">
+                            {formatDisplayDate(req.cancelledAt || null)}
                           </td>
-                          <td className="pl-3 py-3.5 text-right whitespace-nowrap">
+                          <td className="py-3.5 text-right whitespace-nowrap">
                             <StatusBadge status="Cancelled" />
                           </td>
                         </>
@@ -569,21 +464,14 @@ export function BranchRequestsTab({
                       {/* COMPLETED SUBTAB CELLS */}
                       {activeSubtab === "completed" && (
                         <>
-                          <td className="px-3 py-3.5 whitespace-nowrap type-body font-semibold text-ink tabular-nums">
+                          <td className="py-3.5 pr-5 text-right type-body font-medium text-ink whitespace-nowrap tabular-nums">
                             {req.totalScheduled > 0 ? req.totalApproved : req.totalAllocated} /{" "}
                             {req.totalApproved} pcs
                           </td>
-                          <td className="px-3 py-3.5 max-w-[240px]">
-                            <div className="type-body-secondary text-primary">
-                              {activeStrs.length > 0
-                                ? activeStrs.map((s) => `${s.requestNumber} (${s.quantity})`).join(" · ")
-                                : "—"}
-                            </div>
-                          </td>
-                          <td className="px-3 py-3.5 whitespace-nowrap">
+                          <td className="py-3.5 pr-3 whitespace-nowrap">
                             <StatusBadge status={req.transferStage} />
                           </td>
-                          <td className="pl-3 py-3.5 text-right whitespace-nowrap">
+                          <td className="py-3.5 text-right whitespace-nowrap">
                             <StatusBadge status="Completed" />
                           </td>
                         </>
@@ -607,7 +495,7 @@ export function BranchRequestsTab({
             />
           )}
 
-          {/* Contextual Info Strip (Matching Figma) */}
+          {/* Contextual Info Strip */}
           <div className="rounded-control bg-subtle px-3 py-2.5 type-caption text-ink-muted">
             {FOOTER_MESSAGES[activeSubtab]}
           </div>
