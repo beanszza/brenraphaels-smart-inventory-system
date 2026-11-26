@@ -10,7 +10,7 @@ vi.mock("next/server", () => ({
   },
 }));
 
-import { stockMayHaveChanged } from "@/lib/shop/stock-events";
+import { publishStockChanges, stockMayHaveChanged, type StockEventPorts } from "@/lib/shop/stock-events";
 
 beforeEach(() => {
   afterCallbacks.length = 0;
@@ -47,5 +47,23 @@ describe("stockMayHaveChanged", () => {
 
     await vi.advanceTimersByTimeAsync(1_000);
     expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it("removes deleted products from CREOMS and forgets their snapshot", async () => {
+    const known = new Map<number, string>([[1, "a"], [2, "b"]]);
+    const removed: number[] = [];
+    const ports: StockEventPorts = {
+      current: async () => [{ productId: 1, fingerprint: "a" }],
+      published: async () => new Map(known),
+      remember: async ({ productId, fingerprint }) => { known.set(productId, fingerprint); },
+      publish: async () => {},
+      remove: async (productId) => { removed.push(productId); },
+      forget: async (productId) => { known.delete(productId); },
+    };
+
+    expect(await publishStockChanges(ports)).toBe(1);
+    expect(removed).toEqual([2]);
+    expect(known.has(2)).toBe(false);
+    expect(await publishStockChanges(ports)).toBe(0);
   });
 });

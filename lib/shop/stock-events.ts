@@ -1,5 +1,5 @@
 import { after } from "next/server";
-import { pushStockToCreoms, type CreomsStockPush } from "@/lib/gateway/creoms";
+import { deleteStockFromCreoms, pushStockToCreoms, type CreomsStockPush } from "@/lib/gateway/creoms";
 import { publishStockChanged } from "@/lib/gateway/notifications";
 import { readInventory, readTabFigures } from "./inventory";
 import { readProducts } from "./products";
@@ -15,17 +15,22 @@ export interface StockEventPorts {
   remember(state: SizeState): Promise<void>;
   /** Sends the figures to CREOMS's stock count, then tells every open screen the Size changed. */
   publish(state: SizeState): Promise<void>;
+  /** Removes a deleted Size from CREOMS's stock count, then tells every open screen to refresh. */
+  remove?(productId: number): Promise<void>;
+  /** Forgets a deleted Size's snapshot once CREOMS has removed it. */
+  forget?(productId: number): Promise<void>;
 }
 
 /**
  * Pushes to CREOMS and publishes one Size-ID event for each Size whose shop stock (shop Warehouse or Finished Goods tab), image, name, price or
- * presence changed since it was last published. The first run only records a baseline.
- * A failed publish leaves that Size unrecorded so the next run tries again, and never throws.
+ * presence changed since it was last published. Deleted Sizes are removed from CREOMS too. The first run only records a baseline.
+ * A failed publish or remove leaves that Size unrecorded/retained so the next run tries again, and never throws.
  */
 export async function publishStockChanges(ports: StockEventPorts = databasePorts): Promise<number> {
   try {
     const [states, known] = await Promise.all([ports.current(), ports.published()]);
     const baseline = known.size === 0;
+    const currentIds = new Set(states.map(state => state.productId));
     let sent = 0;
     for (const state of states) {
       if (known.get(state.productId) === state.fingerprint) continue;
@@ -34,6 +39,18 @@ export async function publishStockChanges(ports: StockEventPorts = databasePorts
         await ports.remember(state);
       } catch (error) {
         console.error("Stock event could not be published", error);
+      }
+    }
+    if (!baseline && ports.remove && ports.forget) {
+      for (const productId of known.keys()) {
+        if (currentIds.has(productId)) continue;
+        try {
+          await ports.remove(productId);
+          await ports.forget(productId);
+          sent++;
+        } catch (error) {
+          console.error("Deleted stock event could not be published", error);
+        }
       }
     }
     return sent;
@@ -95,6 +112,13 @@ const databasePorts: StockEventPorts = {
   async publish(state) {
     if (state.push) await pushStockToCreoms(state.push);
     await publishStockChanged(state.productId);
+  },
+  async remove(productId) {
+    await deleteStockFromCreoms(productId);
+    await publishStockChanged(productId);
+  },
+  async forget(productId) {
+    await (await db()).shopStockSnapshots.deleteMany({ where: { ProductId: productId } });
   },
 };
 

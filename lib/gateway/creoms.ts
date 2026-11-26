@@ -47,3 +47,17 @@ export async function pushStockToCreoms(push: CreomsStockPush, signal: AbortSign
   });
   if (!response.ok) throw new Error(`CREOMS refused the stock push: ${response.status}`);
 }
+
+/**
+ * Removes a deleted IMS Size from CREOMS's stock count so it disappears from CREOMS's list and shop.
+ * Without CREOMS_URL and IMS_CREOMS_SECRET it sends nothing; a refusal throws so IMS retries next time.
+ */
+export async function deleteStockFromCreoms(productId: number, signal: AbortSignal = AbortSignal.timeout(TIMEOUT_MS)): Promise<void> {
+  const config = settings();
+  if (!config) return;
+  const response = await fetch(`${config.base}/api/internal/ims-stock?productId=${encodeURIComponent(String(productId))}`, {
+    method: "DELETE", cache: "no-store", redirect: "error", signal,
+    headers: { Authorization: `Bearer ${creomsCredential(config.secret)}` },
+  });
+  if (!response.ok) throw new Error(`CREOMS refused the stock delete: ${response.status}`);
+}
