@@ -1,13 +1,14 @@
 import type { Prisma } from "@prisma/client";
 
 export type VariantPackagingType = "Jar" | "Container" | "Pouch";
-export type VariantContentUom = "ML" | "G" | "KG" | "L";
+export type VariantContentUom = "ML" | "G" | "KG" | "L" | "OZ";
 
 export const VARIANT_UOM_LABELS: Record<VariantContentUom, string> = {
   ML: "Milliliter (mL)",
   G: "Gram (g)",
   KG: "Kilogram (kg)",
   L: "Liter (L)",
+  OZ: "Ounce (oz)",
 };
 
 export const VARIANT_UOM_NAMES: Record<VariantContentUom, string> = {
@@ -15,6 +16,7 @@ export const VARIANT_UOM_NAMES: Record<VariantContentUom, string> = {
   G: "Grams",
   KG: "Kilograms",
   L: "Liters",
+  OZ: "Ounces",
 };
 
 export function formatVariantUomLabel(uom?: string | null): string {
@@ -36,6 +38,7 @@ export function normalizeVariantUom(uom?: string | null): VariantContentUom {
   const clean = (uom || "ML").trim().toLowerCase();
   if (clean.startsWith("ml") || clean.startsWith("millilit")) return "ML";
   if (clean.startsWith("kg") || clean.startsWith("kilogram")) return "KG";
+  if (clean.startsWith("oz") || clean.startsWith("ounce")) return "OZ";
   if (clean.startsWith("g")) return "G";
   if (clean.startsWith("l")) return "L";
   return "ML";
@@ -92,7 +95,7 @@ export function parseVariantComponents(
   // Extract UOM
   let uom: VariantContentUom = "ML";
   const unitMatch = raw.match(
-    /\d+(?:\.\d+)?\s*(milliliters?|millilitres?|ml|kilograms?|kg|grams?|g|liters?|litres?|l)\b/i
+    /\d+(?:\.\d+)?\s*(milliliters?|millilitres?|ml|kilograms?|kg|ounces?|oz|grams?|g|liters?|litres?|l)\b/i
   );
   if (unitMatch) {
     uom = normalizeVariantUom(unitMatch[1]);
@@ -140,11 +143,12 @@ export function getVariantAbbreviation(variantName: string): string {
   const unitShortened = clean
     .replace(/\bmillilit(?:er|re)s?\b/gi, "ML")
     .replace(/\bkilograms?\b/gi, "KG")
+    .replace(/\bounces?\b/gi, "OZ")
     .replace(/\bgrams?\b/gi, "G")
     .replace(/\blit(?:er|re)s?\b/gi, "L");
 
   // Collapse "<number> <unit>" into "<number><unit>" so "250 ML Jar" -> "250ML Jar" -> "250ML-JAR"
-  const normalized = unitShortened.replace(/(\d+(?:\.\d+)?)\s+(ml|g|kg|l)\b/gi, "$1$2");
+  const normalized = unitShortened.replace(/(\d+(?:\.\d+)?)\s+(ml|g|kg|l|oz)\b/gi, "$1$2");
 
   const parts = normalized
     .split(/\s+/)

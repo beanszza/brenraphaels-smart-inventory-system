@@ -655,9 +655,10 @@ export default function AddFinishedProductModal({
                                   className="h-10 appearance-none rounded-control border border-input bg-surface pl-3 pr-8 type-body font-medium text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus/30 transition-colors cursor-pointer"
                                 >
                                   <option value="G">Grams (g)</option>
+                                  <option value="KG">Kilograms (kg)</option>
                                   <option value="ML">Milliliters (mL)</option>
-                                  {v.contentUom === "KG" && <option value="KG">Kilograms (kg)</option>}
-                                  {v.contentUom === "L" && <option value="L">Liters (L)</option>}
+                                  <option value="L">Liters (L)</option>
+                                  <option value="OZ">Ounces (oz)</option>
                                 </select>
                                 <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-muted" />
                               </div>
