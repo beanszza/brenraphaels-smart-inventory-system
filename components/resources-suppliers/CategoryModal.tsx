@@ -160,22 +160,29 @@ function CategoryModalForm({
     <ModalWrapper
       open={open}
       title={editingCategory ? "Edit Category" : "Add New Category"}
+      subtitle={
+        editingCategory
+          ? "Update classification details and expiry tracking rules for this category."
+          : "Add a category to organize materials, ingredients, or supplies in inventory."
+      }
       onClose={onClose}
-      size="max-w-[480px]"
+      size="max-w-[540px]"
+      maxWidthPx={540}
     >
-      <div className="space-y-4">
+      <div className="space-y-4.5">
         {saveError && (
-          <div className="rounded-control border border-status-red-border bg-status-red-bg p-3 type-body text-status-red">
+          <div className="rounded-control border border-status-red-border bg-status-red-bg p-3 type-body text-status-red animate-in fade-in-50">
             {saveError}
           </div>
         )}
         {/* Category Name */}
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <label className="block type-label text-ink">
-              Category Name <span className="text-status-red">*</span>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-1 type-label font-medium text-ink">
+              <span>Category Name</span>
+              <span className="text-status-red">*</span>
             </label>
-            <span className={`type-caption ${categoryName.length >= CATEGORY_NAME_MAX ? "font-medium text-status-amber" : "text-ink-muted"}`}>
+            <span className={`type-caption tabular-nums ${categoryName.length >= CATEGORY_NAME_MAX ? "font-medium text-status-amber" : "text-ink-muted"}`}>
               {categoryName.length}/{CATEGORY_NAME_MAX}
             </span>
           </div>
@@ -186,24 +193,31 @@ function CategoryModalForm({
             aria-invalid={!!nameError}
             placeholder="e.g. Packaging Materials"
             style={nameError ? { borderColor: "var(--color-status-red-border)" } : undefined}
-            className={`w-full rounded-control border ${
-              nameError ? "!border-status-red-border focus-visible:!ring-destructive" : "border-border"
-            } bg-surface text-ink px-4 py-2.5 type-body transition-colors`}
+            className={`h-10 w-full rounded-control border ${
+              nameError
+                ? "!border-status-red-border focus-visible:!ring-destructive"
+                : "border-border hover:border-ink-muted/50 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/20"
+            } bg-surface text-ink px-3.5 py-2 type-body placeholder:text-ink-muted/60 transition-colors shadow-none`}
           />
           {nameError ? (
-            <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">{nameError}</p>
+            <p className="type-caption font-medium text-status-red animate-in fade-in-50">{nameError}</p>
           ) : nameWarning ? (
-            <p className="mt-1.5 type-caption font-medium text-status-amber animate-in fade-in-50">{nameWarning}</p>
-          ) : null}
+            <p className="type-caption font-medium text-status-amber animate-in fade-in-50">{nameWarning}</p>
+          ) : (
+            <p className="type-caption text-ink-muted">
+              Must be 2–50 characters, letters and symbols only (no numbers or reserved words).
+            </p>
+          )}
         </div>
 
         {/* Description */}
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <label className="block type-label text-ink">
-              Description
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-1.5 type-label font-medium text-ink">
+              <span>Description</span>
+              <span className="type-caption font-normal text-ink-muted">(optional)</span>
             </label>
-            <span className={`type-caption ${description.length >= CATEGORY_DESC_MAX ? "font-medium text-status-amber" : "text-ink-muted"}`}>
+            <span className={`type-caption tabular-nums ${description.length >= CATEGORY_DESC_MAX ? "font-medium text-status-amber" : "text-ink-muted"}`}>
               {description.length}/{CATEGORY_DESC_MAX}
             </span>
           </div>
@@ -212,67 +226,89 @@ function CategoryModalForm({
             value={description}
             onChange={handleDescriptionChange}
             aria-invalid={!!descError}
-            placeholder="Optional description of this category..."
+            placeholder="Optional description of what items belong in this category..."
             className={`w-full rounded-control border ${
-              descError ? "!border-status-red-border focus-visible:!ring-destructive" : "border-border"
-            } bg-surface text-ink p-3 type-body focus:ring-1 focus:ring-ring outline-none`}
+              descError
+                ? "!border-status-red-border focus-visible:!ring-destructive"
+                : "border-border hover:border-ink-muted/50 focus:border-primary focus:ring-1 focus:ring-primary/20"
+            } bg-surface text-ink p-3 type-body placeholder:text-ink-muted/60 outline-none transition-colors resize-none`}
           />
           {descError ? (
-            <p className="mt-1.5 type-caption font-medium text-status-red animate-in fade-in-50">{descError}</p>
+            <p className="type-caption font-medium text-status-red animate-in fade-in-50">{descError}</p>
           ) : descWarning ? (
-            <p className="mt-1.5 type-caption font-medium text-status-amber animate-in fade-in-50">{descWarning}</p>
+            <p className="type-caption font-medium text-status-amber animate-in fade-in-50">{descWarning}</p>
           ) : null}
         </div>
 
-        {/* Expiry Tracking Option */}
-        <div className="rounded-control border border-border bg-subtle p-3.5">
-          <label
-            htmlFor="category-has-expiry"
-            className="flex items-start gap-2.5 cursor-pointer select-none"
-          >
+        {/* Expiry Tracking Option Card */}
+        <div className="rounded-card border border-border bg-subtle/60 p-4 transition-colors hover:bg-subtle">
+          <div className="flex items-start gap-3.5">
             <input
-              id="category-has-expiry"
               type="checkbox"
+              id="category-has-expiry"
               checked={hasExpiry}
               onChange={(e) => setHasExpiry(e.target.checked)}
-              className="mt-0.5 size-4 rounded-sm border-border accent-primary cursor-pointer"
+              className="sr-only"
+              tabIndex={-1}
             />
-            <span className="space-y-0.5">
-              <span className="block type-label text-ink">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={hasExpiry}
+              aria-labelledby="category-has-expiry-label"
+              onClick={() => setHasExpiry(!hasExpiry)}
+              className={`relative mt-0.5 inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                hasExpiry ? "bg-primary" : "bg-ink-muted/30"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-surface shadow-xs ring-0 transition duration-200 ease-in-out ${
+                  hasExpiry ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </button>
+            <div
+              className="space-y-0.5 cursor-pointer select-none"
+              onClick={() => setHasExpiry(!hasExpiry)}
+            >
+              <span
+                id="category-has-expiry-label"
+                className="block type-label font-medium text-ink cursor-pointer"
+              >
                 This category has an expiry date
               </span>
-              <span className="block type-caption text-ink-muted leading-relaxed">
+              <p className="type-caption text-ink-muted leading-relaxed">
                 Changes only affect new Goods Receipts. Existing receipts and lots keep their recorded expiry.
-              </span>
-            </span>
-          </label>
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Status (Edit only) */}
         {editingCategory && (
-          <div>
-            <label className="mb-1.5 block type-label text-ink">Status</label>
+          <div className="space-y-1.5">
+            <label className="block type-label font-medium text-ink">Status</label>
             <select
               value={isActive ? "true" : "false"}
               onChange={(e) => setIsActive(e.target.value === "true")}
-              className="w-full rounded-control border border-border bg-surface text-ink px-3 py-2 type-body focus:ring-1 focus:ring-ring"
+              className="h-10 w-full rounded-control border border-border bg-surface text-ink px-3 py-2 type-body focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-colors"
             >
               <option value="true">Active</option>
               <option value="false">Inactive</option>
             </select>
-            <p className="mt-1 type-caption text-ink-muted">
+            <p className="type-caption text-ink-muted">
               Inactive categories are hidden from Inventory and new Supply creation.
             </p>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-5 pb-3 border-t border-divider mt-6 mb-2">
+        <div className="flex items-center justify-end gap-2.5 pt-4 pb-1 border-t border-divider mt-6">
           <ModalCloseButton
             type="button"
             variant="outline"
             fallbackOnClose={onClose}
-            className="rounded-control border border-border bg-surface px-5 py-2.5 type-label-button text-ink hover:bg-subtle transition-colors"
+            className="rounded-control border border-border bg-surface px-4 py-2 type-label-button text-ink hover:bg-subtle transition-colors h-9 shadow-none"
           >
             Cancel
           </ModalCloseButton>
@@ -280,7 +316,7 @@ function CategoryModalForm({
             type="button"
             disabled={hasErrors || isSaving}
             onClick={handleRequestSave}
-            className="rounded-control bg-primary text-primary-foreground px-5 py-2.5 type-label-button hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-control bg-primary text-primary-foreground px-5 py-2 type-label-button hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed h-9"
           >
             {isSaving ? "Saving..." : editingCategory ? "Save Changes" : "Create Category"}
           </Button>
