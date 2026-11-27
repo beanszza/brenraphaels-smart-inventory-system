@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ModalWrapper from "./ModalWrapper";
@@ -13,6 +14,7 @@ interface CategoryModalProps {
   editingCategory: CategoryItem | null;
   existingCategories?: CategoryItem[];
   onClose: () => void;
+  onDelete?: (category: CategoryItem) => void;
   onSave: (data: {
     categoryName: string;
     description: string;
@@ -35,6 +37,7 @@ function CategoryModalForm({
   editingCategory,
   existingCategories = [],
   onClose,
+  onDelete,
   onSave,
 }: CategoryModalProps) {
   const [categoryName, setCategoryName] = useState(editingCategory?.categoryName ?? "");
@@ -304,6 +307,18 @@ function CategoryModalForm({
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-2.5 pt-4 pb-1 border-t border-divider mt-6">
+          {editingCategory && onDelete && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                onDelete(editingCategory);
+              }}
+              className="rounded-control border-status-danger/40 text-status-danger hover:bg-status-danger/10 hover:border-status-danger transition-colors h-9 px-3.5 mr-auto shadow-none type-label-button"
+            >
+              <Trash2 size={14} className="mr-1.5 shrink-0" /> Delete
+            </Button>
+          )}
           <ModalCloseButton
             type="button"
             variant="outline"

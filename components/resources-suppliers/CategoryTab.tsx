@@ -23,6 +23,7 @@ interface CategoryTabProps {
   canConfigure?: boolean;
   onAddNew: () => void;
   onEdit: (item: CategoryItem) => void;
+  onDelete?: (item: CategoryItem) => void;
 }
 
 export default function CategoryTab({
@@ -36,6 +37,7 @@ export default function CategoryTab({
   canConfigure = true,
   onAddNew,
   onEdit,
+  onDelete,
 }: CategoryTabProps) {
   const router = useRouter();
   const isAdmin = useIsAdmin();
@@ -146,6 +148,7 @@ export default function CategoryTab({
           pageSize={pageSize}
           canConfigure={canConfigure}
           onEdit={onEdit}
+          onDelete={onDelete}
         />
 
         <Pagination

@@ -7,6 +7,7 @@ import {
   saveSupplier,
   saveRecipe,
   saveCategory,
+  deleteCategory,
   toggleCategoryStatus,
   type SupplyInput,
   type SupplierInput,
@@ -32,6 +33,7 @@ import SupplierModal from "@/components/resources-suppliers/SupplierModal";
 import SupplierDetailsModal from "@/components/resources-suppliers/SupplierDetailsModal";
 import RecipeModal from "@/components/resources-suppliers/RecipeModal";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal";
 
 export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }) {
   const router = useRouter();
@@ -107,6 +109,9 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
   // Modals & Selected Items
   const [openCategoryModal, setOpenCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryItem | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState<CategoryItem | null>(null);
+  const [deleteCategoryError, setDeleteCategoryError] = useState<string | null>(null);
+  const [isDeletingCategory, setIsDeletingCategory] = useState(false);
 
   const [openSupplyModal, setOpenSupplyModal] = useState(false);
   const [editingSupply, setEditingSupply] = useState<SupplyItem | null>(null);
@@ -156,6 +161,47 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
     );
     toast.success(result.message);
     router.refresh();
+  };
+
+  const handleOpenDeleteCategory = (cat: CategoryItem) => {
+    setDeleteCategoryError(null);
+    setDeletingCategory(cat);
+  };
+
+  const handleConfirmDeleteCategory = async () => {
+    if (!deletingCategory) return;
+    if ((deletingCategory.itemCount ?? 0) > 0) {
+      setDeleteCategoryError(
+        `Cannot delete category "${deletingCategory.categoryName}" because it currently has ${deletingCategory.itemCount} connected item(s). Reassign or remove all connected items before deleting this category.`
+      );
+      return;
+    }
+
+    try {
+      setIsDeletingCategory(true);
+      setDeleteCategoryError(null);
+      const res = await deleteCategory(deletingCategory.categoryId);
+      if (!res.success) {
+        setDeleteCategoryError(res.message);
+        toast.error(res.message);
+        return;
+      }
+      toast.success(res.message);
+      setCategoriesState((prev) => prev.filter((c) => c.categoryId !== deletingCategory.categoryId));
+      setDeletingCategory(null);
+      if (openCategoryModal) {
+        setOpenCategoryModal(false);
+        setEditingCategory(null);
+      }
+      router.refresh();
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      const msg = e?.message || "Failed to delete category.";
+      setDeleteCategoryError(msg);
+      toast.error(msg);
+    } finally {
+      setIsDeletingCategory(false);
+    }
   };
 
   const handleSaveSupply = async (input: SupplyInput) => {
@@ -244,6 +290,10 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
             setEditingCategory(cat);
             setOpenCategoryModal(true);
           }}
+          onDelete={(cat) => {
+            if (!canConfigureCatalog) return;
+            handleOpenDeleteCategory(cat);
+          }}
         />
       )}
 
@@ -331,6 +381,9 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
             setOpenCategoryModal(false);
             setEditingCategory(null);
           }}
+          onDelete={(cat) => {
+            handleOpenDeleteCategory(cat);
+          }}
           onSave={handleSaveCategory}
         />
       )}
@@ -393,6 +446,37 @@ export default function ResourcesSuppliersPage({ data }: { data: ResourcesData }
           onSave={handleSaveRecipe}
         />
       )}
+
+      {/* Delete Category Confirmation Modal */}
+      <ActionConfirmModal
+        open={Boolean(deletingCategory)}
+        title="Delete Category"
+        subtitle={deletingCategory ? `Category: ${deletingCategory.categoryName}` : undefined}
+        description={
+          deletingCategory && (deletingCategory.itemCount ?? 0) > 0 ? (
+            <>
+              Cannot delete category <strong>{deletingCategory.categoryName}</strong> because it currently has{" "}
+              <strong>{deletingCategory.itemCount}</strong> connected item(s). Reassign or remove all connected items before deleting this category.
+            </>
+          ) : (
+            <>
+              Are you sure you want to delete category <strong>{deletingCategory?.categoryName}</strong>? This action cannot be undone.
+            </>
+          )
+        }
+        confirmText="Delete Category"
+        loading={isDeletingCategory}
+        loadingText="Deleting..."
+        confirmDisabled={Boolean(deletingCategory && (deletingCategory.itemCount ?? 0) > 0)}
+        errorMessage={deleteCategoryError}
+        onConfirm={handleConfirmDeleteCategory}
+        onClose={() => {
+          if (!isDeletingCategory) {
+            setDeletingCategory(null);
+            setDeleteCategoryError(null);
+          }
+        }}
+      />
     </div>
   );
 }

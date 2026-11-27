@@ -287,3 +287,42 @@ export async function toggleCategoryStatus(id: number, isActive: boolean): Promi
   }
 }
 
+export async function deleteCategory(id: number): Promise<Result> {
+  const staff = await requireModule("Resources & Suppliers");
+  try {
+    check(!isAdminStaff(staff), "Administrators have view-only access to Categories.");
+    check(validId(id), "Invalid category.");
+    const cat = await prisma.categories.findUnique({
+      where: { CategoryId: id },
+      select: {
+        CategoryId: true,
+        CategoryName: true,
+        _count: { select: { Items: true } },
+      },
+    });
+    check(cat, "Category not found.");
+    const itemCount = cat._count?.Items ?? 0;
+    check(
+      itemCount === 0,
+      `Cannot delete category "${cat.CategoryName}" because it currently has ${itemCount} connected item(s). Reassign or remove its items first.`
+    );
+
+    await prisma.categories.delete({
+      where: { CategoryId: id },
+    });
+
+    await recordAudit(staff, {
+      module: "Resources & Suppliers",
+      action: "record.deleted",
+      version: auditVersion({ id }),
+      target: { type: "category", id, name: cat.CategoryName },
+      description: `${staff.name} deleted category ${cat.CategoryName}`,
+    });
+
+    return saved("Category deleted successfully.");
+  } catch (error) {
+    return failed(error);
+  }
+}
+
+

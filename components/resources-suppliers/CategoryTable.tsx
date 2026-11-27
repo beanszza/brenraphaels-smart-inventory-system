@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MoreHorizontal, Pencil } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { CategoryItem } from "./types";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import {
@@ -17,6 +17,7 @@ interface CategoryTableProps {
   pageSize: number;
   canConfigure?: boolean;
   onEdit: (item: CategoryItem) => void;
+  onDelete?: (item: CategoryItem) => void;
 }
 
 export default function CategoryTable({
@@ -25,6 +26,7 @@ export default function CategoryTable({
   pageSize,
   canConfigure = true,
   onEdit,
+  onDelete,
 }: CategoryTableProps) {
 
   return (
@@ -93,6 +95,14 @@ export default function CategoryTable({
                         >
                           <Pencil size={14} className="shrink-0" /> Edit Category
                         </DropdownMenuItem>
+                        {onDelete && (
+                          <DropdownMenuItem
+                            onClick={() => onDelete(item)}
+                            className="cursor-pointer type-body-secondary text-status-danger hover:bg-status-danger/10 focus:bg-status-danger/10 focus:text-status-danger"
+                          >
+                            <Trash2 size={14} className="shrink-0" /> Delete Category
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>

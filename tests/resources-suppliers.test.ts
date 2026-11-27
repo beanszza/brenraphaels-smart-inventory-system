@@ -1,6 +1,6 @@
 import type { AuditEventInput } from "@/lib/gateway/audit";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { saveSupply, saveSupplier, saveRecipe, saveCategory, toggleCategoryStatus, loadSupplyDetails, loadSupplierDetails } from "@/lib/resources-suppliers/actions";
+import { saveSupply, saveSupplier, saveRecipe, saveCategory, deleteCategory, toggleCategoryStatus, loadSupplyDetails, loadSupplierDetails } from "@/lib/resources-suppliers/actions";
 import { getResources } from "@/lib/resources-suppliers/data";
 
 vi.mock("server-only", () => ({}));
@@ -27,7 +27,7 @@ const db = vi.hoisted(() => ({
   $transaction: vi.fn(),
   items: { findMany: vi.fn() }, suppliers: { findMany: vi.fn() },
   recipes: { findMany: vi.fn() }, finishedProducts: { findMany: vi.fn() },
-  categories: { findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(), update: vi.fn(), create: vi.fn() },
+  categories: { findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(), update: vi.fn(), create: vi.fn(), delete: vi.fn() },
   unitOfMeasures: { findMany: vi.fn() },
   inventoryMovementLogs: { findMany: vi.fn() }, supplierItems: { findMany: vi.fn() },
 }));
@@ -471,3 +471,37 @@ it("persists selected production stages in recipe notes and enforces the 100-wor
     stages: ["Cooking", "Cooling", "Resting"],
   });
 });
+
+it("allows deleting a category only when it has zero connected items", async () => {
+  // Refuses deletion when category has linked items
+  db.categories.findUnique.mockResolvedValueOnce({
+    CategoryId: 10,
+    CategoryName: "Ingredients",
+    _count: { Items: 5 },
+  });
+
+  const blockedRes = await deleteCategory(10);
+  expect(blockedRes).toMatchObject({
+    success: false,
+    message: expect.stringContaining("5 connected item(s)"),
+  });
+  expect(db.categories.delete).not.toHaveBeenCalled();
+
+  // Successfully deletes when category has zero linked items
+  db.categories.findUnique.mockResolvedValueOnce({
+    CategoryId: 11,
+    CategoryName: "Packaging & Labels",
+    _count: { Items: 0 },
+  });
+  db.categories.delete.mockResolvedValueOnce({ CategoryId: 11 });
+
+  const successRes = await deleteCategory(11);
+  expect(successRes).toEqual({
+    success: true,
+    message: "Category deleted successfully.",
+  });
+  expect(db.categories.delete).toHaveBeenCalledWith({
+    where: { CategoryId: 11 },
+  });
+});
+
